@@ -382,7 +382,7 @@ def roots_list(
 
 
 def root_occurrences(
-    conn: Connection, root_raw: str, lemma_id: int | None, limit: int, after: int
+    conn: Connection, root_raw: str, lemma_id: int | None, limit: int, after: int, form: str | None = None
 ) -> dict[str, Any] | None:
     r = resolve_root(conn, root_raw)
     if r is None:
@@ -392,11 +392,15 @@ def root_occurrences(
     if lemma_id is not None:
         lemma_cond = "and w.lemma_id = :lem"
         params["lem"] = lemma_id
+    if form:
+        lemma_cond += " and w.text_imlaei = :form"
+        params["form"] = form
     occ = rows(
         conn,
         f"""select w.id, w.location, w.surah, w.ayah, w.verse_id, w.token_from, w.token_to, w.text_imlaei as form,
-                   l.ar as lemma, l.id as lemma_id, w.pos
+                   l.ar as lemma, l.id as lemma_id, w.pos, s.name_ar as surah_name_ar
             from content.words w left join content.lemmas l on l.id = w.lemma_id
+            join content.surahs s on s.number = w.surah
             where w.root_id = :r {lemma_cond} and w.id > :after order by w.id limit :limit""",
         params,
     )
@@ -425,13 +429,14 @@ def root_occurrences(
                 "lemma": lemma_display(o["lemma"]),
                 "lemma_id": o["lemma_id"],
                 "pos": o["pos"],
+                "surah_name_ar": o["surah_name_ar"],
             }
         )
     total = int(
         scalar(
             conn,
             f"select count(*) from content.words w where w.root_id = :r {lemma_cond}",
-            {k: v for k, v in params.items() if k in ("r", "lem")},
+            {k: v for k, v in params.items() if k in ("r", "lem", "form")},
         )
         or 0
     )
@@ -554,3 +559,58 @@ def work_surah(conn: Connection, work_id: str, surah_no: int) -> dict[str, Any] 
     for p in passages:
         p["text"] = _clean(p["text"], strip)
     return {"work": w, "passages": passages}
+
+
+# ─── root graph document ────────────────────────────────────────────────────
+
+
+def root_graph(conn: Connection, raw: str) -> dict[str, Any] | None:
+    """Everything the root-family canvas needs in one payload: root → lemmas → surface word forms,
+    each form with its occurrence count and its first verse (excerpt tokens + reference)."""
+    r = resolve_root(conn, raw)
+    if r is None:
+        return None
+    lemmas = root_lemmas(conn, r["id"])
+    forms = rows(
+        conn,
+        """with f as (
+             select w.lemma_id, w.text_imlaei as form, count(*)::int as occurrences, min(w.id) as first_id
+             from content.words w where w.root_id = :r group by w.lemma_id, w.text_imlaei)
+           select f.lemma_id, f.form, f.occurrences, w.location, w.text_uthmani, w.verse_id, w.token_from, w.token_to,
+                  v.key as verse_key, v.surah, v.ayah, s.name_ar as surah_name_ar
+           from f join content.words w on w.id = f.first_id
+           join content.verses v on v.id = w.verse_id join content.surahs s on s.number = v.surah
+           order by f.lemma_id, f.occurrences desc, f.first_id""",
+        {"r": r["id"]},
+    )
+    verse_ids = list({f["verse_id"] for f in forms})
+    toks = rows(
+        conn,
+        "select verse_id, position, text from content.tokens where verse_id = any(:ids) order by verse_id, position",
+        {"ids": verse_ids},
+    )
+    by_v: dict[int, list[str]] = {}
+    for t in toks:
+        by_v.setdefault(t["verse_id"], []).append(t["text"])
+    by_lemma: dict[int, list[dict[str, Any]]] = {}
+    for f in forms:
+        vt = by_v[f["verse_id"]]
+        a, b = f["token_from"] - 1, f["token_to"]
+        by_lemma.setdefault(f["lemma_id"], []).append(
+            {
+                "form": f["form"],
+                "occurrences": f["occurrences"],
+                "first": {
+                    "location": f["location"],
+                    "verse_key": f["verse_key"],
+                    "surah_name_ar": f["surah_name_ar"],
+                    "word": " ".join(vt[a:b]),
+                    "left": " ".join(vt[max(0, a - 5) : a]),
+                    "right": " ".join(vt[b : b + 5]),
+                },
+            }
+        )
+    for lem in lemmas:
+        lem["forms"] = by_lemma.get(lem["id"], [])
+    r.pop("id")
+    return {"root": r, "lemmas": lemmas}

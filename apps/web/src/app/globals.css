@@ -116,6 +116,7 @@
   to { opacity: 1; }
 }
 
+@layer base {
 /* ─── Base ──────────────────────────────────────────────────────────────── */
 html {
   -webkit-text-size-adjust: 100%;
@@ -162,6 +163,8 @@ button:disabled {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
+}
+
 }
 
 @layer components {

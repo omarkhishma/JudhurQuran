@@ -215,15 +215,25 @@ def root_occurrences(
     request: Request,
     root: str,
     lemma: int | None = Query(None, description="restrict to one lemma id"),
+    form: str | None = Query(None, max_length=60, description="restrict to one surface form (imlaei spelling)"),
     limit: int = Query(50, ge=1, le=500),
     cursor: str | None = Query(None),
 ) -> Response:
     after = int(cursor) if cursor and cursor.isdigit() else 0
     with connect() as conn:
-        r = content.root_occurrences(conn, root, lemma, limit, after)
+        r = content.root_occurrences(conn, root, lemma, limit, after, form)
         if r is None:
             raise not_found("root")
         return cached(request, r)
+
+
+@router.get("/roots/{root}/graph", summary="Root-family graph document: root → lemmas → word forms (with first verse)")
+def root_graph(request: Request, root: str) -> Response:
+    with connect() as conn:
+        g = content.root_graph(conn, root)
+        if g is None:
+            raise not_found("root")
+        return cached(request, g)
 
 
 @router.get("/lemmas/{lemma_id}", summary="One lemma with its surface forms")

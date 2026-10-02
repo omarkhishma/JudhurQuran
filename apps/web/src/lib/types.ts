@@ -196,6 +196,7 @@ export type Occurrence = {
   lemma: string | null;
   lemma_id: number | null;
   pos: string;
+  surah_name_ar: string;
 };
 
 export type OccurrencesPage = {
