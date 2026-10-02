@@ -16,6 +16,7 @@ from jadhr_arabic import has_arabic, is_uthmani, normalize, parse_root_input, ro
 from jadhr_arabic import key as root_key
 from sqlalchemy import Connection
 
+from . import searchindex
 from .content import lemma_display
 from .db import one, rows
 
@@ -119,6 +120,23 @@ def _lemma_candidates(norm_q: str) -> list[str]:
 
 
 def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
+    """OpenSearch when it is reachable (scored, multi-field, highlighted); Postgres otherwise. The
+    response says which engine answered. Detection, references and root letters are exact lookups in
+    Postgres either way."""
+    from . import search_os
+
+    es = searchindex.client()
+    if searchindex.available(es):
+        try:
+            return search_os.search(conn, es, q, limit)
+        except Exception:  # an index problem must never take search down: fall back
+            pass
+    out = search_pg(conn, q, limit)
+    out["engine"] = "postgres"
+    return out
+
+
+def search_pg(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
     kind, info = detect(conn, q)
     results: dict[str, list[dict[str, Any]]] = {
         "verses": [],

@@ -21,12 +21,30 @@ services:
       timeout: 3s
       retries: 30
 
+  search:
+    # Derived index (rebuilt by the loader after every release); Postgres stays the source of truth.
+    image: opensearchproject/opensearch:2.19.3
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms${SEARCH_HEAP:-1g} -Xmx${SEARCH_HEAP:-1g}
+    volumes:
+      - search:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=2s || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
   api:
     build: { context: .., dockerfile: services/api/Dockerfile }
     restart: unless-stopped
-    depends_on: { db: { condition: service_healthy } }
+    depends_on: { db: { condition: service_healthy }, search: { condition: service_healthy } }
     environment:
       JADHR_DATABASE_URL: postgresql+psycopg://jadhr:${POSTGRES_PASSWORD}@db:5432/jadhr
+      JADHR_SEARCH_URL: http://search:9200
       JADHR_ENVIRONMENT: production
       JADHR_PUBLIC_BASE_URL: ${PUBLIC_URL:?set PUBLIC_URL}
       JADHR_CORS_ORIGINS: '["${PUBLIC_URL}"]'
@@ -61,9 +79,10 @@ services:
   loader:
     profiles: [tools]
     build: { context: .., dockerfile: services/api/Dockerfile }
-    depends_on: { db: { condition: service_healthy } }
+    depends_on: { db: { condition: service_healthy }, search: { condition: service_healthy } }
     environment:
       JADHR_DATABASE_URL: postgresql+psycopg://jadhr:${POSTGRES_PASSWORD}@db:5432/jadhr
+      JADHR_SEARCH_URL: http://search:9200
       JADHR_WEB_REVALIDATE_URL: http://web:3000/api/revalidate
       JADHR_REVALIDATE_SECRET: ${REVALIDATE_SECRET}
     volumes:
@@ -73,5 +92,6 @@ services:
 
 volumes:
   pg:
+  search:
   caddy_data:
   caddy_config:

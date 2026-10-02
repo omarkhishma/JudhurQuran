@@ -191,6 +191,19 @@ def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[st
     return counts
 
 
+def rebuild_search_index() -> str:
+    """A release changes content, so the derived search index is rebuilt from it (aliases flip atomically)."""
+    from . import searchindex
+
+    if not searchindex.available(searchindex.client()):
+        return "skipped: OpenSearch is not reachable — search answers from Postgres until `python -m jadhr_api.searchindex reindex` runs"
+    try:
+        out = searchindex.reindex()
+    except Exception as e:  # the release itself is loaded; say plainly that search is stale
+        return f"failed: {e} — search still answers from the previous index"
+    return "ok: " + ", ".join(f"{k} {v['documents']}" for k, v in out["indices"].items())
+
+
 def revalidate_web() -> str:
     """Expire the web app's cached pages so the new release is served at once (not after a day)."""
     s = get_settings()
@@ -217,10 +230,16 @@ def main() -> int:
         return 2
     t = time.time()
     counts = load(Path(sys.argv[1]), Path(sys.argv[2]))
+    search = rebuild_search_index()
     web = revalidate_web()
     print(
         json.dumps(
-            {"loaded": counts, "seconds": round(time.time() - t, 1), "web_revalidate": web},
+            {
+                "loaded": counts,
+                "seconds": round(time.time() - t, 1),
+                "search_index": search,
+                "web_revalidate": web,
+            },
             ensure_ascii=False,
         )
     )

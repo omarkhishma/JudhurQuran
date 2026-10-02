@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # src/app/api/revalidate). Unset → the step is skipped and the loader says so.
     web_revalidate_url: str | None = None
     revalidate_secret: str | None = None
+    # OpenSearch (derived index; Postgres is the source of truth). Unset → search falls back to Postgres.
+    search_url: str | None = "http://localhost:9201"
+    search_timeout: float = 3.0
 
 
 @lru_cache

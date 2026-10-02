@@ -9,14 +9,15 @@
 | `caddy` | `caddy:2-alpine` | TLS (automatic HTTPS for the domain), gzip/zstd, routes `/api/v1/*` to the API and everything else to the web app, blocks `/api/revalidate` from outside |
 | `web` | `apps/web/Dockerfile` | Next.js standalone server. Pages render on first request and stay cached until the next release |
 | `api` | `services/api/Dockerfile` | FastAPI, read-only, ETag + long cache headers |
-| `db` | `postgres:17-alpine` | the `content` schema, reloaded atomically per dataset release |
-| `loader` (one-off) | API image | migrations, atomic load of `data/build/<version>`, then expires the web cache |
+| `db` | `postgres:17-alpine` | the `content` schema, reloaded atomically per dataset release — the source of truth |
+| `search` | `opensearchproject/opensearch:2.19.3` | the derived search index (words, roots, patterns, passages, word occurrences, dictionary articles); disposable, rebuilt from Postgres |
+| `loader` (one-off) | API image | migrations, atomic load of `data/build/<version>`, search reindex (aliases flip atomically), then expires the web cache |
 
 Files: `infra/compose.prod.yml`, `infra/Caddyfile`, `.env.example` (every variable explained).
 
 ## Owner inputs needed before the first deploy
 
-- A server with Docker (2 vCPU / 4 GB is ample) and the domain pointed at it.
+- A server with Docker (2 vCPU / 6 GB: OpenSearch takes a 1 GB heap by default, `SEARCH_HEAP` to change) and the domain pointed at it.
 - `.env.production` on the server (never committed):
 
 ```
@@ -88,3 +89,12 @@ docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loa
 ## Before the site goes public (owner)
 
 Licensing gates from the research reports: the non-commercial assumption (EveryAyah audio CC BY-NC, corpus terms), al-Sa'di in life+70 jurisdictions until 2027-01-01, QuranEnc's "keep the version, link the source" terms (shown on every tafsir/translation), and the corpus attribution link on every word panel. See `docs/research/` and the sources page.
+
+## Search index
+
+OpenSearch holds only derived data. If it is down, `/api/v1/search` answers from Postgres and says so (`"engine": "postgres"`); nothing else depends on it. Rebuild by hand at any time — new indices are built and checked against Postgres document counts before the aliases move:
+
+```
+docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader python -m jadhr_api.searchindex reindex
+docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader python -m jadhr_api.searchindex status
+```

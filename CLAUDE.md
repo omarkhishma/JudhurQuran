@@ -28,7 +28,8 @@ Read `docs/PLAN.md` (status) and `docs/DECISIONS.md` (decisions + lessons) befor
 
 | What | Command |
 |---|---|
-| DB (Postgres 17, port 5442) | `docker compose up -d` |
+| DB + search (Postgres 17 on 5442, OpenSearch on 9201) | `docker compose up -d` |
+| Rebuild the search index (the loader does it after each load) | `uv run python -m jadhr_api.searchindex reindex` |
 | API (port 8000) | `uv run uvicorn jadhr_api.main:app --port 8000 --reload --reload-dir services/api/src --reload-dir packages/arabic-py/src` |
 | Web (port 3210 — 3000 belongs to another project) | `pnpm dev` |
 | Build dataset (fails on pin drift) | `uv run jadhr-pipeline build` |

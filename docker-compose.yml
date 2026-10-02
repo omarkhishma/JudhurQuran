@@ -16,5 +16,24 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+  search:
+    # Derived and disposable: rebuilt from Postgres by `uv run python -m jadhr_api.searchindex reindex`.
+    image: opensearchproject/opensearch:2.19.3
+    container_name: jadhr-quran-search
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms768m -Xmx768m
+    ports:
+      - "9201:9200"
+    volumes:
+      - jadhr_quran_search:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=2s || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 volumes:
   jadhr_quran_pg:
+  jadhr_quran_search:
