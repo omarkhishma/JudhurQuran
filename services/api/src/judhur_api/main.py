@@ -236,6 +236,32 @@ def root_graph(request: Request, root: str) -> Response:
         return cached(request, g)
 
 
+@router.get("/recitations", summary="Reciters with word-level timings")
+def recitations(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": content.reciters(conn), "credit": content.AUDIO_CREDIT})
+
+
+@router.get("/recitations/{reciter_id}/surahs/{number}", summary="Audio URLs and word timings for a surah")
+def recitation_surah(request: Request, reciter_id: str, number: int) -> Response:
+    if not 1 <= number <= 114:
+        raise not_found("surah")
+    with connect() as conn:
+        out = content.recitation_surah(conn, reciter_id, number)
+        if out is None:
+            raise not_found("reciter")
+        return cached(request, out)
+
+
+@router.get("/recitations/{reciter_id}/verses/{key}", summary="Audio URL and word timings for one verse")
+def recitation_verse(request: Request, reciter_id: str, key: str) -> Response:
+    with connect() as conn:
+        out = content.recitation_verse(conn, reciter_id, key)
+        if out is None:
+            raise not_found("recitation")
+        return cached(request, out)
+
+
 @router.get("/lexicon/works", summary="Classical lexicons and gharib works, with editions and licenses")
 def lexicon_works(request: Request) -> Response:
     with connect() as conn:

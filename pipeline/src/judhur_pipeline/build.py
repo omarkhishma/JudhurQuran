@@ -52,13 +52,21 @@ class RawPaths:
     root: Path
     works_registry: Path | None = None
     lexica_registry: Path | None = None
+    recitations_registry: Path | None = None
 
     @classmethod
-    def default(cls, raw: Path, works_registry: Path | None = None, lexica_registry: Path | None = None) -> RawPaths:
+    def default(
+        cls,
+        raw: Path,
+        works_registry: Path | None = None,
+        lexica_registry: Path | None = None,
+        recitations_registry: Path | None = None,
+    ) -> RawPaths:
         return cls(
             root=raw,
             works_registry=works_registry,
             lexica_registry=lexica_registry,
+            recitations_registry=recitations_registry,
             tanzil_uthmani=raw / "tanzil/quran-uthmani.txt",
             tanzil_simple_clean=raw / "tanzil/quran-simple-clean.txt",
             tanzil_meta=raw / "tanzil/quran-data.xml",
@@ -203,6 +211,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
 
     word_id = 0
     token_id = 0
+    verse_tokens: dict[tuple[int, int], tuple[int, list[str], list[str]]] = {}
     for verse_id, k in enumerate(sorted(tanzil.verses), start=1):
         s, a = k
         words = by_verse[k]
@@ -211,6 +220,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         # Standard (imlāʾī) spelling for search: KFGQPC's own "emlaey" text, aligned word by word.
         simple_tok = [x for x in (q.imlaei or simple.verses[k]).split(" ") if x]
         forms = [_word_form(w) for w in words]
+        verse_tokens[k] = (verse_id, t_tok, q.tokens)
 
         try:
             g_qpc = align(forms, q.tokens, _match_key)
@@ -522,6 +532,13 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "exact" if e["match"] == "strict" else "manual" if e["match"] == "manual" else (r or {}).get("confidence", "low")
             )
             e["displayable"] = e["root_key"] is not None and e["confidence"] in ("exact", "manual", "high")
+    reciters_out, timings_out, rec_report = ([], [], {})
+    if raw.recitations_registry:
+        from .recitations import build_recitations
+
+        reciters_out, timings_out, rec_report = build_recitations(raw.root, raw.recitations_registry, verse_tokens)
+    report["recitations"] = rec_report
+
     report["lexica"] = {
         "works": len(lex_works),
         "entries": len(lex_entries),
@@ -536,6 +553,8 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         ("lexicon_works", lex_works),
         ("lexicon_entries", lex_entries),
         ("gharib_glosses", gharib),
+        ("reciters", reciters_out),
+        ("recitation_timings", timings_out),
         ("surahs", surahs_out),
         ("verses", verses_out),
         ("tokens", tokens_out),

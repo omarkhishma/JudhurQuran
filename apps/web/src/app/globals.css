@@ -389,6 +389,11 @@ button:disabled {
   color: var(--c-root);
   user-select: none;
 }
+.w.is-reading {
+  background: var(--sentence-wash);
+  color: var(--t1);
+  box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--c-sentence) 70%, transparent);
+}
 .ayah-num {
   font-family: var(--font-quran);
   font-size: 1em;

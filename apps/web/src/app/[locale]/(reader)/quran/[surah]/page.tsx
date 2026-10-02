@@ -7,6 +7,7 @@ import { VerseList } from "@/components/reader/VerseList";
 import { ReaderController } from "@/components/reader/ReaderController";
 import { ReaderToolbar } from "@/components/reader/ReaderToolbar";
 import { SidePanel } from "@/components/reader/SidePanel";
+import { AudioBar } from "@/components/audio/AudioBar";
 import { cnt, formatNumber } from "@/lib/format";
 import { Link } from "@/i18n/navigation";
 
@@ -85,11 +86,12 @@ export default async function SurahPage({ params }: PageProps<"/[locale]/quran/[
               translationTitle={payload.translation?.title_en}
             />
           </ReaderController>
-          <nav className="mt-12 flex justify-between gap-3 border-t border-line pt-6" aria-label={ts("index")}>
+          <nav className="mt-12 mb-4 flex justify-between gap-3 border-t border-line pt-6" aria-label={ts("index")}>
             {n > 1 ? <Link href={`/quran/${n - 1}`} className="btn min-h-[40px]">{ts("prev")}</Link> : <span />}
             {n < 114 ? <Link href={`/quran/${n + 1}`} className="btn min-h-[40px]">{ts("next")}</Link> : <span />}
           </nav>
         </div>
+        <AudioBar surah={n} surahName={s.name_ar} />
       </div>
       <SidePanel surahName={s.name_ar} />
     </div>

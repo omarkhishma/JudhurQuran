@@ -694,3 +694,52 @@ def lexicon_works(conn: Connection) -> list[dict[str, Any]]:
         f"""select {_LEX_WORK_COLS}, (select count(*) from content.lexicon_entries e where e.work_id = w.id and e.displayable)::int as displayed_entries
             from content.lexicon_works w order by w.sort_order""",
     )
+
+
+# ─── recitations ────────────────────────────────────────────────────────────
+
+AUDIO_CREDIT = {
+    "ar": "التلاوات من EveryAyah.com (رخصة المشاع الإبداعي، غير تجارية)، وتوقيت الكلمات من مشروع quran-align لكولن فير (CC BY 4.0).",
+    "en": "Recitations from EveryAyah.com (CC BY-NC 2.5); word timings from quran-align by Collin Fair (CC BY 4.0).",
+}
+
+
+def reciters(conn: Connection) -> list[dict[str, Any]]:
+    return rows(conn, "select id, name_ar, name_en, style, is_default from content.reciters order by sort_order")
+
+
+def _audio_url(template: str, surah: int, ayah: int) -> str:
+    return template.replace("{surah:03d}", f"{surah:03d}").replace("{ayah:03d}", f"{ayah:03d}")
+
+
+def recitation_surah(conn: Connection, reciter_id: str, surah_no: int) -> dict[str, Any] | None:
+    r = one(conn, "select id, name_ar, name_en, style, audio_url from content.reciters where id = :id", {"id": reciter_id})
+    if r is None:
+        return None
+    vs = rows(
+        conn,
+        """select v.key, v.ayah, t.segments from content.verses v
+           left join content.recitation_timings t on t.verse_id = v.id and t.reciter_id = :r
+           where v.surah = :s order by v.id""",
+        {"r": reciter_id, "s": surah_no},
+    )
+    tmpl = r.pop("audio_url")
+    for v in vs:
+        v["url"] = _audio_url(tmpl, surah_no, v["ayah"])
+        v["segments"] = v["segments"] or []
+    basmala = _audio_url(tmpl, 1, 1) if surah_no not in (1, 9) else None
+    return {"reciter": r, "basmala_url": basmala, "verses": vs, "credit": AUDIO_CREDIT}
+
+
+def recitation_verse(conn: Connection, reciter_id: str, key: str) -> dict[str, Any] | None:
+    r = one(conn, "select id, audio_url from content.reciters where id = :id", {"id": reciter_id})
+    v = one(
+        conn,
+        """select v.key, v.surah, v.ayah, coalesce(t.segments, '[]'::jsonb) as segments from content.verses v
+           left join content.recitation_timings t on t.verse_id = v.id and t.reciter_id = :r where v.key = :k""",
+        {"r": reciter_id, "k": key},
+    )
+    if r is None or v is None:
+        return None
+    v["url"] = _audio_url(r["audio_url"], v["surah"], v["ayah"])
+    return v

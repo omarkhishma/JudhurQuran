@@ -375,5 +375,24 @@
     "kindWord": "كلمة",
     "kindRoot": "جذر",
     "dataControls": "التحكم في بياناتك"
+  },
+  "audio": {
+    "play": "استماع",
+    "pause": "إيقاف مؤقت",
+    "stop": "إيقاف",
+    "prevVerse": "الآية السابقة",
+    "nextVerse": "الآية التالية",
+    "reciter": "القارئ",
+    "follow": "تتبّع الكلمات",
+    "listenVerse": "استمع للآية",
+    "listenWord": "استمع للكلمة",
+    "nowPlaying": "{ref}",
+    "basmala": "البسملة",
+    "credit": "التلاوات: EveryAyah · التوقيت: quran-align",
+    "barLabel": "مشغّل التلاوة",
+    "error": "تعذّر تشغيل التلاوة",
+    "murattal": "مرتّل",
+    "mujawwad": "مجوّد",
+    "muallim": "المعلّم"
   }
 }

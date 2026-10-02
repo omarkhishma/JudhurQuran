@@ -10,6 +10,7 @@ import { PanelSection } from "./PanelSection";
 import { useReader } from "@/lib/store/reader";
 import { LexiconArticle } from "@/components/lexicon/LexiconArticle";
 import { useSaved } from "@/lib/store/saved";
+import { useAudio } from "@/lib/store/audio";
 import { BookmarkButton } from "@/components/saved/BookmarkButton";
 import { useEffect } from "react";
 
@@ -81,6 +82,7 @@ export function WordPanel({
             <p className="quran text-[44px] leading-[1.6] text-t1" dir="rtl" lang="ar">
               {displayText}
             </p>
+            <ListenWord verseKey={w.verse.key} from={w.token_from} to={w.token_to} />
             <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-t2">
               <span className="ar-classical text-[17px]" dir="rtl" lang="ar">{w.text_imlaei}</span>
               {w.translit && <span className="italic" dir="ltr" lang="en">{w.translit}</span>}
@@ -455,5 +457,16 @@ function NextSteps({ w }: { w: WordDetail }) {
         );
       })}
     </ul>
+  );
+}
+
+function ListenWord({ verseKey, from, to }: { verseKey: string; from: number; to: number }) {
+  const t = useTranslations("audio");
+  const playWord = useAudio((s) => s.playWord);
+  return (
+    <button type="button" className="btn mb-1" onClick={() => void playWord(verseKey, from, to)}>
+      <Icon name="play" />
+      {t("listenWord")}
+    </button>
   );
 }

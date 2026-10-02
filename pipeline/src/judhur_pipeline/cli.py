@@ -27,7 +27,9 @@ def main(argv: list[str] | None = None) -> int:
         out = args.out or REPO / "data/build" / args.version
         t = time.time()
         report = build(
-            RawPaths.default(args.raw, REPO / "data/works.yaml", REPO / "data/lexica.yaml"), out, args.version
+            RawPaths.default(
+                args.raw, REPO / "data/works.yaml", REPO / "data/lexica.yaml", REPO / "data/recitations.yaml"
+            ), out, args.version
         )
         print(
             json.dumps(

@@ -375,5 +375,24 @@
     "kindWord": "Word",
     "kindRoot": "Root",
     "dataControls": "Your data"
+  },
+  "audio": {
+    "play": "Listen",
+    "pause": "Pause",
+    "stop": "Stop",
+    "prevVerse": "Previous verse",
+    "nextVerse": "Next verse",
+    "reciter": "Reciter",
+    "follow": "Follow the words",
+    "listenVerse": "Listen to the verse",
+    "listenWord": "Listen to the word",
+    "nowPlaying": "{ref}",
+    "basmala": "Basmala",
+    "credit": "Recitations: EveryAyah · timing: quran-align",
+    "barLabel": "Recitation player",
+    "error": "Could not play the recitation",
+    "murattal": "murattal",
+    "mujawwad": "mujawwad",
+    "muallim": "teaching"
   }
 }

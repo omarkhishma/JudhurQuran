@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
 import { citeVerse } from "@/lib/format";
 import { TafsirSection } from "./TafsirSection";
+import { useAudio } from "@/lib/store/audio";
 import { BookmarkButton } from "@/components/saved/BookmarkButton";
 import { VerseNote } from "@/components/saved/VerseNote";
 
@@ -14,6 +15,8 @@ export function VersePanel({ verseKey, surahName, onClose }: { verseKey: string;
   const tr = useTranslations("reader");
   const locale = useLocale();
   const [copied, setCopied] = useState<string | null>(null);
+  const ta = useTranslations("audio");
+  const playVerse = useAudio((st) => st.playVerse);
   const verseText = typeof document !== "undefined"
     ? Array.from(document.querySelectorAll<HTMLElement>(`[data-verse="${verseKey}"] .w`)).map((w) => w.textContent).join(" ")
     : "";
@@ -54,6 +57,10 @@ export function VersePanel({ verseKey, surahName, onClose }: { verseKey: string;
           <button type="button" className="btn" onClick={() => copy("link")}>
             <Icon name={copied === "link" ? "check" : "share"} />
             {t("shareVerse")}
+          </button>
+          <button type="button" className="btn" onClick={() => void playVerse(verseKey)}>
+            <Icon name="play" />
+            {ta("listenVerse")}
           </button>
           <Link href={`/quran/${s}/${a}`} className="btn">
             <Icon name="external" />

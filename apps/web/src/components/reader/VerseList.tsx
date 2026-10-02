@@ -42,6 +42,7 @@ export function VerseList({
                   <span key={tk.position}>
                     <span
                       className="w"
+                      data-t={tk.position}
                       data-w={loc}
                       data-w2={tk.word_to !== tk.word_from ? `${v.surah}:${v.ayah}:${tk.word_to}` : undefined}
                       data-r={first?.root ?? undefined}
