@@ -1,0 +1,108 @@
+# Source registry — every dataset the product is built from.
+# Each entry: where it comes from, the exact files (sha256-pinned), its license quoted from the
+# artefact or the source page, the attribution we must display, and the role it plays.
+# The pipeline refuses to build from a file whose sha256 differs from this registry.
+
+sources:
+  - id: qpc-hafs
+    kind: quran-text
+    role: display text (Madinah mushaf, Hafs ʿan ʿĀṣim)
+    title_ar: نص مصحف المدينة النبوية (رواية حفص) — مجمع الملك فهد لطباعة المصحف الشريف
+    title_en: KFGQPC Hafs Uthmanic text (King Fahd Glorious Quran Printing Complex)
+    version: text_qpc_hafs (via QUL / qurancdn distribution)
+    url: https://qul.tarteel.ai/resources/quran-script
+    license: KFGQPC terms — free to use and distribute unmodified; may not be sold or altered
+    license_url: https://qurancomplex.gov.sa/
+    attribution_ar: النص القرآني من مجمع الملك فهد لطباعة المصحف الشريف بالمدينة المنورة.
+    attribution_en: Quran text by the King Fahd Glorious Quran Printing Complex, Madinah.
+    files:
+      - path: qpc/qpc-hafs-via-qul.json
+        sha256: 8a50e6e5743946ff30a80c4deda3bc3bf97deeeb40c6b17525ca89a6c2e392d2
+
+  - id: kfgqpc-hafs-font
+    kind: font
+    role: typography of the Quranic text
+    title_ar: خط حفص العثماني — مجمع الملك فهد (الإصدار ٢٢)
+    title_en: KFGQPC Uthmanic Script HAFS font (V22)
+    version: "22"
+    url: https://qul.tarteel.ai/resources/font
+    license: Free to use, copy and distribute; may not be sold, modified, altered, translated or reverse-engineered
+    license_url: https://fonts.qurancomplex.gov.sa/
+    attribution_ar: خط المصحف من مجمع الملك فهد لطباعة المصحف الشريف.
+    attribution_en: Mushaf font by the King Fahd Glorious Quran Printing Complex.
+    files:
+      - path: fonts/UthmanicHafs_V22.ttf
+        sha256: aa68bffce289b4c0ebac68e90502eb69e42356abcd1603cb2b8e99c2c723f145
+
+  - id: tanzil-uthmani
+    kind: quran-text
+    role: verification text and alignment bridge to the morphology
+    title_ar: نص تنزيل (الرسم العثماني ١٫١)
+    title_en: Tanzil Quran Text (Uthmani 1.1)
+    version: "1.1"
+    url: https://tanzil.net/download/
+    license: Creative Commons Attribution 3.0 — verbatim copies only; changing the text is not allowed
+    license_url: https://tanzil.net/docs/text_license
+    attribution_ar: نص القرآن من مشروع تنزيل — tanzil.net
+    attribution_en: Quran text from the Tanzil Project — tanzil.net
+    files:
+      - path: tanzil/quran-uthmani.txt
+        sha256: bf4f57b968d03f4131c070b1e285da9be0e0a108a21c910e872801ca273312c8
+      - path: tanzil/quran-data.xml
+        sha256: 8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a
+
+  - id: tanzil-simple-clean
+    kind: quran-text
+    role: standard (imlāʾī) spelling used only for diacritic-insensitive search
+    title_ar: نص تنزيل (الإملائي المبسط دون تشكيل)
+    title_en: Tanzil Quran Text (Simple Clean)
+    version: "1.1"
+    url: https://tanzil.net/download/
+    license: Creative Commons Attribution 3.0 — verbatim copies only; changing the text is not allowed
+    license_url: https://tanzil.net/docs/text_license
+    attribution_ar: نص القرآن من مشروع تنزيل — tanzil.net
+    attribution_en: Quran text from the Tanzil Project — tanzil.net
+    files:
+      - path: tanzil/quran-simple-clean.txt
+        sha256: 228df2a717671aeb9d2ff573002bd28d6b3f973f4bc7153554e3a81663d67610
+
+  - id: qac
+    kind: morphology
+    role: primary morphology — segments, part of speech, lemma, root
+    title_ar: المدونة القرآنية اللغوية (التحليل الصرفي، الإصدار ٠٫٤)
+    title_en: Quranic Arabic Corpus — morphology v0.4 (Kais Dukes)
+    version: "0.4"
+    url: https://corpus.quran.com/
+    license: GNU General Public License — verbatim copies permitted; the annotation may be used in any website or application with the source indicated and a link to corpus.quran.com
+    license_url: https://corpus.quran.com/download/
+    attribution_ar: التحليل الصرفي من المدونة القرآنية اللغوية — corpus.quran.com
+    attribution_en: Morphology from the Quranic Arabic Corpus — corpus.quran.com
+    files:
+      - path: qac/quranic-corpus-morphology-0.4.txt
+        sha256: a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46
+
+  - id: qac-v2
+    kind: morphology
+    role: cross-check — the corpus author's later revision
+    title_ar: المدونة القرآنية اللغوية (المراجعة الثانية)
+    title_en: Quranic Arabic Corpus — revised data (Kais Dukes, GitHub)
+    url: https://github.com/kaisdukes/quranic-corpus
+    license: PENDING VERIFICATION
+    attribution_ar: المدونة القرآنية اللغوية — مراجعة المؤلف
+    attribution_en: Quranic Arabic Corpus — author's revision
+    files:
+      - path: qac-v2-kaisdukes/morphology.txt
+        sha256: f1d3417be9aac22d54fff9ddc34db0818d7f490d836471a0d9163b3a2c11c065
+
+  - id: qac-fork-mustafa0x
+    kind: morphology
+    role: cross-check — community-corrected roots and lemmas
+    title_ar: نسخة مصححة من المدونة القرآنية (فرقان)
+    title_en: Quran Morphology — corrected fork of the corpus (mustafa0x, furqan.co)
+    url: https://github.com/mustafa0x/quran-morphology
+    license: PENDING VERIFICATION (fork of the corpus under its GPL terms)
+    attribution_ar: تصحيحات الجذور من مشروع فرقان (mustafa0x/quran-morphology)
+    attribution_en: Root corrections from the Furqan project (mustafa0x/quran-morphology)
+    files:
+      - path: qac-morphology-mustafa0x/quran-morphology.txt
+        sha256: 742bfac59941b2cb09736d5b7aae694af50792261fb8450cbf6afafcc340645f

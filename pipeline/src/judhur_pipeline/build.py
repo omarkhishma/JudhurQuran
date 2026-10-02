@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from judhur_arabic import key as root_key
-from judhur_arabic import normalize, skeleton, spaced, strip_marks, translit
+from judhur_arabic import normalize, plain_spelling, skeleton, spaced, strip_marks, translit
 
 from . import labels
 from .align import AlignmentError, align, align_fuzzy
@@ -283,6 +283,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                         "ar": st.lemma_ar,
                         "ar_bare": strip_marks(st.lemma_ar or ""),
                         "norm": normalize(st.lemma_ar or ""),
+                        "norm_plain": plain_spelling(st.lemma_ar or ""),
                         "root_keys": Counter(),
                         "pos": Counter(),
                         "verb_forms": Counter(),
@@ -382,6 +383,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "text_tanzil": tanzil.verses[k],
                 "text_imlaei": simple.verses[k],
                 "norm": normalize(" ".join(simple_tok)),
+                "norm_uthmani": normalize(" ".join(q.tokens)),
                 "word_count": len(words),
                 "token_count": len(q.tokens),
                 "sha256": hashlib.sha256(q.text.encode("utf-8")).hexdigest(),
@@ -428,6 +430,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "ar": row["ar"],
                 "ar_bare": row["ar_bare"],
                 "norm": row["norm"],
+                "norm_plain": row["norm_plain"],
                 "root_id": root_ids.get(rk) if rk else None,
                 "pos": row["pos"].most_common(1)[0][0],
                 "verb_form": row["verb_forms"].most_common(1)[0][0] if row["verb_forms"] else None,

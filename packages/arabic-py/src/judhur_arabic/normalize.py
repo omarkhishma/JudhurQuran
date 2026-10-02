@@ -91,6 +91,33 @@ def skeleton(text: str) -> str:
     return normalize(text).replace(" ", "").translate(_SKELETON_DROP)
 
 
+_UTHMANI_ONLY = re.compile("[\u0670\u0671\u06d6-\u06ed\u08f0-\u08f2]")
+
+
+_DAGGER_AFTER_YA_MID = re.compile("\u0649\u0670(?=[\u0621-\u064a])")
+
+
+def plain_spelling(text: str) -> str:
+    """Heuristic Uthmani → everyday spelling, for MATCHING lemmas only (never displayed).
+
+    وٰ → ا (صَلَوٰة → صلاة) · ىٰ inside a word → ا (تَوْرَىٰة → توراة), at the end → ى (عَلَىٰ)
+    · other dagger alef → ا (عَٰلَمِين → عالمين) · small waw/yeh → و/ي. Words whose everyday
+    spelling omits the alef (إِلَٰه → إله) are covered by also matching the stripped form.
+    """
+    t = unicodedata.normalize("NFC", text)
+    t = t.replace("\u0648\u0670", "\u0627")
+    t = _DAGGER_AFTER_YA_MID.sub("\u0627", t)
+    t = t.replace("\u0649\u0670", "\u0649").replace("\u0670", "\u0627")
+    t = t.replace("\u06e5", "\u0648").replace("\u06e6", "\u064a").replace("\u06e7", "\u064a")
+    return normalize(t)
+
+
+def is_uthmani(text: str) -> bool:
+    """True when the text carries Uthmani-script signs (dagger alef, alef wasla, Quranic annotation
+    marks) — i.e. it was copied from a mushaf rather than typed in everyday spelling."""
+    return bool(_UTHMANI_ONLY.search(text))
+
+
 def has_arabic(text: str) -> bool:
     return any("؀" <= ch <= "ۿ" or "ݐ" <= ch <= "ݿ" or "ࢠ" <= ch <= "ࣿ" for ch in text)
 
