@@ -93,6 +93,9 @@ export type SurahPayload = {
   translation?: { id: string; title_ar: string; title_en: string };
 };
 
+/** How a lemma's pattern was established (see /about#wazn). verb-form-I: triliteral, vowel not claimed. */
+export type PatternMethod = "tag" | "verb-form" | "verb-form-I" | "match";
+
 export type LemmaSummary = {
   id: number;
   key: string;
@@ -105,6 +108,7 @@ export type LemmaSummary = {
   verse_count: number;
   gloss_en: string | null;
   pattern: string | null;
+  pattern_method: PatternMethod | null;
   forms?: { form: string; occurrences: number; sample: string }[];
 };
 

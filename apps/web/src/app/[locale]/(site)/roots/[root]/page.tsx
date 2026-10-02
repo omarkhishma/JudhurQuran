@@ -120,12 +120,25 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="ar-classical text-[28px] leading-tight text-t1" lang="ar">{l.ar}</p>
-                        <p className="mt-1 text-[12.5px] text-t3">
-                          {[
-                            l.verb_form ? (locale === "ar" ? `الباب ${formatNumber(l.verb_form, locale)}` : `Form ${l.verb_form}`) : null,
-                            l.derivation === "ACT_PCPL" ? (locale === "ar" ? "اسم فاعل" : "active participle") : l.derivation === "PASS_PCPL" ? (locale === "ar" ? "اسم مفعول" : "passive participle") : l.derivation === "VN" ? (locale === "ar" ? "مصدر" : "verbal noun") : null,
-                            locale === "en" && l.gloss_en ? l.gloss_en : null,
-                          ].filter(Boolean).join(" · ")}
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-t3">
+                          {l.pattern ? (
+                            <Link
+                              href="/about#wazn"
+                              className="inline-flex items-baseline gap-1 rounded-full bg-card-2 px-2 py-0.5 hover:text-t1"
+                            >
+                              <span>{t("onPattern")}</span>
+                              <span className="ar-classical text-[15px] text-t1" lang="ar" dir="rtl">{l.pattern}</span>
+                            </Link>
+                          ) : l.pattern_method === "verb-form-I" ? (
+                            <span className="rounded-full bg-card-2 px-2 py-0.5">{t("formOne")}</span>
+                          ) : null}
+                          <span>
+                            {[
+                              locale === "en" && l.verb_form ? `Form ${l.verb_form}` : null,
+                              l.derivation === "ACT_PCPL" ? (locale === "ar" ? "اسم فاعل" : "active participle") : l.derivation === "PASS_PCPL" ? (locale === "ar" ? "اسم مفعول" : "passive participle") : l.derivation === "VN" ? (locale === "ar" ? "مصدر" : "verbal noun") : null,
+                              locale === "en" && l.gloss_en ? l.gloss_en : null,
+                            ].filter(Boolean).join(" · ")}
+                          </span>
                         </p>
                       </div>
                       <div className="text-end">

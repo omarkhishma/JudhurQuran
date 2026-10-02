@@ -35,6 +35,7 @@ from .texts import (
     parse_tanzil_txt,
     tanzil_tokens,
 )
+from .wazn import lemma_pattern
 from .works import build_works
 
 EXPECTED_WORDS = 77429
@@ -470,12 +471,20 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
 
     lemmas_out = []
     lemma_root_conflicts = []
+    wazn_counts: Counter[str] = Counter()
     for lid in sorted(lemma_rows):
         row = lemma_rows[lid]
         roots_here = [r for r in row["root_keys"] if r]
         if len(row["root_keys"]) > 1:
             lemma_root_conflicts.append({"lemma": row["key"], "roots": dict(row["root_keys"])})
         rk = roots_here[0] if roots_here else None
+        pos = row["pos"].most_common(1)[0][0]
+        verb_form = row["verb_forms"].most_common(1)[0][0] if row["verb_forms"] else None
+        derivation = row["derivations"].most_common(1)[0][0] if row["derivations"] else None
+        wazn = lemma_pattern(
+            row["ar"], root_rows[root_ids[rk]]["letters"] if rk else None, pos, verb_form, derivation
+        )
+        wazn_counts[wazn["method"] if wazn else "none"] += 1
         lemmas_out.append(
             {
                 "id": lid,
@@ -485,11 +494,13 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "norm": row["norm"],
                 "norm_plain": row["norm_plain"],
                 "root_id": root_ids.get(rk) if rk else None,
-                "pos": row["pos"].most_common(1)[0][0],
-                "verb_form": row["verb_forms"].most_common(1)[0][0] if row["verb_forms"] else None,
-                "derivation": row["derivations"].most_common(1)[0][0] if row["derivations"] else None,
+                "pos": pos,
+                "verb_form": verb_form,
+                "derivation": derivation,
                 "occurrences": row["occurrences"],
                 "verse_count": len(row["verses"]),
+                "pattern": wazn["pattern"] or None if wazn else None,
+                "pattern_method": wazn["method"] if wazn else None,
             }
         )
     roots_out = []
@@ -529,14 +540,20 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         for e in lex_entries:
             r = review.get(e["id"])
             e["confidence"] = (
-                "exact" if e["match"] == "strict" else "manual" if e["match"] == "manual" else (r or {}).get("confidence", "low")
+                "exact"
+                if e["match"] == "strict"
+                else "manual"
+                if e["match"] == "manual"
+                else (r or {}).get("confidence", "low")
             )
             e["displayable"] = e["root_key"] is not None and e["confidence"] in ("exact", "manual", "high")
     reciters_out, timings_out, rec_report = ([], [], {})
     if raw.recitations_registry:
         from .recitations import build_recitations
 
-        reciters_out, timings_out, rec_report = build_recitations(raw.root, raw.recitations_registry, verse_tokens)
+        reciters_out, timings_out, rec_report = build_recitations(
+            raw.root, raw.recitations_registry, verse_tokens
+        )
     report["recitations"] = rec_report
 
     report["lexica"] = {
@@ -584,6 +601,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             "alignment": dict(align_stats),
             "token_word_nonlinear": nonlinear,
             "lemma_root_conflicts": lemma_root_conflicts,
+            "wazn_methods": dict(sorted(wazn_counts.items())),
             "variant_sources": dict(Counter(v["source"] for v in variants_out)),
             "text_sha256": hashlib.sha256("\n".join(v["text_qpc"] for v in verses_out).encode()).hexdigest(),
             "basmala_tokens_removed_from_tanzil": sum(

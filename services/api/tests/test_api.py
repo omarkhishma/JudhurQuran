@@ -239,7 +239,9 @@ def test_lexicon_entry_full_body_and_only_displayable() -> None:
     r = get("/api/v1/roots/علم")
     entry_id = r["lexicon"]["works"][0]["entries"][0]["id"]
     e = get(f"/api/v1/lexicon/entries/{entry_id}")
-    assert e["entry_id"] == entry_id and len(e["body"]) >= len(r["lexicon"]["works"][0]["entries"][0]["excerpt"])
+    assert e["entry_id"] == entry_id and len(e["body"]) >= len(
+        r["lexicon"]["works"][0]["entries"][0]["excerpt"]
+    )
     assert client.get("/api/v1/lexicon/entries/1").status_code in (200, 404)
 
 
@@ -248,3 +250,29 @@ def test_word_panel_carries_root_meaning() -> None:
     assert w["root"]["key"] == "شفع"
     assert "مقارن" in w["root_meaning"]["core"]["text"]
     assert w["root_meaning"]["mufradat"]["entry"]["excerpt"]
+
+
+# ─── Morphological pattern (wazn) ───────────────────────────────────────────
+
+
+def _nfc(s: str | None) -> str | None:
+    import unicodedata
+
+    return unicodedata.normalize("NFC", s) if s is not None else None
+
+
+def test_word_panel_lemma_carries_its_pattern() -> None:
+    w = get("/api/v1/words/1:1:3")  # ٱلرَّحْمَٰنِ
+    assert _nfc(w["lemma"]["pattern"]) == _nfc("فَعْلَان") and w["lemma"]["pattern_method"] == "match"
+
+
+def test_root_family_patterns_and_methods() -> None:
+    lemmas = {lem["ar"]: lem for lem in get("/api/v1/roots/علم")["lemmas"]}
+    expected = {"عِلْم": "فِعْل", "عَلِيم": "فَعِيل", "عَلِمَ": "فَعِلَ", "أَعْلَم": "أَفْعَل"}
+    for ar, pattern in expected.items():
+        lem = next(v for k, v in lemmas.items() if _nfc(k) == _nfc(ar))
+        assert _nfc(lem["pattern"]) == _nfc(pattern), (ar, lem)
+    for lem in lemmas.values():
+        assert lem["pattern_method"] in (None, "tag", "verb-form", "verb-form-I", "match")
+        # a pattern is never claimed without its method, and form-I verbs without a vowel carry no pattern
+        assert (lem["pattern"] is None) == (lem["pattern_method"] in (None, "verb-form-I")), lem

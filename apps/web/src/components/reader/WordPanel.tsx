@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
 import { citeVerse, cnt, formatNumber, toArabicDigits, verseRef } from "@/lib/format";
-import type { Commentary, Features, Label, OccurrencesPage, Segment, WordDetail } from "@/lib/types";
+import type { Commentary, Features, Label, LemmaSummary, OccurrencesPage, Segment, WordDetail } from "@/lib/types";
 import { useCommentary, useOccurrences, useWord } from "./hooks";
 import { PanelSection } from "./PanelSection";
 import { useReader } from "@/lib/store/reader";
@@ -273,6 +273,9 @@ function RootSection({ w }: { w: WordDetail }) {
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="ar-classical truncate text-[19px]" dir="rtl" lang="ar">{l.ar}</span>
                     <span className="text-[11.5px] text-t3">{posLabel(l.pos, locale)}</span>
+                    {l.pattern && (
+                      <span className="ar-classical text-[14px] text-t3" dir="rtl" lang="ar">{l.pattern}</span>
+                    )}
                   </span>
                   <span className="flex items-center gap-2">
                     <span className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-card-3 sm:block" aria-hidden="true">
@@ -334,6 +337,14 @@ function featureRows(f: Features, locale: string, t: ReturnType<typeof useTransl
   return rows;
 }
 
+const PATTERN_WHY = {
+  tag: "patternWhyTag",
+  "verb-form": "patternWhyVerb",
+  "verb-form-I": "patternWhyFormOne",
+  match: "patternWhyMatch",
+  none: "patternNone",
+} as const satisfies Record<NonNullable<LemmaSummary["pattern_method"]> | "none", string>;
+
 function MorphologySection({ w }: { w: WordDetail }) {
   const t = useTranslations("panel");
   const locale = useLocale();
@@ -358,6 +369,22 @@ function MorphologySection({ w }: { w: WordDetail }) {
           <div className="contents">
             <dt className="text-t3">{t("lemma")}</dt>
             <dd className="ar-classical text-[18px]" dir="rtl" lang="ar">{w.lemma.ar}</dd>
+          </div>
+        )}
+        {w.lemma && w.root && (
+          <div className="contents">
+            <dt className="text-t3">{t("pattern")}</dt>
+            <dd>
+              {w.lemma.pattern ? (
+                <span className="ar-classical text-[18px]" dir="rtl" lang="ar">{w.lemma.pattern}</span>
+              ) : (
+                <span className="text-t1">{w.lemma.pattern_method === "verb-form-I" ? t("patternFormOne") : "—"}</span>
+              )}
+              <span className="block text-[12px] leading-relaxed text-t3">
+                {t(PATTERN_WHY[w.lemma.pattern_method ?? "none"])}{" "}
+                <Link href="/about#wazn" className="text-word hover:underline">{t("patternAbout")}</Link>
+              </span>
+            </dd>
           </div>
         )}
       </dl>

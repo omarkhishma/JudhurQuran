@@ -1,3 +1,4 @@
+import type { PatternMethod } from "@/lib/types";
 import type { GraphEdge, GraphNode, VerseExcerpt } from "./types";
 
 export type RootGraphPayload = {
@@ -10,6 +11,8 @@ export type RootGraphPayload = {
     derivation: string | null;
     occurrences: number;
     gloss_en: string | null;
+    pattern: string | null;
+    pattern_method: PatternMethod | null;
     forms: { form: string; occurrences: number; first: { location: string; verse_key: string; surah_name_ar: string; word: string; left: string; right: string } }[];
   }[];
 };
@@ -24,7 +27,8 @@ const POS_AR: Record<string, string> = { V: "فعل", N: "اسم", ADJ: "صفة"
 const DER_AR: Record<string, string> = { ACT_PCPL: "اسم فاعل", PASS_PCPL: "اسم مفعول", VN: "مصدر" };
 
 export function lemmaSub(l: RootGraphPayload["lemmas"][number]): string {
-  return [POS_AR[l.pos] ?? l.pos, l.derivation ? DER_AR[l.derivation] : null, l.verb_form ? `الباب ${l.verb_form}` : null]
+  const wazn = l.pattern ? `على وزن ${l.pattern}` : l.pattern_method === "verb-form-I" ? "ثلاثي مجرد" : null;
+  return [POS_AR[l.pos] ?? l.pos, l.derivation ? DER_AR[l.derivation] : null, wazn]
     .filter(Boolean)
     .join(" · ");
 }

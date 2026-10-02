@@ -147,7 +147,7 @@ def _root_summary(conn: Connection, root_id: int) -> dict[str, Any] | None:
 def root_lemmas(conn: Connection, root_id: int) -> list[dict[str, Any]]:
     lem = rows(
         conn,
-        """select id, key, ar, ar_bare, pos, verb_form, derivation, occurrences, verse_count, gloss_en, pattern
+        """select id, key, ar, ar_bare, pos, verb_form, derivation, occurrences, verse_count, gloss_en, pattern, pattern_method
            from content.lemmas where root_id = :r order by occurrences desc, id""",
         {"r": root_id},
     )
@@ -191,7 +191,7 @@ def word(conn: Connection, location: str) -> dict[str, Any] | None:
     if w["lemma_id"]:
         lem = one(
             conn,
-            """select id, key, ar, ar_bare, pos, verb_form, derivation, occurrences, verse_count, gloss_en, pattern
+            """select id, key, ar, ar_bare, pos, verb_form, derivation, occurrences, verse_count, gloss_en, pattern, pattern_method
                from content.lemmas where id = :id""",
             {"id": w["lemma_id"]},
         )
@@ -226,7 +226,18 @@ def word(conn: Connection, location: str) -> dict[str, Any] | None:
         w["root_meaning"] = {
             "core": lex["core_meaning"],
             "mufradat": (
-                {k: mufradat[k] for k in ("id", "title_ar", "title_en", "author_ar", "death_hijri", "attribution_ar", "attribution_en")}
+                {
+                    k: mufradat[k]
+                    for k in (
+                        "id",
+                        "title_ar",
+                        "title_en",
+                        "author_ar",
+                        "death_hijri",
+                        "attribution_ar",
+                        "attribution_en",
+                    )
+                }
                 | {"entry": mufradat["entries"][0]}
                 if mufradat
                 else None
@@ -468,7 +479,7 @@ def lemma_detail(conn: Connection, lemma_id: int) -> dict[str, Any] | None:
     lem = one(
         conn,
         """select l.id, l.key, l.ar, l.ar_bare, l.pos, l.verb_form, l.derivation, l.occurrences, l.verse_count,
-                  l.gloss_en, l.pattern, r.key as root, r.spaced as root_spaced
+                  l.gloss_en, l.pattern, l.pattern_method, r.key as root, r.spaced as root_spaced
            from content.lemmas l left join content.roots r on r.id = l.root_id where l.id = :id""",
         {"id": lemma_id},
     )
@@ -653,16 +664,44 @@ def root_lexicon(conn: Connection, root_key: str, excerpt: int = 600) -> dict[st
     for e in entries:
         w = works_out.setdefault(
             e["work_id"],
-            {k: e[k] for k in ("id", "title_ar", "title_en", "author_ar", "author_en", "death_hijri", "death_ce", "lang",
-                               "edition_note", "source_url", "license", "attribution_ar", "attribution_en", "redistributable")}
+            {
+                k: e[k]
+                for k in (
+                    "id",
+                    "title_ar",
+                    "title_en",
+                    "author_ar",
+                    "author_en",
+                    "death_hijri",
+                    "death_ce",
+                    "lang",
+                    "edition_note",
+                    "source_url",
+                    "license",
+                    "attribution_ar",
+                    "attribution_en",
+                    "redistributable",
+                )
+            }
             | {"entries": []},
         )
         w["entries"].append(
-            {"id": e["entry_id"]} | {k: e[k] for k in ("headword", "match", "confidence", "core_meaning", "page_ref", "excerpt", "length")}
+            {"id": e["entry_id"]}
+            | {
+                k: e[k]
+                for k in ("headword", "match", "confidence", "core_meaning", "page_ref", "excerpt", "length")
+            }
         )
         if e["core_meaning"] and core is None and e["confidence"] in ("exact", "manual"):
-            core = {"text": e["core_meaning"], "work_id": e["work_id"], "title_ar": e["title_ar"], "title_en": e["title_en"],
-                    "author_ar": e["author_ar"], "page_ref": e["page_ref"], "entry_id": e["entry_id"]}
+            core = {
+                "text": e["core_meaning"],
+                "work_id": e["work_id"],
+                "title_ar": e["title_ar"],
+                "title_en": e["title_en"],
+                "author_ar": e["author_ar"],
+                "page_ref": e["page_ref"],
+                "entry_id": e["entry_id"],
+            }
     return {"core_meaning": core, "works": list(works_out.values())}
 
 
@@ -705,7 +744,9 @@ AUDIO_CREDIT = {
 
 
 def reciters(conn: Connection) -> list[dict[str, Any]]:
-    return rows(conn, "select id, name_ar, name_en, style, is_default from content.reciters order by sort_order")
+    return rows(
+        conn, "select id, name_ar, name_en, style, is_default from content.reciters order by sort_order"
+    )
 
 
 def _audio_url(template: str, surah: int, ayah: int) -> str:
@@ -713,7 +754,11 @@ def _audio_url(template: str, surah: int, ayah: int) -> str:
 
 
 def recitation_surah(conn: Connection, reciter_id: str, surah_no: int) -> dict[str, Any] | None:
-    r = one(conn, "select id, name_ar, name_en, style, audio_url from content.reciters where id = :id", {"id": reciter_id})
+    r = one(
+        conn,
+        "select id, name_ar, name_en, style, audio_url from content.reciters where id = :id",
+        {"id": reciter_id},
+    )
     if r is None:
         return None
     vs = rows(

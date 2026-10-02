@@ -37,7 +37,7 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
     ("roots", "roots.jsonl", ["id", "key", "letters", "spaced", "translit", "occurrences", "verse_count",
                               "surah_count", "lemma_count"], set()),
     ("lemmas", "lemmas.jsonl", ["id", "key", "ar", "ar_bare", "norm", "norm_plain", "root_id", "pos", "verb_form",
-                                "derivation", "occurrences", "verse_count", "gloss_en", "pattern"], set()),
+                                "derivation", "occurrences", "verse_count", "gloss_en", "pattern", "pattern_method"], set()),
     ("words", "words.jsonl", ["id", "verse_id", "surah", "ayah", "position", "location", "token_from", "token_to",
                               "text_uthmani", "text_imlaei", "norm", "norm_uthmani", "root_id", "lemma_id", "pos",
                               "definite", "features", "segments", "translit", "gloss_en"], {"features", "segments"}),

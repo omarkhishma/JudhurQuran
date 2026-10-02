@@ -182,7 +182,7 @@
     "stem": "stem",
     "suffix": "suffix",
     "verbForm": "Verb form",
-    "pattern": "Pattern",
+    "pattern": "Pattern (wazn)",
     "readTafsir": "Read the verse's tafsir",
     "meaningInContext": "Meaning of the verse",
     "glossEn": "Word gloss",
@@ -209,7 +209,14 @@
     "footnotes": "Footnotes",
     "workBy": "By {author}",
     "version": "Version: {version}",
-    "license": "License"
+    "license": "License",
+    "patternFormOne": "Form I (triliteral)",
+    "patternWhyTag": "The pattern of this derived form, from its tag in the Quranic Arabic Corpus.",
+    "patternWhyVerb": "The pattern of the verb form given in the Quranic Arabic Corpus.",
+    "patternWhyMatch": "Found automatically by matching the word's letters to its root; only a single classical pattern is accepted.",
+    "patternWhyFormOne": "The middle vowel is not visible in this dictionary form, so no full pattern is given.",
+    "patternNone": "No single pattern can be stated with certainty for this form, so none is shown.",
+    "patternAbout": "How patterns are found"
   },
   "roots": {
     "indexTitle": "Roots of the Quran",
@@ -262,7 +269,9 @@
     "coreMeaning": "Core meaning",
     "lexiconSoon": "The root's core meaning from Maqayis al-Lugha and its Quranic usage from al-Mufradat are coming soon.",
     "notFound": "No root with these letters occurs in the Quran.",
-    "moreForms": "{n} more forms"
+    "moreForms": "{n} more forms",
+    "onPattern": "pattern",
+    "formOne": "Form I"
   },
   "graph": {
     "kindRoot": "Root",

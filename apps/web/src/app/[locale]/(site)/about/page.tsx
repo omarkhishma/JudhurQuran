@@ -40,15 +40,22 @@ function AboutAr() {
         <li><strong>البسملة:</strong> تُعدّ آيةً في الفاتحة فقط، كما في مصحف المدينة؛ وبسملات السور الأخرى غير مرقمة فلا تدخل في العدّ.</li>
       </ul>
 
+      <h2 id="wazn">كيف نحدّد الوزن</h2>
+      <p>الوزن (الميزان الصرفي) يُرمز فيه لحروف الجذر بالفاء والعين واللام، وتُكتب الحروف الزائدة كما هي: «عَلِيم» على وزن فَعِيل، و«مُسْتَغْفِر» على وزن مُسْتَفْعِل. نحدّد الوزن من ثلاثة طرق، ولا نذكره إلا إذا تعيّن وزن واحد:</p>
+      <ul>
+        <li><strong>الأفعال:</strong> وزن الفعل المزيد من بابه في «المدونة القرآنية اللغوية» (أَفْعَلَ، تَفَعَّلَ، اسْتَفْعَلَ…). والثلاثي المجرد نذكر حركة عينه (فَعَلَ، فَعِلَ، فَعُلَ) إذا ظهرت في صيغة الماضي، وإلا اكتفينا بأنه ثلاثي مجرد.</li>
+        <li><strong>المشتقات الموسومة:</strong> اسم الفاعل واسم المفعول والمصدر في الأبواب المزيدة لها وزن ثابت بحسب الباب (مُفْعِل، مُفْتَعَل، اسْتِفْعَال…).</li>
+        <li><strong>سائر الأسماء:</strong> نطابق حروف الكلمة بحروف جذرها حرفًا حرفًا، ولا نقبل النتيجة إلا إذا كانت وزنًا واحدًا من قائمة مغلقة لأوزان العربية القياسية. فإن احتملت الكلمة وزنين (مثل «سَيَّارَة»: فَعَّالَة أو فَيْعَالَة) أو حُذف منها حرف من أصولها (مثل «يَد» و«ابْن») تركناها بلا وزن.</li>
+      </ul>
+      <p>ونذكر الوزن على أصل الكلمة قبل الإعلال، كما جرى عليه علماء الصرف: «قَالَ» على فَعَلَ، و«مِيزَان» على مِفْعَال، و«مَقَام» على مَفْعَل. هذه الأوزان تحليل آلي راجعنا عيّنات منه، وما زال قيد المراجعة اللغوية؛ فإن رأيت وزنًا غير صحيح فأخبرنا.</p>
+
       <h2 id="sources">من أين البيانات</h2>
       <p>النص من مجمع الملك فهد، ونتحقق منه بنص مشروع تنزيل. التحليل الصرفي (الجذر والصيغة ونوع الكلمة وأجزاؤها) من «المدونة القرآنية اللغوية». التفاسير والترجمات من مصادر تأذن بإعادة النشر أو من مؤلفين قدامى نصوصهم في الملك العام. معاني الجذور من المعاجم الكلاسيكية: المفردات للراغب، ومقاييس اللغة لابن فارس، ولسان العرب، والصحاح، ومعجم لين. التفاصيل والتراخيص في <Link href="/sources">صفحة المصادر والتراخيص</Link>.</p>
 
       <h2 id="limits">حدود العمل الحالية</h2>
       <ul>
         <li>بعض مواد المعاجم رُبطت بجذورها ربطًا تقريبيًا (اختلاف رسم الهمزة أو حروف العلة)؛ نعرض عالي الثقة منها مع تنبيه، ونحجب الباقي حتى تُراجَع.</li>
-        <li>أوزان الكلمات (فَاعِل، مَفْعُول…) وشرح ما يضيفه الوزن إلى المعنى قيد الإعداد.</li>
-        <li>معاني الكلمات المفردة من كتب غريب القرآن قيد التدقيق قبل النشر.</li>
-        <li>التلاوة الصوتية وتظليل الكلمات أثناءها قيد الإعداد.</li>
+        <li>أوزان الكلمات تحليل آلي قيد المراجعة اللغوية، ولم نُضف بعدُ شرح ما يضيفه كل وزن إلى المعنى؛ سنضيفه من كتب الصرف منسوبًا إليها.</li>
       </ul>
       <p>إن وجدت خطأً فأخبرنا؛ فالدقة أولى عندنا من السرعة.</p>
     </Prose>
@@ -77,14 +84,20 @@ function AboutEn() {
         <li><strong>Word forms:</strong> the word as it occurs with its prefixes and suffixes, grouped by standard spelling.</li>
         <li><strong>Basmala:</strong> a numbered verse only in al-Fātiḥa, as in the Madinah mushaf; the basmalas of other surahs are unnumbered and not counted.</li>
       </ul>
+      <h2 id="wazn">How patterns are found</h2>
+      <p>A pattern (wazn) writes the root letters as f-ʿ-l and keeps the added letters as they are: «عَلِيم» is on the pattern فَعِيل, «مُسْتَغْفِر» on مُسْتَفْعِل. We find it in three ways and show it only when a single pattern is certain:</p>
+      <ul>
+        <li><strong>Verbs:</strong> the pattern of the verb form given in the Quranic Arabic Corpus (أَفْعَلَ، تَفَعَّلَ، اسْتَفْعَلَ…). For Form I we give the middle vowel (فَعَلَ، فَعِلَ، فَعُلَ) only when the past-tense dictionary form shows it; otherwise we say only “Form I”.</li>
+        <li><strong>Tagged derived forms:</strong> participles and verbal nouns of the derived forms have a fixed pattern (مُفْعِل، مُفْتَعَل، اسْتِفْعَال…).</li>
+        <li><strong>Other nouns:</strong> the word is matched letter by letter against its root, and the result is accepted only if it is exactly one pattern from a closed list of classical patterns. Words that fit two patterns (سَيَّارَة: فَعَّالَة or فَيْعَالَة) or have lost a root letter (يَد، ابْن) get none.</li>
+      </ul>
+      <p>As in classical morphology, the pattern describes the underlying form before vowel changes: قَالَ is فَعَلَ, مِيزَان is مِفْعَال, مَقَام is مَفْعَل. These patterns are an automatic analysis, checked on samples and still under linguistic review; please tell us about any error.</p>
       <h2 id="sources">Where the data comes from</h2>
       <p>Text from the King Fahd Complex, verified against the Tanzil Project; morphology from the Quranic Arabic Corpus; tafsir and translations from sources that permit re-publication or from public-domain classical authors; root meanings from the classical dictionaries. Details and licenses: <Link href="/sources">Sources & licenses</Link>.</p>
       <h2 id="limits">Current limits</h2>
       <ul>
         <li>Some dictionary articles are matched to their root approximately; high-confidence ones are shown with a caveat, the rest wait for review.</li>
-        <li>Word patterns (wazn) and what each pattern adds to the meaning are in preparation.</li>
-        <li>Word-level meanings from the gharīb works are being checked before publication.</li>
-        <li>Recitation audio with word highlighting is in preparation.</li>
+        <li>Word patterns are an automatic analysis under linguistic review; what each pattern adds to the meaning is not described yet and will come, credited, from the classical morphology books.</li>
       </ul>
     </Prose>
   );
