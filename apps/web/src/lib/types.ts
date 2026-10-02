@@ -246,6 +246,8 @@ export type Source = {
   id: string;
   kind: string;
   role: string;
+  role_ar: string;
+  license_ar: string;
   title_ar: string;
   title_en: string;
   version: string | null;

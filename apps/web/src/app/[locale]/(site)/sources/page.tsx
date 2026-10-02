@@ -34,7 +34,15 @@ export default async function SourcesPage({ params }: PageProps<"/[locale]/sourc
 
       <h2>{ar ? "النص والتحليل الصرفي" : "Text and morphology"}</h2>
       {meta.sources.filter((s) => s.kind !== "tafsir-translation" && s.kind !== "tafsir").map((s) => (
-        <SourceCard key={s.id} title={ar ? s.title_ar : s.title_en} role={s.role} license={s.license} attribution={ar ? s.attribution_ar : s.attribution_en} url={s.url} version={s.version} />
+        <SourceCard
+          key={s.id}
+          title={ar ? s.title_ar : s.title_en}
+          role={ar && s.role_ar ? s.role_ar : s.role}
+          license={ar && s.license_ar ? s.license_ar : s.license}
+          attribution={ar ? s.attribution_ar : s.attribution_en}
+          url={s.url}
+          version={s.version}
+        />
       ))}
 
       <h2>{ar ? "التفاسير والترجمات" : "Tafsir and translations"}</h2>

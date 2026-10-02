@@ -37,7 +37,7 @@ def dataset(conn: Connection) -> dict[str, Any]:
 def sources(conn: Connection) -> list[dict[str, Any]]:
     return rows(
         conn,
-        """select id, kind, role, title_ar, title_en, version, url, license, license_url,
+        """select id, kind, role, role_ar, title_ar, title_en, version, url, license, license_ar, license_url,
                   attribution_ar, attribution_en from content.sources order by kind, id""",
     )
 

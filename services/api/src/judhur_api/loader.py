@@ -102,8 +102,8 @@ def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[st
         for src in sources:
             cur.execute(
                 """insert into content.sources (id, kind, title_ar, title_en, version, url, license, license_url,
-                   attribution_ar, attribution_en, role, files)
-                   values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                   attribution_ar, attribution_en, role, files, role_ar, license_ar)
+                   values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (
                     src["id"],
                     src["kind"],
@@ -117,6 +117,8 @@ def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[st
                     src["attribution_en"],
                     src["role"],
                     Jsonb(src.get("files", [])),
+                    src.get("role_ar", ""),
+                    src.get("license_ar", ""),
                 ),
             )
         counts["sources"] = len(sources)

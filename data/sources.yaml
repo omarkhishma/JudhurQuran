@@ -5,6 +5,8 @@
 
 sources:
   - id: qpc-hafs
+    role_ar: "النص المعروض (مصحف المدينة النبوية برواية حفص عن عاصم) مع أرقام الصفحات والأسطر والأجزاء، والنص الإملائي الرسمي للبحث"
+    license_ar: "شروط مجمع الملك فهد: الاستعمال مجاني في المواقع والبرامج، ولا يجوز تعديل النص أو بيعه"
     kind: quran-text
     role: display text (Madinah mushaf, Hafs ʿan ʿĀṣim) with page, line and juz numbers, and the official imlāʾī search text
     title_ar: بيانات مصحف المدينة النبوية برواية حفص (الإصدار ٢٫٠) — مجمع الملك فهد لطباعة المصحف الشريف
@@ -21,6 +23,8 @@ sources:
         md5: 2489c0e80ddd2e3505d9fce233567516
 
   - id: kfgqpc-hafs-font
+    role_ar: "خط النص القرآني"
+    license_ar: "مجاني للاستعمال والنسخ والتوزيع؛ لا يجوز بيعه أو تعديله أو تحويله"
     kind: font
     role: typography of the Quranic text
     title_ar: خط حفص العثماني — مجمع الملك فهد (الإصدار ٢٢)
@@ -36,6 +40,8 @@ sources:
         sha256: aa68bffce289b4c0ebac68e90502eb69e42356abcd1603cb2b8e99c2c723f145
 
   - id: tanzil-uthmani
+    role_ar: "نص التحقق والجسر بين النص والتحليل الصرفي، وجدول الأجزاء"
+    license_ar: "رخصة المشاع الإبداعي (نسب المصنف ٣٫٠) — نسخ حرفية فقط ولا يجوز تغيير النص"
     kind: quran-text
     role: verification text and alignment bridge to the morphology
     title_ar: نص تنزيل (الرسم العثماني ١٫١)
@@ -53,6 +59,8 @@ sources:
         sha256: 8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a
 
   - id: tanzil-simple-clean
+    role_ar: "النص الإملائي المساعد في البحث"
+    license_ar: "رخصة المشاع الإبداعي (نسب المصنف ٣٫٠) — نسخ حرفية فقط ولا يجوز تغيير النص"
     kind: quran-text
     role: standard (imlāʾī) spelling used only for diacritic-insensitive search
     title_ar: نص تنزيل (الإملائي المبسط دون تشكيل)
@@ -68,6 +76,8 @@ sources:
         sha256: 228df2a717671aeb9d2ff573002bd28d6b3f973f4bc7153554e3a81663d67610
 
   - id: qac
+    role_ar: "التحليل الصرفي الأساسي: أجزاء الكلمة ونوعها وصيغتها المعجمية وجذرها"
+    license_ar: "رخصة جنو العمومية مع شروط المدونة: يجوز الاستعمال في أي موقع مع ذكر المصدر والإحالة إلى corpus.quran.com، ولا يجوز تغيير الملف"
     kind: morphology
     role: primary morphology — segments, part of speech, lemma, root
     title_ar: المدونة القرآنية اللغوية (التحليل الصرفي، الإصدار ٠٫٤)
@@ -83,12 +93,15 @@ sources:
         sha256: a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46
 
   - id: qac-v2
+    role_ar: "مقارنة: مراجعة مؤلف المدونة اللاحقة"
+    license_ar: "رخصة جنو العمومية، الإصدار الثالث (GPL-3.0)"
     kind: morphology
     role: cross-check — the corpus author's later revision
     title_ar: المدونة القرآنية اللغوية (المراجعة الثانية)
     title_en: Quranic Arabic Corpus — revised data (Kais Dukes, GitHub)
     url: https://github.com/kaisdukes/quranic-corpus
-    license: PENDING VERIFICATION
+    license: GNU General Public License v3.0 (repository license)
+    license_url: https://github.com/kaisdukes/quranic-corpus/blob/main/LICENSE
     attribution_ar: المدونة القرآنية اللغوية — مراجعة المؤلف
     attribution_en: Quranic Arabic Corpus — author's revision
     files:
@@ -96,12 +109,14 @@ sources:
         sha256: f1d3417be9aac22d54fff9ddc34db0818d7f490d836471a0d9163b3a2c11c065
 
   - id: qac-fork-mustafa0x
+    role_ar: "مقارنة: تصحيحات مجتمعية لنسبة الجذور والصيغ"
+    license_ar: "لا ملف ترخيص في المستودع؛ هو اشتقاق من المدونة القرآنية، ونستعمله للمقارنة والإحالة فقط"
     kind: morphology
     role: cross-check — community-corrected roots and lemmas
     title_ar: نسخة مصححة من المدونة القرآنية (فرقان)
     title_en: Quran Morphology — corrected fork of the corpus (mustafa0x, furqan.co)
     url: https://github.com/mustafa0x/quran-morphology
-    license: PENDING VERIFICATION (fork of the corpus under its GPL terms)
+    license: No license file in the repository; a derivative of the Quranic Arabic Corpus — used only as a cited cross-check of root attribution
     attribution_ar: تصحيحات الجذور من مشروع فرقان (mustafa0x/quran-morphology)
     attribution_en: Root corrections from the Furqan project (mustafa0x/quran-morphology)
     files:
@@ -109,6 +124,8 @@ sources:
         sha256: 742bfac59941b2cb09736d5b7aae694af50792261fb8450cbf6afafcc340645f
 
   - id: quranenc
+    role_ar: "التفسير الميسر والمختصر، وترجمتا صحيح إنترناشيونال ورواد"
+    license_ar: "شروط موسوعة القرآن الكريم: يجوز التحميل وإعادة النشر دون تعديل أو إضافة أو حذف، مع ذكر الناشر والمصدر ورقم الإصدار"
     kind: tafsir-translation
     role: al-Muyassar and al-Mukhtasar tafsir; Saheeh International and Rowwad English translations
     title_ar: موسوعة القرآن الكريم (QuranEnc.com)
@@ -125,6 +142,8 @@ sources:
       - path: quranenc/english_rwwad/english_rwwad.sqlite
 
   - id: tafsir-api-qul
+    role_ar: "النص الرقمي للتفاسير الكلاسيكية"
+    license_ar: "مؤلفوها من القدامى ونصوصهم في الملك العام (والسعدي في الملك العام وفق قاعدة الخمسين سنة)؛ ترخيص المستودع يخص برمجياته فقط"
     kind: tafsir
     role: digital text of classical tafsir works (public-domain authors)
     title_ar: النصوص الرقمية للتفاسير (المكتبة القرآنية الشاملة QUL عبر مستودع tafsir_api)
