@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import type { Contrast, RelationSource, WordPayload, WordRelations, WujuhEntry } from "@/lib/reader/types";
 import { Fold } from "../VerseKnowledge";
@@ -57,7 +57,7 @@ function Entry({ e, src, here }: { e: WujuhEntry; src: RelationSource | undefine
     <div className="wujuh-entry">
       <button type="button" className="wujuh-head" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className="ar-classical text-[16px] text-t1" lang="ar">{e.heading_ar.replace(/^\(|\)$/g, "")}</span>
-        <span className="text-[11.5px] text-t3">{t("nSenses", { n: formatNumber(e.senses.length, locale) })}</span>
+        <span className="text-[11.5px] text-t3">{t("nSenses", cnt(e.senses.length, locale))}</span>
         <span className="flex-1" />
         <span className="layer-chev" aria-hidden="true">▾</span>
       </button>

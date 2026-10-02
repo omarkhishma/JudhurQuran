@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import type { EditorNote, KnowledgeSource, VerseKnowledge as VK } from "@/lib/reader/types";
 
@@ -183,7 +183,7 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
               <li key={e.id} className="flex flex-wrap items-baseline gap-x-2">
                 <span className="ar-classical text-[17px]" lang="ar">{e.name_ar}</span>
                 <span className="text-[12px] text-t2">{locale === "ar" ? e.wikidata_label_ar ?? e.wikidata_label_en : e.wikidata_label_en ?? e.wikidata_label_ar}</span>
-                <span className="text-[11px] text-t3">{t("inQuranCount", { n: formatNumber(e.occurrences, locale) })}</span>
+                <span className="text-[11px] text-t3">{t("inQuranCount", cnt(e.occurrences, locale))}</span>
                 <a href={`https://www.wikidata.org/wiki/${e.wikidata_id}`} target="_blank" rel="noreferrer" className="text-[11px] text-word hover:underline">
                   {t("onWikidata")}
                 </a>

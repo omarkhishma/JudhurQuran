@@ -4,7 +4,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { formatNumber } from "@/lib/format";
+import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import type { Attestation, WordPayload } from "@/lib/reader/types";
 import type { ChapterInfo } from "../ReaderShell";
@@ -34,7 +34,7 @@ export function InQuranSection({ w, chapter }: { w: WordPayload; chapter: Chapte
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[13px] text-t2">
-        {t("inQuranSummary", { n: formatNumber(a.total, locale), surahs: formatNumber(a.by_chapter.length, locale), here: formatNumber(here, locale), surah: chapter.nameAr })}
+        {t("inQuranSummary", { ...cnt(a.total, locale), ...cnt2(a.by_chapter.length, locale), here: formatNumber(here, locale), surah: chapter.nameAr })}
       </p>
       <div className="flex gap-3 text-[12px] text-t2">
         <span>{t("meccanCount", { n: formatNumber(a.meccan, locale) })}</span>

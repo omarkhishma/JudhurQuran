@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { Term } from "@/components/terms/Term";
-import { formatNumber } from "@/lib/format";
+import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { useReader } from "@/lib/reader/store";
 import type { LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
 import { FORM_TERM } from "@/lib/terms";
@@ -54,7 +54,7 @@ export function FamilySection({ w }: { w: WordPayload }) {
           </p>
         )}
         <p className="mt-1 text-[12px] text-t3">
-          {t("rootCounts", { n: formatNumber(w.root.occurrences, locale), lemmas: formatNumber(w.root.lemma_count, locale) })}
+          {t("rootCounts", { ...cnt(w.root.occurrences, locale), ...cnt2(w.root.lemma_count, locale) })}
         </p>
       </div>
       <p className="label-caps">{t("patternsOnRoot")}</p>

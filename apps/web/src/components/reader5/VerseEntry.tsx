@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
 import { Link } from "@/i18n/navigation";
-import { formatNumber } from "@/lib/format";
+import { cnt } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { useReader } from "@/lib/reader/store";
 import { useAudio } from "@/lib/store/audio";
@@ -61,7 +61,7 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
           </Link>
         ))}
         {related.data && related.data.data.length === 0 && <p className="text-[12.5px] text-t3">{t("noRelated")}</p>}
-        {related.data && <p className="text-[11px] text-t3">{t("relatedNote", { n: formatNumber(related.data.data.length, locale) })}</p>}
+        {related.data && <p className="text-[11px] text-t3">{t("relatedNote", cnt(related.data.data.length, locale))}</p>}
       </VerseLayer>
       <VerseLayer title={t("drawer_note")} defaultOpen={false}>
         <NoteDrawer verseKey={verseKey} />

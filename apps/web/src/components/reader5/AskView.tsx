@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { hasArabic, hasMarks } from "@/lib/arabic/normalize";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { getJSON, useWord } from "@/lib/reader/api";
 import { useBreakpoint } from "@/lib/reader/media";
 import { usePrefs, useReader } from "@/lib/reader/store";
@@ -24,6 +24,7 @@ const TRY = ["عِلْم", "رَحْمَة", "صَبْر", "قَلْب", "knowle
  */
 export function AskView() {
   const t = useTranslations("rd");
+  const locale = useLocale();
   const bp = useBreakpoint();
   // Ask only renders in the browser (the shell enters it after mount), so the URL is readable here.
   const [q, setQ] = useState(() => (typeof window === "undefined" ? "" : (new URLSearchParams(window.location.search).get("q") ?? "")));
@@ -93,7 +94,7 @@ export function AskView() {
       {dq && hits.isFetched && matches.length === 0 && <p className="text-[13.5px] text-t2">{t("askNoMatch", { q: dq })}</p>}
       {matches.length > 1 && !pick && (
         <div className="flex flex-col items-center gap-2">
-          <p className="text-[12.5px] text-t3">{t("askMatches", { n: matches.length })}</p>
+          <p className="text-[12.5px] text-t3">{t("askMatches", cnt(matches.length, locale))}</p>
           <div className="flex flex-wrap justify-center gap-1.5">
             {matches.map((m) => (
               <button key={m.slug} type="button" className={"chip" + (m.slug === chosen ? " is-on" : "")} onClick={() => setPick(m.slug)}>
@@ -199,7 +200,7 @@ function DesktopCard({ w, onCousin }: { w: WordPayload; onCousin: (slug: string)
             {first.left} <mark className="kwic-key">{first.keyword}</mark> {first.right}
           </p>
           <p className="text-[12px] text-t3">
-            {first.surah_name_ar} · <span className="mono" dir="ltr">{first.verse_key}</span> · {t("occursN", { n: formatNumber(w.corpus_freq, locale) })}
+            {first.surah_name_ar} · <span className="mono" dir="ltr">{first.verse_key}</span> · {t("occursN", cnt(w.corpus_freq, locale))}
           </p>
         </div>
       )}
@@ -304,7 +305,7 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
         <>
           <p className="ar-classical text-[36px] text-form" lang="ar">{w.pattern.ar.full}</p>
           <p className="text-[14px]"><PatternFunction p={w.pattern} /></p>
-          <p className="text-[12.5px] text-t3">{t("deckShapeBody", { n: formatNumber(w.pattern.lemma_count, locale) })}</p>
+          <p className="text-[12.5px] text-t3">{t("deckShapeBody", cnt(w.pattern.lemma_count, locale))}</p>
         </>
       ) : (
         <p className="text-[13px] text-t3">{t("noPattern")}</p>

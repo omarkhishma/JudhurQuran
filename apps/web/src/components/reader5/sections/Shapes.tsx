@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
-import { formatNumber } from "@/lib/format";
+import { cnt, cnt2 } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import type { LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
 import { PatternFunction, WordChip } from "./Family";
@@ -85,7 +85,7 @@ function PatternView({ slug }: { slug: string | null }) {
         <span className="mono text-[12px] text-t3" dir="ltr">{p.ar.translit}</span>
       </div>
       <p className="text-[12.5px] text-t2">
-        <PatternFunction p={p} /> — {t("patternSpread", { n: formatNumber(p.lemma_count, locale), occ: formatNumber(p.occurrences, locale) })}
+        <PatternFunction p={p} /> — {t("patternSpread", { ...cnt(p.lemma_count, locale), ...cnt2(p.occurrences, locale) })}
       </p>
       <ul className="flex flex-col divide-y divide-line">
         {p.members.slice(0, 60).map((m) => (

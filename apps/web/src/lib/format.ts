@@ -16,6 +16,11 @@ export function cnt(count: number, locale: string): { count: number; n: string }
   return { count, n: formatNumber(count, locale) };
 }
 
+/** A second count in the same message ({count2} picks the form, {n2} is shown). */
+export function cnt2(count: number, locale: string): { count2: number; n2: string } {
+  return { count2: count, n2: formatNumber(count, locale) };
+}
+
 /** Standard citation: «البقرة: ٢٥٥» in Arabic, “al-Baqarah 2:255” in English. */
 export function citeVerse(surahNameAr: string, surah: number, ayah: number, locale: string, surahNameEn?: string): string {
   return locale === "ar" ? `${surahNameAr}: ${formatNumber(ayah, locale)}` : `${surahNameEn ?? surahNameAr} ${surah}:${ayah}`;

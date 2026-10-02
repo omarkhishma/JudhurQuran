@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic } from "@/lib/arabic/normalize";
-import { formatNumber } from "@/lib/format";
+import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { useIsClient } from "@/lib/client";
 import { usePersonal, useReader, type SuggestTarget } from "@/lib/reader/store";
@@ -91,11 +91,11 @@ function Omnibox({ onClose }: { onClose: () => void }) {
     for (const s of r.surahs.slice(0, 3))
       out.push({ group: t("omniSurahs"), key: `s${s.number}`, dot: "var(--c-sentence)", ar: s.name_ar, sub: s.name_translit, meta: String(s.number), go: () => { onClose(); router.push(`/quran/${s.number}`); } });
     for (const l of r.lemmas.slice(0, 5))
-      out.push({ group: t("omniWords"), key: `w${l.slug}`, dot: "var(--c-word)", ar: l.ar, sub: `${l.envelope.translit}${l.gloss_en ?? l.senses_en?.[0] ? ` · ${l.gloss_en ?? l.senses_en?.[0]}` : ""}`, meta: t("inQuranCount", { n: formatNumber(l.occurrences, locale) }), go: () => { onClose(); openWord({ slug: l.slug, at: null }); } });
+      out.push({ group: t("omniWords"), key: `w${l.slug}`, dot: "var(--c-word)", ar: l.ar, sub: `${l.envelope.translit}${l.gloss_en ?? l.senses_en?.[0] ? ` · ${l.gloss_en ?? l.senses_en?.[0]}` : ""}`, meta: t("inQuranCount", cnt(l.occurrences, locale)), go: () => { onClose(); openWord({ slug: l.slug, at: null }); } });
     for (const x of r.roots.slice(0, 3))
-      out.push({ group: t("omniRoots"), key: `r${x.key}`, dot: "var(--c-root)", ar: x.spaced, sub: x.translit, meta: t("rootCounts", { n: formatNumber(x.occurrences, locale), lemmas: formatNumber(x.lemma_count, locale) }), go: () => { onClose(); router.push(`/roots/${encodeURIComponent(x.key)}`); } });
+      out.push({ group: t("omniRoots"), key: `r${x.key}`, dot: "var(--c-root)", ar: x.spaced, sub: x.translit, meta: t("rootCounts", { ...cnt(x.occurrences, locale), ...cnt2(x.lemma_count, locale) }), go: () => { onClose(); router.push(`/roots/${encodeURIComponent(x.key)}`); } });
     for (const p of (r.patterns ?? []).slice(0, 2))
-      out.push({ group: t("omniPatterns"), key: `p${p.slug}`, dot: "var(--c-form)", ar: p.ar.full, sub: p.ar.translit, meta: t("wordsN", { n: formatNumber(p.lemma_count, locale) }), go: () => { onClose(); router.push(`/search?q=${encodeURIComponent(p.ar.full)}`); } });
+      out.push({ group: t("omniPatterns"), key: `p${p.slug}`, dot: "var(--c-form)", ar: p.ar.full, sub: p.ar.translit, meta: t("wordsN", cnt(p.lemma_count, locale)), go: () => { onClose(); router.push(`/search?q=${encodeURIComponent(p.ar.full)}`); } });
     return out;
   }, [res.data, t, locale, onClose, router, openWord]);
 

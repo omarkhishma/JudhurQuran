@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Link } from "@/i18n/navigation";
 import { setLocalStorage, useTheme } from "@/lib/client";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { useBreakpoint } from "@/lib/reader/media";
 import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
 import { THEME_KEY } from "@/lib/site";
@@ -78,7 +78,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
   const learning = Object.values(wordStates).filter((s) => s === "learning").length;
   const known = Object.values(wordStates).filter((s) => s === "known").length;
   const place = chapter.place === "meccan" ? t("meccan") : t("medinan");
-  const meta = [place, t("verses", { n: formatNumber(chapter.verseCount, locale) }), t("juz", { n: formatNumber(chapter.juz, locale) })];
+  const meta = [place, t("verses", cnt(chapter.verseCount, locale)), t("juz", { n: formatNumber(chapter.juz, locale) })];
   if (wordStatesOn) meta.push(t("knownLearning", { known: formatNumber(known, locale), learning: formatNumber(learning, locale) }));
   const graphHref = selection ? `/graph?w=${encodeURIComponent(selection.slug)}` : "/graph";
 
@@ -124,7 +124,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
         <button type="button" className="hdr-btn" onClick={() => setReview(true)} title={t("reviewTitle")}>
           <Icon name="calendar" size={13} />
           {t("review")}
-          <span className="mono rounded-[5px] bg-card-2 px-1.5 text-[11px] text-t2" aria-label={t("reviewQueued", { n: starredCount })}>
+          <span className="mono rounded-[5px] bg-card-2 px-1.5 text-[11px] text-t2" aria-label={t("reviewQueued", { n: formatNumber(starredCount, locale) })}>
             {formatNumber(starredCount, locale)}
           </span>
         </button>

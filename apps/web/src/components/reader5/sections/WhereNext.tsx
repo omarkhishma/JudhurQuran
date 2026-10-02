@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { cnt } from "@/lib/format";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import type { WordPayload } from "@/lib/reader/types";
 
@@ -18,7 +19,7 @@ export function WhereNext({ w }: { w: WordPayload }) {
       <div className="flex items-center gap-2">
         <p className="label-caps">{t("whereNext")}</p>
         <span className="h-px flex-1 bg-line" />
-        <span className="text-[11.5px] text-t3">{t("trailMeta", { n: distinct.size })}</span>
+        <span className="text-[11.5px] text-t3">{t("trailMeta", cnt(distinct.size, locale))}</span>
       </div>
       <div className="doors">
         {w.next_steps.map((s) => {

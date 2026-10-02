@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { Icon } from "@/components/Icon";
 import { Term } from "@/components/terms/Term";
 import { Link } from "@/i18n/navigation";
-import { formatNumber } from "@/lib/format";
+import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { SECTIONS, type SectionId, usePrefs, useReader } from "@/lib/reader/store";
 import { useStar } from "@/lib/store/saved";
 import type { WordPayload } from "@/lib/reader/types";
@@ -109,7 +109,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
           </span>
         )}
         <span className="type-chip" style={{ ["--chip" as string]: "var(--c-desc)" }}>
-          {t("inQuranCount", { n: formatNumber(w.corpus_freq, locale) })}
+          {t("inQuranCount", cnt(w.corpus_freq, locale))}
         </span>
       </p>
       {occ && (
@@ -143,7 +143,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
             <span className="mono text-[11px] text-t2" dir="ltr">{w.root.translit}</span>
           </button>
           <span className="text-[12px] text-t3">
-            <Term id="root">{t("root")}</Term> · {t("rootCounts", { n: formatNumber(w.root.occurrences, locale), lemmas: formatNumber(w.root.lemma_count, locale) })}
+            <Term id="root">{t("root")}</Term> · {t("rootCounts", { ...cnt(w.root.occurrences, locale), ...cnt2(w.root.lemma_count, locale) })}
           </span>
         </div>
       ) : (
@@ -187,12 +187,12 @@ function Sections({ w, chapter }: { w: WordPayload; chapter: ChapterInfo }) {
   const tab = useReader((s) => s.scrollTo);
   const shownDicts = w.dict_articles.filter((d) => !dictOff[d.id]).length;
   const meta: Record<SectionId, string> = {
-    senses: w.senses.length ? t("nSenses", { n: formatNumber(w.senses.length, locale) }) : t("sourcedLines"),
-    family: t("familyMeta", { n: formatNumber(w.family.reduce((a, g) => a + g.members.length, 0), locale), k: formatNumber(w.family.filter((g) => g.pattern).length, locale) }),
-    patterns: t("shapesMeta", { k: formatNumber(w.shapes.root_patterns.length, locale) }),
-    lexica: t("dictsMeta", { n: formatNumber(shownDicts, locale) }),
+    senses: w.senses.length ? t("nSenses", cnt(w.senses.length, locale)) : t("sourcedLines"),
+    family: t("familyMeta", { ...cnt(w.family.reduce((a, g) => a + g.members.length, 0), locale), ...cnt2(w.family.filter((g) => g.pattern).length, locale) }),
+    patterns: t("shapesMeta", cnt(w.shapes.root_patterns.length, locale)),
+    lexica: t("dictsMeta", cnt(shownDicts, locale)),
     timeline: t("timelineMeta"),
-    usage: t("usageMeta", { n: formatNumber(w.attestations.total, locale) }),
+    usage: t("usageMeta", cnt(w.attestations.total, locale)),
   };
   const bodies: Record<SectionId, React.ReactNode> = {
     senses: <MeaningsSection w={w} />,

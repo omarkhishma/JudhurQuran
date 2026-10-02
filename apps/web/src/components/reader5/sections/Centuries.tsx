@@ -29,7 +29,7 @@ export function CenturiesSection({ w }: { w: WordPayload }) {
         <li className="flex items-center gap-1.5"><span className="dot" style={{ background: "var(--c-root)" }} />{t("lexiconEntryDot")}</li>
         <li className="flex items-center gap-1.5"><span className="inline-block h-[9px] w-[9px] rounded-[2px]" style={{ background: "var(--c-sentence)" }} />{t("corpusDot")}</li>
       </ul>
-      <div className="timeline" role="group" aria-label={t("timelineAria", { n: withArticle.length })}>
+      <div className="timeline" role="group" aria-label={t("timelineAria", { n: formatNumber(withArticle.length, locale) })}>
         <div className="timeline-track">
           {w.timeline.corpora.map((c) => (
             <span key={c.id} className="timeline-corpus" style={{ insetInlineStart: x(c.year) }} title={`${locale === "ar" ? c.label_ar : c.label_en} · ${c.year}`} />

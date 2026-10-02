@@ -15,3 +15,10 @@ export async function expectNoHorizontalScroll(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow, "horizontal overflow in px").toBeLessThanOrEqual(1);
 }
+
+/** The Arabic counted-noun form the UI must show for `n` (CLDR plural categories, Arabic-Indic digits). */
+export function arCount(n: number, forms: { one: string; two: string; few: string; many: string; other: string }): string {
+  const cat = new Intl.PluralRules("ar").select(n) as keyof typeof forms | "zero";
+  const f = cat === "zero" ? forms.other : forms[cat];
+  return f.replace("#", ar(n));
+}

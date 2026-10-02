@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { formatNumber } from "@/lib/format";
+import { cnt, cnt2 } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { useReader } from "@/lib/reader/store";
 import { useSaved } from "@/lib/store/saved";
@@ -53,7 +53,7 @@ export function RootsDrawer({ verseKey }: { verseKey: string }) {
           <button type="button" className={"rail-root" + (focusRoot === k ? " is-on" : "")} aria-pressed={focusRoot === k} onClick={() => setFocusRoot(focusRoot === k ? null : k)} title={t("highlightRootTitle", { root: k })}>
             <span className="ar-classical min-w-[72px] text-[19px] tracking-[.06em] text-root" lang="ar">{k.split("").join(" ")}</span>
             <span className="flex-1" />
-            <span className="mono text-[11px] text-t3">{t("timesHere", { n: formatNumber(n, locale) })}</span>
+            <span className="mono text-[11px] text-t3">{t("timesHere", cnt(n, locale))}</span>
           </button>
         </li>
       ))}
@@ -115,7 +115,7 @@ function GraphDrawer({ verseKey }: { verseKey: string }) {
   const roots = [...new Set(words.map((w) => w.root!))];
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[12px] text-t2">{t("graphPreview", { r: formatNumber(roots.length, locale), w: formatNumber(words.length, locale) })}</p>
+      <p className="text-[12px] text-t2">{t("graphPreview", { ...cnt(roots.length, locale), ...cnt2(words.length, locale) })}</p>
       <div className="flex flex-wrap gap-1.5">
         {roots.map((r) => (
           <span key={r} className="chip"><span className="ar-classical text-[16px] text-root" lang="ar">{r.split("").join(" ")}</span></span>

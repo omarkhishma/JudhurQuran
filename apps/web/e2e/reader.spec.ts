@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { api, ar, expectNoHorizontalScroll } from "./helpers";
+import { api, arCount, expectNoHorizontalScroll } from "./helpers";
 
 /**
  * Reader v5 (PLAN P2, design 03): journey A and a regression test for each prototype bug that applies
@@ -46,7 +46,9 @@ test("journey A: tap a word → entry with its root counts → family → verse 
   const p = panel(page);
   await expect(p.getByRole("heading", { name: w.ar.full })).toBeVisible();
   await expect(p.getByRole("button", { name: new RegExp(w.root!.ar_spaced) }).first()).toBeVisible();
-  await expect(p.getByText(`${ar(w.root!.occurrences)} موضعًا · ${ar(w.root!.lemma_count)} صيغة`).first()).toBeVisible();
+  const occ = arCount(w.root!.occurrences, { one: "موضع واحد", two: "موضعان", few: "# مواضع", many: "# موضعًا", other: "# موضع" });
+  const lem = arCount(w.root!.lemma_count, { one: "صيغة واحدة", two: "صيغتان", few: "# صيغ", many: "# صيغة", other: "# صيغة" });
+  await expect(p.getByText(`${occ} · ${lem}`).first()).toBeVisible();
   // Every lemma on the root is in the family section.
   const family = p.locator('[data-section="family"]');
   await expect(family.locator(".family-group .word-chip")).toHaveCount(w.family.reduce((a, g) => a + g.members.length, 0));

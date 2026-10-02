@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { normalize } from "@/lib/arabic/normalize";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { getJSON, useSurahRoots } from "@/lib/reader/api";
 import { useReader } from "@/lib/reader/store";
 import type { ChapterInfo } from "./ReaderShell";
@@ -65,7 +65,7 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="ar-classical truncate text-[15px] leading-[1.5]" lang="ar">{s.name_ar}</span>
                   <span className="truncate text-[10.5px] text-t3">
-                    {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " · " + t("verses", { n: formatNumber(s.verse_count, locale) })}
+                    {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " · " + t("verses", cnt(s.verse_count, locale))}
                   </span>
                 </span>
               </Link>

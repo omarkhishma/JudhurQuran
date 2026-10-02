@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Segmented } from "@/components/ui/Segmented";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { usePrefs, useReader } from "@/lib/reader/store";
 import type { DictEntry, DictWork, WordPayload } from "@/lib/reader/types";
@@ -139,7 +139,7 @@ function ArticleEntry({ e, lang, expanded, onToggle, onCopied }: { e: DictEntry;
       <div className="flex items-center gap-3 text-[11.5px] text-t3">
         {truncated && (
           <button type="button" className="hover:text-t1" onClick={onToggle}>
-            {expanded ? t("showLess") : t("showMore", { n: formatNumber(e.length, locale) })}
+            {expanded ? t("showLess") : t("showMore", cnt(e.length, locale))}
           </button>
         )}
         {e.page_ref && <span>{e.page_ref}</span>}

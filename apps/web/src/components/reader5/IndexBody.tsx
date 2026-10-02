@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { useReader } from "@/lib/reader/store";
 
@@ -34,7 +34,7 @@ export function IndexBody() {
               <span className="ar-classical text-[18px] tracking-[.06em] text-root" lang="ar">{r.spaced}</span>
               <span className="mono text-[11px] text-t3" dir="ltr">{r.translit}</span>
               <span className="flex-1" />
-              <span className="text-[11.5px] text-t3">{t("entriesN", { n: formatNumber(r.lemma_count, locale) })}</span>
+              <span className="text-[11.5px] text-t3">{t("entriesN", cnt(r.lemma_count, locale))}</span>
             </button>
             {open === r.key && <RootLemmasList root={r.key} />}
           </li>
