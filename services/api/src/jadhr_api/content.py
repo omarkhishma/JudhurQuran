@@ -81,7 +81,7 @@ def _attach_tokens_and_words(conn: Connection, verses: list[dict[str, Any]], ful
     )
     word_cols = (
         "w.verse_id, w.position, w.location, w.token_from, w.token_to, w.pos, w.text_uthmani, w.text_imlaei, "
-        "w.translit, w.gloss_en, r.key as root, l.ar as lemma, l.id as lemma_id"
+        "w.translit, w.gloss_en, r.key as root, l.ar as lemma, l.id as lemma_id, l.slug as lemma_slug"
     )
     if full_words:
         word_cols += ", w.features, w.segments, w.definite"
@@ -803,3 +803,53 @@ def recitation_verse(conn: Connection, reciter_id: str, key: str) -> dict[str, A
         return None
     v["url"] = _audio_url(r["audio_url"], v["surah"], v["ayah"])
     return v
+
+
+# ─── reader helpers ─────────────────────────────────────────────────────────
+
+
+def surah_roots(conn: Connection, number: int) -> list[dict[str, Any]]:
+    """Every root used in a sūra with how often it occurs there (the rail's "roots of this sūra")."""
+    return rows(
+        conn,
+        """select r.key, r.spaced, r.translit, count(*)::int as here, r.occurrences, r.gist_ar
+           from content.words w join content.roots r on r.id = w.root_id
+           where w.surah = :s group by r.id order by count(*) desc, r.key""",
+        {"s": number},
+    )
+
+
+def related_verses(conn: Connection, key: str, limit: int = 10) -> dict[str, Any] | None:
+    """Verses sharing roots with this one, ranked by the rarity of what they share: each shared root
+    adds ln(6236 / verses containing it), so a shared rare root weighs more than a shared common one.
+    A descriptive similarity over the text, not an interpretation."""
+    v = one(conn, "select id, surah, ayah from content.verses where key = :k", {"k": key})
+    if v is None:
+        return None
+    rel = rows(
+        conn,
+        """with mine as (select distinct root_id from content.words where verse_id = :v and root_id is not null),
+                weights as (select r.id, ln(6236.0 / greatest(r.verse_count, 1)) as w
+                            from content.roots r join mine on mine.root_id = r.id),
+                shared as (select distinct w.verse_id, w.root_id from content.words w
+                           join mine on mine.root_id = w.root_id where w.verse_id <> :v)
+           select s.verse_id, round(sum(wt.w)::numeric, 3)::float as score, count(*)::int as shared,
+                  array_agg(r.key order by wt.w desc) as roots
+           from shared s join weights wt on wt.id = s.root_id join content.roots r on r.id = s.root_id
+           group by s.verse_id order by sum(wt.w) desc, s.verse_id limit :n""",
+        {"v": v["id"], "n": limit},
+    )
+    verses = {
+        x["id"]: x
+        for x in rows(
+            conn,
+            """select v.id, v.key, v.surah, v.ayah, v.text_qpc, v.text_imlaei, s.name_ar, s.name_translit
+               from content.verses v join content.surahs s on s.number = v.surah where v.id = any(:ids)""",
+            {"ids": [r["verse_id"] for r in rel]},
+        )
+    }
+    return {
+        "key": key,
+        "method": "shared roots weighted by rarity: sum of ln(6236 / verses containing the root)",
+        "data": [r | {"verse": verses[r["verse_id"]]} for r in rel],
+    }

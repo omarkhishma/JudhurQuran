@@ -93,7 +93,7 @@ def slug_at(conn: Connection, location: str) -> str | None:
 def _occurrence(conn: Connection, location: str, lemma_id: int) -> dict[str, Any] | None:
     w = one(
         conn,
-        """select w.id, w.location, w.surah, w.ayah, w.position, w.text_uthmani, w.text_imlaei, w.translit,
+        """select w.id, w.location, w.surah, w.ayah, w.position, w.token_from, w.token_to, w.text_uthmani, w.text_imlaei, w.translit,
                   w.gloss_en, w.features, w.segments, w.definite, w.lemma_id, s.name_ar, s.name_translit
            from content.words w join content.surahs s on s.number = w.surah where w.location = :loc""",
         {"loc": location},
@@ -106,6 +106,8 @@ def _occurrence(conn: Connection, location: str, lemma_id: int) -> dict[str, Any
         "verse_key": f"{w['surah']}:{w['ayah']}",
         "surah": {"number": w["surah"], "name_ar": w["name_ar"], "name_translit": w["name_translit"]},
         "position": w["position"],
+        "token_from": w["token_from"],
+        "token_to": w["token_to"],
         # The occurrence as written in the mushaf, and in everyday spelling.
         "surface": ar(w["text_uthmani"], w["translit"]),
         "surface_imlaei": w["text_imlaei"],
@@ -460,3 +462,14 @@ def dictionaries(conn: Connection) -> list[dict[str, Any]]:
 
 def corpora(conn: Connection) -> list[dict[str, Any]]:
     return rows(conn, "select id, label_ar, label_en, year from content.corpora order by year, sort_order")
+
+
+def root_family(conn: Connection, raw: str) -> dict[str, Any] | None:
+    """A root with its lemmas grouped by pattern (the index and the graph seed use it)."""
+    r = content.resolve_root(conn, raw)
+    if r is None:
+        return None
+    extra = one(
+        conn, "select gloss_en, gist_ar, gist_source from content.roots where id = :id", {"id": r["id"]}
+    )
+    return {"root": _root_out(r | (extra or {})), "family": _family(conn, r["id"])}

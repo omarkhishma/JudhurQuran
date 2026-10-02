@@ -135,6 +135,23 @@ def surah(
         return cached(request, payload)
 
 
+@router.get("/surahs/{number}/roots", summary="Every root used in a sūra with its count there")
+def surah_roots(request: Request, number: int) -> Response:
+    if not 1 <= number <= 114:
+        raise not_found("surah")
+    with connect() as conn:
+        return cached(request, {"surah": number, "data": content.surah_roots(conn, number)})
+
+
+@router.get("/verses/{key}/related", summary="Verses sharing roots with this one, rare roots weighing more")
+def related_verses(request: Request, key: str, limit: int = Query(10, ge=1, le=50)) -> Response:
+    with connect() as conn:
+        out = content.related_verses(conn, key, limit)
+        if out is None:
+            raise not_found("verse")
+        return cached(request, out)
+
+
 @router.get("/verses/{key}", summary="One verse (e.g. 2:255) with full word morphology")
 def verse(request: Request, key: str) -> Response:
     try:
@@ -323,6 +340,15 @@ def root(request: Request, root: str) -> Response:
         if r is None:
             raise not_found("root")
         return cached(request, r)
+
+
+@router.get("/roots/{root}/family", summary="A root's lemmas grouped by pattern")
+def root_family(request: Request, root: str) -> Response:
+    with connect() as conn:
+        out = lexicon.root_family(conn, root)
+        if out is None:
+            raise not_found("root")
+        return cached(request, out)
 
 
 @router.get("/roots/{root}/occurrences", summary="Concordance (KWIC) rows for a root")

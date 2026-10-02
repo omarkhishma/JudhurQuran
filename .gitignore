@@ -35,3 +35,6 @@ data/release/
 
 # The owner's example data (36 MB) stays local; its sha256 is recorded in docs/DATA-VALIDATION.md
 Example Data/
+
+# Agent worktrees (local, transient)
+.claude/worktrees/
