@@ -1,106 +1,322 @@
-# PLAN — جُذور (working title) · Quran roots platform
+# PLAN — the Quran roots platform (working title pending, see D1)
 
-> Source of truth for what is done, what is next, and how each phase is verified. Decisions and lessons live in `docs/DECISIONS.md`. Updated as work proceeds — never silently deviated from.
+> Status: **DRAFT FOR OWNER REVIEW** — written 2026-10-02 after the owner's review of the first build. Nothing below is executed until the owner has reviewed it with me. This plan replaces the previous one, which measured progress against a phase list I had written myself instead of against the vision and the design.
 
-## 0 · The goal in one paragraph
+## 0 · How to read this plan
 
-An Arabic-first, bilingual (ar default / en) website where the Quran is rendered as real, selectable Unicode text in the authentic Madinah-mushaf script, and **every word is a door**: tap it to see its meaning, its root, its lemma and pattern, how many times the root occurs, every derived form, and every verse that shares the root — then step into a node-graph canvas of the whole root family, or build your own topic / meaning graphs. Tap a verse to read multiple tafsirs. Everything is backed by **our own database and versioned public API**, built from openly licensed, cited sources, cross-validated against independent sources, with provenance visible on every claim. Later the same graph grows into an Arabic dictionary, a hadith encyclopedia and a book reader — one ecosystem.
+- **The measure of done** is the owner's vision (§1) and the full design handoff (`Claude Design Handoff/`: 15 product screens, their overlays, states, phone and dark variants, and the six journeys A–F) — never this plan's own checkboxes. A phase is done when its parity items and journeys are verified, not when its tasks are ticked.
+- **Parity inventory:** every element, state, interaction and copy string of every prototype is itemised with an ID in `docs/research/05-design-inventory.md` — 1,850 items: Reader RDR 615; Editor EDT 348 + its Quran notes QAN 25 + hard-won fixes HWF 58; shell and seed SHL 78, Hub HUB 61, Collections COL 63, Library LIB 59, Search SRC 53, Concordance CON 54, Analyser ANA 53; community SHR 25, Review queue RVQ 101, Notebook NTB 69, Classroom CLS 57, Profile PRF 44, Data & API DAT 67, consolidated defects DEF 14, local-first map MAP 6; plus the content-model narrative. Each phase names the inventory sections it must close. Coverage is reported as "items verified / items in scope"; an item leaves scope only with the owner's approval.
+- **Spec vs prototype:** the inventory marks every place where the spec documents and the prototype code disagree (about 30 in the Reader alone). Proposed rule (D21): build the union when both describe something useful, otherwise the more complete or more accessible one; each resolution is written next to its item before the phase builds it.
+- **Arabic first:** the design was drawn with English chrome around Arabic content; we build the same product with Arabic as the default interface and full RTL mirroring, English as the second locale, and every design rule (tokens, spacing, bidi, 44 px targets, contrast, dark parity) intact.
+- **Status legend:** ✅ verified · 🟡 partial (exists but below the design) · ⬜ missing · 🔒 waits for an owner decision (§4).
+- **Owner checkpoints** are marked ◆. The owner reviews at each one before the next phase starts its user-facing work.
 
-## 1 · Non-negotiable principles (product laws)
+## 1 · The vision, item by item (the owner's words → what it requires)
 
-1. **Mushaf integrity.** The Quranic text is imported verbatim from a verified source, checksummed, and never modified. Search uses derived shadow columns only. A CI gate fails on any byte change.
-2. **No generated religious content.** Meanings, tafsir and glosses come only from cited human sources. No LLM writes or paraphrases meaning. Our own copy is limited to UI and linguistic explanations (grammar terms), flagged for expert review.
-3. **Uncertainty is visible.** Every root, lemma and morphology claim names its source; disagreements between sources render as attributed variants; particles show "no root" rather than a pseudo-root.
-4. **Descriptive statistics only.** Counts and distributions — never numerical-miracle claims.
-5. **Respect and focus.** No ads, no tracking, no streaks or loss-aversion, no autoplay. Quranic text is visually distinct from human commentary; translations are labelled "translation of meanings".
-6. **Local-first and private.** Everything works without an account; personal data stays on the device until the owner decides on accounts.
-7. **Accessible and fast.** WCAG AA contrast, keyboard and screen-reader support, 44px touch targets on phones, dark-theme parity, phone-first reading.
+| # | Vision item (from `Quran Idea.md` and the owner's messages) | Requires |
+|---|---|---|
+| V1 | The Quran as real selectable text in an authentic Quranic script; every verse and every word individually interactive | Verbatim mushaf text, authentic font, word-level interaction everywhere the Quran appears |
+| V2 | Click a word → its meaning; the concept of roots explained clearly; how many times the root appears; the words derived from it; other verses with words of the same root | Per-word meanings from cited sources, plain-language explanation of roots and patterns, counts, family grouped by pattern, occurrences |
+| V3 | Click a verse → its tafsir | Multiple cited tafsirs, comparison |
+| V4 | From a word, enter a node-based infinite canvas: the word, its root, derived forms, occurrences across the Quran; cards with clear spacing showing the word, the root and the verse | Root-family graph built from data, readable at every zoom |
+| V5 | The editor builds different graph types: root-based (default), topic-based, meaning-based (different words sharing the same or close meanings) | Topic data, semantic-relation data, editor parity with the design |
+| V6 | Over time users build and explore a rich network of Quranic words, meanings, roots and semantic relations | Saved, published, forkable, citable graphs; accounts; community |
+| V7 | Our own database and one all-in-one API built from open sources; compare root datasets and verify accuracy; never rely only on the owner's list, but use it when nothing better exists | Pinned licensed sources, validation reports, public API with provenance |
+| V8 | The full ecosystem: an Arabic dictionary, a Quran and hadith encyclopedia, and a book-reading site supported by the dictionary, all enriching each other | Dictionary, hadith and books as first-class texts sharing one root graph |
+| V9 | Arabic is the main language; production quality; respect for the subject; real impact | Arabic-default UI, the laws in §2, scholarly review |
+| V10 | Keep iterating, find gaps, go beyond the vision | "Beyond the vision" (§8), a proposal pass at every phase boundary |
 
-## 2 · Architecture (summary — details in DECISIONS)
+## 2 · Product laws (to be confirmed by the owner at review — several were set without his explicit approval)
 
-| Layer | Choice |
-|---|---|
-| Web | Next.js 16 (App Router) + React 19 + TypeScript, Tailwind 4 over the handoff tokens, next-intl (ar default at `/`, en at `/en`), logical CSS only |
-| Graph canvas | @xyflow/react 12 + elkjs auto-layout, bounded expansion |
-| API | FastAPI (Python 3.13) — `/api/v1`, OpenAPI docs, public read endpoints, ETag + long cache on content |
-| Database | PostgreSQL 17 — content (immutable per dataset release) + later user data |
-| Search | Postgres: normalised shadow columns + pg_trgm + FTS, behind a search module (OpenSearch only when measured need) |
-| Pipeline | Python package `pipeline/`: pinned sources (URL + sha256 + license), parse → validate → cross-check → load → release artefacts |
-| Local dev | `docker compose` (Postgres 17) · `pnpm` workspaces · `uv` for Python |
+- L1 Mushaf integrity: the Quranic text is the KFGQPC publication verbatim, hash-checked on every load; any simplified spelling is a derived, labelled view.
+- L2 No generated religious content: meanings, tafsir and glosses come only from cited human sources; our own copy is UI and plain grammar explanations, flagged for expert review.
+- L3 Uncertainty is visible: sources named on every claim; disagreements shown with attribution; analysis shows confidence; particles say "no root" instead of a pseudo-root.
+- L4 Descriptive statistics only — counts and distributions, never numerical-miracle claims.
+- L5 Respect and focus: no ads, no tracking, no streaks or loss-aversion (also a design rule), no autoplay.
+- L6 Local-first: everything works without an account; signing in is sync, never a wall; anonymous work migrates on sign-in (design rule).
+- L7 Accessible and fast: WCAG 2.1 AA in both themes, 44 px targets, keyboard, screen readers, phone-first reading.
 
-## 3 · Phases
+## 3 · Where we are — the honest gap
 
-Status legend: ✅ done (verified) · 🔄 in progress · ⏳ next · ⛔ blocked (owner) · ⬜ not started
+### 3.1 Against the vision
 
-### Phase 0 — Orientation, research, decisions ✅
-- ✅ Idea + full design handoff read; prototypes captured at desktop and phone width
-- ✅ Research reports in `docs/research/`: 01 text+morphology · 02 Arabic lexica · 03 tafsir/translation/audio/hadith · 04 competitive analysis
-- ✅ Sibling project `../Judhur` found and used as research input (license register, lessons, pinned artefacts)
-- ✅ Source registry `data/sources.yaml` + works registry `data/works.yaml`
-- ✅ DECISIONS seeded and maintained; ✅ project CLAUDE.md (conventions, commands, laws)
-**Exit:** every launch data source has a recorded license and a recommendation; stack decided.
+| # | Status | What exists | What is missing |
+|---|---|---|---|
+| V1 | ✅ | KFGQPC text verbatim with hash check, KFGQPC font, word-level clicks | Mushaf page view (604 pages) — §8 |
+| V2 | 🟡 | Word panel: root, counts, family by lemma, wazn per lemma, five lexica + Ibn Qutaybah, concordance, term cards | Numbered per-word meanings, family grouped by pattern with what each pattern does, Shapes table, "Grammar here", Ask card, cousins, trails |
+| V3 | 🟡 | 7 tafsirs + 2 translations per verse | Side-by-side tafsir comparison |
+| V4 | 🟡 | Root-family canvas with on-demand expansion | Design card anatomy, palette, entry sidebar, map/zoom states, focus and extract actions |
+| V5 | ⬜ | A free editor with note cards | Topic graphs and meaning graphs with data behind them |
+| V6 | ⬜ | Local saving and share links | Accounts, publish/fork/cite, community |
+| V7 | 🟡 | Own DB + API, validation report, pinned sources (pending the P0 cleanup) | Public data API with keys, dataset releases with DOI, OpenSearch-grade search |
+| V8 | ⬜ | — | Arabic dictionary beyond the Quran, the Quran side of the encyclopedia (sūra cards, occasions of revelation, cross-references between verses, people and places — P3.9), hadith encyclopedia, book reader |
+| V9 | 🟡 | Arabic-default UI | Most of the design, expert review |
+| V10 | ⬜ | — | §8 |
 
-### Phase 1 — Canonical dataset (pipeline) ✅
-Done: official KFGQPC text (byte-identical, hash-checked) · Tanzil verification + juz · QAC v0.4 parse (multi-stem words) · token↔word alignment (7 known fusions/splits exposed) · imlāʾī search shadow · roots/lemmas/counts · root variants from QAC v2 + fork · 7 tafsirs + 2 English translations · lexica (Mufradat, Maqayis, Lisan, Sihah, Lane, Ibn Qutaybah) · recitations (12 reciters, word timings) · wazn for every lemma where certain · every build verifies all source pins · DATA-VALIDATION.md generated from computed numbers · English lemma glosses (QAC v2) · English word glosses + transliteration for every word (corpus Word by Word, verbatim) · release artefacts (redistributable JSONL + CSV with manifest, hashes and exclusion reasons).
-- Pin + fetch sources with sha256 verification (fail on drift)
-- Parse Tanzil Uthmani + metadata (114 surahs, 6,236 verses, juz/hizb/page/sajdah) and the QPC Hafs text; letter-stream cross-verification
-- Parse QAC morphology (segments → words), align to Tanzil tokens (basmala convention, 4 known merges)
-- Build roots, lemmas, word forms, POS/features (Arabic + English labels), verb forms, derived-noun types; compute counts (root occurrences, lemma occurrences, per-surah distribution)
-- Pattern (wazn) derivation for lemmas where it is mechanically certain; null + reason otherwise
-- Cross-validation: QAC vs owner CSV vs a second independent source → `docs/DATA-VALIDATION.md` with categories, counts, examples; disputed roots stored as attributed variants
-- Import tafsirs, translations, word-by-word glosses, lexica entries per licenses
-- Integrity test suite (counts, checksums, alignment, no orphan tokens, every root in ≥1 word)
-- Release artefacts (JSON + CSV) with license manifest; dataset version `YYYY.MM.N`
-**Exit:** `pipeline build` from a clean checkout reproduces the DB; all integrity tests green; validation report written from computed numbers.
+### 3.2 Against the design (15 product screens + overlays)
 
-### Phase 2 — API ✅
-Done: schema + atomic loader (+ web cache expiry) · meta/sources/catalog/surahs/verses/pages/words/roots/occurrences/lemmas/search/works/commentary/lexicon/recitations/root graph · ETags tied to the loaded release · error envelope · rate limit · plain-ASCII root input · tests against the loaded dataset.
-- Schema + migrations (Alembic), loader from pipeline output
-- Endpoints: meta/sources · surahs · verses (with words) · words · roots (+family, distribution, occurrences/KWIC) · lemmas · search (Arabic/translit/English/ref/root-letters) · tafsir · translations · lexica · root graph document
-- Error envelope, cursor pagination, ETag/Cache-Control, rate limiting, CORS, OpenAPI docs
-- Tests against the real loaded dataset, incl. the Arabic search assertions
-**Exit:** `curl /api/v1/words/2:255:1` returns the full word panel payload; test suite green.
+| Screen / surface | Status | Note |
+|---|---|---|
+| Hub `/` | 🟡 | Missing context strip, destination cards for every surface, local-first sign-in prompt |
+| Reader v5 (our `/quran/…`) | 🟡 | Have reading surface, panel sections, tafsir, audio. Missing: rail (library, contents with difficulty, roots on this page), header set (Ask, Review with due count, Reading prefs, Graph, Dictionary toggle, A−/A+), five modes, Ask mode + phone four-card deck, the six designed panel sections, tabs preference, word states, sense tint, inline gloss, marginalia, passage tools with long-press, transliteration/tashkīl toggles, resume marker and progress hairline, trails + map, review deck, cite (every format, P2.0), onboarding, phone sheet with grabber half/full |
+| Editor v5 `/graph` | 🟡 | Have canvas, labelled undo, import/export, PNG, share link. Missing: design card anatomy and fields with tags, palette with roots list, entry sidebar (Meaning/Settings/Comments), frames, map view, comments, presence, server autosave, publish → `/g/<slug>`, fork, cite, embed with postMessage, read-only mode as the same component |
+| Split Shell `/split` | ⬜ | |
+| Library `/library` | ⬜ | Shelf, continue, add text (paste/URL/PDF/photo) |
+| Search `/search` | 🟡 | Have detection + results. Missing: kinds with counts, sources filter, root builder in the sidebar, patterns as results, design layout |
+| Concordance `/concordance` | 🟡 | Have KWIC on the root page. Missing: its own screen, sort following/preceding/source, form chips, texts filter, distribution by text/chapter/era, Export CSV |
+| Analyser `/analyse` | ⬜ | |
+| Collections `/explore` | ⬜ | Word of the day, curated sets, study deck |
+| Notebook `/notebook` | ⬜ | Verse notes exist only inside "saved" |
+| Review queue `/review` | ⬜ | Needs accounts + proposals |
+| Classroom `/classroom` | ⬜ | |
+| Published Graph `/g/<slug>` | ⬜ | |
+| Profile `/me` | 🟡 | "Saved" page has export/delete; no profile, no accounts |
+| Data & API `/data` | 🟡 | Developers page + API docs + local release files. Missing: downloads page, TEI/LMF, DOI, changelog, playground, citation formats |
+| Journeys A–F | ⬜ | None works end to end as designed |
 
-### Phase 3 — Web foundations ✅
-- Next.js app, ar/en routing (RTL/LTR), tokens light/dark, fonts self-hosted (Quran font verified at reading size with all marks), shell + nav, error/404 pages
-**Exit:** screenshots at 1440 and 390 in both themes show correct Quranic rendering and mirrored layout.
+## 4 · Owner decisions (for the review meeting; my recommendation first)
 
-### Phase 4 — Quran reader + word panel + tafsir ✅
-Done: surah index · reader (verse/flow layouts, size, translation/inline al-Muyassar, ۞ signs) · word panel (meaning in context, root family, morphology with wazn, counts, KWIC, variants, next steps) · verse panel (7 tafsirs, translation, copy/share) · verse page · word page · audio with word highlighting and listen-to-word · phone sheet · plain-language term cards (40 terms incl. the derived verb forms with their attributed meanings, "Explain terms" setting). The exit journey is an e2e test (desktop + phone).
-- Surah index, surah reader (verse markers, basmala rules, delegated word clicks, copy that never injects verse numbers), verse page
-- Word panel (layered): meaning · root & family · morphology (plain Arabic) · occurrences · dictionaries · where next; phone bottom sheet
-- Verse panel: tafsir selector, translation, audio, copy/share/cite
-- Word audio + verse audio
-**Exit:** journey "open surah → tap word → see root family → open an occurrence → read its tafsir" works on desktop and phone.
+| ID | Decision | Recommendation | Blocks |
+|---|---|---|---|
+| D1 | Product name (the working title came from another project and must go). The design handoff itself calls the product Jadhr (جذر, `jadhr.org`, `jadhr-*` keys) | If Jadhr is the owner's choice, P0.4 renames to it; otherwise I bring a short list of Arabic names with domain and trademark checks | P0 rename |
+| D2 | Commercial or non-commercial — and when. The research shows it governs almost every content layer: recitation audio (EveryAyah, CC BY-NC), OpenITI texts (CC BY-NC-SA, whose share-alike would bind our API), the corpus terms, the Shamela typings (D22), hadith text (D8), and several sources whose terms are silent on commercial use | Launch non-commercial with every layer's licence recorded, so that a later switch is a known list of replacements; set the commercial horizon early, because the commercial path needs permissions (D19) and our own OCR of public-domain printings, which take months | Launch, P3, P10, P11 |
+| D3 | Accounts: auth methods and hosting of personal data | Email magic link + Google/Apple sign-in; server-side sync with a local-first cache; privacy policy states retention | P6 |
+| D4 | Editorial authority: who reviews proposals; competing senses? | An appointed editorial board; reviewer role earned by merged contributions; competing senses shown with attribution rather than one forced winner | P7 |
+| D5 | Real-time level for editor and classroom | Presence only (design's recommendation), then soft locks; no CRDT | P8, P9 |
+| D6 | Source of the per-word "Meanings" | KFGQPC al-Muyassar fī Gharīb al-Qurʾān (official, already held) + Ibn Qutaybah + al-Mufradat senses, each attributed; English from the corpus glosses; community proposals only through review | P3 |
+| D7 | Tashkīl toggle on Quran text | The mushaf always stays fully vocalised; the toggle applies to lexica, hadith, books and user texts; the Quran gets a separate labelled "standard spelling" view | P2 |
+| D8 | Hadith scope, sources and grading authority. No source gives vowelled text, isnād, narrator profiles and named graders under terms that clearly allow commercial use and bulk redistribution. sunnah.com has all of them (clean isnād/matn split, narrator links, named graders) but forbids mass reproduction without agreement. The fawazahmed0 compilation is Unlicense, but its Arabic appears copied from sunnah.com. HadeethEnc explicitly allows republishing (3,582 hadith with explanations and word meanings, no isnād). The large narrator sets have unclear upstream rights | The Six Books + Muwaṭṭaʾ first; display text from sunnah.com under a written agreement (D19), fawazahmed0 as the fallback; gradings from fawazahmed0's data credited to each grader by name (al-Albānī, Shuʿayb al-Arnaʾūṭ, Aḥmad Shākir…) — for al-Bukhārī and Muslim the collection itself is shown («رواه البخاري»), never a grade of ours; HadeethEnc as the curated, explained layer, unmodified with its version; narrators from hadith-kg only once its source is confirmed, otherwise MIS for Muslim (CC BY 4.0) and basic profiles; numbering per Fatḥ al-Bārī for al-Bukhārī and ʿAbd al-Bāqī for Muslim | P11 |
+| D9 | Classical books scope and copyright gate. Life + 70 means authors who died by 1374 AH; life + 50 (Egypt and most Arab laws) by 1394 AH. OpenITI itself contains living authors, so its licence does not make a file safe. Unvowelled OpenITI text (NC-SA) or vowelled Shamela typings (no grant)? Which collections (Sunni, Shia, Zaydi, Ibadi; modern adab from Hindawi)? | Gate at ≤ 1374 AH, 1375–1394 case by case; OpenITI 2025.1.9 metadata as the catalogue; display OpenITI text under NC-SA now, vowelled text only with permission or from our own OCR of public-domain printings; all four collections, labelled | P11 |
+| D9a | User uploads and OCR: private to the uploader by default? May uploads go to a cloud OCR (Azure keeps them 24 h; the Gemini API is barred for sites minors may use)? GPU or per-page budget? Who corrects OCR? | Private by default; self-hosted Kraken with the OpenITI CC0 print model as the main engine, so uploads never leave our servers; a cloud second engine only for public-domain books we ingest ourselves; never auto-add diacritics to OCR output; the uploader corrects their own text, editors correct the curated library | P4, P11 |
+| D10 | Word audio. No openly licensed set of isolated Quran words exists. Today's slices cut EveryAyah verse audio (CC BY-NC) with quran-align timings (CC BY 4.0, 99.99% of words timed); cut words keep their joined-reading endings, lose the opening vowel of hamzat al-waṣl, and bleed into neighbours across idghām. The one complete isolated-word set with a traceable owner belongs to the Tafsir Center (all rights reserved; they already granted it to another site) | Keep slices for now (Ḥuṣarī's teaching recitation bleeds least), with boundary refinement and QA flags; ask the Tafsir Center for their word set (D19); if refused, commission our own pause-form recordings; never synthesised speech for the Quran, and no button where no recording exists. Dictionary headwords outside the Quran (P11.1): no open recording set covers vocalised forms (Lingua Libre has about 1,700 vocalised single words, CC BY-SA, mixed accents). Recommendation: a commercially licensed TTS voice fed with phonemes we derive ourselves — a pausal spoken form (case vowel and tanwīn dropped, ة as هْ, the waṣl vowel written out) converted to IPA — so the engine never guesses the vowels; every file re-transcribed by a diacritising speech recogniser and the mismatches heard by a native reviewer; a visible "synthetic voice" note; human recordings with assigned rights for the most frequent headwords. Needs from the owner: pausal or as-written pronunciation, one voice or two, the disclosure, a reviewer budget, and cloud accounts (Azure first, Amazon Polly second) for a bake-off on a 300–500-word gold set | P3, P5, P11 |
+| D11 | Search engine | Adopt OpenSearch as the design specifies before dictionary, hadith and books land; Postgres stays the source of truth | P1 |
+| D12 | Hosting, domain, budget (OpenSearch, Redis, object storage, monitoring) | One managed set sized in P1 | P1, launch |
+| D13 | Classroom model — the docs and the prototype disagree: the docs describe a learners × roots heat-map with a lesson builder; the prototype shades the words of the passage with lookups/notes/time layers and has no lesson builder. Also: one shared cohort graph or per-learner graphs? | Build both views (the passage view for a lesson, the matrix for the cohort) and one shared graph per lesson with per-card confirmation | P9 |
+| D14 | Dataset license + DOI (needs an owner Zenodo account) | CC BY-SA for our own derived layers only; per-source licenses for the rest | P10 |
+| D15 | Expert reviewers (linguist, Quran scholar) | Owner nominates; I prepare review packets (wazn, term cards, pattern functions, lexicon mappings) | P3 onward |
+| D16 | Files missing from the design handoff: `Field.dc.html` and `Card Field.dc.html` (the editor imports them; 04 §4.7 describes them) and `Lexicon Reader v4.dc.html` (the target of many links, kept "for comparison") | If the owner can export them from Claude Design, parity for card fields is exact; otherwise I build them from 04 §4.7 and the editor screenshot | P8 |
+| D17 | Connection rules: the prototype forbids root→root and verse→verse links while the spec says "any pair may be linked"; meaning and topic graphs need them | Allow them through typed relations per graph type (P8.1a) | P8 |
+| D18 | Licenses on classical texts: OpenITI copies are CC BY-NC-SA, Shamela-derived copies carry only a packager's label; the authors are public domain. Accept NC-SA on the wujūh/furūq layers, or re-key from public-domain print editions so the API stays free for any use? ShareAlike (Arabic WordNet, Wiktionary) acceptable in API output? | Display from OpenITI now under NC-SA with attribution; re-key the high-value parts from print editions before any commercial use (ties to D2) | P3, P8, P10 |
+| D19 | Messages that go out under the owner's name, asking for licences or clarification: Shamela (API key, permission), OpenITI (commercial use), KSAA Siwar (storing al-Qāmūs word→root data beyond 30 days), the MASAQ authors (v5 says CC BY 4.0, v6 says NC), Abdul-Baquee Sharaf (QurSim, QurAna), Waqar144 (mutashābihāt list), Tarteel/QUL (issue #704), Kais Dukes (corpus treebank), Quranpedia (where its topic index comes from; commercial use), sunnah.com (API key and written permission for display, caching and commercial use — their key requests are public GitHub issues carrying the requester's name and email), Dorar, HadeethEnc (commercial use; that linking words to roots is not "modification"), Emad Jumaah (the source of hadith-kg), the Oujda NLP team (the Al Mus'haf corpus), the QAMAR authors (their checked Quran morphology, once released), the Tafsir Center (that CC BY 4.0 covers commercial use and the edited texts inside; permission for its word-by-word recitation audio), the authors of AWN 3.0, Quranic Arabic WordNet, the Arabic Ontology and Qabas | Owner approves the list and the wording; I draft each message | P3, P8, P10 |
+| D20 | Word states on the mushaf. The design marks every tapped word "learning" and paints learning words amber and new words with a blue underline. On the Quran that is visually and devotionally wrong as a default, and a reader who taps to understand is not "learning" a word | An opt-in study mode, off by default on Quran text, with no automatic state on tap; on for user texts and books if the owner wishes; selection and root-family underlines stay subtle | P2, P5 |
+| D21 | Spec vs prototype: about 30 disagreements in the Reader alone (and more in the other screens) | Build the union when both are useful, otherwise the more complete or more accessible; resolutions written next to each inventory item and shown at the phase checkpoint | P2–P10 |
+| D22 | Legal basis for the classical text we already show. The lexica (and later books and tafsir) come from Shamela typings. The Hugging Face Shamela 4 card's own licence section says "Research and personal use", whatever its MIT tag says, and Shamela's terms grant nothing. The authors are public domain; editors' apparatus is not | Keep display-only of the authors' own text with every editorial addition stripped and the edition cited; take legal advice before launch; ask Shamela (D19); over time rebase the core lexica on public-domain printings through our OCR (Khayriyya Tāj 1306 AH, Bulaq al-Qāmūs 1883–85) | Launch, P3, P11 |
+| D23 | Syntax (iʿrāb) sources. MASAQ labels 96.6% of words with role and case but gives no tree, and its licence differs by version (v1, v3, v5: CC BY 4.0; v6: NC). The corpus treebank gives real trees for 42% of words, with no licence file. EQTB covers everything, but 60% of its verses were parsed by a model and not reviewed | MASAQ v5 as the primary word-level iʿrāb after a diff against v6; corpus trees where they exist, credited and non-commercial until permission (D19); EQTB only as editor-side candidates, never shown as analysis without review (L2, L3) | P2 (Grammar here), B10 |
+| D24 | Qirāʾāt, tajwīd and waqf scope: KFGQPC's 8 published riwāyāt or all 20? Shādhdh readings? Tajwīd at 18 rules or about 127? Indo-Pak waqf signs? | KFGQPC's riwāyāt as the authority, aligned word by word; no shādhdh readings at launch; 18 tajwīd rules (cpfair data, CC BY 4.0) remapped onto our text; Madinah waqf signs only | B20, B24 |
+| D25 | Verse relations and entities: QurSim and QurAna allow only unchanged copies with credit and depend on corpus ids; Aḍwāʾ al-Bayān (the densest source of Quran-by-Quran references) is in copyright; scraping the corpus ontology pages | Our own extraction of verse citations from Ibn Kathīr's references (98.8% correct in a sample) as the primary layer; QurSim only as the evaluation set; QurAna shown unchanged with credit pending permission; Aḍwāʾ al-Bayān excluded; no scraping; an in-house entity registry keyed to Wikidata ids (CC0) | B11, B25, P8.3 |
+| D26 | Occasions of revelation: show every narration (al-Wāḥidī and al-Suyūṭī include weak ones) or only authenticated ones? Show Western revelation orders (Nöldeke) next to the traditional Egyptian order? | Authenticated narrations by default with their grading and grader; the full classical texts as a labelled scholarly layer; the traditional order only, with Nöldeke available in the scholarly view and its source named | P3.9, B6 |
+| D27 | Meaning relations: may machine-suggested relations (Arabic WordNet, model output) ever be shown to readers if labelled, or stay editor-side? Antonyms: lexical pairs only (خوف↔أمن) or also the Quran's contrast pairs (ṭibāq, الجنة/النار)? May Qabas (no-derivatives licence) be used internally as a lemma crosswalk? | Editor-side only (L2); both kinds of antonym as separate typed relations, each with its source; Qabas internally only, never redistributed | P8.4 |
+| D28 | Morphology for non-Quran text: (a) a root-convention policy before any two analysers can be compared — hamza seat, weak radicals, quadriliterals, foreign proper nouns, the convention for الله; (b) the analyser stays on the server — a browser or offline bundle would have to be GPL-3; (c) budget for hand-labelling 1–2k hadith and classical tokens, without which confidence on non-Quran text cannot be calibrated; (d) carry the CAMeL stack (about 0.5–2 GB) for a second opinion, or farahidi alone; (e) ask the Oujda team for the Al Mus'haf corpus (78,479 rows with wazn, manually checked, no licence stated) | (a) adopt the corpus conventions, documented, with every disagreement shown rather than merged; (b) server only; (c) yes — a measured confidence is the point; (d) farahidi first, CAMeL after a pilot proves it adds accuracy; (e) yes, through D19 | P4.3, P11 |
+| D29 | Topics: does our public API count as "republishing a dataset" under Quranpedia's terms (credit and version then required)? May readers ever see machine-made topics (QSAC) as a labelled draft? Arabic-only or bilingual labels? One canonical taxonomy, or source "lenses"? Verse-level links only, or word spans too? | Credit and version shown in the API; QSAC editor-side only (L2); bilingual labels with Arabic canonical; one canonical taxonomy with the source shown on every link; verse level first, word spans for entities only | P8.3 |
 
-### Phase 5 — Roots, concordance, search, home ✅
-Done and e2e-tested: root page (family with wazn, stats, distribution, KWIC, lexica, variants), search (Arabic with/without marks, mushaf paste, root letters, ASCII or dotted transliteration, English meaning, references), root builder, home.
-- Root page (family by lemma/form, stats, distribution, KWIC concordance, lexica), search page with root builder, omnibox ⌘K, home page
-**Exit:** any word findable four ways (Arabic with/without diacritics, root letters, transliteration, English); root page numbers match the dataset.
+## 5 · Architecture evolution (recorded in DECISIONS once approved)
 
-### Phase 6 — Graph canvas ✅
-Done: root family map (bounded, expand on demand), editor with palette, labelled undo, autosave, PNG/JSON export, share links.
-- Auto root graph (root → lemmas → forms → verse cards, bounded, expand on demand), card anatomy per handoff, pan/zoom/fit/tidy, keyboard
-- Editor: topic and semantic-field graphs from any word/verse/root/note; labelled undo/redo; local autosave; import/export JSON; PNG export; share-by-link
-**Exit:** a user builds, saves, reloads and shares a graph; no work is ever lost.
+- **One text model for everything:** generic `texts → chapters → passages → tokens` (design §7) so the Quran, hadith collections, classical books and user texts share one reader, one concordance and one root graph. The Quran keeps its stable keys (`2:255`, `2:255:23`).
+- **Content entities the design needs and we lack:** `patterns` catalog (Arabic, transliteration, function, form number, plain explanation in Arabic and English — curated from named sarf works, expert-reviewed); `senses` (numbered, sourced, creditable); `dictionaries` (nine: kind, death year, license, edition) and `dict_articles` keyed by root and by word; `glossary_terms` served by the API; `collections`; `corpora/eras` for the timeline; root English gloss and Arabic core idea; per-passage difficulty.
+- **API:** every Arabic display field as `{ full, bare, translit }`; one-request word payload for the panel's sections; `?in_text=`; user, proposals, graphs, classroom and public data endpoints per `08-api-contract.md`, adapted to Arabic-first.
+- **Search:** OpenSearch with the design's Arabic analyser chain, one document per token occurrence for KWIC, alias-based reindex, outbox worker, the five Arabic assertions + Quran ones in CI (D11).
+- **Morphology:** Quran text uses the curated corpus analysis, with other candidates shown as "other analyses". Arbitrary text (hadith, books, user texts) goes through a server-side morphology service. Only two open, commercially safe engines give both root and wazn: farahidi, a Python port of AlKhalil Morpho Sys 2 (GPL-3.0, 11.5 MB, no dependencies), and CAMeL Tools (MIT) with the Camel Morph MSA database (CC BY 4.0). CAMeL's free default database writes every hamza or weak radical as `#`, so it cannot give our roots as they are. In a 3,000-token pilot against the corpus, farahidi's top root was right 91.3% of the time, the corpus root was among its candidates 98.5% of the time, and it found no analysis for 6.2% of tokens. Candidates are re-scored by a small log-linear model (farahidi's own priority, its in-context pick, a corpus prior, agreement with CAMeL, clitic count) and calibrated on held-out sūras. Results are shown as a percentage with a band (high ≥ 0.9 · medium · low < 0.6), "disputed" when the top two are close, and "no analysis" rather than a guess; a Tashaphyne root guess appears only labelled as a guess. Non-Quran text needs its own calibration set (D28). Results are cached by surface form. GPL engines run only on the server, and no model writes analyses.
+- **Users:** auth, roles (member/reviewer/instructor/admin), server-side word states, notes, progress, review cards, preferences, graphs, lookup events (opt-in, stated retention), anonymous→account migration that never destroys data.
+- **Infrastructure:** Postgres (truth), OpenSearch (derived), Redis (cache, rate limits, queues), object storage (releases, audio, uploads), WebSocket presence, Python workers (ingest, index, releases, analysis). Stack stays Next.js + FastAPI/Python.
 
-### Phase 7 — Personal layer (local-first) ✅
-Done: bookmarks, verse notes, history, reading resume, preferences, maps — in the browser only, export and delete all.
-- Bookmarks, notes, word states, reading progress/resume, preferences, trails — IndexedDB, export/delete
-**Exit:** all personal features work offline of any account; export/delete verified.
+## 6 · Phases
 
-### Phase 8 — Launch readiness 🔄
-Done: about/method (incl. wazn), sources & licenses, privacy, developers pages · SEO (per-page canonical + hreflang, sitemaps for every URL, robots, JSON-LD, share images) · axe WCAG 2.1 AA clean in both themes · CSP + security headers · production build with every content page cached (ISR) and no data needed at build · Docker images, production compose (Caddy TLS), CI, runbook (docs/DEPLOY.md) — all verified on local Docker. Performance: first-paint fonts only (711 → 443 KB), fonts compressed at the proxy; the longest surah page is 208 KB gzipped (2.2 MB raw, measured). 60 e2e tests and 156 Python tests pass. Deploy itself waits for the owner's go.
-- About / methodology / sources & licenses / privacy pages; developer page (API docs)
-- SEO: metadata, sitemaps, OG images for verses and roots, canonical/hreflang
-- a11y audit (axe), performance budgets, security headers/CSP, Dockerfiles, CI, deploy runbook
-**Exit:** all checks green; deployment needs only the owner's go + credentials.
+Every task is verified twice for UI (screens at 1440, 1024 and 390 px in light and dark, compared side by side with the prototype; numbers checked against data), committed on its own, and logged in DECISIONS.
 
-### Later horizons (planned separately, not in this release)
-Accounts + sync · published/forked graphs · community proposals with a scholarly review board · spaced-repetition review of root families · collections · hadith encyclopedia · full dictionary browsing · book reader · classroom.
+### P0 · Integrity reset — remove everything taken from another project ⬜
+- P0.1 Delete the copied files and their checksum manifest (`data/raw/lexica/SHA256SUMS-copied-from-judhur.txt`, the copied Lisan dump and evidence folders, the copied official corpus archive).
+- P0.2 Re-acquire from the original public sources and re-pin: Lane's Lexicon XML from Perseus; the corpus morphology file from corpus.quran.com or its documented public mirrors (hash-matched); rebuild and verify the text hash and every count, explaining any change.
+- P0.3 Rewrite the docs: remove every passage that cites or compares with the other project (DECISIONS, PLAN, research 00–02, code docstrings); re-derive any decision that was borrowed and put it to the owner (§2 laws, the non-commercial assumption → D2).
+- P0.4 Rename the product identity after D1: packages, modules, storage keys (with a one-time local migration), compose names, UI name, metadata, docs.
+- P0.5 Exit: a repository-wide search for the other project's name and paths returns nothing (checked against a known positive first); full tests, build and text hash green.
 
-## 4 · Owner decisions pending (tracked here, surfaced in the final report)
-- Public product name (working title جُذور; "Jadhr" in the handoff collides with jadhr.app)
-- Relationship to the sibling `Judhur` project (this repo is built fresh per the new brief; Judhur's verified research reused)
-- Accounts/PII policy (Judhur decided "no accounts"; the new design assumes optional accounts)
-- Hosting + credentials; domain
+### P1 · Foundations for parity ⬜
+- P1.1 Generic text model (§5) with the Quran migrated into it; existing Quran routes keep working.
+- P1.2 New content entities (§5) with migrations and loaders; glossary moved to the database and API.
+- P1.3 API envelope `{full, bare, translit}`; word payload v2 with every panel section and deterministic next steps seeded by word + dataset version.
+- P1.3a One normalisation spec for the whole product — the design states it three different ways and none of them strips the Quran's annotation marks or folds alef wasla — implemented once (Python + TypeScript, shared test vectors) and used by search, matching and the glossary matcher (the prototype's matcher cannot match Arabic terms at all).
+- P1.3b Stable, collision-free slugs for roots, lemmas and patterns (the design's pattern keys collide: `fa3ala` is both فَعَلَ and فَعَالَة); slugs never change between dataset releases because citations point at them.
+- P1.4 OpenSearch in dev and prod compose: analyser chain, indices (words, roots, patterns, token occurrences, dictionary articles), reindex command, outbox worker, the Arabic assertions in CI (D11).
+- P1.5 Design-system audit: tokens (reconciled with the contrast fixes), type roles (KFGQPC for Quran, Amiri for classical text, Plex Sans Arabic/Plex Sans for UI, Plex Mono for numbers), component recipes, motion, breakpoints 1200/900/390, accessibility floor.
+- P1.6 Shared shell per design §1.4 in Arabic: nav (اقرأ · استكشف · المكتبة · ابحث في المعجم · الفهرس السياقي · المحلّل · الخريطة · دفتري · طلبات التعديل · الفصل · البيانات), horizontally scrolling nav with pinned actions, context strip, sign-in; routes for all 15 screens with real URL parameters (design §1.3), written back on every change (most prototype screens only read them, SHL-S04); every prototype link to the missing Reader v4 mapped to our reader routes, with a verse and word selector for search and concordance hits (SHL-S02). Inventory: SHL.
+- P1.7 Phone designs the handoff does not provide: its phone pass covered only the Reader. Measured on the prototypes at 390 px (2026-10-02): Hub overflows by 183 px, Profile 221, Review queue 174, Analyser 164, Data & API 58, Classroom 51, and 13 of 15 screens have 13–36 controls under 40 px. For every screen I produce phone layouts within the design system (sheets, stacked columns, 44 px targets), show them to the owner, then build them with the screen. The same holds for dark mode: eleven screens have no dark variant or theme toggle in the prototype — Hub, Collections, Library, Search, Concordance and Analyser (SHL-S03) and the five community pages (DEF-02); we derive them from the dark tokens, including the colours the prototype hard-codes for light only (amber, scrims, RDR-472).
+- P1.7a Identifiers namespaced for the ecosystem from day one (Quran, hadith, dictionary, books, user texts) so links and citations never collide when new texts arrive.
+- P1.8 Rights and provenance audit of what is already built, before any new content lands. Found by the research so far:
+  - the lexica we display come from Shamela typings whose dataset card says "Research and personal use" (D22);
+  - the Ibn Kathīr edition we serve carries a modern editor's footnotes (`[[…]]`, hadith sourcing) — strip them or confirm rights, and run the same check on every shipped tafsir and translation against QuranEnc's no-modification terms;
+  - `data/raw/tanzil/quran-uthmani.txt`, pinned in `data/sources.yaml` as "Uthmani 1.1", is byte-identical to the no-pause-marks file (sha256 `bf4f57b9…` for both) — re-acquire, re-pin, re-run the alignment, and label each file truthfully;
+  - Tanzil's text prepends the basmala to verse 1 of most sūras, which shifts word indexes by 4 against the corpus and the audio timings — the join must strip it, with a test;
+  - the corpus folder bundles Tanzil 1.0.2 under CC BY-ND — confirm it never reaches any output;
+  - research 02 §5.1 labels Shamela 4 folder numbers as book ids (folder 6119 is book 23636, 1462 is 1687) — correct the labels and the sample file names.
+  
+  Every source in `data/sources.yaml` is then re-read against its current terms page, the verbatim clause is stored next to it, and any change goes to the owner.
+- P1.9 Exit: every route renders its designed skeleton in both locales and themes at three widths; the word payload carries every section; search assertions green; the P1.8 audit closed with every finding fixed or put to the owner.
+
+### P2 · Reader v5, Quran-first ⬜ (inventory Part 1, RDR-001…615)
+- P2.0 Reconcile before building: resolve each Reader SPEC≠CODE item (RDR-486…515) by the D21 rule and write the resolution next to it. Proposed resolutions: one mode state machine (ask · empty · word · verse · index · review) written to the URL; one section order in both layouts (the spec's); Where next closes every entry, outside Meanings; term jumps open and scroll; dotted terms everywhere the spec names; suggest requires a rationale and accepts sources; omnibox with arrow keys and listbox semantics; citation formats as the union (Chicago, APA, MLA, BibTeX, RIS, plain); marginalia in the margin on wide screens and inline on narrow; review per the spec (scheduler, four grades, Space to flip) keeping the prototype's per-word reveal; verse tools as the union of both lists plus tafsir.
+- P2.1 Three-column layout mirrored for Arabic (RDR-542): rail on the right (sūra index with juzʾ/ḥizb/page navigation, contents with vocabulary coverage and progress, roots of this sūra — renamed so it never collides with mushaf pages), reading surface, docked resizable panel on the left with its handle on the inner edge; progress hairline showing the position in the sūra and the mushaf; header with every designed control and its breakpoint visibility; header meta = sūra name, Makki/Madani, verse count, juzʾ (RDR-574).
+- P2.2 Modes with first-visit logic built on an explicit "has visited" flag (the prototype's falsy chapter 0 sends returning readers back to Ask forever, RDR-516); every state written to the address bar on every navigation and read back from it (`/quran/2/255`, `?w=`, `?mode=`, `?q=`) so back, forward and sharing work — the prototype never writes the URL (RDR-449); `?w=` goes through the same selection path as a tap (RDR-539).
+- P2.3 Ask mode in Arabic: heading, placeholder and Quranic "Try" words (عِلْم، رَحْمَة، صَبْر، قَلْب); clitic-aware and Uthmani-aware matching through lemma lookup; result card (headword, transliteration, plain meaning, recitation slice, root chip + cousins, one well-known verse with its reference, Go deeper / Read / Save); phone four-card deck المعنى · الأقارب · في القرآن · الوزن with its index reset when the word changes (RDR-530); the chat-alphabet input kept for the English UI.
+- P2.4 Reading surface: every word a focusable control with keyboard navigation between words, verses and sūras (the prototype's words are unfocusable spans, RDR-466) and `lang`/`dir` on every Arabic and English run (RDR-465); particles and pronouns clickable with their own entries — no stop-list (RDR-548); the muqaṭṭaʿāt as tokens with their own entry and no root; verse furniture (end-of-verse marker with Arabic-Indic number, waqf signs, sajda, rubʿ al-ḥizb) non-interactive; root-family underline promoted as a core feature (RDR-553); word states as an opt-in study mode, off by default on the mushaf, no automatic "learning" on tap (D20, RDR-552); inline gloss on narrow widths; marginalia; verse tools (union, P2.0) on hover and 420 ms long-press; resume that opens on the last verse read, with progress advancing on reading as well as taps (RDR-572); coverage per sūra ("you know 78% of the words in al-Mulk") instead of easy/stretch labels (RDR-571); transliteration and translation lines (in the Arabic UI off by default, with al-Muyassar's plain Arabic explanation as an option); A−/A+; standard-spelling view per D7.
+- P2.5 Layered panel: header (headword, this occurrence's surface form and location, its segments prefix·stem·suffix from the corpus, root chip with gloss, transliteration, POS, pattern, frequency, history, index, close, open in graph, cite, star) + sections — Meanings Arabic-first (numbered sourced senses, suggest an edit, propose a sense, report an error), Grammar here from the corpus morphology with Arabic grammar labels (مرفوع، منصوب، مجرور، فعل ماضٍ…) and the English set for the English UI, Word family grouped by pattern with function (Quran-attested lemmas with counts by default, all Arabic once P11.1 lands), Shapes table showing every family word per pattern (the prototype shows one, RDR-529), Old dictionaries (list / side-by-side / apparatus, filter chips, provenance on every article; Arabic titles first, death dates in AH with CE second; side-by-side, apparatus and timeline appear only where real per-sense alignment exists, P3.4a), Across the centuries, In the Quran (every occurrence of the lemma, whole-root toggle, grouped by surface form, sūra filter, Makki/Madani split, virtualised — ع ل م alone has 854), Where next; persisted open state; panel-as-tabs preference; every link into a section opens and scrolls to it in both layouts (RDR-527).
+- P2.5a Verse mode — the vision's "click a verse → tafsir", absent from the prototype (RDR-556): tapping the verse number switches the panel to the verse: tafsirs as layers or tabs, translations with credit, recitation, the verse's roots, related verses computed over the whole Quran and weighted by root rarity, notes, cite — and, as P3.9 lands, its occasion of revelation, the verses the tafsirs cite to explain it, and the people and places it mentions.
+- P2.6 Plain-language layer completed: toggle in the header and in preferences, terms from the API, jump actions into panel sections, dotted terms in every place the design names; the 29 terms rewritten for Arabic readers (who already know جذر and وزن) and the missing ones added (Form III, participle, jussive, definite/indefinite…, RDR-281); term detection with Unicode-aware boundaries (JavaScript `\b` cannot match Arabic, RDR-563).
+- P2.7 Curiosity trails: Where next (cousin · verse · shape), breadcrumb after two distinct words, truncation on click, trail map drawer, save to Notebook, open in editor, new trail; verses and roots recorded as steps too (RDR-568).
+- P2.8 Overlays: omnibox over verses, words, roots, patterns and passages, understanding every verse-reference form (2:255, ٢:٢٥٥, البقرة 255, sūra names with or without ال, juzʾ and page numbers, RDR-565); cite/share per target with Quran conventions («[البقرة: ٢٥٥]», Q 2:255, word location 2:255:3) and Arabic dictionary citations («ابن منظور، لسان العرب، مادة ع ل م»), the real access date, scope-correct permalinks (RDR-522); onboarding beats in Arabic with a Quranic demo word (عِلْمًا in 20:114); term cards; trail map; review deck (P5). Every dialog has its role, label, focus trap and focus return (RDR-461).
+- P2.9 Phone: bottom sheet half/full with grabber and swipe that never slides under the header (RDR-532), the tapped verse scrolled above the half sheet (RDR-416), ⋯ menu, header collapse, every target ≥ 44 px, every overlay laid out for 390 px (the review in-context card needs a real phone layout, RDR-420).
+- P2.10 Keep what the design lacks but a Quran reader needs: tafsir (7 works + side-by-side comparison), translations, recitation by choice of reciter with word highlighting from the timings, repeat and continuous play with follow-along scroll, speed control mapped to the prototype's 1× / 0.75× / 0.5× (never synthesised speech for the Quran, RDR-554), page/juzʾ navigation, Copy with the reference and translator credit (RDR-555).
+- P2.10a Scale: al-Baqara is 286 verses and about 6,100 words; occurrence indexes precomputed on the server, long lists virtualised, the largest sūra inside the performance budget (RDR-573).
+- P2.11 Exit ◆: journey A end to end on desktop and phone in both themes; RDR coverage 100% or each exception approved by the owner; a regression test for each prototype bug in RDR-516…540 that applies to us.
+
+### P3 · Lexicon depth — the content behind the panel ⬜
+
+The design's panel stands on content that the prototype faked: every sense list, every "which dictionary attests this sense" mark, every article and every timeline dot is generated placeholder text (`docs/research/05-design-inventory.md`, content model §4). Our law L2 forbids generating it. So P3 is two things: mechanical assembly of everything that sources already state (cited), and an editorial program — human editors, with tools — for what only scholars can write. The prototype's own sample data also contains linguistic errors (it ties «العليم» in 2:32 to the wrong lemma), so it is used as a UI fixture only, never as data.
+
+- P3.0 **Editorial workbench**: an internal, role-protected tool where the editorial board writes and reviews, with sources and two-person review, everything marked "editorial" below — root glosses, pattern functions and plain explanations, sense lists, sense ↔ source links, collections, glossary. It reuses the proposal/review mechanics of P7 and records every change with its author and source. Candidates are pre-filled only by extraction from cited sources (never generated), for editors to confirm or correct.
+- P3.1 Meanings: import KFGQPC al-Muyassar fī Gharīb al-Qurʾān aligned to every word occurrence (a contextual meaning per occurrence); Ibn Qutaybah (exists); al-Mufradat's senses per lemma; Lane's English senses split per lemma; English short gloss per lemma aggregated from the corpus glosses, then reviewed. Sense lists per lemma are assembled from these in the workbench, numbered, each with its sources (D6). The wujūh books give, for the words they cover, each sense with the verses where the Quran uses it (Ibn al-Jawzī: 313 headings, 236 roots; al-Dāmaghānī: about 312 Quranic roots) — the closest classical equivalent to "which sense is meant in this verse", and attributed as such.
+- P3.2 Nine dictionaries: the four we lack have no root-split open edition, so we split them ourselves from the Shamela 4 typings (display-only per D22, apparatus stripped, edition cited), each checked against the OpenITI copy of the same edition as a test oracle. Tāj al-ʿArūs: split on the table-of-contents spans (12,719 headings; estimated ≥ 99% precise), strip the ﴿﴾ that the typing put around headwords. al-Qāmūs: split on its bullets and align each to Tāj's root list within its bāb/faṣl (Tāj follows al-Qāmūs entry by entry; a first prototype aligned 90–94%, target ≥ 98% after review). al-ʿAyn and Tahdhīb: a parser for their permutation groups, using the «مستعمل» lists as a checklist (estimated ≥ 97% and ≥ 95%). Per-root and per-word articles; kinds and death years (AH first, CE second); every split reviewed where the parser is unsure. Long term (D22): rebase Tāj and al-Qāmūs on public-domain printings (Khayriyya 1306 AH; Bulaq 1883–85) through the OCR pipeline (P11.3a) — al-ʿAyn and Tahdhīb have no public-domain printing.
+- P3.3 Pattern catalog: every pattern occurring in the Quran, with function and plain explanation in Arabic and English from named sarf works; expert review (D15).
+- P3.4 Root records: Arabic core idea extracted from Maqāyīs's «أصل … يدلّ على …» (cited; roots Maqāyīs splits into several uṣūl keep all of them); English gloss seeded from Lane's root headings and the aggregated word glosses, confirmed in the workbench.
+- P3.4a Sense ↔ source links ("reviewed · sources: …", "first in <dictionary> (<year>)", the timeline's dots): built in the workbench, article by article, starting with the most frequent roots; until a sense is linked, the UI says so instead of implying agreement.
+- P3.5 Timeline: dictionaries by death year; corpora by era (Quran 632, hadith collections by compilation, poetry only with a licensed corpus).
+- P3.6 Difficulty per verse/passage: a defined, documented, stable function.
+- P3.7 Word audio coverage per D10; a missing file hides the button.
+- P3.7a Root homonymy and loanwords: flag words that share root letters but not meaning (e.g. سِجِلّ "scroll" vs سِجِّيل "baked clay", described by the lexicographers as a loanword) and proper nouns or loanwords marked «مُعرَّب», each with its lexicon source. The family view and the graph show them apart, so the product never teaches that shared letters mean shared meaning.
+- P3.8 Particles and function words: an entry for every particle and pronoun (function, examples, no root), from the corpus's part-of-speech tags and the classical works on particles (Ibn Hishām's Mughnī al-Labīb, al-Murādī's al-Janā al-Dānī — public-domain authors), reviewed by the editorial board (RDR-548).
+- P3.9 Quran knowledge layers — the Quran side of the encyclopedia (V8), shown in the verse mode (P2.5a) and on sūra pages, each with its source and licence:
+  - Sūra cards: names, Makki/Madani, revelation order, verse counts by counting system, virtues and aims. Type and order from Tanzil's metadata (CC BY; agrees with three independent sources); the Arabic introductions and aims from the Tafsir Center's database (CC BY 4.0; commercial scope to be confirmed in writing, D19), with their editors' footnote markers cleaned.
+  - Makki/Madani per verse: an exceptions table for the 41 sūras with verse-level exceptions, seeded from Tanzil's notes and checked against the Tafsir Center's text, every opinion attributed; the mushaf heading stays as printed.
+  - Occasions of revelation (asbāb al-nuzūl): the Tafsir Center's 201 vetted entries (narration with its takhrīj) by default; al-Wāḥidī and al-Suyūṭī's full texts (OpenITI, NC-SA) as a labelled classical layer keyed to verse ranges, every narration with its grading where one exists (D26).
+  - Verse cross-references: our own extraction of the verses each tafsir cites while explaining a verse — Ibn Kathīr's editor references parse at 98.8% accuracy in a sample — with the source tafsir, the passage and a confidence; QurSim only as the evaluation set (D25).
+  - People, places, nations and events: an in-house entity registry with Arabic names and aliases (إبليس/الشيطان), Wikidata ids (CC0) as the spine, mentions seeded from the corpus proper-noun tags; pronoun referents from QurAna shown unchanged with credit pending permission (D25).
+  - Waqf signs: each sign explained in the plain-language layer, positions from Tanzil keyed to our words.
+- P3.10 Exit ◆: for 200 sampled words reviewed against sources, every panel section is populated or shows an honest empty state; expert packets delivered; every P3.9 layer shows its source and licence on screen.
+
+### P4 · Research screens ⬜ (inventory SRC, CON, ANA, LIB)
+- P4.1 Search page (SRC): the five Arabic search assertions of the design pass — the prototype fails two (kitab → kitāb; a root query returning its family) and does not fold ة/ى/ؤ/ئ (SHL-S05); kinds with counts and toggles, sources filter, root-letter builder in the sidebar, "understood as" label, results for words/roots/patterns/passages, empty state → Ask.
+- P4.2 Concordance page (CON): a real pattern (wazn) filter as the spec asks — the prototype's "Form" filter and "By inflected form" both group by lemma (SHL-S06); KWIC with columns hugging the keyword and clear direction labels, sort following/preceding/source, form chips, texts filter, plus Quran filters (part of speech, surah, Makki/Madani), distribution (per text, chapter, era), Export CSV, fallback chain for the root; an alphabetical root index in the tradition of al-Muʿjam al-Mufahras as its entry page.
+- P4.3 Analyser (ANA): table and interlinear views, segment chips, root·wazn, analysis, confidence with "to review" counts and choose-analysis, Try chips, Copy CoNLL-U; Quran text exact from the corpus, other text through the morphology service.
+- P4.4 Library (LIB): shelf (Quran, hadith collections, classical books, my texts) with progress and words known, continue card, filters, add a text (paste; URL; PDF or photo through the P11.3a pipeline with preview-and-correct; private by default, D9a).
+- P4.5 Exit ◆: any word findable four ways across every loaded text; inventory sections closed.
+
+### P5 · Explore and study ⬜ (inventory HUB, COL, NTB; review deck RDR §25)
+- P5.1 Hub: masthead, search, context strip, the three primary cards (Read · Look up · Map), "everything on the platform" grid linking every surface, local-first sign-in prompt, footer (data license, version, contribute, API).
+- P5.2 Collections: word of the day (deterministic by date), progress without streaks, curated Quranic sets (editorially chosen, sourced), set as a map, study swipe deck (Skip/Keep → learning + starred) — built from the spec text alone, because the prototype's plan marks it done but no file contains it.
+- P5.3 Review deck: root-family cards and "In context" with real verses; grades → spaced-repetition scheduler; due count in the header.
+- P5.4 Notebook: notes (word, verse, marginalia, saved trails) with search, grouping and tags; journal from the session log.
+- P5.5 Exit ◆: journey B end to end without an account.
+
+### P6 · Accounts and sync (local-first) 🔒 D3 (inventory PRF, SHR, MAP)
+- P6.1 Auth, sessions, roles; privacy policy; lookup events opt-in with stated retention.
+- P6.2 Server-side user data with local cache; anonymous → account migration (newest wins per record, nothing destroyed, 30-day recoverable copy).
+- P6.3 Profile `/me`: contributions, graphs, library, journal, counts, data controls (export everything, export texts, two-step delete), account settings. Export and delete cover every stored item — a test enumerates all storage keys and server tables (the prototype misses five).
+- P6.4 Exit: sign-in on a second device restores everything; delete removes everything; migration conflicts tested.
+
+### P7 · Contribution and moderation 🔒 D4 (inventory RVQ; suggest flows RDR §23)
+- P7.1 Proposals: suggest an edit, propose a sense, attestation, error report; rationale and sources required; sign-in asked after writing, never before.
+- P7.2 Review queue: filters (Open · Mine · Approved · Merged · Declined · Changes requested — the prototype and the docs differ, we carry the union), two distinct approvals, no self-approve and no double-approve enforced in the database and the API (the prototype only shows the warning text, it never checks), "request changes" as a real status, notes, selection moves on, per-filter empty states; proposals can never touch the Quranic text.
+- P7.3 Merge: sense rewritten with a credit line, revision history and revert, changelog entry, contributor profile; competing senses per D4; abuse controls.
+- P7.4 Exit ◆: journey D end to end with two real reviewer accounts.
+
+### P8 · Graph platform ⬜ (inventory EDT, QAN, HWF) 🔒 D5
+- P8.1 Editor parity: palette (card types with help, roots list, find a card), canvas states (map view at low zoom, zoom control), node kinds root/form/word/sentence/description + frames, design card anatomy with editable fields and tags, fold, edges with handles, quick-add, marquee, keyboard help, entry sidebar (Meaning/Settings/Comments with dictionaries per card), extract forms, focus, server autosave, comments.
+- P8.1a Graph document model: a `graphType` (root · topic · meaning) that adapts the palette, the connection rules and the layout; typed edges (`rel`: derives, realises, attests, synonym-of, near-in-meaning, opposite-of, part-of-topic…); deterministic card ids from data keys (`root:…`, `pattern:…`, `lemma:…`, `verse:2:255`) so dedupe, forks and proposals stay correct; versioned with `doc_version`.
+- P8.2 Root graphs generated from the full data (root → patterns → words → verses), readable at every zoom with clear spacing; verse cards in the Quran font with the word highlighted, wider than word cards; extraction pages for frequent words ("10 of 105 verses", filter by surah/form); particles skipped by default when linking a verse. The generated graph is shown read-only on every root page (the same component), and editing it creates the reader's own copy.
+- P8.3 Topic graphs: no open topic index is complete and clean. Quranpedia's Arabic tree (6,100 topics, up to 4 levels, human-made, a licence that allows republishing with credit and version) covers 3,673 verses — 88.8% of sūras 1–39 and almost nothing after; QSAC covers all 6,236 verses under CC BY 4.0 but in English and labelled with a language model. So: an editorial Arabic taxonomy in the workbench — top level from La Beaume's public-domain index (1878, 18 chapters) merged with Quranpedia's roots — with Quranpedia's assignments imported with credit, QSAC mapped in only as editor-side candidates for sūras 40–114 (D29), every verse–topic link carrying its source, version, reviewer and confidence, and coverage per sūra reported. Topic nodes for people and places share the P3.9 entity registry. User-defined topics sit beside the editorial ones and are never mixed into them.
+- P8.4 Meaning graphs: no open dataset gives Quranic meaning relations (research 06, Part 1), so we build an editorial relation table in the workbench — one row per edge (near-synonym with its «فرق» note, contrast, antonym, wujūh sense, ḍidd, field member), each with source work, locator, quote, verses, editor and review status. Seeds, parsed from public-domain classical works: al-ʿAskarī's al-Furūq al-Lughawiyya (884 «الفرق بين» entries, 211 Quranic root pairs), the wujūh books (Ibn al-Jawzī's Nuzhat al-Aʿyun, al-Dāmaghānī, al-ʿAskarī's al-Wujūh), Ibn al-Anbārī's al-Aḍdād, and for semantic fields Ibn Sīda's al-Mukhaṣṣaṣ and al-Thaʿālibī's Fiqh al-Lugha; Arabic WordNet v2 only as editor-side candidates (modern Arabic, not Quranic). Relations are modelled as near-synonymy plus the classical «فرق», not as full synonymy, which al-ʿAskarī and Ibn Fāris reject. Users add their own links with a relation label.
+- P8.5 Publish → immutable snapshot at `/g/<slug>`, the real editor read-only, display options, selected-card strip, fork with counts, cite, embed snippet + postMessage, `doc_version` fallback.
+- P8.6 Presence (WebSocket) per D5; split view `/split`.
+- P8.6a Phone editor — not in the design: the prototype has no phone layout (at 390 px the palette and sidebar squeeze the canvas to nothing). We design one: full-screen canvas, palette and entry as bottom sheets, long-press for card actions, read-only by default with an explicit edit mode. Mock-ups go to the owner at the P8 checkpoint before building.
+- P8.7 Exit ◆: journey E end to end, including an embed on an external test page.
+
+### P9 · Classroom 🔒 D13 (inventory CLS)
+- P9.1 Cohorts, membership, roles; lessons from verses/passages and roots.
+- P9.2 Heat-map (lookups/notes/time; confirmed/struggling), class stats, most looked-up roots, lesson notes, nudges.
+- P9.3 Shared workspace mounting the real editor, activity feed in the product's own vocabulary, instructor confirmation per card.
+- P9.4 Exit ◆: journey F with a test cohort.
+
+### P10 · Data & API — the scholarly surface 🔒 D2, D14 (inventory DAT)
+- P10.1 Release pipeline: JSON, CSV, TEI, LMF artefacts — real TEI and LMF, validated against their schemas (the prototype's are JSON with another extension) — versioned, immutable, archived with a DOI; only redistributable layers; no invented "used by" numbers or timings.
+- P10.2 Public API with keys, its own rate limits, provenance in every response; playground with timing; endpoint docs in Arabic and English.
+- P10.3 Data page: downloads, statistics, changelog (live, re-read on focus), citation formats, sources and licenses per layer.
+- P10.4 Exit ◆: a citation copied from the site resolves to an immutable artefact.
+
+### P11 · The ecosystem — dictionary, hadith, books 🔒 D8, D9
+- P11.1 Arabic dictionary as its own surface: every root and word in the nine lexica (not only Quranic ones), entry pages, index browsing, Quran attestations as one layer among many.
+- P11.2 Hadith encyclopedia (sources per D8): collections in the generic text model, isnād and matn stored apart, every grading with its grader and the edition it comes from, empty or missing entries in a source (89 of 92 introduction entries in one Muslim edition are empty) patched only from a named cross-check, never silently; Arabic book and chapter titles (the open compilation has English section names only); narrator profiles linked from each name in the isnād; morphological analysis with confidence, links from hadith words to Quran roots, concordance across Quran + hadith, collections on the timeline.
+- P11.3 Book reader: curated classical books and user texts in the same reader with the dictionary panel.
+  - Catalogue: OpenITI 2025.1.9 metadata (9,108 titles, 3,558 authors), filtered by the D9 copyright gate, cleaned versions only, no uncorrected OCR. Ids cross-walked across OpenITI, shamela.ws, the Shamela 4 dump and turath (`Shamela0007798` = 7798 everywhere; verified on three works).
+  - Citation model: work → edition → volume → printed page → block → word. Key `urn:cts:arabicLit:<OpenITI work>.<version>:<volume.page.paragraph>` pinned to a release. The human form is Arabic: «الطبري، جامع البيان، ت. التركي (هجر ١٤٢٢/٢٠٠١)، ١/٣، ف٢». A printed page is cited only when the edition card says its numbering matches print (6,940 of 8,492 Shamela books); otherwise section and paragraph. OpenITI milestones are never keys, because they are regenerated.
+  - Only the author's text: footnotes, footnote markers, the editor's introduction (a non-author page flag), bracketed folio numbers and editorial insertions are stripped; «[سورة: آية]» references become Quran links.
+  - Words linked to roots: word indexes computed on normalised text so the unvowelled OpenITI and vowelled Shamela copies align; analysis through the morphology service (§5) with confidence shown; KITAB's text-reuse data (NC-SA) links passages that quote each other.
+- P11.3a Text intake pipeline (user texts and curated books, D9a):
+  - Paste: normalise only.
+  - URL: main-text extraction (trafilatura ≥ 1.8 or Readability); bidi controls stripped, NFC.
+  - PDF: per-page triage of the text layer — presentation forms folded, visual order reversed before folding, a bad layer detected (private-use characters, low lexicon hit rate, reversed text scoring higher, letters split by spaces) and sent to OCR.
+  - OCR: Kraken with the OpenITI print model (CC0) as the main engine — 3.1% character error on 19th–20th-century books in an independent study, against 24.6% for Tesseract; fine-tuned per typeface from our corrections. A second engine per D9a, lines where the two disagree flagged for review.
+  - Correction: an editor with the line image beside its text, page status auto / needs review / verified, corrections stored as ALTO/PageXML and fed back into training.
+  - Normalisation: Persian look-alike letters mapped to Arabic, tatweel removed only in the search form, printed page number and PDF page index kept apart; diacritics are kept as printed and never added automatically.
+  - Licences: permissive stack only — no AGPL PyMuPDF, no Datalab-licensed models (Surya, Marker, Chandra), no MinerU, Baseer or Qwen2.5-VL-3B.
+  - Expectations stated in the UI: clean modern scans 2–5% character error, classical letterpress 3–15%, lithographs unusable without per-book training, diacritics the weakest part everywhere — so every vocalised page is checked by a person before it is called verified.
+- P11.4 Cross-linking: every root shows its life across Quran, hadith, books and lexica; search and concordance span all texts with source filters.
+- P11.5 Exit ◆: one root followed from a hadith to the Quran to a lexicon article to a book passage without leaving the product.
+
+### P12 · Launch readiness (continuous, closed last) ⬜
+- Journeys A–F as e2e tests on desktop and phone; axe AA in both themes on every screen and overlay; performance budgets (panel payload < 200 ms p95, interaction < 50 ms, largest-surah budget); offline scope (service worker for the current surah/text and saved items); monitoring, error tracking, backups; security review; SEO for every new surface; expert sign-off on linguistic content; licensing gates; deploy only on the owner's go.
+
+## 7 · Order, dependencies and review rhythm
+
+**Inventory in scope per phase** (from `docs/research/05-design-inventory.md`; the consolidated defects DEF-01…14 are closed in the phase of the screen they belong to):
+
+| Phase | Inventory | Items |
+|---|---|---|
+| P1 | SHL (shell, seed, cross-screen) | 78 |
+| P2 | RDR (Reader) | 615 |
+| P4 | SRC 53 · CON 54 · ANA 53 · LIB 59 | 219 |
+| P5 | HUB 61 · COL 63 · NTB 69 | 193 |
+| P6 | PRF 44 · SHR 25 · MAP 6 | 75 |
+| P7 | RVQ | 101 |
+| P8 | EDT 348 · QAN 25 · HWF 58 | 431 |
+| P9 | CLS | 57 |
+| P10 | DAT | 67 |
+| across P5–P10 | DEF | 14 |
+| **Total** | | **1,850** |
+
+- P0 first (the owner's condition). P1 next (everything depends on it). Then P2 with P3 (screen and content together), then P4 and P5. P6 → P7, and P8 → P9, follow the decisions they wait on. P10 and P11 start their data work as soon as P1 lands, and their screens after P4.
+- At each ◆ the owner reviews screens side by side with the prototype, the parity coverage numbers and the journeys before the next phase starts. Between checkpoints I work unattended and log progress in DECISIONS.
+
+## 8 · Beyond the vision (my proposals — for the owner's review)
+
+Each proposal: what it is · why it serves the reader · cost (S/M/L) · risk. Tier 1 = I recommend building it inside the phase named; Tier 2 = strong, needs a decision or data; Tier 3 = later horizon, worth keeping in view. None of these replaces any part of §1 or the design.
+
+### Tier 1 — inside the phases
+- B1 **Mushaf page mode** (P2): the 604-page Madinah layout line by line, every word still interactive, page turns on phones · how most people read and memorise · M · needs per-word line data (research report) and careful justification with the official font.
+- B2 **Interlinear word-by-word mode** (P2): under each word its meaning (al-Muyassar gharib / English gloss), its root and pattern · the most-requested learner view on Quran sites · M · density on phones.
+- B3 **Tafsir side by side, word in focus** (P2): two to three tafsirs in columns with the clicked word highlighted where each explains it · turns tafsir reading into comparison, like the lexica apparatus · M · passage alignment differs per work.
+- B4 **"Hear the root" playlist** (P2/P5): play every occurrence of a root or a word from licensed recitation slices, verse by verse · hearing a family across the Quran is a powerful memory aid · S (slices exist) · licensing per D2.
+- B5 **Quranic Arabic path by frequency** (P5): lessons ordered by how much of the Quran's text each root covers (computed), feeding the review deck · a measurable, motivating route to understanding the Quran in Arabic, without streaks · M · curriculum needs expert review.
+- B6 **Revelation-order reading** (P2): read in the traditional chronological order (Tanzil's metadata, the Egyptian standard order, already held), with a clear note that the order is traditional scholarship and per-verse exceptions from P3.9 · M · must state its source and uncertainty (D26).
+- B7 **Exact share images** (P12): verse and word cards rendered by a real browser on the server so the Quranic font and marks are exact (the current renderer cannot) · sharing is how this spreads · S/M · rendering cost, cache.
+- B8 **Clear Arabic naming of study vs editorial review** (P1): «مراجعة الجذور» for study, «طلبات التعديل» for the editorial queue — the design itself flags the overloaded "Review" · S · none.
+- B8a **"Why do sites give different counts?"** (P4): one page per root answering the common search «كم مرة ذكرت … في القرآن» with our exact count, what was counted, the dataset version, and why other sites differ (the web reports ع ل م as 854, 772, 728, 856 or 582) · trust and search traffic · S · none.
+- B9 **Accessibility beyond AA** (P12): screen-reader reading mode with verse-by-verse navigation and audio-first listening, dyslexia-friendly spacing preset, high-contrast theme · readers with disabilities deserve the full Quran experience · M · testing with real users.
+
+### Tier 2 — strong, needs a decision or data
+- B10 **Syntax (iʿrāb) view** (P2/P4): each word's role and case with Arabic names (MASAQ, 96.6% of words), and a real dependency tree per verse where the corpus treebank covers it (sūras 1–8, 9:1–91 and 59–114 — 42% of words); "Grammar here" links into it · the deepest layer of understanding the words · M/L · licences and coverage per D23; the missing roles of perfect verbs (e.g. قال، كان) filled by the editorial board, not a model.
+- B11 **Similar verses (mutashābihāt) explorer** (P2): verses that memorisers confuse, with their differences highlighted and typed (wording, word swap, addition or omission, ending, order, pronoun shift) · essential for those memorising · M · seeded from Waqar144's curated list (1,344 entries, free use with credit; a formal licence requested, D19), wording similarity computed by our own reimplementation of QUL's open-source matching method over our licensed text.
+- B12 **Meaning search over human sources** (P4): search inside tafsir, gharib and translation texts ("verses about patience") — retrieval only, never generated answers · S/M · ranking quality.
+- B13 **Hifz companion** (P5): repeat a range with a reciter, hide words progressively, root-family hints for hard words, progress by juz, all local-first · M · scope creep; keep it simple.
+- B14 **More languages** (P10/P11): QuranEnc's licensed translations (Urdu, Indonesian, Turkish, French, Bengali…) for glosses and verse translation, later UI locales · reach beyond Arabic and English readers · M · each translation's terms.
+- B15 **Offline app** (P12): installable PWA with downloadable surahs, tafsirs and saved items · readers in low-connectivity places · M · storage budget.
+- B16 **"My roots" map** (P5): a personal graph of the roots met, growing over time — progress made visible without streaks · S/M · none.
+- B17 **Public transparency page** (P10): live coverage, disagreements, open review items and expert sign-offs per layer · trust in a sensitive domain · S · keeping it current.
+- B24 **Tajwīd colouring** (P2): optional colour-coded tajwīd rules on the mushaf text (18 rules from cpfair's data, CC BY 4.0, remapped onto our text) with each rule explained in the plain-language layer · a daily need for reciters · M · offsets must be remapped and checked (D24).
+- B25 **People and places of the Quran** (P3.9 + P8): a page per prophet, nation, place and event with every verse that mentions it (by name or by pronoun), opening into a topic graph · turns the registry into an explorable encyclopedia · M · licences per D25.
+
+### Tier 3 — later horizon
+- B18 **Embeddable widgets** (word card, root family, verse with tafsir) for teachers' sites and blogs · M.
+- B19 **Teacher packs**: printable root-family worksheets generated from the data (no generated text) for madrasas and study circles · M.
+- B20 **Qirāʾāt layer** per word: the KFGQPC riwāyāt texts (Warsh, Qālūn, al-Dūrī, al-Sūsī, Shuʿba, al-Bazzī, Qunbul) aligned word by word to Ḥafṣ (quran-ws/quran-text, CC BY 4.0, pinned and cross-checked against the KFGQPC files), verse numbering joined across counting systems (qiraat-ayah-map, CC BY 4.0) · shows that the Quran was received in several authentic readings and where they differ · L · scope per D24.
+- B21 **Verse ↔ hadith bridge**: hadiths that cite or explain a verse, once the hadith encyclopedia lands · M/L.
+- B22 **Research access for AI assistants**: a read-only, provenance-carrying endpoint (e.g. an MCP server) so assistants quote our cited data instead of inventing — serving data, never generating it · M · must preserve L2.
+- B23 **Linked data**: our roots and lemmas mapped to Wikidata lexemes (it already has a property for corpus root ids), our ids published for others to link · makes the dataset discoverable and citable beyond our site · S/M · none.

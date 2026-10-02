@@ -5,7 +5,9 @@
 ## Decisions
 
 ### Product and scope
-- [2026-10-02] **Build fresh in this folder; reuse the sibling `Judhur` project as research input only.** — The brief points here and describes a different product shape (data-driven lexicon + user graphs from the Claude Design handoff) than Judhur (editorial waqf, owner-authored meanings, read-only canvas). Judhur's verified license register, lessons and pinned artefacts were reused with credit; its code was not. Flagged to the owner.
+- [2026-10-02] **Withdrawn: the earlier decision to use another project as research input.** — It was wrong: this project takes its vision and content only from what the owner gives inside it (global rule "Project boundaries"). Every entry below that cites or was borrowed from that project is to be removed or re-derived in PLAN P0, after the owner's review; until then treat those entries as unconfirmed.
+- [2026-10-02] **The measure of done is the owner's vision plus the full design handoff, itemised in `docs/research/05-design-inventory.md` (1,850 items), never a phase list of my own.** — The first build was reported as launch-ready against my own reduced plan; the owner rejected it. PLAN §0.
+- [2026-10-02] **PLAN.md is a draft for the owner's review; decisions D1–D26 in PLAN §4 are proposals, not decisions, until he confirms them.**
 - [2026-10-02] **Product laws (PLAN §1).** — Mushaf integrity and "no generated religious content" are the owner's own laws from Judhur and match the brief's insistence on respect; the rest come from the design handoff's non-negotiables.
 - [2026-10-02] **Working title جُذور / Judhur; name in one config constant.** — "Jadhr" from the handoff collides with jadhr.app (same niche, paid plans). Public name is an owner call.
 - [2026-10-02] **Arabic is the default UI language and direction; English is a full second locale (`/en`).** — Brief: "Main/default Language: Arabic". Logical CSS only. No Accept-Language redirect (canonical Arabic URLs must not flip by header).
@@ -59,3 +61,9 @@
 - [2026-10-02] Next's image renderer (Satori) shapes Arabic letters but neither reorders right-to-left runs nor places Quranic marks, and it measures joined words as if unjoined. Share images carry no Quranic text and lay out pre-shaped presentation forms word by word.
 - [2026-10-02] A `pytest_collection_modifyitems` hook in a sub-directory conftest receives every test of the session — filter to its own directory or it skips unrelated tests.
 - [2026-10-02] Search responses are cached in the web app for an hour; an API behaviour change needs `loader --revalidate`, not only a data release.
+- [2026-10-02] Measure progress against the source of truth (vision + design inventory), not against a plan I wrote myself — a reduced plan makes "done" meaningless.
+- [2026-10-02] Dataset cards contradict themselves: the Shamela 4 card's YAML says `license: mit` while its own licence section says "Research and personal use". Read the whole card and the upstream terms, never just the tag.
+- [2026-10-02] Licence labels on derived datasets often relicense what the packager never owned (MIT on recitation audio cut from EveryAyah, CC0 on OpenITI chunks, CC BY on CC BY-NC-SA text). Trace every layer to its origin before trusting a label.
+- [2026-10-02] File names lie: `tanzil/quran-uthmani.txt` is byte-identical to the no-pause-marks file. Verify content (for example, count the pause marks) before pinning a file under a name.
+- [2026-10-02] Prototype data is not content: the handoff's senses, sense-to-dictionary marks, articles and timeline dots are placeholders or hashes, and its sample data has linguistic errors. Use it as a UI fixture only.
+- [2026-10-02] Every subagent prompt must forbid identifying data in outgoing requests — one research helper put the owner's email in a User-Agent header on a public query.
