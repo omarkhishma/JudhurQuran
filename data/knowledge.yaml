@@ -1,0 +1,227 @@
+# Knowledge-layer registry — the Quran side of the encyclopedia (PLAN P3.9).
+# Every file the knowledge build reads is sha256-pinned here (paths relative to data/raw/); the build
+# refuses a file whose hash drifted. Each source quotes its licence verbatim, names what we display
+# (attribution in Arabic and English) and states how we may use it. Every output row carries the id
+# of the source it comes from (`source_id` / `source_ids`), and that id must exist here.
+# Texts are kept verbatim; the only transformations are the cleaning rules below, each counted in
+# the build report.
+
+cleaning_rules:
+  - id: tc-apparatus-separated
+    description: >-
+      Tafsir Center fields print their editors' footnotes inline between ¬ and ¥ (sources, takhrīj,
+      manuscript variants with sigla such as «ف، خ: …») and the edited counting works carry manuscript
+      folio marks («/ 86 و/», «/ ظ 157/»; a folio mark always names the leaf side و or ظ). Both are taken
+      out of the displayed text and kept, verbatim, in a notes list with the offset where each stood, so
+      that the original field is rebuilt exactly (tested on every field). A space before a note is
+      removed with it when punctuation follows. A note still open at the end of a field (the field was
+      cut short at the source) runs to the end; a stray ¥ is kept as a marker item.
+  - id: tc-narration-dedupe
+    description: >-
+      The Tafsir Center asbāb rows slice one compilation with overlaps: a narration printed again in the
+      next row (same number, same text) is kept once, under its own verse heading when a copy has it.
+  - id: openiti-markup
+    description: >-
+      OpenITI mARkdown is displayed as text: «# » paragraph marks become paragraph breaks, «~~» line
+      continuations are joined with a space, PageVxxPyyy and msNNN tags are removed (and used for the
+      locator), @QB@/@QE@ Quran-quote tags become ﴿ ﴾. Words are untouched.
+  - id: derived-structure
+    description: >-
+      Verse keys, verse ranges, places, periods, counts and Wikidata ids are our own extraction from the
+      cited text, each row stating the method and confidence that produced it. They are structure, not
+      content: the quoted words always come with them.
+
+sources:
+  - id: tanzil-metadata
+    kind: metadata
+    use: display
+    role: sūra type (Meccan/Medinan, the Egyptian standard classification) and traditional revelation order
+    title_ar: بيانات تنزيل الوصفية للقرآن (quran-data.xml)
+    title_en: Tanzil Quran metadata (quran-data.xml)
+    version: "1.0 (copyright 2008-2009)"
+    url: https://tanzil.net/res/text/metadata/quran-data.xml
+    license: 'XML root, verbatim: copyright="(C) 2008-2009 Tanzil.info" license="cc-by" (Creative Commons Attribution; no version stated)'
+    license_ar: "رخصة المشاع الإبداعي — نسب المصنف (لم يُذكر رقم الإصدار)"
+    license_url: https://tanzil.net/docs/quran_metadata
+    attribution_ar: نوع السورة وترتيب نزولها من بيانات مشروع تنزيل — tanzil.net
+    attribution_en: Sūra type and revelation order from the Tanzil Project metadata — tanzil.net
+    files:
+      - path: tanzil/quran-data.xml
+        sha256: 8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a
+
+  - id: tanzil-revelation-order
+    kind: metadata
+    use: display
+    role: verse-level Makki/Madani exceptions, one note per sūra (the Egyptian standard mushaf's headings, via al-Zanjani)
+    title_ar: صفحة «ترتيب النزول» في توثيق مشروع تنزيل
+    title_en: Tanzil documentation — "Revelation Order"
+    version: fetched 2026-10-03
+    url: https://tanzil.net/docs/revelation_order
+    license: 'No licence on the page; it shows only "Tanzil © 2007–2026" (https://tanzil.net/docs/tanzil_license says "This topic does not exist yet"). The page says its detail "is extracted from \"The History of the Quran\" by Allamah Abu Abd Allah al-Zanjani". We take facts only (which verses each note excepts and where it says they were revealed), each row quoting the note.'
+    license_ar: "لا ترخيص معلن في الصفحة؛ نأخذ منها معلومات (أرقام الآيات المستثناة ومكان نزولها) مع اقتباس الملاحظة بنصها"
+    license_url: https://tanzil.net/docs/revelation_order
+    attribution_ar: "الآيات المستثناة من نوع السورة: صفحة «ترتيب النزول» في مشروع تنزيل، نقلًا عن «تاريخ القرآن» لأبي عبد الله الزنجاني"
+    attribution_en: "Verse-level exceptions: Tanzil, “Revelation Order”, after Abu Abd Allah al-Zanjani, The History of the Quran"
+    files:
+      - path: tanzil-docs/revelation_order.html
+        sha256: 3cabe9707417dd17a361f23eb41936c9cf61f826d2371a0adf8ccf6981053f44
+
+  - id: tafsircenter-quran-db
+    kind: knowledge
+    use: display
+    role: Arabic sūra introductions (names, revelation study, virtues, two counting texts, aims), sūra statistics table, and the vetted occasions of revelation with takhrīj
+    title_ar: قاعدة بيانات القرآن الكريم — مركز تفسير للدراسات القرآنية (tafsir-mcp-data)
+    title_en: Tafsir Center for Quranic Studies — Quranic database (tafsir-mcp-data, quran.db)
+    version: Hugging Face dataset revision dbbfa77518a724a10e72d8d7fd48d2d36a50fa9e (2026-05-13)
+    url: https://huggingface.co/datasets/tafsircenter/tafsir-mcp-data
+    license: >-
+      LICENSE-DATA, verbatim: "The Quranic content database accompanying this software (quran.db) is the
+      intellectual property of Tafsir Center for Quranic Studies (مركز تفسير للدراسات القرآنية), licensed
+      under Creative Commons Attribution 4.0 International (CC BY 4.0). You are free to: - Share — copy and
+      redistribute the material - Adapt — remix, transform, and build upon the material - Use commercially
+      … Attribution — You must give appropriate credit to: "Tafsir Center for Quranic Studies
+      (https://tafsir.net)" Provide a link to the license, and indicate if changes were made."
+      DATA_SOURCES.md also says: "Commercial redistribution of tafsir texts requires permission from rights
+      holders." — commercial scope to be confirmed in writing (PLAN D19). Changes we make: the editors'
+      apparatus is separated (not deleted) and narrations are keyed to verses (cleaning rules above).
+    license_ar: "رخصة المشاع الإبداعي — نسب المصنف 4.0 (CC BY 4.0) بنص ملف LICENSE-DATA؛ مع تنبيه ملف DATA_SOURCES على أن إعادة توزيع نصوص التفاسير تجاريًا تحتاج إذن أصحاب الحقوق"
+    license_url: https://creativecommons.org/licenses/by/4.0/
+    attribution_ar: "المصدر: مركز تفسير للدراسات القرآنية (tafsir.net) — قاعدة بيانات القرآن الكريم، برخصة CC BY 4.0؛ فُصلت حواشي المحققين عن المتن"
+    attribution_en: "Source: Tafsir Center for Quranic Studies (https://tafsir.net) — Quranic database, CC BY 4.0; editors' notes shown apart from the text"
+    files:
+      - path: tafsircenter/quran.db
+        sha256: 10e61f615ab5e6a3440e8ecc8ba1dc2273d12cd9048752760fe53a44d191cc27
+      - path: tafsircenter/repo-LICENSE-DATA
+        sha256: b286b84fe98f8dc422bbaabd0d10e8b03e4152bd63720b3f84728affc6efd9cb
+      - path: tafsircenter/repo-DATA_SOURCES.md
+        sha256: 9545c1bbe41e0374c91645a672847736e066b224b2ff64b43b6d7864f831072e
+      - path: tafsircenter/README.md
+        sha256: 30f4bbb3afc922f2d4fb3d4e0f11af4fce82174f5866a29b13de88f18fbe1868
+
+  - id: wahidi-asbab-openiti
+    kind: classical-text
+    use: display-non-commercial
+    role: al-Wāḥidī's Asbāb nuzūl al-Qurʾān in full, keyed to verse ranges (the labelled classical layer, D26)
+    title_ar: أسباب نزول القرآن — أبو الحسن علي بن أحمد الواحدي (ت ٤٦٨هـ)، تحقيق عصام بن عبد المحسن الحميدان
+    title_en: Asbāb nuzūl al-Qurʾān — Abū al-Ḥasan ʿAlī b. Aḥmad al-Wāḥidī (d. 468 AH), ed. ʿIṣām b. ʿAbd al-Muḥsin al-Ḥumaydān
+    version: OpenITI release 2025.1.9 (DOI 10.5281/zenodo.17767721), version URI 0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1 (primary version)
+    edition: دار الإصلاح، الدمام، الطبعة الثانية 1412هـ / 1992م (OpenITI metadata)
+    url: https://github.com/OpenITI/RELEASE/tree/v2025.1.9/data/0468IbnAhmadWahidiNaysaburi/0468IbnAhmadWahidiNaysaburi.AsbabNuzul
+    license: >-
+      Zenodo record 17767721 (OpenITI v2025.1.9): metadata.license.id = "cc-by-nc-sa-4.0" (Creative Commons
+      Attribution-NonCommercial-ShareAlike 4.0 International). The work's author died in 468 AH; the digital
+      text is OpenITI's. The version file says: "All paratextual elements (introductions, footnotes,
+      indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)".
+    license_ar: "رخصة المشاع الإبداعي — نسب المصنف، غير تجاري، المشاركة بالمثل 4.0 (للنص الرقمي من OpenITI)؛ المؤلف توفي سنة 468هـ"
+    license_url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+    attribution_ar: "الواحدي، أسباب نزول القرآن، تحقيق عصام الحميدان (دار الإصلاح، 1412هـ). النص الرقمي: مدونة OpenITI، إصدار 2025.1.9، برخصة CC BY-NC-SA 4.0"
+    attribution_en: "al-Wāḥidī, Asbāb nuzūl al-Qurʾān, ed. ʿIṣām al-Ḥumaydān (Dār al-Iṣlāḥ, 1412 AH). Digital text: OpenITI corpus release 2025.1.9, CC BY-NC-SA 4.0"
+    files:
+      - path: openiti-2025.1.9/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1
+        sha256: 20e8163fba25d2af8591974b8a8695e6d823af44da3acc11f82631183ce5d254
+      - path: openiti-2025.1.9/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1.yml
+        sha256: 3a50bec18c9bc837a7bc19d864feb87b609be05cf63953ca9c5865940174c83e
+      - path: openiti-2025.1.9/zenodo-record-17767721.json
+        sha256: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+
+  - id: suyuti-lubab-openiti
+    kind: classical-text
+    use: display-non-commercial
+    role: al-Suyūṭī's Lubāb al-nuqūl fī asbāb al-nuzūl in full, keyed to verse ranges (the labelled classical layer, D26)
+    title_ar: لباب النقول في أسباب النزول — جلال الدين السيوطي (ت ٩١١هـ)
+    title_en: Lubāb al-nuqūl fī asbāb al-nuzūl — Jalāl al-Dīn al-Suyūṭī (d. 911 AH)
+    version: OpenITI release 2025.1.9 (DOI 10.5281/zenodo.17767721), version URI 0911Suyuti.LubabNuqul.JK000436-ara1 (primary version)
+    edition: دار إحياء العلوم، بيروت (OpenITI metadata)
+    url: https://github.com/OpenITI/RELEASE/tree/v2025.1.9/data/0911Suyuti/0911Suyuti.LubabNuqul
+    license: >-
+      Zenodo record 17767721 (OpenITI v2025.1.9): metadata.license.id = "cc-by-nc-sa-4.0" (Creative Commons
+      Attribution-NonCommercial-ShareAlike 4.0 International). The work's author died in 911 AH; the digital
+      text is OpenITI's. The version file says: "All paratextual elements (introductions, footnotes,
+      indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)".
+    license_ar: "رخصة المشاع الإبداعي — نسب المصنف، غير تجاري، المشاركة بالمثل 4.0 (للنص الرقمي من OpenITI)؛ المؤلف توفي سنة 911هـ"
+    license_url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+    attribution_ar: "السيوطي، لباب النقول في أسباب النزول (دار إحياء العلوم، بيروت). النص الرقمي: مدونة OpenITI، إصدار 2025.1.9، برخصة CC BY-NC-SA 4.0"
+    attribution_en: "al-Suyūṭī, Lubāb al-nuqūl fī asbāb al-nuzūl (Beirut: Dār Iḥyāʾ al-ʿUlūm). Digital text: OpenITI corpus release 2025.1.9, CC BY-NC-SA 4.0"
+    files:
+      - path: openiti-2025.1.9/0911Suyuti.LubabNuqul.JK000436-ara1
+        sha256: 8ae202385be97b7bbc257bb217c29df37e8b757398e1aa0aec9070076b3f587f
+      - path: openiti-2025.1.9/0911Suyuti.LubabNuqul.JK000436-ara1.yml
+        sha256: 72c4b818da93c8658424cfc61167ff2ff700d0b988005870b0f2070b0ba65f75
+
+  - id: ibn-kathir-crossrefs
+    kind: derived
+    use: display
+    role: verse cross-references — our own extraction of the verses Ibn Kathīr cites while explaining a verse (the edition's bracketed references and unique ﴿…﴾ quotes), read from the build's work_passages (footnotes already stripped)
+    title_ar: الإحالات بين الآيات في تفسير ابن كثير — استخراج جذر
+    title_en: Verse cross-references in Ibn Kathīr's Tafsīr — Jadhr extraction
+    version: extracted from the build's work_passages (ibn-kathir), itself from tafsir_api v1.2.2 (QUL 22)
+    url: https://github.com/spa5k/tafsir_api
+    license: >-
+      The pairs are facts we extract (which verse a passage cites). The text is Ibn Kathīr's (d. 774 AH,
+      public domain); the bracketed verse references are the modern edition's. sources.yaml
+      (tafsir-api-qul): "Works by authors who died centuries ago (al-Tabari, al-Baghawi, al-Qurtubi, Ibn
+      Kathir) are in the public domain … The repository's MIT license covers its code only."
+    license_ar: "الإحالات معلومات نستخرجها؛ نص ابن كثير (ت ٧٧٤هـ) في الملك العام، وأرقام الآيات بين المعقوفين من الطبعة الحديثة"
+    license_url: https://qul.tarteel.ai/faq
+    attribution_ar: "الآيات التي يستشهد بها ابن كثير في تفسيره — استخراج جذر من النص الرقمي (المكتبة القرآنية الشاملة)"
+    attribution_en: "Verses Ibn Kathīr cites in his Tafsīr — extracted by Jadhr from the digital text (Quranic Universal Library)"
+    files:
+      - path: tafsir_api/ar-tafsir-ibn-kathir.json
+        sha256: 64ed06f93a26a2be9d722dac353a36c589a03e11bfaadbf1c7c29906bfc05d00
+
+  - id: qac-proper-nouns
+    kind: morphology
+    use: display
+    role: entity candidates — the corpus's proper-noun (PN) lemmas with their verses
+    title_ar: المدونة القرآنية اللغوية — وسوم أسماء الأعلام
+    title_en: Quranic Arabic Corpus — proper-noun tags (morphology v0.4)
+    version: "0.4"
+    url: https://corpus.quran.com/
+    license: "GNU General Public License — verbatim copies permitted; the annotation may be used in any website or application with the source indicated and a link to corpus.quran.com (sources.yaml, qac)"
+    license_ar: "رخصة جنو العمومية مع شروط المدونة: الاستعمال مع ذكر المصدر والإحالة إلى corpus.quran.com"
+    license_url: https://corpus.quran.com/download/
+    attribution_ar: أسماء الأعلام من وسوم المدونة القرآنية اللغوية — corpus.quran.com
+    attribution_en: Proper-noun tags from the Quranic Arabic Corpus — corpus.quran.com
+    files:
+      - path: qac/quranic-corpus-morphology-0.4.txt
+        sha256: a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46
+
+  - id: wikidata
+    kind: identifiers
+    use: display
+    role: entity identifiers and labels (the spine of the entity registry); pinned query responses
+    title_ar: ويكي بيانات
+    title_en: Wikidata
+    version: responses fetched 2026-10-03 (SPARQL P1441=Q428; wbsearchentities in Arabic; wbgetentities)
+    url: https://www.wikidata.org/
+    license: 'Wikidata:Licensing (fetched 2026-10-03), verbatim: "All structured data (i.e. the main, Property, Lexeme, and EntitySchema namespaces) is released into the public domain under Creative Commons Zero."'
+    license_ar: "البيانات المهيكلة في ويكي بيانات ملك عام برخصة CC0"
+    license_url: https://www.wikidata.org/wiki/Wikidata:Licensing
+    attribution_ar: معرّفات الكيانات من ويكي بيانات (CC0)
+    attribution_en: Entity identifiers from Wikidata (CC0)
+    files:
+      - path: wikidata-quran-entities/sparql-present-in-quran.json
+        sha256: 2eb2c5906b27a0620ba9706768f12a81a5978d61fdaec8e9b6dfae0d0dc92640
+      - path: wikidata-quran-entities/search-ar.json
+        sha256: 184acd77ce38f127762d90f42d4b0eef2411195ae136f70fff8c98c1564dc4b9
+      - path: wikidata-quran-entities/entities.json
+        sha256: f21adb89573f76e4d70203879fe755266fa397e5d25201e03ec1b1804968e089
+      - path: wikidata-quran-entities/licensing-page.wikitext
+        sha256: f371157d3d900fd8fa0c1802e5e4eccb4a577ca1f6a7428609ff8fa2dc3ec185
+
+  - id: qursim
+    kind: evaluation
+    use: evaluation-only
+    role: EVALUATION ONLY (D25) — agreement of our Ibn Kathīr cross-references with QurSim; never output, shown or redistributed
+    title_ar: قرسيم — الآيات المتصلة في تفسير ابن كثير (عبد الباقي شرف)
+    title_en: QurSim — verse relatedness in Ibn Kathīr (Abdul-Baquee M. Sharaf, LREC 2012)
+    version: ibn_kathir_similarity.csv (served 2020-08-29), fetched 2026-10-03
+    url: http://textminingthequran.com/data/ibn_kathir_similarity.csv
+    license: '"Copyright (C) 2011 Abdul-Baquee M. Sharaf / License: GNU Public License … Permission is granted to copy and distribute verbatim copies of this file, but CHANGING IT IS NOT ALLOWED. This annotation can be used in any website or application, provided its source (TextMiningTheQuran.com) is clearly indicated." (original XML header, research 06 Part 3, L1; the CSV carries no header)'
+    license_ar: "يسمح بنسخ الملف كما هو مع ذكر المصدر، ولا يسمح بتغييره؛ نستعمله للتقييم فقط"
+    license_url: http://textminingthequran.com/
+    attribution_ar: "قرسيم (TextMiningTheQuran.com) — للتقييم فقط"
+    attribution_en: "QurSim (TextMiningTheQuran.com) — evaluation only"
+    files:
+      - path: qursim/ibn_kathir_similarity.csv
+        sha256: c898e39e59b024b4910287af0b22eb8746b91a29be80120f1df8b3b5572ba30c
