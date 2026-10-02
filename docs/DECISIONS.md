@@ -23,6 +23,8 @@
 - [2026-10-02] **Search on Postgres (normalised shadow columns + pg_trgm), behind one module.** — Quran scale does not need a search cluster; all Arabic search assertions pass. Revisit when lexicon/hadith full-text relevance is measured to need OpenSearch.
 - [2026-10-02] **Two Arabic search shadows: imlāʾī (KFGQPC "emlaey" text aligned per word) and Uthmani-stripped; the query picks one.** — Everyday spelling matches the imlāʾī shadow (الصلاة → ٱلصَّلَوٰة); text pasted from a mushaf (detected by dagger alef, wasla or Quranic marks) matches the Uthmani shadow. Lemmas also carry a heuristic plain spelling (وٰ→ا etc.) for matching only.
 - [2026-10-02] **Graph canvas: @xyflow/react + elkjs, bounded expansion.** — The handoff editor is rich editable DOM cards; scale is handled by bounding, not a canvas renderer.
+- [2026-10-03] **Every Quran permalink lands in the one reader: `/quran/{s}` reads, `/quran/{s}/{a}` opens the verse in the panel, `/word/{s:a:w}` opens the word; verse mode writes its path to the address bar, a word stays `?w=&at=` on the sūra.** — One reader, one URL behaviour (RDR-566). The sūra text, metadata, JSON-LD and share images render on the server; the panel's tafsir and entry render in the browser (search engines that run scripts index them). Rendering the panel on the server would need per-request state outside the module stores.
+- [2026-10-03] **The reader's star writes to the one saved list (`jadhr-saved`, kind `lemma`, keyed by slug) that Saved, the Review count and later the Notebook read.** — The prototype kept stars under one key and read them under another (RDR-520).
 - [2026-10-02] **Postgres 17 in Docker for dev (host 5442); web dev on port 3210, API on 8000.** — Match prod major; port 3000 belongs to another of the owner's projects.
 
 ### Data
@@ -41,6 +43,10 @@
 - [2026-10-03] **Licence register: `data/licences.yaml`, one entry per source id in the four registries, each with the governing clauses quoted verbatim, the sha256 of every page read, our use and a status; re-checked before every release; `pipeline/tests/test_licences.py` fails when a registry id has no entry.** — Licence wording lived in scattered registry lines and research prose and had drifted from the sources (research 07); one register, checked by a test, keeps it honest.
 
 ## Lessons
+
+- [2026-10-03] Never reveal content on `:focus-within` above a tappable element: a tap focuses the button on mousedown, the revealed tools pushed the word down, and the click landed on the verse instead — every phone tap was lost. Reveal on hover, `:focus-visible` or an explicit state.
+- [2026-10-03] A portal into server-rendered DOM needs a flag set after the first commit, not "is client": after a client-side navigation the client flag is already true during the first render, when the new page's DOM does not exist yet.
+- [2026-10-03] Esc belongs to the innermost layer: a page-level Esc handler must stand down while any dialog or term card is open, or one keypress closes the card and the entry behind it.
 
 - [2026-10-03] Check the licence of the repository the bytes come from, not a sibling repository by the same author: the corpus revision's files sit in an unlicensed API repository while our registry cited the GPL of its frontend.
 - [2026-10-03] Read the files' own tags, not only the distributor's licence page: EveryAyah's ID3 tags name QuranicAudio.com (personal use only), MP3Quran.net and AllahsQuran.com as origins of some recordings.
