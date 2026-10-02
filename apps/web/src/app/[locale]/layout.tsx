@@ -9,8 +9,10 @@ import { SiteHeader } from "@/components/shell/SiteHeader";
 import { Providers } from "@/components/shell/Providers";
 import "../globals.css";
 
+// Nothing is prerendered at build time: pages render from the live API on first request and stay cached
+// (ISR) until the next dataset release expires them. A code deploy therefore never needs the data stack.
 export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
+  return [];
 }
 
 export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Promise<Metadata> {

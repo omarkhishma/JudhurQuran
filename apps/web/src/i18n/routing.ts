@@ -7,6 +7,10 @@ export const routing = defineRouting({
   defaultLocale: "ar",
   localePrefix: "as-needed",
   localeDetection: false,
+  // No cookie: nothing reads it (no detection), and a Set-Cookie on every response stops CDNs from caching pages.
+  localeCookie: false,
+  // hreflang is declared per page (src/lib/seo.ts); a second, header-based copy could only disagree with it.
+  alternateLinks: false,
 });
 
 export type Locale = (typeof routing.locales)[number];

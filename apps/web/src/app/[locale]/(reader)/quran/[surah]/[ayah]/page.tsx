@@ -25,6 +25,11 @@ async function load(surah: string, ayah: string) {
   return { verse, surah: surahPayload.surah };
 }
 
+// Rendered on first request and then cached until the next release (ISR); none are built ahead.
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: PageProps<"/[locale]/quran/[surah]/[ayah]">): Promise<Metadata> {
   const { locale, surah, ayah } = await params;
   const { verse, surah: s } = await load(surah, ayah);

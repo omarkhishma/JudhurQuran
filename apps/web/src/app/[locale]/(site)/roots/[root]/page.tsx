@@ -17,6 +17,11 @@ async function load(raw: string) {
   return api<RootDetail>(`/roots/${encodeURIComponent(decodeURIComponent(raw))}`);
 }
 
+// Rendered on first request and then cached until the next release (ISR); none are built ahead.
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: PageProps<"/[locale]/roots/[root]">): Promise<Metadata> {
   const { locale, root } = await params;
   const r = await load(root);

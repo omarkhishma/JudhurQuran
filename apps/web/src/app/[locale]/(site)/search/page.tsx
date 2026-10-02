@@ -12,6 +12,9 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/search">
   return { title: t("pageTitle"), robots: { index: false, follow: true } };
 }
 
+// Results depend on the query string: rendered per request (the API search call itself is cached).
+export const dynamic = "force-dynamic";
+
 const EXAMPLES = ["الرحمن", "ك ت ب", "2:255", "الصلاة", "يا أيها الذين آمنوا", "s-b-r"];
 
 export default async function SearchPage({ params, searchParams }: PageProps<"/[locale]/search">) {

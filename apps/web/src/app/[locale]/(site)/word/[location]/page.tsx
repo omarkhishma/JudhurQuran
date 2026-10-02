@@ -21,6 +21,11 @@ async function loadWord(loc: string) {
   return api<WordDetail>(`/words/${loc}`);
 }
 
+// Rendered on first request and then cached until the next release (ISR); none are built ahead.
+export function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({ params }: PageProps<"/[locale]/word/[location]">): Promise<Metadata> {
   const { locale, location } = await params;
   const loc = parseLocation(location);

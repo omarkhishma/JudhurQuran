@@ -15,8 +15,9 @@ import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 
 export const revalidate = 86400;
 
+// Rendered on first request and cached (ISR); see the locale layout.
 export function generateStaticParams() {
-  return Array.from({ length: 114 }, (_, i) => ({ surah: String(i + 1) }));
+  return [];
 }
 
 function parseSurah(raw: string): number {
