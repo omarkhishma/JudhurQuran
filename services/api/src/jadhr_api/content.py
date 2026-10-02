@@ -853,3 +853,33 @@ def related_verses(conn: Connection, key: str, limit: int = 10) -> dict[str, Any
         "method": "shared roots weighted by rarity: sum of ln(6236 / verses containing the root)",
         "data": [r | {"verse": verses[r["verse_id"]]} for r in rel],
     }
+
+
+def divisions(conn: Connection) -> dict[str, Any]:
+    """Where each juzʾ and ḥizb begins (the rail's navigation): first verse, its sūra and mushaf page."""
+    juz = rows(
+        conn,
+        """select distinct on (v.juz) v.juz as number, v.key, v.surah, v.ayah, v.page, s.name_ar, s.name_translit
+           from content.verses v join content.surahs s on s.number = v.surah order by v.juz, v.id""",
+    )
+    hizb = rows(
+        conn,
+        """select distinct on ((v.hizb_quarter - 1) / 4) (v.hizb_quarter - 1) / 4 + 1 as number, v.juz, v.key,
+                  v.surah, v.ayah, v.page, s.name_ar, s.name_translit
+           from content.verses v join content.surahs s on s.number = v.surah
+           order by (v.hizb_quarter - 1) / 4, v.id""",
+    )
+    return {"juz": juz, "hizb": hizb, "pages": 604}
+
+
+def surah_lemma_sets(conn: Connection) -> dict[str, list[str]]:
+    """The distinct words (lemma slugs) of each sūra, for vocabulary coverage in study mode (RDR-571)."""
+    out: dict[str, list[str]] = {}
+    for r in rows(
+        conn,
+        """select w.surah, array_agg(distinct l.slug order by l.slug) as slugs
+           from content.words w join content.lemmas l on l.id = w.lemma_id group by w.surah order by w.surah""",
+    ):
+        out[str(r["surah"])] = r["slugs"]
+    return out
+

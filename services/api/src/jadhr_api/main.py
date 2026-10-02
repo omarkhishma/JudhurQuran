@@ -108,6 +108,12 @@ def surahs(request: Request) -> Response:
         return cached(request, {"data": content.surahs(conn)})
 
 
+@router.get("/surahs/lemma-sets", summary="The distinct words (lemma slugs) of every sūra, for vocabulary coverage")
+def surah_lemma_sets(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": content.surah_lemma_sets(conn)})
+
+
 @router.get("/surahs/{number}", summary="One surah with its verses, display tokens and words")
 def surah(
     request: Request,
@@ -238,6 +244,12 @@ def commentary(
         return cached(request, {"verse": key, "data": out})
 
 
+@router.get("/divisions", summary="Where each juzʾ and ḥizb begins, with its mushaf page")
+def divisions(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, content.divisions(conn))
+
+
 @router.get("/pages/{page}", summary="All verses on one Madinah-mushaf page (1–604)")
 def page(request: Request, page: int) -> Response:
     if not 1 <= page <= 604:
@@ -282,12 +294,14 @@ def word_attestations(
     form: str | None = Query(
         None, max_length=60, description="restrict to one surface form (mushaf spelling)"
     ),
+    scope: str = Query("lemma", pattern="^(lemma|root)$", description="this word only, or its whole root"),
+    surah: int | None = Query(None, ge=1, le=114, description="only within one sūra"),
     limit: int = Query(50, ge=1, le=500),
     cursor: str | None = Query(None),
 ) -> Response:
     after = int(cursor) if cursor and cursor.isdigit() else 0
     with connect() as conn:
-        out = lexicon.word_attestations(conn, slug, after, limit, form)
+        out = lexicon.word_attestations(conn, slug, after, limit, form, scope, surah)
         if out is None:
             raise not_found("word")
         return cached(request, out)

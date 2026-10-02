@@ -74,3 +74,28 @@ def test_root_family_holds_every_lemma_of_the_root() -> None:
         assert len(members) == rec["lemma_count"] == len({m["slug"] for m in members})
         assert sum(m["occurrences"] for m in members) == rec["occurrences"]
     assert client.get("/api/v1/roots/zzz/family").status_code == 404
+
+
+def test_divisions_start_every_juz_and_hizb_at_its_first_verse() -> None:
+    d = get("/api/v1/divisions")
+    assert [j["number"] for j in d["juz"]] == list(range(1, 31))
+    assert [h["number"] for h in d["hizb"]] == list(range(1, 61))
+    # a juzʾ is two aḥzāb: juzʾ k begins where ḥizb 2k−1 begins
+    for j in d["juz"]:
+        assert j["key"] == d["hizb"][2 * j["number"] - 2]["key"], j
+    for a, b in zip(d["hizb"], d["hizb"][1:], strict=False):
+        assert (a["surah"], a["ayah"]) < (b["surah"], b["ayah"])
+        assert a["page"] <= b["page"]
+    assert d["juz"][0]["key"] == "1:1"
+    # each start agrees with the verse record itself
+    for j in d["juz"][::7]:
+        v = get(f"/api/v1/verses/{j['key']}")
+        assert v["juz"] == j["number"] and v["page"] == j["page"]
+
+
+def test_surah_lemma_sets_are_the_distinct_words_of_each_surah() -> None:
+    sets = get("/api/v1/surahs/lemma-sets")["data"]
+    assert len(sets) == 114
+    for n in (1, 112):
+        words = [w for v in get(f"/api/v1/surahs/{n}")["verses"] for w in v["words"]]
+        assert sets[str(n)] == sorted({w["lemma_slug"] for w in words if w["lemma_slug"]})

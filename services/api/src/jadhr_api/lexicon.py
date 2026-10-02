@@ -347,23 +347,39 @@ def word_payload(
 
 
 def word_attestations(
-    conn: Connection, slug: str, after: int, limit: int, form: str | None
+    conn: Connection,
+    slug: str,
+    after: int,
+    limit: int,
+    form: str | None,
+    scope: str = "lemma",
+    surah: int | None = None,
 ) -> dict[str, Any] | None:
-    """Every occurrence of a lemma in the Quran as KWIC rows, paged by word id (the "In the Quran" section)."""
+    """Every occurrence of a lemma — or of its whole root (``scope="root"``) — in the Quran as KWIC rows,
+    optionally within one sūra, paged by word id (the "In the Quran" section, RDR-558)."""
     lem = lemma_by_slug(conn, slug)
     if lem is None:
         return None
-    params: dict[str, Any] = {"l": lem["id"], "after": after, "n": limit + 1}
-    cond = ""
+    params: dict[str, Any] = {"after": after, "n": limit + 1}
+    if scope == "root" and lem["root_id"]:
+        cond = "w.root_id = :r"
+        params["r"] = lem["root_id"]
+    else:
+        cond = "w.lemma_id = :l"
+        params["l"] = lem["id"]
     if form:
-        cond = "and w.text_uthmani = :form"
+        cond += " and w.text_uthmani = :form"
         params["form"] = form
+    if surah:
+        cond += " and w.surah = :s"
+        params["s"] = surah
     occ = rows(
         conn,
         f"""select w.id, w.location, w.surah, w.ayah, w.verse_id, w.token_from, w.token_to, s.name_ar,
-                   s.revelation_place
+                   s.revelation_place, l.slug as lemma_slug
             from content.words w join content.surahs s on s.number = w.surah
-            where w.lemma_id = :l and w.id > :after {cond} order by w.id limit :n""",
+            left join content.lemmas l on l.id = w.lemma_id
+            where {cond} and w.id > :after order by w.id limit :n""",
         params,
     )
     more = len(occ) > limit
@@ -386,12 +402,24 @@ def word_attestations(
                 "verse_key": f"{o['surah']}:{o['ayah']}",
                 "surah_name_ar": o["name_ar"],
                 "revelation_place": o["revelation_place"],
+                "lemma_slug": o["lemma_slug"],
                 "left": " ".join(vt[:a]),
                 "keyword": " ".join(vt[a:b]),
                 "right": " ".join(vt[b:]),
             }
         )
-    return {"slug": slug, "data": data, "next_cursor": str(occ[-1]["id"]) if more and occ else None}
+    total = scalar(
+        conn,
+        f"select count(*) from content.words w where {cond}",
+        {k: v for k, v in params.items() if k not in ("after", "n")},
+    )
+    return {
+        "slug": slug,
+        "scope": "root" if "r" in params else "lemma",
+        "total": total,
+        "data": data,
+        "next_cursor": str(occ[-1]["id"]) if more and occ else None,
+    }
 
 
 def pattern_payload(conn: Connection, slug: str, limit: int = 200) -> dict[str, Any] | None:
