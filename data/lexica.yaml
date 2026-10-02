@@ -166,7 +166,7 @@ works:
     death_hijri: 1293
     death_ce: 1876
     edition_note: London, Williams and Norgate, 1863–1893 (8 parts; parts 6–8 completed by Stanley Lane-Poole). Perseus Digital Library TEI XML with corrections by the laneslexicon project.
-    source_url: https://github.com/laneslexicon/lexicon_xml
+    source_url: https://github.com/laneslexicon/lexicon_xml/tree/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6
     license: Creative Commons Attribution-ShareAlike 3.0 United States (Perseus Digital Library, Tufts University); "offer Perseus any modifications you make". Underlying 1863–1893 work in the public domain.
     license_url: https://creativecommons.org/licenses/by-sa/3.0/us/
     redistributable: true
@@ -174,8 +174,8 @@ works:
     attribution_en: "Edward William Lane, An Arabic-English Lexicon (London: Williams and Norgate, 1863–1893). Text provided by Perseus Digital Library, with funding from The U.S. Department of Education and The Max Planck Society. Corrections: laneslexicon/lexicon_xml. Licensed CC BY-SA 3.0 US (https://creativecommons.org/licenses/by-sa/3.0/us/); modified (TEI markup removed, Arabic transliteration converted to Arabic script)."
     format: perseus-lane
     files:
-      - path: lexica/perseus-lane-lexicon_xml/lexicon_xml.tar.gz
-        sha256: 49b5d9cf855ae79ae4402f6f15bf089b80253ab43043a6bd2c4425f5b41e086e
+      - path: lexica/laneslexicon-lexicon_xml/lexicon_xml-f3c19fb.tar.gz
+        sha256: 630d8bcdddf59bec019516631cb1290d26d016abdb378f3611df7b99cf190177
     manual_roots: {}
 
   - id: ibn-qutaybah-gharib

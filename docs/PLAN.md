@@ -1,6 +1,6 @@
 # PLAN — the Quran roots platform (working title pending, see D1)
 
-> Status: **DRAFT FOR OWNER REVIEW** — written 2026-10-02 after the owner's review of the first build. Nothing below is executed until the owner has reviewed it with me. This plan replaces the previous one, which measured progress against a phase list I had written myself instead of against the vision and the design.
+> Status: **ACTIVE** — written 2026-10-02 after the owner's review of the first build; approved by the owner on 2026-10-03 ("go ahead with your recommendation, proceed autonomously across all phases"): every recommendation in §4 and the laws in §2 stand as decisions. The owner's further vision points come after all phases here are done. Progress is logged in `docs/DECISIONS.md`; each task's status is marked in §6.
 
 ## 0 · How to read this plan
 
@@ -26,7 +26,7 @@
 | V9 | Arabic is the main language; production quality; respect for the subject; real impact | Arabic-default UI, the laws in §2, scholarly review |
 | V10 | Keep iterating, find gaps, go beyond the vision | "Beyond the vision" (§8), a proposal pass at every phase boundary |
 
-## 2 · Product laws (to be confirmed by the owner at review — several were set without his explicit approval)
+## 2 · Product laws (confirmed by the owner, 2026-10-03)
 
 - L1 Mushaf integrity: the Quranic text is the KFGQPC publication verbatim, hash-checked on every load; any simplified spelling is a derived, labelled view.
 - L2 No generated religious content: meanings, tafsir and glosses come only from cited human sources; our own copy is UI and plain grammar explanations, flagged for expert review.
@@ -74,7 +74,7 @@
 | Data & API `/data` | 🟡 | Developers page + API docs + local release files. Missing: downloads page, TEI/LMF, DOI, changelog, playground, citation formats |
 | Journeys A–F | ⬜ | None works end to end as designed |
 
-## 4 · Owner decisions (for the review meeting; my recommendation first)
+## 4 · Decisions (the recommendation column was approved by the owner on 2026-10-03)
 
 | ID | Decision | Recommendation | Blocks |
 |---|---|---|---|
@@ -285,7 +285,7 @@ The design's panel stands on content that the prototype faked: every sense list,
 - P0 first (the owner's condition). P1 next (everything depends on it). Then P2 with P3 (screen and content together), then P4 and P5. P6 → P7, and P8 → P9, follow the decisions they wait on. P10 and P11 start their data work as soon as P1 lands, and their screens after P4.
 - At each ◆ the owner reviews screens side by side with the prototype, the parity coverage numbers and the journeys before the next phase starts. Between checkpoints I work unattended and log progress in DECISIONS.
 
-## 8 · Beyond the vision (my proposals — for the owner's review)
+## 8 · Beyond the vision (my proposals; Tier 1 approved with the plan on 2026-10-03)
 
 Each proposal: what it is · why it serves the reader · cost (S/M/L) · risk. Tier 1 = I recommend building it inside the phase named; Tier 2 = strong, needs a decision or data; Tier 3 = later horizon, worth keeping in view. None of these replaces any part of §1 or the design.
 
