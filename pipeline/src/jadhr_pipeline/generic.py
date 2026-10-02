@@ -42,6 +42,12 @@ QURAN_TEXT = {
 }
 
 
+def lemma_display(ar: str) -> str:
+    """Corpus lemmas sometimes carry a shadda on their first letter that belongs to the preceding word's
+    assimilation (رَّحْمَٰن); it is context, not part of the lemma (same rule as the API)."""
+    return ar[0] + ar[2:] if len(ar) > 1 and ar[1] == "\u0651" else ar
+
+
 def _pattern_rows(lemmas: list[dict[str, Any]], registry: SlugRegistry) -> list[dict[str, Any]]:
     by_pattern: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for lem in lemmas:
@@ -89,8 +95,9 @@ def build_generic(
 
     # Most frequent first, so common words get the clean slug when two romanise alike.
     for lem in sorted(lemmas, key=lambda x: (-x["occurrences"], x["key"])):
-        lem["slug"] = lemma_reg.assign(lem["key"], slug_lemma(lem["ar"]))
-        lem["translit"] = scholarly(lem["ar"])
+        shown = lemma_display(lem["ar"])
+        lem["slug"] = lemma_reg.assign(lem["key"], slug_lemma(shown))
+        lem["translit"] = scholarly(shown)
         lem["pos_ar"], lem["pos_en"] = labels.POS.get(lem["pos"], (lem["pos"], lem["pos"]))
     patterns = _pattern_rows(lemmas, pattern_reg)
     pattern_ids = {p["ar"]: p["id"] for p in patterns}
@@ -168,7 +175,7 @@ def build_generic(
     report = {
         "lemma_slugs_added": len(lemma_reg.added),
         "pattern_slugs_added": len(pattern_reg.added),
-        "lemma_slug_suffixed": sum(1 for x in lemmas if x["slug"] != slug_lemma(x["ar"])),
+        "lemma_slug_suffixed": sum(1 for x in lemmas if x["slug"] != slug_lemma(lemma_display(x["ar"]))),
         "patterns": len(patterns),
         "texts": len(texts),
         "passages": len(passages),
