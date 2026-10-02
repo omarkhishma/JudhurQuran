@@ -6,6 +6,7 @@ Run: ``uv run uvicorn jadhr_api.main:app --port 8000``  ·  Docs: ``/api/v1/docs
 from __future__ import annotations
 
 import hashlib
+import re
 import time
 from collections import defaultdict, deque
 from typing import Any
@@ -18,7 +19,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import content
+from . import content, lexicon
 from .db import connect
 from .search import search as run_search
 from .settings import get_settings
@@ -191,15 +192,110 @@ def page(request: Request, page: int) -> Response:
         return cached(request, {"page": page, "verses": content.verses_by_page(conn, page)})
 
 
+_LOCATION = re.compile(r"^\d{1,3}:\d{1,3}:\d{1,3}$")
+
+
 @router.get(
-    "/words/{location}", summary="Everything about one word (e.g. 2:255:1): morphology, lemma, root family"
+    "/words/{ident}",
+    summary="A word: by lemma slug (maktaba) the panel's one-request payload; by location (2:255:1) one occurrence",
 )
-def word(request: Request, location: str) -> Response:
+def word(
+    request: Request,
+    ident: str,
+    at: str | None = Query(
+        None, description="a Quran location (2:255:3): adds that occurrence's grammar and glosses"
+    ),
+    limit: int = Query(12, ge=0, le=50, description="attestations returned inline"),
+) -> Response:
     with connect() as conn:
-        w = content.word(conn, location)
-        if w is None:
+        if _LOCATION.match(ident):
+            w = content.word(conn, ident)
+            if w is None:
+                raise not_found("word")
+            return cached(request, w)
+        if at is not None and not _LOCATION.match(at):
+            raise HTTPException(status_code=400, detail="at must be a Quran location such as 2:255:3")
+        payload = lexicon.word_payload(conn, ident, at, limit)
+        if payload is None:
             raise not_found("word")
-        return cached(request, w)
+        return cached(request, payload)
+
+
+@router.get("/words/{slug}/attestations", summary="Every occurrence of a lemma as KWIC rows, paged")
+def word_attestations(
+    request: Request,
+    slug: str,
+    form: str | None = Query(
+        None, max_length=60, description="restrict to one surface form (mushaf spelling)"
+    ),
+    limit: int = Query(50, ge=1, le=500),
+    cursor: str | None = Query(None),
+) -> Response:
+    after = int(cursor) if cursor and cursor.isdigit() else 0
+    with connect() as conn:
+        out = lexicon.word_attestations(conn, slug, after, limit, form)
+        if out is None:
+            raise not_found("word")
+        return cached(request, out)
+
+
+@router.get("/locations/{location}/word", summary="The lemma slug of the word at a Quran location")
+def location_word(request: Request, location: str) -> Response:
+    if not _LOCATION.match(location):
+        raise not_found("location")
+    with connect() as conn:
+        slug = lexicon.slug_at(conn, location)
+        return cached(request, {"location": location, "slug": slug})
+
+
+@router.get("/patterns", summary="Every pattern (wazn) attested in the Quran, most used first")
+def patterns(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": lexicon.patterns_list(conn)})
+
+
+@router.get("/patterns/{slug}", summary="One pattern with every lemma on it")
+def pattern(request: Request, slug: str) -> Response:
+    with connect() as conn:
+        p = lexicon.pattern_payload(conn, slug)
+        if p is None:
+            raise not_found("pattern")
+        return cached(request, p)
+
+
+@router.get("/glossary", summary="The plain-language glossary (Arabic and English)")
+def glossary(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, lexicon.glossary(conn))
+
+
+@router.get("/texts", summary="Every text the product reads (the library shelf)")
+def texts(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": lexicon.texts(conn)})
+
+
+@router.get("/texts/{slug}", summary="One text with its chapters")
+def text(request: Request, slug: str) -> Response:
+    with connect() as conn:
+        t = lexicon.text_detail(conn, slug)
+        if t is None:
+            raise not_found("text")
+        return cached(request, t)
+
+
+@router.get(
+    "/dictionaries", summary="The classical dictionaries with authors, death years, editions and licences"
+)
+def dictionaries(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": lexicon.dictionaries(conn)})
+
+
+@router.get("/corpora", summary="Corpora on the timeline, by date")
+def corpora(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": lexicon.corpora(conn)})
 
 
 @router.get("/roots", summary="Roots, optionally filtered by letter position (the root builder)")
