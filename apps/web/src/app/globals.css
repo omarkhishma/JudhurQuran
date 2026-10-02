@@ -1,0 +1,418 @@
+@import "tailwindcss";
+
+/* ─── Design tokens (handoff 02-design-tokens, verbatim values) ───────────── */
+:root {
+  --canvas: #eeeef1;
+  --card: #ffffff;
+  --card-2: #f5f5f8;
+  --card-3: #ecedf1;
+  --panel: #f8f8fa;
+  --paper: #fffffe;
+  --line: #e5e5ea;
+  --line-2: #d3d3dc;
+  --edge: #b7b7c3;
+  --dot: #d5d5dd;
+  --t1: #16161a;
+  --t2: #4f4f5a;
+  --t3: #71717c;
+  --c-root: #a8682c;
+  --c-form: #6f55c4;
+  --c-word: #2f6ae0;
+  --c-sentence: #177a44;
+  --c-desc: #6f6f7c;
+  --ring: #2f6ae0;
+  --good: #15803d;
+  --bad: #c02626;
+  --amber: #b45309;
+  --sh: 0 1px 2px rgba(20, 20, 35, 0.05), 0 10px 24px -12px rgba(20, 20, 35, 0.2);
+  --sh-open: 0 2px 4px rgba(20, 20, 35, 0.06), 0 30px 60px -20px rgba(20, 20, 35, 0.32);
+  /* Tinted wells for word states and type chips (contrast ≥ 4.5:1 for text on them) */
+  --root-wash: color-mix(in srgb, var(--c-root) 12%, var(--card));
+  --word-wash: color-mix(in srgb, var(--c-word) 10%, var(--card));
+  --form-wash: color-mix(in srgb, var(--c-form) 10%, var(--card));
+  --sentence-wash: color-mix(in srgb, var(--c-sentence) 10%, var(--card));
+  --reading-scale: 1;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --canvas: #0f0f12;
+  --card: #1a1a20;
+  --card-2: #22222a;
+  --card-3: #2b2b34;
+  --panel: #15151a;
+  --paper: #16161b;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.16);
+  --t1: #f2f2f7;
+  --t2: #b0b0be;
+  --t3: #8d8d9b;
+  --ring: #7aa2f7;
+  --edge: #4d4d5b;
+  --dot: #2a2a33;
+  --bad: #f07178;
+  --good: #79d68b;
+  --amber: #f0b45c;
+  --c-root: #e0a361;
+  --c-form: #ab92f2;
+  --c-word: #7aa2f7;
+  --c-sentence: #6fce88;
+  --c-desc: #9a9aa8;
+  --sh: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 14px 30px -14px rgba(0, 0, 0, 0.85);
+  --sh-open: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 34px 64px -20px rgba(0, 0, 0, 0.9);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-card: var(--card);
+  --color-card-2: var(--card-2);
+  --color-card-3: var(--card-3);
+  --color-panel: var(--panel);
+  --color-paper: var(--paper);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-t1: var(--t1);
+  --color-t2: var(--t2);
+  --color-t3: var(--t3);
+  --color-root: var(--c-root);
+  --color-form: var(--c-form);
+  --color-word: var(--c-word);
+  --color-sentence: var(--c-sentence);
+  --color-desc: var(--c-desc);
+  --color-ring: var(--ring);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-amber: var(--amber);
+  --color-root-wash: var(--root-wash);
+  --color-word-wash: var(--word-wash);
+  --color-form-wash: var(--form-wash);
+  --color-sentence-wash: var(--sentence-wash);
+  --font-ui: var(--font-plex-arabic), var(--font-plex-sans), system-ui, sans-serif;
+  --font-latin: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-classical: var(--font-amiri), "Amiri", serif;
+  --font-quran: var(--font-quran-hafs), "KFGQPC HAFS Uthmanic Script", serif;
+  --shadow-rest: var(--sh);
+  --shadow-open: var(--sh-open);
+  --animate-pop: dc-pop 0.12s ease-out;
+  --animate-rise: dc-rise 0.16s ease-out;
+  --animate-fade: dc-fade 0.15s;
+}
+
+@keyframes dc-pop {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes dc-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes dc-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+body {
+  background: var(--canvas);
+  color: var(--t1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.55;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+:lang(en) body,
+body:lang(en) {
+  font-family: var(--font-latin);
+}
+::selection {
+  background: color-mix(in srgb, var(--ring) 24%, transparent);
+}
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+button:disabled {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@layer components {
+/* ─── Text families ─────────────────────────────────────────────────────── */
+.ar-classical {
+  font-family: var(--font-classical);
+  line-height: 2;
+}
+.quran {
+  font-family: var(--font-quran);
+  font-feature-settings: normal;
+  /* tashkil and small high marks collide below ~2.0 */
+  line-height: 2.25;
+  word-spacing: 0.04em;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.label-caps {
+  font-size: 11px;
+  color: var(--t3);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+:lang(ar) .label-caps,
+.label-caps:lang(ar) {
+  letter-spacing: 0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ─── Shared recipes (handoff §2.5) ─────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--t2);
+  font-size: 13px;
+  padding: 5px 11px;
+  min-height: 30px;
+  transition: border-color 0.14s ease-out, color 0.14s ease-out, background 0.14s ease-out;
+  white-space: nowrap;
+}
+.btn:hover {
+  border-color: var(--ring);
+  color: var(--t1);
+}
+.btn[aria-pressed="true"],
+.btn.is-on {
+  background: color-mix(in srgb, var(--ring) 10%, var(--card));
+  border-color: color-mix(in srgb, var(--ring) 55%, var(--line));
+  color: var(--t1);
+}
+.btn-primary {
+  background: var(--t1);
+  color: var(--card);
+  border-color: var(--t1);
+}
+.btn-primary:hover {
+  color: var(--card);
+  opacity: 0.92;
+}
+.icon-btn {
+  width: 32px;
+  height: 30px;
+  padding: 0;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  font-size: 12px;
+  padding: 3px 10px;
+  color: var(--t1);
+  transition: border-color 0.14s ease-out;
+}
+.chip:hover {
+  border-color: var(--line-2);
+}
+.chip.is-on {
+  background: var(--word-wash);
+  border-color: var(--ring);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  flex: none;
+  display: inline-block;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--sh);
+}
+.seg-group {
+  display: inline-flex;
+  gap: 1px;
+  padding: 2px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.seg {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--t3);
+  font-size: 12.5px;
+  padding: 4px 11px;
+  border-radius: 7px;
+  white-space: nowrap;
+}
+.seg[aria-pressed="true"],
+.seg[aria-selected="true"] {
+  border-color: var(--line-2);
+  background: var(--card);
+  color: var(--t1);
+  font-weight: 500;
+}
+.popover {
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  box-shadow: var(--sh-open);
+  animation: dc-pop 0.12s ease-out;
+}
+
+@media (max-width: 899px) {
+  .btn,
+  .seg {
+    min-height: 40px;
+  }
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+}
+
+/* Keep long Arabic and Latin from overflowing narrow screens */
+.break-anywhere {
+  overflow-wrap: anywhere;
+}
+
+@layer components {
+/* ─── Reader ────────────────────────────────────────────────────────────── */
+.reader-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: calc(100dvh - 52px);
+  background: var(--paper);
+}
+@media (min-width: 1024px) {
+  .reader-layout:has(.side-panel) {
+    grid-template-columns: minmax(0, 1fr) 440px;
+  }
+}
+.reader-text {
+  --reading-size: calc(29px * var(--reading-scale, 1));
+}
+.verse {
+  padding: 14px 6px 18px;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 120px;
+  border-radius: 10px;
+  transition: background 0.4s ease-out;
+}
+.verse.is-target,
+.verse.is-verse-selected {
+  background: color-mix(in srgb, var(--c-sentence) 7%, transparent);
+}
+.verse-text {
+  font-size: var(--reading-size);
+  color: var(--t1);
+  text-align: start;
+}
+.reader-text[data-layout="flow"] .verse-list {
+  text-align: justify;
+}
+.reader-text[data-layout="flow"] .verse {
+  display: inline;
+  padding: 0;
+  border: 0;
+}
+.reader-text[data-layout="flow"] .verse-text {
+  display: inline;
+}
+.reader-text[data-layout="flow"] .inline-layer {
+  display: none;
+}
+.w {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0 1px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background 0.12s ease-out, color 0.12s ease-out;
+}
+.w:hover {
+  background: var(--word-wash);
+}
+.w.is-root {
+  background: var(--root-wash);
+  color: color-mix(in srgb, var(--c-root) 70%, var(--t1));
+}
+.w.is-selected {
+  background: color-mix(in srgb, var(--ring) 20%, var(--card));
+  color: var(--t1);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ring) 45%, transparent);
+}
+.hizb-mark {
+  color: var(--c-root);
+  user-select: none;
+}
+.ayah-num {
+  font-family: var(--font-quran);
+  font-size: 1em;
+  color: var(--c-sentence);
+  border-radius: 99px;
+  padding: 0 2px;
+  background: transparent;
+  border: 0;
+  line-height: 1;
+}
+.ayah-num:hover {
+  background: var(--sentence-wash);
+}
+.inline-layer {
+  margin-top: 6px;
+  display: grid;
+  gap: 8px;
+}
+.inline-translation {
+  font-family: var(--font-latin);
+  font-size: calc(15px * var(--reading-scale, 1));
+  line-height: 1.65;
+  color: var(--t2);
+}
+.inline-tafsir {
+  font-family: var(--font-classical);
+  font-size: calc(16px * var(--reading-scale, 1));
+  line-height: 2;
+  color: var(--t2);
+  border-inline-start: 3px solid color-mix(in srgb, var(--c-sentence) 45%, transparent);
+  padding-inline-start: 10px;
+}
+}
