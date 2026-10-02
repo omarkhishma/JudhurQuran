@@ -3,9 +3,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
+import { Segmented } from "@/components/ui/Segmented";
+import { verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { usePrefs } from "@/lib/reader/store";
-import { verseRef } from "@/lib/format";
 import type { Commentary, Work } from "@/lib/types";
 
 export function useCommentary(verseKey: string | null, works: string[], initialData?: Commentary) {
@@ -17,76 +18,87 @@ export function useCommentary(verseKey: string | null, works: string[], initialD
   });
 }
 
-/** Tafsir chooser + passage + translation, with each work's credit line. Seedable from the server. */
-export function TafsirSection({
-  verseKey,
-  initialWorks,
-  initialCommentary,
-}: {
-  verseKey: string;
-  initialWorks?: Work[];
-  initialCommentary?: Commentary;
-}) {
+const MAX_COMPARE = 3;
+
+/**
+ * The verse's tafsir (P2.5a, P2.10): one work at a time, or up to three side by side (columns when the
+ * panel is wide enough, stacked when it is not); the chosen translation below; every work credited.
+ */
+export function TafsirSection({ verseKey }: { verseKey: string }) {
   const t = useTranslations("panel");
+  const tr = useTranslations("rd");
+  const locale = useLocale();
   const tafsirs = usePrefs((s) => s.tafsirs);
   const translation = usePrefs((s) => s.translation);
-  const [active, setActive] = useState<string>(initialCommentary?.data[0]?.work.id ?? tafsirs[0] ?? "muyassar");
-  const works = useQuery({
-    queryKey: ["works"],
-    queryFn: async () => ((await (await fetch("/api/v1/works")).json()) as { data: Work[] }).data,
-    initialData: initialWorks,
-  });
-  const ids = [active, translation];
-  const seeded = initialCommentary && initialCommentary.data.map((d) => d.work.id).join(",") === ids.join(",") ? initialCommentary : undefined;
-  const { data, isLoading } = useCommentary(verseKey, ids, seeded);
-  const tafsir = data?.data.find((d) => d.work.id === active);
+  const [mode, setMode] = useState<"one" | "compare">("one");
+  const [active, setActive] = useState<string>(tafsirs[0] ?? "muyassar");
+  const [picked, setPicked] = useState<string[]>(tafsirs.slice(0, 2));
+  const works = useQuery({ queryKey: ["works"], queryFn: async () => (await getJSON<{ data: Work[] }>("/works")).data, staleTime: Infinity });
+  const shown = mode === "one" ? [active] : picked;
+  const { data, isLoading } = useCommentary(verseKey, [...shown, translation]);
   const trans = data?.data.find((d) => d.work.id === translation);
   const tafsirWorks = (works.data ?? []).filter((w) => w.kind === "tafsir");
-  const locale = useLocale();
+
+  function pick(id: string) {
+    if (mode === "one") return setActive(id);
+    // at most three columns, the oldest dropped first (as in the dictionaries' side by side)
+    setPicked((p) => (p.includes(id) ? (p.length > 1 ? p.filter((x) => x !== id) : p) : [...p, id].slice(-MAX_COMPARE)));
+  }
 
   return (
     <>
-      <section className="border-b border-line px-5 py-3">
-        <p className="label-caps mb-2">{t("chooseTafsir")}</p>
-        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={t("chooseTafsir")}>
-          {tafsirWorks.map((w) => (
-            <button
-              key={w.id}
-              type="button"
-              role="tab"
-              aria-selected={w.id === active}
-              className={"chip " + (w.id === active ? "is-on" : "")}
-              onClick={() => setActive(w.id)}
-            >
-              <span className="ar-classical text-[14px]" lang="ar">{w.title_ar}</span>
-            </button>
-          ))}
+      <section className="flex flex-col gap-2 border-b border-line px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="label-caps flex-1">{t("chooseTafsir")}</p>
+          <Segmented
+            label={tr("tafsirView")}
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "one", label: tr("tafsirOne") },
+              { value: "compare", label: tr("tafsirCompare") },
+            ]}
+          />
         </div>
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("chooseTafsir")}>
+          {tafsirWorks.map((w) => {
+            const on = shown.includes(w.id);
+            return (
+              <button key={w.id} type="button" aria-pressed={on} className={"chip " + (on ? "is-on" : "")} onClick={() => pick(w.id)}>
+                <span className="ar-classical text-[14px]" lang="ar">{w.title_ar}</span>
+              </button>
+            );
+          })}
+        </div>
+        {mode === "compare" && <p className="text-[11px] text-t3">{tr("tafsirCompareNote")}</p>}
       </section>
-      <section className="px-5 py-4" role="tabpanel" aria-busy={isLoading}>
+      <section className={"tafsir-cols px-4 py-4" + (mode === "compare" ? " is-compare" : "")} aria-busy={isLoading}>
         {isLoading && <p className="text-t3">…</p>}
-        {tafsir && (
-          <>
-            {tafsir.passage ? (
-              <>
-                {tafsir.passage.verse_from !== tafsir.passage.verse_to && (
-                  <p className="mb-2 text-[12px] text-t3">
-                    {t("passageRange", { from: verseRef(tafsir.passage.verse_from, locale), to: verseRef(tafsir.passage.verse_to, locale) })}
-                  </p>
-                )}
-                <div className="ar-classical whitespace-pre-line text-[17px] leading-[2.05] text-t1" dir="rtl" lang="ar">
-                  {tafsir.passage.text}
-                </div>
-              </>
-            ) : (
-              <p className="text-t3">{t("noPassage")}</p>
-            )}
-            <WorkCredit work={tafsir.work} />
-          </>
-        )}
+        {shown.map((id) => {
+          const c = data?.data.find((d) => d.work.id === id);
+          if (!c) return null;
+          return (
+            <article key={id} className="flex min-w-0 flex-col gap-2">
+              {mode === "compare" && <p className="ar-classical text-[15px] font-bold" lang="ar">{c.work.title_ar}</p>}
+              {c.passage ? (
+                <>
+                  {c.passage.verse_from !== c.passage.verse_to && (
+                    <p className="text-[12px] text-t3">{t("passageRange", { from: verseRef(c.passage.verse_from, locale), to: verseRef(c.passage.verse_to, locale) })}</p>
+                  )}
+                  <div className="ar-classical whitespace-pre-line text-[17px] leading-[2.05] text-t1" dir="rtl" lang="ar">
+                    {c.passage.text}
+                  </div>
+                </>
+              ) : (
+                <p className="text-t3">{t("noPassage")}</p>
+              )}
+              <WorkCredit work={c.work} />
+            </article>
+          );
+        })}
       </section>
       {trans?.passage && (
-        <section className="border-t border-line px-5 py-4">
+        <section className="border-t border-line px-4 py-4">
           <p className="label-caps mb-2">{t("translationTab")} — {trans.work.title_en}</p>
           <p className="text-[15px] leading-relaxed text-t1" dir="ltr" lang="en">{trans.passage.text}</p>
           {trans.passage.footnotes && (
@@ -106,7 +118,7 @@ function WorkCredit({ work }: { work: Work }) {
   const locale = useLocale();
   const t = useTranslations("panel");
   return (
-    <p className="mt-4 border-t border-line pt-2 text-[11.5px] leading-relaxed text-t3">
+    <p className="mt-1 border-t border-line pt-2 text-[11.5px] leading-relaxed text-t3">
       {locale === "ar" ? `${work.title_ar} — ${work.author_ar}` : `${work.title_en} — ${work.author_en}`}
       {" · "}
       {t("version", { version: work.version })}

@@ -12,6 +12,7 @@ import { WordEntry } from "./WordEntry";
 import { VerseEntry } from "./VerseEntry";
 import { IndexBody } from "./IndexBody";
 import { SurahAbout } from "./SurahAbout";
+import { LocationEntry } from "./LocationEntry";
 
 const MIN_W = 320;
 
@@ -79,7 +80,8 @@ export function Panel({ chapter, docked, width }: { chapter: ChapterInfo; docked
       </div>
       <PanelSearch />
       <div ref={body} className="panel-body">
-        {mode === "word" && selection && <WordEntry query={word} chapter={chapter} bodyRef={body} />}
+        {mode === "word" && selection?.slug && <WordEntry query={word} chapter={chapter} bodyRef={body} />}
+        {mode === "word" && selection && !selection.slug && selection.at && <LocationEntry at={selection.at} />}
         {mode === "verse" && verse && <VerseEntry verseKey={verse} />}
         {mode === "index" && <IndexBody />}
         {mode === "surah" && <SurahAbout chapter={chapter} />}

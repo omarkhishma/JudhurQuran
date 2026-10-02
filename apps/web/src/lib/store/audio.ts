@@ -7,9 +7,14 @@ export type VerseAudio = { key: string; ayah: number; url: string; segments: [nu
 
 type Mode = "surah" | "verse" | "word";
 
+export const SPEEDS = [1, 0.75, 0.5] as const; // the prototype's control, mapped to real recitation (RDR-554)
+export type Speed = (typeof SPEEDS)[number];
+
 type AudioState = {
   reciter: string;
   follow: boolean;
+  speed: Speed;
+  repeat: boolean; // repeat the current verse (memorisation)
   // playback
   playing: boolean;
   mode: Mode;
@@ -23,6 +28,8 @@ type AudioState = {
   error: string | null;
   setReciter: (id: string) => void;
   setFollow: (v: boolean) => void;
+  cycleSpeed: () => void;
+  setRepeat: (v: boolean) => void;
   playSurah: (surah: number, fromAyah: number) => void;
   playVerse: (key: string) => void;
   playWord: (key: string, tokenFrom: number, tokenTo: number) => void;
@@ -43,6 +50,8 @@ export const useAudio = create<AudioState>()(
     (set, get) => ({
       reciter: "alafasy",
       follow: true,
+      speed: 1,
+      repeat: false,
       playing: false,
       mode: "surah",
       surah: null,
@@ -59,6 +68,8 @@ export const useAudio = create<AudioState>()(
         if (playing && mode !== "word" && surah) get().playSurah(surah, queue[index]?.ayah ?? 1);
       },
       setFollow: (v) => set({ follow: v }),
+      cycleSpeed: () => set((s) => ({ speed: SPEEDS[(SPEEDS.indexOf(s.speed) + 1) % SPEEDS.length] })),
+      setRepeat: (v) => set({ repeat: v }),
       playSurah: async (surah, fromAyah) => {
         try {
           const data = await fetchSurah(get().reciter, surah);
@@ -113,6 +124,6 @@ export const useAudio = create<AudioState>()(
       stop: () => set({ playing: false, queue: [], index: 0, token: null, slice: null, surah: null }),
       set: (p) => set(p),
     }),
-    { name: "jadhr-audio", partialize: (s) => ({ reciter: s.reciter, follow: s.follow }) },
+    { name: "jadhr-audio", partialize: (s) => ({ reciter: s.reciter, follow: s.follow, speed: s.speed, repeat: s.repeat }) },
   ),
 );

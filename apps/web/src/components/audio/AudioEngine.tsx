@@ -11,7 +11,7 @@ import { useAudio } from "@/lib/store/audio";
 export function AudioEngine() {
   const el = useRef<HTMLAudioElement>(null);
   const raf = useRef<number | null>(null);
-  const { playing, queue, index, inBasmala, basmalaUrl, slice, mode } = useAudio();
+  const { playing, queue, index, inBasmala, basmalaUrl, slice, mode, speed } = useAudio();
   const current = queue[index];
   const src = inBasmala ? basmalaUrl : current?.url;
 
@@ -33,6 +33,11 @@ export function AudioEngine() {
     if (playing) void a.play().catch((e) => useAudio.getState().set({ playing: false, error: String(e) }));
     else a.pause();
   }, [src, playing, slice]);
+
+  // Speed applies to the element itself, so the word timings stay exact at any rate.
+  useEffect(() => {
+    if (el.current) el.current.playbackRate = speed;
+  }, [speed, src]);
 
   // Follow along: mark the recited word.
   useEffect(() => {
@@ -77,6 +82,11 @@ export function AudioEngine() {
   function onEnded() {
     const st = useAudio.getState();
     if (st.inBasmala) return st.set({ inBasmala: false });
+    if (st.repeat && st.mode !== "word" && el.current) {
+      el.current.currentTime = 0;
+      void el.current.play();
+      return;
+    }
     if (st.mode === "surah" && st.index + 1 < st.queue.length) return st.set({ index: st.index + 1, token: null });
     st.set({ playing: false, token: null });
     document.querySelectorAll(".w.is-reading").forEach((n) => n.classList.remove("is-reading"));

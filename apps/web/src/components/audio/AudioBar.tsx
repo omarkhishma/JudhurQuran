@@ -33,9 +33,14 @@ export function AudioBar({ surah, surahName }: { surah: number; surahName: strin
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Play starts at the open verse, else the first verse on screen in the reading surface.
   function firstVisibleAyah(): number {
-    const verses = Array.from(document.querySelectorAll<HTMLElement>(".reader-text .verse"));
-    const top = verses.find((v) => v.getBoundingClientRect().bottom > 120);
+    const hot = document.querySelector<HTMLElement>(".passage[data-hot]");
+    if (hot?.dataset.verse) return Number(hot.dataset.verse.split(":")[1]);
+    const surface = document.querySelector<HTMLElement>(".reader-surface");
+    const edge = (surface?.getBoundingClientRect().top ?? 0) + 40;
+    const verses = Array.from(document.querySelectorAll<HTMLElement>(".passage"));
+    const top = verses.find((v) => v.getBoundingClientRect().bottom > edge);
     return Number((top?.dataset.verse ?? `${surah}:1`).split(":")[1]);
   }
 
@@ -68,6 +73,12 @@ export function AudioBar({ surah, surahName }: { surah: number; surahName: strin
         </button>
         <button type="button" className="btn icon-btn" onClick={() => step(1)} disabled={!active} aria-label={t("nextVerse")}>
           <Icon name="chevronEnd" />
+        </button>
+        <button type="button" className="btn mono min-w-[52px] text-[12px]" onClick={a.cycleSpeed} title={t("speed")} aria-label={`${t("speed")} ${a.speed}×`}>
+          {`${client ? a.speed : 1}×`}
+        </button>
+        <button type="button" className="btn icon-btn" aria-pressed={client && a.repeat} onClick={() => a.setRepeat(!a.repeat)} title={t("repeat")} aria-label={t("repeat")}>
+          <Icon name="repeat" />
         </button>
         <span className="min-w-0 flex-1 truncate text-[13px] text-t2" aria-live="polite">
           {active && (a.inBasmala ? t("basmala") : verse ? t("nowPlaying", { ref: `${surahName}: ${formatNumber(verse.ayah, locale)}` }) : "")}

@@ -42,8 +42,8 @@ export async function ReaderPage({
     const [, a, p] = initial.word.split(":").map(Number);
     const w = payload.verses.find((v) => v.ayah === a)?.words.find((x) => x.position === p);
     if (!w) notFound();
-    // particles without a lemma open their verse instead
-    init = w.lemma_slug ? { word: { slug: w.lemma_slug, at: initial.word } } : { verse: `${surah}:${a}` };
+    // a word with no lemma (a pronoun, the Quranic initials) opens its entry by location
+    init = { word: { slug: w.lemma_slug ?? "", at: initial.word } };
   }
   const ar = locale === "ar";
   return (

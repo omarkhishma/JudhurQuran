@@ -7,7 +7,8 @@ import { Icon } from "@/components/Icon";
 import { Term } from "@/components/terms/Term";
 import { Link } from "@/i18n/navigation";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
-import { SECTIONS, type SectionId, usePrefs, useReader } from "@/lib/reader/store";
+import { SECTIONS, type SectionId, usePersonal, usePrefs, useReader } from "@/lib/reader/store";
+import { Segmented } from "@/components/ui/Segmented";
 import { useStar } from "@/lib/store/saved";
 import type { WordPayload } from "@/lib/reader/types";
 import { FORM_TERM, TAG_TERM } from "@/lib/terms";
@@ -173,6 +174,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
           <Term id="noRoot">{t("noRoot")}</Term> — {t("noRootExplain")}
         </p>
       )}
+      <WordStateControl slug={w.slug} />
       <div className="flex flex-wrap gap-2">
         <Link href={`/graph?w=${encodeURIComponent(w.slug)}`} className="btn flex-1" title={t("openInGraphTitle")}>
           <Icon name="graph" size={13} />
@@ -187,6 +189,30 @@ function EntryHeader({ w }: { w: WordPayload }) {
         </button>
       </div>
     </header>
+  );
+}
+
+/** In study mode only (D20): the reader marks a word new, learning or known — never by a tap (RDR-552). */
+function WordStateControl({ slug }: { slug: string }) {
+  const t = useTranslations("rd");
+  const on = usePrefs((s) => s.wordStates);
+  const state = usePersonal((s) => s.wordStates[slug] ?? "new");
+  const setWordState = usePersonal((s) => s.setWordState);
+  if (!on) return null;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[12px] text-t3">{t("wordState")}</span>
+      <Segmented
+        label={t("wordState")}
+        value={state}
+        onChange={(v) => setWordState(slug, v)}
+        options={[
+          { value: "new", label: t("stateNew") },
+          { value: "learning", label: t("stateLearning") },
+          { value: "known", label: t("stateKnown") },
+        ]}
+      />
+    </div>
   );
 }
 

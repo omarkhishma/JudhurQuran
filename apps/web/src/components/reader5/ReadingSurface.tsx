@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "@/i18n/navigation";
 import { useAfterMount } from "@/lib/client";
 import { formatNumber } from "@/lib/format";
 import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
@@ -27,6 +28,7 @@ export type InitialSelection = { verse?: string; word?: { slug: string; at: stri
 export function ReadingSurface({ chapter, initial, children }: { chapter: ChapterInfo; initial?: InitialSelection; children: React.ReactNode }) {
   const t = useTranslations("rd");
   const locale = useLocale();
+  const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
   const selection = useReader((s) => s.selection);
   const verse = useReader((s) => s.verse);
@@ -47,7 +49,6 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const notes = useSaved((s) => s.notes);
   const setPrefs = usePrefs((s) => s.set);
   const wordStates = usePersonal((s) => s.wordStates);
-  const setWordState = usePersonal((s) => s.setWordState);
   const setProgress = usePersonal((s) => s.setProgress);
   const playVerse = useAudio((s) => s.playVerse);
   const [drawer, setDrawer] = useState<{ key: string; tool: DrawerTool } | null>(null);
@@ -68,11 +69,11 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   // resume marker from the last visit (shown, then the reader goes on).
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    const w = p.get("w") ?? initial?.word?.slug ?? null;
-    const at = p.get("w") ? p.get("at") : (initial?.word?.at ?? null);
+    const w = p.get("w") ?? initial?.word?.slug ?? (p.get("at") ? "" : null);
+    const at = p.get("at") ?? initial?.word?.at ?? null;
     const v = p.get("v") ?? initial?.verse ?? null;
     if (w || v) arrival.current = true;
-    if (w) {
+    if (w !== null && (w || at)) {
       openWord({ slug: w, at: at && at.startsWith(`${chapter.number}:`) ? at : null });
       setPrefs({ panelOpen: true });
     } else if (v && v.startsWith(`${chapter.number}:`)) {
@@ -106,7 +107,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     url.pathname = `${prefix}/quran/${chapter.number}`;
     for (const k of ["w", "at", "v", "mode", "q"]) url.searchParams.delete(k);
     if (mode === "word" && selection) {
-      url.searchParams.set("w", selection.slug);
+      if (selection.slug) url.searchParams.set("w", selection.slug);
       if (selection.at) url.searchParams.set("at", selection.at);
     } else if (mode === "verse" && verse) {
       const [s, a] = verse.split(":");
@@ -137,7 +138,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       const mode = u.searchParams.get("mode");
       const s = useReader.getState();
       if (m[2]) s.openVerse(`${m[1]}:${m[2]}`);
-      else if (w) s.openWord({ slug: w, at: u.searchParams.get("at") }, { fromHistory: true });
+      else if (w || u.searchParams.get("at")) s.openWord({ slug: w ?? "", at: u.searchParams.get("at") }, { fromHistory: true });
       else if (v) s.openVerse(v);
       else if (mode === "lookup") s.setMode("index");
       else if (mode === "about") s.setMode("surah");
@@ -228,7 +229,28 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
         else closeEntry();
         return;
       }
+      // Alt+↑/↓ move to the previous / next sūra from anywhere in the reader.
+      if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        const n = chapter.number + (e.key === "ArrowDown" ? 1 : -1);
+        if (n >= 1 && n <= 114) {
+          e.preventDefault();
+          router.push(`/quran/${n}`);
+        }
+        return;
+      }
       if (!el?.classList.contains("w") || !ref.current) return;
+      // ↑/↓ move to the first word of the previous / next verse.
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        const verses = Array.from(ref.current.querySelectorAll<HTMLElement>(".passage"));
+        const i = verses.indexOf(el.closest<HTMLElement>(".passage")!);
+        const to = verses[i + (e.key === "ArrowDown" ? 1 : -1)]?.querySelector<HTMLElement>(".w");
+        if (to) {
+          e.preventDefault();
+          roving(ref.current, to);
+          to.focus();
+        }
+        return;
+      }
       const rtl = document.documentElement.dir === "rtl";
       const dir = e.key === (rtl ? "ArrowLeft" : "ArrowRight") ? 1 : e.key === (rtl ? "ArrowRight" : "ArrowLeft") ? -1 : 0;
       if (!dir) return;
@@ -242,7 +264,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [closeEntry, drawer]);
+  }, [closeEntry, drawer, chapter.number, router]);
 
   // Touch: a 420 ms long-press reveals a verse's tools; moving cancels it, so scrolling never does (RDR-149).
   const press = useRef<{ timer: ReturnType<typeof setTimeout> | null }>({ timer: null });
@@ -283,9 +305,8 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       const second = selection?.at === w.dataset.w && w.dataset.w2;
       const at = second ? w.dataset.w2! : w.dataset.w!;
       const slug = second ? w.dataset.l2 : w.dataset.l;
-      if (!slug) return;
-      if (wordStatesOn && !usePersonal.getState().wordStates[slug]) setWordState(slug, "learning");
-      openWord({ slug, at });
+      // a word with no lemma (a pronoun, the Quranic initials) opens its own entry by location (RDR-548)
+      openWord({ slug: slug ?? "", at });
       setPrefs({ panelOpen: true });
     }
   }

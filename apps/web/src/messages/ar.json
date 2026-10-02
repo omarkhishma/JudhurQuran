@@ -419,7 +419,9 @@
     "error": "تعذّر تشغيل التلاوة",
     "murattal": "مرتّل",
     "mujawwad": "مجوّد",
-    "muallim": "المعلّم"
+    "muallim": "المعلّم",
+    "speed": "سرعة التلاوة",
+    "repeat": "كرّر الآية"
   },
   "screens": {
     "building": "هذه الشاشة قيد البناء ضمن الخطة، ولم تكتمل بعد.",
@@ -874,6 +876,29 @@
     "cardStudyPrefers": "ترجّح دراسة مركز تفسير أنها {period}.",
     "cardTruncated": "النص مقطوع في قاعدة بيانات المصدر.",
     "openEntry": "افتح مدخل {w}",
-    "noteMark": "ملاحظة ·"
+    "noteMark": "ملاحظة ·",
+    "scopeWord": "هذه الكلمة",
+    "scopeRoot": "الجذر كله ({root})",
+    "surahFilter": "السورة",
+    "allSurahs": "كل السور",
+    "filteredN": "المطابق: {n}",
+    "tafsirOne": "تفسير واحد",
+    "tafsirCompare": "جنبًا إلى جنب",
+    "tafsirCompareNote": "اختر حتى ثلاثة تفاسير؛ تصطف أعمدة إذا اتسعت اللوحة.",
+    "viewSurahs": "السور",
+    "viewJuz": "الأجزاء",
+    "viewPage": "الصفحة",
+    "pageN": "ص {n}",
+    "hizbN": "الحزب {n}",
+    "pageJumpLabel": "رقم الصفحة في مصحف المدينة",
+    "pageJumpGo": "اذهب إلى الصفحة",
+    "coverage": "تعرف {pct} من كلماتها",
+    "wordState": "حالتها عندك",
+    "stateNew": "جديدة",
+    "stateLearning": "قيد التعلّم",
+    "stateKnown": "معروفة",
+    "initialsExplain": "حروف مقطّعة تُقرأ بأسماء حروفها، لا جذر لها ولا وزن. وللمفسرين في معناها أقوال تجدها في تفسير الآية.",
+    "verseTafsirOf": "تفسير الآية {ref}",
+    "tafsirView": "طريقة عرض التفسير"
   }
 }

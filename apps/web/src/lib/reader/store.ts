@@ -87,7 +87,7 @@ export const useReader = create<ReaderState>((set, get) => ({
     }
     // choosing any word while onboarding shows its first beat moves it to the second (RDR-406)
     set({ selection: sel, verse: null, mode: "word", history, cursor, ask: false, sheet: "half", onbBeat: s.onbBeat === 0 ? 1 : s.onbBeat });
-    usePersonal.getState().recordTrail("word", sel.slug);
+    if (sel.slug) usePersonal.getState().recordTrail("word", sel.slug);
   },
   openVerse: (key) => {
     set({ verse: key, selection: null, mode: "verse", ask: false, sheet: "half" });

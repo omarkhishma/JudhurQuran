@@ -419,7 +419,9 @@
     "error": "Could not play the recitation",
     "murattal": "murattal",
     "mujawwad": "mujawwad",
-    "muallim": "teaching"
+    "muallim": "teaching",
+    "speed": "Playback speed",
+    "repeat": "Repeat the verse"
   },
   "screens": {
     "building": "This screen is being built as part of the plan and is not finished yet.",
@@ -874,6 +876,29 @@
     "cardStudyPrefers": "The Tafsir Center's study prefers that it is {period}.",
     "cardTruncated": "The text is cut short in the source database.",
     "openEntry": "Open the entry for {w}",
-    "noteMark": "Note ·"
+    "noteMark": "Note ·",
+    "scopeWord": "This word",
+    "scopeRoot": "The whole root ({root})",
+    "surahFilter": "Sūra",
+    "allSurahs": "All sūras",
+    "filteredN": "Matching: {n}",
+    "tafsirOne": "One",
+    "tafsirCompare": "Side by side",
+    "tafsirCompareNote": "Pick up to three; they sit in columns when the panel is wide enough.",
+    "viewSurahs": "Sūras",
+    "viewJuz": "Juzʾ",
+    "viewPage": "Page",
+    "pageN": "p. {n}",
+    "hizbN": "Ḥizb {n}",
+    "pageJumpLabel": "Page of the Madinah mushaf",
+    "pageJumpGo": "Go to page",
+    "coverage": "You know {pct} of its words",
+    "wordState": "For you",
+    "stateNew": "New",
+    "stateLearning": "Learning",
+    "stateKnown": "Known",
+    "initialsExplain": "Quranic initials, read by the names of their letters; they have no root and no pattern. The exegetes' views on them are in the verse's tafsir.",
+    "verseTafsirOf": "Tafsir of {ref}",
+    "tafsirView": "Tafsir view"
   }
 }

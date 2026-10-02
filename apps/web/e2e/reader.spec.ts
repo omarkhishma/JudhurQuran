@@ -345,3 +345,96 @@ test("a verse note shows under its verse (marginalia)", async ({ page }) => {
   await page.reload();
   await expect(page.locator('[data-note="1:2"] .margin-note')).toContainText("الحمد ثناء");
 });
+
+test("every word opens an entry: the Quranic initials and free pronouns by location (RDR-547/548)", async ({ page }) => {
+  await returning(page);
+  await page.goto("/quran/2");
+  await page.locator('.w[data-w="2:1:1"]').click();
+  await expect(page).toHaveURL(/[?&]at=2(:|%3A)1(:|%3A)1/);
+  const p = panel(page);
+  await expect(p.getByRole("heading", { name: "الٓمٓ" })).toBeVisible();
+  await expect(p).toContainText("حروف مقطّعة");
+  await p.getByRole("button", { name: /تفسير الآية/ }).click();
+  await expect(page).toHaveURL(/\/quran\/2\/1$/);
+  await page.goto("/word/2:255:5");
+  await expect(panel(page).getByRole("heading", { name: "هُوَ" })).toBeVisible();
+  await expect(panel(page)).toContainText("ضمير");
+});
+
+test("study mode: words are marked only by the reader, and the rail shows each sūra's coverage (D20, RDR-552/571)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the rail is an overlay on phones");
+  await returning(page);
+  await page.addInitScript(() => localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { wordStates: true }, version: 2 })));
+  const sets = await api<{ data: Record<string, string[]> }>(page, "/surahs/lemma-sets");
+  await page.goto("/quran/112");
+  const first = page.locator('.w[data-w="112:1:1"]');
+  await first.click();
+  // a tap opens the word but does not mark it
+  const states = () => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state?.wordStates ?? {});
+  expect(Object.keys(await states())).toHaveLength(0);
+  const slug = await first.getAttribute("data-l");
+  await panel(page).getByRole("button", { name: "معروفة" }).click();
+  expect((await states())[slug!]).toBe("known");
+  const pct = new Intl.NumberFormat("ar-EG", { style: "percent", maximumFractionDigits: 0 }).format(1 / sets.data["112"].length);
+  await expect(page.locator('.reader-rail [aria-current="page"]')).toContainText(pct);
+});
+
+test("rail: ajzāʾ and a mushaf page take the reader where they begin (P2.1)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the rail is an overlay on phones");
+  await returning(page);
+  const d = await api<{ juz: { number: number; surah: number; ayah: number }[] }>(page, "/divisions");
+  await page.goto("/quran/1");
+  const rail = page.locator(".reader-rail");
+  await rail.getByRole("button", { name: "الأجزاء" }).click();
+  const j4 = d.juz[3];
+  await rail.locator(`a[href$="/quran/${j4.surah}#v${j4.ayah}"]`).first().click();
+  await expect(page).toHaveURL(new RegExp(`/quran/${j4.surah}#v${j4.ayah}$`));
+  await expect(page.locator(`#v${j4.ayah}`)).toBeInViewport();
+  const pg = await api<{ verses: { surah: number; ayah: number }[] }>(page, "/pages/300");
+  await rail.getByRole("button", { name: "الصفحة" }).click();
+  await rail.getByRole("textbox").fill("٣٠٠");
+  await rail.getByRole("button", { name: "اذهب إلى الصفحة" }).click();
+  await expect(page).toHaveURL(new RegExp(`/quran/${pg.verses[0].surah}#v${pg.verses[0].ayah}$`));
+});
+
+test("In the Quran: the whole root and a sūra filter (RDR-558)", async ({ page }) => {
+  await returning(page);
+  const all = await api<{ total: number }>(page, "/words/ilm/attestations?scope=root&surah=2&limit=1");
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  const p = panel(page);
+  const usage = p.locator('[data-section="usage"]');
+  await usage.locator(".layer-head").click();
+  await usage.getByRole("button", { name: /الجذر كله/ }).click();
+  await usage.getByRole("combobox").selectOption("2");
+  await expect(usage).toContainText(`المطابق: ${new Intl.NumberFormat("ar-EG").format(all.total)}`);
+  await expect(usage.locator(".kwic-row").first()).toContainText("2:");
+});
+
+test("tafsir side by side: up to three works at once (P2.10)", async ({ page }) => {
+  await returning(page);
+  await page.goto("/quran/2/255");
+  const p = panel(page);
+  await p.getByRole("button", { name: "جنبًا إلى جنب" }).click();
+  await expect(p.locator(".tafsir-cols.is-compare > article")).toHaveCount(2);
+  const chips = p.getByRole("group", { name: "اختر التفسير" }).locator('button[aria-pressed="false"]');
+  await chips.first().click();
+  await expect(p.locator(".tafsir-cols.is-compare > article")).toHaveCount(3);
+  await chips.first().click();
+  await expect(p.locator(".tafsir-cols.is-compare > article")).toHaveCount(3);
+});
+
+test("recitation speed cycles 1×, 0.75×, 0.5× and repeat toggles (RDR-554)", async ({ page }) => {
+  await returning(page);
+  await page.goto("/quran/1");
+  const speed = page.getByRole("button", { name: /سرعة التلاوة/ });
+  await expect(speed).toHaveText("1×");
+  await speed.click();
+  await expect(speed).toHaveText("0.75×");
+  await speed.click();
+  await expect(speed).toHaveText("0.5×");
+  const repeat = page.getByRole("button", { name: "كرّر الآية" });
+  await repeat.click();
+  await expect(repeat).toHaveAttribute("aria-pressed", "true");
+  await page.reload();
+  await expect(page.getByRole("button", { name: /سرعة التلاوة/ })).toHaveText("0.5×");
+});

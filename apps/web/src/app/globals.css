@@ -1507,6 +1507,10 @@ button.type-chip:hover {
 .dist-bar.is-here {
   background: var(--chart-root);
 }
+.dist-bar.is-on {
+  background: var(--chart-root);
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--ring);
+}
 .kwic-row {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
@@ -2089,5 +2093,35 @@ button.type-chip:hover {
   font-style: normal;
   color: var(--t3);
   flex: none;
+}
+}
+
+@layer components {
+/* ─── Tafsir: one, or up to three side by side ──────────────────────────────── */
+.tafsir-cols {
+  display: grid;
+  gap: 16px;
+}
+.tafsir-cols.is-compare {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.tafsir-cols.is-compare > article {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card-2);
+}
+}
+
+@layer components {
+/* Vocabulary coverage per sūra in study mode (RDR-571): known, then learning, then the rest */
+.coverage-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 99px;
+  background: linear-gradient(to left, var(--good) 0 var(--known), var(--amber) var(--known) var(--learning), var(--line) var(--learning) 100%);
+}
+[dir="ltr"] .coverage-bar {
+  background: linear-gradient(to right, var(--good) 0 var(--known), var(--amber) var(--known) var(--learning), var(--line) var(--learning) 100%);
 }
 }
