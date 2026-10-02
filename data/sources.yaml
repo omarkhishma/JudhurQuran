@@ -107,6 +107,8 @@ sources:
     files:
       - path: qac-v2-kaisdukes/morphology.txt
         sha256: f1d3417be9aac22d54fff9ddc34db0818d7f490d836471a0d9163b3a2c11c065
+      - path: qac-v2-kaisdukes/lemmas.txt
+        sha256: 631fd141d1a0d7b771b638bf8a30a73c97391e5086af98978b9260062cf1ee04
 
   - id: qac-fork-mustafa0x
     role_ar: "مقارنة: تصحيحات مجتمعية لنسبة الجذور والصيغ"
@@ -137,9 +139,13 @@ sources:
     attribution_en: Source — The Noble Qur'an Encyclopedia, QuranEnc.com (publisher and version stated per work).
     files:
       - path: quranenc/arabic_moyassar/arabic_moyassar.sqlite
+        sha256: eb384e586487b089b826375d3f705d07e775e0019325da405e0337a9f6b3da04
       - path: quranenc/arabic_mokhtasar/arabic_mokhtasar.sqlite
+        sha256: 05086b0661250dca6c6cedd6c4503f169d14dc5fef81ae5042418c07817495e0
       - path: quranenc/english_saheeh/english_saheeh.sqlite
+        sha256: 8e3feedb9b6735d60355c53aef9ebc4b86a8b995d118c0387e7e1bd93b67eddb
       - path: quranenc/english_rwwad/english_rwwad.sqlite
+        sha256: 77e2ede3d8e6d6b5c6e16ff78eda2d2b6cc0a6b7489c94a5dde4f7481f5fdee8
 
   - id: tafsir-api-qul
     role_ar: "النص الرقمي للتفاسير الكلاسيكية"
@@ -154,3 +160,14 @@ sources:
     license_url: https://qul.tarteel.ai/faq
     attribution_ar: مصدر النص الرقمي — المكتبة القرآنية الشاملة (qul.tarteel.ai)
     attribution_en: Digital text source — Quranic Universal Library (qul.tarteel.ai)
+    files:
+      - path: tafsir_api/ar-tafsir-as-saadi.json
+        sha256: 94a8414799ef1deb2e945ed93e55004c752693f2e9648c3d2a82e66fed08195e
+      - path: tafsir_api/ar-tafsir-al-baghawi.json
+        sha256: 2fea02ccd1a5527e416faa573231755f7fb1395dbdc276c32616760ccb40bbdd
+      - path: tafsir_api/ar-tafsir-ibn-kathir.json
+        sha256: 64ed06f93a26a2be9d722dac353a36c589a03e11bfaadbf1c7c29906bfc05d00
+      - path: tafsir_api/ar-tafseer-al-qurtubi.json
+        sha256: 8a37b2915506076cf060944751d2447f58b0771c2f780c4197a3d1f2f3dda11f
+      - path: tafsir_api/ar-tafsir-al-tabari.json
+        sha256: c101c85804cd91593b556ff00bf4cf453b37825dac4c0dc2cb59d43668360f89

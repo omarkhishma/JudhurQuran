@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 from .build import RawPaths, build
+from .pins import verify_source_pins
 
 REPO = Path(__file__).resolve().parents[3]
 DATASET_VERSION = "2026.10.0"
@@ -26,6 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "build":
         out = args.out or REPO / "data/build" / args.version
         t = time.time()
+        pins = verify_source_pins(args.raw, REPO / "data/sources.yaml")  # raises on any drift
         report = build(
             RawPaths.default(
                 args.raw, REPO / "data/works.yaml", REPO / "data/lexica.yaml", REPO / "data/recitations.yaml"
@@ -35,7 +37,13 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(
             json.dumps(
-                {"out": str(out), "seconds": round(time.time() - t, 1), **report["counts"]},
+                {
+                    "out": str(out),
+                    "seconds": round(time.time() - t, 1),
+                    "pins_verified": len(pins["verified"]),
+                    "unpinned": pins["unpinned"],
+                    **report["counts"],
+                },
                 ensure_ascii=False,
             )
         )
