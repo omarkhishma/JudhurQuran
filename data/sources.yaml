@@ -44,8 +44,8 @@ sources:
     license_ar: "رخصة المشاع الإبداعي (نسب المصنف ٣٫٠) — نسخ حرفية فقط ولا يجوز تغيير النص"
     kind: quran-text
     role: verification text and alignment bridge to the morphology
-    title_ar: نص تنزيل (الرسم العثماني ١٫١)
-    title_en: Tanzil Quran Text (Uthmani 1.1)
+    title_ar: نص تنزيل (الرسم العثماني ١٫١، بلا علامات الوقف)
+    title_en: Tanzil Quran Text (Uthmani 1.1, without pause marks)
     version: "1.1"
     url: https://tanzil.net/download/
     license: Creative Commons Attribution 3.0 — verbatim copies only; changing the text is not allowed
@@ -53,8 +53,11 @@ sources:
     attribution_ar: نص القرآن من مشروع تنزيل — tanzil.net
     attribution_en: Quran text from the Tanzil Project — tanzil.net
     files:
-      - path: tanzil/quran-uthmani.txt
+      - path: tanzil/quran-uthmani-nomarks.txt
         sha256: bf4f57b968d03f4131c070b1e285da9be0e0a108a21c910e872801ca273312c8
+      # with pause marks and sajdah signs: the waqf layer (PLAN P3.9) keys these marks to our words
+      - path: tanzil/quran-uthmani-marks-sajdah.txt
+        sha256: 18c719bb3ba26d32ef457f40dad77cd28c4c5a34156833e26a8e5fcfdd246fb1
       - path: tanzil/quran-data.xml
         sha256: 8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a
 

@@ -77,7 +77,8 @@ class RawPaths:
             works_registry=works_registry,
             lexica_registry=lexica_registry,
             recitations_registry=recitations_registry,
-            tanzil_uthmani=raw / "tanzil/quran-uthmani.txt",
+            # the no-pause-marks variant (verified by content: zero pause marks), used for alignment only
+            tanzil_uthmani=raw / "tanzil/quran-uthmani-nomarks.txt",
             tanzil_simple_clean=raw / "tanzil/quran-simple-clean.txt",
             tanzil_meta=raw / "tanzil/quran-data.xml",
             kfgqpc=raw / "kfgqpc-uthmanic-hafs-v2-0/UthmanicHafs_v2-0 data/hafsData_v2-0.json",

@@ -97,6 +97,8 @@ Keys used: al-Mufradat, Maqayis and al-Sihah from the Shamela4 TOC; Lisan from t
 
 ### 5.1 Shamela 4 full extraction — `huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB`
 
+> **Identifiers (corrected 2026-10-03, PLAN P1.8).** The numbers used for books in this section (6119, 1462, 5826, 6061, 1684, 2502…) are the Shamela 4 dataset's **folder numbers** (`book_id`), not shamela.ws book ids. For the works we hold, from their `book_metadata.json`: 6119 al-Mufradat = shamela.ws 23636 · 1462 Lisan = 1687 · 5826 Maqayis = 21710 · 6061 al-Sihah = 23235 · 1684 Ibn Qutaybah = 3259. Citations and cross-walks to OpenITI use the shamela.ws id (`Shamela00…` in OpenITI version ids).
+
 - Contents: 8,589 Shamela books, 7,611,186 pages (snapshot `shamela4_full_extraction_pg_2026_04_26`). Per book: `book_metadata.json` (includes the Shamela bibliographic card "betaka" with editor, publisher, edition), `pages.jsonl` (`body`, separate `footnotes`, printed `page_num`, `part`), `toc.jsonl`, `manifest.json` with SHA-256 per file. All 20 downloaded books verified against their manifest checksums (0 mismatches).
 - Relevant books present (folder id → edition from betaka):
   - 6119 al-Mufradat fi Gharib al-Quran — ed. Safwan Adnan al-Dawudi, Dar al-Qalam / al-Dar al-Shamiya, Damascus–Beirut, 1st ed. 1412 AH; 881 pages; TOC 1,679 (≈1,600 root articles).
