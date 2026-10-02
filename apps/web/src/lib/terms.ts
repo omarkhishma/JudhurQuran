@@ -9,7 +9,8 @@ export type TermId =
   | "root" | "lemma" | "wazn" | "verbForm" | "formOne" | "derivedForm" | "activeParticiple" | "passiveParticiple"
   | "verbalNoun" | "perfect" | "imperfect" | "imperative" | "passiveVoice" | "nominative" | "accusative"
   | "genitive" | "jussive" | "prefix" | "suffix" | "stem" | "noRoot" | "tashkeel" | "rasm" | "imlaei"
-  | "concordance" | "occurrences" | "lexicon" | "gharib" | "variant" | "gloss" | "transliteration"; // prettier-ignore
+  | "concordance" | "occurrences" | "lexicon" | "gharib" | "variant" | "gloss" | "transliteration"
+  | "form2" | "form3" | "form4" | "form5" | "form6" | "form7" | "form8" | "form9" | "form10"; // prettier-ignore
 
 type Card = { name: string; body: string };
 export type Term = { category: "grammar" | "writing" | "sources" | "meaning"; ar: Card; en: Card; href?: string };
@@ -20,6 +21,20 @@ export const CATEGORY = {
   sources: { ar: "مصطلح في المصادر", en: "sources term" },
   meaning: { ar: "مصطلح في المعنى", en: "meaning term" },
 } as const;
+
+// Derived verb forms: their best-known meanings as the morphology manuals list them (e.g. al-Ḥamlāwī,
+// Shadhā al-ʿArf fī Fann al-Ṣarf), each with Quranic examples. A form's meaning in a given verse is
+// for the tafsir to settle, so the cards say "among its meanings".
+const SOURCE_AR = " (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)";
+const SOURCE_EN = " (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)";
+function form(n: string, arName: string, arBody: string, enBody: string): Term {
+  return {
+    category: "grammar",
+    href: "/about#wazn",
+    ar: { name: `${arName} (${n})`, body: arBody + SOURCE_AR },
+    en: { name: `Form ${n} — ${arName}`, body: enBody + SOURCE_EN },
+  };
+}
 
 export const TERMS: Record<TermId, Term> = {
   root: {
@@ -182,7 +197,24 @@ export const TERMS: Record<TermId, Term> = {
     ar: { name: "النقحرة", body: "كتابة الكلمة العربية بحروف لاتينية تقرّب نطقها لمن لا يقرأ العربية: ʿilm، kitāb." },
     en: { name: "Transliteration", body: "An Arabic word written in Latin letters so its sound can be read: ʿilm, kitāb." },
   },
+
+  form2: form("II", "فَعَّلَ", "من معانيه التكثير والمبالغة (قَطَّعَ)، وجعلُ غيره يفعل (فَرَّحَ: جعله يفرح)، ونسبةُ الشيء إلى أصل الفعل (كَذَّبَ: نسبه إلى الكذب).", "Intensity or repetition (qaṭṭaʿa, to cut to pieces), making someone do the act (farraḥa, to gladden), or ascribing the quality (kadhdhaba, to call a liar)."),
+  form3: form("III", "فَاعَلَ", "من معانيه المشاركة بين اثنين في الفعل (قَاتَلَ، جَادَلَ)، وقد يأتي بمعنى الفعل المجرد (سَافَرَ).", "Doing the act with or against another (qātala, to fight; jādala, to dispute); sometimes the plain meaning (sāfara, to travel)."),
+  form4: form("IV", "أَفْعَلَ", "من معانيه جعلُ غيره يفعل (أَخْرَجَ: جعله يخرج)، والدخول في الوقت أو المكان (أَصْبَحَ: دخل في الصباح)، والصيرورة.", "Causing the act (akhraja, to bring out — make go out), entering a time or place (aṣbaḥa, to reach morning), or becoming."),
+  form5: form("V", "تَفَعَّلَ", "من معانيه مطاوعة فَعَّلَ (عَلَّمْتُه فتَعَلَّمَ)، والتكلّف (تَصَبَّرَ)، والتدرّج في الفعل (تَجَرَّعَ).", "The act received or taken on oneself, from Form II (ʿallamtuhu fa-taʿallama, I taught him and he learned), effort (taṣabbara), or doing it little by little (tajarraʿa, to sip)."),
+  form6: form("VI", "تَفَاعَلَ", "من معانيه المشاركة بين أكثر من اثنين (تَسَاءَلُوا: سأل بعضهم بعضًا)، وإظهار ما ليس في الحقيقة (تَمَارَضَ)، والتدرّج.", "Mutual action among several (tasāʾalū, they asked one another), pretending (tamāraḍa, to feign illness), or gradual action."),
+  form7: form("VII", "انْفَعَلَ", "من معانيه المطاوعة، أي قبول أثر الفعل (كَسَرْتُه فانْكَسَرَ)، ولا يأتي إلا لازمًا.", "Undergoing the act — the result of Form I (kasartuhu fa-nkasara, I broke it and it broke). Never takes an object."),
+  form8: form("VIII", "افْتَعَلَ", "من معانيه المطاوعة (جَمَعْتُه فاجْتَمَعَ)، والاتخاذ (اتَّخَذَ)، والاجتهاد في تحصيل الفعل (اكْتَسَبَ).", "Undergoing or doing for oneself (jamaʿtuhu fa-jtamaʿa, I gathered them and they gathered), taking for oneself (ittakhadha), or striving for it (iktasaba, to earn)."),
+  form9: form("IX", "افْعَلَّ", "يدل في الغالب على الألوان والعيوب وقوّتها (ابْيَضَّتْ، اسْوَدَّتْ).", "Mostly colours and defects, intensely (ibyaḍḍat, to turn white; iswaddat, to turn black)."),
+  form10: form("X", "اسْتَفْعَلَ", "من معانيه الطلب (اسْتَغْفَرَ: طلب المغفرة)، والتحوّل، ووجود الشيء على صفة (اسْتَكْبَرَ: رأى نفسه كبيرًا).", "Seeking or asking (istaghfara, to seek forgiveness), turning into, or finding or deeming oneself so (istakbara, to be arrogant — deem oneself great)."),
 };
+
+
+
+/** Corpus verb form number → its card. */
+export const FORM_TERM: Partial<Record<number, TermId>> = {
+  2: "form2", 3: "form3", 4: "form4", 5: "form5", 6: "form6", 7: "form7", 8: "form8", 9: "form9", 10: "form10",
+}; // prettier-ignore
 
 /** Corpus feature tags → the term that explains them. */
 export const TAG_TERM: Record<string, TermId> = {

@@ -14,7 +14,7 @@ import { useAudio } from "@/lib/store/audio";
 import { BookmarkButton } from "@/components/saved/BookmarkButton";
 import { useEffect, type ReactNode } from "react";
 import { Term } from "@/components/terms/Term";
-import { TAG_TERM } from "@/lib/terms";
+import { FORM_TERM, TAG_TERM } from "@/lib/terms";
 
 function lab(l: Label | undefined, locale: string): string | null {
   if (!l) return null;
@@ -364,7 +364,11 @@ function featureRows(f: Features, locale: string, t: ReturnType<typeof useTransl
   const rows: [string, ReactNode, ReactNode][] = [];
   const add = (key: string, k: ReactNode, v: ReactNode) => v && rows.push([key, k, v]);
   add("pos", locale === "ar" ? "النوع" : "Part of speech", lab(f.pos, locale));
-  if (f.verb_form) add("form", <Term id="verbForm">{t("verbForm")}</Term>, `${f.verb_form.pattern} (${f.verb_form.roman})`);
+  if (f.verb_form) {
+    const label = `${f.verb_form.pattern} (${f.verb_form.roman})`;
+    const id = FORM_TERM[f.verb_form.number];
+    add("form", <Term id="verbForm">{t("verbForm")}</Term>, id ? <Term id={id}>{label}</Term> : label);
+  }
   add("aspect", locale === "ar" ? "الزمن" : "Aspect", termed(f.aspect, locale));
   add("voice", locale === "ar" ? "البناء" : "Voice", termed(f.voice, locale));
   add("derivation", locale === "ar" ? "الاشتقاق" : "Derivation", termed(f.derivation, locale));

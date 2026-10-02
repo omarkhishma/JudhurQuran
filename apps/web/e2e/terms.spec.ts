@@ -27,3 +27,11 @@ test("explain-terms off shows plain labels", async ({ page }) => {
   await expect(page.getByText("الصيغة المعجمية").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "الصيغة المعجمية" })).toHaveCount(0);
 });
+
+test("a derived verb form explains itself, with its source", async ({ page }) => {
+  await page.goto("/word/2:199:7"); // وَٱسْتَغْفِرُوا — Form X
+  await page.getByRole("button", { name: /اسْتَفْعَلَ/ }).click();
+  const card = page.getByRole("dialog", { name: /اسْتَفْعَلَ/ });
+  await expect(card).toContainText("الطلب");
+  await expect(card).toContainText("شذا العرف");
+});
