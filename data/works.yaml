@@ -55,6 +55,9 @@ works:
     format: tafsir-api
     file: tafsir_api/ar-tafsir-al-baghawi.json
     version: tafsir_api v1.2.2 (QUL 27)
+    # The digital edition prints its editor's footnotes inline ([[…]]) and manuscript folio marks;
+    # they are the editor's work, not the author's, and are stripped at build (D22, PLAN P1.8).
+    strip_apparatus: true
 
   - id: ibn-kathir
     kind: tafsir
@@ -68,6 +71,9 @@ works:
     format: tafsir-api
     file: tafsir_api/ar-tafsir-ibn-kathir.json
     version: tafsir_api v1.2.2 (QUL 22)
+    # The digital edition prints its editor's footnotes inline ([[…]]) and manuscript folio marks;
+    # they are the editor's work, not the author's, and are stripped at build (D22, PLAN P1.8).
+    strip_apparatus: true
 
   - id: qurtubi
     kind: tafsir
@@ -81,6 +87,9 @@ works:
     format: tafsir-api
     file: tafsir_api/ar-tafseer-al-qurtubi.json
     version: tafsir_api v1.2.2 (QUL 23)
+    # The digital edition prints its editor's footnotes inline ([[…]]) and manuscript folio marks;
+    # they are the editor's work, not the author's, and are stripped at build (D22, PLAN P1.8).
+    strip_apparatus: true
 
   - id: tabari
     kind: tafsir
@@ -94,6 +103,9 @@ works:
     format: tafsir-api
     file: tafsir_api/ar-tafsir-al-tabari.json
     version: tafsir_api v1.2.2 (QUL 37)
+    # The digital edition prints its editor's footnotes inline ([[…]]) and manuscript folio marks;
+    # they are the editor's work, not the author's, and are stripped at build (D22, PLAN P1.8).
+    strip_apparatus: true
 
   - id: saheeh
     kind: translation
