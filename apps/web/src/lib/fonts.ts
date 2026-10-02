@@ -12,11 +12,13 @@ export const quranHafs = localFont({
   fallback: ["serif"],
 });
 
+// Classical text (tafsir, lexica) appears below the fold or after a tap: not preloaded, swapped in.
 export const amiri = Amiri({
   subsets: ["arabic", "latin"],
   weight: ["400", "700"],
   variable: "--font-amiri",
   display: "swap",
+  preload: false,
 });
 
 export const plexArabic = IBM_Plex_Sans_Arabic({
@@ -38,6 +40,7 @@ export const plexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
   variable: "--font-plex-mono",
   display: "swap",
+  preload: false,
 });
 
 export const fontVariables = [quranHafs, amiri, plexArabic, plexSans, plexMono].map((f) => f.variable).join(" ");

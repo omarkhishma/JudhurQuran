@@ -1,6 +1,20 @@
 # Public entry point. SITE_ADDRESS is the domain (automatic HTTPS) or ":80" for a plain local run.
 {$SITE_ADDRESS::80} {
-	encode zstd gzip
+	# Defaults plus fonts: the KFGQPC font must be served as the signed TTF (no conversion to WOFF2 is
+	# allowed), so transport compression is what shrinks it.
+	encode {
+		zstd
+		gzip
+		match {
+			header Content-Type text/*
+			header Content-Type application/json*
+			header Content-Type application/javascript*
+			header Content-Type application/xml*
+			header Content-Type image/svg+xml*
+			header Content-Type font/ttf*
+			header Content-Type font/otf*
+		}
+	}
 
 	# The public API goes straight to FastAPI; the web app's own /api/v1 rewrite is only a dev convenience.
 	handle /api/v1/* {
