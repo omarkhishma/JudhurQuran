@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -9,10 +10,11 @@ import yaml
 from jadhr_pipeline.pins import sha256_file, verify_source_pins
 
 REPO = Path(__file__).resolve().parents[2]
+RAW = Path(os.environ.get("JADHR_RAW_DIR", REPO / "data" / "raw"))  # same switch as conftest.py
 
 
 def test_every_pinned_source_file_matches() -> None:
-    result = verify_source_pins(REPO / "data/raw", REPO / "data/sources.yaml")
+    result = verify_source_pins(RAW, REPO / "data/sources.yaml")
     assert len(result["verified"]) >= 18 and result["unpinned"] == []
 
 
