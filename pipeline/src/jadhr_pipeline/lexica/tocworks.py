@@ -38,6 +38,9 @@ class RawArticle:
     page_ref: str | None
     source_ref: str
     core_meaning: str | None = None
+    # Root-mapping keys when they differ from the printed headword: the permutations of a combined
+    # header ("عق، قع") or the Tāj root an al-Qāmūs bullet is aligned to. Never displayed.
+    match_heads: list[str] | None = None
 
 
 @dataclass

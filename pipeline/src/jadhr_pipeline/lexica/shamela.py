@@ -32,6 +32,7 @@ MARKER_PATTERNS: dict[str, re.Pattern[str]] = {
     "guillemets": re.compile(r" ?\u00ab([\u0660-\u06690-9]{1,3})\u00bb"),
     "negation-parens": re.compile(r" ?\(\u00ac([\u0660-\u06690-9]{1,3})\)"),
     "parens": re.compile(r" ?\(([\u0660-\u06690-9]{1,3})\)"),
+    "none": re.compile(r"(?!)"),  # an edition with no reference markers in the body (Tāj)
 }
 _NOTE_NUMBER = re.compile(r"(?:^|[\r\n])\s*\(\u00ac?([\u0660-\u06690-9]{1,3})\)")
 _TOC_ID = re.compile(r"toc-(\d+)")
@@ -195,12 +196,24 @@ def _strip_spans(raw: str, counters: Counters) -> tuple[str, list[Span]]:
     return "".join(out), spans
 
 
-def read_lines(pages: list[Page], marker_style: str, counters: Counters) -> list[Line]:
+_BROKEN_SPAN = re.compile(
+    r"((?:^|[\r\n])<span[^>]*>[^<\r\n]*)[\r\n]+([^<]*</span>)"
+)  # spans that open a line
+
+
+def read_lines(
+    pages: list[Page], marker_style: str, counters: Counters, *, join_broken_spans: bool = False
+) -> list[Line]:
+    """``join_broken_spans``: a heading span the typist broke over two lines ("<span>ع ض⏎و: </span>")
+    is put back on one line (the break becomes a space) so that it is still seen as a heading."""
     out: list[Line] = []
     for page in pages:
         if page.footnotes:
             counters.add("footnotes-dropped")
         body = strip_markers(page, marker_style, counters)
+        if join_broken_spans:
+            body, n = _BROKEN_SPAN.subn(r"\1 \2", body)
+            counters.add("title-markup-removed:line-break-inside-heading", n)
         for n, raw in enumerate(re.split(r"\r\n|\r|\n", body)):
             text, spans = _strip_spans(raw, counters)
             out.append(Line(text, page, n == 0, spans))

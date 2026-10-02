@@ -7,8 +7,8 @@ Entry point::
 
 ``raw`` is data/raw, ``registry`` data/lexica.yaml, ``roots`` the 1,642 canonical root rows
 (fields ``key``, ``letters``; ``occurrences`` breaks ties). ``words`` (words.jsonl rows) and
-``surahs`` (surahs.jsonl rows) are needed for the gharib work; when omitted they are read from
-``data/build/<latest>/`` next to ``raw``.
+``surahs`` (surahs.jsonl rows) are needed for the gharib work and for recognising Quran quotations
+in Tāj; when omitted they are read from ``data/build/<latest>/`` next to ``raw``.
 
 Research, licences and rationale: docs/research/02-arabic-lexica.md.
 """
@@ -23,12 +23,14 @@ from typing import Any
 from .gharib import WordIndex, build_glosses, parse_items
 from .lane import read_lane
 from .lisan import split_lisan
+from .quranidx import QuranPairs
 from .registry import Registry, WorkSpec, load_registry
 from .rootmap import Match, RootMatcher
 from .shamela import Counters, load_pages, load_toc, read_lines
+from .taj import split_taj
 from .tocworks import RawArticle, segment_toc_work
 
-__all__ = ["build_lexica", "load_registry"]
+__all__ = ["build_lexica", "load_registry", "work_articles"]
 
 ID_STRIDE = 1_000_000  # entry id = id_block * ID_STRIDE + position in the work (deterministic, stable)
 
@@ -53,7 +55,40 @@ def _split_counters(counters: Counters, rules: dict[str, str]) -> dict[str, dict
     return {"rules_applied": applied, "stats": stats}
 
 
-def _articles(spec: WorkSpec, counters: Counters) -> tuple[list[RawArticle], dict[str, Any]]:
+class _Context:
+    """What one build shares between works: the Quran words (loaded once, on demand) and parsed works
+    that another work aligns to (al-Qāmūs reads Tāj's root list)."""
+
+    def __init__(self, raw: Path, reg: Registry, words: list[dict] | None, surahs: list[dict] | None) -> None:
+        self.raw, self.reg = raw, reg
+        self._words, self._surahs = words, surahs
+        self._quran: QuranPairs | None = None
+        self.parsed: dict[str, tuple[list[RawArticle], dict[str, Any], Counters]] = {}
+
+    def words(self) -> list[dict]:
+        if self._words is None:
+            self._words = _jsonl(_latest_build(self.raw) / "words.jsonl")
+        return self._words
+
+    def surahs(self) -> list[dict]:
+        if self._surahs is None:
+            self._surahs = _jsonl(_latest_build(self.raw) / "surahs.jsonl")
+        return self._surahs
+
+    def quran(self) -> QuranPairs:
+        if self._quran is None:
+            self._quran = QuranPairs(self.words())
+        return self._quran
+
+    def articles(self, spec: WorkSpec) -> tuple[list[RawArticle], dict[str, Any], Counters]:
+        if spec.id not in self.parsed:
+            counters = Counters()
+            arts, extra = _articles(spec, counters, self)
+            self.parsed[spec.id] = (arts, extra, counters)
+        return self.parsed[spec.id]
+
+
+def _articles(spec: WorkSpec, counters: Counters, ctx: _Context) -> tuple[list[RawArticle], dict[str, Any]]:
     fmt = spec.format
     if fmt == "perseus-lane":
         lane = read_lane(spec.path(spec.cfg["files"][0]["path"]), counters)
@@ -61,12 +96,19 @@ def _articles(spec: WorkSpec, counters: Counters) -> tuple[list[RawArticle], dic
         return arts, {"lane_tokens": [e.tokens for e in lane]}
     pages = load_pages(spec.dir)
     toc = load_toc(spec.dir)
-    lines = read_lines(pages, spec.cfg["footnote_marker"], counters)
+    lines = read_lines(
+        pages,
+        spec.cfg["footnote_marker"],
+        counters,
+        join_broken_spans=bool(spec.cfg.get("join_broken_spans")),
+    )
     if fmt == "shamela-toc":
         return segment_toc_work(spec, lines, toc, counters)
     if fmt == "shamela-lisan":
         lisan = split_lisan(lines, toc, counters, spec.cfg["shamela_id"])
         return [RawArticle(a.headword, a.body, a.page_ref, a.source_ref) for a in lisan], {}
+    if fmt == "shamela-taj":
+        return split_taj(spec, lines, toc, counters, ctx.quran())
     raise ValueError(f"{spec.id}: format {fmt} is not a lexicon format")
 
 
@@ -75,7 +117,9 @@ def _map_roots(
 ) -> list[Match]:
     manual = spec.manual_roots()
     lane_tokens: list[list[str]] | None = extra.get("lane_tokens")
-    heads: list[list[str]] = lane_tokens if lane_tokens is not None else [[a.headword] for a in arts]
+    heads: list[list[str]] = (
+        lane_tokens if lane_tokens is not None else [a.match_heads or [a.headword] for a in arts]
+    )
     # Pass 1: strict/manual, to know which roots already have a strict article in this work.
     first: list[Match] = []
     for hs in heads:
@@ -105,6 +149,16 @@ def _map_roots(
     return out
 
 
+def work_articles(
+    raw: Path, registry: Path, work_id: str, words: list[dict] | None = None, surahs: list[dict] | None = None
+) -> tuple[list[RawArticle], dict[str, Any]]:
+    """One work's split articles before root mapping (with ``match_heads`` for combined headings) —
+    for quality checks such as the OpenITI boundary oracle. Empty articles are kept here."""
+    reg = load_registry(raw, registry, verify=False)
+    arts, extra, _ = _Context(raw, reg, words, surahs).articles(reg.work(work_id))
+    return arts, extra
+
+
 def build_lexica(
     raw: Path,
     registry: Path,
@@ -113,6 +167,7 @@ def build_lexica(
     surahs: list[dict] | None = None,
 ) -> tuple[list[dict], list[dict], list[dict], dict]:
     reg: Registry = load_registry(raw, registry)
+    ctx = _Context(raw, reg, words, surahs)
     matcher = RootMatcher(roots)
     works_out: list[dict[str, Any]] = []
     entries_out: list[dict[str, Any]] = []
@@ -133,11 +188,7 @@ def build_lexica(
         wrep: dict[str, Any] = {"format": spec.format}
 
         if spec.format == "shamela-gharib":
-            build = None
-            if words is None or surahs is None:
-                build = _latest_build(raw)
-            ws = words if words is not None else _jsonl(build / "words.jsonl")  # type: ignore[operator]
-            ss = surahs if surahs is not None else _jsonl(build / "surahs.jsonl")  # type: ignore[operator]
+            ws, ss = ctx.words(), ctx.surahs()
             pages = load_pages(spec.dir)
             toc = load_toc(spec.dir)
             lines = read_lines(pages, spec.cfg["footnote_marker"], counters)
@@ -156,7 +207,7 @@ def build_lexica(
             report["works"][spec.id] = wrep
             continue
 
-        arts, extra = _articles(spec, counters)
+        arts, extra, counters = ctx.articles(spec)
         dropped_empty = [a.headword for a in arts if not a.body.strip()]
         keep = [i for i, a in enumerate(arts) if a.body.strip()]
         arts = [arts[i] for i in keep]

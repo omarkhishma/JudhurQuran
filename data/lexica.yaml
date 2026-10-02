@@ -13,17 +13,23 @@ cleaning_rules:
   - id: footnote-markers-removed
     description: Editor footnote reference markers in the body are removed — «١» (al-Mufradat, Lisan), (¬١) (Maqayis), (١) (al-Sihah, Ibn Qutaybah). The report counts how many had a matching note on the same page.
   - id: title-markup-removed
-    description: Shamela heading markup <span data-type="title" …>…</span> is removed from the body; the heading text becomes the entry headword (or the surah for gharib items).
+    description: "Shamela heading markup <span data-type=\"title\" …>…</span> is removed from the body; the heading text becomes the entry headword (or the surah for gharib items). Where the typist broke a heading span over two lines (Tāj, two headings), the break inside the span becomes a space so the heading is still recognised (`title-markup-removed:line-break-inside-heading`)."
   - id: page-join
     description: Consecutive printed pages are joined. A page that ends a line starts a new paragraph; a page that breaks mid-paragraph is joined with a single space. Whitespace only.
   - id: whitespace-normalised
-    description: Line breaks become paragraph breaks (\n\n); runs of spaces/tabs collapse to one space; paragraphs are trimmed; empty paragraphs dropped.
+    description: "Line breaks become paragraph breaks (\\n\\n); runs of spaces/tabs collapse to one space; paragraphs are trimmed; empty paragraphs dropped. In Tāj, an empty bracket pair left by a lost honorific glyph and split over two lines («[⏎]») is put back on one line (`whitespace-normalised:line-break-in-empty-brackets`)."
   - id: separator-lines-dropped
     description: Decorative separator lines ("* * *") between gloss groups are dropped (Ibn Qutaybah).
   - id: gharib-item-number
     description: Ibn Qutaybah items open with the ayah number(s) and a dash — «٤١-», «٣٠ و٣١-», «١٦، ١٨، ٢١، ٣٠-», «١٧-١٨-». The number prefix is moved to `ayah` and is not part of the gloss; the gloss is the item's printed text after it, verbatim, including any connective and the quoted phrase («و ﴿يَوْمِ الدِّينِ﴾ يوم القيامة…»). `phrase` repeats the first quoted words (﴿…﴾, (…) or "…") for alignment. An item naming several ayahs gives one gloss row per listed ayah in which its phrase occurs (same text); a phrase quoted across ayahs ("… * …") is aligned part by part. A line with no number that opens with ﴿…﴾ is a further item of the same ayah, unless its phrase is absent from that ayah (±3) but present elsewhere in the Quran — then it is a cited verse and stays, verbatim, in the previous gloss.
   - id: lisan-article-split
     description: Lisan al-Arab is split into articles at line-initial headwords "X:" whose first letter matches the current فصل and whose last letter matches the section's باب (majority of headwords in that فصل; weak/hamza bab accepts و ي ا ى ء). Splitting only inserts boundaries; no text is moved or changed.
+  - id: taj-article-split
+    description: "Tāj al-ʿArūs is split at printed root headings taken in the order of its TOC: a heading span that opens its line (only marks, digits or punctuation such as «٣ -» before it — dropped with the heading), or a plain line that is only the heading (where the typist misplaced the anchor). A TOC anchor inside running text or glued into a word is ignored and its text kept. Two headings over one text («ظوأ» then «وظيأ») make one article with both headings. A root article the TOC does not list, typed «صرخَ: (الصَّرْخَة…» at a line start, is split when the word shares the article's first and last radical and sorts between the neighbouring headings (17 such). Section headings (باب، فصل، الجزء، المقصد، رموز…) close the article. Splitting only inserts boundaries; no text is moved or changed."
+  - id: heading-separator-dropped
+    description: "The colon printed right after a root heading («أبأ» then «: ( الأَبَاءَةُ…») goes with the heading, which becomes `headword`; so does stray numbering or punctuation printed on the heading's own line before it («٣ - (ف ط ر)»)."
+  - id: taj-headword-markers-removed
+    description: "The Shamela typing of Tāj turned the sign printed before each headword into ﴿, ﴾ or ! (alternating, 3–22 per 1,000 letters). These marker characters are removed with the space the conversion put beside them. Quran quotations use the same brackets, so a ﴿…﴾ span is kept when it reads as a quotation: a sūra:āya reference follows it; or a citation introduces it (تعالى، عز وجل، جل ثناؤه، التنزيل، قرئ… ending in a colon or after a verb of citing — not the eulogy «إلى الله تعالى»); or its words alone follow the Quran (60% or more of its consecutive word pairs occur in one verse, and it does not straddle al-Qāmūs's parentheses). Spans are chosen together without overlaps, so a marker inside a quotation is still removed. Counted per reason (`taj-quotation-brackets-kept:*`)."
   - id: lane-markup-removed
     description: Lane (Perseus TEI) markup is removed; element text is kept in document order; each <entryFree> becomes one paragraph; <pb n> page breaks become page_ref only.
   - id: lane-transliteration
@@ -219,3 +225,35 @@ works:
       الدهر: 76
       الانشراح: 94
       اللهب: 111
+
+  - id: taj
+    sort_order: 9        # display order = author's death date
+    id_block: 10          # entry ids = id_block × 1,000,000 + position (stable)
+    kind: general
+    lang: ar
+    title_ar: تاج العروس من جواهر القاموس
+    title_en: Taj al-ʿArus min Jawahir al-Qamus
+    author_ar: محمد مرتضى الحسيني الزبيدي
+    author_en: Murtada al-Zabidi
+    death_hijri: 1205
+    death_ce: 1791
+    edition_note: تحقيق جماعة من المختصين، من إصدارات وزارة الإرشاد والأنباء في الكويت – المجلس الوطني للثقافة والفنون والآداب، 40 جزءا، 1385–1422هـ / 1965–2001م (وصوّرت أجزاء منه دار الهداية ودار إحياء التراث)، ترقيم الكتاب موافق للمطبوع. النص الرقمي من المكتبة الشاملة (الكتاب 7030).
+    source_url: https://shamela.ws/book/7030
+    license: Public-domain author text (d. 1205 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (revision 07554bee; the card's licence section says "Research and personal use"; Shamela grants no reuse licence; rights in the Kuwait edition remain with its owners). The typing carries none of the editors' footnotes. Display-only (PLAN D22).
+    redistributable: false
+    attribution_ar: "المصدر: تاج العروس من جواهر القاموس، مرتضى الزبيدي (ت 1205هـ)، تحقيق جماعة من المختصين، المجلس الوطني للثقافة والفنون والآداب، الكويت، 1385–1422هـ. النص الرقمي: المكتبة الشاملة، الكتاب 7030."
+    attribution_en: "Source: Murtada al-Zabidi (d. 1205 AH), Taj al-ʿArus min Jawahir al-Qamus, ed. a committee of specialists (Kuwait: National Council for Culture, Arts and Letters, 1385–1422 AH / 1965–2001). Digital text: al-Maktaba al-Shamila, book 7030."
+    format: shamela-taj
+    shamela_id: 7030
+    dir: lexica/hf-authenticilm-shamela4/2502
+    footnote_marker: none             # the typing carries no reference markers
+    join_broken_spans: true           # two headings are typed across a line break ("ع ض⏎و:")
+    files:
+      - path: lexica/hf-authenticilm-shamela4/2502/pages.jsonl
+        sha256: 7480c314c5d40d3e83a85084f4ef452e5a0206f5d0faf4782aeb01f03c82a5c3
+      - path: lexica/hf-authenticilm-shamela4/2502/toc.jsonl
+        sha256: d2be2f8c7a5dfe1093283aa837c2b7d7960591da23d5b00d1b441a12b9693496
+      - path: lexica/hf-authenticilm-shamela4/2502/book_metadata.json
+        sha256: 6af830f8a966b57cc98669b4d635b8686061c4f4d3f04ddde22fa438887b1dc8
+    manual_roots:
+      ككب: {root: كوكب, note: "al-Zabidi, after al-Jawhari, files الكوكب under ككب, the و counted as an augment (vol. 4 p. 157); QAC root k-w-k-b"}

@@ -78,6 +78,10 @@ def test_counts_and_root_coverage(built: tuple, work: str) -> None:
     assert rep["coverage_any_pct"] == round(100 * roots_any / 1642, 2)
 
 
+# Loose and manual mappings per work (each listed for review with its confidence).
+REVIEW_BY_WORK = {"mufradat": 224, "maqayis": 216, "lisan": 180, "sihah": 169, "lane": 271, "taj": 15}
+
+
 def test_cross_work_coverage_and_review_list(built: tuple) -> None:
     rep = built[3]
     assert rep["coverage"]["roots_total"] == 1642
@@ -90,7 +94,9 @@ def test_cross_work_coverage_and_review_list(built: tuple) -> None:
     loose_ids = {e["id"] for e in built[1] if e["match"] in ("loose", "manual")}
     review_ids = {r["entry_id"] for r in rep["review"]}
     assert loose_ids == review_ids
-    assert rep["review_count"] == 1060
+    by_work = {w: sum(1 for r in rep["review"] if r["work_id"] == w) for w in REVIEW_BY_WORK}
+    assert by_work == REVIEW_BY_WORK
+    assert rep["review_count"] == sum(REVIEW_BY_WORK.values())
     assert {r["confidence"] for r in rep["review"]} <= {"high", "medium", "low", "manual"}
     for r in rep["review"]:
         assert r["rule"]
@@ -290,7 +296,7 @@ def test_root_keys_are_canonical_and_rows_follow_the_contract(built: tuple, root
 
 
 # Display order by death date (CE): the nine dictionaries of the design plus Ibn Qutaybah's gharib.
-WORK_ORDER = ["ibn-qutaybah-gharib", "sihah", "maqayis", "mufradat", "lisan", "lane"]
+WORK_ORDER = ["ibn-qutaybah-gharib", "sihah", "maqayis", "mufradat", "lisan", "taj", "lane"]
 
 
 def test_entry_ids_do_not_move_when_the_display_order_changes(built: tuple) -> None:
