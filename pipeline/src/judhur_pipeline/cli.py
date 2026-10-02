@@ -29,7 +29,9 @@ def main(argv: list[str] | None = None) -> int:
         report = build(
             RawPaths.default(
                 args.raw, REPO / "data/works.yaml", REPO / "data/lexica.yaml", REPO / "data/recitations.yaml"
-            ), out, args.version
+            ),
+            out,
+            args.version,
         )
         print(
             json.dumps(

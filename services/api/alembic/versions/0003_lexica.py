@@ -69,4 +69,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute("drop table content.gharib_glosses; drop table content.lexicon_entries; drop table content.lexicon_works;")
+    op.execute(
+        "drop table content.gharib_glosses; drop table content.lexicon_entries; drop table content.lexicon_works;"
+    )

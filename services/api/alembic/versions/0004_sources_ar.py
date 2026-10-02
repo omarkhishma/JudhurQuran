@@ -14,7 +14,9 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute("alter table content.sources add column role_ar text not null default '', add column license_ar text not null default ''")
+    op.execute(
+        "alter table content.sources add column role_ar text not null default '', add column license_ar text not null default ''"
+    )
 
 
 def downgrade() -> None:
