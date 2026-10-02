@@ -1,0 +1,215 @@
+# Lexicon registry — classical dictionaries and Quran-gharib works served per root / per verse.
+# Research and licensing: docs/research/02-arabic-lexica.md.
+# Every file is sha256-pinned; the pipeline refuses to build from a file that differs.
+# Paths are relative to data/raw/.
+# Texts are imported verbatim. The ONLY transformations allowed are the cleaning rules listed
+# under `cleaning_rules`; each one is counted per work in the build report.
+
+cleaning_rules:
+  - id: front-matter-skipped
+    description: Editor introductions, studies, indexes and section-only text (كتاب/باب/فصل headings and the prose under them) are not imported; only dictionary articles / gloss items are.
+  - id: footnotes-dropped
+    description: The Shamela page `footnotes` field (the modern editor's apparatus — takhrij, variant notes, commentary) is never imported.
+  - id: footnote-markers-removed
+    description: Editor footnote reference markers in the body are removed — «١» (al-Mufradat, Lisan), (¬١) (Maqayis), (١) (al-Sihah, Ibn Qutaybah). The report counts how many had a matching note on the same page.
+  - id: title-markup-removed
+    description: Shamela heading markup <span data-type="title" …>…</span> is removed from the body; the heading text becomes the entry headword (or the surah for gharib items).
+  - id: page-join
+    description: Consecutive printed pages are joined. A page that ends a line starts a new paragraph; a page that breaks mid-paragraph is joined with a single space. Whitespace only.
+  - id: whitespace-normalised
+    description: Line breaks become paragraph breaks (\n\n); runs of spaces/tabs collapse to one space; paragraphs are trimmed; empty paragraphs dropped.
+  - id: separator-lines-dropped
+    description: Decorative separator lines ("* * *") between gloss groups are dropped (Ibn Qutaybah).
+  - id: gharib-item-number
+    description: Ibn Qutaybah items open with the ayah number(s) and a dash — «٤١-», «٣٠ و٣١-», «١٦، ١٨، ٢١، ٣٠-», «١٧-١٨-». The number prefix is moved to `ayah` and is not part of the gloss; the gloss is the item's printed text after it, verbatim, including any connective and the quoted phrase («و ﴿يَوْمِ الدِّينِ﴾ يوم القيامة…»). `phrase` repeats the first quoted words (﴿…﴾, (…) or "…") for alignment. An item naming several ayahs gives one gloss row per listed ayah in which its phrase occurs (same text); a phrase quoted across ayahs ("… * …") is aligned part by part. A line with no number that opens with ﴿…﴾ is a further item of the same ayah, unless its phrase is absent from that ayah (±3) but present elsewhere in the Quran — then it is a cited verse and stays, verbatim, in the previous gloss.
+  - id: lisan-article-split
+    description: Lisan al-Arab is split into articles at line-initial headwords "X:" whose first letter matches the current فصل and whose last letter matches the section's باب (majority of headwords in that فصل; weak/hamza bab accepts و ي ا ى ء). Splitting only inserts boundaries; no text is moved or changed.
+  - id: lane-markup-removed
+    description: Lane (Perseus TEI) markup is removed; element text is kept in document order; each <entryFree> becomes one paragraph; <pb n> page breaks become page_ref only.
+  - id: lane-transliteration
+    description: Lane's Arabic is encoded by Perseus in a Buckwalter variant; it is converted to Arabic script with the Perseus/laneslexicon table (A^→أ, A_→إ, A@→ٱ, y^→ئ, w^→ؤ, then standard Buckwalter incl. `→ٰ, {→ٱ, ^→ٔ, =→ٓ, _→ٕ, -→ـ). Characters outside the table are kept and counted.
+
+works:
+  - id: mufradat
+    sort_order: 1
+    kind: lexicon
+    lang: ar
+    title_ar: المفردات في غريب القرآن
+    title_en: al-Mufradat fi Gharib al-Qur'an
+    author_ar: الراغب الأصفهاني
+    author_en: al-Raghib al-Isfahani
+    death_hijri: 502
+    death_ce: 1108
+    edition_note: تحقيق صفوان عدنان الداودي، دار القلم والدار الشامية، دمشق وبيروت، الطبعة الأولى 1412هـ. النص الرقمي من المكتبة الشاملة (الكتاب 23636).
+    source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/04__علوم-القرآن-وأصول-التفسير/6119__المفردات-في-غريب-القرآن
+    license: Public-domain author text (d. 502 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Editor apparatus excluded. Display-only.
+    redistributable: false
+    attribution_ar: "المصدر: المفردات في غريب القرآن، الراغب الأصفهاني (ت 502هـ)، تحقيق صفوان عدنان الداودي، دار القلم والدار الشامية، دمشق وبيروت، الطبعة الأولى 1412هـ. النص الرقمي: المكتبة الشاملة، الكتاب 23636. حُذفت حواشي المحقق."
+    attribution_en: "Source: al-Raghib al-Isfahani (d. 502 AH), al-Mufradat fi Gharib al-Qur'an, ed. Safwan Adnan al-Dawudi (Damascus/Beirut: Dar al-Qalam & al-Dar al-Shamiyya, 1st ed., 1412 AH). Digital text: al-Maktaba al-Shamila, book 23636. Editor's notes omitted."
+    format: shamela-toc
+    shamela_id: 23636
+    dir: lexica/hf-authenticilm-shamela4/6119
+    footnote_marker: guillemets
+    article_rule: parent-kitab        # articles are TOC children of a top-level "كتاب X"
+    files:
+      - path: lexica/hf-authenticilm-shamela4/6119/pages.jsonl
+        sha256: 815e0d7e100673625a353b51628db4a49a197644bc3eb5029a05d08124a52fa1
+      - path: lexica/hf-authenticilm-shamela4/6119/toc.jsonl
+        sha256: d1c7aa3fe51b6c0db23ab73b2afab100bee0b5e1e6ce430557d4649f9a154804
+      - path: lexica/hf-authenticilm-shamela4/6119/book_metadata.json
+        sha256: b61ccfea1aadf249f3dd67ce13da12d9fa743513b7453b07c74616d47e35ca04
+    # Articles headed by a word rather than a root; mapped by hand (match = manual).
+    manual_roots:
+      ساعة: {root: سوع, note: "al-Raghib heads the article with the noun الساعة; QAC root s-w-ʿ"}
+      ماء: {root: موه, note: "article الماء; QAC root m-w-h"}
+      خنزير: {root: خنزر, note: "article الخنزير; QAC root ḫ-n-z-r"}
+
+  - id: maqayis
+    sort_order: 2
+    kind: lexicon
+    lang: ar
+    title_ar: معجم مقاييس اللغة
+    title_en: Maqayis al-Lugha
+    author_ar: أحمد بن فارس
+    author_en: Ahmad ibn Faris
+    death_hijri: 395
+    death_ce: 1004
+    edition_note: تحقيق عبد السلام محمد هارون، شركة مكتبة ومطبعة مصطفى البابي الحلبي، الطبعة الثانية 1389–1392هـ / 1969–1972م (مصورة دار الجيل ودار الفكر). النص الرقمي من المكتبة الشاملة (الكتاب 21710).
+    source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/30__الغريب-والمعاجم/5826__معجم-مقاييس-اللغة
+    license: Public-domain author text (d. 395 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Editor apparatus excluded. Display-only.
+    redistributable: false
+    attribution_ar: "المصدر: معجم مقاييس اللغة، ابن فارس (ت 395هـ)، تحقيق عبد السلام محمد هارون، مصطفى البابي الحلبي، الطبعة الثانية 1389–1392هـ. النص الرقمي: المكتبة الشاملة، الكتاب 21710. حُذفت حواشي المحقق."
+    attribution_en: "Source: Ahmad ibn Faris (d. 395 AH), Maqayis al-Lugha, ed. Abd al-Salam Muhammad Harun (Cairo: Mustafa al-Babi al-Halabi, 2nd ed., 1389–1392 AH). Digital text: al-Maktaba al-Shamila, book 21710. Editor's notes omitted."
+    format: shamela-toc
+    shamela_id: 21710
+    dir: lexica/hf-authenticilm-shamela4/5826
+    footnote_marker: negation-parens
+    article_rule: after-first-kitab   # articles are root-like titles from the first "كتاب" heading to the end matter
+    end_title: تفسير الإشارات إلى بعض المراجع
+    core_meaning: first-sentence
+    files:
+      - path: lexica/hf-authenticilm-shamela4/5826/pages.jsonl
+        sha256: c71f76ebfef583aa757dd3abf59af9b8e07e91ea126582e859c13bbc7dacd91e
+      - path: lexica/hf-authenticilm-shamela4/5826/toc.jsonl
+        sha256: c78a4557fe435736bb44cc9b663f81efd32a74f4a328474a7c6bdd4401dc7014
+      - path: lexica/hf-authenticilm-shamela4/5826/book_metadata.json
+        sha256: 956a2640eace304050c744a65af6597c8bda37e1fbd8d0c6619f6dd81bdf8c74
+    manual_roots: {}
+
+  - id: lisan
+    sort_order: 3
+    kind: lexicon
+    lang: ar
+    title_ar: لسان العرب
+    title_en: Lisan al-ʿArab
+    author_ar: ابن منظور
+    author_en: Ibn Manzur
+    death_hijri: 711
+    death_ce: 1311
+    edition_note: دار صادر، بيروت، الطبعة الثالثة 1414هـ، 15 جزءا (الحواشي لليازجي وجماعة من اللغويين — غير مستوردة). النص الرقمي من المكتبة الشاملة (الكتاب 1687).
+    source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/30__الغريب-والمعاجم/1462__لسان-العرب
+    license: Public-domain author text (d. 711 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Footnotes excluded. Display-only.
+    redistributable: false
+    attribution_ar: "المصدر: لسان العرب، ابن منظور (ت 711هـ)، دار صادر، بيروت، الطبعة الثالثة 1414هـ. النص الرقمي: المكتبة الشاملة، الكتاب 1687."
+    attribution_en: "Source: Ibn Manzur (d. 711 AH), Lisan al-ʿArab (Beirut: Dar Sadir, 3rd ed., 1414 AH). Digital text: al-Maktaba al-Shamila, book 1687. Footnotes omitted."
+    format: shamela-lisan
+    shamela_id: 1687
+    dir: lexica/hf-authenticilm-shamela4/1462
+    footnote_marker: guillemets
+    files:
+      - path: lexica/hf-authenticilm-shamela4/1462/pages.jsonl
+        sha256: 181175b7b0e044e9fd05969ca512d1bcd373304805cf09102fd8aaac28530bba
+      - path: lexica/hf-authenticilm-shamela4/1462/toc.jsonl
+        sha256: 75335a0d8920788a0919e3f08038807e218d12bec817a324d669544b06d94a29
+      - path: lexica/hf-authenticilm-shamela4/1462/book_metadata.json
+        sha256: 7da1e58a997c50146800b451fc17031eb9f25c40a98abf57bbe279e30c0f0c8d
+    manual_roots: {}
+
+  - id: sihah
+    sort_order: 4
+    kind: lexicon
+    lang: ar
+    title_ar: الصحاح تاج اللغة وصحاح العربية
+    title_en: al-Sihah
+    author_ar: إسماعيل بن حماد الجوهري
+    author_en: al-Jawhari
+    death_hijri: 393
+    death_ce: 1003
+    edition_note: تحقيق أحمد عبد الغفور عطار، دار العلم للملايين، بيروت، الطبعة الرابعة 1407هـ / 1987م. النص الرقمي من المكتبة الشاملة (الكتاب 23235).
+    source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/30__الغريب-والمعاجم/6061__الصحاح-تاج-اللغة-وصحاح-العربية
+    license: Public-domain author text (d. 393 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Editor apparatus excluded. Display-only.
+    redistributable: false
+    attribution_ar: "المصدر: الصحاح تاج اللغة وصحاح العربية، الجوهري (ت 393هـ)، تحقيق أحمد عبد الغفور عطار، دار العلم للملايين، بيروت، الطبعة الرابعة 1407هـ. النص الرقمي: المكتبة الشاملة، الكتاب 23235. حُذفت حواشي المحقق."
+    attribution_en: "Source: al-Jawhari (d. 393 AH), al-Sihah, ed. Ahmad Abd al-Ghafur Attar (Beirut: Dar al-Ilm lil-Malayin, 4th ed., 1407 AH / 1987). Digital text: al-Maktaba al-Shamila, book 23235. Editor's notes omitted."
+    format: shamela-toc
+    shamela_id: 23235
+    dir: lexica/hf-authenticilm-shamela4/6061
+    footnote_marker: parens
+    article_rule: bracketed           # articles are the "[ROOT]" titles
+    files:
+      - path: lexica/hf-authenticilm-shamela4/6061/pages.jsonl
+        sha256: f3ca39e648ab75eea332417b5b81cfc1f096ded0f4931dce57dbee39a63bf841
+      - path: lexica/hf-authenticilm-shamela4/6061/toc.jsonl
+        sha256: bbd0a51240121d95f86a254426a8b922f6ea6547a7bec3d592b37c9552c67ab7
+      - path: lexica/hf-authenticilm-shamela4/6061/book_metadata.json
+        sha256: 79b3f4df43befa90e0f7efbc2d133fc7418f622965c00903f2fe09d4ce510e46
+    manual_roots: {}
+
+  - id: lane
+    sort_order: 5
+    kind: lexicon
+    lang: en
+    title_ar: معجم لين العربي الإنجليزي
+    title_en: An Arabic-English Lexicon
+    author_ar: إدوارد وليم لين
+    author_en: Edward William Lane
+    death_hijri: 1293
+    death_ce: 1876
+    edition_note: London, Williams and Norgate, 1863–1893 (8 parts; parts 6–8 completed by Stanley Lane-Poole). Perseus Digital Library TEI XML with corrections by the laneslexicon project.
+    source_url: https://github.com/laneslexicon/lexicon_xml
+    license: Creative Commons Attribution-ShareAlike 3.0 United States (Perseus Digital Library, Tufts University); "offer Perseus any modifications you make". Underlying 1863–1893 work in the public domain.
+    license_url: https://creativecommons.org/licenses/by-sa/3.0/us/
+    redistributable: true
+    attribution_ar: "المصدر: إدوارد وليم لين، معجم عربي–إنجليزي (لندن 1863–1893). النص الرقمي من مكتبة بيرسيوس الرقمية (جامعة تافتس) بترخيص CC BY-SA 3.0 US، مع تصحيحات مشروع laneslexicon؛ حُوّلت الحروف العربية من الترميز اللاتيني."
+    attribution_en: "Edward William Lane, An Arabic-English Lexicon (London: Williams and Norgate, 1863–1893). Text provided by Perseus Digital Library, with funding from The U.S. Department of Education and The Max Planck Society. Corrections: laneslexicon/lexicon_xml. Licensed CC BY-SA 3.0 US (https://creativecommons.org/licenses/by-sa/3.0/us/); modified (TEI markup removed, Arabic transliteration converted to Arabic script)."
+    format: perseus-lane
+    files:
+      - path: lexica/perseus-lane-lexicon_xml/lexicon_xml.tar.gz
+        sha256: 49b5d9cf855ae79ae4402f6f15bf089b80253ab43043a6bd2c4425f5b41e086e
+    manual_roots: {}
+
+  - id: ibn-qutaybah-gharib
+    sort_order: 6
+    kind: gharib
+    lang: ar
+    title_ar: غريب القرآن
+    title_en: Gharib al-Qur'an
+    author_ar: عبد الله بن مسلم بن قتيبة الدينوري
+    author_en: Ibn Qutaybah al-Dinawari
+    death_hijri: 276
+    death_ce: 889
+    edition_note: تحقيق أحمد صقر، دار الكتب العلمية، 1398هـ / 1978م. النص الرقمي من المكتبة الشاملة (الكتاب 3259).
+    source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/04__علوم-القرآن-وأصول-التفسير/1684__غريب-القرآن-لابن-قتيبة-ت-أحمد-صقر
+    license: Public-domain author text (d. 276 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Editor apparatus excluded. Display-only.
+    redistributable: false
+    attribution_ar: "المصدر: غريب القرآن، ابن قتيبة (ت 276هـ)، تحقيق أحمد صقر، دار الكتب العلمية، 1398هـ. النص الرقمي: المكتبة الشاملة، الكتاب 3259. حُذفت حواشي المحقق."
+    attribution_en: "Source: Ibn Qutaybah (d. 276 AH), Gharib al-Qur'an, ed. Ahmad Saqr (Dar al-Kutub al-Ilmiyya, 1398 AH / 1978). Digital text: al-Maktaba al-Shamila, book 3259. Editor's notes omitted."
+    format: shamela-gharib
+    shamela_id: 3259
+    dir: lexica/hf-authenticilm-shamela4/1684
+    footnote_marker: parens
+    files:
+      - path: lexica/hf-authenticilm-shamela4/1684/pages.jsonl
+        sha256: 00b0034933dfc186eebdcb055ce0df77829d2213cd747937674ad1f7a05f7b0e
+      - path: lexica/hf-authenticilm-shamela4/1684/toc.jsonl
+        sha256: e15226de85a62f67ef96abddbdbec4eab5ef279528470bd7163fa70b346db1f9
+      - path: lexica/hf-authenticilm-shamela4/1684/book_metadata.json
+        sha256: fa4b2f1c8926123fc95b62cc6f9cd3c5982a4d91b6e7c3fd9e8791602b4cec1d
+    # Surah headings in this edition that differ from the canonical surah names.
+    surah_aliases:
+      الحمد: 1
+      بني إسرائيل: 17
+      المؤمن: 40
+      الدهر: 76
+      الانشراح: 94
+      اللهب: 111

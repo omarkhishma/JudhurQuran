@@ -56,6 +56,9 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
 ]  # fmt: skip
 
 TRUNCATE_ORDER = [
+    "gharib_glosses",
+    "lexicon_entries",
+    "lexicon_works",
     "work_passages",
     "works",
     "root_variants",
@@ -80,6 +83,12 @@ def _rows(
                 if src in obj:
                     obj[dst] = obj.pop(src)
             yield tuple(Jsonb(obj.get(c)) if c in json_cols else obj.get(c) for c in columns)
+
+
+# Every loaded table must be emptied first, or a reload would duplicate rows.
+_missing = {t for t, *_ in TABLES} - set(TRUNCATE_ORDER)
+if _missing:
+    raise RuntimeError(f"tables loaded but never truncated: {sorted(_missing)}")
 
 
 def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[str, int]:

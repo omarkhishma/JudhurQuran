@@ -522,8 +522,6 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "exact" if e["match"] == "strict" else "manual" if e["match"] == "manual" else (r or {}).get("confidence", "low")
             )
             e["displayable"] = e["root_key"] is not None and e["confidence"] in ("exact", "manual", "high")
-        # Ibn Qutaybah verse glosses are held back until merged numbered items are split (see PLAN).
-        gharib = []
     report["lexica"] = {
         "works": len(lex_works),
         "entries": len(lex_entries),

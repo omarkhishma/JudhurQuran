@@ -6,6 +6,8 @@ import { Link } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
 import { citeVerse } from "@/lib/format";
 import { TafsirSection } from "./TafsirSection";
+import { BookmarkButton } from "@/components/saved/BookmarkButton";
+import { VerseNote } from "@/components/saved/VerseNote";
 
 export function VersePanel({ verseKey, surahName, onClose }: { verseKey: string; surahName: string; onClose?: () => void }) {
   const t = useTranslations("panel");
@@ -34,11 +36,14 @@ export function VersePanel({ verseKey, surahName, onClose }: { verseKey: string;
       <header className="sticky top-0 z-10 border-b border-line bg-card px-5 pt-4 pb-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[12px] text-t3">{citeVerse(surahName, Number(verseKey.split(":")[0]), Number(verseKey.split(":")[1]), locale)}</p>
-          {onClose && (
-            <button type="button" className="btn icon-btn" aria-label={t("close")} onClick={onClose}>
-              <Icon name="close" />
-            </button>
-          )}
+          <div className="flex gap-1">
+            <BookmarkButton kind="verse" keyId={verseKey} label={`${surahName}: ${a}`} />
+            {onClose && (
+              <button type="button" className="btn icon-btn" aria-label={t("close")} onClick={onClose}>
+                <Icon name="close" />
+              </button>
+            )}
+          </div>
         </div>
         <p className="quran mt-1 max-h-[30vh] overflow-y-auto text-[24px] leading-[2.1]" dir="rtl" lang="ar">{verseText}</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -57,6 +62,7 @@ export function VersePanel({ verseKey, surahName, onClose }: { verseKey: string;
         </div>
       </header>
 
+      <VerseNote verseKey={verseKey} />
       <TafsirSection verseKey={verseKey} />
     </div>
   );

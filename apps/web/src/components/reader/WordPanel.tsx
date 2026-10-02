@@ -9,6 +9,9 @@ import { useCommentary, useOccurrences, useWord } from "./hooks";
 import { PanelSection } from "./PanelSection";
 import { useReader } from "@/lib/store/reader";
 import { LexiconArticle } from "@/components/lexicon/LexiconArticle";
+import { useSaved } from "@/lib/store/saved";
+import { BookmarkButton } from "@/components/saved/BookmarkButton";
+import { useEffect } from "react";
 
 function lab(l: Label | undefined, locale: string): string | null {
   if (!l) return null;
@@ -35,6 +38,10 @@ export function WordPanel({
   const tc = useTranslations("common");
   const locale = useLocale();
   const { data: w, isLoading, isError } = useWord(location, initial?.word);
+  const visit = useSaved((st) => st.visit);
+  useEffect(() => {
+    if (w) visit({ location: w.location, label: w.text_imlaei, root: w.root?.key ?? null });
+  }, [w, visit]);
 
   if (isLoading) return <p className="p-5 text-t3">{t("loadingWord")}</p>;
   if (isError || !w) return <p className="p-5 text-bad">{t("error")}</p>;
@@ -51,6 +58,7 @@ export function WordPanel({
             {t("wordOf", { n: formatNumber(w.position, locale), ref: citeVerse(w.verse.surah_name_ar, w.verse.surah, w.verse.ayah, locale) })}
           </p>
           <div className="flex gap-1">
+            <BookmarkButton kind="word" keyId={w.location} label={`${w.text_imlaei} — ${w.verse.surah_name_ar}: ${w.ayah}`} />
             {onNavigate && (
               <>
                 <button type="button" className="btn icon-btn" aria-label={t("prevWord")} onClick={() => onNavigate(-1)}>
@@ -164,9 +172,12 @@ function MeaningSection({ w, initial }: { w: WordDetail; initial?: Commentary })
       {w.glosses.map((g) => (
         <div key={g.id}>
           <p className="label-caps mb-1">{tl("glossTitle", { title: g.title_ar })}</p>
-          <p className="ar-classical text-[16.5px] leading-[2] text-t1" dir="rtl" lang="ar">
-            <span className="text-word">{g.phrase}: </span>
+          <p className="ar-classical whitespace-pre-line text-[16.5px] leading-[2] text-t1" dir="rtl" lang="ar">
             {g.gloss}
+          </p>
+          <p className="text-[11.5px] text-t3">
+            {`${g.title_ar} — ${g.author_ar}`}
+            {g.page_ref ? ` · ${locale === "ar" ? toArabicDigits(g.page_ref) : g.page_ref}` : ""}
           </p>
         </div>
       ))}

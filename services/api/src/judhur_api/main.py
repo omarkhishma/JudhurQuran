@@ -236,6 +236,12 @@ def root_graph(request: Request, root: str) -> Response:
         return cached(request, g)
 
 
+@router.get("/lexicon/works", summary="Classical lexicons and gharib works, with editions and licenses")
+def lexicon_works(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": content.lexicon_works(conn)})
+
+
 @router.get("/lexicon/entries/{entry_id}", summary="One classical lexicon article (display only; see license)")
 def lexicon_entry(request: Request, entry_id: int) -> Response:
     with connect() as conn:

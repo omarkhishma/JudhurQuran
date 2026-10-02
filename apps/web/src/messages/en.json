@@ -349,5 +349,31 @@
     "by": "{author} (d. {death} AH)",
     "openInRoot": "Everything the dictionaries say about this root",
     "loading": "Loading…"
+  },
+  "saved": {
+    "title": "Saved",
+    "lead": "What you saved, noted and browsed — all kept in this browser only and never sent to any server.",
+    "tabBookmarks": "Bookmarks",
+    "tabNotes": "My notes",
+    "tabHistory": "Recently viewed",
+    "tabMaps": "My maps",
+    "emptyBookmarks": "No bookmarks yet. Save a verse from the verse panel, or a word from the word panel.",
+    "emptyNotes": "No notes yet. Write a note on any verse from the verse panel.",
+    "emptyHistory": "You haven't opened any words yet. Tap a word in the mushaf.",
+    "openMaps": "Open my maps",
+    "export": "Export all my data",
+    "delete": "Delete all my data from this browser",
+    "deleteConfirm": "Click again to delete permanently",
+    "deleted": "Your local data was deleted.",
+    "bookmark": "Save",
+    "bookmarked": "Saved",
+    "bookmarkVerse": "Save verse",
+    "bookmarkWord": "Save word",
+    "note": "My note on this verse",
+    "notePlaceholder": "Write your note… (saved in this browser only)",
+    "kindVerse": "Verse",
+    "kindWord": "Word",
+    "kindRoot": "Root",
+    "dataControls": "Your data"
   }
 }

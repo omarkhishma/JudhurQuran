@@ -336,7 +336,7 @@ Edward William Lane, An Arabic-English Lexicon (London: Williams and Norgate, 18
 
 - Owner (Omar): decide whether the site is or may become commercial. If yes, OpenITI, islamlab and m3ajim text stay out of the product (internal QA only); if permanently non-commercial, CC BY-NC-SA material becomes an option.
 - Owner (Omar), with counsel: approve "display-only" for the Arabic lexica at launch, and get an opinion before exposing Arabic lexicon text through the public API or bulk download (the Shamela typings of Dawudi 1412 AH, Harun 1969–72, Attar 1987, Saqr 1978).
-- Engineering (next build session): importer for Shamela4 books → one record per article with `work`, `root`, `headword`, `text` (author text only), `edition`, `shamela_id`, `volume`, `page`; apparatus stripping; a Lisan article splitter tested against the 9,143 OpenITI `### $` tags; QAC-root → article mapping table with `match_tier` and a manual review queue for the loose-only matches; Ibn Qutaybah item → (surah, ayah, word span) alignment; Lane XML → root/entry records with the Perseus statement attached.
+- Engineering — done 2026-10-02 (§10): importer for the launch set, Lisan splitter, root mapping with review queue, Ibn Qutaybah verse alignment, Lane conversion. Still open: wiring `build_lexica` into build.py / cli / API (coordinator), and human review of the 1,060 loose/manual mappings and the 1,026 suppressed candidates (owner or a designated reviewer) before loose entries are shown.
 - Engineering: a collation pass (Shamela vs a second typing per work — wizsk/Hawramani/OpenITI) that flags divergent words for human review before an article is published.
 - Owner (Omar): outreach for the word layer — KFGQPC (al-Muyassar fi Gharib al-Quran: API/bulk and commercial use), Tafsir Center (cloud@tafsir.net: confirm CC BY 4.0 covers `word_content_meaning` commercially and name its sources), QuranEnc (per-word display of al-Siraj). Nothing was sent; it goes out under the owner's name only with his say.
 - Judhur project owner: its Hawramani Lisan `index.json` lacks high-frequency roots (سلم، قبل، سكن، فتح، قدم، ولي…); not touched here.
@@ -344,29 +344,18 @@ Edward William Lane, An Arabic-English Lexicon (London: Williams and Norgate, 18
 
 ## 9. Appendix — files and scripts
 
-Everything below is under `data/raw/lexica/` (repo root). Checksums: `SHA256SUMS.txt` (my downloads), `SHA256SUMS-copied-from-judhur.txt` (Lisan/Lane copied from the Judhur project), `openiti/MANIFEST.json` (git blob SHA-1 per OpenITI file), per-book `manifest.json` in `hf-authenticilm-shamela4/` (all 20 books re-verified, 0 mismatches). Pinned revisions: `HF_REVISIONS.txt`, `GIT_COMMITS.txt`.
+State after the implementation step (2026-10-02): `data/raw/lexica/` was cut from 1.8 GB to 82 MB and now holds only what the pipeline reads, plus licence evidence. `SHA256SUMS.txt` covers every remaining file; the per-book `manifest.json` files in `hf-authenticilm-shamela4/` were re-verified (0 mismatches); `HF_REVISIONS.txt`, `GIT_COMMITS.txt` and `_evidence/openiti/MANIFEST.json` pin the exact revisions of everything removed, so each research copy can be re-fetched byte-for-byte.
 
-| Folder | What | Size |
+| Folder (kept) | What | Size |
 |---|---|---|
-| `hf-authenticilm-shamela4/<book_id>/` | Shamela4 books 1459 Ayn, 1462 Lisan, 1684 Ibn Qutaybah, 2421 Yaqutat al-Sirat, 2502 Taj, 2503 Tahdhib, 2558 Qamus, 3304 Mujmal, 3498 Muhkam, 3805 Tadhkirat al-Arib, 4963 Tuhfat al-Arib, 5232 Gharibayn, 5305 al-Majmu al-Mughith, 5440 Umdat al-Huffaz, 5737 Asas, 5826 Maqayis, 6006 Sijistani, 6061 Sihah, 6088 Tibyan, 6119 Mufradat | ≈200 MB |
-| `hf-islamlab-arabic-lexicons/` | `train-00000.parquet`, README, `LICENSES.md`, `SOURCES.md`, `works-train-00000.parquet` | 96 MB |
-| `hf-mysamai-m3ajim/` | roots/words/dictionaries parquet + README | 87 MB |
-| `hf-mohamedrashad-arabic-roots/` | train parquet + README | 80 MB |
-| `openiti/<URI>/` | 121 OpenITI files (all versions + yml) + release 2025.1.9 metadata | 408 MB |
-| `gh-wizsk-arabic_lexicons/` | shallow clone; `assets/data/db/db.sqlite` unzipped | 294 MB |
-| `gh-gibreelabdullah-lanelexicon/` | shallow clone; `assets/lanelexicon.sqlite` | 228 MB |
-| `gh-osintai-arabic-dictionaries/` | shallow clone (raw Shamela exports) | 199 MB |
-| `gh-ejtaal-mr/` | shallow clone (viewer + page indexes only) | 6 MB |
-| `perseus-lane-lexicon_xml/` | `lexicon_xml.tar.gz` + README (copied from Judhur) | 12 MB |
-| `hawramani-lisan/` | `lisan-hawramani.jsonl`, `index.json`, `errors.log` (copied from Judhur) | 39 MB |
-| `tafsircenter-tafsir-mcp-data/` | `quran.db` (word meanings table) + README, `LICENSE-DATA`, `DATA_SOURCES.md` copies, `_source.json` | 225 MB |
-| `kfgqpc-muyassar-gharib/` | `MuyassarGhareeb.docx` (Wayback copy) + developer page snapshot, `_source.json` | 1.3 MB |
-| `quranenc-arabic-seraj/` | al-Siraj, 114 surah JSON files + terms snapshot, `_source.json` | 6.5 MB |
-| `ksu-ar-ma3any-makhlouf/` | Makhlouf word meanings JSON (reference only, no licence), `_source.json` | 0.5 MB |
-| `spa5k-qul519-muyassar-fi-al-gharib/` | QUL 519 mirror (reference only), `_source.json` | 1.5 MB |
-| `itsSamBz-islamic-api-meanings/` | mixed meanings JSON (reference only), `_source.json` | 7.9 MB |
+| `hf-authenticilm-shamela4/{6119,5826,1462,6061,1684}/` | al-Mufradat, Maqayis, Lisan, al-Sihah, Ibn Qutaybah — `pages.jsonl`, `toc.jsonl`, `book_metadata.json`, `manifest.json` (+ dataset README and extraction manifest) | ≈70 MB |
+| `perseus-lane-lexicon_xml/` | `lexicon_xml.tar.gz` (laneslexicon/lexicon_xml, Perseus TEI) + README | 12 MB |
+| `kfgqpc-muyassar-gharib/` | official `MuyassarGhareeb.docx` (Wayback copy; the Complex's server times out) + developer-page snapshot — kept because it is hard to re-fetch; candidate for the word layer, pending permission | 1.3 MB |
+| `_evidence/<source>/` | licence texts, READMEs, terms snapshots and `_source.json` records of every removed source (islamlab, m3ajim, MohamedRashad, OpenITI manifest, wizsk, GibreelAbdullah, OSINTAI, ejtaal, Hawramani errors log, Tafsir Center, QuranEnc al-Siraj, KSU Makhlouf, QUL 519, itsSamBz) | 0.9 MB |
 
-Scripts (session scratchpad, not in the repo): `lexcommon.py` (QAC loader, normalization, candidate generation, coverage), `coverage.py`, `cov_shamela4.py`, `cov_shamela4b.py`, `cov_openiti.py`, `cov_umdat.py`, `union.py`, `lisan_qc.py`, `fidelity.py`, `lenratio.py`, `vocal.py`; results in `coverage_results.json`. The QAC file used is `quranic-corpus-morphology-0.4.txt` from `github.com/cltk/arabic_morphology_quranic-corpus` (header: GNU GPL, © 2011 Kais Dukes). Core of the matcher (simplified: the extra rule that lets a CSV `ا` stand for ء/و/ي is omitted):
+Removed after the research (re-fetchable from the pinned revisions): the wizsk, GibreelAbdullah, OSINTAI and ejtaal clones; the m3ajim, MohamedRashad and islamlab parquet files; the 121 OpenITI files; the Hawramani Lisan copy (the Judhur original is untouched); the Tafsir Center `quran.db`; the QuranEnc al-Siraj, KSU Makhlouf, QUL 519 and itsSamBz JSON; and the 15 Shamela books not in the launch set (Taj, Tahdhib, al-Qamus, al-Ayn, Asas, Mujmal, al-Muhkam, al-Gharibayn, Tuhfat al-Arib, al-Majmu al-Mughith, Umdat al-Huffaz, al-Sijistani, al-Tibyan, Yaqutat al-Sirat, Tadhkirat al-Arib).
+
+Research scripts (session scratchpad only, not in the repo): `lexcommon.py` (QAC loader, normalization, candidate generation, coverage), `coverage.py`, `cov_shamela4.py`, `cov_shamela4b.py`, `cov_openiti.py`, `cov_umdat.py`, `union.py`, `lisan_qc.py`, `fidelity.py`, `lenratio.py`, `vocal.py`; results in `coverage_results.json`. The QAC file used is `quranic-corpus-morphology-0.4.txt` from `github.com/cltk/arabic_morphology_quranic-corpus` (header: GNU GPL, © 2011 Kais Dukes). Core of the matcher (simplified: the extra rule that lets a CSV `ا` stand for ء/و/ي is omitted):
 
 ```python
 def candidates(root, loose=False):
@@ -389,3 +378,75 @@ def candidates(root, loose=False):
         if len(root) == 3 and root[2] in 'وي': out.add(root[:2])  # يد، أخ، دم
     return out
 ```
+
+## 10. Implementation (pipeline, 2026-10-02)
+
+The launch set from §7.1 is now imported by production code in `pipeline/src/judhur_pipeline/lexica/`, driven by the registry `data/lexica.yaml`, tested by `pipeline/tests/test_lexica.py`.
+
+### 10.1 API
+
+```python
+from judhur_pipeline.lexica import build_lexica
+
+works, entries, glosses, report = build_lexica(
+    raw=Path("data/raw"),                 # registry paths are relative to this
+    registry=Path("data/lexica.yaml"),    # sha256-pinned; a mismatch or missing file raises LexiconRegistryError
+    roots=roots_jsonl_rows,               # the 1,642 canonical roots (key, letters, occurrences)
+    words=words_jsonl_rows,               # optional; default: latest data/build/<version>/words.jsonl
+    surahs=surahs_jsonl_rows,             # optional; default: latest data/build/<version>/surahs.jsonl
+)
+```
+
+- `works` (6 rows): `id, title_ar, title_en, author_ar, author_en, death_hijri, death_ce, lang, edition_note, source_url, license, attribution_ar, attribution_en, redistributable, sort_order`. Only `lane` has `redistributable: true`.
+- `entries` (26,696 rows): `id, work_id, root_key, headword, match, body, core_meaning, page_ref, source_ref`. `id = sort_order × 1,000,000 + position in the work` (deterministic). `root_key` is a canonical display key or null; `match` is `strict | loose | manual`, and null exactly when `root_key` is null. `body` paragraphs are separated by a blank line. `core_meaning` is set for Maqayis only. `page_ref` is `volume/page` or `page`, with a range when the article spans pages (Lane: printed page number). `source_ref` is `shamela:<book>:toc-<id>`, `shamela:<book>:page-<id>:line-<n>` or `perseus:lane:<file>:<entryFree id>`.
+- `glosses` (3,431 rows): `id, work_id, surah, ayah, phrase, gloss, word_locations` plus `page_ref` and `source_ref` (two extra fields for citation; drop them if the loader is strict). `gloss` is the item's printed text after its ayah number, verbatim — connective and quoted phrase included («و ﴿يَوْمِ الدِّينِ﴾ يوم القيامة…»); `phrase` repeats the quoted words for alignment and highlighting (rule `gharib-item-number`).
+- `report`: `rules` (the registry rules), `works.<id>` (counts, coverage, `roots_without_entry`, `unmatched_headwords`, `toc_headings_not_found`, `rules_applied` and `stats` counters), `review` (every loose and manual mapping with confidence), `review_suppressed`, `coverage` (cross-work, incl. `display_fallbacks`).
+
+### 10.2 How each work is read
+
+- al-Mufradat, Maqayis, al-Sihah: the Shamela TOC gives the expected ordered headwords; an article starts at the printed heading line that matches the next expected title within a look-ahead of 4 (al-Mufradat: the headword alone on its line; Maqayis: the headword span alone on its line, or a plain headword line followed by Ibn Faris's letter formula; al-Sihah: a line opening with "[root]"). Shamela TOC anchors are not trusted as boundaries — 167 of al-Mufradat's sit inside running text, even inside a word ("م<span>أخ</span>وذ") — so markup is removed and its text kept.
+- Lisan: own splitter (rule `lisan-article-split`). Line-initial "X:" tokens of 2–6 letters are candidates; tokens with a medial plain alif or a definite article are rejected (قال، صار، والوجء); the article starts are the heaviest subsequence that is non-decreasing in Lisan's (باب = last radical, فصل = first radical) order, each skeleton weighing 1 in total across its occurrences (so a headword that opens its article once outweighs a formula such as "وَيُرْوَى:" repeated on many lines); repeats of the same skeleton in one run keep the occurrence that best fits the alphabetical order. The merged articles of earlier community splits are fixed: عين, ولي, دين and حفظ are separate entries (test-asserted). Dev check against OpenITI's hand-annotated tags (the pinned Shamela0001687 mARkdown, re-fetched for the check and deleted again): 96 of the 9,143 OpenITI tags have no matching start here and 323 starts here have no OpenITI tag. The 96 are mostly OpenITI's own false tags (names opening hadith citations — عمر ×4, علي ×3, خالد ×3, وهب ×3 — and quote words such as قال, تريد, لقلت), second occurrences of a headword OpenITI tagged twice (حلق, سحر, خدر, صقع, كوز, طلق, غيل, عمي), and about 8 genuine headwords written with a medial alif (باج، ضاج، جاذ، جاس، نار، عاعا…) that stay inside the preceding article. The 323 are 248 quadriliteral/quinqueliteral articles OpenITI did not tag (شطرنج، زبرجد، قرنفل…), 42 triliteral ones (فتح، قبر، نزل، فصل، عسل…), 25 letter descriptions ("ب:", "ت:"…) and 8 two-letter or particle headings from the closing section.
+- Lane: one entry per `<div2 type="root">`; Perseus' Buckwalter variant converted with the laneslexicon table; 91.0% of Arabic tokens agree exactly with the laneslexicon project's own converted database on a 300-root sample (the rest are differences of segmentation, not of letters). 13 root divisions are empty in the Perseus XML and are dropped — including قبل (Lane pp. ≈2475–2480 are missing from the Perseus file), قبع، قبن، كعل، مظع، منج — so Lane shows nothing for قبل.
+- Ibn Qutaybah: an item opens a line either with its ayah number(s) and a dash — «٤١-», «٢- و (العالَمُونَ)», «٣٠ و٣١-», «١٦، ١٨، ٢١، ٣٠-», «١٧-١٨-» — or, for a further word of the same ayah, directly with ﴿phrase﴾. The phrase is the first quoted span (﴿…﴾, (…) or "…"). A numbered item naming several ayahs gives one row per listed ayah in which its phrase occurs (57 such items); a phrase quoted across ayahs ("… * …") is aligned part by part (26). An unnumbered ﴿…﴾ line that does not occur near its ayah but does occur elsewhere in the Quran is a verse cited inside the previous gloss and stays in it (6). A surah heading followed by an honorific outside its TOC anchor («سورة محمد ﷺ») is recognised. Alignment tiers for the printed ayah: match keys → consonant skeleton → leading clitic → the phrase as one alif-insensitive string («يا أيها» ↔ «يَٰٓأَيُّهَا») → a one-word dictionary form («الصَّيِّبُ» ↔ «كَصَيِّبٖ»); ayahs ±1…±3 are tried with the first three tiers only and 30 items were re-keyed (listed). A sample of 30 of the 95 alignments made only by the two loosest tiers was checked by hand: all correct.
+
+### 10.3 Root mapping
+
+- Strict = the headword's letter skeleton equals a canonical root, or a printed final shadda doubles the last letter ("أزّ" → ءزز, sub-rule `shadda-expanded`). Accepted automatically.
+- Loose = exactly one documented substitution, always listed for review with a confidence flag: `alif-for-hamza` (high), `alif-for-weak` (high), `two-letter-geminate` (high), `waw-yaa-swap` (medium), `hamza-weak-swap` (low), `two-letter-defective` (low). Ties between candidates are assigned to the root with more Quranic occurrences, flagged `ambiguous` and downgraded to low (27 cases, e.g. Sihah [أبا] → أبو, alternative أبي).
+- A loose candidate is not assigned when the work already has a strict article for that root (the headword is then most likely a different, non-Quranic root); these 1,026 cases are listed in `review_suppressed` with root null.
+- Manual = `manual_roots` in the registry: al-Mufradat ساعة → سوع, ماء → موه, خنزير → خنزر.
+- Note: these strict/loose tiers are stricter than the research tiers of §2 (where alif/hamza spellings and two-letter geminates counted as strict), so the strict percentages below are lower than in §3; the strict + loose totals agree with §3.
+
+### 10.4 Counts and coverage (computed by the pipeline; pinned in the tests)
+
+| Work | Entries | Strict | Loose | Manual | No root | Roots strict | Roots any | Coverage any | Occurrences covered |
+|---|---|---|---|---|---|---|---|---|---|
+| al-Mufradat | 1,624 | 1,295 | 221 | 3 | 105 | 1,295 = 78.87% | 1,515 | 92.27% | 98.51% |
+| Maqayis | 4,750 | 1,357 | 216 | 0 | 3,177 | 1,352 = 82.34% | 1,547 | 94.21% | 99.16% |
+| Lisan | 9,370 | 1,490 | 180 | 0 | 7,700 | 1,489 = 90.68% | 1,619 | 98.60% | 99.71% |
+| al-Sihah | 5,648 | 1,490 | 169 | 0 | 3,989 | 1,470 = 89.52% | 1,599 | 97.38% | 98.23% |
+| Lane | 5,304 | 1,466 | 271 | 0 | 3,567 | 1,388 = 84.53% | 1,613 | 98.23% | 99.72% |
+
+- All works together: 1,633 of 1,642 roots have at least one entry (1,630 with an Arabic entry). The 9 without any are reduplicated quadriliterals (حصحص، ذبذب، رفرف، زحزح، زلزل، صرصر، صفصف، صلصل، هدهد); `display_fallbacks` offers the geminate article for 5 of them (زلزل → زلل, ذبذب → ذبب, صرصر → صرر, صفصف → صفف, هدهد → هدد).
+- Entries with no root (non-Quranic articles) are kept: filter `root_key IS NOT NULL` for the Quran subset.
+- Review queue: 1,060 mappings (high 779, medium 75, low 203, manual 3) by rule: two-letter-geminate 395, alif-for-weak 341, hamza-weak-swap 125, waw-yaa-swap 75, alif-for-hamza 66, two-letter-defective 55, manual 3. Plus 1,026 suppressed candidates.
+- Ibn Qutaybah: 3,382 items → 3,431 glosses, 3,404 aligned to word locations (99.2%), 27 unaligned (listed with source_ref — mostly readings that differ from the Hafs text, e.g. «بظنين», or dictionary forms such as «المنسأة»), 30 re-keyed to a neighbouring ayah, 6 cited verses kept in the previous gloss. Fix of 2026-10-02: before it, 153 of 3,093 glosses swallowed later numbered items of other ayahs (e.g. 1:1 contained the items of 1:2, 1:4 and 1:6) because items written «٢- و (العالَمُونَ)», «٤- و ﴿…﴾» or «٣٠ و٣١-» were not recognised; now 0.
+- Shamela gaps (not pipeline defects): Maqayis has no article text for عون, غلظ, وجل, خفض in the Shamela typing; 11 Maqayis and 9 al-Sihah TOC titles have no printed heading (listed in the report); al-Sihah has 9 bracket headings missing from its TOC (imported anyway).
+
+### 10.5 Cleaning rules applied (counts from the report)
+
+| Rule | al-Mufradat | Maqayis | Lisan | al-Sihah | Ibn Qutaybah |
+|---|---|---|---|---|---|
+| footnotes-dropped (pages) | 857 | 2,632 | 3,731 | 4,152 | 542 |
+| footnote-markers-removed | 2,963 | 8,923 (27 after a heading) | 5,119 | 8,415 | 1,976 |
+| … with a matching note on the same page | 2,962 | 8,896 | 5,106 | 8,328 | 1,975 |
+| title-markup-removed | 1,666 | 5,492 | 760 | 6,299 | 115 |
+
+- Lane: `lane-markup-removed` 48,176 paragraphs, `lane-transliteration` 395,995 Arabic runs, 2 characters outside the table kept as is.
+- Lisan split: 20,229 candidates; 6,734 rejected as not a root form; 4,149 off the (باب, فصل) chain; 21 repeated in run; 9,370 entries.
+- `page-join`, `whitespace-normalised`, `front-matter-skipped` and `separator-lines-dropped` counts are in `report.works.<id>.rules_applied`.
+
+### 10.6 Verification
+
+Command (repo root): `uv run pytest pipeline/tests/test_lexica.py -q` → `24 passed in 7.69s`; with the Arabic helper tests `uv run pytest pipeline/tests packages/arabic-py/tests -q` → `41 passed in 7.73s`. `uv run ruff check` / `ruff format --check` → "All checks passed!" / "9 files already formatted"; `uv run mypy pipeline/src/judhur_pipeline/lexica --ignore-missing-imports` → "Success: no issues found in 8 source files". The tests load the real pinned files and assert the counts above, the Maqayis core meanings of علم, كتب, رحم (verbatim prefix of the body), the al-Mufradat رحم article as printed (p. 347–348), the Lisan splits (عين not inside عون; ولي, دين, حفظ likewise), Lane كتب (Arabic script, no Buckwalter left), al-Sihah [رحم] at 5/1929, the 9:41 gloss aligned to 9:41:1–3, no gloss containing a later numbered item (the coordinator's detector, checked first on a merged sample), separate glosses for 1:2 (العالمون), 1:4 (يوم الدين) and 1:6 (الصراط) aligned inside their own ayahs and absent from 1:1, al-Qamar's refrain item giving rows for 54:16, 18, 21 and 30, that no body contains a stripped marker pattern, span markup or a carriage return, that every root_key is one of the 1,642, that every loose/manual mapping is on the review list, and that the registry refuses a file whose sha256 differs or is missing. The marker and merge checks were run against known positives first (a marked string; the old merged عون record) and do fail on them.
+

@@ -686,3 +686,11 @@ def word_glosses(conn: Connection, location: str) -> list[dict[str, Any]]:
            where :loc = any(g.word_locations) order by g.id""",
         {"loc": location},
     )
+
+
+def lexicon_works(conn: Connection) -> list[dict[str, Any]]:
+    return rows(
+        conn,
+        f"""select {_LEX_WORK_COLS}, (select count(*) from content.lexicon_entries e where e.work_id = w.id and e.displayable)::int as displayed_entries
+            from content.lexicon_works w order by w.sort_order""",
+    )

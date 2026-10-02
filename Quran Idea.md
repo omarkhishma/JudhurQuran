@@ -79,7 +79,7 @@ Over time, this could allow users to build and explore a rich, interactive netwo
 
 #### Note:
 
-It's a big **NO** to rely only on my researches and my provided data. It's definitely describe or explain the idea and clarify the vision. However, without your extra mile to validate and enhance and improve and find the gaps, this will not reach the best result.
+It's a big **NO** to rely only on my researches and my provided data. It's definitely describe or explain the idea and clarify the vision. However, without your extra mile to validate and enhance and improve and find the gaps, this will not reach the best result. and it's obvious that if you did not find somthing better then you should use from the provided search results.
 
 Main/default Language: Arabic.
 Frontend: I suggest react, whats is your suggestion?
