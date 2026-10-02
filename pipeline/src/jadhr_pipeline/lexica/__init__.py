@@ -23,6 +23,7 @@ from typing import Any
 from .gharib import WordIndex, build_glosses, parse_items
 from .lane import read_lane
 from .lisan import split_lisan
+from .qamus import split_qamus
 from .quranidx import QuranPairs
 from .registry import Registry, WorkSpec, load_registry
 from .rootmap import Match, RootMatcher
@@ -109,6 +110,9 @@ def _articles(spec: WorkSpec, counters: Counters, ctx: _Context) -> tuple[list[R
         return [RawArticle(a.headword, a.body, a.page_ref, a.source_ref) for a in lisan], {}
     if fmt == "shamela-taj":
         return split_taj(spec, lines, toc, counters, ctx.quran())
+    if fmt == "shamela-qamus":  # aligned to the root list of the commentary that follows it (Tāj)
+        taj_articles, _, _ = ctx.articles(ctx.reg.work(spec.cfg["align_with"]))
+        return split_qamus(spec, lines, toc, counters, taj_articles)
     raise ValueError(f"{spec.id}: format {fmt} is not a lexicon format")
 
 

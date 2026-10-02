@@ -56,10 +56,12 @@ def _plain(text: str) -> str:
 # work: (entries, strict, loose, manual, roots strict, roots any) — computed by the pipeline, pinned.
 EXPECTED = {
     "taj": (11891, 1620, 14, 1, 1617, 1628),
+    "qamus": (10389, 1616, 23, 1, 1613, 1629),
 }
 # The research's expected size of each work (docs/research/06 Part 6, 02 §3).
 RANGES = {
     "taj": (11_800, 12_000),  # 11,985 root headings in the TOC (7,390 plain, 3,521 spaced, 1,074 irregular)
+    "qamus": (10_300, 10_500),  # 10,371 bullets; ~9,800–10,300 roots in Hawramani/m3ajim word keys
 }
 
 
@@ -104,6 +106,21 @@ HAND_CHECKED = [
     ("taj", "عضو", "ع ض و", "39/60", "(العضو، بالضم والكسر: واحد الأعضاء"),
     # the root فصل, whose one-word title is also a section word
     ("taj", "فصل", "فصل", "30/162", "الفصل: الحاجز بين الشيئين، كما في المحكم"),
+    # al-Qāmūs: the headword is the bullet's first word; the root comes from the aligned Tāj heading
+    ("qamus", "رحم", "الرحمة", "1111", "الرحمة، ويحرك: الرقة، والمغفرة، والتعطف،"),
+    ("qamus", "علم", "علمه", "1140", "علمه، كسمعه، علما، بالكسر: عرفه، وعلم هو في نفسه"),
+    ("qamus", "كتب", "كتبه", "128", "كتبه كتبا وكتابا: خطه،"),
+    ("qamus", "قول", "القول", "1051", "القول: الكلام، أو كل لفظ مذل به اللسان، تاما أو ناقصا"),
+    ("qamus", "أمن", "الأمن", "1176", "الأمن والآمن، كصاحب: ضد الخوف"),
+    ("qamus", "سمو", "سما", "1296", "و: سما سموا: ارتفع،"),
+    ("qamus", "حمد", "الحمد", "278", "الحمد: الشكر، والرضى، والجزاء، وقضاء الحق،"),
+    ("qamus", "ربب", "الرب", "87", "الرب، باللام: لا يطلق لغير الله ﷿، وقد يخفف"),
+    ("qamus", "شور", "شار", "420", "شار العسل شورا وشيارا وشيارة ومشارا ومشارة: استخرجه من الوقبة،"),
+    # two lines the typist printed without their bullet, recovered through Tāj
+    ("qamus", "شجر", "الشجر", "413", "الشجر والشجر والشجراء، كجبل وعنب وصحراء،"),
+    ("qamus", "حير", "حار", "381", "حار يحار حيرة وحيرا وحيرا وحيرانا وتحير واستحار:"),
+    # الكوكب aligned to Tāj's heading ككب (manual mapping, registry)
+    ("qamus", "كوكب", "الكوكب", "131", "الكوكب: النجم،"),
 ]
 
 
@@ -172,11 +189,44 @@ def test_taj_typing_defects_are_counted_not_edited(built: tuple) -> None:
     assert found == stats["typing-defect:empty-brackets"]
 
 
+# --- al-Qāmūs: every bullet accounted for, roots through Tāj --------------------------------------
+
+
+def test_qamus_bullets_all_accounted_for_and_aligned(built: tuple) -> None:
+    raw = "\n".join(
+        json.loads(line)["body"]
+        for line in (RAW / "lexica/hf-authenticilm-shamela4/2558/pages.jsonl").open(encoding="utf-8")
+    )
+    bullets_in_source = raw.count("•")
+    rep = built[3]["works"]["qamus"]
+    rules = rep["rules_applied"]
+    rows = _rows(built, "qamus")
+    assert bullets_in_source == rep["bullets"] == rules["qamus-bullet-split"] == 10371
+    # One entry per bullet, plus the articles whose bullet the typist left out (recovered through Tāj).
+    recovered = rules["qamus-bullet-split:lost-bullet-recovered"]
+    assert len(rows) == bullets_in_source + recovered
+    assert len(rep["lost_bullets_recovered"]) == recovered == 18
+    for e in rows:
+        assert "•" not in e["body"], e["headword"]
+        assert e["body"].startswith(e["headword"].strip()) or e["body"][:3] in ("و: ", "ي: ")
+    # Particles (الألف اللينة) aside, at least 99% of the articles are aligned to a Tāj root.
+    particles = rules["qamus-root-alignment:particles-not-aligned"]
+    aligned = rules["qamus-root-alignment"]
+    assert aligned / (len(rows) - particles) >= 0.99
+    assert rules["qamus-root-alignment:unaligned"] == len(rep["unaligned_bullets"])
+    print(
+        f"\nqamus: {aligned} of {len(rows) - particles} articles aligned to Tāj ({aligned / (len(rows) - particles):.2%})"
+    )
+
+
 # --- boundary precision against the OpenITI copy ----------------------------------------------------
 
 ORACLE = {
     # work: (OpenITI version, markup style, compare after the printed header, research estimate)
     "taj": ("1205MurtadaZabidi.TajCarus.JK007140-ara1", "bar", False, 0.98),
+    # same typing (no other copy splits al-Qāmūs); its bullets carry no root, so entries are keyed by
+    # their first word — the root assignment was checked by hand instead (docs/research/02 §10.7)
+    "qamus": ("0817MajdDinFiruzabadi.QamusMuhit.Shamela0007283-ara1", "bullet", False, 0.98),
 }
 
 
@@ -187,7 +237,11 @@ def test_split_precision_against_openiti(work: str, words: list[dict]) -> None:
     if not path.exists():
         pytest.skip(f"OpenITI oracle {name} not downloaded (data/raw/lexica/openiti-oracles)")
     arts, _ = work_articles(RAW, REGISTRY, work, words, _jsonl(BUILD / "surahs.jsonl"))
-    entries = [(a.match_heads or [a.headword], a.body) for a in arts if a.body.strip()]
+    entries = [
+        ([a.headword] if style == "bullet" else a.match_heads or [a.headword], a.body)
+        for a in arts
+        if a.body.strip()
+    ]
     precision, verdicts = boundary_precision(entries, read_oracle(path, style), skip_head=skip_head)
     print(f"\n{work}: boundary precision {precision:.2f} on {len(verdicts)} sampled entries against {name}")
     for v in verdicts:

@@ -30,6 +30,10 @@ cleaning_rules:
     description: "What the typing printed around a root heading goes with the heading, which becomes `headword`: the colon or full stop after it («أبأ» then «: ( الأَبَاءَةُ…», «ع ز ر» then «. العَزْرُ…»), the brackets of a bracketed heading («(⏎قبعر⏎)», «[دغمس⏎]») and stray numbering or punctuation on the heading's own line before it («٣ - (ف ط ر)»)."
   - id: taj-headword-markers-removed
     description: "The Shamela typing of Tāj turned the sign printed before each headword into ﴿, ﴾ or ! (alternating, 3–22 per 1,000 letters). These marker characters are removed with the space the conversion put beside them. Quran quotations use the same brackets, so a ﴿…﴾ span is kept when it reads as a quotation: a sūra:āya reference follows it; or a citation introduces it (تعالى، عز وجل، جل ثناؤه، التنزيل، قرئ… ending in a colon or after a verb of citing, with no full stop between — not the eulogy «إلى الله تعالى.»), and a cited span cut through al-Qāmūs's parentheses must still read as Quran; or its words alone follow the Quran (60% or more of its consecutive word pairs occur in one verse) with no parenthesis, square bracket or lexicographer's colon inside. Spans are chosen together without overlaps, so a marker inside a quotation is still removed. Counted per reason (`taj-quotation-brackets-kept:*`)."
+  - id: qamus-bullet-split
+    description: "al-Qāmūs (Risāla edition) opens every root with a bullet «•» and never prints the root. Every bullet starts an article that runs to the next bullet or section heading; the bullet is the edition's article mark and is not kept. Where the typist left out a bullet (18 lines such as «الشَّجَرُ والشِّجَرُ…» or «حارَ يحَارُ حَيْرَةً…» inside the previous article), the article starts at the line whose first word carries the letters of a Tāj root left unpaired in that section and whose opening words open that Tāj article, which quotes al-Qāmūs. The headword is the article's first word as printed (after «و:» or «ي:», the weak-letter mark of باب الواو والياء, which stays in the body). Splitting only inserts boundaries; no text is moved or changed."
+  - id: qamus-root-alignment
+    description: "Each al-Qāmūs article is aligned to the Tāj al-ʿArūs root headings of the same باب (last radical) and فصل (first radical) — Tāj is a commentary that follows al-Qāmūs article by article — by an order-preserving alignment scoring (a) the Tāj root's letters appearing in order in the headword (a weak radical may be written و، ي or ا) and (b) the article's opening words appearing at the opening of Tāj's article, which quotes al-Qāmūs. A section whose فصل heading the typing lost is aligned against the Tāj roots up to the next فصل present; a leftover article takes an unused root of its section when letters and text both agree (Tāj sometimes orders two roots the other way round). The aligned Tāj heading is used only to map the root; nothing is displayed from Tāj. Unaligned articles are listed in the report and mapped from their own headword; the closing section on particles is not aligned."
   - id: lane-markup-removed
     description: Lane (Perseus TEI) markup is removed; element text is kept in document order; each <entryFree> becomes one paragraph; <pb n> page breaks become page_ref only.
   - id: lane-transliteration
@@ -257,3 +261,35 @@ works:
         sha256: 6af830f8a966b57cc98669b4d635b8686061c4f4d3f04ddde22fa438887b1dc8
     manual_roots:
       ككب: {root: كوكب, note: "al-Zabidi, after al-Jawhari, files الكوكب under ككب, the و counted as an augment (vol. 4 p. 157); QAC root k-w-k-b"}
+
+  - id: qamus
+    sort_order: 8        # display order = author's death date
+    id_block: 9           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: general
+    lang: ar
+    title_ar: القاموس المحيط
+    title_en: al-Qamus al-Muhit
+    author_ar: مجد الدين محمد بن يعقوب الفيروزآبادي
+    author_en: al-Firuzabadi
+    death_hijri: 817
+    death_ce: 1414
+    edition_note: تحقيق مكتب تحقيق التراث في مؤسسة الرسالة، بإشراف محمد نعيم العرقسوسي، مؤسسة الرسالة، بيروت، الطبعة الثامنة 1426هـ / 2005م، 1357 صفحة، ترقيم الكتاب موافق للمطبوع. النص الرقمي من المكتبة الشاملة (الكتاب 7283).
+    source_url: https://shamela.ws/book/7283
+    license: Public-domain author text (d. 817 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (revision 07554bee; the card's licence section says "Research and personal use"; Shamela grants no reuse licence; rights in the Risala edition, including its vocalisation, remain with its owners). The two notes of the Shamela preparer (preface only) are excluded. Display-only (PLAN D22).
+    redistributable: false
+    attribution_ar: "المصدر: القاموس المحيط، الفيروزآبادي (ت 817هـ)، تحقيق مكتب تحقيق التراث في مؤسسة الرسالة بإشراف محمد نعيم العرقسوسي، مؤسسة الرسالة، بيروت، الطبعة الثامنة 1426هـ. النص الرقمي: المكتبة الشاملة، الكتاب 7283."
+    attribution_en: "Source: al-Firuzabadi (d. 817 AH), al-Qamus al-Muhit, ed. Maktab Tahqiq al-Turath at Mu'assasat al-Risala under Muhammad Nuʿaym al-ʿArqsusi (Beirut: Mu'assasat al-Risala, 8th ed., 1426 AH / 2005). Digital text: al-Maktaba al-Shamila, book 7283."
+    format: shamela-qamus
+    shamela_id: 7283
+    dir: lexica/hf-authenticilm-shamela4/2558
+    footnote_marker: none             # the only notes are the Shamela preparer's, in the preface
+    align_with: taj                   # root list of the commentary that follows al-Qāmūs entry by entry
+    files:
+      - path: lexica/hf-authenticilm-shamela4/2558/pages.jsonl
+        sha256: 8cd2b897e4231acd3ffa723e717e5ba1544f9b5027cba2eadfa7062d5f344462
+      - path: lexica/hf-authenticilm-shamela4/2558/toc.jsonl
+        sha256: 8bf995a4b3a11db61e2e2ae6489c4740600d43268b0f64f83ffc92f44490d17d
+      - path: lexica/hf-authenticilm-shamela4/2558/book_metadata.json
+        sha256: 7c71a487eda56567a6e0e9b19ae7d8c033c9c4a906ff439cc30a3e33182eeb3f
+    manual_roots:
+      ككب: {root: كوكب, note: "the bullet «الكَوْكَبُ» sits in باب الباء فصل الكاف and aligns to Tāj's heading ككب (the و counted as an augment); QAC root k-w-k-b"}

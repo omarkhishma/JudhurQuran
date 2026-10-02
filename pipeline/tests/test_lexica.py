@@ -79,7 +79,15 @@ def test_counts_and_root_coverage(built: tuple, work: str) -> None:
 
 
 # Loose and manual mappings per work (each listed for review with its confidence).
-REVIEW_BY_WORK = {"mufradat": 224, "maqayis": 216, "lisan": 180, "sihah": 169, "lane": 271, "taj": 15}
+REVIEW_BY_WORK = {
+    "mufradat": 224,
+    "maqayis": 216,
+    "lisan": 180,
+    "sihah": 169,
+    "lane": 271,
+    "taj": 15,
+    "qamus": 24,
+}
 
 
 def test_cross_work_coverage_and_review_list(built: tuple) -> None:
@@ -296,7 +304,7 @@ def test_root_keys_are_canonical_and_rows_follow_the_contract(built: tuple, root
 
 
 # Display order by death date (CE): the nine dictionaries of the design plus Ibn Qutaybah's gharib.
-WORK_ORDER = ["ibn-qutaybah-gharib", "sihah", "maqayis", "mufradat", "lisan", "taj", "lane"]
+WORK_ORDER = ["ibn-qutaybah-gharib", "sihah", "maqayis", "mufradat", "lisan", "qamus", "taj", "lane"]
 
 
 def test_entry_ids_do_not_move_when_the_display_order_changes(built: tuple) -> None:
