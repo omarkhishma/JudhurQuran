@@ -38,25 +38,36 @@ def error(status: int, code: str, message: str, field: str | None = None) -> ORJ
     return ORJSONResponse({"error": {"code": code, "message": message, "field": field}}, status_code=status)
 
 
-_DATASET_VERSION: dict[str, str] = {}
+# The loaded release, re-read every RELEASE_TTL seconds so a new release is served without a restart.
+RELEASE_TTL = 30.0
+_RELEASE: dict[str, Any] = {"checked": float("-inf"), "version": "", "id": ""}
 
 
-def dataset_version() -> str:
-    if "v" not in _DATASET_VERSION:
+def dataset_release() -> tuple[str, str]:
+    """(version, release id). The id adds the load time, so reloading the same version still changes
+    every ETag — a corrected rebuild must never be answered with 304 from the previous load."""
+    now = time.monotonic()
+    if now - _RELEASE["checked"] > RELEASE_TTL:
         with connect() as conn:
-            _DATASET_VERSION["v"] = content.dataset(conn)["version"]
-    return _DATASET_VERSION["v"]
+            d = content.dataset(conn)
+        _RELEASE.update(checked=now, version=d["version"], id=f"{d['version']}@{d['loaded_at'].isoformat()}")
+    return _RELEASE["version"], _RELEASE["id"]
 
 
 def cached(request: Request, payload: Any) -> Response:
-    """Content is immutable within a dataset release: strong ETag over version + URL, long cache."""
-    version = dataset_version()
+    """Content is immutable within a dataset release: strong ETag over release + URL, long cache."""
+    version, release = dataset_release()
     etag = (
         '"'
-        + hashlib.sha256(f"{version}|{request.url.path}?{request.url.query}".encode()).hexdigest()[:32]
+        + hashlib.sha256(f"{release}|{request.url.path}?{request.url.query}".encode()).hexdigest()[:32]
         + '"'
     )
-    headers = {"ETag": etag, "Cache-Control": CONTENT_CACHE, "X-Dataset-Version": version}
+    headers = {
+        "ETag": etag,
+        "Cache-Control": CONTENT_CACHE,
+        "X-Dataset-Version": version,
+        "X-Dataset-Release": release,
+    }
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
     return ORJSONResponse(payload, headers=headers)
@@ -215,7 +226,9 @@ def root_occurrences(
     request: Request,
     root: str,
     lemma: int | None = Query(None, description="restrict to one lemma id"),
-    form: str | None = Query(None, max_length=60, description="restrict to one surface form (imlaei spelling)"),
+    form: str | None = Query(
+        None, max_length=60, description="restrict to one surface form (imlaei spelling)"
+    ),
     limit: int = Query(50, ge=1, le=500),
     cursor: str | None = Query(None),
 ) -> Response:
@@ -227,7 +240,9 @@ def root_occurrences(
         return cached(request, r)
 
 
-@router.get("/roots/{root}/graph", summary="Root-family graph document: root → lemmas → word forms (with first verse)")
+@router.get(
+    "/roots/{root}/graph", summary="Root-family graph document: root → lemmas → word forms (with first verse)"
+)
 def root_graph(request: Request, root: str) -> Response:
     with connect() as conn:
         g = content.root_graph(conn, root)
@@ -268,7 +283,9 @@ def lexicon_works(request: Request) -> Response:
         return cached(request, {"data": content.lexicon_works(conn)})
 
 
-@router.get("/lexicon/entries/{entry_id}", summary="One classical lexicon article (display only; see license)")
+@router.get(
+    "/lexicon/entries/{entry_id}", summary="One classical lexicon article (display only; see license)"
+)
 def lexicon_entry(request: Request, entry_id: int) -> Response:
     with connect() as conn:
         e = content.lexicon_entry(conn, entry_id)
@@ -320,7 +337,7 @@ def create_app() -> FastAPI:
         allow_origins=settings.cors_origins,
         allow_methods=["GET", "HEAD", "OPTIONS"],
         allow_headers=["*"],
-        expose_headers=["ETag", "X-Dataset-Version", "Retry-After"],
+        expose_headers=["ETag", "X-Dataset-Version", "X-Dataset-Release", "Retry-After"],
         max_age=86400,
     )
 

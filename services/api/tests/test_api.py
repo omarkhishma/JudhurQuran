@@ -202,6 +202,22 @@ def test_etag_round_trip_returns_304() -> None:
     assert r2.status_code == 304
 
 
+def test_etag_is_tied_to_the_loaded_release_not_just_the_version() -> None:
+    import judhur_api.main as m
+
+    meta = get("/api/v1/meta")["dataset"]
+    r = client.get("/api/v1/surahs")
+    assert r.headers["x-dataset-release"].startswith(meta["version"] + "@")
+    # Reloading the same version (a corrected rebuild) must change every ETag.
+    saved = dict(m._RELEASE)
+    try:
+        m._RELEASE.update(checked=float("inf"), id=saved["id"] + "-reloaded")
+        r2 = client.get("/api/v1/surahs", headers={"If-None-Match": r.headers["etag"]})
+        assert r2.status_code == 200 and r2.headers["etag"] != r.headers["etag"]
+    finally:
+        m._RELEASE.update(saved)
+
+
 def test_errors_use_the_envelope() -> None:
     r = client.get("/api/v1/words/999:1:1")
     assert r.status_code == 404

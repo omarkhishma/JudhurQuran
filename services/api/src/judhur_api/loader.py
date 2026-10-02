@@ -14,6 +14,8 @@ import hashlib
 import json
 import sys
 import time
+import urllib.error
+import urllib.request
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -151,14 +153,35 @@ def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[st
     return counts
 
 
+def revalidate_web() -> str:
+    """Expire the web app's cached pages so the new release is served at once (not after a day)."""
+    s = get_settings()
+    if not s.web_revalidate_url:
+        return "skipped: JUDHUR_WEB_REVALIDATE_URL is not set — cached pages keep the previous release until they expire"
+    req = urllib.request.Request(s.web_revalidate_url, method="POST", data=b"")
+    if s.revalidate_secret:
+        req.add_header("Authorization", f"Bearer {s.revalidate_secret}")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return f"ok ({r.status})"
+    except (urllib.error.URLError, TimeoutError) as e:
+        return f"failed: {e} — run it again or the site serves the previous release until its cache expires"
+
+
 def main() -> int:
     if len(sys.argv) != 3:
         print("usage: python -m judhur_api.loader <build_dir> <sources.yaml>", file=sys.stderr)
         return 2
     t = time.time()
     counts = load(Path(sys.argv[1]), Path(sys.argv[2]))
-    print(json.dumps({"loaded": counts, "seconds": round(time.time() - t, 1)}))
-    return 0
+    web = revalidate_web()
+    print(
+        json.dumps(
+            {"loaded": counts, "seconds": round(time.time() - t, 1), "web_revalidate": web},
+            ensure_ascii=False,
+        )
+    )
+    return 0 if not web.startswith("failed") else 3
 
 
 if __name__ == "__main__":

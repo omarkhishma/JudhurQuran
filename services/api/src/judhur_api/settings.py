@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     public_base_url: str = "http://localhost:8000"
     rate_limit_per_minute: int = 600
     environment: str = "development"
+    # After a release loads, the loader asks the web app to expire its cached pages (apps/web
+    # src/app/api/revalidate). Unset → the step is skipped and the loader says so.
+    web_revalidate_url: str | None = None
+    revalidate_secret: str | None = None
 
 
 @lru_cache
