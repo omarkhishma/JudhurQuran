@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Prose } from "@/components/prose/Prose";
+import { localized } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/developers">): Promise<Metadata> {
   const { locale } = await params;
-  return { title: locale === "ar" ? "واجهة برمجية للمطوّرين" : "API for developers" };
+  return { title: locale === "ar" ? "واجهة برمجية للمطوّرين" : "API for developers", alternates: localized(locale, "/developers") };
 }
 
 const ENDPOINTS: [string, string, string][] = [

@@ -5,8 +5,16 @@ import type { Meta, Verse } from "@/lib/types";
 import { HomeSearch } from "@/components/home/HomeSearch";
 import { ContinueReading } from "@/components/home/ContinueReading";
 import { formatNumber } from "@/lib/format";
+import { localized } from "@/lib/seo";
+import { JsonLd, website } from "@/components/seo/JsonLd";
+import type { Metadata } from "next";
 
 const FEATURED_ROOTS = ["رحم", "علم", "كتب", "هدي", "قرأ", "صبر", "نور", "سلم"];
+
+export async function generateMetadata({ params }: PageProps<"/[locale]">): Promise<Metadata> {
+  const { locale } = await params;
+  return { alternates: localized(locale, "/") };
+}
 
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
@@ -21,6 +29,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4">
+      <JsonLd data={website(locale)} />
       <section className="flex flex-col items-center pt-14 pb-10 text-center md:pt-20" aria-labelledby="home-title">
         <figure className="mb-8">
           <blockquote className="quran text-[34px] text-t1 md:text-[44px]" dir="rtl" lang="ar">

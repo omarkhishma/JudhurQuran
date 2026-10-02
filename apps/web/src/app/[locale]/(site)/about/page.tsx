@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Prose } from "@/components/prose/Prose";
+import { localized } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/about">): Promise<Metadata> {
   const { locale } = await params;
-  return { title: locale === "ar" ? "عن المشروع ومنهجه" : "About and method" };
+  return { title: locale === "ar" ? "عن المشروع ومنهجه" : "About and method", alternates: localized(locale, "/about") };
 }
 
 export default async function AboutPage({ params }: PageProps<"/[locale]/about">) {

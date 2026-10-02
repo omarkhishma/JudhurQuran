@@ -30,7 +30,8 @@
     "notFoundBody": "We couldn't find what you were looking for. Try searching, or start from the home page.",
     "errorTitle": "Something went wrong",
     "errorBody": "Sorry — this page couldn't be loaded. Please try again in a moment.",
-    "home": "Home"
+    "home": "Home",
+    "rootsCount": "{count, plural, =0 {no roots} one {{n} root} other {{n} roots}}"
   },
   "nav": {
     "read": "Read",

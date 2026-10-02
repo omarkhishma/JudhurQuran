@@ -292,3 +292,12 @@ def test_root_family_patterns_and_methods() -> None:
         assert lem["pattern_method"] in (None, "tag", "verb-form", "verb-form-I", "match")
         # a pattern is never claimed without its method, and form-I verbs without a vowel carry no pattern
         assert (lem["pattern"] is None) == (lem["pattern_method"] in (None, "verb-form-I")), lem
+
+
+def test_catalog_lists_every_verse_word_and_root() -> None:
+    counts = get("/api/v1/meta")["dataset"]["counts"]
+    c = get("/api/v1/catalog")
+    assert len(c["verses"]) == counts["verses"]
+    assert sum(n for _, _, n in c["verses"]) == counts["words"]
+    assert len(c["roots"]) == len(set(c["roots"])) == counts["roots"]
+    assert c["verses"][0] == [1, 1, 4] and c["loaded_at"]

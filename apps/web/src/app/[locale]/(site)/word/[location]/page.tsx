@@ -6,6 +6,8 @@ import { api } from "@/lib/api";
 import type { Commentary, OccurrencesPage, WordDetail } from "@/lib/types";
 import { WordPanel } from "@/components/reader/WordPanel";
 import { citeVerse, formatNumber } from "@/lib/format";
+import { localized } from "@/lib/seo";
+import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 
 export const revalidate = 86400;
 
@@ -33,7 +35,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/word/[lo
       ? `كلمة «${w.text_imlaei}» (${w.features.pos.ar}) في ${cite}${w.root ? `، من الجذر (${w.root.spaced}) الذي ورد في القرآن الكريم ${formatNumber(w.root.occurrences, locale)} مرة بصيغ منها: ${w.root.lemmas.slice(0, 5).map((l) => l.ar).join("، ")}` : ""}. معناها في سياق الآية، وتحليلها الصرفي، ومواضعها في القرآن.`
       : `The word “${w.text_imlaei}” (${w.features.pos.en}) in Quran ${w.verse.key}${w.root ? `, from the root ${w.root.translit} which occurs ${w.root.occurrences} times in the Quran` : ""}: meaning in context, morphology and occurrences.`;
   const path = `/word/${loc}`;
-  return { title, description, alternates: { canonical: locale === "ar" ? path : `/en${path}`, languages: { ar: path, en: `/en${path}` } } };
+  return { title, description, alternates: localized(locale, path) };
 }
 
 export default async function WordPage({ params }: PageProps<"/[locale]/word/[location]">) {
@@ -51,6 +53,15 @@ export default async function WordPage({ params }: PageProps<"/[locale]/word/[lo
   const tokens = w.verse.tokens;
   return (
     <div className="mx-auto max-w-[780px] px-4 py-8">
+      <JsonLd
+        data={breadcrumbs(locale, [
+          [(locale === "ar" ? "الرئيسية" : "Home"), "/"],
+          [(locale === "ar" ? "القرآن الكريم" : "The Quran"), "/quran"],
+          [locale === "ar" ? `سورة ${w.verse.surah_name_ar}` : `Surah ${w.verse.surah}`, `/quran/${w.surah}`],
+          [locale === "ar" ? `الآية ${w.ayah}` : `Verse ${w.verse.key}`, `/quran/${w.surah}/${w.ayah}`],
+          [w.text_imlaei, `/word/${w.location}`],
+        ])}
+      />
       <nav className="mb-4 flex flex-wrap items-center gap-2 text-[13px] text-t3" aria-label="breadcrumb">
         <Link href={`/quran/${w.surah}`} className="hover:text-t1">{`سورة ${w.verse.surah_name_ar}`}</Link>
         <span aria-hidden="true">/</span>

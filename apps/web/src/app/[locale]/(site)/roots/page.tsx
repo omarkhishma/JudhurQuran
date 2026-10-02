@@ -5,11 +5,12 @@ import { api } from "@/lib/api";
 import type { RootSummary } from "@/lib/types";
 import { RootBuilder } from "@/components/roots/RootBuilder";
 import { formatNumber } from "@/lib/format";
+import { localized } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/roots">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "roots" });
-  return { title: t("indexTitle"), alternates: { canonical: locale === "ar" ? "/roots" : "/en/roots", languages: { ar: "/roots", en: "/en/roots" } } };
+  return { title: t("indexTitle"), alternates: localized(locale, "/roots") };
 }
 
 export default async function RootsIndexPage({ params }: PageProps<"/[locale]/roots">) {

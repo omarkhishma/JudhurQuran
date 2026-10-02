@@ -34,6 +34,17 @@ def dataset(conn: Connection) -> dict[str, Any]:
     return d
 
 
+def catalog(conn: Connection) -> dict[str, Any]:
+    """Compact index of addressable content: [surah, ayah, words] per verse and every root key."""
+    verses = rows(conn, "select surah, ayah, word_count from content.verses order by id")
+    roots = rows(conn, "select key from content.roots order by occurrences desc, id")
+    return {
+        "loaded_at": dataset(conn)["loaded_at"],
+        "verses": [[v["surah"], v["ayah"], v["word_count"]] for v in verses],
+        "roots": [r["key"] for r in roots],
+    }
+
+
 def sources(conn: Connection) -> list[dict[str, Any]]:
     return rows(
         conn,

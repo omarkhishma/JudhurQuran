@@ -4,10 +4,11 @@ import { api } from "@/lib/api";
 import type { LexiconWork, Meta, Work } from "@/lib/types";
 import { Prose } from "@/components/prose/Prose";
 import { formatNumber } from "@/lib/format";
+import { localized } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/sources">): Promise<Metadata> {
   const { locale } = await params;
-  return { title: locale === "ar" ? "المصادر والتراخيص" : "Sources and licenses" };
+  return { title: locale === "ar" ? "المصادر والتراخيص" : "Sources and licenses", alternates: localized(locale, "/sources") };
 }
 
 export default async function SourcesPage({ params }: PageProps<"/[locale]/sources">) {

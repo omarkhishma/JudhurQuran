@@ -21,8 +21,8 @@ export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Pr
     title: { default: `${t("siteName")} — ${t("tagline")}`, template: `%s · ${t("siteName")}` },
     description: t("tagline"),
     applicationName: t("siteName"),
-    alternates: { languages: { ar: "/", en: "/en" } },
     openGraph: { siteName: t("siteName"), locale: locale === "ar" ? "ar_AR" : "en_US", type: "website" },
+    twitter: { card: "summary_large_image" },
     icons: { icon: "/icon.svg" },
   };
 }

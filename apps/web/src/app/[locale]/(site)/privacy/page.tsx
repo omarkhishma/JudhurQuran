@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Prose } from "@/components/prose/Prose";
+import { localized } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/privacy">): Promise<Metadata> {
   const { locale } = await params;
-  return { title: locale === "ar" ? "الخصوصية" : "Privacy" };
+  return { title: locale === "ar" ? "الخصوصية" : "Privacy", alternates: localized(locale, "/privacy") };
 }
 
 export default async function PrivacyPage({ params }: PageProps<"/[locale]/privacy">) {

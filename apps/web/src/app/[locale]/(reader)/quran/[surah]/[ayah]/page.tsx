@@ -9,6 +9,8 @@ import { ReaderController } from "@/components/reader/ReaderController";
 import { SidePanel } from "@/components/reader/SidePanel";
 import { TafsirSection } from "@/components/reader/TafsirSection";
 import { citeVerse, formatNumber } from "@/lib/format";
+import { localized } from "@/lib/seo";
+import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 
 export const revalidate = 86400;
 
@@ -33,7 +35,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/quran/[s
   const title = locale === "ar" ? `${cite} — ${verse.text_imlaei.split(" ").slice(0, 8).join(" ")}` : `Quran ${cite}`;
   const description = locale === "ar" ? `﴿${verse.text_imlaei}﴾ — التفسير الميسر: ${gist}…` : `${text.slice(0, 80)} — tafsir, translation, and the root of every word.`;
   const path = `/quran/${s.number}/${verse.ayah}`;
-  return { title, description, alternates: { canonical: locale === "ar" ? path : `/en${path}`, languages: { ar: path, en: `/en${path}` } } };
+  return { title, description, alternates: localized(locale, path) };
 }
 
 export default async function VersePage({ params }: PageProps<"/[locale]/quran/[surah]/[ayah]">) {
@@ -50,6 +52,14 @@ export default async function VersePage({ params }: PageProps<"/[locale]/quran/[
 
   return (
     <div className="reader-layout">
+      <JsonLd
+        data={breadcrumbs(locale, [
+          [(locale === "ar" ? "الرئيسية" : "Home"), "/"],
+          [(locale === "ar" ? "القرآن الكريم" : "The Quran"), "/quran"],
+          [(locale === "ar" ? `سورة ${s.name_ar}` : `Surah ${s.name_translit}`), `/quran/${s.number}`],
+          [locale === "ar" ? `الآية ${verse.ayah}` : `Verse ${verse.ayah}`, `/quran/${s.number}/${verse.ayah}`],
+        ])}
+      />
       <div className="min-w-0 bg-paper">
         <div className="mx-auto max-w-[860px] px-4 pb-20">
           <nav className="flex flex-wrap items-center justify-between gap-2 border-b border-line py-3 text-[13px]" aria-label="breadcrumb">

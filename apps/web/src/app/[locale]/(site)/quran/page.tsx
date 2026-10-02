@@ -3,11 +3,12 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { api } from "@/lib/api";
 import type { Surah } from "@/lib/types";
 import { SurahIndex } from "@/components/quran/SurahIndex";
+import { localized } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/quran">): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "surah" });
-  return { title: t("index"), description: t("indexLead"), alternates: { canonical: locale === "ar" ? "/quran" : "/en/quran" } };
+  return { title: t("index"), description: t("indexLead"), alternates: localized(locale, "/quran") };
 }
 
 export default async function QuranIndexPage({ params }: PageProps<"/[locale]/quran">) {

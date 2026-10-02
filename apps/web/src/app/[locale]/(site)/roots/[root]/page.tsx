@@ -8,6 +8,8 @@ import { Concordance } from "@/components/roots/Concordance";
 import { RootLexicon } from "@/components/lexicon/RootLexicon";
 import { Icon } from "@/components/Icon";
 import { formatNumber, toArabicDigits } from "@/lib/format";
+import { localized } from "@/lib/seo";
+import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 
 export const revalidate = 86400;
 
@@ -26,7 +28,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/roots/[r
       ? `ورد جذر (${r.spaced}) في القرآن الكريم ${formatNumber(r.occurrences, locale)} مرة في ${formatNumber(r.verse_count, locale)} آية من ${formatNumber(r.surah_count, locale)} سورة، بصيغ منها: ${lemmas}. شاهد عائلته ومواضعه وسياقاته.`
       : `The root ${r.translit} (${r.spaced}) occurs ${r.occurrences} times in ${r.verse_count} verses of the Quran, in ${r.lemma_count} lemmas. See its family, distribution and every occurrence in context.`;
   const path = `/roots/${encodeURIComponent(r.key)}`;
-  return { title, description, alternates: { canonical: locale === "ar" ? path : `/en${path}`, languages: { ar: path, en: `/en${path}` } } };
+  return { title, description, alternates: localized(locale, path) };
 }
 
 const GROUPS: { key: string; pos: string[] }[] = [
@@ -57,6 +59,13 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 py-10">
+      <JsonLd
+        data={breadcrumbs(locale, [
+          [locale === "ar" ? "الرئيسية" : "Home", "/"],
+          [t("indexTitle"), "/roots"],
+          [r.spaced, `/roots/${encodeURIComponent(r.key)}`],
+        ])}
+      />
       <nav className="mb-4 text-[13px] text-t3" aria-label="breadcrumb">
         <Link href="/roots" className="hover:text-t1">{t("indexTitle")}</Link>
       </nav>

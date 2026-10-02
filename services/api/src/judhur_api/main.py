@@ -87,6 +87,14 @@ def meta(request: Request) -> Response:
         return cached(request, {"dataset": d, "sources": content.sources(conn)})
 
 
+@router.get(
+    "/catalog", summary="Every verse (with its word count) and every root key — for sitemaps and crawlers"
+)
+def catalog(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, content.catalog(conn))
+
+
 @router.get("/sources", summary="Every data source with its license and required attribution")
 def sources(request: Request) -> Response:
     with connect() as conn:

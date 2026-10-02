@@ -10,6 +10,8 @@ import { SidePanel } from "@/components/reader/SidePanel";
 import { AudioBar } from "@/components/audio/AudioBar";
 import { cnt, formatNumber } from "@/lib/format";
 import { Link } from "@/i18n/navigation";
+import { localized } from "@/lib/seo";
+import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 
 export const revalidate = 86400;
 
@@ -35,7 +37,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/quran/[s
   return {
     title,
     description,
-    alternates: { canonical: locale === "ar" ? `/quran/${n}` : `/en/quran/${n}`, languages: { ar: `/quran/${n}`, en: `/en/quran/${n}` } },
+    alternates: localized(locale, `/quran/${n}`),
   };
 }
 
@@ -55,6 +57,7 @@ export default async function SurahPage({ params }: PageProps<"/[locale]/quran/[
 
   return (
     <div className="reader-layout">
+      <JsonLd data={breadcrumbs(locale, [[(locale === "ar" ? "الرئيسية" : "Home"), "/"], [(locale === "ar" ? "القرآن الكريم" : "The Quran"), "/quran"], [(locale === "ar" ? `سورة ${s.name_ar}` : `Surah ${s.name_translit}`), `/quran/${n}`]])} />
       <div className="min-w-0 bg-paper">
         <ReaderToolbar surah={n} nameAr={s.name_ar} nameTranslit={s.name_translit} verseCount={s.verse_count} />
         <div className="mx-auto max-w-[860px] px-4 pb-24">
