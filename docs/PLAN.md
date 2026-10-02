@@ -32,15 +32,16 @@ An Arabic-first, bilingual (ar default / en) website where the Quran is rendered
 
 Status legend: ✅ done (verified) · 🔄 in progress · ⏳ next · ⛔ blocked (owner) · ⬜ not started
 
-### Phase 0 — Orientation, research, decisions 🔄
-- 🔄 Read idea + full design handoff + walk prototypes (desktop + phone captures) — done for reading; captures taken
-- 🔄 Research reports in `docs/research/`: 01 text+morphology · 02 Arabic lexica · 03 tafsir/translation/audio/hadith · 04 competitive analysis
-- ✅ Discovered owner's sibling project `../Judhur` (July 2026) — reuse its verified license register, lessons and source artefacts as inputs; do not modify it
-- ⬜ Source registry `data/sources.yaml` (every source: URL, sha256, license quote, attribution, permitted uses)
-- ⬜ DECISIONS seeded; project CLAUDE.md
+### Phase 0 — Orientation, research, decisions ✅
+- ✅ Idea + full design handoff read; prototypes captured at desktop and phone width
+- ✅ Research reports in `docs/research/`: 01 text+morphology · 02 Arabic lexica · 03 tafsir/translation/audio/hadith · 04 competitive analysis
+- ✅ Sibling project `../Judhur` found and used as research input (license register, lessons, pinned artefacts)
+- ✅ Source registry `data/sources.yaml` + works registry `data/works.yaml`
+- ✅ DECISIONS seeded and maintained; ⬜ project CLAUDE.md
 **Exit:** every launch data source has a recorded license and a recommendation; stack decided.
 
-### Phase 1 — Canonical dataset (pipeline) ⬜
+### Phase 1 — Canonical dataset (pipeline) 🔄
+Done: official KFGQPC text (byte-identical, hash-checked) · Tanzil verification + juz · QAC v0.4 parse (multi-stem words) · token↔word alignment (7 known fusions/splits exposed) · imlāʾī search shadow · roots/lemmas/counts · root variants from QAC v2 + fork · 7 tafsirs + 2 English translations. Remaining: wazn derivation · DATA-VALIDATION.md · lexica (agent building) · transliteration · English glosses · release artefacts.
 - Pin + fetch sources with sha256 verification (fail on drift)
 - Parse Tanzil Uthmani + metadata (114 surahs, 6,236 verses, juz/hizb/page/sajdah) and the QPC Hafs text; letter-stream cross-verification
 - Parse QAC morphology (segments → words), align to Tanzil tokens (basmala convention, 4 known merges)
@@ -52,18 +53,20 @@ Status legend: ✅ done (verified) · 🔄 in progress · ⏳ next · ⛔ blocke
 - Release artefacts (JSON + CSV) with license manifest; dataset version `YYYY.MM.N`
 **Exit:** `pipeline build` from a clean checkout reproduces the DB; all integrity tests green; validation report written from computed numbers.
 
-### Phase 2 — API ⬜
+### Phase 2 — API 🔄
+Done: schema + atomic loader · meta/sources/surahs/verses/pages/words/roots/occurrences/lemmas/search/works/commentary · ETag + cache headers · error envelope · rate limit · 45 tests incl. Arabic search assertions. Remaining: lexicon endpoints · root graph document · audio timings.
 - Schema + migrations (Alembic), loader from pipeline output
 - Endpoints: meta/sources · surahs · verses (with words) · words · roots (+family, distribution, occurrences/KWIC) · lemmas · search (Arabic/translit/English/ref/root-letters) · tafsir · translations · lexica · root graph document
 - Error envelope, cursor pagination, ETag/Cache-Control, rate limiting, CORS, OpenAPI docs
 - Tests against the real loaded dataset, incl. the Arabic search assertions
 **Exit:** `curl /api/v1/words/2:255:1` returns the full word panel payload; test suite green.
 
-### Phase 3 — Web foundations ⬜
+### Phase 3 — Web foundations ✅
 - Next.js app, ar/en routing (RTL/LTR), tokens light/dark, fonts self-hosted (Quran font verified at reading size with all marks), shell + nav, error/404 pages
 **Exit:** screenshots at 1440 and 390 in both themes show correct Quranic rendering and mirrored layout.
 
-### Phase 4 — Quran reader + word panel + tafsir ⬜
+### Phase 4 — Quran reader + word panel + tafsir 🔄
+Done: surah index · reader (verse/flow layouts, size, translation/inline al-Muyassar, ۞ signs) · word panel (meaning in context, root family, morphology, counts, KWIC, variants, next steps) · verse panel (7 tafsirs, translation, copy/share) · phone sheet. Remaining: verse page · word page · audio + word highlighting · plain-language term cards.
 - Surah index, surah reader (verse markers, basmala rules, delegated word clicks, copy that never injects verse numbers), verse page
 - Word panel (layered): meaning · root & family · morphology (plain Arabic) · occurrences · dictionaries · where next; phone bottom sheet
 - Verse panel: tafsir selector, translation, audio, copy/share/cite

@@ -32,6 +32,8 @@
   --form-wash: color-mix(in srgb, var(--c-form) 10%, var(--card));
   --sentence-wash: color-mix(in srgb, var(--c-sentence) 10%, var(--card));
   --reading-scale: 1;
+  /* Chart mark colour for single-series root charts (validated: lightness band + contrast, light and dark) */
+  --chart-root: #a8682c;
   color-scheme: light;
 }
 
@@ -58,6 +60,7 @@
   --c-word: #7aa2f7;
   --c-sentence: #6fce88;
   --c-desc: #9a9aa8;
+  --chart-root: #b97a3c;
   --sh: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 14px 30px -14px rgba(0, 0, 0, 0.85);
   --sh-open: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 34px 64px -20px rgba(0, 0, 0, 0.9);
   color-scheme: dark;
