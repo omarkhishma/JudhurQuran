@@ -1,5 +1,5 @@
 """Arabic utilities. Combining-mark strings are written as explicit escapes —
-editors silently reorder marks in typed literals (Judhur lesson)."""
+editors silently reorder marks in typed literals."""
 
 import pytest
 from judhur_arabic import (

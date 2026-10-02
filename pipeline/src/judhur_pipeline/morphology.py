@@ -50,7 +50,7 @@ class MorphError(ValueError):
 
 def read_lines_strict(path: Path) -> list[str]:
     """Decode UTF-8 and split lines. Consistent CRLF is accepted (the v0.4 file ships with it);
-    a stray CR anywhere else raises — CRs once created phantom roots (Judhur lesson)."""
+    a stray CR anywhere else raises — a CR left on a line becomes part of the last field and creates phantom roots."""
     raw = path.read_bytes()
     crlf, cr, lf = raw.count(b"\r\n"), raw.count(b"\r"), raw.count(b"\n")
     if cr and not (cr == crlf and lf - crlf <= 1):

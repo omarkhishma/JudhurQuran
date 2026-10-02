@@ -5,7 +5,7 @@ Research date: 2026-10-02. Every file listed below was downloaded into `data/raw
 ## 0. Outcome in one screen
 
 - **Display text:** the official KFGQPC "Uthmanic Hafs" Unicode text (`hafsData_v2-0.json`, from the KFGQPC developer portal; MD5 and SHA-1 match the portal's published checksums). It is the text the KFGQPC Hafs font was built for, and it renders as Madinah-mushaf script (khah-head sukun, open tanween, attached waqf signs, ayah-end medallion with number).
-- **Font:** `KFGQPC HAFS Uthmanic Script` Version 2.2 (`UthmanicHafs_V22.ttf`). The file from the KFGQPC font site zip, the QUL CDN copy and the sibling Judhur project copy are byte-identical (sha256 `aa68bffc…f145`). It must be served unmodified (no WOFF2 conversion, no subsetting).
+- **Font:** `KFGQPC HAFS Uthmanic Script` Version 2.2 (`UthmanicHafs_V22.ttf`). The file from the KFGQPC font site zip and the QUL CDN copy are byte-identical (sha256 `aa68bffc…f145`). It must be served unmodified (no WOFF2 conversion, no subsetting).
 - **Canonical verification text + morphology alignment key:** Tanzil Uthmani 1.1 (CC BY 3.0 + "no changes" clause). 6,236 verses verified. The letter stream agrees with KFGQPC; the orthographic encoding differs (sukun, tanween, word spacing).
 - **Primary morphology:** Quranic Arabic Corpus (QAC) v0.4, kept byte-pristine. 128,219 segments / 77,429 words / 1,642 roots / 4,832 lemmas / 27,462 words with no root. Our root counts reproduce the live corpus.quran.com dictionary exactly (رحم 339, كتب 319, نوس 241).
 - **Cross-check sources:** there is no openly licensed, human-verified, token-level root dataset that is independent of QAC. Every "other" root dataset I could test (openislam.org, tafsir.app "تحليل كلمات القرآن", QUL morphology, kwanite, quran-analyzer, the owner CSV) descends from QAC or its mustafa0x fork. The workable independent check is **AlKhalil Morpho Sys 2** (via the `farahidi` Python port, GPL-3.0). It is rule-based and lexicon-based, and it also gives a wazn. Pilot on 3,000 random QAC tokens: AlKhalil's top-1 root matched QAC on 91.3% of analysed tokens; QAC's root was among AlKhalil's candidates for 98.5%; 6.2% of tokens got no analysis. Second-tier checks: the linuxscout manual word index (GPL-3.0), MASAQ (independent POS and segmentation, but no roots, CC BY-NC 3.0), and the mustafa0x deltas as a ready-made list of known disputes.
@@ -18,13 +18,12 @@ Research date: 2026-10-02. Every file listed below was downloaded into `data/raw
 | Slug / file | Source URL (no login) | Bytes | sha256 |
 |---|---|---|---|
 | `qac-morphology-0.4/quranic-corpus-morphology-0.4.txt` | https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt | 6,309,503 | `a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46` |
-| `qac-morphology-0.4/quranic-corpus-morphology-0.4.official.zip` | copied read-only from the sibling Judhur project (`data/sources/corpus/`); inner file timestamp 2011-05-02 | 1,028,754 | `fda26f87cc58b42fc992a3ad666a562805b636f34bcecb46326d048337ca7999` |
 | `qac-morphology-mustafa0x/quran-morphology.txt` (+ README, `morphology-terms-ar.json`, `scripts/`) | https://github.com/mustafa0x/quran-morphology (last commit 2018-06-19) | 6,322,866 | `742bfac59941b2cb09736d5b7aae694af50792261fb8450cbf6afafcc340645f` |
 | `qac-v2-kaisdukes/morphology.txt`, `lemmas.txt`, `syntax.txt`, `pause-marks.tsv`, `quran-uthmani.xml`, `chapters.json`, `verses.json` | https://github.com/kaisdukes/quranic-corpus-api/tree/main/src/main/resources/data | 2,617,763 (morphology.txt) | `f1d3417be9aac22d54fff9ddc34db0818d7f490d836471a0d9163b3a2c11c065` |
 
 **Official download needs an e-mail address.** At https://corpus.quran.com/download/, the file is released only after a form submission (`txtEmail`, "for verification purposes only"). The direct path `https://corpus.quran.com/download/quranic-corpus-morphology-0.4.txt` redirects (302) to the homepage. I did not submit the owner's e-mail.
 
-**Provenance proof without the form:** four copies agree. The bnjasim mirror (2018) and the ezAldinWaez mirror are byte-identical (CRLF, `a1d12923…`). The AhmedSaadi0 mirror is the same content with LF line endings (normalised sha `910b721a…`). The official zip from the sibling project also contains a byte-identical file (`a1d12923…`). It also matches the Judhur hash, so there is **no upstream drift**. The live site still serves 0.4 data: corpus.quran.com shows root ن و س for 2:8:2 and د ل ل for 7:22:1, exactly as in the file. CRLF warning: parse in binary/newline-aware mode, or you will get "\r"-suffixed phantom roots (Judhur lesson).
+**Provenance proof without the form:** three public mirrors agree. The bnjasim mirror (2018) and the ezAldinWaez mirror are byte-identical (CRLF, `a1d12923…`). The AhmedSaadi0 mirror is the same content with LF line endings (normalised sha `910b721a…`). The live site still serves 0.4 data: corpus.quran.com shows root ن و س for 2:8:2 and د ل ل for 7:22:1, exactly as in the file. CRLF warning: parse in binary/newline-aware mode, or you will get "\r"-suffixed phantom roots.
 
 ### 1.2 Format (QAC 0.4)
 
@@ -120,9 +119,9 @@ Download endpoint, no login: `https://tanzil.net/pub/download/index.php?quranTyp
 | `tanzil/quran-simple-clean.txt` | simple-clean, no diacritics | 781,176 | `228df2a717671aeb9d2ff573002bd28d6b3f973f4bc7153554e3a81663d67610` |
 | `tanzil/quran-data.xml` | metadata, https://tanzil.net/res/text/metadata/quran-data.xml | 77,234 | `8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a` |
 
-**Drift check against Judhur:**
+**Variant check:**
 
-- The no-options Uthmani file reproduces Judhur's sha `bf4f57b9…` exactly, so there is **no upstream drift**. Judhur's copy simply lacks pause marks.
+- A fresh download of the Uthmani text with no options gives sha `bf4f57b9…`, the no-pause-marks variant; the marks variant is kept under its own name (`quran-uthmani-marks-sajdah.txt`).
 - `quran-data.xml` matches `8867c1d8…` exactly.
 - Note: `tanzil/quran-uthmani.txt` was overwritten at 14:50 by another process with the no-marks variant. That is why the marks variant has its own explicit file name.
 
@@ -170,8 +169,8 @@ The notice is appended to every downloaded file and is the same as https://tanzi
 | Slug / file | Obtained from | Bytes | sha256 | Authenticity check |
 |---|---|---|---|---|
 | `kfgqpc-uthmanic-hafs-v2-0/UthmanicHafs_v2-0.zip` (data in CSV/JSON/SQL/XML/TXT/HTML/XLSX + `uthmanic_hafs_v20.ttf` + docx/pdf; extracted json, csv, read.me, ttf alongside) | KFGQPC developer portal `https://download.qurancomplex.gov.sa/resources_dev/UthmanicHafs_v2-0.zip`, via Wayback `web.archive.org/web/20250417225336id_/…` | 10,729,285 | `a7b0e5591945712ec5e4d6142938ae4d1e9b49bdc89dff06222789bfebdfd72c` | **MD5 `cf6841ae…8278` and SHA-1 `36ea5ab0…7ebf` equal the checksums published on the portal** (2025-09 snapshot). The 2023 snapshot listed older checksums for an earlier build. |
-| `fonts/kfgqpc-official-site/UthmanicHafs_v22.zip` (UthmanicHafs_V22.ttf, uthmanic_hafs_v22.ttf, full-Quran docx) | font site `https://fonts.qurancomplex.gov.sa/wp-content/uploads/fonts/UthmanicHafs_v22.zip`, via Wayback (2025-12-08) | 962,683 | `b5cf0666441aabd5ff2be4993934e6f2a57d00b6b89afcdf708cd70288671b23` | The inner `UthmanicHafs_V22.ttf` is byte-identical to the QUL CDN copy and to Judhur's copy (`aa68bffc…`) |
-| `fonts/kfgqpc-uthmanic-hafs/UthmanicHafs_V22.ttf` | QUL CDN `https://static-cdn.tarteel.ai/qul/fonts/UthmanicHafs_V22.ttf` (no login) | 297,700 | `aa68bffce289b4c0ebac68e90502eb69e42356abcd1603cb2b8e99c2c723f145` | Matches the official zip and Judhur, so **no drift** |
+| `fonts/kfgqpc-official-site/UthmanicHafs_v22.zip` (UthmanicHafs_V22.ttf, uthmanic_hafs_v22.ttf, full-Quran docx) | font site `https://fonts.qurancomplex.gov.sa/wp-content/uploads/fonts/UthmanicHafs_v22.zip`, via Wayback (2025-12-08) | 962,683 | `b5cf0666441aabd5ff2be4993934e6f2a57d00b6b89afcdf708cd70288671b23` | The inner `UthmanicHafs_V22.ttf` is byte-identical to the QUL CDN copy (`aa68bffc…`) |
+| `fonts/kfgqpc-uthmanic-hafs/UthmanicHafs_V22.ttf` | QUL CDN `https://static-cdn.tarteel.ai/qul/fonts/UthmanicHafs_V22.ttf` (no login) | 297,700 | `aa68bffce289b4c0ebac68e90502eb69e42356abcd1603cb2b8e99c2c723f145` | Matches the official zip |
 | `fonts/kfgqpc-official-site/UthmanTN_v2-0.ttf` / `UthmanTNB_v2-0.ttf` | `https://fonts.qurancomplex.gov.sa/wp-content/uploads/2022/12/UthmanTN_v2-0.ttf` (+ `UthmanTNB_v2-0.ttf`), via Wayback | 139,336 / 132,048 | `f4a2b776…1ba` / `c881678c…e38` | Family "KFGQPC Uthman Taha Naskh", v2.0 |
 | `kfgqpc-hafs-smart-v4/kfgqpc_hafs_smart_4.zip` | portal `resources_dev/kfgqpc_hafs_smart_4.zip`, via Wayback | 22,705,385 | `e0db8d3ccb9889abe70606a70fef102f1e3a4646e682c0263ef9554775a05ffe` | MD5 `53d82b55…` and SHA-1 `1dbeae38…` equal the portal values. **Not usable:** `aya_text` is Private-Use-Area glyph codes (2,600 distinct PUA codepoints), not real Unicode. |
 | `fonts/amiri-quran/Amiri-1.003.zip` (+ extracted) | https://github.com/aliftype/amiri/releases/download/1.003/Amiri-1.003.zip | 1,033,533 | `81af0aff7d2086d8af24cea7202f7546130997982534691373485cd96744d05e` | GitHub release 1.003 (2025-06-13) |
@@ -282,7 +281,6 @@ Saved in `quran-com-api-v4-text/`:
 | `verse_1_1_words_qpc.json` | 2,165 | `120de923…2fd` |
 | `verse_2_8_words_qpc.json` | 4,951 | `40a4afad…452` |
 
-The QPC text is identical to the sibling's `qpc-hafs-via-qul.json` (0 differing verses), so **no drift**.
 
 Sample:
 
@@ -301,7 +299,7 @@ Sample:
   - redistributing QF Content as a dataset, API or download without a signed commercial license;
   - modifying the Quran text.
 - On termination, QF Content must be deleted.
-- **Owner action:** under these terms `quran-com-api-v4-text/*.json` and `qpc/qpc-hafs-via-qul.json` (another agent copied the latter in from Judhur; it came from qurancdn) should not be kept past 2026-10-09. The official KFGQPC file in §3 replaces them: it has the same text minus 33 tatweels. I did not delete them, because file deletion is the owner's call.
+- Under these terms no Quran Foundation content is kept: the API samples fetched for this research were removed from `data/raw`, and the official KFGQPC file in §3 is the display text (the same text minus 33 tatweels).
 
 ## 6. Cross-validation sources for root attribution
 
@@ -315,7 +313,7 @@ Sample:
 - **Owner CSV (`Example Data/Quran DB - Clean Roots.csv`, 77,431 rows):**
   - Roots are QAC-like (الناس → نوس, الماعون → معن).
   - It also contains non-QAC fillers: محمد → حمد, مدين → مدين, and particles given pseudo-roots (من, ما, الا…; 1,799 "roots").
-  - Provenance and license are unknown, so it cannot be a licensed cross-check. Judhur already reconciled it: 49,085 agree, 883 divergences.
+  - Provenance and license are unknown, so it cannot be a licensed cross-check. Our own reconciliation (`docs/DATA-VALIDATION.md`): 49,085 roots agree with the corpus, 882 differ.
 
 ### 6.2 Independent or partly independent, usable
 
@@ -372,17 +370,9 @@ Sample:
 - **AlKhalil, if outputs are shown or cited:** «تحقق صرفي آلي: الخليل الصرفي 2 (Oujda NLP Team) عبر farahidi — GPL-3.0».
 - **MASAQ, if used** (non-commercial only): «MASAQ — Sawalha et al., Mendeley Data, DOI 10.17632/9yvrzxktmr.6 — CC BY-NC 3.0».
 
-## 9. Drift check against the sibling Judhur project (`Judhur/judhur/data/sources/`, verified 2026-07-10/12)
+## 9. Licence quotes re-verified at the source (2026-10-02)
 
-| Artifact | Judhur sha256 | Fresh download today | Drift |
-|---|---|---|---|
-| Tanzil `quran-uthmani.txt` | `bf4f57b9…12c8` | `bf4f57b9…12c8` (no-options variant) | None |
-| Tanzil `quran-data.xml` | `8867c1d8…c5c7a` | `8867c1d8…c5c7a` | None |
-| QAC `quranic-corpus-morphology-0.4.txt` | `a1d12923…8c46` | `a1d12923…8c46` (bnjasim mirror) | None |
-| `UthmanicHafs_V22.ttf` | `aa68bffc…f145` | `aa68bffc…f145` (QUL CDN and KFGQPC zip) | None |
-| `qpc-hafs-via-qul.json` | `8a50e6e5…92d2` | Re-fetched `qpc_hafs` from api.quran.com: 0 of 6,236 verses differ | None (content) |
-
-**License quotes re-verified at the source today:** Tanzil (tanzil.net/docs/Text_License and the file footer), QAC (download page, license.jsp, file header, FAQ), KFGQPC font EULA (inside the font file), QF Developer Terms (updated 2026-09-26; Judhur's 2026-07 register predates this revision and lacks the explicit 1-week cache and no-dataset clauses). The KFGQPC usage page could only be read via Wayback (2024-05-18).
+Tanzil (tanzil.net/docs/Text_License and the file footer), QAC (download page, license.jsp, file header, FAQ), KFGQPC font EULA (inside the font file), QF Developer Terms (updated 2026-09-26; it carries the explicit 1-week cache and no-dataset clauses). The KFGQPC usage page could only be read via Wayback (2024-05-18).
 
 ## 10. Housekeeping notes (flagged, not acted on)
 

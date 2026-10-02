@@ -35,7 +35,7 @@ Status keys: **Used** — data in the product · **Cross-check** — used to ver
 | github.com/wizsk/arabic_lexicons | Lexicons in SQLite | **Not used** | Its Lisan splitter merges entries (عين inside عون…), and its "المحيط" table is a modern dictionary, not al-Qamus. |
 | github.com/GibreelAbdullah/LaneLexicon | Lane's Lexicon database | **Cross-check** | Same Perseus lineage as the source we use (Perseus XML, CC BY-SA). |
 | github.com/OSINTAI/Arabic-Dictionaries | Dictionary dumps | **Not used** | No license. |
-| arabiclexicon.hawramani.com | Lisan, Lane and others online | **Cross-check** | States the texts are public domain; used to check our Lisan article boundaries (a copy exists in the sibling Judhur project). |
+| arabiclexicon.hawramani.com | Lisan, Lane and others online | **Cross-check** | States the texts are public domain; its texts match the Shamela typings, so it is a cross-check for Lisan article boundaries, never a source. |
 
 ## Public sites
 

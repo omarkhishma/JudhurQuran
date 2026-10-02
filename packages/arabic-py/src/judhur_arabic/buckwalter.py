@@ -1,10 +1,11 @@
 """Buckwalter transliteration → Arabic, Quranic Arabic Corpus variant.
 
 The Quranic Arabic Corpus (corpus.quran.com) extends classic Buckwalter with
-Quranic annotation marks. The table below matches the corpus' published
-scheme and was cross-checked against an independent implementation in the
-owner's earlier Judhur project. Mapping is strict: an unknown character
-raises, because a silently dropped byte would corrupt a root or a lemma.
+Quranic annotation marks. The table below was checked entry by entry against
+the corpus' published table (corpus.quran.com/java/buckwalter.jsp, 2026-10-03):
+all 60 published entries match; ``|`` (alef with madda) is kept from classic
+Buckwalter although the corpus does not use it. Mapping is strict: an unknown
+character raises, because a silently dropped byte would corrupt a root or a lemma.
 
 This module is used for morphology metadata (roots, lemmas, segment forms).
 The displayed Quranic text never passes through it.

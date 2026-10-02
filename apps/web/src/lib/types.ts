@@ -1,4 +1,4 @@
-/** Shapes returned by the Judhur API (/api/v1). Kept in sync with services/api content.py. */
+/** Shapes returned by our API (/api/v1). Kept in sync with services/api content.py. */
 
 export type Label = { tag: string; ar: string; en: string };
 

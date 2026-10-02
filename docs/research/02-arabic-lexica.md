@@ -42,7 +42,6 @@ Keys = distinct normalized keys the dataset exposes. Rows marked chapter-level a
 | Lisan al-Arab | wizsk | 9,334 | 1,621 = 98.7% | 1,634 = 99.5% | 98.5% | 96.4% |
 | Lisan al-Arab | OpenITI mARkdown `### $` tags | 9,112 | 1,620 = 98.7% | 1,631 = 99.3% | 98.4% | 96.3% |
 | Lisan al-Arab | MohamedRashad (Hawramani) | 9,239 | 1,592 = 97.0% | 1,612 = 98.2% | 95.9% | 94.7% |
-| Lisan al-Arab | Hawramani jsonl (Judhur copy) | 9,237 | 1,591 = 96.9% | 1,612 = 98.2% | 95.9% | 94.6% |
 | Lisan al-Arab | Shamela4 / islamlab | chapter-level (760 / 742 rows) | — | — | — | — |
 | al-Sihah | wizsk | 5,648 | 1,616 = 98.4% | 1,628 = 99.1% | 99.6% | 95.9% |
 | al-Sihah | Shamela4 TOC | 5,603 | 1,609 = 98.0% | 1,624 = 98.9% | 98.3% | 95.6% |
@@ -77,7 +76,6 @@ What the residual misses are, checked by hand:
 - al-Mufradat: some articles are headed by a word, not a root (ساعة for سوع, ماء for موه, خنزير for خنزر, لات), so the key match undercounts; other roots have no article at all (no heading ليس, يمم, تسع or كوكب in the Shamela TOC, the Shamela body title spans, the wizsk keys or the OpenITI headers). Loose-tier misses: 84 roots, almost all with ≤8 Quranic occurrences except ليس (89), موه (63), سوع (49).
 - Maqayis: strict misses are mostly orthography (Ibn Faris keys weak roots with ى/ا, e.g. دنى for دنو) — loose fixes 85 of them. Real gaps in wizsk are segmentation losses, e.g. the volume-initial articles قل and حد are absent in wizsk but present in islamlab/Shamela (V05P003, V02P003). Quadriliterals (برهن, خنزر, سنبل, كوكب, قنطر, زخرف…) are only partly covered because Ibn Faris treats most of them inside triliteral articles.
 - Lisan: every one of the "missing" major roots I traced exists in the text but is **merged into a neighbouring record** by the article splitter that m3ajim and wizsk share (9,067 of their 9,344 records are identical): عين inside عون (at char 9,381), ولي inside وشي (at char 43,566 of an 86,357-char record), دين inside دون (char 9,559), حفظ inside حظظ, ندد inside نجد, رحل inside رجل, قدد inside قحد. The underlying Shamela text has these headwords at line start, and OpenITI's hand-annotated mARkdown tags every one of them (`### $ عين:` etc.), so the defect is in those two datasets' segmentation, not in the text; our own splitter, tested against the OpenITI tags, avoids it.
-- Hawramani Lisan (Judhur copy): 9,243 records (not ~1,500), 2 fetch failures (غنث, غوث). Its `index.json` (9,245 roots) is itself incomplete — it lacks سلم, قبل, سما/سمو, ولي, سكن, فتح, قدم and others, although the live site serves e.g. `arabiclexicon.hawramani.com/سلم/?book=3`. This is why its occurrence-weighted coverage is only 95.9%. Flag for the Judhur project; not fixed here (outside scope).
 - Lane: the residual misses are mostly quadriliterals and rare roots (هطع, هرع, نتق, دهق); Lane's own work stops in ق and the ك–ي volumes are Lane-Poole's thinner completion from Lane's notes.
 
 ## 4. Union coverage of the recommended set
@@ -189,11 +187,10 @@ Keys used: al-Mufradat, Maqayis and al-Sihah from the Shamela4 TOC; Lisan from t
 - Quality: HTML-to-text conversion collapsed whitespace between elements ("وقدرَحِمْتُهُ", "لقوميؤمنون", "هادياًوذا" in Lisan رحم), which corrupts words. Not fit for display without re-fetching.
 - Licence, verbatim (card): "This dataset is available under the GPL-3.0 license." The uploader does not own the Hawramani texts; the underlying claim is Hawramani's "All texts belong to the public domain."
 
-### 5.7 arabiclexicon.hawramani.com (and the Judhur Lisan copy)
+### 5.7 arabiclexicon.hawramani.com
 
 - Site: 47 works, root pages per book (`?book=3` Lisan, `?book=5` al-Ayn, `?book=8` al-Sihah, `?book=33` al-Mufradat, `?book=50` Lane). Text matches the Shamela typings (spot-check: the Mufradat رحم article is identical to Shamela 6119, including "[الكهف/ 81]").
 - Statement, verbatim (site footer, `https://arabiclexicon.hawramani.com/about/`): "Software and presentation © 2026 Hawramani.com. All texts belong to the public domain." The general terms (`https://hawramani.com/terms-of-use/`) contain no content licence. `robots.txt` allows root pages.
-- Judhur copy, now at `data/raw/lexica/hawramani-lisan/` (copied, SHA-256 recorded in `SHA256SUMS-copied-from-judhur.txt`): `lisan-hawramani.jsonl` 9,243 records (`id`, `root`, `permalink`, `textHtml`), `index.json` 9,245 roots, `errors.log` 2 failures. Vocalization 0.27 (a lighter typing than the Shamela Dar Sadir text's 0.62). Inline marginal notes appear as "(1) قوله… كذا بالنسخ…"; the Shamela card for the Dar Sadir edition attributes its notes to al-Yaziji (d. 1906) "and a group of linguists", so check their status before displaying them.
 - Permissions: (a) display — yes for the text; (b) redistribution — yes for public-domain text, never the site's presentation/markup; (c) commercial — same. Risk: Hawramani does not name its editions, and the text is Shamela-derived.
 
 ### 5.8 Lane's Arabic-English Lexicon
@@ -339,7 +336,6 @@ Edward William Lane, An Arabic-English Lexicon (London: Williams and Norgate, 18
 - Engineering — done 2026-10-02 (§10): importer for the launch set, Lisan splitter, root mapping with review queue, Ibn Qutaybah verse alignment, Lane conversion. Still open: wiring `build_lexica` into build.py / cli / API (coordinator), and human review of the 1,060 loose/manual mappings and the 1,026 suppressed candidates (owner or a designated reviewer) before loose entries are shown.
 - Engineering: a collation pass (Shamela vs a second typing per work — wizsk/Hawramani/OpenITI) that flags divergent words for human review before an article is published.
 - Owner (Omar): outreach for the word layer — KFGQPC (al-Muyassar fi Gharib al-Quran: API/bulk and commercial use), Tafsir Center (cloud@tafsir.net: confirm CC BY 4.0 covers `word_content_meaning` commercially and name its sources), QuranEnc (per-word display of al-Siraj). Nothing was sent; it goes out under the owner's name only with his say.
-- Judhur project owner: its Hawramani Lisan `index.json` lacks high-frequency roots (سلم، قبل، سكن، فتح، قدم، ولي…); not touched here.
 - Not done in this research: no comparison against printed page images; Shamela's own upstream typists' terms beyond the MCP terms page were not found; al-Qamus, al-Ayn and Tahdhib root-level parsers were not built, so their coverage is reported as "chapter-level", not as a percentage.
 
 ## 9. Appendix — files and scripts
@@ -353,7 +349,7 @@ State after the implementation step (2026-10-02): `data/raw/lexica/` was cut fro
 | `kfgqpc-muyassar-gharib/` | official `MuyassarGhareeb.docx` (Wayback copy; the Complex's server times out) + developer-page snapshot — kept because it is hard to re-fetch; candidate for the word layer, pending permission | 1.3 MB |
 | `_evidence/<source>/` | licence texts, READMEs, terms snapshots and `_source.json` records of every removed source (islamlab, m3ajim, MohamedRashad, OpenITI manifest, wizsk, GibreelAbdullah, OSINTAI, ejtaal, Hawramani errors log, Tafsir Center, QuranEnc al-Siraj, KSU Makhlouf, QUL 519, itsSamBz) | 0.9 MB |
 
-Removed after the research (re-fetchable from the pinned revisions): the wizsk, GibreelAbdullah, OSINTAI and ejtaal clones; the m3ajim, MohamedRashad and islamlab parquet files; the 121 OpenITI files; the Hawramani Lisan copy (the Judhur original is untouched); the Tafsir Center `quran.db`; the QuranEnc al-Siraj, KSU Makhlouf, QUL 519 and itsSamBz JSON; and the 15 Shamela books not in the launch set (Taj, Tahdhib, al-Qamus, al-Ayn, Asas, Mujmal, al-Muhkam, al-Gharibayn, Tuhfat al-Arib, al-Majmu al-Mughith, Umdat al-Huffaz, al-Sijistani, al-Tibyan, Yaqutat al-Sirat, Tadhkirat al-Arib).
+Removed after the research (re-fetchable from the pinned revisions): the wizsk, GibreelAbdullah, OSINTAI and ejtaal clones; the m3ajim, MohamedRashad and islamlab parquet files; the 121 OpenITI files; the Tafsir Center `quran.db`; the QuranEnc al-Siraj, KSU Makhlouf, QUL 519 and itsSamBz JSON; and the 15 Shamela books not in the launch set (Taj, Tahdhib, al-Qamus, al-Ayn, Asas, Mujmal, al-Muhkam, al-Gharibayn, Tuhfat al-Arib, al-Majmu al-Mughith, Umdat al-Huffaz, al-Sijistani, al-Tibyan, Yaqutat al-Sirat, Tadhkirat al-Arib).
 
 Research scripts (session scratchpad only, not in the repo): `lexcommon.py` (QAC loader, normalization, candidate generation, coverage), `coverage.py`, `cov_shamela4.py`, `cov_shamela4b.py`, `cov_openiti.py`, `cov_umdat.py`, `union.py`, `lisan_qc.py`, `fidelity.py`, `lenratio.py`, `vocal.py`; results in `coverage_results.json`. The QAC file used is `quranic-corpus-morphology-0.4.txt` from `github.com/cltk/arabic_morphology_quranic-corpus` (header: GNU GPL, © 2011 Kais Dukes). Core of the matcher (simplified: the extra rule that lets a CSV `ا` stand for ء/و/ي is omitted):
 

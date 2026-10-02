@@ -124,9 +124,9 @@
 Every task is verified twice for UI (screens at 1440, 1024 and 390 px in light and dark, compared side by side with the prototype; numbers checked against data), committed on its own, and logged in DECISIONS.
 
 ### P0 · Integrity reset — remove everything taken from another project ⬜
-- P0.1 Delete the copied files and their checksum manifest (`data/raw/lexica/SHA256SUMS-copied-from-judhur.txt`, the copied Lisan dump and evidence folders, the copied official corpus archive).
-- P0.2 Re-acquire from the original public sources and re-pin: Lane's Lexicon XML from Perseus; the corpus morphology file from corpus.quran.com or its documented public mirrors (hash-matched); rebuild and verify the text hash and every count, explaining any change.
-- P0.3 Rewrite the docs: remove every passage that cites or compares with the other project (DECISIONS, PLAN, research 00–02, code docstrings); re-derive any decision that was borrowed and put it to the owner (§2 laws, the non-commercial assumption → D2).
+- P0.1 ✅ Copied files moved to the Trash (2026-10-03): the copied checksum manifest, the copied Lisan dump's evidence folder, the copied Lane archive and the copied official corpus archive. Nothing from them is kept in the repository or the build.
+- P0.2 ✅ Lane's Lexicon re-acquired from its public repository (laneslexicon/lexicon_xml at f3c19fb) and re-pinned; the rebuilt dataset is byte-identical except the source URL. The pinned corpus morphology file already came from a public mirror (three mirrors agree), so it stays.
+- P0.3 ✅ Docs and code comments rewritten: every passage that cited or compared with the other project removed from DECISIONS and research 00–02; borrowed lessons deleted; laws and the licensing stance re-recorded as the owner's decisions of 2026-10-03; the Buckwalter table re-verified entry by entry against the corpus' published table (60 of 60 match).
 - P0.4 Rename the product identity after D1: packages, modules, storage keys (with a one-time local migration), compose names, UI name, metadata, docs.
 - P0.5 Exit: a repository-wide search for the other project's name and paths returns nothing (checked against a known positive first); full tests, build and text hash green.
 
