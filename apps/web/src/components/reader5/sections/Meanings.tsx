@@ -7,6 +7,7 @@ import { formatNumber } from "@/lib/format";
 import { useReader } from "@/lib/reader/store";
 import type { Features, Label, WordPayload } from "@/lib/reader/types";
 import { FORM_TERM, TAG_TERM } from "@/lib/terms";
+import { WujuhBlock } from "./Wujuh";
 
 /**
  * Meanings (design 03 §3.5.1, P2.5). Numbered sense lists are assembled by the editorial board from the
@@ -63,7 +64,8 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
             </li>
           ))}
         </ol>
-      ) : (
+      ) : null}
+      {w.senses.length === 0 && (
         <>
           {lines.length > 0 ? (
             <ol className="flex flex-col gap-2">
@@ -86,8 +88,11 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
           ) : (
             <p className="text-[13px] text-t3">{t("noSourcedLines")}</p>
           )}
-          <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] leading-relaxed text-t3">{t("sensesPending")}</p>
         </>
+      )}
+      <WujuhBlock w={w} />
+      {w.senses.length === 0 && (
+        <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] leading-relaxed text-t3">{t("sensesPending")}</p>
       )}
       <div className="flex flex-wrap gap-2">
         <button type="button" className="btn text-[12px]" onClick={() => setSuggest({ kind: "sense", slug: w.slug, label: w.ar.full, current: "" })}>

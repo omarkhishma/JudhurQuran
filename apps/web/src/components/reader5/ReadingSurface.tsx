@@ -33,6 +33,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const openWord = useReader((s) => s.openWord);
   const openVerse = useReader((s) => s.openVerse);
   const closeEntry = useReader((s) => s.closeEntry);
+  const setMode = useReader((s) => s.setMode);
   const setCite = useReader((s) => s.setCite);
   const showToast = useReader((s) => s.showToast);
   const tintRoot = usePrefs((s) => s.tintRoot);
@@ -104,6 +105,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       if (Number(s) === chapter.number) url.pathname += `/${a}`;
       else url.searchParams.set("v", verse);
     } else if (mode === "index") url.searchParams.set("mode", "lookup");
+    else if (mode === "surah") url.searchParams.set("mode", "about");
     if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url.href);
   }, [mode, selection, verse, chapter.number]);
 
@@ -215,6 +217,11 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     const tool = el.closest<HTMLElement>("[data-tool]");
     if (tool) {
       runTool(tool.dataset.tool as DrawerTool | "audio" | "tafsir" | "copy" | "cite", tool.dataset.verseKey!);
+      return;
+    }
+    if (el.closest("[data-about]")) {
+      setMode("surah");
+      setPrefs({ panelOpen: true });
       return;
     }
     const verseBtn = el.closest<HTMLElement>("[data-verse-btn]");

@@ -7,7 +7,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type Mode = "empty" | "word" | "verse" | "index";
+export type Mode = "empty" | "word" | "verse" | "index" | "surah";
 export type Selection = { slug: string; at: string | null };
 export type SectionId = "senses" | "family" | "patterns" | "lexica" | "timeline" | "usage";
 export const SECTIONS: SectionId[] = ["senses", "family", "patterns", "lexica", "timeline", "usage"];

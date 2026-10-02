@@ -48,6 +48,9 @@ export function ReaderShell({ chapter, children, footer }: { chapter: ChapterInf
     else if (mode === "lookup") {
       useReader.getState().setMode("index");
       setPrefs({ panelOpen: true });
+    } else if (mode === "about") {
+      useReader.getState().setMode("surah");
+      setPrefs({ panelOpen: true });
     } else if (mode === "review") useReader.getState().setReview(true);
     else if (!mode && !p.get("w") && !p.get("v") && !personal.visited && Object.keys(personal.progress).length === 0) {
       useReader.getState().setAsk(true);

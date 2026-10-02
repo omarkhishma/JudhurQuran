@@ -234,3 +234,43 @@ test("copy puts the reference after the verse text (RDR-555)", async ({ page, co
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text).toMatch(/^﴿.+﴾ \[الفاتحة: ٢\]$/);
 });
+
+test("verse mode carries the occasion of revelation verbatim with its source (P2.5a, P3.9)", async ({ page }) => {
+  await returning(page);
+  const k = await api<{ asbab: { text: string; source_id: string }[]; sources: Record<string, { attribution_ar: string }> }>(page, "/verses/2:6/knowledge");
+  expect(k.asbab.length).toBeGreaterThan(0);
+  await page.goto("/quran/2/6");
+  const p = panel(page);
+  const layer = p.locator(".layer", { has: page.getByRole("button", { name: /أسباب النزول/ }) });
+  await expect(layer.locator(".kn-item")).toHaveCount(k.asbab.length);
+  const first = k.asbab[0].text.replace(/\s+/g, " ").trim().slice(0, 24);
+  await expect(layer).toContainText(first);
+  await expect(layer).toContainText(k.sources[k.asbab[0].source_id].attribution_ar);
+});
+
+test("wujūh: a Quranic word's senses from the classical books, the sense citing this verse marked (P3.1)", async ({ page }) => {
+  await returning(page);
+  type Rel = { wujuh: { senses: { id: string; verses: string[] }[] }[] };
+  const rel = await api<Rel>(page, "/words/ilm/relations");
+  const att = await api<{ data: { location: string; verse_key: string }[] }>(page, "/words/ilm/attestations?limit=200");
+  const cited = new Set(rel.wujuh.flatMap((e) => e.senses.flatMap((s) => s.verses)));
+  const hit = att.data.find((a) => cited.has(a.verse_key))!;
+  expect(hit, "an occurrence of عِلْم in a verse the wujūh books cite").toBeTruthy();
+  const [s] = hit.verse_key.split(":");
+  await page.goto(`/quran/${s}?w=ilm&at=${hit.location}`);
+  const p = panel(page);
+  await expect(p.getByText("الوجوه في القرآن")).toBeVisible();
+  await expect(p.locator(".wujuh-sense.is-here").first()).toBeVisible();
+  await expect(p.locator(".wujuh-sense.is-here .verse-chip.is-here").first()).toHaveText(hit.verse_key);
+});
+
+test("About this sūra opens its card from the chapter head, verbatim (P3.9)", async ({ page }) => {
+  await returning(page);
+  const card = await api<{ card: { names: string } }>(page, "/surahs/1/card");
+  await page.goto("/quran/1");
+  await page.getByRole("button", { name: "عن السورة" }).first().click();
+  await expect(page).toHaveURL(/[?&]mode=about/);
+  const p = panel(page);
+  await expect(p.getByRole("heading", { name: "سورة الفاتحة" })).toBeVisible();
+  await expect(p).toContainText(card.card.names.replace(/\s+/g, " ").trim().slice(0, 20));
+});

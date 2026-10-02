@@ -11,6 +11,7 @@ import type { ChapterInfo } from "./ReaderShell";
 import { WordEntry } from "./WordEntry";
 import { VerseEntry } from "./VerseEntry";
 import { IndexBody } from "./IndexBody";
+import { SurahAbout } from "./SurahAbout";
 
 const MIN_W = 320;
 
@@ -45,7 +46,9 @@ export function Panel({ chapter, docked, width }: { chapter: ChapterInfo; docked
         ? t("allEntries")
         : mode === "verse" && verse
           ? t("verseTitle", { ref: verse })
-          : t("dictionary");
+          : mode === "surah"
+            ? t("aboutSurah")
+            : t("dictionary");
 
   function close() {
     if (docked) setPrefs({ panelOpen: false });
@@ -80,6 +83,7 @@ export function Panel({ chapter, docked, width }: { chapter: ChapterInfo; docked
         {mode === "word" && selection && <WordEntry query={word} chapter={chapter} bodyRef={body} />}
         {mode === "verse" && verse && <VerseEntry verseKey={verse} />}
         {mode === "index" && <IndexBody />}
+        {mode === "surah" && <SurahAbout chapter={chapter} />}
         {mode === "empty" && <EmptyBody chapter={chapter} />}
       </div>
     </aside>

@@ -24,6 +24,9 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
         <p className="mono text-[11.5px] uppercase text-t3" dir="ltr">{`${formatNumber(s.number, locale)} / ${formatNumber(114, locale)}`}</p>
         <h1 className="chapter-title ar-classical" lang="ar">{`سورة ${s.name_ar}`}</h1>
         {locale === "en" && <p className="text-[14px] text-t2">{`${s.name_translit} — ${s.name_en}`}</p>}
+        <button type="button" className="about-btn" data-about>
+          {t("aboutSurah")}
+        </button>
         <p className="text-[12px] text-t3">
           {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " · " + tc("verses", cnt(s.verse_count, locale)) + " · " + t("pagesRange", { from: formatNumber(s.page_start, locale), to: formatNumber(s.page_end, locale) })}
         </p>

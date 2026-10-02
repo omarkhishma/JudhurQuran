@@ -1906,3 +1906,133 @@ button.type-chip:hover {
   width: auto;
 }
 }
+
+@layer components {
+/* ─── Knowledge layers and wujūh in the panel (P2.5a, P3.1, P3.9) ─────────── */
+.kn-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.kn-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.kn-text {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.kn-text[data-folded="true"] {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--lines, 6);
+  overflow: hidden;
+}
+.kn-notes > summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--t3);
+  list-style-position: inside;
+}
+.kn-notes > summary:hover {
+  color: var(--t1);
+}
+.kn-notes[open] > summary {
+  margin-bottom: 4px;
+}
+.kn-notes ol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--line-2);
+}
+.kn-cite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.kn-quote {
+  flex-basis: 100%;
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--t2);
+}
+.wujuh-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card-2);
+}
+.wujuh-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: start;
+  background: transparent;
+}
+.wujuh-head[aria-expanded="false"] .layer-chev {
+  transform: rotate(-90deg);
+}
+[dir="rtl"] .wujuh-head[aria-expanded="false"] .layer-chev {
+  transform: rotate(90deg);
+}
+.wujuh-sense {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.wujuh-sense.is-here {
+  background: color-mix(in srgb, var(--c-sentence) 9%, transparent);
+  border-radius: 8px;
+  padding-inline: 8px;
+  border-top-color: transparent;
+}
+.tag-pill.is-here {
+  color: color-mix(in srgb, var(--c-sentence) 80%, var(--t1));
+  border-color: color-mix(in srgb, var(--c-sentence) 45%, var(--line));
+  background: color-mix(in srgb, var(--c-sentence) 10%, var(--card));
+}
+.verse-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--t2);
+}
+.verse-chip:hover {
+  border-color: var(--c-sentence);
+  color: var(--t1);
+}
+.verse-chip.is-here {
+  border-color: var(--c-sentence);
+  color: var(--t1);
+  font-weight: 600;
+}
+.about-btn {
+  align-self: flex-start;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--t2);
+}
+.about-btn:hover {
+  border-color: var(--ring);
+  color: var(--t1);
+}
+}

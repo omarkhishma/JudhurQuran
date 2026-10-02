@@ -36,7 +36,7 @@ function useVerse(key: string) {
   return useQuery({ queryKey: ["verse", key], queryFn: () => getJSON<VersePayload>(`/verses/${key}`) });
 }
 
-function RootsDrawer({ verseKey }: { verseKey: string }) {
+export function RootsDrawer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const v = useVerse(verseKey);
@@ -82,7 +82,7 @@ function RelatedDrawer({ verseKey }: { verseKey: string }) {
   );
 }
 
-function NoteDrawer({ verseKey }: { verseKey: string }) {
+export function NoteDrawer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
   const note = useSaved((s) => s.notes[verseKey]);
   const setNote = useSaved((s) => s.setNote);
