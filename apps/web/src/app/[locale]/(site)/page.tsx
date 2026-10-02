@@ -35,7 +35,7 @@ export default async function HomePage({ params }: PageProps<"/[locale]">) {
           <blockquote className="quran text-[34px] text-t1 md:text-[44px]" dir="rtl" lang="ar">
             <Link
               href={`/word/96:1:1`}
-              className="rounded-md bg-root-wash px-1 text-root decoration-root/40 underline-offset-[10px] hover:underline"
+              className="rounded-md bg-root-wash px-1 text-root underline decoration-root/40 underline-offset-[10px] hover:decoration-root"
             >
               {firstWord.text}
             </Link>{" "}

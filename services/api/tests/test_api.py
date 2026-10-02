@@ -301,3 +301,12 @@ def test_catalog_lists_every_verse_word_and_root() -> None:
     assert sum(n for _, _, n in c["verses"]) == counts["words"]
     assert len(c["roots"]) == len(set(c["roots"])) == counts["roots"]
     assert c["verses"][0] == [1, 1, 4] and c["loaded_at"]
+
+
+def test_plain_ascii_roots_find_the_real_root() -> None:
+    def roots(q: str) -> list[str]:
+        return [r["key"] for r in get("/api/v1/search", q=q)["results"]["roots"]]
+
+    assert roots("r-h-m") == ["رحم"]  # رحم
+    assert roots("h-m-d")[0] == "حمد"  # حمد before the rarer همد
+    assert get("/api/v1/roots/r-h-m")["key"] == "رحم"

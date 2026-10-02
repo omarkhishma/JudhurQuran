@@ -61,15 +61,26 @@ export function SavedView() {
     <div className="mx-auto max-w-[900px] px-4 py-10">
       <h1 className="text-[28px] font-semibold">{t("title")}</h1>
       <p className="mt-1 max-w-[70ch] text-t2">{t("lead")}</p>
-      <div className="seg-group mt-6" role="tablist">
-        {(["bookmarks", "notes", "history"] as const).map((k) => (
-          <button key={k} type="button" role="tab" aria-selected={tab === k} className="seg" onClick={() => setTab(k)}>
-            {t(k === "bookmarks" ? "tabBookmarks" : k === "notes" ? "tabNotes" : "tabHistory")}
-          </button>
-        ))}
-        <Link href="/graph" className="seg">{t("tabMaps")}</Link>
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="seg-group" role="tablist" aria-label={t("title")}>
+          {(["bookmarks", "notes", "history"] as const).map((k) => (
+            <button
+              key={k}
+              id={`saved-tab-${k}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === k}
+              aria-controls="saved-panel"
+              className="seg"
+              onClick={() => setTab(k)}
+            >
+              {t(k === "bookmarks" ? "tabBookmarks" : k === "notes" ? "tabNotes" : "tabHistory")}
+            </button>
+          ))}
+        </div>
+        <Link href="/graph" className="btn">{t("tabMaps")}</Link>
       </div>
-      <div className="mt-4" role="tabpanel">
+      <div className="mt-4" role="tabpanel" id="saved-panel" aria-labelledby={`saved-tab-${tab}`}>
         {client && tab === "bookmarks" && (
           bookmarks.length ? (
             <ul className="space-y-2">

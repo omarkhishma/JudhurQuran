@@ -8,6 +8,8 @@ are ``و``/``ي``. Users type roots many ways (``أمن``, ``ا م ن``, ``ء-م
 
 from __future__ import annotations
 
+import itertools
+
 from .normalize import strip_marks
 
 # Single-character academic transliteration (DIN 31635-style, as in the design handoff).
@@ -36,6 +38,49 @@ _LATIN_TO_AR: dict[str, str] = {
     "l": "ل", "m": "م", "n": "ن", "h": "ه", "w": "و", "y": "ي",
 }  # fmt: skip
 _LATIN_DIGRAPHS: dict[str, str] = {"th": "ث", "kh": "خ", "dh": "ذ", "sh": "ش", "gh": "غ"}
+
+
+# Plain-ASCII input cannot carry the dots that tell ح from ه or ص from س; each such letter stands for all
+# of its readings, and the caller keeps the combinations that are real roots.
+_ASCII_AMBIGUOUS: dict[str, tuple[str, ...]] = {
+    "h": ("ه", "ح"), "s": ("س", "ص"), "d": ("د", "ض"), "t": ("ت", "ط"), "z": ("ز", "ظ"),
+    "dh": ("ذ", "ظ"), "a": ("ء", "ع"), "e": ("ع", "ء"), "g": ("غ", "ج"), "x": ("خ",), "kh": ("خ",),
+    "c": ("ش",), "ch": ("ش",),
+}  # fmt: skip
+_MAX_CANDIDATES = 64
+
+
+def root_input_candidates(raw: str) -> list[list[str]]:
+    """Every root a typed input may mean, the strict reading first.
+
+    Arabic input and dotted transliteration (``ḥ-m-d``) have one reading. Plain ASCII (``h-m-d``) expands
+    each ambiguous letter (h → ه/ح, s → س/ص, d → د/ض, t → ت/ط, z → ز/ظ, a → ء/ع, g → غ/ج); at most 64
+    combinations are returned.
+    """
+    strict = parse_root_input(raw)
+    text = strip_marks(raw).strip()
+    if any("ء" <= ch <= "ي" or ch == "ٱ" for ch in text):
+        return [strict] if strict else []
+    parts = [p for p in text.replace("_", "-").replace(" ", "-").lower().split("-") if p]
+    if not 2 <= len(parts) <= 5:
+        return [strict] if strict else []
+    options: list[tuple[str, ...]] = []
+    for part in parts:
+        opts = _ASCII_AMBIGUOUS.get(part)
+        if opts is None:
+            mapped = _LATIN_DIGRAPHS.get(part) or _LATIN_TO_AR.get(part)
+            if mapped is None:
+                return [strict] if strict else []
+            opts = (mapped,)
+        options.append(opts)
+    out: list[list[str]] = [strict] if strict else []
+    for combo in itertools.product(*options):
+        letters = list(combo)
+        if letters not in out:
+            out.append(letters)
+        if len(out) >= _MAX_CANDIDATES:
+            break
+    return out
 
 
 def display_letters(letters: list[str] | str) -> list[str]:

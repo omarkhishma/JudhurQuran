@@ -39,7 +39,8 @@ export function DistributionChart({ rows, surahNames }: { rows: Row[]; surahName
             style={{ height: H }}
             dir="rtl"
             onPointerLeave={() => setHover(null)}
-            role="img"
+            // A group, not an image: every bar is a link to its surah.
+            role="group"
             aria-label={`${t("distribution")}: ${rows.length} / 114`}
           >
             {surahNames.map((s) => {

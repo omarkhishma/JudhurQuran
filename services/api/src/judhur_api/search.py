@@ -12,7 +12,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from judhur_arabic import has_arabic, is_uthmani, normalize, parse_root_input
+from judhur_arabic import has_arabic, is_uthmani, normalize, parse_root_input, root_input_candidates
 from judhur_arabic import key as root_key
 from sqlalchemy import Connection
 
@@ -91,9 +91,9 @@ def detect(conn: Connection, q: str) -> tuple[str, dict[str, Any]]:
             return "arabic_phrase", {}
         return "arabic_word", {}
     if re.fullmatch(r"\s*[a-zA-Zʿʾ'’ḥḫṣḍṭẓġšṯḏ]{1,3}(\s*[-_ ]\s*[a-zA-Zʿʾ'’ḥḫṣḍṭẓġšṯḏ]{1,3}){1,3}\s*", raw):
-        letters = parse_root_input(raw)
-        if letters:
-            return "root", {"letters": letters}
+        candidates = root_input_candidates(raw)
+        if candidates:
+            return "root", {"letters": candidates[0], "candidates": candidates}
     return "latin", {}
 
 
@@ -144,9 +144,14 @@ def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
         if s:
             results["surahs"].append(s)
     elif kind == "root":
-        r = _root_row(conn, root_key(info["letters"]))
-        if r:
-            results["roots"].append(r)
+        # Every reading of the input that is a real root, most frequent first (r-h-m → رحم; h-m-d → حمد, همد).
+        keys = [root_key(c) for c in info.get("candidates") or [info["letters"]]]
+        results["roots"] = rows(
+            conn,
+            """select key, spaced, translit, occurrences, lemma_count, verse_count from content.roots
+               where key = any(:ks) order by occurrences desc, id""",
+            {"ks": keys},
+        )
     if kind in ("arabic_word", "arabic_phrase") or (
         kind == "surah" and has_arabic(q) and not norm_q.isdigit()
     ):

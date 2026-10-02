@@ -14,16 +14,16 @@
   --dot: #d5d5dd;
   --t1: #16161a;
   --t2: #4f4f5a;
-  --t3: #71717c;
-  --c-root: #a8682c;
+  --t3: #686872;
+  --c-root: #945c27;
   --c-form: #6f55c4;
-  --c-word: #2f6ae0;
+  --c-word: #2b62ce;
   --c-sentence: #177a44;
-  --c-desc: #6f6f7c;
-  --ring: #2f6ae0;
-  --good: #15803d;
+  --c-desc: #686874;
+  --ring: #2b62ce;
+  --good: #13763a;
   --bad: #c02626;
-  --amber: #b45309;
+  --amber: #a54c08;
   --sh: 0 1px 2px rgba(20, 20, 35, 0.05), 0 10px 24px -12px rgba(20, 20, 35, 0.2);
   --sh-open: 0 2px 4px rgba(20, 20, 35, 0.06), 0 30px 60px -20px rgba(20, 20, 35, 0.32);
   /* Tinted wells for word states and type chips (contrast ≥ 4.5:1 for text on them) */
@@ -48,7 +48,7 @@
   --line-2: rgba(255, 255, 255, 0.16);
   --t1: #f2f2f7;
   --t2: #b0b0be;
-  --t3: #8d8d9b;
+  --t3: #9a9aa8;
   --ring: #7aa2f7;
   --edge: #4d4d5b;
   --dot: #2a2a33;

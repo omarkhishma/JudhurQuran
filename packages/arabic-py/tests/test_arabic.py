@@ -94,3 +94,14 @@ def test_parse_root_input_rejects_non_roots() -> None:
     assert parse_root_input("") is None
     assert parse_root_input("kitab") is None
     assert parse_root_input("ك") is None
+
+
+def test_ascii_root_input_expands_undotted_letters() -> None:
+    from judhur_arabic import root_input_candidates
+
+    as_keys = lambda q: ["".join(c) for c in root_input_candidates(q)]  # noqa: E731
+    assert "رحم" in as_keys("r-h-m")  # رحم: plain h may be ح
+    assert as_keys("r-h-m")[0] == "رهم"  # the strict reading stays first (رهم)
+    assert as_keys("ḥ-m-d")[0] == "حمد"  # dotted ḥ is not ambiguous
+    assert as_keys("رحم") == ["رحم"]  # Arabic input has one reading
+    assert len(root_input_candidates("h-s-d-t-z")) <= 64

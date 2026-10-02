@@ -11,7 +11,7 @@ from .normalize import (
     skeleton,
     strip_marks,
 )
-from .roots import display_letters, from_qac, key, parse_root_input, spaced, translit
+from .roots import display_letters, from_qac, key, parse_root_input, root_input_candidates, spaced, translit
 
 __all__ = [
     "BuckwalterError",
@@ -27,6 +27,7 @@ __all__ = [
     "normalize",
     "parse_root_input",
     "plain_spelling",
+    "root_input_candidates",
     "skeleton",
     "spaced",
     "split_lemma_key",

@@ -8,7 +8,7 @@ import re
 from typing import Any
 
 from judhur_arabic import key as root_key
-from judhur_arabic import parse_root_input
+from judhur_arabic import root_input_candidates
 from sqlalchemy import Connection
 
 from .db import one, rows, scalar
@@ -345,14 +345,16 @@ def next_steps(conn: Connection, w: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def resolve_root(conn: Connection, raw: str) -> dict[str, Any] | None:
-    letters = parse_root_input(raw)
-    if not letters:
+    """The root a typed input names. Plain ASCII may name several (h-m-d: حمد or همد); the most frequent
+    existing one wins — search lists all of them."""
+    keys = [root_key(c) for c in root_input_candidates(raw)]
+    if not keys:
         return None
     return one(
         conn,
         """select id, key, letters, spaced, translit, occurrences, verse_count, surah_count, lemma_count
-           from content.roots where key = :k""",
-        {"k": root_key(letters)},
+           from content.roots where key = any(:ks) order by occurrences desc, id limit 1""",
+        {"ks": keys},
     )
 
 

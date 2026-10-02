@@ -72,6 +72,12 @@ Rollback = run the loader with the previous version directory.
 
 `git pull`, then `up -d --build`. The web build needs no data or API. Rollback = check out the previous tag and rebuild.
 
+When the API changed (search behaviour, payload fields), expire the pages and responses the web app cached from the old API:
+
+```
+docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader python -m judhur_api.loader --revalidate
+```
+
 ## Things that bite
 
 - **`HOSTNAME=0.0.0.0`** must stay in the web image. Docker sets `HOSTNAME` to the container id; with that, the locale proxy's internal rewrite is treated as an external host and every Arabic page redirect-loops.

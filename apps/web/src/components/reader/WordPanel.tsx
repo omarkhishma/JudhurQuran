@@ -382,7 +382,7 @@ function MorphologySection({ w }: { w: WordDetail }) {
               )}
               <span className="block text-[12px] leading-relaxed text-t3">
                 {t(PATTERN_WHY[w.lemma.pattern_method ?? "none"])}{" "}
-                <Link href="/about#wazn" className="text-word hover:underline">{t("patternAbout")}</Link>
+                <Link href="/about#wazn" className="text-word underline underline-offset-2">{t("patternAbout")}</Link>
               </span>
             </dd>
           </div>
@@ -422,7 +422,7 @@ function InQuranSection({ w, initial }: { w: WordDetail; initial?: OccurrencesPa
       </ul>
       <p className="text-[12px] text-t3">
         {t("countsNote")}{" "}
-        <Link href="/about#counting" className="text-word hover:underline">{t("countsHow")}</Link>
+        <Link href="/about#counting" className="text-word underline underline-offset-2">{t("countsHow")}</Link>
       </p>
       {data && (
         <ul className="divide-y divide-line rounded-lg border border-line">

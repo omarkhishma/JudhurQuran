@@ -9,8 +9,8 @@ export const OG_SIZE = { width: 1200, height: 630 };
 // Design tokens (globals.css, light theme).
 const PAPER = "#fffffe";
 const INK = "#16161a";
-const MUTED = "#71717c";
-const ROOT = "#a8682c";
+const MUTED = "#686872";
+const ROOT = "#945c27";
 const LINE = "#e5e5ea";
 
 const fonts = Promise.all([
