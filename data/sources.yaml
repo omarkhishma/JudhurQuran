@@ -110,6 +110,23 @@ sources:
       - path: qac-v2-kaisdukes/lemmas.txt
         sha256: 631fd141d1a0d7b771b638bf8a30a73c97391e5086af98978b9260062cf1ee04
 
+  - id: qac-wbw
+    role_ar: "الترجمة الحرفية الإنجليزية لكل كلمة ونقحرتها"
+    license_ar: "يُسمح بالعرض مع ذكر المصدر ووضع رابط إليه، ولا يُسمح بالتعديل؛ نعرضها كما هي ولا ندرجها في حزمة البيانات"
+    kind: glosses
+    role: English word-by-word glosses and transliteration (display only, verbatim)
+    title_ar: المدونة القرآنية اللغوية — الترجمة كلمة كلمة
+    title_en: Quranic Arabic Corpus — Word by Word (corpus.quran.com)
+    version: fetched 2026-10-02
+    url: https://corpus.quran.com/wordbyword.jsp
+    license: "Corpus terms: may be used in any website or application provided the source (the Quranic Arabic Corpus) is clearly indicated with a link to corpus.quran.com; changing it is not allowed. Shown verbatim; not included in the bulk release."
+    license_url: https://corpus.quran.com/license.jsp
+    attribution_ar: الترجمة الحرفية والنقحرة — المدونة القرآنية اللغوية (corpus.quran.com)
+    attribution_en: Word-by-word glosses and transliteration — Quranic Arabic Corpus (corpus.quran.com)
+    files:
+      - path: qac-wbw/wbw.jsonl
+        sha256: 41a0a27a5c744c93b0a08a6a7fa964e2c50562f58a7a625011162daca7e8584a
+
   - id: qac-fork-mustafa0x
     role_ar: "مقارنة: تصحيحات مجتمعية لنسبة الجذور والصيغ"
     license_ar: "لا ملف ترخيص في المستودع؛ هو اشتقاق من المدونة القرآنية، ونستعمله للمقارنة والإحالة فقط"

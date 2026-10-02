@@ -310,3 +310,22 @@ def test_plain_ascii_roots_find_the_real_root() -> None:
     assert roots("r-h-m") == ["رحم"]  # رحم
     assert roots("h-m-d")[0] == "حمد"  # حمد before the rarer همد
     assert get("/api/v1/roots/r-h-m")["key"] == "رحم"
+
+
+def test_word_glosses_and_transliteration_are_verbatim_from_the_corpus() -> None:
+    import json
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parents[3] / "data/raw/qac-wbw/wbw.jsonl"
+    expected = {}
+    with src.open(encoding="utf-8") as fh:
+        for line in fh:
+            r = json.loads(line)
+            if r["location"] in ("1:1:1", "2:255:23", "112:1:1"):
+                expected[r["location"]] = r
+    for loc, r in expected.items():
+        w = get(f"/api/v1/words/{loc}")
+        assert (w["gloss_en"], w["translit"]) == (r["gloss"], r["translit"]), loc
+    assert (
+        get("/api/v1/words/1:1:1")["gloss_en"] == "In (the) name"
+    )  # punctuation kept as the corpus writes it

@@ -25,6 +25,7 @@ from judhur_arabic import normalize, plain_spelling, skeleton, spaced, strip_mar
 
 from . import labels
 from .align import AlignmentError, align, align_fuzzy
+from .english import lemma_glosses, word_glosses
 from .morphology import ForkWord, MorphWord, Stem, group_by_verse, parse_fork, parse_v04, parse_v2
 from .texts import (
     BASMALA_TOKENS,
@@ -51,6 +52,8 @@ class RawPaths:
     qac_v2: Path
     qac_fork: Path
     root: Path
+    qac_v2_lemmas: Path | None = None
+    qac_wbw: Path | None = None
     works_registry: Path | None = None
     lexica_registry: Path | None = None
     recitations_registry: Path | None = None
@@ -75,6 +78,8 @@ class RawPaths:
             qac_v04=raw / "qac/quranic-corpus-morphology-0.4.txt",
             qac_v2=raw / "qac-v2-kaisdukes/morphology.txt",
             qac_fork=raw / "qac-morphology-mustafa0x/quran-morphology.txt",
+            qac_v2_lemmas=raw / "qac-v2-kaisdukes/lemmas.txt",
+            qac_wbw=raw / "qac-wbw/wbw.jsonl",
         )
 
 
@@ -185,6 +190,12 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         raise ValueError("fork word locations differ from v0.4")
     by_verse = group_by_verse(v04)
     v2_by_loc = {w.location: w for w in v2}
+    lemma_gloss = lemma_glosses(raw.qac_v2_lemmas) if raw.qac_v2_lemmas and raw.qac_v2_lemmas.exists() else {}
+    wbw = word_glosses(raw.qac_wbw) if raw.qac_wbw and raw.qac_wbw.exists() else {}
+    if wbw and set(wbw) != {w.location for w in v04}:
+        missing = sorted({w.location for w in v04} - set(wbw))[:5]
+        extra = sorted(set(wbw) - {w.location for w in v04})[:5]
+        raise ValueError(f"word-by-word locations differ from the corpus: missing {missing}, extra {extra}")
     fork_by_loc: dict[str, ForkWord] = {f"{f.surah}:{f.ayah}:{f.word}": f for f in fork}
 
     # ── Cross-verification: QPC vs Tanzil letter streams (marks/encodings differ by convention) ──
@@ -395,6 +406,8 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                     "definite": w.definite,
                     "features": _stem_features(st),
                     "segments": _segments_json(w),
+                    "translit": wbw[w.location][0] if wbw else None,
+                    "gloss_en": wbw[w.location][1] if wbw else None,
                 }
             )
 
@@ -499,6 +512,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "derivation": derivation,
                 "occurrences": row["occurrences"],
                 "verse_count": len(row["verses"]),
+                "gloss_en": lemma_gloss.get(row["key"]),
                 "pattern": wazn["pattern"] or None if wazn else None,
                 "pattern_method": wazn["method"] if wazn else None,
             }
@@ -602,6 +616,12 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             "token_word_nonlinear": nonlinear,
             "lemma_root_conflicts": lemma_root_conflicts,
             "wazn_methods": dict(sorted(wazn_counts.items())),
+            "english": {
+                "lemma_glosses": sum(1 for x in lemmas_out if x["gloss_en"]),
+                "lemma_glosses_unused": sorted(set(lemma_gloss) - {x["key"] for x in lemmas_out}),
+                "word_glosses": sum(1 for x in words_out if x["gloss_en"]),
+                "word_glosses_source": "qac-wbw" if wbw else "missing",
+            },
             "variant_sources": dict(Counter(v["source"] for v in variants_out)),
             "text_sha256": hashlib.sha256("\n".join(v["text_qpc"] for v in verses_out).encode()).hexdigest(),
             "basmala_tokens_removed_from_tanzil": sum(

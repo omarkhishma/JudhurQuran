@@ -172,10 +172,32 @@ function MeaningSection({ w, initial }: { w: WordDetail; initial?: Commentary })
   return (
     <div className="space-y-4">
       {locale === "en" && (w.gloss_en || w.lemma?.gloss_en) && (
-        <p className="text-[15px] text-t1" dir="ltr" lang="en">
-          <span className="text-t3">{t("glossEn")}: </span>
-          <i>{w.gloss_en ?? w.lemma?.gloss_en}</i>
-        </p>
+        <div dir="ltr" lang="en">
+          {w.gloss_en && (
+            <p className="text-[15px] text-t1">
+              <span className="text-t3"><Term id="gloss">{t("glossEn")}</Term>: </span>
+              <i>{w.gloss_en}</i>
+            </p>
+          )}
+          {w.lemma?.gloss_en && (
+            <p className="text-[14px] text-t1">
+              <span className="text-t3">{t("lemmaGlossEn")}: </span>
+              <i>{w.lemma.gloss_en}</i>
+            </p>
+          )}
+          <p className="mt-0.5 flex flex-wrap gap-x-2 text-[11.5px] text-t3">
+            {w.gloss_en && (
+              <a href={`https://corpus.quran.com/wordbyword.jsp?chapter=${w.surah}&verse=${w.ayah}#(${w.location})`} target="_blank" rel="noreferrer" className="hover:underline">
+                {t("glossSource")}
+              </a>
+            )}
+            {w.lemma?.gloss_en && (
+              <a href="https://github.com/kaisdukes/quranic-corpus" target="_blank" rel="noreferrer" className="hover:underline">
+                {t("lemmaGlossSource")}
+              </a>
+            )}
+          </p>
+        </div>
       )}
       {w.glosses.map((g) => (
         <div key={g.id}>

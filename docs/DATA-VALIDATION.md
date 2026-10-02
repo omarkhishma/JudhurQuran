@@ -49,7 +49,9 @@ No independent, openly licensed, human-verified token-level root dataset exists:
 
 ## 4 · English word glosses
 
-Word glosses not yet imported in this build.
+Source: the corpus's Word by Word pages, 77,429 words, stored verbatim (punctuation included) as its terms require.
+- MASAQ (CC BY-NC 3.0) is not an independent gloss source: of 77,015 words compared, 75,133 (97.6%) are the corpus gloss lowercased and hyphenated; 13,974 are verbatim. It is not used for glosses.
+- The owner's file (Translation column) against the corpus: 75,350 identical, 2,065 different. Examples: 2:30:22: corpus «[to] You."» · file «[to]»; 2:30:24: corpus «"Indeed, I» · file «"Indeed,»; 2:31:10: corpus «"Inform Me» · file «"Inform»; 2:34:8: corpus «Iblis.» · file «Iblees.»; 2:52:2: corpus «We forgave» · file «We»; 2:53:2: corpus «We gave» · file «We».
 - Lemma glosses (corpus author's revision, GPL-3.0): 1,588 lemmas, mostly verbs; 7 entries of that list match no lemma of the primary edition.
 
 ## 5 · Morphological patterns (wazn)

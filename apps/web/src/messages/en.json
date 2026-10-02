@@ -198,7 +198,7 @@
     "variantLine": "{source}: root “{root}”",
     "variantNone": "{source}: no root",
     "variantsNote": "Sources sometimes trace a word to different roots; we show the primary attribution and list the others faithfully.",
-    "morphSource": "Morphology: the Quranic Arabic Corpus",
+    "morphSource": "Morphology, word glosses and transliteration: the Quranic Arabic Corpus",
     "loadingWord": "Loading word…",
     "error": "Could not load.",
     "tafsirTab": "Tafsir",
@@ -219,7 +219,10 @@
     "patternWhyMatch": "Found automatically by matching the word's letters to its root; only a single classical pattern is accepted.",
     "patternWhyFormOne": "The middle vowel is not visible in this dictionary form, so no full pattern is given.",
     "patternNone": "No single pattern can be stated with certainty for this form, so none is shown.",
-    "patternAbout": "How patterns are found"
+    "patternAbout": "How patterns are found",
+    "lemmaGlossEn": "Dictionary sense",
+    "glossSource": "Word by word: Quranic Arabic Corpus",
+    "lemmaGlossSource": "Lemma sense: Quranic Arabic Corpus (author’s revision)"
   },
   "roots": {
     "indexTitle": "Roots of the Quran",
