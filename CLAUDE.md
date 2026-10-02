@@ -9,6 +9,13 @@ Read `docs/PLAN.md` (status) and `docs/DECISIONS.md` (decisions + lessons) befor
 - Disagreements are shown with attribution; particles get "no root", never a pseudo-root.
 - No tracking, ads or cookies; personal data stays in the browser.
 
+## Ownership of the vision
+
+- The measure of done is the owner's vision (`Quran Idea.md`, the owner's later messages) and the full design handoff (`Claude Design Handoff/`, every screen, state and journey) — never a phase list I wrote myself. A plan is a path toward the vision; finishing the plan without the vision is not done, and is never reported as done or "ready for production".
+- Thinking beyond the vision is part of the job: at every phase boundary, and whenever the work reveals an opportunity, add concrete proposals (what, why it serves the reader, cost, risks) to the "Beyond the vision" section of `docs/PLAN.md`. The owner reviews them; proposals that change the product's identity wait for that review, the rest are built.
+- Never move part of the vision to "later" without the owner's agreement. If something truly cannot be built now, name it, say why, and put it in front of the owner.
+- This project's vision is its own. Nothing is taken from any other project — no code, data, names, wording, decisions or lessons (global rule "Project boundaries").
+
 ## Layout
 
 - `apps/web` — Next.js 16 (read `apps/web/AGENTS.md`: this Next differs from training data; docs in `node_modules/next/dist/docs/`). Arabic at `/`, English at `/en`.
