@@ -1,0 +1,169 @@
+# Relation seed registry — classical works parsed into editor-side relation candidates (PLAN P8.4) and
+# wujūh senses (P3.1). Research and licensing: docs/research/06-knowledge-sources.md Part 1 and Part 8.
+#
+# Every row the pipeline emits is status `extracted`: a mechanical reading of the named work, never a
+# reviewed relation. Editors review in the workbench (L2: no generated religious or linguistic content —
+# every relation comes from a named classical work, with its locator and the author's words).
+#
+# Files are OpenITI release 2025.1.9 (tag v2025.1.9, commit below), fetched raw at that commit into
+# data/raw/openiti-relations/ (SHA256SUMS.txt and SOURCE.txt there). Paths are relative to data/raw/.
+# Each file is sha256-pinned; the pipeline refuses to build from a file that differs.
+#
+# Licence: OpenITI publishes the corpus under CC BY-NC-SA 4.0 (decision D18: non-commercial display with
+# attribution is approved for launch; anything redistributed from these rows stays CC BY-NC-SA 4.0). The
+# authors are public domain; the editions' apparatus is not used (the OpenITI cleaned versions drop it, and
+# the cleaning rules below drop the folio marks that remain).
+
+openiti:
+  release: "2025.1.9"
+  tag: v2025.1.9
+  commit: cfc4157a3cf2054c0888f133970a4eaa3e22e58c
+  repository: https://github.com/OpenITI/RELEASE
+  zenodo: https://zenodo.org/records/17767721
+  doi: 10.5281/zenodo.17767721
+  licence: CC BY-NC-SA 4.0
+  licence_url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  # Verbatim, OpenITI documentation (github.com/OpenITI/documentation, index.md, "How can I use OpenITI?
+  # What license is used?"), read 2026-10-03; Zenodo record 17767721 carries license id cc-by-nc-sa-4.0.
+  licence_clause: >-
+    OpenITI is published under the CC BY-NC-SA 4.0 license. You can use the corpus and publish or share
+    your works based on it according to the license. Please, do cite the files or the corpus if you use
+    them.
+  corpus_citation: >-
+    Nigst, Lorenz; Romanov, Maxim; Savant, Sarah Bowen; Seydi, Masoumeh; Verkinderen, Peter (2025).
+    OpenITI: a Machine-Readable Corpus of Islamicate Texts. Version 2025.1.9. Zenodo.
+    https://doi.org/10.5281/zenodo.17767721
+
+# Transformations applied to every file before parsing (pipeline/src/jadhr_pipeline/relations/openiti.py).
+# Every row's text is a slice of the cleaned file; the tests re-run the cleaning and check it.
+cleaning_rules:
+  - id: header-dropped
+    description: "The OpenITI metadata header (up to #META#Header#End#) is not text."
+  - id: annotator-lines-dropped
+    description: OpenITI working notes on their own line («### | CHECK [13-89]») are dropped.
+  - id: auto-heading-inline
+    description: "«### | AUTO X» lines — a bold headword the conversion lifted out of the running text (Ibn al-Anbārī) — are put back inline where they stood: glued to a one-letter proclitic before them and to a next line that continues the word («الفلذ» + «ة: قطعة» → «الفلذة: قطعة»)."
+  - id: paragraphs
+    description: "«# » opens a paragraph, «~~» continues it (joined with one space); heading lines («# |», «### |») are paragraphs of their own; a line holding only a page or milestone marker stays in the paragraph it interrupts."
+  - id: page-marks
+    description: PageVxxPyyy is removed and kept as the locator (the marker closes printed page yyy).
+  - id: milestones
+    description: msNNN is removed and kept as a locator, cited only with the release (OpenITI regenerates milestones).
+  - id: line-marks
+    description: «|», the typist's printed-line breaks and heading bars, is removed.
+  - id: quote-markup
+    description: "OpenITI Quran-quote tags @QB@ … @QE@ and ^ are removed; their spans (and ^ ( … ) ^ pairs) are kept for verse resolution."
+  - id: stray-marks
+    description: «$» and «@» left over from the conversion are removed.
+  - id: folio-marks
+    description: The modern editor's manuscript folio marks «( 52 / أ )» are removed (decision D22).
+  - id: whitespace
+    description: "Runs of spaces collapse to one; paragraphs are trimmed and empty ones dropped; no space before ، ؛ : . ؟ ! ) ] or after ( [. Whitespace only."
+
+sources:
+  - id: nuzha
+    kind: wujuh
+    parser: nuzha
+    sort_order: 1
+    title_ar: نزهة الأعين النواظر في علم الوجوه والنظائر
+    title_en: Nuzhat al-Aʿyun al-Nawāẓir fī ʿIlm al-Wujūh wa-l-Naẓāʾir
+    author_ar: ابن الجوزي، جمال الدين أبو الفرج عبد الرحمن بن علي
+    author_en: Ibn al-Jawzī, Jamāl al-Dīn Abū al-Faraj ʿAbd al-Raḥmān b. ʿAlī
+    death_hijri: 597
+    death_ce: 1201
+    edition_ar: تحقيق محمد عبد الكريم كاظم الراضي، مؤسسة الرسالة، بيروت، الطبعة الأولى 1404هـ / 1984م
+    edition_en: "ed. Muḥammad ʿAbd al-Karīm Kāẓim al-Rāḍī (Beirut: Muʾassasat al-Risāla, 1st ed., 1404/1984)"
+    openiti_uri: 0597IbnJawzi.NuzhatAcyun.JK007134-ara1
+    openiti_status: OpenITI primary version (PRIMARY_VERSION, CLEANED_VERSION)
+    file: openiti-relations/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1
+    sha256: 64037e51c700a7c3623bbb5b7e42b032b8d04f8389d279e50b6aea89d6bb8934
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1
+    quote_styles: [brackets, triggers]
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: ابن الجوزي (ت 597هـ)، نزهة الأعين النواظر في علم الوجوه والنظائر، تحقيق محمد عبد الكريم كاظم الراضي (بيروت: مؤسسة الرسالة، ط1، 1404هـ/1984م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0597IbnJawzi.NuzhatAcyun.JK007134-ara1، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Source: Ibn al-Jawzī (d. 597 AH), Nuzhat al-Aʿyun al-Nawāẓir fī ʿIlm al-Wujūh wa-l-Naẓāʾir, ed. Muḥammad ʿAbd al-Karīm Kāẓim al-Rāḍī (Beirut: Muʾassasat al-Risāla, 1404/1984). Digital text: OpenITI release 2025.1.9, file 0597IbnJawzi.NuzhatAcyun.JK007134-ara1, CC BY-NC-SA 4.0."
+
+  - id: damghani
+    kind: wujuh
+    parser: damghani
+    sort_order: 2
+    title_ar: قاموس القرآن أو إصلاح الوجوه والنظائر في القرآن الكريم
+    title_en: Qāmūs al-Qurʾān, or Iṣlāḥ al-Wujūh wa-l-Naẓāʾir fī al-Qurʾān al-Karīm
+    author_ar: الحسين بن محمد الدامغاني
+    author_en: al-Ḥusayn b. Muḥammad al-Dāmaghānī
+    death_hijri: 478
+    death_ce: 1085
+    edition_ar: تحقيق عبد العزيز سيد الأهل، دار العلم للملايين، بيروت، الطبعة الثالثة 1980م
+    edition_en: "ed. ʿAbd al-ʿAzīz Sayyid al-Ahl (Beirut: Dār al-ʿIlm li-l-Malāyīn, 3rd ed., 1980)"
+    openiti_uri: 0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1
+    openiti_status: OpenITI primary version (PRIMARY_VERSION, CLEANED_VERSION)
+    file: openiti-relations/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1
+    sha256: 972931b22a01fd05ec335e96ed40949fe24f7dcf6da5e5f3f67ed3fd0cc6a20e
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1
+    quote_styles: [dquotes, brackets, triggers]
+    # The typist's note at the head of the file: «يوجد نقص في صفحة 426 إلى 450» — printed pages 426–450 are
+    # missing from this digital text. The entries on them are absent from the seeds.
+    known_gaps: [printed pages 426–450 missing in the digital text]
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: الدامغاني (ت 478هـ)، قاموس القرآن أو إصلاح الوجوه والنظائر في القرآن الكريم، تحقيق عبد العزيز سيد الأهل (بيروت: دار العلم للملايين، ط3، 1980م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Source: al-Dāmaghānī (d. 478 AH), Qāmūs al-Qurʾān aw Iṣlāḥ al-Wujūh wa-l-Naẓāʾir fī al-Qurʾān al-Karīm, ed. ʿAbd al-ʿAzīz Sayyid al-Ahl (Beirut: Dār al-ʿIlm li-l-Malāyīn, 3rd ed., 1980). Digital text: OpenITI release 2025.1.9, file 0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1, CC BY-NC-SA 4.0."
+
+  - id: askari-furuq
+    kind: furuq
+    parser: furuq
+    sort_order: 3
+    title_ar: الفروق اللغوية
+    title_en: al-Furūq al-Lughawiyya
+    author_ar: أبو هلال الحسن بن عبد الله العسكري
+    author_en: Abū Hilāl al-Ḥasan b. ʿAbd Allāh al-ʿAskarī
+    death_hijri: 395
+    death_ce: 1005
+    edition_ar: تحقيق محمد إبراهيم سليم، دار العلم والثقافة للنشر والتوزيع، القاهرة
+    edition_en: "ed. Muḥammad Ibrāhīm Salīm (Cairo: Dār al-ʿIlm wa-l-Thaqāfa)"
+    openiti_uri: 0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1
+    # Version choice. OpenITI 2025.1.9 holds five versions; its metadata flags JK006960 as primary. JK006960
+    # and Shamela0010414 are the same typing of the same edition (identical slips, e.g. «يدم أخوف», «علي بن
+    # عيس»; 73,214 vs 73,111 tokens). Shamela0010414 is used because it carries the edition card (editor,
+    # publisher — JK006960 has none, with author death "9999" and title "الفرق"), its page markers follow
+    # shamela.ws book 10414 so a reader can check a citation, it has a few corrections (JK «لاعلام الق … وعلى
+    # ألى ه» = Shamela «لاعلام الحق … وعلى آله»), and no stray conversion marks ($, «@ @ 112»). Shamela0001736
+    # and Shia003912 are the later Qum compilation (with al-Jazāʾirī's additions), Masaha004742 another
+    # printing; neither is this edition. Both of the first two files are pinned; the other is a cross-check.
+    openiti_status: "OpenITI secondary version (the primary JK006960 is the same typing without an edition card); not tagged CLEANED_VERSION — checked: no footnotes, no editor's introduction"
+    file: openiti-relations/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1
+    sha256: e58873e6f2219a1537bd85abace070070ed96bbac0018b6d51dd629784a8a505
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1
+    cross_check:
+      openiti_uri: 0395AbuHilalCaskari.FuruqLughawiyya.JK006960-ara1
+      file: openiti-relations/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.JK006960-ara1
+      sha256: 2f4c59028b9002e384b9e0e4afc6563ea0ed3b4aa93cf97977ab38ec70f14cb8
+    quote_styles: [brackets, triggers]
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: أبو هلال العسكري (ت نحو 395هـ)، الفروق اللغوية، تحقيق محمد إبراهيم سليم (القاهرة: دار العلم والثقافة). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Source: Abū Hilāl al-ʿAskarī (d. c. 395 AH), al-Furūq al-Lughawiyya, ed. Muḥammad Ibrāhīm Salīm (Cairo: Dār al-ʿIlm wa-l-Thaqāfa). Digital text: OpenITI release 2025.1.9, file 0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1, CC BY-NC-SA 4.0."
+
+  - id: anbari-addad
+    kind: addad
+    parser: addad
+    sort_order: 4
+    title_ar: الأضداد
+    title_en: al-Aḍdād
+    author_ar: أبو بكر محمد بن القاسم بن الأنباري
+    author_en: Abū Bakr Muḥammad b. al-Qāsim Ibn al-Anbārī
+    death_hijri: 328
+    death_ce: 940
+    edition_ar: تحقيق محمد أبو الفضل إبراهيم، المكتبة العصرية، بيروت، 1407هـ / 1987م
+    edition_en: "ed. Muḥammad Abū al-Faḍl Ibrāhīm (Beirut: al-Maktaba al-ʿAṣriyya, 1407/1987)"
+    openiti_uri: 0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1
+    openiti_status: OpenITI primary version (PRIMARY_VERSION, CLEANED_VERSION); page numbering follows the print («ترقيم الكتاب موافق للمطبوع»)
+    file: openiti-relations/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1
+    sha256: 66ecea680d2b313f24153298bb54214a7cae602ffe66937fe278ad8ac40cf869
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1
+    quote_styles: [triggers]
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: أبو بكر بن الأنباري (ت 328هـ)، الأضداد، تحقيق محمد أبو الفضل إبراهيم (بيروت: المكتبة العصرية، 1407هـ/1987م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1، برخصة CC BY-NC-SA 4.0. أرقام المواد من المحقق."
+    attribution_en: "Source: Ibn al-Anbārī (d. 328 AH), al-Aḍdād, ed. Muḥammad Abū al-Faḍl Ibrāhīm (Beirut: al-Maktaba al-ʿAṣriyya, 1407/1987). Digital text: OpenITI release 2025.1.9, file 0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1, CC BY-NC-SA 4.0. Entry numbers are the editor's."
