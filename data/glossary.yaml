@@ -1,0 +1,418 @@
+# Plain-language glossary (PLAN P1.2 → P2.6). The site's own linguistic copy: standard definitions of
+# grammar, writing and source terms — no religious content (law L2). Flagged for expert review (D15).
+# Loaded into content.glossary_terms and served at /api/v1/glossary; the editorial workbench (P3.0)
+# edits it from there on. Each term: key, category, optional page that goes deeper, Arabic and English.
+categories:
+  grammar:
+    ar: مصطلح صرفي ونحوي
+    en: grammar term
+  writing:
+    ar: مصطلح في الكتابة
+    en: writing term
+  sources:
+    ar: مصطلح في المصادر
+    en: sources term
+  meaning:
+    ar: مصطلح في المعنى
+    en: meaning term
+terms:
+- key: root
+  category: grammar
+  href: /roots
+  sort_order: 1
+  ar:
+    label: الجذر
+    body: 'الحروف الأصلية في الكلمة، وهي في الغالب ثلاثة وأحيانًا أربعة، تحمل معنى عامًّا تشترك فيه كل الكلمات المشتقة منها. من الجذر (ك ت ب) تأتي: كَتَبَ، وكِتَاب، ومَكْتُوب.'
+  en:
+    label: Root
+    body: The core letters of a word — usually three, sometimes four — carrying a general meaning shared by every word built from them. From k-t-b come kataba (he wrote), kitāb (book) and maktūb (written).
+- key: lemma
+  category: grammar
+  href: null
+  sort_order: 2
+  ar:
+    label: الصيغة المعجمية
+    body: الكلمة في صورتها الأساسية كما تُذكر في المعجم، بلا سوابق ولا لواحق ولا تصريف. «يعلمون» و«علمتم» صيغتهما المعجمية «عَلِمَ».
+  en:
+    label: Lemma
+    body: The dictionary form of a word, without prefixes, suffixes or inflection. Both yaʿlamūna (they know) and ʿalimtum (you knew) have the lemma ʿalima (to know).
+- key: wazn
+  category: grammar
+  href: /about#wazn
+  sort_order: 3
+  ar:
+    label: الوزن الصرفي
+    body: 'قالب تُصبّ فيه حروف الجذر، ويُرمز فيه للحروف الأصلية بالفاء والعين واللام: «كَاتِب» على وزن فَاعِل، و«مَكْتُوب» على وزن مَفْعُول. الكلمات التي على وزن واحد تتشابه غالبًا في وظيفتها.'
+  en:
+    label: Pattern (wazn)
+    body: 'A mould the root letters are poured into, written with the letters f-ʿ-l: kātib (writer) has the pattern fāʿil, maktūb (written) the pattern mafʿūl. Words on one pattern often share a job — the doer, the thing done, the place.'
+- key: verbForm
+  category: grammar
+  href: null
+  sort_order: 4
+  ar:
+    label: الباب (وزن الفعل)
+    body: 'الصورة التي يأتي عليها الفعل: إما ثلاثي مجرد مثل «عَلِمَ»، وإما مزيد بحرف أو أكثر يضيف إلى معناه، مثل «عَلَّمَ» أي جعل غيره يعلم، و«تَعَلَّمَ» أي حصّل العلم.'
+  en:
+    label: Verb form
+    body: 'The shape a verb takes: the plain Form I (ʿalima, to know) or a derived form whose added letters add to the meaning — ʿallama (Form II, to teach: make someone know), taʿallama (Form V, to learn).'
+- key: formOne
+  category: grammar
+  href: null
+  sort_order: 5
+  ar:
+    label: الثلاثي المجرد
+    body: 'الفعل المكوَّن من حروفه الأصلية الثلاثة وحدها، بلا حرف زائد: كَتَبَ، عَلِمَ، حَسُنَ. وبقية أبواب الفعل تُبنى عليه.'
+  en:
+    label: Form I
+    body: 'The plain verb, made of its three root letters only: kataba (he wrote), ʿalima (he knew). Every other verb form is built on it.'
+- key: derivedForm
+  category: grammar
+  href: null
+  sort_order: 6
+  ar:
+    label: الفعل المزيد
+    body: 'فعل زيد على حروفه الأصلية حرف أو أكثر فتغيّر معناه أو زاد: أَكْرَمَ، قَاتَلَ، اسْتَغْفَرَ. ولكل زيادة معانٍ مشهورة يذكرها علماء الصرف.'
+  en:
+    label: Derived verb form
+    body: 'A verb with letters added to its root, which shifts or adds to its meaning: akrama (Form IV, to honour), qātala (Form III, to fight), istaghfara (Form X, to seek forgiveness).'
+- key: activeParticiple
+  category: grammar
+  href: null
+  sort_order: 7
+  ar:
+    label: اسم الفاعل
+    body: 'اسم يدل على من قام بالفعل: «كَاتِب» من كَتَبَ، و«مُؤْمِن» من آمَنَ. يأتي من الثلاثي على وزن فَاعِل.'
+  en:
+    label: Active participle
+    body: 'The word for the one who does the action: kātib (writer) from kataba, muʾmin (believer) from āmana. From Form I it has the pattern fāʿil.'
+- key: passiveParticiple
+  category: grammar
+  href: null
+  sort_order: 8
+  ar:
+    label: اسم المفعول
+    body: 'اسم يدل على من وقع عليه الفعل: «مَكْتُوب» من كَتَبَ، و«مُكْرَم» من أَكْرَمَ. يأتي من الثلاثي على وزن مَفْعُول.'
+  en:
+    label: Passive participle
+    body: 'The word for what the action was done to: maktūb (written) from kataba, mukram (honoured) from akrama. From Form I it has the pattern mafʿūl.'
+- key: verbalNoun
+  category: grammar
+  href: null
+  sort_order: 9
+  ar:
+    label: المصدر
+    body: 'اسم يدل على الحدث نفسه مجرّدًا من الزمن: «الكِتَابَة» و«العِلْم» و«الاسْتِغْفَار».'
+  en:
+    label: Verbal noun (maṣdar)
+    body: 'The action itself as a noun, without time: kitāba (writing), ʿilm (knowing, knowledge), istighfār (seeking forgiveness).'
+- key: perfect
+  category: grammar
+  href: null
+  sort_order: 10
+  ar:
+    label: الفعل الماضي
+    body: 'ما دلّ على حدث وقع وانقضى: كَتَبَ، آمَنُوا.'
+  en:
+    label: Perfect
+    body: The verb of a completed action — kataba (he wrote), āmanū (they believed). It names the action as done, not perfection.
+- key: imperfect
+  category: grammar
+  href: null
+  sort_order: 11
+  ar:
+    label: الفعل المضارع
+    body: 'ما دلّ على حدث يقع في الحال أو في المستقبل: يَكْتُبُ، يُؤْمِنُونَ.'
+  en:
+    label: Imperfect
+    body: The verb of an action still happening or yet to happen — yaktubu (he writes, will write), yuʾminūna (they believe).
+- key: imperative
+  category: grammar
+  href: null
+  sort_order: 12
+  ar:
+    label: فعل الأمر
+    body: 'ما يُطلب به حدوث الفعل: اكْتُبْ، اقْرَأْ.'
+  en:
+    label: Imperative
+    body: 'The verb of a command or request: uktub (write!), iqraʾ (read!).'
+- key: passiveVoice
+  category: grammar
+  href: null
+  sort_order: 13
+  ar:
+    label: المبني للمجهول
+    body: 'فعل لم يُذكر فاعله: «كُتِبَ» أي كتبه أحدٌ لم يُذكر، و«قُضِيَ» أي قضاه من لم يُسمَّ.'
+  en:
+    label: Passive voice
+    body: 'A verb whose doer is not named: kutiba (it was written), quḍiya (it was decreed).'
+- key: nominative
+  category: grammar
+  href: null
+  sort_order: 14
+  ar:
+    label: المرفوع
+    body: حالة الاسم حين يكون فاعلًا أو مبتدأً أو خبرًا ونحوها، وحالة الفعل المضارع حين لا يسبقه ناصب ولا جازم. علامتها الأصلية الضمة.
+  en:
+    label: Nominative (and indicative)
+    body: The case of a noun that is the subject or the predicate, and the plain mood of an imperfect verb. Its basic sign is the ḍamma (-u).
+- key: accusative
+  category: grammar
+  href: null
+  sort_order: 15
+  ar:
+    label: المنصوب
+    body: حالة الاسم حين يكون مفعولًا به أو حالًا أو تمييزًا ونحوها، وحالة الفعل المضارع بعد أدوات النصب مثل «أن» و«لن». علامتها الأصلية الفتحة.
+  en:
+    label: Accusative (and subjunctive)
+    body: The case of a noun that is an object, a circumstance and the like, and the mood of an imperfect verb after an and lan. Its basic sign is the fatḥa (-a).
+- key: genitive
+  category: grammar
+  href: null
+  sort_order: 16
+  ar:
+    label: المجرور
+    body: حالة الاسم بعد حرف الجر، أو حين يكون مضافًا إليه. علامتها الأصلية الكسرة.
+  en:
+    label: Genitive
+    body: The case of a noun after a preposition, or after another noun it belongs to (“of”). Its basic sign is the kasra (-i).
+- key: jussive
+  category: grammar
+  href: null
+  sort_order: 17
+  ar:
+    label: المجزوم
+    body: حالة الفعل المضارع بعد أدوات الجزم مثل «لم» و«لا» الناهية وأدوات الشرط. علامتها الأصلية السكون.
+  en:
+    label: Jussive
+    body: The mood of an imperfect verb after lam (did not), a forbidding lā, or a condition. Its basic sign is the sukūn (no vowel).
+- key: prefix
+  category: grammar
+  href: null
+  sort_order: 18
+  ar:
+    label: السابقة
+    body: 'حرف أو أكثر يتصل بأول الكلمة وليس من أصلها: واو العطف، وباء الجر، و«ال» التعريف.'
+  en:
+    label: Prefix
+    body: 'A letter or two joined to the front of a word but not part of it: wa- (and), bi- (with, by), al- (the).'
+- key: suffix
+  category: grammar
+  href: null
+  sort_order: 19
+  ar:
+    label: اللاحقة
+    body: 'ما يتصل بآخر الكلمة: الضمائر المتصلة مثل «ـهم» و«ـكم»، وعلامات الجمع والتأنيث.'
+  en:
+    label: Suffix
+    body: 'What is joined to the end of a word: attached pronouns such as -hum (them) and -kum (you), and plural or feminine endings.'
+- key: stem
+  category: grammar
+  href: null
+  sort_order: 20
+  ar:
+    label: الجذع
+    body: قلب الكلمة بعد نزع السوابق واللواحق، وفيه حروف الجذر.
+  en:
+    label: Stem
+    body: The core of a word once prefixes and suffixes are taken off; it holds the root letters.
+- key: noRoot
+  category: grammar
+  href: /about#principles
+  sort_order: 21
+  ar:
+    label: كلمات بلا جذر
+    body: 'الحروف (مثل: مِن، في، إنّ) والضمائر وأسماء الإشارة والأسماء الموصولة وكثير من الأعلام الأعجمية لا تُردّ إلى جذر عند علماء الصرف، فلا نخترع لها جذرًا.'
+  en:
+    label: Words without a root
+    body: Particles (min, fī, inna), pronouns, demonstratives, relative pronouns and many foreign names are not traced to a root in Arabic morphology, so none is invented for them.
+- key: tashkeel
+  category: writing
+  href: null
+  sort_order: 22
+  ar:
+    label: التشكيل
+    body: 'الحركات الصغيرة فوق الحروف وتحتها: الفتحة والضمة والكسرة والسكون والشدة. البحث في الموقع لا يتأثر بها، فاكتب بها أو بدونها.'
+  en:
+    label: Vowel marks (tashkīl)
+    body: The small marks above and below letters that show short vowels, doubling and silence. Search ignores them — type with or without.
+- key: rasm
+  category: writing
+  href: null
+  sort_order: 23
+  ar:
+    label: الرسم العثماني
+    body: طريقة كتابة المصحف الموروثة، وتخالف الإملاء المعتاد في كلمات مثل «ٱلصَّلَوٰة» و«ٱلْكِتَٰب». نعرض نص مصحف المدينة كما نشره مجمع الملك فهد دون أي تغيير.
+  en:
+    label: Uthmani script (rasm)
+    body: 'The inherited spelling of the mushaf, which differs from everyday spelling in some words — ṣalāh (prayer) is written with a wāw: ٱلصَّلَوٰة. The Madinah mushaf text is shown exactly as the King Fahd Complex published it.'
+- key: imlaei
+  category: writing
+  href: null
+  sort_order: 24
+  ar:
+    label: الرسم الإملائي
+    body: 'الكلمة مكتوبة بقواعد الإملاء الحديثة، ونستعمله للبحث والفهرسة فقط: «الصلاة» مقابل «ٱلصَّلَوٰة».'
+  en:
+    label: Standard spelling
+    body: The word in modern spelling, used only for search and indexing — الصلاة beside the mushaf's ٱلصَّلَوٰة.
+- key: concordance
+  category: sources
+  href: null
+  sort_order: 25
+  ar:
+    label: الفهرس السياقي
+    body: قائمة بكل مواضع الكلمة أو الجذر في القرآن، يظهر كل موضع ومعه ما قبله وما بعده من كلمات.
+  en:
+    label: Concordance
+    body: A list of every place a word or root occurs in the Quran, each shown with the words around it.
+- key: occurrences
+  category: sources
+  href: /about#counting
+  sort_order: 26
+  ar:
+    label: المواضع
+    body: عدد المرات التي ورد فيها الجذر أو الكلمة في المصحف؛ تُعدّ كل كلمة مرة واحدة، وطريقة العدّ مبيّنة في صفحة المنهج.
+  en:
+    label: Occurrences
+    body: How many times the root or word appears in the mushaf, counting each word once. How we count is set out on the method page.
+- key: lexicon
+  category: sources
+  href: null
+  sort_order: 27
+  ar:
+    label: المعجم
+    body: كتاب يجمع ألفاظ اللغة ويشرح معانيها. نعرض هنا معاجم العربية الكبرى مثل «مقاييس اللغة» و«لسان العرب»، كلٌّ منسوب إلى مؤلفه وطبعته.
+  en:
+    label: Lexicon
+    body: A dictionary of the language. The site shows the great classical Arabic dictionaries — Maqāyīs al-Lugha, Lisān al-ʿArab and others — each credited to its author and edition.
+- key: gharib
+  category: sources
+  href: null
+  sort_order: 28
+  ar:
+    label: غريب القرآن
+    body: كتب تشرح الكلمات القرآنية التي قد يخفى معناها على القارئ، مثل «تفسير غريب القرآن» لابن قتيبة.
+  en:
+    label: Gharīb al-Qurʾān
+    body: Books that explain the Quran's less familiar words, such as Ibn Qutaybah's Tafsīr Gharīb al-Qurʾān.
+- key: variant
+  category: sources
+  href: /about#principles
+  sort_order: 29
+  ar:
+    label: اختلاف نسبة الجذر
+    body: حين تردّ المصادر كلمةً إلى جذرين مختلفين نذكر النسبة الأساسية ونذكر معها ما قاله غيرها، منسوبًا إلى صاحبه.
+  en:
+    label: Root variant
+    body: When sources trace a word to different roots, the primary attribution is shown together with the others, each credited.
+- key: gloss
+  category: meaning
+  href: null
+  sort_order: 30
+  ar:
+    label: الترجمة الحرفية
+    body: ترجمة قصيرة لكلمة واحدة في سياقها، وليست ترجمة لمعنى الآية.
+  en:
+    label: Gloss
+    body: A short translation of one word in its context — not a translation of the verse.
+- key: transliteration
+  category: writing
+  href: null
+  sort_order: 31
+  ar:
+    label: النقحرة
+    body: 'كتابة الكلمة العربية بحروف لاتينية تقرّب نطقها لمن لا يقرأ العربية: ʿilm، kitāb.'
+  en:
+    label: Transliteration
+    body: 'An Arabic word written in Latin letters so its sound can be read: ʿilm, kitāb.'
+- key: form2
+  category: grammar
+  href: /about#wazn
+  sort_order: 32
+  ar:
+    label: فَعَّلَ (II)
+    body: 'من معانيه التكثير والمبالغة (قَطَّعَ)، وجعلُ غيره يفعل (فَرَّحَ: جعله يفرح)، ونسبةُ الشيء إلى أصل الفعل (كَذَّبَ: نسبه إلى الكذب). (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)'
+  en:
+    label: Form II — فَعَّلَ
+    body: Intensity or repetition (qaṭṭaʿa, to cut to pieces), making someone do the act (farraḥa, to gladden), or ascribing the quality (kadhdhaba, to call a liar). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
+- key: form3
+  category: grammar
+  href: /about#wazn
+  sort_order: 33
+  ar:
+    label: فَاعَلَ (III)
+    body: من معانيه المشاركة بين اثنين في الفعل (قَاتَلَ، جَادَلَ)، وقد يأتي بمعنى الفعل المجرد (سَافَرَ). (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)
+  en:
+    label: Form III — فَاعَلَ
+    body: Doing the act with or against another (qātala, to fight; jādala, to dispute); sometimes the plain meaning (sāfara, to travel). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
+- key: form4
+  category: grammar
+  href: /about#wazn
+  sort_order: 34
+  ar:
+    label: أَفْعَلَ (IV)
+    body: 'من معانيه جعلُ غيره يفعل (أَخْرَجَ: جعله يخرج)، والدخول في الوقت أو المكان (أَصْبَحَ: دخل في الصباح)، والصيرورة. (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)'
+  en:
+    label: Form IV — أَفْعَلَ
+    body: Causing the act (akhraja, to bring out — make go out), entering a time or place (aṣbaḥa, to reach morning), or becoming. (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
+- key: form5
+  category: grammar
+  href: /about#wazn
+  sort_order: 35
+  ar:
+    label: تَفَعَّلَ (V)
+    body: من معانيه مطاوعة فَعَّلَ (عَلَّمْتُه فتَعَلَّمَ)، والتكلّف (تَصَبَّرَ)، والتدرّج في الفعل (تَجَرَّعَ). (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)
+  en:
+    label: Form V — تَفَعَّلَ
+    body: The act received or taken on oneself, from Form II (ʿallamtuhu fa-taʿallama, I taught him and he learned), effort (taṣabbara), or doing it little by little (tajarraʿa, to sip). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
+- key: form6
+  category: grammar
+  href: /about#wazn
+  sort_order: 36
+  ar:
+    label: تَفَاعَلَ (VI)
+    body: 'من معانيه المشاركة بين أكثر من اثنين (تَسَاءَلُوا: سأل بعضهم بعضًا)، وإظهار ما ليس في الحقيقة (تَمَارَضَ)، والتدرّج. (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)'
+  en:
+    label: Form VI — تَفَاعَلَ
+    body: Mutual action among several (tasāʾalū, they asked one another), pretending (tamāraḍa, to feign illness), or gradual action. (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
+- key: form7
+  category: grammar
+  href: /about#wazn
+  sort_order: 37
+  ar:
+    label: انْفَعَلَ (VII)
+    body: من معانيه المطاوعة، أي قبول أثر الفعل (كَسَرْتُه فانْكَسَرَ)، ولا يأتي إلا لازمًا. (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)
+  en:
+    label: Form VII — انْفَعَلَ
+    body: Undergoing the act — the result of Form I (kasartuhu fa-nkasara, I broke it and it broke). Never takes an object. (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
+- key: form8
+  category: grammar
+  href: /about#wazn
+  sort_order: 38
+  ar:
+    label: افْتَعَلَ (VIII)
+    body: من معانيه المطاوعة (جَمَعْتُه فاجْتَمَعَ)، والاتخاذ (اتَّخَذَ)، والاجتهاد في تحصيل الفعل (اكْتَسَبَ). (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)
+  en:
+    label: Form VIII — افْتَعَلَ
+    body: Undergoing or doing for oneself (jamaʿtuhu fa-jtamaʿa, I gathered them and they gathered), taking for oneself (ittakhadha), or striving for it (iktasaba, to earn). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
+- key: form9
+  category: grammar
+  href: /about#wazn
+  sort_order: 39
+  ar:
+    label: افْعَلَّ (IX)
+    body: يدل في الغالب على الألوان والعيوب وقوّتها (ابْيَضَّتْ، اسْوَدَّتْ). (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)
+  en:
+    label: Form IX — افْعَلَّ
+    body: Mostly colours and defects, intensely (ibyaḍḍat, to turn white; iswaddat, to turn black). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
+- key: form10
+  category: grammar
+  href: /about#wazn
+  sort_order: 40
+  ar:
+    label: اسْتَفْعَلَ (X)
+    body: 'من معانيه الطلب (اسْتَغْفَرَ: طلب المغفرة)، والتحوّل، ووجود الشيء على صفة (اسْتَكْبَرَ: رأى نفسه كبيرًا). (من معانيه المشهورة كما في كتب الصرف، مثل «شذا العرف» للحملاوي.)'
+  en:
+    label: Form X — اسْتَفْعَلَ
+    body: Seeking or asking (istaghfara, to seek forgiveness), turning into, or finding or deeming oneself so (istakbara, to be arrogant — deem oneself great). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)

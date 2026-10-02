@@ -57,6 +57,8 @@ class RawPaths:
     works_registry: Path | None = None
     lexica_registry: Path | None = None
     recitations_registry: Path | None = None
+    glossary: Path | None = None
+    registry_dir: Path | None = None
 
     @classmethod
     def default(
@@ -65,9 +67,13 @@ class RawPaths:
         works_registry: Path | None = None,
         lexica_registry: Path | None = None,
         recitations_registry: Path | None = None,
+        glossary: Path | None = None,
+        registry_dir: Path | None = None,
     ) -> RawPaths:
         return cls(
             root=raw,
+            glossary=glossary,
+            registry_dir=registry_dir,
             works_registry=works_registry,
             lexica_registry=lexica_registry,
             recitations_registry=recitations_registry,
@@ -534,6 +540,16 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             }
         )
 
+    generic: dict[str, list[dict[str, Any]]] = {}
+    if raw.registry_dir:
+        from .generic import build_generic, load_glossary
+
+        generic, report["generic"] = build_generic(
+            surahs_out, verses_out, words_out, lemmas_out, raw.registry_dir
+        )
+        if raw.glossary:
+            generic["glossary_terms"] = load_glossary(raw.glossary)
+
     works_out, passages_out, works_report = (
         build_works(raw.root, raw.works_registry, {(v["surah"], v["ayah"]): v["id"] for v in verses_out})
         if raw.works_registry
@@ -593,6 +609,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         ("lemmas", lemmas_out),
         ("roots", roots_out),
         ("root_variants", variants_out),
+        *generic.items(),
     ):
         with (out_dir / f"{name}.jsonl").open("w", encoding="utf-8") as fh:
             for r in rows:

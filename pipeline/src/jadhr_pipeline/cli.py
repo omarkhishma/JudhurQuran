@@ -30,7 +30,12 @@ def main(argv: list[str] | None = None) -> int:
         pins = verify_source_pins(args.raw, REPO / "data/sources.yaml")  # raises on any drift
         report = build(
             RawPaths.default(
-                args.raw, REPO / "data/works.yaml", REPO / "data/lexica.yaml", REPO / "data/recitations.yaml"
+                args.raw,
+                REPO / "data/works.yaml",
+                REPO / "data/lexica.yaml",
+                REPO / "data/recitations.yaml",
+                glossary=REPO / "data/glossary.yaml",
+                registry_dir=REPO / "data/registry",
             ),
             out,
             args.version,

@@ -38,13 +38,32 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                                 "word_count", "token_count", "sha256"], set()),
     ("tokens", "tokens.jsonl", ["id", "verse_id", "position", "text", "word_from", "word_to"], set()),
     ("roots", "roots.jsonl", ["id", "key", "letters", "spaced", "translit", "occurrences", "verse_count",
-                              "surah_count", "lemma_count"], set()),
+                              "surah_count", "lemma_count", "gloss_en", "gist_ar", "gist_source"], {"gist_source"}),
+    ("patterns", "patterns.jsonl", ["id", "slug", "ar", "ar_bare", "translit", "form_number", "pos_hint",
+                                    "lemma_count", "occurrences", "function_ar", "function_en", "plain_ar",
+                                    "plain_en"], set()),
     ("lemmas", "lemmas.jsonl", ["id", "key", "ar", "ar_bare", "norm", "norm_plain", "root_id", "pos", "verb_form",
-                                "derivation", "occurrences", "verse_count", "gloss_en", "pattern", "pattern_method"], set()),
+                                "derivation", "occurrences", "verse_count", "gloss_en", "pattern", "pattern_method",
+                                "slug", "translit", "pattern_id", "pos_ar", "pos_en"], set()),
     ("words", "words.jsonl", ["id", "verse_id", "surah", "ayah", "position", "location", "token_from", "token_to",
                               "text_uthmani", "text_imlaei", "norm", "norm_uthmani", "root_id", "lemma_id", "pos",
                               "definite", "features", "segments", "translit", "gloss_en"], {"features", "segments"}),
     ("root_variants", "root_variants.jsonl", ["word_id", "source", "root_key"], set()),
+    ("texts", "texts.jsonl", ["id", "slug", "uri", "kind", "title_ar", "title_en", "author_ar", "author_en", "meta_ar",
+                              "meta_en", "era_year", "source_id", "sort_order", "chapter_count", "passage_count",
+                              "token_count"], set()),
+    ("chapters", "chapters.jsonl", ["id", "text_id", "ordinal", "uri", "title_ar", "title_en", "title_translit",
+                                    "passage_count", "meta"], {"meta"}),
+    ("passages", "passages.jsonl", ["id", "text_id", "chapter_id", "ordinal", "ref", "uri", "verse_id", "ar_full",
+                                    "norm", "token_count"], set()),
+    ("passage_tokens", "passage_tokens.jsonl", ["id", "passage_id", "ordinal", "uri", "surface", "surface_bare",
+                                                "norm", "lemma_id", "root_id", "pattern_id", "pos", "confidence",
+                                                "word_id"], set()),
+    ("corpora", "corpora.jsonl", ["id", "text_id", "label_ar", "label_en", "year", "sort_order"], set()),
+    ("glossary_terms", "glossary_terms.jsonl", ["key", "category", "category_ar", "category_en", "label_ar",
+                                                "label_en", "body_ar", "body_en", "href", "jump_target",
+                                                "sort_order"], set()),
+    ("senses", "senses.jsonl", ["id", "lemma_id", "ordinal", "text_ar", "text_en", "sources", "status"], {"sources"}),
     ("works", "works.jsonl", ["id", "kind", "lang", "level", "title_ar", "title_en", "author_ar", "author_en",
                               "source_id", "version", "file_sha256", "sort_order", "default_for",
                               "strip_leading_number", "verse_coverage", "passage_count"], set()),
@@ -61,6 +80,13 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
 ]  # fmt: skip
 
 TRUNCATE_ORDER = [
+    "senses",
+    "glossary_terms",
+    "corpora",
+    "passage_tokens",
+    "passages",
+    "chapters",
+    "texts",
     "recitation_timings",
     "reciters",
     "gharib_glosses",
@@ -71,6 +97,7 @@ TRUNCATE_ORDER = [
     "root_variants",
     "words",
     "lemmas",
+    "patterns",
     "roots",
     "tokens",
     "verses",
@@ -150,6 +177,16 @@ def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[st
         stored = hashlib.sha256("\n".join(r[0] for r in cur.fetchall()).encode()).hexdigest()
         if stored != report["text_sha256"]:
             raise RuntimeError(f"text hash mismatch after load: {stored} ≠ {report['text_sha256']}")
+        # The Quran's passages point at the verified verses and never hold a copy of the text.
+        cur.execute(
+            """select count(*) from content.passages p join content.texts t on t.id = p.text_id
+               where t.kind = 'quran' and (p.ar_full is not null or p.verse_id is null)"""
+        )
+        copies = cur.fetchone()
+        if copies and copies[0]:
+            raise RuntimeError(
+                f"{copies[0]} Quran passages carry their own text instead of pointing at verses"
+            )
         cur.execute("analyze")
     return counts
 
