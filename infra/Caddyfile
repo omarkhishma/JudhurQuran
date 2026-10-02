@@ -1,0 +1,30 @@
+# Public entry point. SITE_ADDRESS is the domain (automatic HTTPS) or ":80" for a plain local run.
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	# The public API goes straight to FastAPI; the web app's own /api/v1 rewrite is only a dev convenience.
+	handle /api/v1/* {
+		reverse_proxy api:8000
+	}
+	handle /api/v1 {
+		reverse_proxy api:8000
+	}
+
+	# Cache expiry is called by the loader inside the network (http://web:3000); never from outside.
+	handle /api/revalidate {
+		respond 404
+	}
+
+	# Hashed build assets never change.
+	@static path /_next/static/*
+	header @static Cache-Control "public, max-age=31536000, immutable"
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

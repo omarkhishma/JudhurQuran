@@ -1,0 +1,19 @@
+# Build contexts are the repo root; only source and lockfiles go in.
+**/node_modules
+**/.next
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+.git
+.env
+.env.*
+!.env.example
+data/raw
+data/build
+data/release
+Example Data
+Claude Design Handoff
+docs
+**/*.log

@@ -1,0 +1,52 @@
+# Continuous integration. The licensed raw sources and the loaded database are not in the repository,
+# so CI runs the unit tests (data-dependent tests skip with that reason) plus lint, types, the
+# production web build and both container images. The full suite runs locally: see docs/DEPLOY.md.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      # Needs no API: nothing is prerendered at build time.
+      - run: pnpm build
+        env:
+          NEXT_PUBLIC_SITE_URL: https://example.invalid
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version-file: .python-version
+      - run: uv sync --frozen
+      - run: uv run ruff check packages pipeline services
+      - run: uv run ruff format --check packages pipeline services
+      - run: uv run pytest packages/arabic-py pipeline services/api -q -rs
+
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f services/api/Dockerfile -t judhur-api:ci .
+      - run: docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SITE_URL=https://example.invalid -t judhur-web:ci .

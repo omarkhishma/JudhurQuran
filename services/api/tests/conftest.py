@@ -1,0 +1,34 @@
+"""API tests run against a loaded dataset. Without a reachable database (CI) they skip with that reason;
+set JUDHUR_REQUIRE_DATA=1 to make a missing database a failure instead."""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+import psycopg
+import pytest
+from judhur_api.settings import get_settings
+
+HERE = Path(__file__).resolve().parent
+
+
+def _database_ready() -> bool:
+    dsn = get_settings().database_url.replace("postgresql+psycopg://", "postgresql://")
+    try:
+        with psycopg.connect(dsn, connect_timeout=3) as conn:
+            return conn.execute("select count(*) from content.dataset").fetchone()[0] > 0
+    except Exception:
+        return False
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    # The hook sees every collected test of the session; only this directory needs the database.
+    items = [i for i in items if Path(str(i.fspath)).resolve().is_relative_to(HERE)]
+    if not items or _database_ready():
+        return
+    if os.environ.get("JUDHUR_REQUIRE_DATA") == "1":
+        raise pytest.UsageError("JUDHUR_REQUIRE_DATA=1 but no loaded dataset is reachable")
+    skip = pytest.mark.skip(reason="no loaded dataset reachable: unit tests only")
+    for item in items:
+        item.add_marker(skip)

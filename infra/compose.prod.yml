@@ -1,0 +1,77 @@
+# Production stack: Postgres, API, web, Caddy (TLS + routing). Run from the repository root:
+#   docker compose -f infra/compose.prod.yml --env-file .env.production up -d --build
+# Load or update a dataset release (migrations + atomic load + web cache expiry):
+#   docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader
+# See docs/DEPLOY.md. Nothing here runs against production without the owner's go.
+name: judhur-quran
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: judhur
+      POSTGRES_DB: judhur
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U judhur -d judhur"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: { context: .., dockerfile: services/api/Dockerfile }
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      JUDHUR_DATABASE_URL: postgresql+psycopg://judhur:${POSTGRES_PASSWORD}@db:5432/judhur
+      JUDHUR_ENVIRONMENT: production
+      JUDHUR_PUBLIC_BASE_URL: ${PUBLIC_URL:?set PUBLIC_URL}
+      JUDHUR_CORS_ORIGINS: '["${PUBLIC_URL}"]'
+      WEB_CONCURRENCY: ${API_WORKERS:-2}
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${PUBLIC_URL}
+        JUDHUR_API_ORIGIN: http://api:8000
+    restart: unless-stopped
+    depends_on: [api]
+    environment:
+      JUDHUR_API_ORIGIN: http://api:8000
+      JUDHUR_REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set REVALIDATE_SECRET}
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [web, api]
+    ports: ["${HTTP_PORT:-80}:80", "${HTTPS_PORT:-443}:443"]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # One-off: apply migrations, load data/build/<version>, expire the web cache.
+  loader:
+    profiles: [tools]
+    build: { context: .., dockerfile: services/api/Dockerfile }
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      JUDHUR_DATABASE_URL: postgresql+psycopg://judhur:${POSTGRES_PASSWORD}@db:5432/judhur
+      JUDHUR_WEB_REVALIDATE_URL: http://web:3000/api/revalidate
+      JUDHUR_REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+    volumes:
+      - ../data/build:/data/build:ro
+      - ../data/sources.yaml:/data/sources.yaml:ro
+    command: ["sh", "-c", "alembic upgrade head && python -m judhur_api.loader /data/build/${DATASET_VERSION:?set DATASET_VERSION} /data/sources.yaml"]
+
+volumes:
+  pg:
+  caddy_data:
+  caddy_config:
