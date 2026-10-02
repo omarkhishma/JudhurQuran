@@ -57,6 +57,7 @@ function AboutAr() {
       <ul>
         <li>بعض مواد المعاجم رُبطت بجذورها ربطًا تقريبيًا (اختلاف رسم الهمزة أو حروف العلة)؛ نعرض عالي الثقة منها مع تنبيه، ونحجب الباقي حتى تُراجَع.</li>
         <li>أوزان الكلمات تحليل آلي قيد المراجعة اللغوية، ولم نُضف بعدُ شرح ما يضيفه كل وزن إلى المعنى؛ سنضيفه من كتب الصرف منسوبًا إليها.</li>
+        <li>شروح المصطلحات (تحت المصطلح خط منقّط) كتبناها بلغة مبسّطة لغير المتخصص، وهي قيد المراجعة اللغوية.</li>
       </ul>
       <p>إن وجدت خطأً فأخبرنا؛ فالدقة أولى عندنا من السرعة.</p>
     </Prose>
@@ -99,6 +100,7 @@ function AboutEn() {
       <ul>
         <li>Some dictionary articles are matched to their root approximately; high-confidence ones are shown with a caveat, the rest wait for review.</li>
         <li>Word patterns are an automatic analysis under linguistic review; what each pattern adds to the meaning is not described yet and will come, credited, from the classical morphology books.</li>
+        <li>The plain-language term cards (dotted terms) are our own simplified wording for non-specialists and are under linguistic review.</li>
       </ul>
     </Prose>
   );

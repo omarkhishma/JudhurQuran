@@ -8,6 +8,7 @@ import { Concordance } from "@/components/roots/Concordance";
 import { RootLexicon } from "@/components/lexicon/RootLexicon";
 import { Icon } from "@/components/Icon";
 import { formatNumber, toArabicDigits } from "@/lib/format";
+import { Term } from "@/components/terms/Term";
 import { localized } from "@/lib/seo";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 
@@ -35,6 +36,12 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/roots/[r
   const path = `/roots/${encodeURIComponent(r.key)}`;
   return { title, description, alternates: localized(locale, path) };
 }
+
+const DERIVATION: Record<string, { ar: string; en: string; term: "activeParticiple" | "passiveParticiple" | "verbalNoun" }> = {
+  ACT_PCPL: { ar: "اسم فاعل", en: "active participle", term: "activeParticiple" },
+  PASS_PCPL: { ar: "اسم مفعول", en: "passive participle", term: "passiveParticiple" },
+  VN: { ar: "مصدر", en: "verbal noun", term: "verbalNoun" },
+};
 
 const GROUPS: { key: string; pos: string[] }[] = [
   { key: "groupVerbs", pos: ["V"] },
@@ -99,7 +106,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
         ).map(([k, n]) => (
           <div key={k} className="card p-4">
             <dd className="text-[28px] font-semibold text-t1">{formatNumber(n, locale)}</dd>
-            <dt className="text-[13px] text-t2">{t(k)}</dt>
+            <dt className="text-[13px] text-t2">{k === "statOccurrences" ? <Term id="occurrences">{t(k)}</Term> : k === "statLemmas" ? <Term id="lemma">{t(k)}</Term> : t(k)}</dt>
           </div>
         ))}
       </dl>
@@ -122,7 +129,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
       )}
 
       <section className="mt-10" aria-labelledby="family">
-        <h2 id="family" className="text-[18px] font-semibold">{t("family")}</h2>
+        <h2 id="family" className="text-[18px] font-semibold"><Term id="root">{t("family")}</Term></h2>
         <p className="mb-4 text-[13.5px] text-t2">{t("familyLead")}</p>
         <div className="space-y-6">
           {grouped.map((g) => (
@@ -144,15 +151,17 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
                               <span className="ar-classical text-[15px] text-t1" lang="ar" dir="rtl">{l.pattern}</span>
                             </Link>
                           ) : l.pattern_method === "verb-form-I" ? (
-                            <span className="rounded-full bg-card-2 px-2 py-0.5">{t("formOne")}</span>
+                            <span className="rounded-full bg-card-2 px-2 py-0.5">
+                              <Term id="formOne">{t("formOne")}</Term>
+                            </span>
                           ) : null}
-                          <span>
-                            {[
-                              locale === "en" && l.verb_form ? `Form ${l.verb_form}` : null,
-                              l.derivation === "ACT_PCPL" ? (locale === "ar" ? "اسم فاعل" : "active participle") : l.derivation === "PASS_PCPL" ? (locale === "ar" ? "اسم مفعول" : "passive participle") : l.derivation === "VN" ? (locale === "ar" ? "مصدر" : "verbal noun") : null,
-                              locale === "en" && l.gloss_en ? l.gloss_en : null,
-                            ].filter(Boolean).join(" · ")}
-                          </span>
+                          {locale === "en" && l.verb_form ? <span>{`Form ${l.verb_form}`}</span> : null}
+                          {l.derivation && DERIVATION[l.derivation] && (
+                            <span>
+                              <Term id={DERIVATION[l.derivation].term}>{DERIVATION[l.derivation][locale === "ar" ? "ar" : "en"]}</Term>
+                            </span>
+                          )}
+                          {locale === "en" && l.gloss_en ? <span>{l.gloss_en}</span> : null}
                         </p>
                       </div>
                       <div className="text-end">
@@ -183,7 +192,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
       </section>
 
       <section className="mt-10 scroll-mt-24" aria-labelledby="lexicon-h" id="lexicon">
-        <h2 id="lexicon-h" className="text-[18px] font-semibold">{tl("inLexicons")}</h2>
+        <h2 id="lexicon-h" className="text-[18px] font-semibold"><Term id="lexicon">{tl("inLexicons")}</Term></h2>
         <p className="mb-3 max-w-[80ch] text-[13.5px] text-t2">{tl("lexiconsLead")}</p>
         <RootLexicon lexicon={r.lexicon} />
       </section>
@@ -197,14 +206,14 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
       </section>
 
       <section className="mt-10" aria-labelledby="kwic" id="occurrences">
-        <h2 id="kwic" className="text-[18px] font-semibold">{t("concordance")}</h2>
+        <h2 id="kwic" className="text-[18px] font-semibold"><Term id="concordance">{t("concordance")}</Term></h2>
         <p className="mb-3 text-[13.5px] text-t2">{t("concordanceLead")}</p>
         <Concordance root={r.key} lemmas={r.lemmas.map((l) => ({ id: l.id, ar: l.ar, occurrences: l.occurrences }))} />
       </section>
 
       {(r.variants.length > 0 || r.also_attributed.length > 0) && (
         <section className="mt-10" aria-labelledby="variants">
-          <h2 id="variants" className="text-[18px] font-semibold">{t("variantsTitle")}</h2>
+          <h2 id="variants" className="text-[18px] font-semibold"><Term id="variant">{t("variantsTitle")}</Term></h2>
           <p className="mb-3 max-w-[80ch] text-[13.5px] text-t2">{t("variantsLead")}</p>
           <ul className="space-y-1.5 text-[14px]">
             {r.variants.map((v) => (

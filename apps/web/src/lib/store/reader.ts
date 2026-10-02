@@ -30,6 +30,7 @@ export type ReadingPrefs = {
   tafsirs: string[]; // ordered work ids shown in the verse panel
   layout: "verses" | "flow";
   highlightRoot: boolean;
+  explainTerms: boolean; // dotted technical terms open plain-language cards (default on)
 };
 
 type PrefsState = ReadingPrefs & {
@@ -46,6 +47,7 @@ export const usePrefs = create<PrefsState>()(
       tafsirs: ["muyassar", "saadi", "ibn-kathir", "tabari", "qurtubi", "baghawi", "mukhtasar"],
       layout: "verses",
       highlightRoot: true,
+      explainTerms: true,
       set: (p) => set(p),
     }),
     { name: "judhur-prefs", version: 1 },

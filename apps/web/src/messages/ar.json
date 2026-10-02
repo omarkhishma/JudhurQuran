@@ -148,7 +148,9 @@
     "nextSurah": "السورة التالية",
     "surahInfo": "{place} · {verses} · الصفحات {from}–{to}",
     "studyVerse": "صفحة الآية",
-    "readInSurah": "اقرأها في سياق السورة"
+    "readInSurah": "اقرأها في سياق السورة",
+    "explainTerms": "اشرح المصطلحات",
+    "explainTermsHint": "تحت المصطلحات خط منقّط؛ انقرها لترى شرحًا مبسّطًا."
   },
   "panel": {
     "wordPanel": "لوحة الكلمة",

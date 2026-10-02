@@ -148,7 +148,9 @@
     "nextSurah": "Next surah",
     "surahInfo": "{place} · {verses} · pages {from}–{to}",
     "studyVerse": "Verse page",
-    "readInSurah": "Read it in the surah"
+    "readInSurah": "Read it in the surah",
+    "explainTerms": "Explain terms",
+    "explainTermsHint": "Technical terms are dotted; tap one for a plain explanation."
   },
   "panel": {
     "wordPanel": "Word panel",

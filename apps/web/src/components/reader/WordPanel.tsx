@@ -12,7 +12,9 @@ import { LexiconArticle } from "@/components/lexicon/LexiconArticle";
 import { useSaved } from "@/lib/store/saved";
 import { useAudio } from "@/lib/store/audio";
 import { BookmarkButton } from "@/components/saved/BookmarkButton";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
+import { Term } from "@/components/terms/Term";
+import { TAG_TERM } from "@/lib/terms";
 
 function lab(l: Label | undefined, locale: string): string | null {
   if (!l) return null;
@@ -85,7 +87,11 @@ export function WordPanel({
             <ListenWord verseKey={w.verse.key} from={w.token_from} to={w.token_to} />
             <p className="flex flex-wrap items-center gap-x-2 text-[13px] text-t2">
               <span className="ar-classical text-[17px]" dir="rtl" lang="ar">{w.text_imlaei}</span>
-              {w.translit && <span className="italic" dir="ltr" lang="en">{w.translit}</span>}
+              {w.translit && (
+                <span className="italic" dir="ltr" lang="en">
+                  <Term id="transliteration">{w.translit}</Term>
+                </span>
+              )}
               <span className="rounded-full bg-word-wash px-2 py-0.5 text-[11.5px] text-word">{lab(w.features.pos, locale)}</span>
             </p>
           </div>
@@ -256,7 +262,7 @@ function RootSection({ w }: { w: WordDetail }) {
         })}
       </p>
       <div>
-        <p className="label-caps mb-1.5">{t("family")}</p>
+        <p className="label-caps mb-1.5"><Term id="lemma">{t("family")}</Term></p>
         <ul className="space-y-1">
           {root.lemmas.map((l) => {
             const current = l.id === w.lemma?.id;
@@ -315,25 +321,33 @@ function NoRoot({ w }: { w: WordDetail }) {
   const locale = useLocale();
   return (
     <div>
-      <p className="text-[14px] font-medium text-t1">{t("noRoot")}</p>
+      <p className="text-[14px] font-medium text-t1"><Term id="noRoot">{t("noRoot")}</Term></p>
       <p className="mt-1 text-[13px] leading-relaxed text-t2">{t("noRootExplain", { pos: lab(w.features.pos, locale) ?? "" })}</p>
     </div>
   );
 }
 
-function featureRows(f: Features, locale: string, t: ReturnType<typeof useTranslations>): [string, string][] {
-  const rows: [string, string][] = [];
-  const add = (k: string, v: string | null | undefined) => v && rows.push([k, v]);
-  add(locale === "ar" ? "النوع" : "Part of speech", lab(f.pos, locale));
-  if (f.verb_form) add(t("verbForm"), `${f.verb_form.pattern} (${f.verb_form.roman})`);
-  add(locale === "ar" ? "الزمن" : "Aspect", lab(f.aspect, locale));
-  add(locale === "ar" ? "البناء" : "Voice", lab(f.voice, locale));
-  add(locale === "ar" ? "الاشتقاق" : "Derivation", lab(f.derivation, locale));
+/** A corpus label, dotted when a plain-language term explains it (اسم فاعل، مضارع، مجرور…). */
+function termed(l: Label | undefined, locale: string): ReactNode {
+  const text = lab(l, locale);
+  if (!text || !l) return null;
+  const id = TAG_TERM[l.tag];
+  return id ? <Term id={id}>{text}</Term> : text;
+}
+
+function featureRows(f: Features, locale: string, t: ReturnType<typeof useTranslations>): [string, ReactNode, ReactNode][] {
+  const rows: [string, ReactNode, ReactNode][] = [];
+  const add = (key: string, k: ReactNode, v: ReactNode) => v && rows.push([key, k, v]);
+  add("pos", locale === "ar" ? "النوع" : "Part of speech", lab(f.pos, locale));
+  if (f.verb_form) add("form", <Term id="verbForm">{t("verbForm")}</Term>, `${f.verb_form.pattern} (${f.verb_form.roman})`);
+  add("aspect", locale === "ar" ? "الزمن" : "Aspect", termed(f.aspect, locale));
+  add("voice", locale === "ar" ? "البناء" : "Voice", termed(f.voice, locale));
+  add("derivation", locale === "ar" ? "الاشتقاق" : "Derivation", termed(f.derivation, locale));
   const pgn = [lab(f.person, locale), lab(f.gender, locale), lab(f.number, locale)].filter(Boolean).join(" · ");
-  add(locale === "ar" ? "الشخص والعدد" : "Person · gender · number", pgn || null);
-  add(locale === "ar" ? "الحالة الإعرابية" : "Case", lab(f.case, locale));
-  add(locale === "ar" ? "الإعراب" : "Mood", lab(f.mood, locale));
-  if (f.special) add(locale === "ar" ? "المجموعة" : "Group", lab(f.special, locale));
+  add("pgn", locale === "ar" ? "الشخص والعدد" : "Person · gender · number", pgn || null);
+  add("case", locale === "ar" ? "الحالة الإعرابية" : "Case", termed(f.case, locale));
+  add("mood", locale === "ar" ? "الإعراب" : "Mood", termed(f.mood, locale));
+  if (f.special) add("special", locale === "ar" ? "المجموعة" : "Group", lab(f.special, locale));
   return rows;
 }
 
@@ -359,21 +373,21 @@ function MorphologySection({ w }: { w: WordDetail }) {
         </ol>
       </div>
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13.5px]">
-        {featureRows(w.features, locale, t).map(([k, v]) => (
-          <div key={k} className="contents">
+        {featureRows(w.features, locale, t).map(([key, k, v]) => (
+          <div key={key} className="contents">
             <dt className="text-t3">{k}</dt>
             <dd className="text-t1">{v}</dd>
           </div>
         ))}
         {w.lemma && (
           <div className="contents">
-            <dt className="text-t3">{t("lemma")}</dt>
+            <dt className="text-t3"><Term id="lemma">{t("lemma")}</Term></dt>
             <dd className="ar-classical text-[18px]" dir="rtl" lang="ar">{w.lemma.ar}</dd>
           </div>
         )}
         {w.lemma && w.root && (
           <div className="contents">
-            <dt className="text-t3">{t("pattern")}</dt>
+            <dt className="text-t3"><Term id="wazn">{t("pattern")}</Term></dt>
             <dd>
               {w.lemma.pattern ? (
                 <span className="ar-classical text-[18px]" dir="rtl" lang="ar">{w.lemma.pattern}</span>
@@ -403,7 +417,9 @@ function SegmentChip({ s, locale }: { s: Segment; locale: string }) {
     >
       <span className="quran text-[22px] leading-[1.8]" lang="ar">{s.text}</span>
       <span className="text-[11px] text-t2">{label}</span>
-      <span className="text-[10px] text-t3">{t(s.kind)}</span>
+      <span className="text-[10px] text-t3">
+        <Term id={s.kind === "prefix" ? "prefix" : s.kind === "suffix" ? "suffix" : "stem"}>{t(s.kind)}</Term>
+      </span>
     </li>
   );
 }

@@ -112,6 +112,7 @@ function ReaderSettings({ showTranslation }: { showTranslation: boolean }) {
             <Toggle label={t("translationOn")} checked={showTranslation} onChange={(v) => prefs.set({ showTranslation: v })} />
             <Toggle label={t("inlineTafsir")} checked={prefs.inlineTafsir} onChange={(v) => prefs.set({ inlineTafsir: v })} />
             <Toggle label={t("highlightRoot")} hint={t("highlightRootHint")} checked={prefs.highlightRoot} onChange={(v) => prefs.set({ highlightRoot: v })} />
+            <Toggle label={t("explainTerms")} hint={t("explainTermsHint")} checked={prefs.explainTerms} onChange={(v) => prefs.set({ explainTerms: v })} />
             <p className="label-caps mt-3 mb-1.5">{t("textSize")}</p>
             <div className="seg-group w-full" role="group" aria-label={t("textSize")}>
               <button type="button" className="seg flex-1" onClick={() => prefs.set({ scale: Math.max(0.8, +(prefs.scale - 0.1).toFixed(1)) })} aria-label={t("textSmaller")}>
