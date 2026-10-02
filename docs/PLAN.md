@@ -149,7 +149,7 @@ Every task is verified twice for UI (screens at 1440, 1024 and 390 px in light a
   - the corpus folder bundles Tanzil 1.0.2 under CC BY-ND — confirm it never reaches any output;
   - research 02 §5.1 labels Shamela 4 folder numbers as book ids (folder 6119 is book 23636, 1462 is 1687) — correct the labels and the sample file names.
   
-  Every source in `data/sources.yaml` is then re-read against its current terms page, the verbatim clause is stored next to it, and any change goes to the owner.
+  Every source in `data/sources.yaml` is then re-read against its current terms page, the verbatim clause is stored next to it, and any change goes to the owner. ✅ Re-read 2026-10-03 for every id in the four registries (39 entries): `data/licences.yaml` holds the clauses verbatim with each page's sha256 (a test fails when a registry id lacks an entry), and `docs/research/07-licence-register.md` puts the findings to the owner — ok 2, attention 28, conflict 9; no source changed its terms; the open items are owner decisions under D2/D19/D22 and the engineering fixes listed in 07 (release notices and labels, recitation credits, Lane's Arabic credit, registry wording).
 - P1.9 Exit: every route renders its designed skeleton in both locales and themes at three widths; the word payload carries every section; search assertions green; the P1.8 audit closed with every finding fixed or put to the owner.
 
 ### P2 · Reader v5, Quran-first ⬜ (inventory Part 1, RDR-001…615)
