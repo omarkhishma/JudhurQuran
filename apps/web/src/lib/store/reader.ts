@@ -50,6 +50,6 @@ export const usePrefs = create<PrefsState>()(
       explainTerms: true,
       set: (p) => set(p),
     }),
-    { name: "jadhr-prefs", version: 1 },
+    { name: "jadhr-prefs-legacy", version: 1 },
   ),
 );

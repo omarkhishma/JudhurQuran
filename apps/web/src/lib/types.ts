@@ -33,6 +33,7 @@ export type WordLite = {
   root: string | null;
   lemma: string | null;
   lemma_id: number | null;
+  lemma_slug?: string | null;
 };
 
 export type Features = {

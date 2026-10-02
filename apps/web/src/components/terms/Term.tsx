@@ -4,7 +4,7 @@ import { useLocale } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
-import { usePrefs } from "@/lib/store/reader";
+import { usePrefs } from "@/lib/reader/store";
 import { CATEGORY, TERMS, type TermId } from "@/lib/terms";
 
 const CARD_WIDTH = 300;

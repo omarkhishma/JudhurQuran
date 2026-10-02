@@ -1,0 +1,255 @@
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useRef, useState } from "react";
+import { Icon } from "@/components/Icon";
+import { Link } from "@/i18n/navigation";
+import { setLocalStorage, useTheme } from "@/lib/client";
+import { formatNumber } from "@/lib/format";
+import { useBreakpoint } from "@/lib/reader/media";
+import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
+import { THEME_KEY } from "@/lib/site";
+import type { ChapterInfo } from "./ReaderShell";
+import { ReadingPrefs } from "./ReadingPrefs";
+
+const SIZE_MIN = 0.8;
+const SIZE_MAX = 1.6;
+
+/** The reader's bespoke header (design 03 §3.2, inventory RDR-016…031), mirrored for Arabic. */
+export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; surfaceRef: React.RefObject<HTMLDivElement | null> }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const bp = useBreakpoint();
+  const theme = useTheme();
+  const size = usePrefs((s) => s.size);
+  const railOpen = usePrefs((s) => s.railOpen);
+  const panelOpen = usePrefs((s) => s.panelOpen);
+  const wordStatesOn = usePrefs((s) => s.wordStates);
+  const setPrefs = usePrefs((s) => s.set);
+  const ask = useReader((s) => s.ask);
+  const setAsk = useReader((s) => s.setAsk);
+  const setOmnibox = useReader((s) => s.setOmnibox);
+  const setReview = useReader((s) => s.setReview);
+  const setRailOverlay = useReader((s) => s.setRailOverlay);
+  const railOverlay = useReader((s) => s.railOverlay);
+  const selection = useReader((s) => s.selection);
+  const stars = usePersonal((s) => s.stars);
+  const wordStates = usePersonal((s) => s.wordStates);
+  const [prefsOpen, setPrefsOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const wide = bp !== "phone";
+
+  // Reading-position hairline: how far through the sūra the reader has scrolled.
+  useEffect(() => {
+    const el = surfaceRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const max = el.scrollHeight - el.clientHeight;
+      setProgress(max > 0 ? Math.min(1, el.scrollTop / max) : 0);
+    };
+    onScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [surfaceRef]);
+
+  function setSize(next: number) {
+    setPrefs({ size: Math.round(Math.min(SIZE_MAX, Math.max(SIZE_MIN, next)) * 100) / 100 });
+  }
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    setLocalStorage(THEME_KEY, next);
+  }
+  function toggleRail() {
+    if (bp === "wide") setPrefs({ railOpen: !railOpen });
+    else setRailOverlay(!railOverlay);
+  }
+  function toggleAsk() {
+    if (ask) {
+      setAsk(false);
+      setPrefs({ panelOpen: true });
+    } else {
+      setAsk(true);
+    }
+  }
+
+  const learning = Object.values(wordStates).filter((s) => s === "learning").length;
+  const known = Object.values(wordStates).filter((s) => s === "known").length;
+  const place = chapter.place === "meccan" ? t("meccan") : t("medinan");
+  const meta = [place, t("verses", { n: formatNumber(chapter.verseCount, locale) }), t("juz", { n: formatNumber(chapter.juz, locale) })];
+  if (wordStatesOn) meta.push(t("knownLearning", { known: formatNumber(known, locale), learning: formatNumber(learning, locale) }));
+  const starredCount = Object.keys(stars).length;
+  const graphHref = selection ? `/graph?w=${encodeURIComponent(selection.slug)}` : "/graph";
+
+  return (
+    <header className="reader-header">
+      <button type="button" className="hdr-btn hdr-square" onClick={toggleRail} aria-label={t("toggleContents")} title={t("toggleContentsTitle")} aria-expanded={bp === "wide" ? railOpen : railOverlay}>
+        <Icon name="menu" size={14} />
+      </button>
+      <Link href="/" className="flex shrink-0 items-center" aria-label={t("home")}>
+        <span className="block h-[18px] w-[18px] rounded-[5px] bg-root" aria-hidden="true" />
+      </Link>
+      <div className="flex min-w-0 max-w-[260px] flex-col leading-tight">
+        <span className="ar-classical truncate text-[15px] leading-[1.35] text-t1" lang="ar" dir="rtl">
+          {`سورة ${chapter.nameAr}`}
+        </span>
+        <span className="truncate text-[11px] text-t3">{meta.join(" · ")}</span>
+      </div>
+      <span className="flex-1" />
+      {wide && (
+        <div className="ctrl-group" role="group" aria-label={t("textSize")}>
+          <button type="button" onClick={() => setSize(size - 0.1)} aria-label={t("smaller")} title={t("smaller")} disabled={size <= SIZE_MIN}>
+            <span className="text-[11.5px]">A−</span>
+          </button>
+          <span className="mono min-w-[38px] text-center text-[11.5px] text-t3" dir="ltr">{`${Math.round(size * 100)}%`}</span>
+          <button type="button" onClick={() => setSize(size + 0.1)} aria-label={t("larger")} title={t("larger")} disabled={size >= SIZE_MAX}>
+            <span className="text-[13.5px]">A+</span>
+          </button>
+        </div>
+      )}
+      <button type="button" className="hdr-btn" aria-pressed={ask} onClick={toggleAsk} title={t("askTitle")}>
+        {t("ask")}
+      </button>
+      {wide && (
+        <button type="button" className="hdr-btn min-w-[120px] justify-between" onClick={() => setOmnibox(true)} title={t("searchTitle")} aria-keyshortcuts="Meta+K Control+K">
+          <span className="flex items-center gap-1.5 text-t3">
+            <Icon name="search" size={13} />
+            {t("search")}
+          </span>
+          <kbd className="mono rounded border border-line px-1 text-[10.5px] text-t3" dir="ltr">⌘K</kbd>
+        </button>
+      )}
+      {wide && (
+        <button type="button" className="hdr-btn" onClick={() => setReview(true)} title={t("reviewTitle")}>
+          <Icon name="calendar" size={13} />
+          {t("review")}
+          <span className="mono rounded-[5px] bg-card-2 px-1.5 text-[11px] text-t2" aria-label={t("reviewQueued", { n: starredCount })}>
+            {formatNumber(starredCount, locale)}
+          </span>
+        </button>
+      )}
+      {wide && (
+        <div className="relative">
+          <button type="button" className="hdr-btn" aria-expanded={prefsOpen} onClick={() => setPrefsOpen((v) => !v)} title={t("readingTitle")}>
+            <Icon name="sliders" size={13} />
+            {t("reading")}
+          </button>
+          {prefsOpen && <ReadingPrefs onClose={() => setPrefsOpen(false)} />}
+        </div>
+      )}
+      {wide && (
+        <button type="button" className="hdr-btn hdr-icon" onClick={toggleTheme} aria-pressed={theme === "dark"} aria-label={theme === "dark" ? t("themeLight") : t("themeDark")} title={theme === "dark" ? t("themeLight") : t("themeDark")}>
+          <Icon name={theme === "dark" ? "sun" : "moon"} size={14} />
+        </button>
+      )}
+      {wide && (
+        <Link href={graphHref} className="hdr-btn" title={selection ? t("graphWordTitle") : t("graphTitle")}>
+          <Icon name="graph" size={13} />
+          {t("graph")}
+        </Link>
+      )}
+      {!wide && (
+        <div className="relative">
+          <button type="button" className="hdr-btn hdr-more" aria-label={t("more")} aria-expanded={moreOpen} onClick={() => setMoreOpen((v) => !v)}>
+            ⋯
+          </button>
+          {moreOpen && (
+            <MoreMenu
+              onClose={() => setMoreOpen(false)}
+              onPrefs={() => {
+                setMoreOpen(false);
+                setPrefsOpen(true);
+              }}
+              size={size}
+              setSize={setSize}
+              theme={theme}
+              toggleTheme={toggleTheme}
+              graphHref={graphHref}
+            />
+          )}
+          {prefsOpen && <ReadingPrefs onClose={() => setPrefsOpen(false)} />}
+        </div>
+      )}
+      <button
+        type="button"
+        className="hdr-btn"
+        aria-pressed={panelOpen && !ask}
+        onClick={() => {
+          // from Ask, the dictionary button leaves Ask for the reading view with the panel open
+          if (ask) {
+            setAsk(false);
+            setPrefs({ panelOpen: true });
+          } else setPrefs({ panelOpen: !panelOpen });
+        }}
+        title={t("dictionaryTitle")}
+      >
+        <Icon name="book" size={13} />
+        {t("dictionary")}
+      </button>
+      <span className="reader-hairline" style={{ width: `${progress * 100}%` }} aria-hidden="true" />
+    </header>
+  );
+}
+
+function MoreMenu({
+  onClose,
+  onPrefs,
+  size,
+  setSize,
+  theme,
+  toggleTheme,
+  graphHref,
+}: {
+  onClose: () => void;
+  onPrefs: () => void;
+  size: number;
+  setSize: (n: number) => void;
+  theme: "light" | "dark" | null;
+  toggleTheme: () => void;
+  graphHref: string;
+}) {
+  const t = useTranslations("rd");
+  const box = useRef<HTMLDivElement>(null);
+  const setOmnibox = useReader((s) => s.setOmnibox);
+  const setReview = useReader((s) => s.setReview);
+  useEffect(() => {
+    box.current?.querySelector<HTMLElement>("button,a")?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onDown = (e: PointerEvent) => !box.current?.contains(e.target as Node) && onClose();
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onDown);
+    };
+  }, [onClose]);
+  return (
+    <div ref={box} className="popover more-menu" role="menu" aria-label={t("more")}>
+      <button type="button" role="menuitem" onClick={() => { onClose(); setOmnibox(true); }}>
+        {t("searchEverything")} <span aria-hidden="true">⌕</span>
+      </button>
+      <button type="button" role="menuitem" onClick={onPrefs}>
+        {t("readingTitle")} <span aria-hidden="true">Aa</span>
+      </button>
+      <button type="button" role="menuitem" onClick={() => setSize(size + 0.1)}>
+        {t("larger")} <span aria-hidden="true">A+</span>
+      </button>
+      <button type="button" role="menuitem" onClick={() => setSize(size - 0.1)}>
+        {t("smaller")} <span aria-hidden="true">A−</span>
+      </button>
+      <button type="button" role="menuitem" onClick={() => { onClose(); setReview(true); }}>
+        {t("reviewRoots")}
+      </button>
+      <button type="button" role="menuitem" onClick={() => { toggleTheme(); onClose(); }}>
+        {theme === "dark" ? t("themeLight") : t("themeDark")}
+      </button>
+      <Link href={graphHref} role="menuitem" onClick={onClose}>
+        {t("graphEditor")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
+      </Link>
+      <Link href="/library" role="menuitem" onClick={onClose}>
+        {t("library")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
+      </Link>
+    </div>
+  );
+}

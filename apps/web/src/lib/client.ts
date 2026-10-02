@@ -1,12 +1,23 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 const noop = () => () => {};
 
 /** true after hydration, false during SSR and the hydration pass — without an effect. */
 export function useIsClient(): boolean {
   return useSyncExternalStore(noop, () => true, () => false);
+}
+
+/** true from the frame after the first commit. For portals into server-rendered DOM: after a client-side
+ * navigation that DOM does not exist yet during the first render, which useIsClient cannot tell. */
+export function useAfterMount(): boolean {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setOn(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return on;
 }
 
 function subscribeStorage(cb: () => void): () => void {

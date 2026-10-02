@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
-import { usePrefs } from "@/lib/store/reader";
+import { usePrefs } from "@/lib/reader/store";
 import { verseRef } from "@/lib/format";
 import type { Commentary, Work } from "@/lib/types";
 import { useCommentary } from "./hooks";
