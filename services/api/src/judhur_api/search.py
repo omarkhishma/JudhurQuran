@@ -105,6 +105,19 @@ def _root_row(conn: Connection, key: str) -> dict[str, Any] | None:
     )
 
 
+_CLITICS = ("وال", "فال", "بال", "كال", "لل", "ال", "و", "ف")
+
+
+def _lemma_candidates(norm_q: str) -> list[str]:
+    """The query plus the query without a leading article/conjunction (الرحمن → رحمن), for lemma matching."""
+    out = [norm_q]
+    for c in _CLITICS:
+        if norm_q.startswith(c) and len(norm_q) - len(c) >= 2:
+            out.append(norm_q[len(c) :])
+            break
+    return out
+
+
 def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
     kind, info = detect(conn, q)
     results: dict[str, list[dict[str, Any]]] = {
@@ -160,8 +173,8 @@ def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
                 conn,
                 """select l.id, l.ar, l.pos, l.occurrences, r.key as root from content.lemmas l
                    left join content.roots r on r.id = l.root_id
-                   where l.norm = :q or l.norm_plain = :q order by l.occurrences desc limit :limit""",
-                {"q": norm_q, "limit": limit},
+                   where l.norm = any(:qs) or l.norm_plain = any(:qs) order by l.occurrences desc limit :limit""",
+                {"qs": _lemma_candidates(norm_q), "limit": limit},
             )
             for lem in results["lemmas"]:
                 lem["ar"] = lemma_display(lem["ar"])
@@ -183,8 +196,9 @@ def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
         pattern = "%" + norm_q.replace("%", "").replace("_", "") + "%"
         results["verses"] = rows(
             conn,
-            f"""select key, surah, ayah, text_qpc, text_imlaei from content.verses
-               where {vcol} like :p order by id limit :limit""",
+            f"""select v.key, v.surah, v.ayah, v.text_qpc, v.text_imlaei, s.name_ar, s.name_translit
+               from content.verses v join content.surahs s on s.number = v.surah
+               where v.{vcol} like :p order by v.id limit :limit""",
             {"p": pattern, "limit": limit},
         )
     if kind == "latin":

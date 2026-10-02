@@ -263,7 +263,7 @@ export type SearchResult = {
   query: string;
   detected: { kind: string; label_ar: string; label_en: string; surah?: number; ayah?: number };
   results: {
-    verses: { key: string; surah: number; ayah: number; text_qpc: string; text_imlaei: string }[];
+    verses: { key: string; surah: number; ayah: number; text_qpc: string; text_imlaei: string; name_ar: string; name_translit: string }[];
     surahs: Surah[];
     roots: { key: string; spaced: string; translit: string; occurrences: number; lemma_count: number; verse_count: number }[];
     lemmas: { id: number; ar: string; pos: string; occurrences: number; root: string | null; gloss_en?: string | null }[];

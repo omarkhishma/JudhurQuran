@@ -5,10 +5,10 @@ import { useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
 
-export function HomeSearch() {
+export function HomeSearch({ initial = "" }: { initial?: string }) {
   const t = useTranslations("search");
   const router = useRouter();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initial);
   return (
     <form
       role="search"
