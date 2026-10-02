@@ -4,10 +4,10 @@ requires-python = "==3.13.*"
 
 [manifest]
 members = [
-    "judhur-api",
-    "judhur-arabic",
-    "judhur-pipeline",
-    "judhur-quran-workspace",
+    "jadhr-api",
+    "jadhr-arabic",
+    "jadhr-pipeline",
+    "jadhr-quran-workspace",
 ]
 
 [[package]]
@@ -214,13 +214,13 @@ wheels = [
 ]
 
 [[package]]
-name = "judhur-api"
+name = "jadhr-api"
 version = "0.1.0"
 source = { editable = "services/api" }
 dependencies = [
     { name = "alembic" },
     { name = "fastapi" },
-    { name = "judhur-arabic" },
+    { name = "jadhr-arabic" },
     { name = "orjson" },
     { name = "psycopg", extra = ["binary", "pool"] },
     { name = "pydantic" },
@@ -240,7 +240,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.13" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", marker = "extra == 'test'", specifier = ">=0.27" },
-    { name = "judhur-arabic", editable = "packages/arabic-py" },
+    { name = "jadhr-arabic", editable = "packages/arabic-py" },
     { name = "orjson", specifier = ">=3.10" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.2" },
     { name = "pydantic", specifier = ">=2.8" },
@@ -252,17 +252,17 @@ requires-dist = [
 provides-extras = ["test"]
 
 [[package]]
-name = "judhur-arabic"
+name = "jadhr-arabic"
 version = "0.1.0"
 source = { editable = "packages/arabic-py" }
 
 [[package]]
-name = "judhur-pipeline"
+name = "jadhr-pipeline"
 version = "0.1.0"
 source = { editable = "pipeline" }
 dependencies = [
     { name = "httpx" },
-    { name = "judhur-arabic" },
+    { name = "jadhr-arabic" },
     { name = "lxml" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pyyaml" },
@@ -271,14 +271,14 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
-    { name = "judhur-arabic", editable = "packages/arabic-py" },
+    { name = "jadhr-arabic", editable = "packages/arabic-py" },
     { name = "lxml", specifier = ">=5" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pyyaml", specifier = ">=6" },
 ]
 
 [[package]]
-name = "judhur-quran-workspace"
+name = "jadhr-quran-workspace"
 version = "0.0.0"
 source = { virtual = "." }
 

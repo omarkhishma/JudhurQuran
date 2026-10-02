@@ -123,12 +123,12 @@
 
 Every task is verified twice for UI (screens at 1440, 1024 and 390 px in light and dark, compared side by side with the prototype; numbers checked against data), committed on its own, and logged in DECISIONS.
 
-### P0 · Integrity reset — remove everything taken from another project ⬜
+### P0 · Integrity reset — remove everything taken from another project ✅
 - P0.1 ✅ Copied files moved to the Trash (2026-10-03): the copied checksum manifest, the copied Lisan dump's evidence folder, the copied Lane archive and the copied official corpus archive. Nothing from them is kept in the repository or the build.
 - P0.2 ✅ Lane's Lexicon re-acquired from its public repository (laneslexicon/lexicon_xml at f3c19fb) and re-pinned; the rebuilt dataset is byte-identical except the source URL. The pinned corpus morphology file already came from a public mirror (three mirrors agree), so it stays.
 - P0.3 ✅ Docs and code comments rewritten: every passage that cited or compared with the other project removed from DECISIONS and research 00–02; borrowed lessons deleted; laws and the licensing stance re-recorded as the owner's decisions of 2026-10-03; the Buckwalter table re-verified entry by entry against the corpus' published table (60 of 60 match).
-- P0.4 Rename the product identity after D1: packages, modules, storage keys (with a one-time local migration), compose names, UI name, metadata, docs.
-- P0.5 Exit: a repository-wide search for the other project's name and paths returns nothing (checked against a known positive first); full tests, build and text hash green.
+- P0.4 ✅ Renamed to Jadhr (جذر), the design's name (D1): Python packages `jadhr_arabic`, `jadhr_pipeline`, `jadhr_api`, the `jadhr-pipeline` command, `JADHR_*` settings, storage keys, compose names, Docker user, UI name, metadata and docs. No storage migration: the product was never deployed, so no reader holds data under the old keys.
+- P0.5 ✅ Exit (2026-10-03): a scan of every file in the repository (outside `node_modules` and `.git`, both checked separately) finds the old name nowhere, and finds the planted positive control; Python 156 passed (strict, with data); lint, typecheck and the production build pass; end-to-end and axe 62 passed; dataset text hash unchanged (`5ee8af4e…`).
 
 ### P1 · Foundations for parity ⬜
 - P1.1 Generic text model (§5) with the Quran migrated into it; existing Quran routes keep working.

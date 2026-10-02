@@ -27,9 +27,9 @@ export function SavedView() {
   }
 
   async function exportAll() {
-    const graphs = await Promise.all((await listGraphs()).map((g) => get(`judhur-graph:${g.id}`)));
+    const graphs = await Promise.all((await listGraphs()).map((g) => get(`jadhr-graph:${g.id}`)));
     const local: Record<string, unknown> = {};
-    for (const k of ["judhur-saved", "judhur-prefs", "judhur-progress", "judhur-panel-layers", "judhur-theme"]) {
+    for (const k of ["jadhr-saved", "jadhr-prefs", "jadhr-progress", "jadhr-panel-layers", "jadhr-theme"]) {
       try {
         local[k] = JSON.parse(localStorage.getItem(k) ?? "null");
       } catch {
@@ -39,19 +39,19 @@ export function SavedView() {
     const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), local, graphs }, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "judhur-my-data.json";
+    a.download = "jadhr-my-data.json";
     a.click();
   }
 
   async function deleteAll() {
     if (!confirm) return setConfirm(true);
     clearAll();
-    for (const k of ["judhur-saved", "judhur-prefs", "judhur-progress", "judhur-panel-layers"]) {
+    for (const k of ["jadhr-saved", "jadhr-prefs", "jadhr-progress", "jadhr-panel-layers"]) {
       try {
         localStorage.removeItem(k);
       } catch {}
     }
-    for (const k of await keys()) if (String(k).startsWith("judhur-")) await del(k);
+    for (const k of await keys()) if (String(k).startsWith("jadhr-")) await del(k);
     setConfirm(false);
     setDone(true);
   }

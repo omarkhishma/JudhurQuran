@@ -7,8 +7,8 @@ import hashlib
 import re
 from typing import Any
 
-from judhur_arabic import key as root_key
-from judhur_arabic import root_input_candidates
+from jadhr_arabic import key as root_key
+from jadhr_arabic import root_input_candidates
 from sqlalchemy import Connection
 
 from .db import one, rows, scalar

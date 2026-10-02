@@ -16,11 +16,11 @@ from typing import Any
 
 import pytest
 import yaml
-from judhur_arabic import strip_marks
-from judhur_pipeline.lexica import build_lexica
-from judhur_pipeline.lexica.lane import translit
-from judhur_pipeline.lexica.registry import LexiconRegistryError, load_registry
-from judhur_pipeline.lexica.rootmap import RootMatcher
+from jadhr_arabic import strip_marks
+from jadhr_pipeline.lexica import build_lexica
+from jadhr_pipeline.lexica.lane import translit
+from jadhr_pipeline.lexica.registry import LexiconRegistryError, load_registry
+from jadhr_pipeline.lexica.rootmap import RootMatcher
 
 REPO = Path(__file__).resolve().parents[2]
 RAW = REPO / "data" / "raw"
@@ -300,7 +300,7 @@ def test_registry_refuses_a_file_whose_sha256_differs(tmp_path: Path) -> None:
 
 def test_registry_refuses_a_missing_file(tmp_path: Path) -> None:
     raw = tmp_path / "raw"
-    shutil.copytree(RAW / "lexica" / "perseus-lane-lexicon_xml", raw / "lexica" / "perseus-lane-lexicon_xml")
+    shutil.copytree(RAW / "lexica" / "laneslexicon-lexicon_xml", raw / "lexica" / "laneslexicon-lexicon_xml")
     with pytest.raises(LexiconRegistryError, match="missing raw file"):
         load_registry(raw, REGISTRY)
 

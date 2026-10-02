@@ -1,4 +1,4 @@
-# جُذور (Judhur, working title) — Quran roots platform
+# جذر (Jadhr) — Quran roots platform
 
 Read `docs/PLAN.md` (status) and `docs/DECISIONS.md` (decisions + lessons) before touching code. `docs/DATA-VALIDATION.md` is generated; `docs/DEPLOY.md` is the runbook; `docs/research/` holds the source and licence research.
 
@@ -19,7 +19,7 @@ Read `docs/PLAN.md` (status) and `docs/DECISIONS.md` (decisions + lessons) befor
 ## Layout
 
 - `apps/web` — Next.js 16 (read `apps/web/AGENTS.md`: this Next differs from training data; docs in `node_modules/next/dist/docs/`). Arabic at `/`, English at `/en`.
-- `services/api` — FastAPI + Alembic (hand-written SQL migrations) + `judhur_api.loader`.
+- `services/api` — FastAPI + Alembic (hand-written SQL migrations) + `jadhr_api.loader`.
 - `pipeline` — dataset build from pinned raw sources in `data/raw/` (gitignored, licensed downloads).
 - `packages/arabic-py` — Arabic normalisation, Buckwalter, root input parsing.
 - `infra/` — production compose + Caddyfile.
@@ -29,13 +29,13 @@ Read `docs/PLAN.md` (status) and `docs/DECISIONS.md` (decisions + lessons) befor
 | What | Command |
 |---|---|
 | DB (Postgres 17, port 5442) | `docker compose up -d` |
-| API (port 8000) | `uv run uvicorn judhur_api.main:app --port 8000 --reload --reload-dir services/api/src --reload-dir packages/arabic-py/src` |
+| API (port 8000) | `uv run uvicorn jadhr_api.main:app --port 8000 --reload --reload-dir services/api/src --reload-dir packages/arabic-py/src` |
 | Web (port 3210 — 3000 belongs to another project) | `pnpm dev` |
-| Build dataset (fails on pin drift) | `uv run judhur-pipeline build` |
-| Load it (+ expire web cache) | `uv run python -m judhur_api.loader data/build/2026.10.0 data/sources.yaml` |
-| Expire web cache only (after API changes) | `uv run python -m judhur_api.loader --revalidate` |
-| Validation report / release | `uv run python -m judhur_pipeline.validation` · `uv run python -m judhur_pipeline.release` |
-| Python tests (strict, with data) | `JUDHUR_REQUIRE_DATA=1 uv run pytest packages/arabic-py pipeline services/api -q` |
+| Build dataset (fails on pin drift) | `uv run jadhr-pipeline build` |
+| Load it (+ expire web cache) | `uv run python -m jadhr_api.loader data/build/2026.10.0 data/sources.yaml` |
+| Expire web cache only (after API changes) | `uv run python -m jadhr_api.loader --revalidate` |
+| Validation report / release | `uv run python -m jadhr_pipeline.validation` · `uv run python -m jadhr_pipeline.release` |
+| Python tests (strict, with data) | `JADHR_REQUIRE_DATA=1 uv run pytest packages/arabic-py pipeline services/api -q` |
 | Web checks | `pnpm lint && pnpm typecheck && pnpm build` |
 | E2E + axe (needs the dev stack) | `cd apps/web && pnpm exec playwright test` |
 

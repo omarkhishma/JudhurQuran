@@ -30,8 +30,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from judhur_arabic import key as root_key_of
-from judhur_arabic import strip_marks
+from jadhr_arabic import key as root_key_of
+from jadhr_arabic import strip_marks
 
 _FOLD = str.maketrans(
     {

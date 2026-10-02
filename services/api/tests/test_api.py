@@ -10,7 +10,7 @@ import hashlib
 
 import pytest
 from fastapi.testclient import TestClient
-from judhur_api.main import app
+from jadhr_api.main import app
 
 client = TestClient(app)
 
@@ -203,7 +203,7 @@ def test_etag_round_trip_returns_304() -> None:
 
 
 def test_etag_is_tied_to_the_loaded_release_not_just_the_version() -> None:
-    import judhur_api.main as m
+    import jadhr_api.main as m
 
     meta = get("/api/v1/meta")["dataset"]
     r = client.get("/api/v1/surahs")

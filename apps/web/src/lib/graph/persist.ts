@@ -5,8 +5,8 @@ import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from
 import type { GraphDoc, GraphMeta } from "./types";
 
 /** Local-first storage: graphs live in this browser's IndexedDB until accounts exist. */
-const INDEX = "judhur-graphs-index";
-const KEY = (id: string) => `judhur-graph:${id}`;
+const INDEX = "jadhr-graphs-index";
+const KEY = (id: string) => `jadhr-graph:${id}`;
 
 export async function listGraphs(): Promise<GraphMeta[]> {
   return ((await get<GraphMeta[]>(INDEX)) ?? []).sort((a, b) => b.updatedAt - a.updatedAt);

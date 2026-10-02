@@ -41,7 +41,7 @@ export const useSaved = create<SavedState>()(
         set((s) => ({ history: [{ ...v, at: Date.now() }, ...s.history.filter((x) => x.location !== v.location)].slice(0, 60) })),
       clearAll: () => set({ bookmarks: [], notes: {}, history: [] }),
     }),
-    { name: "judhur-saved", version: 1 },
+    { name: "jadhr-saved", version: 1 },
   ),
 );
 

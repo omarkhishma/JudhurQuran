@@ -48,5 +48,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -f services/api/Dockerfile -t judhur-api:ci .
-      - run: docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SITE_URL=https://example.invalid -t judhur-web:ci .
+      - run: docker build -f services/api/Dockerfile -t jadhr-api:ci .
+      - run: docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SITE_URL=https://example.invalid -t jadhr-web:ci .

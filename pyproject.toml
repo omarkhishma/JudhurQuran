@@ -1,5 +1,5 @@
 [project]
-name = "judhur-quran-workspace"
+name = "jadhr-quran-workspace"
 version = "0.0.0"
 requires-python = ">=3.13,<3.14"
 
@@ -10,9 +10,9 @@ package = false
 members = ["packages/arabic-py", "pipeline", "services/api"]
 
 [tool.uv.sources]
-judhur-arabic = { workspace = true }
-judhur-pipeline = { workspace = true }
-judhur-api = { workspace = true }
+jadhr-arabic = { workspace = true }
+jadhr-pipeline = { workspace = true }
+jadhr-api = { workspace = true }
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]

@@ -2,7 +2,7 @@
 editors silently reorder marks in typed literals."""
 
 import pytest
-from judhur_arabic import (
+from jadhr_arabic import (
     BuckwalterError,
     bw_lemma_to_arabic,
     bw_to_arabic,
@@ -97,7 +97,7 @@ def test_parse_root_input_rejects_non_roots() -> None:
 
 
 def test_ascii_root_input_expands_undotted_letters() -> None:
-    from judhur_arabic import root_input_candidates
+    from jadhr_arabic import root_input_candidates
 
     as_keys = lambda q: ["".join(c) for c in root_input_candidates(q)]  # noqa: E731
     assert "رحم" in as_keys("r-h-m")  # رحم: plain h may be ح

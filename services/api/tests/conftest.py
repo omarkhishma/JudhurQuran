@@ -1,5 +1,5 @@
 """API tests run against a loaded dataset. Without a reachable database (CI) they skip with that reason;
-set JUDHUR_REQUIRE_DATA=1 to make a missing database a failure instead."""
+set JADHR_REQUIRE_DATA=1 to make a missing database a failure instead."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import psycopg
 import pytest
-from judhur_api.settings import get_settings
+from jadhr_api.settings import get_settings
 
 HERE = Path(__file__).resolve().parent
 
@@ -27,8 +27,8 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     items = [i for i in items if Path(str(i.fspath)).resolve().is_relative_to(HERE)]
     if not items or _database_ready():
         return
-    if os.environ.get("JUDHUR_REQUIRE_DATA") == "1":
-        raise pytest.UsageError("JUDHUR_REQUIRE_DATA=1 but no loaded dataset is reachable")
+    if os.environ.get("JADHR_REQUIRE_DATA") == "1":
+        raise pytest.UsageError("JADHR_REQUIRE_DATA=1 but no loaded dataset is reachable")
     skip = pytest.mark.skip(reason="no loaded dataset reachable: unit tests only")
     for item in items:
         item.add_marker(skip)

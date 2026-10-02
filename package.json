@@ -1,5 +1,5 @@
 {
-  "name": "judhur-quran",
+  "name": "jadhr-quran",
   "private": true,
   "packageManager": "pnpm@10.34.3",
   "engines": { "node": ">=24" },

@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { setLocalStorage, useLocalStorage } from "@/lib/client";
 
-const KEY = "judhur-panel-layers";
+const KEY = "jadhr-panel-layers";
 
 function readLayers(): Record<string, boolean> {
   try {

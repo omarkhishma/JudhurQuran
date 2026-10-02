@@ -113,6 +113,6 @@ export const useAudio = create<AudioState>()(
       stop: () => set({ playing: false, queue: [], index: 0, token: null, slice: null, surah: null }),
       set: (p) => set(p),
     }),
-    { name: "judhur-audio", partialize: (s) => ({ reciter: s.reciter, follow: s.follow }) },
+    { name: "jadhr-audio", partialize: (s) => ({ reciter: s.reciter, follow: s.follow }) },
   ),
 );

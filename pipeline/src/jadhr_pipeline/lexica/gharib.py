@@ -16,7 +16,7 @@ alignment. An item that names several ayahs gives one gloss row for every listed
 the phrase occurs (the same text). Continuation lines (verse, further explanation) belong to
 the open item; "* * *" lines are decorative separators (rule ``separator-lines-dropped``).
 
-Alignment: the phrase is normalised (judhur_arabic.normalize) and matched as a contiguous run
+Alignment: the phrase is normalised (jadhr_arabic.normalize) and matched as a contiguous run
 of words of the verse, comparing match keys, then the consonant skeleton, then allowing a
 leading clitic on the Quran word. When the printed ayah has no match, ayahs ±1…±3 of the same
 surah are tried; a hit there re-keys the gloss to that ayah and is listed in the report.
@@ -28,7 +28,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from judhur_arabic import normalize, skeleton
+from jadhr_arabic import normalize, skeleton
 
 from .registry import WorkSpec
 from .shamela import ARABIC_DIGITS, Counters, Line, TocEntry, assemble

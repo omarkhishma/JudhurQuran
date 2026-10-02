@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
-from judhur_pipeline.pins import sha256_file, verify_source_pins
+from jadhr_pipeline.pins import sha256_file, verify_source_pins
 
 REPO = Path(__file__).resolve().parents[2]
 

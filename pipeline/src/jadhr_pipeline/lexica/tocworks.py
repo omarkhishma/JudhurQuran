@@ -21,7 +21,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from judhur_arabic import strip_marks
+from jadhr_arabic import strip_marks
 
 from .registry import WorkSpec
 from .shamela import Counters, Line, TocEntry, assemble, match_key, root_like_title

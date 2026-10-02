@@ -21,7 +21,7 @@ test("a dotted term opens a plain-language card; Esc closes it and returns focus
 
 test("explain-terms off shows plain labels", async ({ page }) => {
   await page.addInitScript(() =>
-    localStorage.setItem("judhur-prefs", JSON.stringify({ state: { explainTerms: false }, version: 1 })),
+    localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { explainTerms: false }, version: 1 })),
   );
   await page.goto("/word/2:255:23");
   await expect(page.getByText("الصيغة المعجمية").first()).toBeVisible();

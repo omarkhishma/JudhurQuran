@@ -1,4 +1,4 @@
-# DEPLOY — running جُذور in production
+# DEPLOY — running Jadhr (جذر) in production
 
 > Nothing here is run against production without the owner's explicit go. Every command below was run end to end on a local Docker host (2026-10-02): stack up, dataset loaded, every page 200 through Caddy.
 
@@ -34,9 +34,9 @@ DATASET_VERSION=2026.10.0
 The raw sources are licensed downloads kept out of git (`data/raw/`, every file sha256-pinned in `data/sources.yaml`, `data/lexica.yaml`, `data/recitations.yaml`).
 
 ```
-uv run judhur-pipeline build                   # fails on any pin drift
-uv run python -m judhur_pipeline.validation    # regenerates docs/DATA-VALIDATION.md
-JUDHUR_REQUIRE_DATA=1 uv run pytest packages/arabic-py pipeline services/api -q
+uv run jadhr-pipeline build                   # fails on any pin drift
+uv run python -m jadhr_pipeline.validation    # regenerates docs/DATA-VALIDATION.md
+JADHR_REQUIRE_DATA=1 uv run pytest packages/arabic-py pipeline services/api -q
 ```
 
 Copy `data/build/<version>/` and `data/sources.yaml` to the same paths in the server's checkout.
@@ -75,13 +75,13 @@ Rollback = run the loader with the previous version directory.
 When the API changed (search behaviour, payload fields), expire the pages and responses the web app cached from the old API:
 
 ```
-docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader python -m judhur_api.loader --revalidate
+docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader python -m jadhr_api.loader --revalidate
 ```
 
 ## Things that bite
 
 - **`HOSTNAME=0.0.0.0`** must stay in the web image. Docker sets `HOSTNAME` to the container id; with that, the locale proxy's internal rewrite is treated as an external host and every Arabic page redirect-loops.
-- **`JUDHUR_API_ORIGIN` is baked into the web build** (the `/api/v1` rewrite). Behind Caddy the rewrite is never used, but a deploy without Caddy must build with the right origin.
+- **`JADHR_API_ORIGIN` is baked into the web build** (the `/api/v1` rewrite). Behind Caddy the rewrite is never used, but a deploy without Caddy must build with the right origin.
 - **The revalidation secret** must be identical on `web` and `loader`; without it the loader reports `failed` and pages keep the old release for up to a day.
 - **Backups**: the `content` schema is fully reproducible from `data/build/<version>`; keep those directories. There is no user data on the server (everything personal stays in the reader's browser).
 

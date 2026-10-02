@@ -1,6 +1,6 @@
-"""Judhur public API — Quran text, morphology, roots and search, read-only and cited.
+"""Jadhr public API — Quran text, morphology, roots and search, read-only and cited.
 
-Run: ``uv run uvicorn judhur_api.main:app --port 8000``  ·  Docs: ``/api/v1/docs``
+Run: ``uv run uvicorn jadhr_api.main:app --port 8000``  ·  Docs: ``/api/v1/docs``
 """
 
 from __future__ import annotations
@@ -327,7 +327,7 @@ _hits: dict[str, deque[float]] = defaultdict(deque)
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="Judhur API",
+        title="Jadhr API",
         version="1.0.0",
         description=(
             "Read-only API over the Quran text (KFGQPC Hafs), its word-by-word morphology (Quranic Arabic Corpus) "

@@ -1,6 +1,6 @@
 """Release artefacts: the redistributable part of a built dataset, as JSON Lines + CSV with a manifest.
 
-    uv run python -m judhur_pipeline.release            # data/build/<version> → data/release/<version>
+    uv run python -m jadhr_pipeline.release            # data/build/<version> → data/release/<version>
 
 Only data whose licence allows redistribution goes in; everything left out is listed in MANIFEST.json
 with the reason. Every file carries its sha256 and row count. Publishing the release is the owner's call.
@@ -168,7 +168,7 @@ def build_release(version: str) -> dict[str, Any]:
                 }
             )
     manifest = {
-        "dataset": "judhur-quran",
+        "dataset": "jadhr-quran",
         "version": version,
         "created": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "text_sha256": report["text_sha256"],

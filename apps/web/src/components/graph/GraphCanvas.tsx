@@ -67,7 +67,7 @@ function CanvasInner({
   onChange,
   toolbarExtra,
   status,
-  fileName = "judhur-map",
+  fileName = "jadhr-map",
   registerAdd,
 }: GraphCanvasProps) {
   const t = useTranslations("graph");

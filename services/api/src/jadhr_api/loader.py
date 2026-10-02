@@ -1,7 +1,7 @@
 """Load a built dataset release into the `content` schema — atomically.
 
-    uv run python -m judhur_api.loader data/build/2026.10.0 data/sources.yaml
-    uv run python -m judhur_api.loader --revalidate     # only expire the web cache (after an API deploy)
+    uv run python -m jadhr_api.loader data/build/2026.10.0 data/sources.yaml
+    uv run python -m jadhr_api.loader --revalidate     # only expire the web cache (after an API deploy)
 
 Everything happens in one transaction: truncate content tables, COPY every
 JSONL file, record the dataset row. A failure leaves the previous release in
@@ -158,7 +158,7 @@ def revalidate_web() -> str:
     """Expire the web app's cached pages so the new release is served at once (not after a day)."""
     s = get_settings()
     if not s.web_revalidate_url:
-        return "skipped: JUDHUR_WEB_REVALIDATE_URL is not set — cached pages keep the previous release until they expire"
+        return "skipped: JADHR_WEB_REVALIDATE_URL is not set — cached pages keep the previous release until they expire"
     req = urllib.request.Request(s.web_revalidate_url, method="POST", data=b"")
     if s.revalidate_secret:
         req.add_header("Authorization", f"Bearer {s.revalidate_secret}")
@@ -176,7 +176,7 @@ def main() -> int:
         print(json.dumps({"web_revalidate": web}, ensure_ascii=False))
         return 0 if web.startswith("ok") else 3
     if len(sys.argv) != 3:
-        print("usage: python -m judhur_api.loader <build_dir> <sources.yaml> | --revalidate", file=sys.stderr)
+        print("usage: python -m jadhr_api.loader <build_dir> <sources.yaml> | --revalidate", file=sys.stderr)
         return 2
     t = time.time()
     counts = load(Path(sys.argv[1]), Path(sys.argv[2]))

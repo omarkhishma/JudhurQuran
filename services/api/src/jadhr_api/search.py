@@ -3,7 +3,7 @@
 The query is classified first (verse reference, surah name, root letters, Arabic
 word/phrase, Latin) and the classification is returned to the client so the UI
 can say honestly what it understood. All Arabic matching is diacritic- and
-orthography-insensitive on both sides (``judhur_arabic.normalize``); display
+orthography-insensitive on both sides (``jadhr_arabic.normalize``); display
 always uses the stored, verified forms.
 """
 
@@ -12,8 +12,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from judhur_arabic import has_arabic, is_uthmani, normalize, parse_root_input, root_input_candidates
-from judhur_arabic import key as root_key
+from jadhr_arabic import has_arabic, is_uthmani, normalize, parse_root_input, root_input_candidates
+from jadhr_arabic import key as root_key
 from sqlalchemy import Connection
 
 from .content import lemma_display

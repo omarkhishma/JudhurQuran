@@ -1,7 +1,7 @@
 import "server-only";
 import { notFound } from "next/navigation";
 
-const API_ORIGIN = process.env.JUDHUR_API_ORIGIN ?? "http://127.0.0.1:8000";
+const API_ORIGIN = process.env.JADHR_API_ORIGIN ?? "http://127.0.0.1:8000";
 
 /**
  * Server-side fetch from our API. Content is immutable within a dataset release, so pages

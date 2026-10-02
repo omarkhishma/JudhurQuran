@@ -1,7 +1,7 @@
 /** Local-first personal state (device only, never sent anywhere). */
 export type Progress = { surah: number; ayah: number; at: number };
 
-export const PROGRESS_KEY = "judhur-progress";
+export const PROGRESS_KEY = "jadhr-progress";
 
 export function readProgress(): Progress | null {
   try {

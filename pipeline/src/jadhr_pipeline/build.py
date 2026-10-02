@@ -20,8 +20,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from judhur_arabic import key as root_key
-from judhur_arabic import normalize, plain_spelling, skeleton, spaced, strip_marks, translit
+from jadhr_arabic import key as root_key
+from jadhr_arabic import normalize, plain_spelling, skeleton, spaced, strip_marks, translit
 
 from . import labels
 from .align import AlignmentError, align, align_fuzzy

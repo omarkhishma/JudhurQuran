@@ -5,7 +5,7 @@ pages (https://corpus.quran.com/wordbyword.jsp). Terms: use is allowed "provided
 Arabic Corpus) is clearly indicated, and a link is made to http://corpus.quran.com"; changing it is not
 allowed. So the text is stored and shown verbatim, punctuation included (research 03 §6.2).
 
-    uv run python -m judhur_pipeline.corpus_wbw data/raw/qac-wbw      # fetch (resumable, polite)
+    uv run python -m jadhr_pipeline.corpus_wbw data/raw/qac-wbw      # fetch (resumable, polite)
 
 Fetching keeps every page as served (``pages/CCC-VVV.html``, named by the first verse on the page), then
 writes ``wbw.jsonl`` ({location, translit, gloss}) and ``SHA256SUMS.txt``. Parsing is strict: every page
@@ -27,7 +27,7 @@ import httpx
 from .fetch_tafsir import AYAH_COUNTS
 
 BASE = "https://corpus.quran.com/wordbyword.jsp"
-USER_AGENT = "judhur-dataset-build/1.0 (non-commercial Quran study site; polite fetch, 1 request per second)"
+USER_AGENT = "jadhr-dataset-build/1.0 (non-commercial Quran study site; polite fetch, 1 request per second)"
 DELAY_SECONDS = 1.0
 
 _ROW = re.compile(

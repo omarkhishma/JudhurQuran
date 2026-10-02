@@ -19,7 +19,7 @@ for (const path of PAGES) {
 // Dark theme: its own tokens, checked on the pages that use the most colours.
 for (const path of ["/quran/2/255", "/word/2:255:23", `/roots/${encodeURIComponent("علم")}`, "/search?q=%D8%B5%D8%A8%D8%B1", "/en"]) {
   test(`axe dark: ${decodeURIComponent(path)}`, async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem("judhur-theme", "dark"));
+    await page.addInitScript(() => localStorage.setItem("jadhr-theme", "dark"));
     await page.goto(path);
     await page.waitForLoadState("networkidle");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");

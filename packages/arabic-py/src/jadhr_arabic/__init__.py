@@ -1,4 +1,4 @@
-"""Arabic text utilities shared by the Judhur pipeline and API."""
+"""Arabic text utilities shared by the Jadhr pipeline and API."""
 
 from .buckwalter import BuckwalterError, bw_lemma_to_arabic, bw_to_arabic, split_lemma_key
 from .normalize import (

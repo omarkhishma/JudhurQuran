@@ -12,10 +12,10 @@ export function useIsClient(): boolean {
 function subscribeStorage(cb: () => void): () => void {
   const onStorage = () => cb();
   window.addEventListener("storage", onStorage);
-  window.addEventListener("judhur:storage", onStorage);
+  window.addEventListener("jadhr:storage", onStorage);
   return () => {
     window.removeEventListener("storage", onStorage);
-    window.removeEventListener("judhur:storage", onStorage);
+    window.removeEventListener("jadhr:storage", onStorage);
   };
 }
 
@@ -38,7 +38,7 @@ export function setLocalStorage(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
   } catch {}
-  window.dispatchEvent(new Event("judhur:storage"));
+  window.dispatchEvent(new Event("jadhr:storage"));
 }
 
 function subscribeTheme(cb: () => void): () => void {

@@ -1,6 +1,6 @@
 """Content core: dataset, sources, surahs, verses, tokens, roots, lemmas, words, root variants.
 
-The `content` schema is loaded wholesale per dataset release (see judhur_api.loader) and is
+The `content` schema is loaded wholesale per dataset release (see jadhr_api.loader) and is
 read-only for the application role. Search shadow columns are derived; the displayed Quran
 text (`verses.text_qpc`, `tokens.text`) is byte-identical to the verified source.
 

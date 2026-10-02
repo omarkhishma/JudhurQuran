@@ -19,7 +19,7 @@ function AboutAr() {
   return (
     <Prose>
       <h1>عن المشروع ومنهجه</h1>
-      <p className="lead">جُذور موقع لقراءة القرآن الكريم وتدبّر كلماته من جذورها: كل كلمة في المصحف نصٌّ حقيقي تنقره فترى معناها وجذرها، وكم مرة ورد الجذر في القرآن، وكل الكلمات التي تفرّعت منه، ثم تتبّعها في آياتها أو على خريطة.</p>
+      <p className="lead">جذر موقع لقراءة القرآن الكريم وتدبّر كلماته من جذورها: كل كلمة في المصحف نصٌّ حقيقي تنقره فترى معناها وجذرها، وكم مرة ورد الجذر في القرآن، وكل الكلمات التي تفرّعت منه، ثم تتبّعها في آياتها أو على خريطة.</p>
 
       <h2 id="principles">مبادئنا</h2>
       <ul>
@@ -68,7 +68,7 @@ function AboutEn() {
   return (
     <Prose>
       <h1>About and method</h1>
-      <p className="lead">Judhur is a site for reading the Quran and reflecting on its words through their roots: every word of the mushaf is real text you can tap to see its meaning and root, how often that root occurs in the Quran, and every word that branches from it — then follow it through its verses or on a map.</p>
+      <p className="lead">Jadhr is a site for reading the Quran and reflecting on its words through their roots: every word of the mushaf is real text you can tap to see its meaning and root, how often that root occurs in the Quran, and every word that branches from it — then follow it through its verses or on a map.</p>
       <h2 id="principles">Our principles</h2>
       <ul>
         <li><strong>The Quranic text is a trust.</strong> We show the Madinah mushaf (Hafs ʿan ʿĀṣim) exactly as published by the King Fahd Glorious Quran Printing Complex, in its official script, unaltered, and verify it automatically with a digital fingerprint on every data update.</li>

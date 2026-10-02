@@ -1,5 +1,5 @@
 # Web app image (Next.js standalone). Build context: repository root.
-#   docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SITE_URL=https://example.org -t judhur-web .
+#   docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SITE_URL=https://example.org -t jadhr-web .
 # The build needs no API or data: every page renders on first request and is cached (ISR).
 
 FROM node:24-alpine AS deps
@@ -18,8 +18,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web ./apps/web
 # Inlined into the client bundle and the /api/v1 rewrite at build time.
 ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
-ARG JUDHUR_API_ORIGIN=http://api:8000
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL JUDHUR_API_ORIGIN=$JUDHUR_API_ORIGIN NEXT_TELEMETRY_DISABLED=1
+ARG JADHR_API_ORIGIN=http://api:8000
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL JADHR_API_ORIGIN=$JADHR_API_ORIGIN NEXT_TELEMETRY_DISABLED=1
 RUN pnpm --filter web build
 
 FROM node:24-alpine AS run

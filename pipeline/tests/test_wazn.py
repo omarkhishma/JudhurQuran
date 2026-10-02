@@ -11,7 +11,7 @@ from __future__ import annotations
 import unicodedata
 
 import pytest
-from judhur_pipeline.wazn import lemma_pattern
+from jadhr_pipeline.wazn import lemma_pattern
 
 
 def nfc(s: str) -> str:

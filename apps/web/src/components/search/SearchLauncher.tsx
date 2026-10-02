@@ -26,10 +26,10 @@ export function SearchLauncher() {
       setOpen(true);
     }
     window.addEventListener("keydown", onKey);
-    window.addEventListener("judhur:open-search", onOpen);
+    window.addEventListener("jadhr:open-search", onOpen);
     return () => {
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("judhur:open-search", onOpen);
+      window.removeEventListener("jadhr:open-search", onOpen);
     };
   }, [open]);
 

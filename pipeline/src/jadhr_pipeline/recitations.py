@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from judhur_arabic import normalize
+from jadhr_arabic import normalize
 
 from .align import align
 

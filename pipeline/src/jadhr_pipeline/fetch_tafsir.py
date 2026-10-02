@@ -40,7 +40,7 @@ def fetch(slug: str, out_dir: Path) -> Path:
     ayahs: list[dict] = []
     empty: list[dict] = []
     with httpx.Client(
-        timeout=60, headers={"User-Agent": "judhur-pipeline (research; contact via repo)"}
+        timeout=60, headers={"User-Agent": "jadhr-pipeline (research; contact via repo)"}
     ) as client:
         for s in range(1, 115):
             r = _get(client, f"{BASE}/{slug}/{s}.json")

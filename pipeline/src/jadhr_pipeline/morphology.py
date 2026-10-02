@@ -22,7 +22,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from judhur_arabic import bw_lemma_to_arabic, bw_to_arabic, from_qac, split_lemma_key
+from jadhr_arabic import bw_lemma_to_arabic, bw_to_arabic, from_qac, split_lemma_key
 
 ROMAN = {
     "I": 1,

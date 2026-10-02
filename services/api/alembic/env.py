@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from alembic import context
-from judhur_api.settings import get_settings
+from jadhr_api.settings import get_settings
 from sqlalchemy import create_engine
 
 

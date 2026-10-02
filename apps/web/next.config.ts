@@ -2,7 +2,7 @@ import path from "node:path";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
-const API_ORIGIN = process.env.JUDHUR_API_ORIGIN ?? "http://127.0.0.1:8000";
+const API_ORIGIN = process.env.JADHR_API_ORIGIN ?? "http://127.0.0.1:8000";
 const isProd = process.env.NODE_ENV === "production";
 
 /**

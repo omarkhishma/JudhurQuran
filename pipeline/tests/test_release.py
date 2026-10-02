@@ -6,7 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from judhur_pipeline.release import REPO, build_release
+from jadhr_pipeline.release import REPO, build_release
 
 
 def test_release_matches_its_manifest_and_the_build() -> None:

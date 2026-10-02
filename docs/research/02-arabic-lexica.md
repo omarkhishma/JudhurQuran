@@ -377,12 +377,12 @@ def candidates(root, loose=False):
 
 ## 10. Implementation (pipeline, 2026-10-02)
 
-The launch set from §7.1 is now imported by production code in `pipeline/src/judhur_pipeline/lexica/`, driven by the registry `data/lexica.yaml`, tested by `pipeline/tests/test_lexica.py`.
+The launch set from §7.1 is now imported by production code in `pipeline/src/jadhr_pipeline/lexica/`, driven by the registry `data/lexica.yaml`, tested by `pipeline/tests/test_lexica.py`.
 
 ### 10.1 API
 
 ```python
-from judhur_pipeline.lexica import build_lexica
+from jadhr_pipeline.lexica import build_lexica
 
 works, entries, glosses, report = build_lexica(
     raw=Path("data/raw"),                 # registry paths are relative to this
@@ -444,5 +444,5 @@ works, entries, glosses, report = build_lexica(
 
 ### 10.6 Verification
 
-Command (repo root): `uv run pytest pipeline/tests/test_lexica.py -q` → `24 passed in 7.69s`; with the Arabic helper tests `uv run pytest pipeline/tests packages/arabic-py/tests -q` → `41 passed in 7.73s`. `uv run ruff check` / `ruff format --check` → "All checks passed!" / "9 files already formatted"; `uv run mypy pipeline/src/judhur_pipeline/lexica --ignore-missing-imports` → "Success: no issues found in 8 source files". The tests load the real pinned files and assert the counts above, the Maqayis core meanings of علم, كتب, رحم (verbatim prefix of the body), the al-Mufradat رحم article as printed (p. 347–348), the Lisan splits (عين not inside عون; ولي, دين, حفظ likewise), Lane كتب (Arabic script, no Buckwalter left), al-Sihah [رحم] at 5/1929, the 9:41 gloss aligned to 9:41:1–3, no gloss containing a later numbered item (the coordinator's detector, checked first on a merged sample), separate glosses for 1:2 (العالمون), 1:4 (يوم الدين) and 1:6 (الصراط) aligned inside their own ayahs and absent from 1:1, al-Qamar's refrain item giving rows for 54:16, 18, 21 and 30, that no body contains a stripped marker pattern, span markup or a carriage return, that every root_key is one of the 1,642, that every loose/manual mapping is on the review list, and that the registry refuses a file whose sha256 differs or is missing. The marker and merge checks were run against known positives first (a marked string; the old merged عون record) and do fail on them.
+Command (repo root): `uv run pytest pipeline/tests/test_lexica.py -q` → `24 passed in 7.69s`; with the Arabic helper tests `uv run pytest pipeline/tests packages/arabic-py/tests -q` → `41 passed in 7.73s`. `uv run ruff check` / `ruff format --check` → "All checks passed!" / "9 files already formatted"; `uv run mypy pipeline/src/jadhr_pipeline/lexica --ignore-missing-imports` → "Success: no issues found in 8 source files". The tests load the real pinned files and assert the counts above, the Maqayis core meanings of علم, كتب, رحم (verbatim prefix of the body), the al-Mufradat رحم article as printed (p. 347–348), the Lisan splits (عين not inside عون; ولي, دين, حفظ likewise), Lane كتب (Arabic script, no Buckwalter left), al-Sihah [رحم] at 5/1929, the 9:41 gloss aligned to 9:41:1–3, no gloss containing a later numbered item (the coordinator's detector, checked first on a merged sample), separate glosses for 1:2 (العالمون), 1:4 (يوم الدين) and 1:6 (الصراط) aligned inside their own ayahs and absent from 1:1, al-Qamar's refrain item giving rows for 54:16, 18, 21 and 30, that no body contains a stripped marker pattern, span markup or a carriage return, that every root_key is one of the 1,642, that every loose/manual mapping is on the review list, and that the registry refuses a file whose sha256 differs or is missing. The marker and merge checks were run against known positives first (a marked string; the old merged عون record) and do fail on them.
 

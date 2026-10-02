@@ -1,4 +1,4 @@
-"""Pipeline command line: ``uv run judhur-pipeline build``."""
+"""Pipeline command line: ``uv run jadhr-pipeline build``."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ DATASET_VERSION = "2026.10.0"
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="judhur-pipeline")
+    parser = argparse.ArgumentParser(prog="jadhr-pipeline")
     sub = parser.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build", help="build the canonical dataset into data/build/<version>")
     b.add_argument("--raw", type=Path, default=REPO / "data/raw")

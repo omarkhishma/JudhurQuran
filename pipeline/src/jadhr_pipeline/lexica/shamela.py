@@ -22,7 +22,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from judhur_arabic import strip_marks
+from jadhr_arabic import strip_marks
 
 ARABIC_DIGITS = str.maketrans("\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669", "0123456789")
 
