@@ -193,9 +193,11 @@ def word(conn: Connection, location: str) -> dict[str, Any] | None:
         "select position, text, word_from, word_to from content.tokens where verse_id = :id order by position",
         {"id": w["verse_id"]},
     )
-    v["surah_name_ar"] = scalar(
-        conn, "select name_ar from content.surahs where number = :n", {"n": v["surah"]}
+    names = one(
+        conn, "select name_ar, name_translit from content.surahs where number = :n", {"n": v["surah"]}
     )
+    assert names is not None
+    v["surah_name_ar"], v["surah_name_translit"] = names["name_ar"], names["name_translit"]
     w["verse"] = v
 
     w["lemma"] = None

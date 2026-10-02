@@ -58,7 +58,10 @@ export function WordPanel({
       <header className={(page ? "" : "sticky top-0 z-10 ") + "border-b border-line bg-card px-5 pt-4 pb-3"}>
         <div className="mb-1 flex items-center justify-between gap-2">
           <p className="text-[12px] text-t3">
-            {t("wordOf", { n: formatNumber(w.position, locale), ref: citeVerse(w.verse.surah_name_ar, w.verse.surah, w.verse.ayah, locale) })}
+            {t("wordOf", {
+              n: formatNumber(w.position, locale),
+              ref: citeVerse(w.verse.surah_name_ar, w.verse.surah, w.verse.ayah, locale, w.verse.surah_name_translit),
+            })}
           </p>
           <div className="flex gap-1">
             <BookmarkButton kind="word" keyId={w.location} label={`${w.text_imlaei} — ${w.verse.surah_name_ar}: ${w.ayah}`} />

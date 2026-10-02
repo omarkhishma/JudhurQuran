@@ -62,15 +62,19 @@ export default async function WordPage({ params }: PageProps<"/[locale]/word/[lo
         data={breadcrumbs(locale, [
           [(locale === "ar" ? "الرئيسية" : "Home"), "/"],
           [(locale === "ar" ? "القرآن الكريم" : "The Quran"), "/quran"],
-          [locale === "ar" ? `سورة ${w.verse.surah_name_ar}` : `Surah ${w.verse.surah}`, `/quran/${w.surah}`],
+          [locale === "ar" ? `سورة ${w.verse.surah_name_ar}` : `Surah ${w.verse.surah_name_translit}`, `/quran/${w.surah}`],
           [locale === "ar" ? `الآية ${w.ayah}` : `Verse ${w.verse.key}`, `/quran/${w.surah}/${w.ayah}`],
           [w.text_imlaei, `/word/${w.location}`],
         ])}
       />
       <nav className="mb-4 flex flex-wrap items-center gap-2 text-[13px] text-t3" aria-label="breadcrumb">
-        <Link href={`/quran/${w.surah}`} className="hover:text-t1">{`سورة ${w.verse.surah_name_ar}`}</Link>
+        <Link href={`/quran/${w.surah}`} className="hover:text-t1">
+          {locale === "ar" ? `سورة ${w.verse.surah_name_ar}` : `Surah ${w.verse.surah_name_translit}`}
+        </Link>
         <span aria-hidden="true">/</span>
-        <Link href={`/quran/${w.surah}/${w.ayah}`} className="hover:text-t1">{citeVerse(w.verse.surah_name_ar, w.surah, w.ayah, locale)}</Link>
+        <Link href={`/quran/${w.surah}/${w.ayah}`} className="hover:text-t1">
+          {citeVerse(w.verse.surah_name_ar, w.surah, w.ayah, locale, w.verse.surah_name_translit)}
+        </Link>
       </nav>
       <figure className="card mb-6 p-5">
         <blockquote className="quran text-[26px] leading-[2.2]" dir="rtl" lang="ar">

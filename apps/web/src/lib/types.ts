@@ -168,6 +168,7 @@ export type WordDetail = {
     page: number;
     juz: number;
     surah_name_ar: string;
+    surah_name_translit: string;
     tokens: Token[];
   };
   lemma: LemmaSummary | null;
