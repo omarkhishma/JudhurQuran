@@ -31,8 +31,9 @@ cleaning_rules:
 
 works:
   - id: mufradat
-    sort_order: 1
-    kind: lexicon
+    sort_order: 6        # display order = author's death date
+    id_block: 1           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: interpretive
     lang: ar
     title_ar: المفردات في غريب القرآن
     title_en: al-Mufradat fi Gharib al-Qur'an
@@ -65,8 +66,9 @@ works:
       خنزير: {root: خنزر, note: "article الخنزير; QAC root ḫ-n-z-r"}
 
   - id: maqayis
-    sort_order: 2
-    kind: lexicon
+    sort_order: 5        # display order = author's death date
+    id_block: 2           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: root
     lang: ar
     title_ar: معجم مقاييس اللغة
     title_en: Maqayis al-Lugha
@@ -97,8 +99,9 @@ works:
     manual_roots: {}
 
   - id: lisan
-    sort_order: 3
-    kind: lexicon
+    sort_order: 7        # display order = author's death date
+    id_block: 3           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: general
     lang: ar
     title_ar: لسان العرب
     title_en: Lisan al-ʿArab
@@ -126,8 +129,9 @@ works:
     manual_roots: {}
 
   - id: sihah
-    sort_order: 4
-    kind: lexicon
+    sort_order: 4        # display order = author's death date
+    id_block: 4           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: general
     lang: ar
     title_ar: الصحاح تاج اللغة وصحاح العربية
     title_en: al-Sihah
@@ -156,8 +160,9 @@ works:
     manual_roots: {}
 
   - id: lane
-    sort_order: 5
-    kind: lexicon
+    sort_order: 10        # display order = author's death date
+    id_block: 5           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: english
     lang: en
     title_ar: معجم لين العربي الإنجليزي
     title_en: An Arabic-English Lexicon
@@ -179,7 +184,8 @@ works:
     manual_roots: {}
 
   - id: ibn-qutaybah-gharib
-    sort_order: 6
+    sort_order: 2        # display order = author's death date
+    id_block: 6           # entry ids = id_block × 1,000,000 + position (stable)
     kind: gharib
     lang: ar
     title_ar: غريب القرآن

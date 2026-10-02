@@ -30,7 +30,7 @@ from .tocworks import RawArticle, segment_toc_work
 
 __all__ = ["build_lexica", "load_registry"]
 
-ID_STRIDE = 1_000_000  # entry id = sort_order * ID_STRIDE + position in the work (deterministic)
+ID_STRIDE = 1_000_000  # entry id = id_block * ID_STRIDE + position in the work (deterministic, stable)
 
 
 def _latest_build(raw: Path) -> Path:
@@ -129,7 +129,7 @@ def build_lexica(
     for spec in reg.works:
         counters = Counters()
         works_out.append(spec.work_row())
-        base = int(spec.cfg["sort_order"]) * ID_STRIDE
+        base = spec.id_block * ID_STRIDE
         wrep: dict[str, Any] = {"format": spec.format}
 
         if spec.format == "shamela-gharib":
@@ -223,6 +223,11 @@ def build_lexica(
                 "roots_any": len(any_roots),
                 "coverage_strict_pct": round(100 * len(strict_roots) / len(roots), 2),
                 "coverage_any_pct": round(100 * len(any_roots) / len(roots), 2),
+                "coverage_strict_occurrence_pct": round(
+                    100 * sum(occ[k] for k in strict_roots) / occ_total, 2
+                )
+                if occ_total
+                else None,
                 "coverage_any_occurrence_pct": round(100 * sum(occ[k] for k in any_roots) / occ_total, 2)
                 if occ_total
                 else None,
