@@ -13,7 +13,7 @@ import pytest
 
 HERE = Path(__file__).resolve().parent
 RAW = Path(os.environ.get("JUDHUR_RAW_DIR", Path(__file__).resolve().parents[2] / "data" / "raw"))
-NEEDS_DATA = {"test_lexica.py", "test_every_pinned_source_file_matches"}
+NEEDS_DATA = {"test_lexica.py", "test_release.py", "test_every_pinned_source_file_matches"}
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
