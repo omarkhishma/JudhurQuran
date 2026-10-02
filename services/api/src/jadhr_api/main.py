@@ -108,7 +108,9 @@ def surahs(request: Request) -> Response:
         return cached(request, {"data": content.surahs(conn)})
 
 
-@router.get("/surahs/lemma-sets", summary="The distinct words (lemma slugs) of every sūra, for vocabulary coverage")
+@router.get(
+    "/surahs/lemma-sets", summary="The distinct words (lemma slugs) of every sūra, for vocabulary coverage"
+)
 def surah_lemma_sets(request: Request) -> Response:
     with connect() as conn:
         return cached(request, {"data": content.surah_lemma_sets(conn)})

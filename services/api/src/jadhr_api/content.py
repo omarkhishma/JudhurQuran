@@ -882,4 +882,3 @@ def surah_lemma_sets(conn: Connection) -> dict[str, list[str]]:
     ):
         out[str(r["surah"])] = r["slugs"]
     return out
-
