@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    html,body{margin:0;padding:0;background:#fffffe}
+    *{box-sizing:border-box}
+    a{color:#2f6ae0;text-decoration:none}
+    a:hover{color:#16161a;text-decoration:underline}
+    input,button{font-family:inherit}
+    button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}
+    @keyframes dcRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+
+  <div style="height:56px;flex:none;display:flex;align-items:center;gap:14px;padding:0 clamp(16px,3vw,28px);border-bottom:1px solid #e5e5ea;background:#f8f8fa;position:sticky;top:0;z-index:20">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;text-decoration:none"><div style="width:20px;height:20px;border-radius:6px;background:#a8682c"></div><span style="font-size:15px;font-weight:600;letter-spacing:-.01em">Jadhr</span><span dir="rtl" style="font-family:Amiri,serif;font-size:17px;color:#71717c">جَذْر</span></a>
+    <div style="display:flex;gap:1px;padding:2px;background:#ecedf1;border-radius:9px;font-size:12.5px">
+      <sc-for list="{{ modes }}" as="m" hint-placeholder-count="4">
+        <a href="{{ m.href }}" title="{{ m.hint }}" style="{{ m.style }}">{{ m.label }}</a>
+      </sc-for>
+    </div>
+    <div style="flex:1"></div>
+    <form onSubmit="{{ onSearch }}" style="display:flex;align-items:center;gap:8px;width:min(260px,30vw);height:30px;border:1px solid #e5e5ea;border-radius:8px;background:#fff;padding:0 10px;color:#71717c;font-size:12.5px">
+      <span>⌕</span>
+      <input value="{{ q }}" onChange="{{ onQ }}" placeholder="Search" aria-label="Search the lexicon" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:13px;color:#16161a" />
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;border:1px solid #e5e5ea;border-radius:4px;padding:0 5px">⌘K</span>
+    </form>
+    <sc-if value="{{ signedIn }}" hint-placeholder-val="{{ false }}">
+      <a href="Profile.dc.html" title="{{ accountName }}" style="width:28px;height:28px;border-radius:99px;background:#a8682c;display:block"></a>
+    </sc-if>
+    <sc-if value="{{ signedOut }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ openSignIn }}" style="background:#fff;border:1px solid #e5e5ea;border-radius:8px;color:#16161a;font-size:12.5px;padding:6px 12px;cursor:pointer" style-hover="border-color:#2f6ae0">Sign in</button>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ hasContext }}" hint-placeholder-val="{{ false }}">
+    <div style="height:40px;flex:none;display:flex;align-items:center;gap:10px;padding:0 clamp(16px,3vw,28px);background:#fff;border-bottom:1px solid #e5e5ea;font-size:12.5px;color:#4f4f5a;overflow-x:auto">
+      <span style="color:#71717c;white-space:nowrap">Where you were</span>
+      <sc-for list="{{ ctxChips }}" as="c" hint-placeholder-count="2">
+        <a href="{{ c.href }}" style="display:flex;align-items:center;gap:6px;padding:3px 10px;border:1px solid #e5e5ea;border-radius:99px;background:#f8f8fa;color:#16161a;white-space:nowrap;text-decoration:none"><span style="{{ c.dot }}"></span><span dir="auto" style="{{ c.arStyle }}">{{ c.label }}</span></a>
+      </sc-for>
+      <div style="flex:1"></div>
+      <button onClick="{{ clearContext }}" style="background:transparent;border:none;color:#71717c;font-size:12px;cursor:pointer">Clear</button>
+    </div>
+  </sc-if>
+
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:clamp(28px,6vw,60px) 20px;text-align:center">
+    <div dir="rtl" style="font-family:Amiri,serif;font-size:36px;color:#a8682c;letter-spacing:.12em;line-height:1">ع ل م</div>
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:640px">
+      <h1 style="font-size:clamp(28px,4vw,36px);font-weight:600;letter-spacing:-.02em;line-height:1.15;margin:0">Read Arabic by its roots.</h1>
+      <p style="font-size:16px;line-height:1.6;color:#4f4f5a;margin:0;text-wrap:pretty">Tap any word in a text and see its root, the whole family built on it, what nine classical lexica say — then map it on a canvas. Free and open, for learners and scholars.</p>
+    </div>
+    <form onSubmit="{{ onSearch }}" style="width:min(560px,100%);display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid #d3d3dc;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(20,20,35,.05),0 10px 24px -12px rgba(20,20,35,.2)">
+      <span style="color:#71717c;font-size:18px">⌕</span>
+      <input value="{{ q }}" onChange="{{ onQ }}" placeholder="Try a word, a root, k-t-b, or 2:255" aria-label="Search" dir="auto" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:Amiri,'IBM Plex Sans',serif;font-size:20px;color:#16161a" />
+      <button type="submit" style="font-size:11.5px;color:#71717c;border:1px solid #e5e5ea;border-radius:4px;padding:1px 6px;font-family:'IBM Plex Mono',monospace;background:#fff;cursor:pointer">↵</button>
+    </form>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;width:min(640px,100%);margin-top:6px">
+      <sc-for list="{{ doors }}" as="d" hint-placeholder-count="3">
+        <a href="{{ d.href }}" style="padding:14px 16px;border:1px solid #e5e5ea;border-radius:12px;background:#f8f8fa;text-align:left;display:flex;flex-direction:column;gap:4px;color:#16161a;text-decoration:none" style-hover="border-color:#2f6ae0;text-decoration:none">
+          <div style="{{ d.dot }}"></div>
+          <div style="font-size:14px;font-weight:600">{{ d.label }}</div>
+          <div style="font-size:12.5px;color:#4f4f5a;line-height:1.5">{{ d.sub }}</div>
+        </a>
+      </sc-for>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;width:min(640px,100%);margin-top:18px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c;text-align:left">Everything on the platform</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px">
+        <sc-for list="{{ all }}" as="p" hint-placeholder-count="12">
+          <a href="{{ p.href }}" title="{{ p.hint }}" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e5ea;border-radius:9px;background:#fff;font-size:12.5px;color:#16161a;text-decoration:none;text-align:left" style-hover="border-color:#2f6ae0;text-decoration:none"><span style="{{ p.dot }}"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.label }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#71717c">{{ p.tag }}</span></a>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:40px;flex:none;display:flex;align-items:center;gap:16px;padding:0 clamp(16px,3vw,28px);border-top:1px solid #e5e5ea;font-size:12px;color:#71717c;flex-wrap:wrap">
+    <span>Grant-funded · CC BY-SA data · MIT code</span><div style="flex:1"></div><span>v2026.09</span><a href="Review%20Queue.dc.html" style="color:#71717c">Contribute</a><a href="Data%20%26%20API.dc.html" style="color:#71717c">API</a><a href="UX%20Audit%20%26%20Roadmap.dc.html" style="color:#71717c">Audit</a><a href="Feature%20Explorations.dc.html" style="color:#71717c">Explorations</a>
+  </div>
+
+  <sc-if value="{{ signIn }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSignIn }}" style="position:fixed;inset:0;z-index:90;background:rgba(10,10,16,.35);display:flex;align-items:flex-end;justify-content:center;padding:28px">
+      <div onClick="{{ stop }}" style="width:min(520px,100%);background:#fff;border:1px solid #d3d3dc;border-radius:14px;box-shadow:0 2px 4px rgba(20,20,35,.06),0 30px 60px -20px rgba(20,20,35,.32);padding:18px 20px;display:flex;flex-direction:column;gap:12px;animation:dcRise .16s ease-out">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+            <div style="font-size:15px;font-weight:600">{{ signInTitle }}</div>
+            <div style="font-size:13px;color:#4f4f5a;line-height:1.5">Your reading, notes and stars live in this browser. Sign in to keep them across devices and to propose edits to the lexicon. Reading, lookups and the graph editor never require an account.</div>
+          </div>
+          <button onClick="{{ closeSignIn }}" aria-label="Close" style="width:24px;height:24px;border:1px solid #e5e5ea;border-radius:6px;background:#fff;font-size:11px;color:#71717c;cursor:pointer">✕</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onClick="{{ doSignIn }}" style="flex:1;background:#fff;border:1px solid #e5e5ea;border-radius:9px;font-size:13px;padding:9px;color:#16161a;cursor:pointer" style-hover="border-color:#2f6ae0">Continue with email</button>
+          <button onClick="{{ doSignIn }}" style="flex:1;background:#fff;border:1px solid #e5e5ea;border-radius:9px;font-size:13px;padding:9px;color:#16161a;cursor:pointer" style-hover="border-color:#2f6ae0">ORCID</button>
+          <button onClick="{{ doSignIn }}" style="flex:1;background:#fff;border:1px solid #e5e5ea;border-radius:9px;font-size:13px;padding:9px;color:#16161a;cursor:pointer" style-hover="border-color:#2f6ae0">Institution</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;font-size:12px;color:#71717c;flex-wrap:wrap"><a href="Profile.dc.html">Export my data instead</a><span>·</span><span>No tracking, no ads — grant-funded, open licence</span><div style="flex:1"></div><button onClick="{{ closeSignIn }}" style="background:transparent;border:none;color:#71717c;font-size:12px;cursor:pointer">Not now</button></div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { q: '', signIn: false, account: null, ctx: null, KEYS: null };
+  componentDidMount() {
+    import('./lexicon-data.js').then(m => {
+      this.m = m;
+      this.setState({ account: m.load(m.KEYS.account, null), ctx: m.load(m.KEYS.context, null), KEYS: m.KEYS });
+    });
+    this._key = e => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); const el = document.querySelector('input[aria-label="Search"]'); if (el) el.focus(); } };
+    window.addEventListener('keydown', this._key);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this._key); }
+  renderVals() {
+    const s = this.state, m = this.m;
+    const dot = c => 'width:8px;height:8px;border-radius:99px;flex:none;background:' + c;
+    const pages = [
+      ['Ask', 'Lexicon%20Reader%20v5.dc.html?mode=ask', '#2f6ae0', '6a', 'One word, five minutes — the plain way in'],
+      ['Explore', 'Collections.dc.html', '#a8682c', '6g', 'Word of the day · curated sets'],
+      ['Read', 'Lexicon%20Reader%20v5.dc.html', '#177a44', 'Reader v5', 'Books, scripture, your own texts — with the dictionary beside'],
+      ['Library', 'Library.dc.html', '#177a44', '3a·3b', 'Shelf, progress, add a text'],
+      ['Dictionary', 'Lexicon%20Reader%20v5.dc.html?mode=lookup', '#a8682c', 'Lookup', 'Roots, patterns, lexica, timelines'],
+      ['Concordance', 'Concordance.dc.html', '#177a44', '2c·2d', 'Every attestation of a root'],
+      ['Analyser', 'Analyser.dc.html', '#6f55c4', '5d', 'Morphology of any surface form'],
+      ['Graph', 'Lexicon%20Editor%20v5.dc.html', '#6f55c4', 'Editor', 'Root-family canvas'],
+      ['Split view', 'Shell.dc.html', '#6f55c4', '5i', 'Text · dictionary · graph side by side'],
+      ['Review', 'Lexicon%20Reader%20v5.dc.html?mode=review', '#a8682c', '1a·1b', 'Root-family recall'],
+      ['Notebook', 'Notebook.dc.html', '#2f6ae0', '5f·3f', 'Notes and reading journal'],
+      ['Search', 'Search.dc.html', '#2f6ae0', '5b', 'Results with facets'],
+      ['Review queue', 'Review%20Queue.dc.html', '#b45309', '4b', 'Proposals awaiting approval'],
+      ['Classroom', 'Classroom.dc.html', '#177a44', '4c·4d', 'Assignments and the shared graph'],
+      ['Published graphs', 'Published%20Graph.dc.html', '#6f55c4', '4f', 'Read-only, embeddable'],
+      ['Profile', 'Profile.dc.html', '#a8682c', '4h', 'Contributions, data export'],
+      ['Data & API', 'Data%20%26%20API.dc.html', '#6f6f7c', '5g·5h', 'Releases, licences, playground']
+    ];
+    const modes = [['Read', 'Lexicon%20Reader%20v4.dc.html', 'Read a text with the dictionary beside it'], ['Look up', 'Lexicon%20Reader%20v5.dc.html?mode=lookup', 'Open the dictionary'], ['Graph', 'Lexicon%20Editor%20v5.dc.html', 'Root-family canvas'], ['Review', 'Lexicon%20Reader%20v5.dc.html?mode=review', 'Recall the roots you met']];
+    const ctx = s.ctx || {};
+    const chips = [];
+    if (ctx.book) chips.push({ label: ctx.book, href: 'Lexicon%20Reader%20v4.dc.html', dot: dot('#177a44'), arStyle: "font-family:Amiri,serif;font-size:15px" });
+    if (ctx.wordAr) chips.push({ label: ctx.wordAr + (ctx.wordTr ? ' · ' + ctx.wordTr : ''), href: 'Lexicon%20Reader%20v4.dc.html?w=' + encodeURIComponent(ctx.word || ''), dot: dot('#2f6ae0'), arStyle: "font-family:Amiri,serif;font-size:15px" });
+    if (ctx.rootAr) chips.push({ label: ctx.rootAr, href: 'Concordance.dc.html?root=' + encodeURIComponent(ctx.root || ''), dot: dot('#a8682c'), arStyle: "font-family:Amiri,serif;font-size:15px;letter-spacing:.06em" });
+    return {
+      q: s.q, onQ: e => this.setState({ q: e.currentTarget.value }),
+      onSearch: e => { e.preventDefault(); const q = s.q.trim(); if (q) window.location.href = 'Search.dc.html?q=' + encodeURIComponent(q); },
+      modes: modes.map(x => ({ label: x[0], href: x[1], hint: x[2], style: 'padding:5px 12px;border-radius:7px;color:#4f4f5a;text-decoration:none' })),
+      doors: [
+        { label: 'Read', sub: 'Qurʾān, ḥadīth, classical prose — or paste your own.', href: 'Library.dc.html', dot: dot('#177a44') },
+        { label: 'Look up', sub: '6 roots · 9 lexica · patterns and timelines (prototype data).', href: 'Lexicon%20Reader%20v5.dc.html?mode=lookup', dot: dot('#a8682c') },
+        { label: 'Map', sub: 'Build and publish root-family graphs.', href: 'Lexicon%20Editor%20v5.dc.html', dot: dot('#6f55c4') }
+      ],
+      all: pages.map(p => ({ label: p[0], href: p[1], dot: dot(p[2]), tag: p[3], hint: p[4] })),
+      hasContext: chips.length > 0, ctxChips: chips,
+      clearContext: () => { if (m) m.save(m.KEYS.context, null); this.setState({ ctx: null }); },
+      signedIn: !!s.account, signedOut: !s.account, accountName: s.account ? s.account.name : '',
+      signIn: s.signIn, openSignIn: () => this.setState({ signIn: true }), closeSignIn: () => this.setState({ signIn: false }), stop: e => e.stopPropagation(),
+      signInTitle: (() => { const n = m ? Object.keys(m.load(m.KEYS.marks, {})).length : 0; const notes = m ? (m.load(m.KEYS.notes, [])).length : 0; return n || notes ? 'You have ' + n + ' starred word' + (n === 1 ? '' : 's') + ' and ' + notes + ' note' + (notes === 1 ? '' : 's') + ' on this device' : 'Sign in to sync and contribute'; })(),
+      doSignIn: () => { const acct = { name: 'Amal Haddad', affiliation: 'Lexicography · Univ. of Jordan', orcid: '0000-0002-1825-0097', since: '2025' }; if (m) m.save(m.KEYS.account, acct); this.setState({ account: acct, signIn: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;background:#eeeef1;height:100%}*{box-sizing:border-box}a{color:#2f6ae0;text-decoration:none}a:hover{color:#16161a}button{font-family:inherit}button:focus-visible,a:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}</style>
+</helmet>
+<div style="position:fixed;inset:0;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+  <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;background:#f8f8fa;border-bottom:1px solid #e5e5ea">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;flex:none"><div style="width:18px;height:18px;border-radius:5px;background:#a8682c"></div><span style="font-size:14px;font-weight:600">Jadhr</span><span style="font-size:12px;color:#71717c">· split view</span></a>
+    <div style="display:flex;gap:1px;padding:2px;background:#ecedf1;border-radius:9px;font-size:12px"><sc-for list="{{ panes }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</button></sc-for></div>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#4f4f5a;overflow:hidden"><span style="color:#71717c;white-space:nowrap">Context</span><sc-for list="{{ ctx }}" as="c" hint-placeholder-count="2"><span style="display:flex;align-items:center;gap:6px;padding:3px 10px;border:1px solid #e5e5ea;border-radius:99px;background:#fff;white-space:nowrap"><span style="{{ c.dot }}"></span><span dir="auto" style="font-family:Amiri,'IBM Plex Sans',serif;font-size:14px">{{ c.label }}</span></span></sc-for><sc-if value="{{ noCtx }}" hint-placeholder-val="{{ true }}"><span style="color:#71717c">select a word in the text</span></sc-if></div>
+    <button onClick="{{ toGraph }}" disabled="{{ noWord }}" style="{{ toGraphStyle }}">Send word to graph →</button>
+  </div>
+  <div style="flex:1;min-height:0;display:flex">
+    <sc-if value="{{ showRead }}" hint-placeholder-val="{{ true }}">
+      <iframe ref="{{ readRef }}" src="{{ readSrc }}" title="Reader" style="{{ readStyle }}"></iframe>
+    </sc-if>
+    <sc-if value="{{ showGraph }}" hint-placeholder-val="{{ true }}">
+      <iframe ref="{{ graphRef }}" src="{{ graphSrc }}" title="Graph editor" style="{{ graphStyle }}"></iframe>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { read: true, graph: true, ctx: null, graphSrc: 'Lexicon%20Editor%20v5.dc.html?from=shell' };
+  componentDidMount() {
+    this.readRef = React.createRef(); this.graphRef = React.createRef();
+    const pull = () => { try { const c = JSON.parse(localStorage.getItem('jadhr-context') || 'null'); if (JSON.stringify(c) !== JSON.stringify(this.state.ctx)) this.setState({ ctx: c }); } catch (e) {} };
+    pull(); this._iv = setInterval(pull, 800);
+  }
+  componentWillUnmount() { clearInterval(this._iv); }
+  renderVals() {
+    const s = this.state, c = s.ctx || {};
+    const dot = col => 'width:7px;height:7px;border-radius:99px;background:' + col;
+    const chips = [];
+    if (c.book) chips.push({ label: c.book, dot: dot('#177a44') });
+    if (c.wordAr) chips.push({ label: c.wordAr + (c.wordTr ? ' · ' + c.wordTr : ''), dot: dot('#2f6ae0') });
+    if (c.rootAr) chips.push({ label: c.rootAr, dot: dot('#a8682c') });
+    const both = s.read && s.graph;
+    return {
+      panes: [['read', 'Text + dictionary', s.read], ['graph', 'Graph', s.graph]].map(p => ({ label: p[1], onClick: () => { const n = { [p[0]]: !p[2] }; if (!s[p[0] === 'read' ? 'graph' : 'read'] && p[2]) return; this.setState(n); }, style: 'white-space:nowrap;padding:5px 11px;border-radius:7px;cursor:pointer;border:1px solid ' + (p[2] ? '#d3d3dc' : 'transparent') + ';background:' + (p[2] ? '#fff' : 'transparent') + ';color:' + (p[2] ? '#16161a' : '#71717c') + ';font-weight:' + (p[2] ? 500 : 400) })),
+      ctx: chips, noCtx: !chips.length, noWord: !c.word,
+      toGraphStyle: 'white-space:nowrap;border-radius:8px;font-size:12.5px;padding:6px 12px;cursor:' + (c.word ? 'pointer' : 'default') + ';background:' + (c.word ? '#16161a' : '#f5f5f8') + ';border:1px solid ' + (c.word ? '#16161a' : '#e5e5ea') + ';color:' + (c.word ? '#fff' : '#71717c'),
+      toGraph: () => { if (!c.word) return; let seedQ = ''; try { seedQ = '&seed=' + encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({ words: [{ ar: c.wordAr, tr: c.wordTr, en: '', pos: 'noun', form: { ar: 'فَعْل', tr: '', en: '' }, root: { ar: c.rootAr, tr: c.root, en: '' } }], sentence: null }))))); } catch (e) {} this.setState({ graphSrc: 'Lexicon%20Editor%20v5.dc.html?from=shell&w=' + encodeURIComponent(c.word) + '&tr=' + encodeURIComponent(c.wordTr || '') + '&ar=' + encodeURIComponent(c.wordAr || '') + seedQ + '&t=' + Date.now(), graph: true }); },
+      showRead: s.read, showGraph: s.graph,
+      readRef: this.readRef, graphRef: this.graphRef,
+      readSrc: 'Lexicon%20Reader%20v4.dc.html', graphSrc: s.graphSrc,
+      readStyle: 'border:none;height:100%;min-width:0;' + (both ? 'flex:1.15;border-right:1px solid #d3d3dc' : 'flex:1'),
+      graphStyle: 'border:none;height:100%;min-width:0;flex:1'
+    };
+  }
+}
+</script>
+</body>
+</html>

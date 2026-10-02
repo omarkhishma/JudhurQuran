@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;background:#eeeef1}*{box-sizing:border-box}a{color:#2f6ae0;text-decoration:none}a:hover{color:#16161a}input,button{font-family:inherit}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(111,85,196,.25)}50%{box-shadow:0 0 0 7px rgba(111,85,196,.08)}}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+  <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;background:#f8f8fa;border-bottom:1px solid #e5e5ea">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;flex:none"><div style="width:18px;height:18px;border-radius:5px;background:#a8682c"></div><span style="font-size:14px;font-weight:600">Jadhr</span></a>
+    <div style="display:flex;gap:1px;padding:2px;background:#ecedf1;border-radius:9px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:0 1 auto"><sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><a href="{{ n.href }}" aria-current="{{ n.current }}" style="{{ n.style }}">{{ n.label }}</a></sc-for></div>
+    <div style="flex:1"></div>
+    <span style="font-size:12.5px;color:#4f4f5a;white-space:nowrap">Arabic 301 · Week 6</span>
+    <div style="display:flex;gap:2px;padding:2px;background:#ecedf1;border-radius:9px"><sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for></div>
+  </div>
+
+  <sc-if value="{{ tabAssign }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:0">
+      <div style="padding:26px 34px 40px;display:flex;flex-direction:column;gap:16px;background:#fffffe;min-width:0">
+        <div style="display:flex;align-items:center;gap:12px;font-size:12px;color:#4f4f5a;flex-wrap:wrap"><span>Lookups per word</span><span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:10px;background:#fdf1e3;border-radius:2px"></span>1–3</span><span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:10px;background:#f6d5a8;border-radius:2px"></span>4–8</span><span style="display:flex;align-items:center;gap:4px"><span style="width:14px;height:10px;background:#e0b361;border-radius:2px"></span>9+</span><div style="flex:1"></div><div style="display:flex;gap:2px;padding:2px;background:#ecedf1;border-radius:9px"><sc-for list="{{ layers }}" as="l" hint-placeholder-count="3"><button onClick="{{ l.onClick }}" style="{{ l.style }}">{{ l.label }}</button></sc-for></div></div>
+        <sc-for list="{{ passages }}" as="p" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#71717c">{{ p.label }}</div><div style="flex:1;height:1px;background:#e5e5ea"></div><span style="font-size:11.5px;color:#71717c">{{ p.meta }}</span></div>
+            <div dir="rtl" style="font-family:Amiri,serif;font-size:29px;line-height:1.9;color:#16161a;text-align:right;text-wrap:pretty;display:flex;flex-wrap:wrap;column-gap:6px;row-gap:2px"><sc-for list="{{ p.toks }}" as="t" hint-placeholder-count="10"><button onClick="{{ t.onClick }}" title="{{ t.hint }}" style="{{ t.style }}">{{ t.ar }}</button></sc-for></div>
+            <div style="font-size:14px;line-height:1.6;color:#4f4f5a">{{ p.en }}</div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ hasFocus }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:#f8f8fa;border:1px solid #e5e5ea;border-radius:10px;flex-wrap:wrap"><span dir="rtl" style="font-family:Amiri,serif;font-size:22px">{{ focus.ar }}</span><div style="flex:1;min-width:180px;display:flex;flex-direction:column;gap:2px"><div style="font-size:13px">{{ focus.line }}</div><div style="font-size:11.5px;color:#71717c">{{ focus.sub }}</div></div><button onClick="{{ addLesson }}" style="background:#fff;border:1px solid #e5e5ea;border-radius:7px;font-size:12px;padding:4px 10px;cursor:pointer">{{ lessonLabel }}</button></div>
+        </sc-if>
+      </div>
+      <div style="background:#f8f8fa;border-left:1px solid #e5e5ea;padding:18px 16px;display:flex;flex-direction:column;gap:12px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Class · 22 students</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="padding:10px 12px;background:#fff;border:1px solid #e5e5ea;border-radius:9px"><div style="font-size:20px;font-weight:600">18</div><div style="font-size:11px;color:#71717c">finished</div></div><div style="padding:10px 12px;background:#fff;border:1px solid #e5e5ea;border-radius:9px"><div style="font-size:20px;font-weight:600">11 min</div><div style="font-size:11px;color:#71717c">median time</div></div></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c;margin-top:4px">Most looked-up roots</div>
+        <div style="display:flex;flex-direction:column;gap:5px;font-size:12.5px"><sc-for list="{{ topRoots }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:8px"><span dir="rtl" style="font-family:Amiri,serif;font-size:17px;color:#a8682c;min-width:52px;text-align:right">{{ r.ar }}</span><div style="flex:1;height:8px;border-radius:2px;background:#ecedf1;overflow:hidden"><div style="{{ r.bar }}"></div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#71717c">{{ r.n }}</span></div></sc-for></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c;margin-top:4px">Lesson notes · Friday</div>
+        <sc-for list="{{ lesson }}" as="l" hint-placeholder-count="1"><div style="display:flex;gap:8px;align-items:center;padding:7px 10px;background:#fff;border:1px solid #e5e5ea;border-radius:8px;font-size:12.5px"><span dir="rtl" style="font-family:Amiri,serif;font-size:17px">{{ l.ar }}</span><span style="flex:1;color:#4f4f5a">{{ l.why }}</span></div></sc-for>
+        <sc-if value="{{ noLesson }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px;color:#71717c">Click a word in the text, then “Add to lesson notes”.</div></sc-if>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c;margin-top:4px">Needs a nudge</div>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:#4f4f5a"><div style="display:flex;gap:8px"><span style="width:8px;height:8px;border-radius:99px;background:#c02626;margin-top:5px"></span><span>4 not started · <a href="#">remind</a></span></div><div style="display:flex;gap:8px"><span style="width:8px;height:8px;border-radius:99px;background:#b45309;margin-top:5px"></span><span>2 finished in under 3 min</span></div></div>
+        <div style="margin-top:auto;font-size:11.5px;color:#71717c;line-height:1.5">Aggregates only by default; per-student detail is opt-in for the class. Sample data.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ tabShared }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:0">
+      <div style="position:relative;overflow:hidden;min-height:480px;background:#fff">
+        <iframe src="Lexicon%20Editor%20v5.dc.html?view=sample&embed=1&entry=0" title="Shared class graph" style="position:absolute;inset:0;width:100%;height:100%;border:none"></iframe>
+        <div style="position:absolute;left:16px;bottom:16px;display:flex;align-items:center;gap:8px;padding:6px 12px;background:#fff;border:1px solid #e5e5ea;border-radius:99px;box-shadow:0 1px 2px rgba(20,20,35,.05),0 10px 24px -12px rgba(20,20,35,.2);font-size:12px;color:#4f4f5a;pointer-events:none">Class copy · students propose, teacher confirms · same cards as the editor</div>
+        <a href="Lexicon%20Editor%20v5.dc.html?fork=sample" style="position:absolute;right:16px;bottom:16px;padding:6px 12px;background:#16161a;border-radius:8px;font-size:12px;color:#fff">Open in the editor →</a>
+        <div style="position:absolute;right:16px;top:14px;display:flex;align-items:center;gap:8px;pointer-events:none"><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#71717c;background:#fff;padding:3px 9px;border-radius:99px;border:1px solid #e5e5ea"><span style="width:6px;height:6px;border-radius:99px;background:#15803d"></span>Live · 6 here</span><div style="display:flex"><sc-for list="{{ avatars }}" as="a" hint-placeholder-count="5"><span style="{{ a }}"></span></sc-for></div></div>
+      </div>
+      <div style="background:#f8f8fa;border-left:1px solid #e5e5ea;display:flex;flex-direction:column;min-height:0">
+        <div style="display:flex;gap:2px;padding:10px 12px;border-bottom:1px solid #e5e5ea"><sc-for list="{{ sideTabs }}" as="t" hint-placeholder-count="3"><button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for></div>
+        <div style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:12.5px;color:#4f4f5a">
+          <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:6px;padding-bottom:6px;border-bottom:1px solid #e5e5ea"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Awaiting your confirmation</div><sc-for list="{{ pending }}" as="p" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff9f1;border:1px dashed #b45309;border-radius:8px"><span dir="rtl" style="font-family:Amiri,serif;font-size:17px;color:#16161a">{{ p.ar }}</span><span style="flex:1;font-size:12px;color:#4f4f5a">{{ p.by }}</span><button onClick="{{ p.onConfirm }}" style="font-size:11px;padding:2px 8px;border-radius:6px;background:#16161a;color:#fff;border:none;cursor:pointer">Confirm</button></div></sc-for></div></sc-if>
+          <sc-for list="{{ feed }}" as="f" hint-placeholder-count="4"><div style="display:flex;gap:8px"><span style="{{ f.av }}"></span><div style="line-height:1.5"><strong style="color:#16161a;font-weight:500">{{ f.who }}</strong> {{ f.text }}<div style="font-size:11px;color:#71717c">{{ f.when }}</div></div></div></sc-for>
+        </div>
+        <form onSubmit="{{ send }}" style="padding:12px 14px;border-top:1px solid #e5e5ea;display:flex;gap:6px"><input value="{{ draft }}" onChange="{{ onDraft }}" placeholder="Comment or @mention…" aria-label="Comment" style="flex:1;min-width:0;font-size:12.5px;padding:7px 10px;border:1px solid #e5e5ea;border-radius:8px;background:#fff;outline:none" /><button type="submit" style="background:#16161a;border:none;border-radius:8px;font-size:12px;padding:0 12px;color:#fff;cursor:pointer">Send</button></form>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { m: null, c: null, tab: 'assign', layer: 'lookups', focus: null, lesson: [], side: 'Activity', draft: '', confirmed: {}, feed: [
+    { who: 'Omar', text: 'added التَّعَلُّم under تَفَعُّل', when: 'just now', c: '#2f6ae0' }, { who: 'Sara', text: 'asked about يُدْرَكُ · 2 replies', when: '4 min', c: '#177a44' },
+    { who: 'Dr. Nour', text: 'confirmed 3 cards · tagged topic Knowledge', when: '12 min', c: '#a8682c' }, { who: 'Layla', text: 'linked passage 1·3 to Knowledge', when: '20 min', c: '#6f55c4' }] };
+  componentDidMount() { Promise.all([import('./lexicon-data.js'), import('./jadhr-chrome.js')]).then(([m, c]) => this.setState({ m, c, tab: new URLSearchParams(location.search).get('tab') === 'shared' ? 'shared' : 'assign' })); }
+  renderVals() {
+    const s = this.state, m = s.m, c = s.c;
+    if (!m) return { nav: [], tabs: [], passages: [], layers: [], topRoots: [], lesson: [], cards: [], edges: [], cursors: [], avatars: [], sideTabs: [], feed: [], tabAssign: true };
+    const ch = m.BOOK.chapters[0];
+    const hash = str => [...str].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 997, 7);
+    const look = id => { const w = m.WMAP[id]; if (!w) return 0; const base = w.freq < 10 ? 9 : w.freq < 20 ? 5 : 2; return Math.max(0, Math.round(base + (hash(id) % 5) - 2)); };
+    const time = id => 4 + (hash(id) % 9);
+    const notesN = id => hash(id) % 4;
+    const val = id => s.layer === 'lookups' ? look(id) : s.layer === 'notes' ? notesN(id) * 3 : time(id);
+    const shade = v => v >= 9 ? '#e0b361' : v >= 4 ? '#f6d5a8' : v >= 1 ? '#fdf1e3' : 'transparent';
+    const rootCount = {}; ch.passages.forEach(p => p.toks.forEach(t => { const x = m.parseTok(t); if (x.word) { const r = m.WMAP[x.word].root; rootCount[r] = (rootCount[r] || 0) + look(x.word); } }));
+    const tops = Object.entries(rootCount).sort((a, b) => b[1] - a[1]).slice(0, 4); const maxR = Math.max(1, ...tops.map(t => t[1]));
+    const f = s.focus ? m.WMAP[s.focus] : null;
+    const cardsDef = [
+      { id: 'r', ar: 'ع ل م', x: 60, y: 100, type: 'root', by: 'Dr. Nour', ok: true }, { id: 'f1', ar: 'فَاعِل', x: 270, y: 50, type: 'form', by: 'Layla', ok: true }, { id: 'f2', ar: 'تَفَعُّل', x: 270, y: 160, type: 'form', by: 'Omar', ok: false },
+      { id: 'w1', ar: 'العَالِم', x: 470, y: 46, type: 'word', by: 'Layla · 2 min ago', ok: true }, { id: 'w2', ar: 'التَّعَلُّم', x: 470, y: 156, type: 'word', by: 'Omar · just now', ok: false }, { id: 'r2', ar: 'د ر ك', x: 60, y: 280, type: 'root', by: 'Sara · proposed', ok: false }];
+    const col = { root: '#a8682c', form: '#6f55c4', word: '#2f6ae0' };
+    const conf = k => k.ok || s.confirmed[k.id];
+    return {
+      nav: c.navModel('Classroom'),
+      tabs: [['assign', 'Assignment'], ['shared', 'Shared graph']].map(t => ({ label: t[1], onClick: () => this.setState({ tab: t[0] }), style: c.seg(s.tab === t[0]) })),
+      tabAssign: s.tab === 'assign', tabShared: s.tab === 'shared',
+      layers: [['lookups', 'lookups'], ['notes', 'notes'], ['time', 'time spent']].map(l => ({ label: l[1], onClick: () => this.setState({ layer: l[0] }), style: c.seg(s.layer === l[0]) })),
+      passages: ch.passages.slice(0, 3).map((p, pi) => ({ label: 'Ch. 1 · passage ' + (pi + 1), en: p.en, meta: p.toks.filter(t => m.parseTok(t).word).length + ' entries · ' + (14 + pi * 2) + ' of 18 finished', toks: p.toks.map(raw => { const t = m.parseTok(raw); const v = t.word ? val(t.word) : 0; return { ar: t.ar, hint: t.word ? look(t.word) + ' lookups · ' + m.WMAP[t.word].tr : '', onClick: () => t.word && this.setState({ focus: t.word }), style: 'font-family:Amiri,serif;font-size:29px;line-height:1.5;color:#16161a;background:' + (s.focus === t.word && t.word ? '#e0b361' : shade(v)) + ';border:none;border-radius:4px;padding:0 3px;cursor:' + (t.word ? 'pointer' : 'default') + (s.focus === t.word && t.word ? ';box-shadow:inset 0 -2px 0 #a8682c' : '') }; }) })),
+      hasFocus: !!f, focus: f ? { ar: f.ar, line: 'looked up by ' + Math.min(18, look(f.id) + 3) + ' of 18 · avg ' + (1 + look(f.id) / 6).toFixed(1) + ' times · ' + notesN(f.id) + ' notes', sub: f.pos + ' · ' + m.FORM_META[f.form][1] + ' · root ' + m.RMAP[f.root].tr + (look(f.id) >= 9 ? ' — worth 5 minutes on Friday' : '') } : {},
+      lessonLabel: f && s.lesson.some(l => l.id === f.id) ? 'In lesson notes ✓' : 'Add to lesson notes',
+      addLesson: () => f && !s.lesson.some(l => l.id === f.id) && this.setState({ lesson: s.lesson.concat([{ id: f.id, ar: f.ar, why: look(f.id) + ' lookups · ' + m.FORM_META[f.form][1] }]) }),
+      topRoots: tops.map(t => ({ ar: m.RMAP[t[0]].ar, n: String(t[1]), bar: 'height:100%;background:#a8682c;width:' + Math.round(t[1] / maxR * 100) + '%' })),
+      lesson: s.lesson, noLesson: !s.lesson.length,
+      pending: cardsDef.filter(k => !conf(k)).map(k => ({ ar: k.ar, by: k.by, onConfirm: () => this.setState({ confirmed: Object.assign({}, s.confirmed, { [k.id]: true }), feed: [{ who: 'Dr. Nour', text: 'confirmed ' + k.ar, when: 'just now', c: '#a8682c' }].concat(s.feed) }) })),
+      hasPending: cardsDef.some(k => !conf(k)),
+      cards: cardsDef.map(k => ({ ar: k.ar, by: k.by, unconfirmed: !conf(k), onConfirm: () => this.setState({ confirmed: Object.assign({}, s.confirmed, { [k.id]: true }), feed: [{ who: 'Dr. Nour', text: 'confirmed ' + k.ar, when: 'just now', c: '#a8682c' }].concat(s.feed) }),
+        arStyle: 'font-family:Amiri,serif;font-size:' + (k.type === 'root' ? 19 : 17) + 'px;letter-spacing:' + (k.type === 'root' ? '.06em' : '0') + ';color:' + col[k.type],
+        style: 'position:absolute;left:' + k.x + 'px;top:' + k.y + 'px;display:flex;flex-direction:column;gap:3px;padding:5px 10px;border-radius:8px;background:#fff;border:1.5px ' + (conf(k) ? 'solid' : 'dashed') + ' ' + col[k.type] + ';opacity:' + (conf(k) ? 1 : .85) })),
+      edges: [['r', 'f1'], ['r', 'f2'], ['f1', 'w1'], ['f2', 'w2']].map(([a, b]) => { const A = cardsDef.find(k => k.id === a), B = cardsDef.find(k => k.id === b); return { x1: A.x + 70, y1: A.y + 18, x2: B.x, y2: B.y + 18, stroke: A.type === 'root' ? '#a8682c' : '#b7b7c3', dash: conf(A) && conf(B) ? 'none' : '4 3' }; }),
+      cursors: [{ name: 'Omar', x: 236, y: 150, c: '#6f55c4' }, { name: 'Sara', x: 120, y: 250, c: '#177a44' }].map(u => ({ name: u.name, style: 'position:absolute;left:' + u.x + 'px;top:' + u.y + 'px;width:10px;height:10px;border-radius:99px;background:' + u.c + ';animation:pulse 1.6s ease-in-out infinite', labStyle: 'position:absolute;left:' + (u.x + 14) + 'px;top:' + (u.y - 4) + 'px;font-size:10px;font-weight:500;color:' + u.c })),
+      avatars: ['#a8682c', '#6f55c4', '#2f6ae0', '#177a44', '#ecedf1'].map((cc, i) => 'width:24px;height:24px;border-radius:99px;background:' + cc + ';border:2px solid #eeeef1;display:inline-block;margin-left:' + (i ? -8 : 0) + 'px'),
+      sideTabs: ['Activity', 'Topics 4', 'Notes 12'].map(t => ({ label: t, onClick: () => this.setState({ side: t }), style: c.seg(s.side === t) })),
+      feed: s.feed.map(x => ({ who: x.who, text: x.text, when: x.when, av: 'width:20px;height:20px;border-radius:99px;flex:none;background:' + x.c })),
+      draft: s.draft, onDraft: e => this.setState({ draft: e.currentTarget.value }),
+      send: e => { e.preventDefault(); if (!s.draft.trim()) return; this.setState({ feed: [{ who: 'You', text: s.draft.trim(), when: 'just now', c: '#16161a' }].concat(s.feed), draft: '' }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

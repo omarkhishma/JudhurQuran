@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;background:#eeeef1}*{box-sizing:border-box}a{color:#2f6ae0;text-decoration:none}a:hover{color:#16161a}input,button{font-family:inherit}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+  <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;background:#f8f8fa;border-bottom:1px solid #e5e5ea">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;flex:none"><div style="width:18px;height:18px;border-radius:5px;background:#a8682c"></div><span style="font-size:14px;font-weight:600">Jadhr</span></a>
+    <div style="display:flex;gap:1px;padding:2px;background:#ecedf1;border-radius:9px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:0 1 auto"><sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><a href="{{ n.href }}" aria-current="{{ n.current }}" style="{{ n.style }}">{{ n.label }}</a></sc-for></div>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:2px;padding:2px;background:#ecedf1;border-radius:9px"><sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for></div>
+    <span style="font-size:12px;color:#4f4f5a;white-space:nowrap">CC BY-SA 4.0 · code MIT</span>
+  </div>
+
+  <sc-if value="{{ tabData }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 300px;min-height:0">
+      <div style="padding:26px 30px 40px;display:flex;flex-direction:column;gap:18px;background:#fffffe;min-width:0">
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:22px;font-weight:600;letter-spacing:-.01em">Jadhr — dataset</div><div style="font-size:14px;line-height:1.6;color:#4f4f5a;max-width:560px">Roots, patterns, words, senses with source attributions, and attestations across the loaded corpora. Everything the site shows, as files you can diff.</div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px"><sc-for list="{{ stats }}" as="x" hint-placeholder-count="4"><div style="padding:12px 14px;background:#f8f8fa;border:1px solid #e5e5ea;border-radius:10px"><div style="font-size:20px;font-weight:600">{{ x.v }}</div><div style="font-size:11px;color:#71717c;text-transform:uppercase;letter-spacing:.07em">{{ x.l }}</div></div></sc-for></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Releases</div>
+          <div style="border:1px solid #e5e5ea;border-radius:10px;overflow:hidden">
+            <sc-for list="{{ releases }}" as="r" hint-placeholder-count="3"><div style="{{ r.style }}"><span style="{{ r.vStyle }}">{{ r.v }}</span><span style="font-size:12.5px;color:#4f4f5a;flex:1;min-width:200px">{{ r.note }}</span><span style="display:flex;gap:5px;flex-wrap:wrap"><sc-for list="{{ r.formats }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onClick }}" style="font-size:11px;padding:2px 8px;border:1px solid #e5e5ea;border-radius:6px;background:#fff;cursor:pointer">{{ f.label }}</button></sc-for></span><span style="font-size:11px;color:#71717c;white-space:nowrap">{{ r.doi }}</span></div></sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Changelog · v2026.09 (this prototype's live data)</div><div style="padding:12px 14px;background:#f8f8fa;border:1px solid #e5e5ea;border-radius:10px;font-size:13px;color:#4f4f5a;line-height:1.7">{{ changelog }}</div></div>
+      </div>
+      <div style="background:#f8f8fa;border-left:1px solid #e5e5ea;padding:22px 18px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Cite the dataset</div><div style="font-size:12.5px;line-height:1.6;padding:9px 11px;border:1px solid #e5e5ea;border-radius:8px;background:#fff;white-space:pre-wrap;font-family:inherit">{{ citeText }}</div><div style="display:flex;gap:5px;font-size:11px"><sc-for list="{{ citeFmts }}" as="f" hint-placeholder-count="3"><button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button></sc-for><div style="flex:1"></div><button onClick="{{ copyCite }}" style="font-size:11px;padding:1px 8px;border-radius:99px;border:1px solid #e5e5ea;background:#fff;cursor:pointer">copy</button></div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Sources &amp; licences</div><div style="font-size:12px;color:#4f4f5a;line-height:1.6">Classical lexica: public domain (digitised texts credited per source). Lane: PD. Qurʾān text: Tanzil, CC BY-ND. Our alignments, glosses and attestation links: CC BY-SA 4.0.</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Used by</div><div style="font-size:12px;color:#4f4f5a;line-height:1.6">2 papers · 6 forks · 14 downstream tools · <a href="Review%20Queue.dc.html">add yours</a></div></div>
+        <div style="margin-top:auto;font-size:11.5px;color:#71717c;line-height:1.5">Every merged contribution appears in the next release's changelog under the contributor's name.</div>
+        <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#15803d">{{ toast }}</div></sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ tabApi }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0">
+      <div style="background:#f8f8fa;border-right:1px solid #e5e5ea;padding:14px 10px;display:flex;flex-direction:column;gap:2px;font-family:'IBM Plex Mono',monospace;font-size:11.5px">
+        <div style="padding:6px 10px;color:#71717c;font-family:'IBM Plex Sans',sans-serif;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase">Endpoints</div>
+        <sc-for list="{{ endpoints }}" as="e" hint-placeholder-count="8"><button onClick="{{ e.onClick }}" style="{{ e.style }}"><span style="{{ e.mStyle }}">{{ e.method }}</span> {{ e.path }}</button></sc-for>
+        <div style="margin-top:auto;padding:8px 10px;font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;color:#71717c;line-height:1.5">v1 · no key for reads · 60 req/min · <a href="#">OpenAPI spec</a></div>
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0;background:#fffffe">
+        <div style="padding:16px 22px 12px;border-bottom:1px solid #e5e5ea;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:15px;font-weight:600"><span style="{{ epMStyle }}">{{ ep.method }}</span> {{ ep.path }}</div><div style="font-size:12.5px;color:#4f4f5a;line-height:1.5">{{ ep.desc }}</div></div>
+          <form onSubmit="{{ send }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:260px;display:flex;align-items:center;gap:6px;padding:8px 12px;border:1px solid #2f6ae0;border-radius:8px;background:#fff;font-family:'IBM Plex Mono',monospace;font-size:12.5px"><span style="color:#71717c;white-space:nowrap">{{ ep.base }}</span><input value="{{ param }}" onChange="{{ onParam }}" dir="auto" aria-label="Query parameter" style="flex:1;min-width:80px;border:none;outline:none;font-family:Amiri,'IBM Plex Mono',monospace;font-size:15px;background:transparent" /><span style="color:#71717c;white-space:nowrap">{{ ep.tail }}</span></div><button type="submit" style="background:#16161a;border:1px solid #16161a;border-radius:8px;color:#fff;font-size:12.5px;padding:8px 14px;cursor:pointer">Send</button><button onClick="{{ copyCurl }}" type="button" style="background:#fff;border:1px solid #e5e5ea;border-radius:8px;color:#4f4f5a;font-size:12.5px;padding:8px 10px;cursor:pointer">curl</button></form>
+        </div>
+        <div style="flex:1;min-height:0;padding:14px 22px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;gap:12px;font-size:11.5px;color:#71717c"><span style="color:#15803d;font-weight:500">200 OK</span><span>{{ ms }} ms</span><span>application/json</span><span>etag "v2026.09"</span></div>
+          <pre style="margin:0;flex:1;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.6;color:#16161a;padding:12px 14px;background:#f8f8fa;border:1px solid #e5e5ea;border-radius:10px;overflow:auto;white-space:pre;max-height:60vh">{{ resp }}</pre>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { m: null, c: null, tab: 'data', ep: 'lookup', param: 'علم', resp: '', ms: 42, fmt: 'bibtex', toast: null };
+  componentDidMount() { Promise.all([import('./lexicon-data.js'), import('./jadhr-chrome.js')]).then(([m, c]) => { this.setState({ m, c, tab: new URLSearchParams(location.search).get('tab') === 'api' ? 'api' : 'data' }); this.run(); }); this._vis = () => this.forceUpdate(); window.addEventListener('focus', this._vis); document.addEventListener('visibilitychange', this._vis); }
+  componentWillUnmount() { window.removeEventListener('focus', this._vis); document.removeEventListener('visibilitychange', this._vis); }
+  flash(t) { this.setState({ toast: t }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null }), 1800); }
+  eps() { return [
+    { id: 'lookup', method: 'GET', path: '/lookup', base: 'https://api.jadhr.org/v1/lookup?q=', tail: '&limit=3', desc: 'Resolves any query the site search accepts — Arabic with or without tashkīl, transliteration, English gloss, root letters, wazn, verse reference — and returns typed matches.' },
+    { id: 'root', method: 'GET', path: '/roots/{root}', base: 'https://api.jadhr.org/v1/roots/', tail: '', desc: 'A root with its patterns, words and attestation counts. Accepts the key (ilm), the letters (علم) or the transliteration (ʿ-l-m).' },
+    { id: 'word', method: 'GET', path: '/words/{id}', base: 'https://api.jadhr.org/v1/words/', tail: '', desc: 'One entry: senses with the lexica that attest each, pattern, root, corpus frequency.' },
+    { id: 'pattern', method: 'GET', path: '/patterns/{wazn}', base: 'https://api.jadhr.org/v1/patterns/', tail: '', desc: 'Every word on a pattern across roots.' },
+    { id: 'conc', method: 'GET', path: '/concordance', base: 'https://api.jadhr.org/v1/concordance?root=', tail: '&texts=all', desc: 'KWIC lines for a root across the loaded texts.' },
+    { id: 'lex', method: 'GET', path: '/lexica/{id}/{root}', base: 'https://api.jadhr.org/v1/lexica/lisan/', tail: '', desc: 'A lexicon entry for a root, with sense alignment.' },
+    { id: 'analyse', method: 'POST', path: '/analyse', base: 'https://api.jadhr.org/v1/analyse  {"text":"', tail: '"}', desc: 'Morphological analysis of a phrase: segmentation, candidate roots, pattern, confidence.' },
+    { id: 'graphs', method: 'POST', path: '/graphs', base: 'https://api.jadhr.org/v1/graphs  {"title":"', tail: '", …}', desc: 'Publish a graph (requires a key).' }
+  ]; }
+  run() {
+    const s = this.state, m = s.m; if (!m) return; const q = s.param.trim(); const ql = q.toLowerCase(), qa = m.stripDia(q);
+    const wordJ = w => ({ kind: 'word', id: w.id, ar: w.ar, tr: w.tr, root: w.root, pattern: m.FORM_META[w.form][0], pos: w.pos, senses: w.senses.map((sen, i) => ({ id: 's' + (i + 1), en: sen, sources: m.DICTS.filter((d, j) => m.dictAttests(w, i, j)).map(d => d.id).slice(0, 4) })), frequency: w.freq, url: 'https://jadhr.org/w/' + w.id });
+    const rootJ = r => ({ kind: 'root', id: r.key, ar: r.ar, tr: r.tr, gloss: r.en, words: m.WORDS.filter(w => w.root === r.key).length, attestations: r.corpus, url: 'https://jadhr.org/r/' + r.key });
+    let out;
+    if (s.ep === 'lookup') { const roots = m.ROOTS.filter(r => r.bare === qa.replace(/\s/g, '') || r.tr === ql || r.en.includes(ql)); const words = m.WORDS.filter(w => m.stripDia(w.ar).includes(qa) || w.tr.toLowerCase().includes(ql) || w.en.includes(ql)).slice(0, 3); out = { query: { raw: q, detected: /[\u0600-\u06FF]/.test(q) ? (/[\u064B-\u0652]/.test(q) ? 'arabic' : 'arabic_undiacritised') : 'latin' }, results: roots.map(rootJ).concat(words.map(wordJ)) }; }
+    else if (s.ep === 'root') { const r = m.ROOTS.find(r => r.key === ql || r.bare === qa.replace(/\s/g, '') || r.tr === ql) || m.ROOTS[2]; out = Object.assign(rootJ(r), { patterns: [...new Set(m.WORDS.filter(w => w.root === r.key).map(w => w.form))].map(f => ({ ar: f, tr: m.FORM_META[f][0], words: m.WORDS.filter(w => w.root === r.key && w.form === f).map(w => w.id) })) }); }
+    else if (s.ep === 'word') { const w = m.WMAP[ql] || m.WORDS.find(w => m.stripDia(w.ar) === qa) || m.WMAP.ilm; out = wordJ(w); }
+    else if (s.ep === 'pattern') { const f = Object.keys(m.FORM_META).find(f => m.stripDia(f) === qa || m.FORM_META[f][0].toLowerCase() === ql) || 'مَفْعُول'; out = { kind: 'pattern', ar: f, tr: m.FORM_META[f][0], meaning: m.FORM_META[f][1], words: m.WORDS.filter(w => w.form === f).map(w => ({ id: w.id, ar: w.ar, root: w.root, en: w.en })) }; }
+    else if (s.ep === 'conc') { const r = m.ROOTS.find(r => r.key === ql || r.bare === qa.replace(/\s/g, '')) || m.ROOTS[2]; const lines = []; m.ALL_PASSAGES.forEach(x => { const toks = x.ps.toks.map(t => m.parseTok(t)); toks.forEach((t, i) => { if (t.word && m.WMAP[t.word].root === r.key) lines.push({ source: x.ref, left: toks.slice(0, i).map(t => t.ar).join(' '), keyword: t.ar, right: toks.slice(i + 1).map(t => t.ar).join(' ') }); }); }); out = { root: r.key, hits: lines.length, lines: lines.slice(0, 6) }; }
+    else if (s.ep === 'lex') { const r = m.ROOTS.find(r => r.key === ql || r.bare === qa.replace(/\s/g, '')) || m.ROOTS[2]; const w = m.WORDS.find(w => w.root === r.key); const d = m.DICTS.find(d => d.id === 'lisan'); out = { lexicon: d.id, compiler: d.by, died: d.d, root: r.key, entry: m.lexEntry(w, r, d).text.slice(0, 400) + '…', senses_aligned: w.senses.map((sen, i) => ({ sense: 's' + (i + 1), attested: m.dictAttests(w, i, 5) })) }; }
+    else if (s.ep === 'analyse') { out = { text: q, tokens: q.split(/\s+/).map(t => { const a = m.analyse(t); return { token: t, segments: a.segments.map(g => g.t), root: a.candidates[0] ? a.candidates[0].root.key : null, pattern: a.pattern, entry: a.word ? a.word.id : null, confidence: a.confidence }; }) }; }
+    else out = { status: 'created', id: 'g_' + Date.now().toString(36), url: 'https://jadhr.org/g/you/' + (q || 'untitled').replace(/\s+/g, '-').toLowerCase(), license: 'CC-BY-SA-4.0' };
+    out.dataset = 'v2026.09'; out.license = out.license || 'CC-BY-SA-4.0';
+    this.setState({ resp: JSON.stringify(out, null, 2), ms: 28 + Math.floor(Math.random() * 40) });
+  }
+  renderVals() {
+    const s = this.state, m = s.m, c = s.c;
+    if (!m) return { nav: [], tabs: [], stats: [], releases: [], citeFmts: [], endpoints: [], ep: {}, tabData: true };
+    const ep = this.eps().find(e => e.id === s.ep);
+    const props = m.load(m.KEYS.proposals, []); const merged = props.filter(p => p.status === 'merged');
+    const cite = s.fmt === 'bibtex' ? '@dataset{jadhr_2026_09,\n  title = {Jadhr — Arabic Root Lexicon, dataset v2026.09},\n  year = {2026},\n  doi = {10.5281/zenodo.0000000},\n  license = {CC-BY-SA-4.0}\n}' : s.fmt === 'chicago' ? 'Jadhr. Arabic Root Lexicon, dataset v2026.09. 2026. https://doi.org/10.5281/zenodo.0000000.' : 'Jadhr. (2026). Arabic Root Lexicon (dataset v2026.09) [Data set]. https://doi.org/10.5281/zenodo.0000000';
+    const fmts = ['JSON', 'TEI', 'LMF', 'CSV'];
+    const dl = fmt => () => { const data = fmt === 'CSV' ? 'id,ar,tr,root,pattern,pos,en\n' + m.WORDS.map(w => [w.id, w.ar, w.tr, w.root, w.form, w.pos, '"' + w.en + '"'].join(',')).join('\n') : JSON.stringify({ format: fmt, dataset: 'v2026.09', roots: m.ROOTS, words: m.WORDS, lexica: m.DICTS }, null, 2); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: fmt === 'CSV' ? 'text/csv' : 'application/json' })); a.download = 'jadhr-v2026.09.' + (fmt === 'CSV' ? 'csv' : 'json'); a.click(); };
+    return {
+      nav: c.navModel('Data & API'),
+      tabs: [['data', 'Dataset'], ['api', 'API playground']].map(t => ({ label: t[1], onClick: () => this.setState({ tab: t[0] }), style: c.seg(s.tab === t[0]) })), tabData: s.tab === 'data', tabApi: s.tab === 'api',
+      stats: [{ v: String(m.ROOTS.length), l: 'roots (prototype)' }, { v: String(m.WORDS.length), l: 'words' }, { v: String(m.WORDS.reduce((a, w) => a + w.senses.length, 0)), l: 'senses · sourced' }, { v: String(m.DICTS.length), l: 'lexica' }],
+      releases: [{ v: 'v2026.09', note: (merged.length ? merged.length + ' merged contribution' + (merged.length > 1 ? 's' : '') + ' this session · ' : '') + 'scripture attestations sample · pattern tables · timeline', doi: 'live', cur: true }, { v: 'v2026.06', note: 'Qurʾān attestations · pattern table for 1,800 roots', doi: 'DOI 10.5281/…4471' }, { v: 'v2026.03', note: 'first public release · 9 lexica aligned', doi: 'DOI 10.5281/…3109' }].map((r, i) => ({ v: r.v, note: r.note, doi: r.doi, formats: r.cur ? fmts.map(f => ({ label: f, onClick: dl(f) })) : [], vStyle: "font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:" + (r.cur ? '#16161a;font-weight:500' : '#4f4f5a') + ';min-width:80px', style: 'display:flex;gap:12px;align-items:center;padding:10px 14px;flex-wrap:wrap;background:' + (r.cur ? '#fff' : 'transparent') + (i < 2 ? ';border-bottom:1px solid #e5e5ea' : '') })),
+      changelog: merged.length ? merged.map(p => '• ' + p.by + ' — ' + (p.kind === 'edit' ? 'edited sense' : p.kind) + ' on ' + p.wordAr + ': “' + p.text.slice(0, 70) + '”').join('\n') : 'No contributions merged yet in this session. Approve one in the review queue and it appears here under the contributor’s name.',
+      citeText: cite, citeFmts: [['bibtex', 'BibTeX'], ['chicago', 'Chicago'], ['apa', 'APA']].map(f => ({ label: f[1], onClick: () => this.setState({ fmt: f[0] }), style: 'font-size:11px;padding:1px 8px;border-radius:99px;cursor:pointer;border:1px solid ' + (s.fmt === f[0] ? '#2f6ae0' : '#e5e5ea') + ';background:' + (s.fmt === f[0] ? '#eef3fd' : '#fff') })),
+      copyCite: () => { try { navigator.clipboard.writeText(cite); } catch (e) {} this.flash('Citation copied'); }, toast: s.toast,
+      endpoints: this.eps().map(e => ({ method: e.method, path: e.path, onClick: () => { this.setState({ ep: e.id, param: e.id === 'root' || e.id === 'conc' || e.id === 'lex' ? 'ilm' : e.id === 'word' ? 'ilm' : e.id === 'pattern' ? 'مَفْعُول' : e.id === 'analyse' ? 'إِنَّ العِلْمَ لَا يُدْرَكُ' : e.id === 'graphs' ? 'ʿ-l-m family' : 'علم' }); setTimeout(() => this.run(), 0); }, mStyle: 'color:' + (e.method === 'GET' ? '#15803d' : '#2f6ae0'), style: 'display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:11.5px;border:1px solid ' + (s.ep === e.id ? '#d3d3dc' : 'transparent') + ';background:' + (s.ep === e.id ? '#fff' : 'transparent') + ';color:' + (s.ep === e.id ? '#16161a' : '#4f4f5a') })),
+      ep, epMStyle: 'color:' + (ep.method === 'GET' ? '#15803d' : '#2f6ae0'), param: s.param, onParam: e => this.setState({ param: e.currentTarget.value }),
+      send: e => { e.preventDefault(); this.run(); }, ms: s.ms, resp: s.resp,
+      copyCurl: () => { try { navigator.clipboard.writeText('curl "' + ep.base + encodeURIComponent(s.param) + ep.tail + '"'); } catch (e) {} this.flash('curl copied'); }
+    };
+  }
+}
+</script>
+</body>
+</html>

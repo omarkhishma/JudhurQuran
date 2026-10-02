@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;background:#eeeef1}*{box-sizing:border-box}a{color:#2f6ae0;text-decoration:none}a:hover{color:#16161a}input,button{font-family:inherit}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+  <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;background:#f8f8fa;border-bottom:1px solid #e5e5ea">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;flex:none"><div style="width:18px;height:18px;border-radius:5px;background:#a8682c"></div><span style="font-size:14px;font-weight:600">Jadhr</span></a>
+    <form onSubmit="{{ onSubmit }}" style="flex:1;max-width:480px;height:32px;border:1px solid #2f6ae0;border-radius:9px;background:#fff;display:flex;align-items:center;padding:0 12px;gap:10px"><span style="color:#71717c">⌕</span><input value="{{ q }}" onChange="{{ onQ }}" dir="auto" aria-label="Search" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:Amiri,'IBM Plex Sans',serif;font-size:17px;color:#16161a" /></form>
+    <div style="flex:1"></div>
+    <span style="font-size:12px;color:#71717c;white-space:nowrap">{{ meta }}</span>
+  </div>
+  <div style="padding:10px 22px;border-bottom:1px solid #e5e5ea;background:#fff;display:flex;align-items:center;gap:10px;font-size:13px;color:#4f4f5a;flex-wrap:wrap"><span>Understood as</span><span style="{{ detStyle }}">{{ detected }}</span><span style="color:#71717c">{{ detNote }}</span></div>
+  <div style="flex:1;display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0">
+    <div style="background:#f8f8fa;border-right:1px solid #e5e5ea;padding:16px 14px;display:flex;flex-direction:column;gap:14px;font-size:12.5px">
+      <div style="display:flex;flex-direction:column;gap:5px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Kind</div><sc-for list="{{ kinds }}" as="k" hint-placeholder-count="4"><label style="display:flex;gap:8px;align-items:center;color:#16161a;cursor:pointer"><input type="checkbox" checked="{{ k.on }}" onChange="{{ k.onToggle }}" /> {{ k.label }} <span style="margin-left:auto;color:#71717c">{{ k.n }}</span></label></sc-for></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Source</div><sc-for list="{{ sources }}" as="k" hint-placeholder-count="3"><label style="display:flex;gap:8px;align-items:center;color:#16161a;cursor:pointer"><input type="checkbox" checked="{{ k.on }}" onChange="{{ k.onToggle }}" /> {{ k.label }} <span style="margin-left:auto;color:#71717c">{{ k.n }}</span></label></sc-for></div>
+      <div style="display:flex;flex-direction:column;gap:5px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Root letters</div><div style="display:flex;gap:4px"><sc-for list="{{ letters }}" as="l" hint-placeholder-count="3"><input value="{{ l.v }}" onChange="{{ l.onChange }}" dir="rtl" maxlength="1" placeholder="·" aria-label="Root letter" style="width:40px;font-family:Amiri,serif;font-size:18px;text-align:center;padding:3px;border:1px solid #e5e5ea;border-radius:6px;background:#fff" /></sc-for></div><div style="font-size:11px;color:#71717c">narrow to roots with these letters</div></div>
+    </div>
+    <div style="padding:16px 22px 40px;display:flex;flex-direction:column;gap:14px;background:#fffffe">
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#71717c"><span>{{ g.title }}</span><div style="flex:1;height:1px;background:#e5e5ea"></div><a href="{{ g.moreHref }}">{{ g.more }}</a></div>
+          <div style="{{ g.grid }}">
+            <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4">
+              <a href="{{ r.href }}" style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:#fff;border:1px solid #e5e5ea;border-radius:10px;color:#16161a" style-hover="border-color:#2f6ae0"><span style="{{ r.dot }}"></span><span dir="rtl" style="font-family:Amiri,serif;font-size:20px;min-width:80px;text-align:right;color:{{ r.color }}">{{ r.ar }}</span><span style="flex:1;min-width:0;font-size:12.5px;color:#4f4f5a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.en }}</span><span dir="auto" style="font-family:Amiri,'IBM Plex Mono',monospace;font-size:13px;color:#71717c;white-space:nowrap">{{ r.meta }}</span></a>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><div style="padding:30px;text-align:center;color:#71717c;font-size:13.5px;line-height:1.6">Nothing in the prototype data matches. Try <a href="Search.dc.html?q=k-t-b">k-t-b</a>, <a href="Search.dc.html?q=maf3uul">maf3uul</a>, <a href="Search.dc.html?q=2:32">2:32</a> or <a href="Search.dc.html?q=library">library</a>.</div></sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { m: null, c: null, q: '', kinds: { Words: true, Roots: true, Patterns: true, Passages: true }, src: {}, letters: ['', '', ''] };
+  componentDidMount() { Promise.all([import('./lexicon-data.js'), import('./jadhr-chrome.js')]).then(([m, c]) => this.setState({ m, c, q: new URLSearchParams(location.search).get('q') || '' })); }
+  detect(q) {
+    if (!q) return ['—', 'type a query', null];
+    if (/^\d+:\d+$/.test(q)) return ['verse reference ' + q, 'jumps to the passage', 'ref'];
+    if (/[\u0600-\u06FF]/.test(q)) { const bare = q.replace(/\s/g, ''); if (bare.length === 3 && !/[\u064B-\u0652]/.test(q)) return ['root letters ' + q, 'also matches words containing them', 'ar']; return [/[\u064B-\u0652]/.test(q) ? 'Arabic · with tashkīl' : 'Arabic · no tashkīl', 'diacritics ignored when matching', 'ar']; }
+    if (/^[a-zʿʾ']-[a-zʿʾ']-[a-zʿʾ']$/i.test(q)) return ['transliterated root ' + q, '', 'tr'];
+    const chat = q.toLowerCase().replace(/3/g, 'ʿ').replace(/2/g, 'ʾ').replace(/uu/g, 'ū').replace(/ii/g, 'ī').replace(/aa/g, 'ā');
+    const pat = Object.keys(this.state.m.FORM_META).find(f => this.state.m.FORM_META[f][0].toLowerCase() === chat);
+    if (pat) return ['pattern ' + pat + ' · ' + this.state.m.FORM_META[pat][0], 'via chat/Buckwalter transliteration', 'pat', pat];
+    if (/[āīūʿʾḍṣṭẕḥ]/.test(q)) return ['transliteration', '', 'tr'];
+    return ['English gloss or transliteration', '', 'en'];
+  }
+  renderVals() {
+    const s = this.state, m = s.m, c = s.c;
+    if (!m) return { groups: [], kinds: [], sources: [], letters: [] };
+    const q = s.q.trim(), ql = q.toLowerCase(), qa = m.stripDia(q).replace(/\s/g, '');
+    const det = this.detect(q);
+    const L = s.letters.filter(Boolean);
+    const rootOk = r => L.every(ch => r.bare.includes(ch));
+    const books = [Object.assign({ id: 'base', kind: 'Classical' }, m.BOOK)].concat(m.SCRIPTURE);
+    const srcOn = id => s.src[id] !== false;
+    const roots = q ? m.ROOTS.filter(rootOk).filter(r => r.bare === qa || r.tr.toLowerCase() === ql || r.en.toLowerCase().includes(ql) || (qa.length >= 2 && r.bare.includes(qa))) : m.ROOTS.filter(rootOk);
+    const pats = det[3] ? [det[3]] : Object.keys(m.FORM_META).filter(f => q && (m.stripDia(f) === qa || m.FORM_META[f][0].toLowerCase() === ql));
+    const words = m.WORDS.filter(w => rootOk(m.RMAP[w.root])).filter(w => det[3] ? w.form === det[3] : (q && ((qa && m.stripDia(w.ar).includes(qa)) || w.tr.toLowerCase().includes(ql) || w.en.toLowerCase().includes(ql) || (qa.length === 3 && m.RMAP[w.root].bare === qa))));
+    const pass = [];
+    books.forEach(b => b.chapters.forEach((ch, ci) => ch.passages.forEach((p, pi) => { if (!srcOn(b.id)) return; const toks = p.toks.map(t => m.parseTok(t)); const txt = toks.map(t => t.ar).join(' '); const hit = det[3] ? toks.some(t => t.word && m.WMAP[t.word].form === det[3]) : (q && ((qa && m.stripDia(txt).includes(qa)) || (p.ref && p.ref === q) || p.en.toLowerCase().includes(ql))); if (hit) pass.push({ b, ci, pi, p, txt }); })));
+    const dot = c.dot;
+    const groups = [];
+    if (s.kinds.Roots && roots.length && (q || L.length)) groups.push({ title: 'Roots', rows: roots.slice(0, 6).map(r => ({ ar: r.ar, en: r.en, meta: m.WORDS.filter(w => w.root === r.key).length + ' words', dot: dot(c.C.root), color: '#a8682c', href: 'Concordance.dc.html?root=' + r.key })), more: 'concordance →', moreHref: 'Concordance.dc.html', grid: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px' });
+    if (s.kinds.Patterns && pats.length) groups.push({ title: 'Patterns', rows: pats.map(f => ({ ar: f, en: m.FORM_META[f][1], meta: m.WORDS.filter(w => w.form === f).length + ' words', dot: dot(c.C.form), color: '#6f55c4', href: 'Lexicon%20Reader%20v4.dc.html?w=' + (m.WORDS.find(w => w.form === f) || {}).id })), more: '', moreHref: '#', grid: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px' });
+    if (s.kinds.Words && words.length) groups.push({ title: 'Words' + (det[3] ? ' on this pattern' : ''), rows: words.slice(0, 12).map(w => ({ ar: w.ar, en: w.tr + ' · ' + w.en, meta: m.RMAP[w.root].ar, dot: dot(c.C.word), color: '#2f6ae0', href: 'Lexicon%20Reader%20v4.dc.html?w=' + w.id })), more: words.length > 12 ? words.length + ' total' : '', moreHref: '#', grid: 'display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px' });
+    if (s.kinds.Passages && pass.length) groups.push({ title: 'Passages', rows: pass.slice(0, 10).map(o => ({ ar: o.txt.length > 60 ? o.txt.slice(0, 60) + '…' : o.txt, en: o.p.en, meta: (o.p.ref || 'Ch. ' + (o.ci + 1) + '·' + (o.pi + 1)) + ' · ' + o.b.en, dot: dot(c.C.sentence), color: '#16161a', href: 'Lexicon%20Reader%20v4.dc.html?book=' + o.b.id })), more: 'open as concordance →', moreHref: 'Concordance.dc.html', grid: 'display:flex;flex-direction:column;gap:6px' });
+    const total = roots.length + pats.length + words.length + pass.length;
+    return {
+      nav: c.navModel(''), q: s.q, onQ: e => this.setState({ q: e.currentTarget.value }), onSubmit: e => { e.preventDefault(); history.replaceState(null, '', 'Search.dc.html?q=' + encodeURIComponent(s.q)); this.forceUpdate(); },
+      meta: q ? total + ' results' : '', detected: det[0], detNote: det[1], detStyle: 'white-space:nowrap;padding:3px 10px;border-radius:99px;background:' + (det[2] === 'pat' ? '#f1edfb' : '#eef3fd') + ';border:1px solid ' + (det[2] === 'pat' ? '#6f55c4' : '#2f6ae0') + ';color:#16161a;font-family:Amiri,\'IBM Plex Sans\',serif',
+      kinds: [['Words', words.length], ['Roots', roots.length], ['Patterns', pats.length], ['Passages', pass.length]].map(k => ({ label: k[0], n: k[1], on: !!s.kinds[k[0]], onToggle: () => this.setState({ kinds: Object.assign({}, s.kinds, { [k[0]]: !s.kinds[k[0]] }) }) })),
+      sources: books.map(b => ({ label: b.en, n: pass.filter(o => o.b.id === b.id).length, on: srcOn(b.id), onToggle: () => this.setState({ src: Object.assign({}, s.src, { [b.id]: !srcOn(b.id) }) }) })),
+      letters: s.letters.map((v, i) => ({ v, onChange: e => { const L2 = s.letters.slice(); L2[i] = e.currentTarget.value.slice(-1); this.setState({ letters: L2 }); } })),
+      groups, empty: !!q && !groups.length
+    };
+  }
+}
+</script>
+</body>
+</html>

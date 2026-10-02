@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;background:#eeeef1}*{box-sizing:border-box}a{color:#2f6ae0;text-decoration:none}a:hover{color:#16161a}input,button,textarea{font-family:inherit}button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+  <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;background:#f8f8fa;border-bottom:1px solid #e5e5ea">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;flex:none"><div style="width:18px;height:18px;border-radius:5px;background:#a8682c"></div><span style="font-size:14px;font-weight:600">Jadhr</span></a>
+    <div style="display:flex;gap:1px;padding:2px;background:#ecedf1;border-radius:9px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:0 1 auto"><sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><a href="{{ n.href }}" aria-current="{{ n.current }}" style="{{ n.style }}">{{ n.label }}</a></sc-for></div>
+    <div style="flex:1"></div>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#71717c;white-space:nowrap">{{ meta }}</span>
+    <div style="display:flex;gap:2px;padding:2px;background:#ecedf1;border-radius:9px"><sc-for list="{{ filters }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button></sc-for></div>
+  </div>
+  <div style="flex:1;display:grid;grid-template-columns:320px minmax(0,1fr);min-height:0">
+    <div style="background:#f8f8fa;border-right:1px solid #e5e5ea;overflow-y:auto;display:flex;flex-direction:column">
+      <sc-for list="{{ list }}" as="p" hint-placeholder-count="5">
+        <button onClick="{{ p.onClick }}" style="{{ p.style }}"><div style="display:flex;align-items:baseline;gap:8px"><span dir="rtl" style="font-family:Amiri,serif;font-size:19px;color:#16161a">{{ p.ar }}</span><span style="font-size:12px;color:#16161a">{{ p.kind }}</span><div style="flex:1"></div><span style="font-size:11px;color:#71717c">{{ p.when }}</span></div><div style="{{ p.subStyle }}">{{ p.sub }}</div></button>
+      </sc-for>
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 14px;font-size:12.5px;color:#71717c;line-height:1.55">{{ emptyText }}</div></sc-if>
+    </div>
+    <div style="padding:20px 24px 40px;display:flex;flex-direction:column;gap:14px;background:#fffffe;min-width:0">
+      <sc-if value="{{ hasCur }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:3px"><div style="font-size:16px;font-weight:600">{{ cur.title }}</div><div style="font-size:12.5px;color:#71717c">{{ cur.by }}</div></div><div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#4f4f5a;flex-wrap:wrap"><sc-for list="{{ cur.approvals }}" as="a" hint-placeholder-count="2"><span style="{{ a.style }}">{{ a.glyph }}</span><span style="color:{{ a.color }}">{{ a.label }}</span></sc-for></div></div>
+        <div style="border:1px solid #e5e5ea;border-radius:10px;overflow:hidden;font-size:14px;line-height:1.7">
+          <sc-if value="{{ cur.hasBefore }}" hint-placeholder-val="{{ true }}"><div style="padding:10px 14px;background:#fbe9e9;color:#4f4f5a;border-bottom:1px solid #e5e5ea"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#c02626;margin-right:10px">−</span>{{ cur.before }}</div></sc-if>
+          <div style="padding:10px 14px;background:#e7f4ec;color:#16161a"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#15803d;margin-right:10px">+</span>{{ cur.after }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Rationale &amp; sources</div><div style="padding:10px 14px;background:#f8f8fa;border:1px solid #e5e5ea;border-radius:10px;font-size:13px;color:#4f4f5a;line-height:1.55">{{ cur.why }} <span style="{{ cur.srcStyle }}">{{ cur.srcNote }}</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Your note to the contributor</div><textarea value="{{ note }}" onChange="{{ onNote }}" rows="2" placeholder="Optional — shown with the decision" style="width:100%;resize:vertical;padding:9px 12px;background:#fff;border:1px solid #e5e5ea;border-radius:8px;font-size:13px;color:#16161a;outline:none;font-family:inherit" style-focus="border-color:#2f6ae0"></textarea></div>
+        <sc-if value="{{ cur.pending }}" hint-placeholder-val="{{ true }}"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button onClick="{{ decline }}" style="background:#fff;border:1px solid #e5e5ea;border-radius:9px;font-size:13px;padding:9px 14px;color:#c02626;cursor:pointer">Decline</button><button onClick="{{ changes }}" style="background:#fff;border:1px solid #e5e5ea;border-radius:9px;font-size:13px;padding:9px 14px;color:#4f4f5a;cursor:pointer">Request changes</button><div style="flex:1"></div><button onClick="{{ approve }}" style="background:#16161a;border:1px solid #16161a;border-radius:9px;font-size:13px;padding:9px 16px;color:#fff;cursor:pointer">{{ approveLabel }}</button></div></sc-if>
+        <sc-if value="{{ cur.settled }}" hint-placeholder-val="{{ false }}"><div style="{{ cur.settledStyle }}">{{ cur.settledText }}</div></sc-if>
+        <div style="font-size:11.5px;color:#71717c;line-height:1.5;margin-top:auto">Two approvals merge a proposal; every merge is credited on the entry and in the next dataset changelog. You are reviewing as <strong style="color:#16161a;font-weight:500">R. Saleh</strong> (prototype role).</div>
+      </sc-if>
+      <sc-if value="{{ noCur }}" hint-placeholder-val="{{ true }}"><div style="padding:40px;text-align:center;color:#71717c;font-size:13.5px">Select a proposal.</div></sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SEED = [
+  { id: 'seed1b', kind: 'edit', wordId: 'alam', wordAr: 'عَالَم', senseIdx: 0, current: 'the world; all created things', text: 'the world; everything other than God — all created things', why: 'Lisān gives كلُّ ما سوى الخالق as the primary gloss; the theological framing is the classical one.', sources: ['lisan'], status: 'pending', by: 'A. Haddad', approvals: ['H. Mansour'], ts: Date.now() - 2 * 864e5 },
+  { id: 'seed2b', kind: 'attest', wordId: 'qayyum', wordAr: 'قَيُّوم', senseIdx: null, current: '', text: 'Attestation · Q 2:255 — اللهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ', why: 'Auto-verified verse text (Tanzil).', sources: ['quran'], status: 'pending', by: 'M. Farouk', approvals: [], ts: Date.now() - 4 * 864e5 },
+  { id: 'seed3b', kind: 'error', wordId: 'maktab', wordAr: 'مَكْتَب', senseIdx: null, current: 'pattern shown as مَفْعِل', text: 'pattern should be مَفْعَل', why: 'Standard grammars (Wright §223) give mafʿal for nouns of place from Form I verbs with fatḥa.', sources: [], status: 'pending', by: 'L. Khoury', approvals: [], ts: Date.now() - 5 * 864e5 },
+  { id: 'seed4b', kind: 'sense', wordId: 'alam', wordAr: 'عَالَم', senseIdx: null, current: '(new sense)', text: 'the human microcosm (Sufi usage: العالم الصغير)', why: '', sources: [], status: 'pending', by: 'A. Haddad', approvals: [], ts: Date.now() - 2 * 864e5 }
+];
+class Component extends DCLogic {
+  state = { m: null, c: null, list: [], cur: null, filter: 'Open', note: '' };
+  componentDidMount() { Promise.all([import('./lexicon-data.js'), import('./jadhr-chrome.js')]).then(([m, c]) => { let list = m.load(m.KEYS.proposals, []); if (!list.some(p => p.id === 'seed1b')) { list = SEED.concat(list.filter(p => !/^seed\d$/.test(p.id))); m.save(m.KEYS.proposals, list); } this.setState({ m, c, list, cur: (list.find(p => p.status === 'pending') || list[0] || {}).id || null }); }); }
+  persist(list) { this.state.m.save(this.state.m.KEYS.proposals, list); this.setState({ list }); }
+  decide(status) { const s = this.state; const list = s.list.map(p => { if (p.id !== s.cur) return p; if (status === 'approve') { if ((p.approvals || []).indexOf('R. Saleh') >= 0) return p; const ap = (p.approvals || []).concat(['R. Saleh']); return Object.assign({}, p, { approvals: ap, status: ap.length >= 2 ? 'merged' : 'pending', note: s.note }); } return Object.assign({}, p, { status, note: s.note }); }); this.persist(list); const still = list.find(p => p.id === s.cur); const leaves = s.filter === 'Open' && still && still.status !== 'pending'; this.setState({ note: '', cur: leaves ? ((list.find(p => p.status === 'pending' && p.id !== s.cur) || still).id) : s.cur, filter: leaves && !list.some(p => p.status === 'pending' && p.id !== s.cur) ? (still.status === 'merged' ? 'Merged' : 'Declined') : s.filter }); }
+  renderVals() {
+    const s = this.state, m = s.m, c = s.c;
+    if (!m) return { nav: [], filters: [], list: [], noCur: true };
+    const KIND = { edit: 'edit sense', sense: 'new sense', attest: 'attestation', error: 'error report', entry: 'new entry', note: 'from a note' };
+    const open = s.list.filter(p => p.status === 'pending');
+    const shown = s.list.filter(p => s.filter === 'Open' ? p.status === 'pending' : s.filter === 'Mine' ? p.by === 'you' : s.filter === 'Merged' ? p.status === 'merged' : p.status !== 'pending' && p.status !== 'merged').slice().sort((a, b) => b.ts - a.ts);
+    const cur = s.list.find(p => p.id === s.cur);
+    const ago = ts => { const d = Math.round((Date.now() - ts) / 864e5); return d < 1 ? 'today' : d + ' d'; };
+    const ap = cur ? (cur.approvals || []) : [];
+    return {
+      nav: c.navModel('Review queue'),
+      meta: open.length + ' open · ' + s.list.filter(p => p.by === 'you').length + ' yours',
+      filters: ['Open', 'Mine', 'Merged', 'Declined'].map(f => { const inF = p => f === 'Open' ? p.status === 'pending' : f === 'Mine' ? p.by === 'you' : f === 'Merged' ? p.status === 'merged' : p.status !== 'pending' && p.status !== 'merged'; const n = s.list.filter(inF).length; return { label: f + (n ? ' ' + n : ''), onClick: () => { const first = s.list.filter(inF).sort((a, b) => b.ts - a.ts)[0]; this.setState({ filter: f, cur: first ? first.id : null, note: '' }); }, style: c.seg(s.filter === f) }; }),
+      list: shown.map(p => ({ ar: p.wordAr || '—', kind: KIND[p.kind] || p.kind, when: ago(p.ts), onClick: () => this.setState({ cur: p.id, note: '' }),
+        sub: p.by + ' · ' + ((p.approvals || []).length) + ' of 2 approvals' + ((p.sources || []).length ? ' · cites ' + p.sources.length : (p.why ? '' : ' · no source attached')),
+        subStyle: 'font-size:11.5px;color:' + (!(p.sources || []).length && !p.why ? '#b45309' : '#71717c'),
+        style: 'display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:12px 14px;border:none;border-bottom:1px solid #e5e5ea;cursor:pointer;background:' + (p.id === s.cur ? '#fff' : 'transparent') + ';border-left:3px solid ' + (p.id === s.cur ? '#a8682c' : 'transparent') })),
+      empty: !shown.length, hasCur: !!cur, noCur: !cur,
+      emptyText: s.filter === 'Open' ? 'Nothing waiting. Proposals arrive from “Suggest an edit” on any sense in the Reader, from unknown words, and from notes.' : s.filter === 'Mine' ? 'You have not proposed anything yet — try “Suggest an edit” on a sense in the Reader.' : s.filter === 'Merged' ? 'Nothing merged yet.' : 'Nothing declined.',
+      cur: cur ? { title: (KIND[cur.kind] || cur.kind) + (cur.senseIdx != null ? ' ' + String(cur.senseIdx + 1).padStart(2, '0') : '') + ' · ' + (cur.wordAr || ''), by: cur.by + ' · proposed ' + new Date(cur.ts).toLocaleDateString() + (cur.by === 'you' ? ' · you cannot approve your own proposal' : ''),
+        hasBefore: !!cur.current && cur.kind !== 'attest', before: cur.current, after: cur.text, why: cur.why || 'No rationale given.',
+        srcStyle: 'color:' + ((cur.sources || []).length ? '#15803d' : '#b45309'), srcNote: (cur.sources || []).length ? '· cited: ' + cur.sources.map(id => (m.DICTS.find(d => d.id === id) || { en: id }).en).join(', ') + ' — reference present (auto-checked)' : '· no source attached — request one before approving',
+        approvals: [0, 1].map(i => ({ glyph: ap[i] ? '✓' : '', label: ap[i] || (i === ap.length ? 'you' : 'pending'), color: ap[i] ? '#15803d' : '#71717c', style: 'width:20px;height:20px;border-radius:99px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;' + (ap[i] ? 'background:#15803d;color:#fff' : 'border:1.5px dashed #d3d3dc') })),
+        pending: cur.status === 'pending', settled: cur.status !== 'pending',
+        settledText: cur.status === 'merged' ? 'Merged · credited to ' + cur.by + ' · appears in the next changelog' : cur.status === 'declined' ? 'Declined' + (cur.note ? ' · “' + cur.note + '”' : '') : 'Changes requested' + (cur.note ? ' · “' + cur.note + '”' : ''),
+        settledStyle: 'padding:10px 14px;border-radius:10px;font-size:13px;font-weight:500;background:' + (cur.status === 'merged' ? '#e7f4ec' : '#f5f5f8') + ';color:' + (cur.status === 'merged' ? '#15803d' : '#4f4f5a') } : {},
+      approveLabel: ap.indexOf('R. Saleh') >= 0 ? 'You approved · waiting for one more' : ap.length >= 1 ? 'Approve & merge' : 'Approve (1 of 2)',
+      note: s.note, onNote: e => this.setState({ note: e.currentTarget.value }),
+      approve: () => this.decide('approve'), decline: () => this.decide('declined'), changes: () => this.decide('changes')
+    };
+  }
+}
+</script>
+</body>
+</html>

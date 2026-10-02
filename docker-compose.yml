@@ -1,0 +1,20 @@
+name: judhur-quran-dev
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: judhur-quran-db
+    environment:
+      POSTGRES_USER: judhur
+      POSTGRES_PASSWORD: judhur
+      POSTGRES_DB: judhur
+    ports:
+      - "5442:5432"
+    volumes:
+      - judhur_quran_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U judhur -d judhur"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+volumes:
+  judhur_quran_pg:

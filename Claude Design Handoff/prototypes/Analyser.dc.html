@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;background:#eeeef1}*{box-sizing:border-box}a{color:#2f6ae0;text-decoration:none}a:hover{color:#16161a}input,button,textarea{font-family:inherit}button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+  <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;background:#f8f8fa;border-bottom:1px solid #e5e5ea">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;flex:none"><div style="width:18px;height:18px;border-radius:5px;background:#a8682c"></div><span style="font-size:14px;font-weight:600">Jadhr</span></a>
+    <div style="display:flex;gap:1px;padding:2px;background:#ecedf1;border-radius:9px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:0 1 auto"><sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><a href="{{ n.href }}" aria-current="{{ n.current }}" style="{{ n.style }}">{{ n.label }}</a></sc-for></div>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:2px;padding:2px;background:#ecedf1;border-radius:9px"><sc-for list="{{ views }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" style="{{ v.style }}">{{ v.label }}</button></sc-for></div>
+    <button onClick="{{ exportConll }}" style="background:#fff;border:1px solid #e5e5ea;border-radius:8px;color:#4f4f5a;font-size:12.5px;padding:6px 12px;cursor:pointer;white-space:nowrap">Copy CoNLL-U</button>
+  </div>
+  <div style="padding:14px 22px;border-bottom:1px solid #e5e5ea;background:#fff;display:flex;flex-direction:column;gap:8px">
+    <textarea value="{{ q }}" onChange="{{ onQ }}" dir="rtl" rows="2" placeholder="اكتب أو الصق عبارة…" aria-label="Phrase to analyse" style="width:100%;resize:vertical;font-family:Amiri,serif;font-size:24px;line-height:1.8;color:#16161a;text-align:right;padding:10px 14px;border:1px solid #e5e5ea;border-radius:10px;background:#fffffe;outline:none" style-focus="border-color:#2f6ae0"></textarea>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:#71717c"><span>Try</span><sc-for list="{{ samples }}" as="x" hint-placeholder-count="3"><button onClick="{{ x.onClick }}" dir="rtl" style="font-family:Amiri,serif;font-size:15px;padding:2px 10px;border-radius:99px;background:#fff;border:1px solid #e5e5ea;cursor:pointer;color:#16161a">{{ x.label }}</button></sc-for><div style="flex:1"></div><span>{{ meta }}</span></div>
+  </div>
+  <sc-if value="{{ table }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;background:#fff;display:flex;flex-direction:column">
+      <div style="display:grid;grid-template-columns:130px 170px 130px minmax(0,1fr) 70px;padding:7px 22px;border-bottom:1px solid #e5e5ea;background:#f8f8fa;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#71717c"><div>Token</div><div>Segments</div><div>Root · wazn</div><div>Analysis</div><div style="text-align:right">Conf.</div></div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+        <div style="{{ r.style }}">
+          <div style="font-family:Amiri,serif;font-size:21px;color:#16161a;direction:ltr"><bdi>{{ r.tok }}</bdi></div>
+          <div style="font-family:Amiri,serif;font-size:17px;display:flex;gap:4px;flex-wrap:wrap;direction:ltr"><sc-for list="{{ r.segs }}" as="g" hint-placeholder-count="2"><bdi title="{{ g.g }}" style="{{ g.style }}">{{ g.t }}</bdi></sc-for></div>
+          <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;direction:ltr"><bdi style="font-family:Amiri,serif;font-size:16px;color:#a8682c;letter-spacing:.05em">{{ r.root }}</bdi><bdi style="font-family:Amiri,serif;font-size:15px;color:#6f55c4">{{ r.pat }}</bdi><span style="font-size:12px;color:#b7b7c3">{{ r.noRoot }}</span></div>
+          <div style="font-size:12.5px;color:#4f4f5a;line-height:1.5">{{ r.analysis }} <a href="{{ r.href }}" style="{{ r.linkStyle }}">{{ r.link }}</a></div>
+          <div style="{{ r.confStyle }}">{{ r.conf }}</div>
+        </div>
+      </sc-for>
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><div style="padding:30px 22px;color:#71717c;font-size:13px">Type a phrase above.</div></sc-if>
+      <div style="margin-top:auto;padding:9px 22px;border-top:1px solid #e5e5ea;background:#f8f8fa;display:flex;gap:14px;font-size:12px;color:#71717c;flex-wrap:wrap"><span><span style="color:#6f55c4">■</span> affix</span><span>{{ foot }}</span><div style="flex:1"></div><a href="{{ graphHref }}">Build graph from this →</a></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ inter }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;background:#fffffe;padding:28px 30px;display:flex;flex-direction:column;gap:20px">
+      <div dir="rtl" style="display:flex;flex-wrap:wrap;gap:18px 14px;justify-content:flex-start">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px;padding:10px 12px;border:1px solid #e5e5ea;border-radius:10px;background:#fff">
+            <div style="font-family:Amiri,serif;font-size:26px;color:#16161a;line-height:1.3">{{ r.tok }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#71717c;direction:ltr">{{ r.tr }}</div>
+            <div style="font-size:11.5px;color:#4f4f5a;direction:ltr;text-align:center;max-width:140px">{{ r.gloss }}</div>
+            <div style="font-family:Amiri,serif;font-size:14px;color:#a8682c;letter-spacing:.05em">{{ r.root }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-size:12.5px;color:#71717c">{{ foot }}</div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { m: null, c: null, q: '', view: 'table' };
+  componentDidMount() { Promise.all([import('./lexicon-data.js'), import('./jadhr-chrome.js')]).then(([m, c]) => this.setState({ m, c, q: new URLSearchParams(location.search).get('q') || 'إِنَّ العِلْمَ لَا يُدْرَكُ إِلَّا بِالتَّعَلُّمِ' })); }
+  renderVals() {
+    const s = this.state, m = s.m, c = s.c;
+    if (!m) return { nav: [], views: [], samples: [], rows: [], table: true };
+    const toks = s.q.trim() ? s.q.trim().split(/\s+/) : [];
+    const FN = /^(و|ف|في|من|الى|على|لا|ما|ان|الا|ثم|هو|هي|كان|انما|كل|هنا|حين|بين|لم|قد|عن|ذي|لنا|به|فيه|انك|انت)$/;
+    const an = toks.map(t => { const bare = m.stripDia(t).replace(/[،.:؛]/g, ''); const a = m.analyse(t); const fn = FN.test(bare); return { t, a, fn }; });
+    const rows = an.map((o, i) => { const a = o.a; const cand = a.candidates[0]; const conf = o.fn ? 1 : a.word ? 0.99 : (cand ? cand.score : 0); const low = conf < 0.8; return {
+      tok: o.t, style: 'display:grid;grid-template-columns:130px 170px 130px minmax(0,1fr) 70px;align-items:center;gap:8px;padding:9px 22px;border-bottom:1px solid #f0f0f3;background:' + (low ? '#fff9f1' : '#fff'),
+      segs: o.fn ? [{ t: o.t, g: 'particle — not segmented', style: 'color:#71717c;padding:0 5px' }] : a.segments.filter(g => /[\u0621-\u064A]/.test(g.t)).slice().reverse().map(g => ({ t: g.t, g: g.g, style: (g.kind === 'stem' ? 'color:#16161a' : 'color:#6f55c4') + ';padding:0 5px;border-radius:5px;background:' + (g.kind === 'stem' ? '#f5f5f8' : '#f1edfb') })),
+      root: o.fn ? '' : (cand ? cand.root.ar : '—'), pat: o.fn ? '' : (a.word ? a.word.form : (cand ? a.pattern : '')),
+      analysis: o.fn ? 'particle / function word' : (a.word ? a.word.pos + ' · ' + (a.gram || 'dictionary form') + ' · ' + a.word.en : (cand ? (a.gram || 'stem') + ' · ' + (a.candidates.length > 1 ? a.candidates.length + ' analyses' : 'one analysis') : 'no root in the lexicon')),
+      link: a.word ? 'entry' : (low && !o.fn ? 'choose' : ''), linkStyle: 'font-size:12px;color:' + (low && !a.word ? '#b45309' : '#2f6ae0'), href: a.word ? 'Lexicon%20Reader%20v4.dc.html?w=' + a.word.id : '#',
+      noRoot: o.fn ? '—' : '', conf: conf.toFixed(2), confStyle: "text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;color:" + (conf >= 0.8 ? '#15803d' : '#b45309'),
+      tr: a.word ? a.word.tr : '', gloss: o.fn ? '(particle)' : (a.word ? a.word.en : (cand ? '? ' + cand.root.en : '?'))
+    }; });
+    const nRoots = new Set(an.filter(o => !o.fn && o.a.candidates[0]).map(o => o.a.candidates[0].root.key)).size;
+    const toReview = an.filter(o => !o.fn && !o.a.word && o.a.candidates[0] && o.a.candidates[0].score < 0.8).length;
+    const seedWords = an.filter(o => o.a.word).map(o => { const w = o.a.word, r = m.RMAP[w.root]; return { ar: w.ar, tr: w.tr, en: w.en, pos: w.pos, form: { ar: w.form, tr: m.FORM_META[w.form][0], en: m.FORM_META[w.form][1] }, root: { ar: r.ar, tr: r.tr, en: r.en } }; });
+    let seedQ = ''; try { seedQ = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify({ words: seedWords, sentence: { ar: s.q.trim(), tr: '', en: 'Analysed phrase', src: 'Analyser' } }))))); } catch (e) {}
+    return {
+      nav: c.navModel('Analyser'), q: s.q, onQ: e => this.setState({ q: e.currentTarget.value }),
+      views: [['table', 'Table'], ['inter', 'Interlinear']].map(v => ({ label: v[1], onClick: () => this.setState({ view: v[0] }), style: c.seg(s.view === v[0]) })),
+      table: s.view === 'table', inter: s.view === 'inter',
+      samples: ['إِنَّ العِلْمَ لَا يُدْرَكُ إِلَّا بِالتَّعَلُّمِ', 'وَالمُكَاتَبَةُ بَيْنَ القَارِئِ وَالكِتَابِ مُسْتَقِيمَةٌ', 'يَجْلِسُ المُدَرِّسُ فِي المَجْلِسِ'].map(x => ({ label: x.split(' ').slice(0, 3).join(' ') + '…', onClick: () => this.setState({ q: x }) })),
+      meta: toks.length ? toks.length + ' tokens · ' + nRoots + ' roots · ' + toReview + ' to review' : '', rows, empty: !toks.length,
+      foot: toks.length ? toks.length + ' tokens · ' + nRoots + ' roots · ' + toReview + ' to review · rule-based prototype analyser' : '',
+      graphHref: 'Lexicon%20Editor%20v5.dc.html?from=analyser&seed=' + seedQ,
+      exportConll: () => { const lines = ['# text = ' + s.q.trim()].concat(an.map((o, i) => [i + 1, o.t, o.a.word ? o.a.word.ar : '_', o.fn ? 'PART' : (o.a.word ? (o.a.word.pos === 'verb' ? 'VERB' : 'NOUN') : 'X'), '_', 'Root=' + (o.a.candidates[0] ? o.a.candidates[0].root.tr : '_') + '|Pattern=' + (o.a.word ? o.a.word.form : o.a.pattern), '_', '_', '_', '_'].join('\t'))); try { navigator.clipboard.writeText(lines.join('\n')); } catch (e) {} }
+    };
+  }
+}
+</script>
+</body>
+</html>

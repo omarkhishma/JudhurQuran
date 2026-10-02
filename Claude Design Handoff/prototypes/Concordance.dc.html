@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;background:#eeeef1}*{box-sizing:border-box}a{color:#2f6ae0;text-decoration:none}a:hover{color:#16161a}input,button{font-family:inherit}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+  <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;background:#f8f8fa;border-bottom:1px solid #e5e5ea">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;flex:none"><div style="width:18px;height:18px;border-radius:5px;background:#a8682c"></div><span style="font-size:14px;font-weight:600">Jadhr</span></a>
+    <div style="display:flex;gap:1px;padding:2px;background:#ecedf1;border-radius:9px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:0 1 auto"><sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><a href="{{ n.href }}" aria-current="{{ n.current }}" style="{{ n.style }}">{{ n.label }}</a></sc-for></div>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:2px;padding:2px;background:#ecedf1;border-radius:9px"><sc-for list="{{ views }}" as="v" hint-placeholder-count="2"><button onClick="{{ v.onClick }}" style="{{ v.style }}">{{ v.label }}</button></sc-for></div>
+    <button onClick="{{ exportCsv }}" style="background:#fff;border:1px solid #e5e5ea;border-radius:8px;color:#4f4f5a;font-size:12.5px;padding:6px 12px;cursor:pointer;white-space:nowrap">Export CSV</button>
+  </div>
+  <div style="padding:12px 16px;border-bottom:1px solid #e5e5ea;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font-size:12px;color:#71717c">Root</span>
+    <sc-for list="{{ rootChips }}" as="r" hint-placeholder-count="6"><button onClick="{{ r.onClick }}" dir="rtl" style="{{ r.style }}">{{ r.ar }}</button></sc-for>
+    <span style="width:1px;height:18px;background:#e5e5ea;margin:0 4px"></span>
+    <span style="font-size:12px;color:#71717c">Texts</span>
+    <sc-for list="{{ textChips }}" as="t" hint-placeholder-count="4"><button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for>
+    <div style="flex:1"></div>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#71717c">{{ meta }}</span>
+  </div>
+
+  <sc-if value="{{ kwic }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:flex;flex-direction:column;background:#fff">
+      <div style="padding:8px 16px;border-bottom:1px solid #e5e5ea;background:#f8f8fa;display:flex;align-items:center;gap:8px;font-size:12px;color:#71717c;flex-wrap:wrap"><span>Sort</span><sc-for list="{{ sorts }}" as="o" hint-placeholder-count="3"><button onClick="{{ o.onClick }}" style="{{ o.style }}">{{ o.label }}</button></sc-for><span style="width:1px;height:16px;background:#e5e5ea;margin:0 4px"></span><span>Form</span><sc-for list="{{ formChips }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onClick }}" dir="rtl" style="{{ f.style }}">{{ f.label }}</button></sc-for></div>
+      <div style="display:grid;grid-template-columns:130px minmax(0,1fr) 140px minmax(0,1fr);padding:6px 16px;border-bottom:1px solid #e5e5ea;font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:#71717c;background:#f8f8fa"><div>Source</div><div style="text-align:right">← following</div><div style="text-align:center">Keyword</div><div>preceding →</div></div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+        <button onClick="{{ r.onClick }}" title="{{ r.en }}" style="display:grid;grid-template-columns:130px minmax(0,1fr) 140px minmax(0,1fr);align-items:center;gap:8px;padding:7px 16px;border:none;border-bottom:1px solid #f0f0f3;background:transparent;font-family:Amiri,serif;font-size:19px;color:#16161a;cursor:pointer;text-align:left;width:100%" style-hover="background:#f8f8fa">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#71717c">{{ r.src }}</div>
+          <div dir="rtl" style="text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4f4f5a"><bdi>{{ r.right }}</bdi></div>
+          <div dir="rtl" style="text-align:center;color:#2f6ae0;font-weight:700">{{ r.kw }}</div>
+          <div dir="rtl" style="text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4f4f5a"><bdi>{{ r.left }}</bdi></div>
+        </button>
+      </sc-for>
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><div style="padding:24px 16px;font-size:13px;color:#71717c">No attestations of this root in the selected texts.</div></sc-if>
+      <div style="margin-top:auto;padding:8px 16px;border-top:1px solid #e5e5ea;background:#f8f8fa;font-size:12px;color:#71717c">Click a line to open it in the reader with the hit selected.</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ dist }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1px;background:#e5e5ea">
+      <div style="background:#fff;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">By text · hits per 100 words</div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px">
+          <sc-for list="{{ byText }}" as="t" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:10px"><div style="width:150px;color:#16161a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.label }}</div><div style="flex:1;height:14px;border-radius:3px;background:#ecedf1;overflow:hidden"><div style="{{ t.bar }}"></div></div><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#71717c;width:80px;text-align:right">{{ t.n }}</div></div></sc-for>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c;margin-top:6px">Collocates · within 2 words</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline"><sc-for list="{{ colloc }}" as="c" hint-placeholder-count="8"><span dir="rtl" title="{{ c.hint }}" style="{{ c.style }}">{{ c.ar }}</span></sc-for></div>
+      </div>
+      <div style="background:#fff;padding:18px 22px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c;flex:1">By inflected form</div><span style="font-size:11.5px;color:#71717c">click a form → KWIC lines</span></div>
+        <div style="display:flex;flex-direction:column;gap:1px;background:#e5e5ea;border:1px solid #e5e5ea;border-radius:10px;overflow:hidden">
+          <sc-for list="{{ byForm }}" as="f" hint-placeholder-count="6"><button onClick="{{ f.onClick }}" style="{{ f.style }}"><span dir="rtl" style="font-family:Amiri,serif;font-size:20px;color:#16161a;text-align:right">{{ f.ar }}</span><div style="height:8px;border-radius:2px;background:#ecedf1;overflow:hidden"><div style="{{ f.bar }}"></div></div><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#4f4f5a;text-align:right">{{ f.n }}</span></button></sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { m: null, c: null, root: null, texts: {}, view: 'kwic', sort: 'right', form: null };
+  componentDidMount() {
+    Promise.all([import('./lexicon-data.js'), import('./jadhr-chrome.js')]).then(([m, c]) => {
+      const qs = new URLSearchParams(location.search);
+      const r = qs.get('root'); const w = qs.get('w');
+      const root = (r && m.RMAP[r]) ? r : (w && m.WMAP[w] ? m.WMAP[w].root : (m.load(m.KEYS.context, {}) || {}).root) || 'ilm';
+      this.setState({ m, c, root: m.RMAP[root] ? root : 'ilm', view: qs.get('view') === 'dist' ? 'dist' : 'kwic' });
+    });
+  }
+  hits() {
+    const s = this.state, m = s.m; if (!m) return [];
+    const books = [Object.assign({ id: 'base' }, m.BOOK)].concat(m.SCRIPTURE).concat(m.load(m.KEYS.texts, []).map(t => ({ id: t.id, en: t.title, ar: t.title, chapters: [{ passages: t.text.split(/(?<=[.؟!،:؛])\s+|\n+/).filter(Boolean).map((sent, i) => ({ ref: t.short + ' · ' + (i + 1), en: '', toks: sent.split(/\s+/).map(tok => { const a = m.analyse(tok); return a.word ? tok + '|' + a.word.id : tok; }) })) }] })));
+    const out = [];
+    books.forEach((b, bi) => b.chapters.forEach((c, ci) => c.passages.forEach((p, pi) => {
+      const toks = p.toks.map(t => m.parseTok(t));
+      toks.forEach((t, ti) => {
+        if (!t.word || m.WMAP[t.word].root !== s.root) return;
+        out.push({ book: b, bi, ci, pi, ti, kw: t.ar, form: m.WMAP[t.word].ar, wordId: t.word, left: toks.slice(0, ti).map(x => x.ar).join(' '), right: toks.slice(ti + 1).map(x => x.ar).join(' '), src: p.ref || ('Ch. ' + (ci + 1) + '·' + (pi + 1)), en: p.en, nwords: toks.length, neigh: toks.slice(Math.max(0, ti - 2), ti).concat(toks.slice(ti + 1, ti + 3)).map(x => x.ar) });
+      });
+    })));
+    return out;
+  }
+  renderVals() {
+    const s = this.state, m = s.m, c = s.c;
+    if (!m) return { nav: [], views: [], rootChips: [], textChips: [], sorts: [], formChips: [], rows: [], byText: [], colloc: [], byForm: [], kwic: true };
+    const all = this.hits();
+    const books = [...new Map(all.map(h => [h.book.id, h.book])).values()];
+    const on = id => s.texts[id] !== false;
+    let hs = all.filter(h => on(h.book.id)).filter(h => !s.form || h.form === s.form);
+    const key = h => m.stripDia(s.sort === 'right' ? h.right : s.sort === 'left' ? h.left.split(' ').reverse().join(' ') : h.src);
+    hs = hs.slice().sort((a, b) => key(a).localeCompare(key(b), 'ar'));
+    const root = m.RMAP[s.root];
+    const forms = [...new Set(all.filter(h => on(h.book.id)).map(h => h.form))].map(f => ({ f, n: all.filter(h => h.form === f && on(h.book.id)).length })).sort((a, b) => b.n - a.n);
+    const maxF = Math.max(1, ...forms.map(f => f.n));
+    const byText = books.map(b => { const n = all.filter(h => h.book.id === b.id).length; const words = b.chapters.reduce((a, ch) => a + ch.passages.reduce((x, p) => x + p.toks.length, 0), 0); return { b, n, per: words ? n / words * 100 : 0 }; });
+    const maxP = Math.max(0.01, ...byText.map(t => t.per));
+    const coll = {}; all.filter(h => on(h.book.id)).forEach(h => h.neigh.forEach(w => { const k = m.stripDia(w).replace(/[،.:]/g, ''); if (k.length > 2) coll[k] = coll[k] || { ar: w, n: 0 }; if (coll[k]) coll[k].n += 1; }));
+    const collocs = Object.values(coll).sort((a, b) => b.n - a.n).slice(0, 14);
+    const maxC = Math.max(1, ...collocs.map(x => x.n));
+    return {
+      nav: c.navModel('Concordance'),
+      views: [['kwic', 'KWIC'], ['dist', 'Distribution']].map(v => ({ label: v[1], onClick: () => this.setState({ view: v[0] }), style: c.seg(s.view === v[0]) })),
+      kwic: s.view === 'kwic', dist: s.view === 'dist',
+      rootChips: m.ROOTS.map(r => ({ ar: r.ar, onClick: () => this.setState({ root: r.key, form: null }), style: 'font-family:Amiri,serif;font-size:17px;letter-spacing:.06em;padding:2px 10px;border-radius:99px;cursor:pointer;background:#fff;border:1px solid ' + (s.root === r.key ? '#a8682c' : '#e5e5ea') + ';color:' + (s.root === r.key ? '#a8682c' : '#16161a') })),
+      textChips: books.map(b => ({ label: (b.en || b.ar) + ' ' + all.filter(h => h.book.id === b.id).length, onClick: () => this.setState({ texts: Object.assign({}, s.texts, { [b.id]: !on(b.id) }) }), style: c.chip(on(b.id)) })),
+      meta: hs.length + ' hits · ' + root.tr + ' · ' + forms.length + ' forms',
+      sorts: [['right', 'following context'], ['left', 'preceding'], ['src', 'source']].map(o => ({ label: o[1], onClick: () => this.setState({ sort: o[0] }), style: c.chip(s.sort === o[0]) })),
+      formChips: [{ f: null, n: all.filter(h => on(h.book.id)).length }].concat(forms).map(f => ({ label: (f.f || 'any') + ' ' + f.n, onClick: () => this.setState({ form: f.f }), style: (f.f ? 'font-family:Amiri,serif;font-size:15px;' : '') + c.chip(s.form === f.f) })),
+      rows: hs.map(h => ({ src: h.src, left: h.left || '—', right: h.right || '—', kw: h.kw, en: h.en, onClick: () => { location.href = 'Lexicon%20Reader%20v4.dc.html?book=' + encodeURIComponent(h.book.id) + '&w=' + encodeURIComponent(h.wordId); } })),
+      empty: !hs.length,
+      byText: byText.map(t => ({ label: t.b.en || t.b.ar, n: t.n + ' · ' + t.per.toFixed(1), bar: 'height:100%;background:#177a44;width:' + Math.round(t.per / maxP * 100) + '%' })),
+      colloc: collocs.map(x => ({ ar: x.ar, hint: x.n + ' co-occurrences', style: 'font-family:Amiri,serif;font-size:' + (14 + Math.round(x.n / maxC * 12)) + 'px;color:' + (x.n / maxC > .6 ? '#16161a' : x.n / maxC > .3 ? '#4f4f5a' : '#71717c') })),
+      byForm: forms.map(f => ({ ar: f.f, n: String(f.n), onClick: () => this.setState({ form: f.f, view: 'kwic' }), bar: 'height:100%;background:#2f6ae0;width:' + Math.round(f.n / maxF * 100) + '%', style: 'display:grid;grid-template-columns:110px 1fr 48px;align-items:center;gap:10px;padding:7px 12px;border:none;cursor:pointer;background:' + (s.form === f.f ? '#eef3fd' : '#fff') + ';text-align:left;width:100%' })),
+      exportCsv: () => { const csv = 'source,preceding,keyword,following\n' + hs.map(h => [h.src, h.left, h.kw, h.right].map(x => '"' + String(x).replace(/"/g, '""') + '"').join(',')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'concordance-' + root.tr + '.csv'; a.click(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

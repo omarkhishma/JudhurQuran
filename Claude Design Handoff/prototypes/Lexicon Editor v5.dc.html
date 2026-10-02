@@ -1,0 +1,2627 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --canvas:#eeeef1; --card:#ffffff; --card-2:#f5f5f8; --card-3:#ecedf1;
+      --line:#e5e5ea; --line-2:#d3d3dc;
+      --t1:#16161a; --t2:#4f4f5a; --t3:#71717c;
+      --ring:#2f6ae0; --edge:#b7b7c3; --dot:#d5d5dd; --bad:#c02626; --good:#15803d;
+      --c-root:#a8682c; --c-form:#6f55c4; --c-word:#2f6ae0; --c-sentence:#177a44; --c-desc:#6f6f7c;
+      --sh:0 1px 2px rgba(20,20,35,.05), 0 10px 24px -12px rgba(20,20,35,.20);
+      --sh-open:0 2px 4px rgba(20,20,35,.06), 0 30px 60px -20px rgba(20,20,35,.32);
+      --panel:#f8f8fa;
+    }
+    .dark{
+      --canvas:#0f0f12; --card:#1a1a20; --card-2:#22222a; --card-3:#2b2b34;
+      --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.16);
+      --t1:#f2f2f7; --t2:#b0b0be; --t3:#8d8d9b;
+      --ring:#7aa2f7; --edge:#4d4d5b; --dot:#2a2a33; --bad:#f07178; --good:#79d68b;
+      --c-root:#e0a361; --c-form:#ab92f2; --c-word:#7aa2f7; --c-sentence:#6fce88; --c-desc:#9a9aa8;
+      --sh:0 1px 0 rgba(255,255,255,.04) inset, 0 14px 30px -14px rgba(0,0,0,.85);
+      --sh-open:0 1px 0 rgba(255,255,255,.06) inset, 0 34px 64px -20px rgba(0,0,0,.9);
+      --panel:#15151a;
+    }
+    html,body{margin:0;padding:0;background:var(--canvas)}
+    *{box-sizing:border-box}
+    a{color:var(--ring);text-decoration:none}
+    a:hover{color:var(--t1)}
+    input,textarea,select,button{font-family:inherit}
+    ::selection{background:color-mix(in oklab, var(--ring) 28%, transparent)}
+    ::-webkit-scrollbar{width:9px;height:9px}
+    ::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:9px}
+    ::-webkit-scrollbar-track{background:transparent}
+    button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
+    @keyframes dcRise{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+    @keyframes dcPop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+  </style>
+</helmet>
+<div style="{{ shellStyle }}">
+
+  <div style="{{ headerStyle }}">
+    <div style="width:18px;height:18px;border-radius:5px;background:var(--c-root);flex:none"></div>
+    <sc-if value="{{ editingTitle }}" hint-placeholder-val="{{ false }}">
+      <input value="{{ titleDraft }}" onChange="{{ onTitleInput }}" onBlur="{{ commitTitle }}" onKeyDown="{{ onTitleKey }}" ref="{{ titleRef }}" style="background:var(--card-2);border:1px solid var(--ring);border-radius:6px;color:var(--t1);font-size:13.5px;font-weight:500;padding:3px 7px;width:200px;outline:none" />
+    </sc-if>
+    <sc-if value="{{ notEditingTitle }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ startTitleEdit }}" title="Rename" style="background:transparent;border:1px solid transparent;border-radius:6px;color:var(--t1);font-size:13.5px;font-weight:500;padding:3px 7px;cursor:text;white-space:nowrap;flex:none;min-width:80px;max-width:180px;overflow:hidden;text-overflow:ellipsis" style-hover="border-color:var(--line-2)">{{ title }}</button>
+    </sc-if>
+    <sc-if value="{{ ro }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);border:1px solid var(--line);border-radius:99px;padding:2px 9px;white-space:nowrap">Published · read-only</span></sc-if>
+    <sc-if value="{{ edit }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;gap:6px;margin-left:6px"><span style="font-size:11.5px;color:var(--t3);display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:99px;background:var(--good)"></span>Live</span><div style="display:flex"><sc-for list="{{ presence }}" as="p" hint-placeholder-count="3"><span title="{{ p.name }}" style="{{ p.style }}"></span></sc-for></div></div>
+    <div role="status" aria-live="polite" style="{{ saveStyle }}">
+      <div style="{{ saveDotStyle }}"></div>{{ saveText }}
+    </div>
+    </sc-if>
+    <div style="flex:1"></div>
+    <sc-if value="{{ edit }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;gap:1px;padding:2px;background:var(--card-2);border:1px solid var(--line);border-radius:9px">
+      <button onClick="{{ tidy }}" title="Re-layout the whole graph (T)" aria-label="Tidy layout" style="background:transparent;border:none;border-radius:7px;color:var(--t1);font-size:13px;font-weight:500;padding:5px 11px;cursor:pointer" style-hover="background:var(--card)">Tidy</button>
+      <div style="width:1px;height:16px;background:var(--line)"></div>
+      <button onClick="{{ fitView }}" title="Fit everything in view (F)" aria-label="Fit to view" style="background:transparent;border:none;border-radius:7px;color:var(--t1);font-size:13px;font-weight:500;padding:5px 11px;cursor:pointer" style-hover="background:var(--card)">Fit</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:1px;padding:2px;background:var(--card-2);border:1px solid var(--line);border-radius:9px">
+      <button onClick="{{ undo }}" title="{{ undoTitle }}" aria-label="Undo" disabled="{{ noUndo }}" style="{{ undoStyle }}">Undo</button>
+      <div style="width:1px;height:16px;background:var(--line)"></div>
+      <button onClick="{{ redo }}" title="{{ redoTitle }}" aria-label="Redo" disabled="{{ noRedo }}" style="{{ redoStyle }}">Redo</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:1px;padding:2px;background:var(--card-2);border:1px solid var(--line);border-radius:9px">
+      <button onClick="{{ importJson }}" title="Load a graph from a JSON file" style="background:transparent;border:none;border-radius:7px;color:var(--t1);font-size:13px;font-weight:500;padding:5px 11px;cursor:pointer" style-hover="background:var(--card)">Import</button>
+      <div style="width:1px;height:16px;background:var(--line)"></div>
+      <button onClick="{{ exportJson }}" title="Download the graph as JSON" style="background:transparent;border:none;border-radius:7px;color:var(--t1);font-size:13px;font-weight:500;padding:5px 11px;cursor:pointer" style-hover="background:var(--card)">Export</button>
+    </div>
+    <input type="file" accept="application/json,.json" ref="{{ fileRef }}" onChange="{{ onFile }}" aria-label="Import graph JSON" style="display:none" />
+    <a href="{{ readerHref }}" title="{{ readerTitle }}" style="display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--t2);font-size:13px;padding:5px 11px;text-decoration:none" style-hover="border-color:var(--ring);color:var(--t1)">
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" style="flex:none"><path d="M1.6 2.2h3.4a1.3 1.3 0 0 1 1 .5 1.3 1.3 0 0 1 1-.5h3.4v7.1H7a1.3 1.3 0 0 0-1 .5 1.3 1.3 0 0 0-1-.5H1.6zM6 2.7v7.1" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      {{ readerLabel }}
+    </a>
+    <button onClick="{{ publish }}" title="Publish a read-only, embeddable copy of this graph" style="background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--t2);font-size:13px;padding:5px 11px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">Publish</button>
+    </sc-if>
+    <sc-if value="{{ ro }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;align-items:center;gap:1px;padding:2px;background:var(--card-2);border:1px solid var(--line);border-radius:9px">
+      <button onClick="{{ foldAllRo }}" title="Fold every card to its headline" style="background:transparent;border:none;border-radius:7px;color:var(--t1);font-size:13px;font-weight:500;padding:5px 11px;cursor:pointer" style-hover="background:var(--card)">Fold</button>
+      <div style="width:1px;height:16px;background:var(--line)"></div>
+      <button onClick="{{ unfoldAllRo }}" title="Unfold every card" style="background:transparent;border:none;border-radius:7px;color:var(--t1);font-size:13px;font-weight:500;padding:5px 11px;cursor:pointer" style-hover="background:var(--card)">Unfold</button>
+      <div style="width:1px;height:16px;background:var(--line)"></div>
+      <button onClick="{{ fitView }}" title="Fit everything in view (F)" style="background:transparent;border:none;border-radius:7px;color:var(--t1);font-size:13px;font-weight:500;padding:5px 11px;cursor:pointer" style-hover="background:var(--card)">Fit</button>
+    </div>
+    <a href="{{ forkHref }}" title="Copy this graph into your own editor" style="display:flex;align-items:center;background:var(--t1);border:1px solid var(--t1);border-radius:8px;color:var(--canvas);font-size:13px;padding:5px 12px;text-decoration:none">Fork</a>
+    </sc-if>
+    <button onClick="{{ toggleSidebar }}" title="Show or hide the details panel" style="{{ sidebarBtnStyle }}">Details</button>
+    <button onClick="{{ toggleTheme }}" title="{{ themeTitle }}" aria-label="{{ themeTitle }}" aria-pressed="{{ isDark }}" style="width:30px;height:28px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--t2);cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">
+      <svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="{{ themeIcon }}" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </button>
+    <button onClick="{{ toggleHelp }}" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts" style="width:28px;height:28px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--t2);font-size:13.5px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">?</button>
+  </div>
+
+  <div style="flex:1;min-height:0;display:flex">
+
+    <sc-if value="{{ leftClosedEdit }}" hint-placeholder-val="{{ false }}">
+      <div style="width:36px;flex:none;display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px 0;background:var(--panel);border-right:1px solid var(--line)">
+        <button onClick="{{ toggleLeft }}" title="Show the library panel" style="width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid transparent;border-radius:7px;color:var(--t3);cursor:pointer" style-hover="border-color:var(--line-2);color:var(--t1)">
+          <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true"><path d="M3 2 L8 8 L3 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
+        <div style="writing-mode:vertical-rl;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--t3)">Library</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ leftOpenEdit }}" hint-placeholder-val="{{ true }}">
+    <div style="width:238px;flex:none;display:flex;flex-direction:column;background:var(--panel);border-right:1px solid var(--line)">
+      <div style="padding:10px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="search" placeholder="Find a card…" value="{{ filter }}" onChange="{{ onFilter }}" onKeyDown="{{ onFilterKey }}" aria-label="Find a card" style="flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:7px;color:var(--t1);font-size:13px;padding:6px 9px;outline:none" style-focus="border-color:var(--ring)" />
+          <button onClick="{{ toggleLeft }}" title="Hide this panel" style="width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid transparent;border-radius:7px;color:var(--t3);cursor:pointer" style-hover="border-color:var(--line-2);color:var(--t1)">
+            <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true"><path d="M7 2 L2 8 L7 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </button>
+        </div>
+        <sc-if value="{{ hasFilter }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:5px;margin-top:2px">
+            <div style="flex:1;min-width:0;font-size:12px;color:var(--t3)">{{ filterNote }}</div>
+            <button onClick="{{ prevMatch }}" title="Previous match (⇧Enter)" aria-label="Previous match" style="width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--t2);font-size:11.5px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">↑</button>
+            <button onClick="{{ nextMatch }}" title="Next match (Enter)" aria-label="Next match" style="width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--t2);font-size:11.5px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">↓</button>
+            <button onClick="{{ clearFilter }}" title="Clear search" aria-label="Clear search" style="width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--t3);font-size:11.5px;cursor:pointer" style-hover="border-color:var(--bad);color:var(--bad)">✕</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <button onClick="{{ togglePaletteHelp }}" title="Show or hide the card types" aria-expanded="{{ paletteOpen }}" style="display:flex;align-items:center;gap:6px;background:transparent;border:none;padding:0;cursor:pointer;text-align:left">
+            <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.09em;flex:1">Card types</div>
+            <div style="font-size:11px;color:var(--t3)">{{ paletteHelpLabel }}</div>
+          </button>
+          <sc-if value="{{ paletteOpen }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ palette }}" as="p" hint-placeholder-count="5">
+                <div draggable="true" onDragStart="{{ p.onDragStart }}" onClick="{{ p.onAdd }}" title="{{ p.hint }}" style="{{ p.style }}" style-hover="border-color:var(--ring);box-shadow:var(--sh)">
+                  <div style="display:flex;align-items:center;gap:7px">
+                    <div style="width:7px;height:7px;border-radius:99px;background:currentColor;flex:none"></div>
+                    <div style="font-size:12.5px;font-weight:500;color:var(--t1)">{{ p.label }}</div>
+                    <div style="flex:1"></div>
+                    <div dir="rtl" style="font-family:'IBM Plex Sans Arabic',sans-serif;font-size:12.5px;color:var(--t2)">{{ p.ar }}</div>
+                  </div>
+                  <div style="font-size:11.5px;color:var(--t3);line-height:1.4;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.hint }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.09em">Roots in the lexicon</div>
+          <sc-for list="{{ lexRoots }}" as="r" hint-placeholder-count="3">
+            <div draggable="true" onDragStart="{{ r.onDragStart }}" onClick="{{ r.onAdd }}" title="{{ r.hint }}" style="{{ r.style }}" style-hover="border-color:var(--ring)">
+              <div style="display:flex;align-items:baseline;gap:8px">
+                <div dir="rtl" style="font-family:Amiri,serif;font-size:19px;color:var(--t1);letter-spacing:0.06em">{{ r.ar }}</div>
+                <div style="flex:1"></div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--t3)">{{ r.tr }}</div>
+              </div>
+              <div style="font-size:11.5px;color:var(--t2);line-height:1.4;margin-top:2px">{{ r.en }}</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:4px">{{ r.counts }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <button onClick="{{ toggleHelp }}" style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 10px;cursor:pointer;text-align:left" style-hover="border-color:var(--ring)">
+          <div style="flex:1;font-size:13px;color:var(--t1)">Keyboard shortcuts</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--t3);border:1px solid var(--line-2);border-radius:5px;padding:0 5px">?</div>
+        </button>
+      </div>
+    </div>
+    </sc-if>
+
+    <div ref="{{ paneRef }}" onMouseDown="{{ onPaneDown }}" onWheel="{{ onWheel }}" onContextMenu="{{ onPaneCtx }}" onDragOver="{{ onDragOver }}" onDrop="{{ onDrop }}" style="{{ paneStyle }}">
+      <div style="{{ worldStyle }}">
+        <svg width="24000" height="24000" style="position:absolute;left:-12000px;top:-12000px;overflow:visible;pointer-events:none">
+          <defs>
+            <marker id="dcArrow" viewBox="0 0 10 10" refX="8.4" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse" markerUnits="strokeWidth">
+              <path d="M1,1 L9,5 L1,9 Z" fill="context-stroke"></path>
+            </marker>
+          </defs>
+          <g transform="translate(12000,12000)">
+            <sc-for list="{{ edges }}" as="e" hint-placeholder-count="8">
+              <path d="{{ e.d }}" fill="none" stroke="transparent" stroke-width="18" stroke-linecap="round" onMouseDown="{{ e.onDown }}" onClick="{{ e.onSelect }}" style="pointer-events:stroke;cursor:pointer"></path>
+            </sc-for>
+            <sc-for list="{{ edges }}" as="e" hint-placeholder-count="8">
+              <path d="{{ e.d }}" fill="none" stroke="{{ e.stroke }}" stroke-width="{{ e.width }}" stroke-opacity="{{ e.opacity }}" stroke-dasharray="{{ e.dash }}" stroke-linecap="round" marker-end="{{ e.marker }}" style="pointer-events:none"></path>
+            </sc-for>
+          </g>
+        </svg>
+
+        <sc-for list="{{ frames }}" as="f" hint-placeholder-count="0">
+          <div style="{{ f.style }}">
+            <div onMouseDown="{{ f.onDown }}" onDoubleClick="{{ f.selectInside }}" onContextMenu="{{ f.onCtx }}" title="{{ f.title }}" style="{{ f.headerStyle }}">
+              <div style="font-weight:500;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.label }}</div>
+              <div style="color:var(--t3);white-space:nowrap">{{ f.count }}</div>
+            </div>
+            <sc-for list="{{ f.handles }}" as="h" hint-placeholder-count="8">
+              <div onMouseDown="{{ h.onDown }}" title="Resize group" style="{{ h.style }}"></div>
+            </sc-for>
+          </div>
+        </sc-for>
+
+        <sc-for list="{{ cards }}" as="n" hint-placeholder-count="6">
+          <div ref="{{ n.ref }}" data-card="{{ n.id }}" data-screen-label="{{ n.label }}" onMouseDown="{{ n.onDown }}" onDoubleClick="{{ n.onToggle }}" onContextMenu="{{ n.onCtx }}" style="{{ n.style }}">
+            <sc-if value="{{ n.lod }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ n.lodStyle }}">
+                <div dir="rtl" style="{{ n.lodArStyle }}">{{ n.ar }}</div>
+                <div style="display:flex;align-items:center;gap:10px">
+                  <div style="width:11px;height:11px;border-radius:99px;background:currentColor;flex:none"></div>
+                  <div style="flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:26px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ n.lodSub }}</div>
+                </div>
+              </div>
+            </sc-if>
+            <div style="{{ n.detailStyle }}">
+            <div style="padding:12px 14px 8px;display:flex;flex-direction:column;gap:2px">
+              <div style="display:flex;align-items:center;gap:8px;min-height:16px">
+                <div style="display:flex;align-items:center;gap:5px;padding:2px 7px 2px 5px;border-radius:99px;background:color-mix(in oklab, currentColor 12%, transparent)">
+                  <div style="width:5px;height:5px;border-radius:99px;background:currentColor"></div>
+                  <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600">{{ n.typeLabel }}</div>
+                </div>
+                <div style="flex:1"></div>
+                <div style="font-size:11px;color:var(--t3);white-space:nowrap">{{ n.counts }}</div>
+              </div>
+              <div dir="rtl" style="{{ n.arStyle }}">{{ n.ar }}</div>
+              <sc-if value="{{ n.folded }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:11.5px;color:var(--t2);line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ n.oneLine }}</div>
+              </sc-if>
+              <sc-if value="{{ n.open }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:1px">
+                  <sc-if value="{{ n.tr }}" hint-placeholder-val="{{ true }}">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--t3);letter-spacing:0.01em">{{ n.tr }}</div>
+                  </sc-if>
+                  <div style="font-size:13px;color:var(--t2);line-height:1.5;text-wrap:pretty">{{ n.en }}</div>
+                </div>
+              </sc-if>
+            </div>
+
+            <sc-if value="{{ n.open }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column">
+                <div style="height:1px;background:var(--line);margin:2px 14px 0"></div>
+                <div style="display:flex;gap:16px;padding:10px 14px">
+                  <sc-for list="{{ n.stats }}" as="s" hint-placeholder-count="3">
+                    <div style="display:flex;flex-direction:column;gap:1px">
+                      <div style="font-size:14px;font-weight:500;color:var(--t1);font-variant-numeric:tabular-nums">{{ s.v }}</div>
+                      <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.07em">{{ s.l }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="height:1px;background:var(--line);margin:0 14px"></div>
+                <div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.09em">Fields</div>
+                    <div style="flex:1;height:1px;background:var(--line)"></div>
+                    <button onClick="{{ n.openMenu }}" onMouseDown="{{ n.stop }}" title="Add a field of any type" style="{{ n.addFieldStyle }}background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--t2);font-size:11.5px;padding:1px 7px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">+ Add</button>
+                  </div>
+                  <sc-for list="{{ n.fieldRows }}" as="f" hint-placeholder-count="2">
+                    <dc-import name="Card Field" f="{{ f }}" hint-size="100%,22px"></dc-import>
+                  </sc-for>
+                  <sc-if value="{{ n.noFields }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:11.5px;color:var(--t3);line-height:1.45">No fields yet. Add any input type — text, notes, number, select, tags, audio, image, file, link, date.</div>
+                  </sc-if>
+                  <sc-if value="{{ n.menuOpen }}" hint-placeholder-val="{{ false }}">
+                    <div onMouseDown="{{ n.stop }}" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--card-2)">
+                      <sc-for list="{{ n.kindOptions }}" as="k" hint-placeholder-count="10">
+                        <button onClick="{{ k.onClick }}" onMouseDown="{{ n.stop }}" style="background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--t2);font-size:11.5px;padding:3px 6px;cursor:pointer;text-align:left" style-hover="border-color:var(--ring);color:var(--t1)">{{ k.label }}</button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+                <div style="height:1px;background:var(--line);margin:0 14px"></div>
+                <div style="padding:10px 14px 4px;display:flex;flex-direction:column;gap:6px">
+                  <div style="display:flex;gap:5px;align-items:stretch">
+                    <button onClick="{{ n.extract.onClick }}" onMouseDown="{{ n.stop }}" disabled="{{ n.extract.disabled }}" title="{{ n.extract.title }}" style="{{ n.extract.style }}">{{ n.extract.label }}</button>
+                    <sc-if value="{{ n.extract.hasOptions }}" hint-placeholder-val="{{ false }}">
+                      <button onClick="{{ n.toggleLinkMenu }}" onMouseDown="{{ n.stop }}" title="{{ n.extract.caretTitle }}" style="{{ n.extract.caretStyle }}">
+                        <svg width="11" height="7" viewBox="0 0 15 9" aria-hidden="true"><path d="M1.5 1.5 L7.5 7 L13.5 1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                      </button>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{ n.extract.menuOpen }}" hint-placeholder-val="{{ false }}">
+                    <div onMouseDown="{{ n.stop }}" style="display:flex;flex-direction:column;gap:4px;padding:5px;border:1px solid var(--line);border-radius:8px;background:var(--card-2)">
+                      <sc-for list="{{ n.extract.options }}" as="o" hint-placeholder-count="3">
+                        <button onClick="{{ o.onClick }}" onMouseDown="{{ n.stop }}" style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:5px 8px;cursor:pointer;text-align:left" style-hover="border-color:var(--ring)">
+                          <span style="font-size:12px;font-weight:500;color:var(--t1)">{{ o.label }}</span>
+                          <span style="font-family:Amiri,serif;font-size:14px;color:var(--t2);line-height:1.5">{{ o.sub }}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ n.extract.note }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:11px;color:var(--t3);line-height:1.45">{{ n.extract.note }}</div>
+                  </sc-if>
+                  <div style="display:flex;gap:6px">
+                    <sc-for list="{{ n.actions }}" as="a" hint-placeholder-count="2">
+                      <button onClick="{{ a.onClick }}" onMouseDown="{{ n.stop }}" title="{{ a.title }}" style="flex:1;background:transparent;border:1px solid var(--line);border-radius:7px;color:var(--t2);font-size:12px;padding:4px 6px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">{{ a.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <div onClick="{{ n.onToggle }}" onMouseDown="{{ n.stop }}" title="{{ n.foldTitle }}" style="height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t3)" style-hover="color:var(--t1)">
+              <sc-if value="{{ n.folded }}" hint-placeholder-val="{{ true }}">
+                <svg width="15" height="9" viewBox="0 0 15 9" aria-hidden="true"><path d="M1.5 1.5 L7.5 7 L13.5 1.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </sc-if>
+              <sc-if value="{{ n.open }}" hint-placeholder-val="{{ false }}">
+                <svg width="15" height="9" viewBox="0 0 15 9" aria-hidden="true"><path d="M1.5 7 L7.5 1.5 L13.5 7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </sc-if>
+            </div>
+
+            </div>
+            <sc-for list="{{ n.ports }}" as="p" hint-placeholder-count="4">
+              <div data-handle="{{ p.handle }}" onMouseDown="{{ p.onDown }}" title="Drag out to link · drop a wire here to receive one" style="{{ p.style }}" style-hover="transform:scale(1.5);background:currentColor"></div>
+            </sc-for>
+          </div>
+        </sc-for>
+
+        <sc-for list="{{ ghosts }}" as="g" hint-placeholder-count="0">
+          <div onClick="{{ g.onAccept }}" onMouseDown="{{ g.stop }}" title="{{ g.title }}" style="{{ g.style }}" style-hover="opacity:1;border-style:solid">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="display:flex;align-items:center;gap:5px;padding:2px 7px 2px 5px;border-radius:99px;background:color-mix(in oklab, currentColor 12%, transparent)">
+                <div style="width:5px;height:5px;border-radius:99px;background:currentColor"></div>
+                <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600">{{ g.typeLabel }}</div>
+              </div>
+              <div style="flex:1"></div>
+              <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:#b45309">Proposed</div>
+            </div>
+            <div dir="rtl" style="{{ g.arStyle }}">{{ g.ar }}</div>
+            <div style="font-size:12px;color:var(--t2);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.en }}</div>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ hasEdgeMenu }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ edgeMenu.wrapStyle }}">
+            <div onMouseDown="{{ edgeMenu.stop }}" style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line-2);border-radius:99px;box-shadow:var(--sh);padding:3px 4px 3px 12px;white-space:nowrap">
+              <div style="font-size:12px;color:var(--t2)">{{ edgeMenu.rel }}</div>
+              <button onClick="{{ edgeMenu.onDelete }}" onMouseDown="{{ edgeMenu.stop }}" title="Delete this wire (⌫)" style="background:transparent;border:1px solid var(--line);border-radius:99px;color:var(--bad);font-size:12px;padding:3px 10px;cursor:pointer" style-hover="border-color:var(--bad)">✕ Unlink</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <svg style="position:absolute;inset:0;pointer-events:none;overflow:visible">
+        <sc-if value="{{ connectPath }}" hint-placeholder-val="{{ false }}">
+          <path d="{{ connectPath }}" fill="none" stroke="var(--ring)" stroke-width="1.6" stroke-dasharray="5 4" stroke-linecap="round"></path>
+        </sc-if>
+      </svg>
+
+      <sc-if value="{{ marqueeStyle }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ marqueeStyle }}"></div>
+      </sc-if>
+
+      <sc-if value="{{ canvasEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+          <div style="max-width:290px;display:flex;flex-direction:column;gap:7px;text-align:center;padding:22px 24px;border:1px dashed var(--line-2);border-radius:16px;background:color-mix(in oklab, var(--card) 72%, transparent)">
+            <div style="font-size:14px;font-weight:500;color:var(--t1)">{{ emptyTitle }}</div>
+            <div style="font-size:13px;color:var(--t2);line-height:1.6">{{ emptyBody }}</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasCtx }}" hint-placeholder-val="{{ false }}">
+        <div onMouseDown="{{ ctx.stop }}" style="{{ ctx.wrapStyle }}">
+          <sc-for list="{{ ctx.items }}" as="i" hint-placeholder-count="4">
+            <button onClick="{{ i.onClick }}" onMouseDown="{{ ctx.stop }}" style="{{ i.style }}" style-hover="background:var(--card-2)">
+              <div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ i.label }}</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--t3)">{{ i.key }}</div>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+        <div role="status" aria-live="polite" style="position:absolute;left:50%;bottom:56px;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line-2);border-radius:99px;box-shadow:var(--sh);padding:6px 8px 6px 15px;font-size:13px;color:var(--t1);white-space:nowrap;animation:dcRise .18s ease">
+          <div>{{ toast }}</div>
+          <sc-if value="{{ toastUndo }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ undo }}" style="background:var(--card-2);border:1px solid var(--line);border-radius:99px;color:var(--t1);font-size:12px;padding:3px 11px;cursor:pointer" style-hover="border-color:var(--ring)">Undo</button>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <div style="position:absolute;right:12px;bottom:12px;display:flex;align-items:center;gap:1px;padding:2px;background:var(--card);border:1px solid var(--line);border-radius:9px;box-shadow:var(--sh);z-index:45">
+        <button onClick="{{ zoomOut }}" title="Zoom out (−)" aria-label="Zoom out" style="width:26px;height:24px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;border-radius:7px;color:var(--t2);font-size:14px;cursor:pointer" style-hover="background:var(--card-2);color:var(--t1)">−</button>
+        <button onClick="{{ resetZoom }}" title="Reset to 100% (1)" aria-label="Reset zoom to 100 percent" style="min-width:46px;height:24px;background:transparent;border:none;border-radius:7px;color:var(--t1);font-size:12px;font-variant-numeric:tabular-nums;cursor:pointer" style-hover="background:var(--card-2)">{{ zoomLabel }}</button>
+        <button onClick="{{ zoomIn }}" title="Zoom in (+)" aria-label="Zoom in" style="width:26px;height:24px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;border-radius:7px;color:var(--t2);font-size:14px;cursor:pointer" style-hover="background:var(--card-2);color:var(--t1)">+</button>
+      </div>
+      <sc-if value="{{ mapMode }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:8px;padding:5px 12px;background:var(--card);border:1px solid var(--line);border-radius:99px;box-shadow:var(--sh);font-size:12px;color:var(--t2);z-index:45">
+          <div style="width:6px;height:6px;border-radius:99px;background:var(--ring);flex:none"></div>Map view — zoom in for card detail
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ sidebarClosed }}" hint-placeholder-val="{{ true }}">
+      <div style="width:36px;flex:none;display:flex;flex-direction:column;align-items:center;gap:12px;padding:10px 0;background:var(--panel);border-left:1px solid var(--line)">
+        <button onClick="{{ toggleSidebar }}" title="Show the details panel" style="width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid transparent;border-radius:7px;color:var(--t3);cursor:pointer" style-hover="border-color:var(--line-2);color:var(--t1)">
+          <svg width="10" height="16" viewBox="0 0 10 16" aria-hidden="true"><path d="M7 2 L2 8 L7 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
+        <div style="writing-mode:vertical-rl;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--t3)">Details</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ sidebarOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="width:clamp(380px, 30vw, 560px);flex:none;display:flex;flex-direction:column;background:var(--panel);border-left:1px solid var(--line)">
+      <div style="padding:14px 24px 0;display:flex;align-items:center;gap:8px">
+        <div style="font-size:13px;font-weight:500;color:var(--t1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ins.header }}</div>
+        <sc-if value="{{ ins.badge }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ ins.badgeStyle }}">{{ ins.badge }}</div>
+        </sc-if>
+        <button onClick="{{ closeSidebar }}" title="Hide this panel" style="width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid transparent;border-radius:6px;color:var(--t3);font-size:12.5px;cursor:pointer" style-hover="border-color:var(--line-2);color:var(--t1)">✕</button>
+      </div>
+
+      <sc-if value="{{ ins.hasPath }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;padding:8px 24px 0">
+          <sc-for list="{{ ins.path }}" as="p" hint-placeholder-count="2">
+            <button onClick="{{ p.onClick }}" title="{{ p.title }}" style="{{ p.style }}" style-hover="border-color:var(--ring);color:var(--t1)">{{ p.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;gap:4px;padding:8px 20px;border-bottom:1px solid var(--line)">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2">
+          <button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ tabMeaning }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;padding-bottom:36px">
+          <sc-if value="{{ mean.none }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:22px 24px;font-size:13px;color:var(--t2);line-height:1.65;text-wrap:pretty">{{ mean.noneText }}</div>
+          </sc-if>
+          <sc-if value="{{ mean.has }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column">
+              <div style="padding:22px 24px 18px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line)">
+                <div dir="rtl" style="font-family:Amiri,serif;font-size:42px;line-height:1.25;color:var(--t1);word-break:break-word">{{ mean.ar }}</div>
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--t2)">{{ mean.tr }}</div>
+                  <div style="flex:1"></div>
+                  <div style="font-size:12px;color:var(--t3);text-align:right">{{ mean.grammar }}</div>
+                </div>
+                <div style="font-size:13.5px;color:var(--t1);line-height:1.55;text-wrap:pretty">{{ mean.gloss }}</div>
+              </div>
+
+              <div style="padding:14px 24px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)">
+                <div dir="rtl" style="font-family:Amiri,serif;font-size:21px;color:var(--t1);letter-spacing:0.08em">{{ mean.rootAr }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--t3)">{{ mean.rootTr }}</div>
+                <div style="flex:1"></div>
+                <button onClick="{{ mean.onRoot }}" title="{{ mean.rootTitle }}" style="width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--line);border-radius:7px;color:var(--t3);font-size:14px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">+</button>
+              </div>
+
+              <div style="padding:16px 24px;display:flex;flex-direction:column;gap:9px;border-bottom:1px solid var(--line)">
+                <div style="font-size:11.5px;color:var(--t3);line-height:1.5">Editorial summary — our wording, not a lexicographer's.</div>
+                <div style="font-size:13px;color:var(--t2);line-height:1.65;text-wrap:pretty">{{ mean.summary }}</div>
+                <div style="font-size:12px;color:var(--t3)">{{ mean.occur }}</div>
+                <button onClick="{{ mean.onViewDicts }}" title="Open the dictionary list below" style="align-self:flex-start;display:flex;align-items:center;gap:9px;background:var(--card-2);border:1px solid var(--line);border-radius:99px;color:var(--t1);font-size:13px;padding:7px 15px 7px 12px;cursor:pointer;margin-top:2px" style-hover="border-color:var(--ring)">
+                  <div style="display:flex;gap:2px;align-items:flex-end;height:11px">
+                    <div style="width:2px;height:11px;background:currentColor;opacity:.5"></div>
+                    <div style="width:2px;height:8px;background:currentColor;opacity:.5"></div>
+                    <div style="width:2px;height:11px;background:currentColor;opacity:.5"></div>
+                  </div>
+                  View in dictionaries
+                </button>
+              </div>
+
+              <div style="padding:16px 24px 12px;display:flex;flex-direction:column;gap:7px">
+                <div onClick="{{ mean.onToggleDicts }}" title="Show or hide the list" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                  <div style="font-size:13px;font-weight:600;color:var(--t1);flex:1">Dictionaries and lexica</div>
+                  <div style="width:30px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--t3);border-radius:7px" style-hover="color:var(--t1);background:var(--card)">
+                    <sc-if value="{{ mean.dictsOpen }}" hint-placeholder-val="{{ true }}">
+                      <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><path d="M2.5 7 L8 2.2 L13.5 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    </sc-if>
+                    <sc-if value="{{ mean.dictsClosed }}" hint-placeholder-val="{{ false }}">
+                      <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><path d="M2.5 3 L8 7.8 L13.5 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    </sc-if>
+                  </div>
+                </div>
+                <div style="font-size:12px;color:var(--t3);line-height:1.5">Public-domain classical lexica, ordered by compiler death date.</div>
+                <button onClick="{{ mean.onLabels }}" title="What the labels mean" style="align-self:flex-start;display:flex;align-items:center;gap:7px;background:transparent;border:1px solid var(--line);border-radius:99px;color:var(--t2);font-size:12px;padding:4px 11px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">About these labels</button>
+                <sc-if value="{{ mean.labelsOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:12px;color:var(--t3);line-height:1.6;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card)">{{ mean.labelsText }}</div>
+                </sc-if>
+              </div>
+
+              <sc-if value="{{ mean.dictsOpen }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column">
+                  <sc-for list="{{ mean.dicts }}" as="d" hint-placeholder-count="9">
+                    <div style="border-top:1px solid var(--line);padding:14px 24px;display:flex;flex-direction:column;gap:8px">
+                      <div onClick="{{ d.onToggle }}" title="Show or hide this entry" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                        <div dir="rtl" style="font-family:Amiri,serif;font-size:20px;color:var(--t1);min-width:112px">{{ d.ar }}</div>
+                        <div style="font-size:13px;font-weight:600;color:var(--t1)">{{ d.en }}</div>
+                        <div style="flex:1"></div>
+                        <div style="width:30px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--t3);border-radius:7px" style-hover="color:var(--t1);background:var(--card)">
+                          <sc-if value="{{ d.open }}" hint-placeholder-val="{{ false }}">
+                            <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><path d="M2.5 7 L8 2.2 L13.5 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                          </sc-if>
+                          <sc-if value="{{ d.closed }}" hint-placeholder-val="{{ true }}">
+                            <svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><path d="M2.5 3 L8 7.8 L13.5 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                          </sc-if>
+                        </div>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                        <div style="font-size:12px;color:var(--t3)">{{ d.by }}</div>
+                        <div style="{{ d.tagStyle }}">{{ d.tag }}</div>
+                      </div>
+                      <sc-if value="{{ d.open }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;flex-direction:column;gap:9px">
+                          <div style="border-left:2px solid var(--line-2);padding:2px 0 2px 14px;display:flex;flex-direction:column;gap:8px">
+                            <div dir="rtl" style="font-family:'IBM Plex Sans Arabic',sans-serif;font-size:13.5px;line-height:2;color:var(--t2)">{{ d.stub }}</div>
+                            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--t3);line-height:1.6">{{ d.entryNote }}</div>
+                          </div>
+                          <div style="display:flex;gap:6px">
+                            <sc-for list="{{ d.tools }}" as="t" hint-placeholder-count="3">
+                              <button onClick="{{ t.onClick }}" title="{{ t.title }}" style="width:29px;height:26px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--line);border-radius:7px;color:var(--t3);font-size:12px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">{{ t.glyph }}</button>
+                            </sc-for>
+                          </div>
+                          <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--t3);line-height:1.5">{{ d.source }}</div>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tabComments }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:14px 20px;display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ comments }}" as="cm" hint-placeholder-count="2">
+            <div style="display:flex;gap:9px"><span style="{{ cm.av }}"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><div style="font-size:12.5px;line-height:1.5;color:var(--t1)"><strong style="font-weight:500">{{ cm.who }}</strong> <span style="color:var(--t3)">on</span> <button onClick="{{ cm.onJump }}" dir="rtl" style="background:transparent;border:none;padding:0;font-family:Amiri,serif;font-size:15px;color:var(--ring);cursor:pointer">{{ cm.anchor }}</button></div><div style="font-size:13px;line-height:1.5;color:var(--t2)">{{ cm.text }}</div><div style="font-size:11px;color:var(--t3)">{{ cm.when }}</div></div></div>
+          </sc-for>
+          <sc-if value="{{ noComments }}" hint-placeholder-val="{{ false }}"><div style="font-size:12.5px;color:var(--t3);line-height:1.55">No comments yet. Select a card and write below — comments anchor to the card and travel with it.</div></sc-if>
+        </div>
+        <div style="padding:12px 20px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;background:var(--panel)"><div style="font-size:11.5px;color:var(--t3)">{{ commentTarget }}</div><div style="display:flex;gap:6px"><input value="{{ cDraft }}" onChange="{{ onCDraft }}" onKeyDown="{{ onCKey }}" placeholder="Comment or @mention…" style="flex:1;min-width:0;font-size:12.5px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--t1);outline:none" /><button onClick="{{ sendComment }}" style="background:var(--t1);border:none;border-radius:8px;font-size:12px;padding:0 12px;color:var(--canvas);cursor:pointer">Send</button></div></div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ tabProposals }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column">
+        <div style="padding:16px 24px 12px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:14px;font-weight:600;color:var(--t1);flex:1">{{ prop.title }}</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--t3)">{{ prop.count }}</div>
+          </div>
+          <sc-if value="{{ prop.source }}" hint-placeholder-val="{{ false }}">
+            <div dir="rtl" style="font-family:Amiri,serif;font-size:17px;line-height:1.7;color:var(--t2);text-align:right">{{ prop.source }}</div>
+          </sc-if>
+          <div style="font-size:12px;color:var(--t3);line-height:1.5">Nothing enters the graph unreviewed. Dashed cards on the canvas are these proposals — click one to accept it.</div>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto">
+          <sc-for list="{{ prop.rows }}" as="r" hint-placeholder-count="4">
+            <div style="{{ r.style }}">
+              <div style="{{ r.dotStyle }}"></div>
+              <div dir="rtl" style="font-family:Amiri,serif;font-size:20px;color:var(--t1);min-width:78px;text-align:right">{{ r.ar }}</div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                <div style="font-size:12px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.line }}</div>
+                <div style="{{ r.noteStyle }}">{{ r.note }}</div>
+              </div>
+              <sc-if value="{{ r.pending }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ r.onAccept }}" style="background:var(--card);border:1px solid var(--line);border-radius:6px;font-size:11.5px;padding:3px 9px;color:var(--t1);cursor:pointer" style-hover="border-color:var(--ring)">Accept</button>
+                <button onClick="{{ r.onSkip }}" style="background:transparent;border:1px solid transparent;border-radius:6px;font-size:11.5px;padding:3px 6px;color:var(--t3);cursor:pointer" style-hover="color:var(--bad)">Skip</button>
+              </sc-if>
+              <sc-if value="{{ r.settled }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ r.stateStyle }}">{{ r.state }}</div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding:12px 24px;border-top:1px solid var(--line);display:flex;gap:8px;background:var(--panel)">
+          <button onClick="{{ prop.onDiscard }}" style="flex:1;background:var(--card);border:1px solid var(--line);border-radius:9px;font-size:13px;padding:9px;color:var(--t2);cursor:pointer" style-hover="border-color:var(--bad);color:var(--bad)">Discard all</button>
+          <button onClick="{{ prop.onAcceptConfident }}" disabled="{{ prop.noConfident }}" style="{{ prop.acceptStyle }}">{{ prop.acceptLabel }}</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ tabSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;overflow-y:auto;padding:20px 24px 40px;display:flex;flex-direction:column;gap:18px">
+
+        <sc-if value="{{ ins.empty }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:12.5px;color:var(--t2);line-height:1.6">Select a card to edit it. Cards start folded — click the chevron at the bottom edge, or double-click a card, to open it.</div>
+            <div style="font-size:12.5px;color:var(--t2);line-height:1.6">Open a Root to extract its forms, a Form to extract its words, a Word to extract the sentences it appears in. A Sentence links the words it cites, their roots, or both.</div>
+            <div style="display:flex;flex-direction:column;gap:5px;padding-top:2px">
+              <sc-for list="{{ graphStats }}" as="g" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="{{ g.dotStyle }}"></div>
+                  <div style="font-size:12.5px;color:var(--t2);flex:1">{{ g.label }}</div>
+                  <div style="font-size:12.5px;color:var(--t1);font-variant-numeric:tabular-nums">{{ g.count }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ ins.single }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.09em">Headword</div>
+              <sc-for list="{{ ins.head }}" as="f" hint-placeholder-count="3">
+                <dc-import name="Card Field" f="{{ f }}" hint-size="100%,24px"></dc-import>
+              </sc-for>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.09em">Fields</div>
+                <div style="flex:1;height:1px;background:var(--line)"></div>
+                <button onClick="{{ ins.openMenu }}" title="Add a field" style="background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--t2);font-size:11.5px;padding:1px 7px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">+ Add</button>
+              </div>
+              <sc-if value="{{ ins.menuOpen }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:7px;border:1px solid var(--line);border-radius:8px;background:var(--card)">
+                  <sc-for list="{{ ins.kindOptions }}" as="k" hint-placeholder-count="10">
+                    <button onClick="{{ k.onClick }}" style="background:var(--card-2);border:1px solid var(--line);border-radius:6px;color:var(--t2);font-size:11.5px;padding:3px 6px;cursor:pointer;text-align:left" style-hover="border-color:var(--ring);color:var(--t1)">{{ k.label }}</button>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-for list="{{ ins.fields }}" as="f" hint-placeholder-count="2">
+                <dc-import name="Card Field" f="{{ f }}" hint-size="100%,24px"></dc-import>
+              </sc-for>
+              <sc-if value="{{ ins.noFields }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11.5px;color:var(--t3);line-height:1.45">No fields on this card yet.</div>
+              </sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.09em">Links</div>
+              <sc-for list="{{ ins.links }}" as="l" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:9px;padding:7px 2px;border-bottom:1px solid var(--line)">
+                  <div style="{{ l.dotStyle }}"></div>
+                  <div style="font-size:11px;color:var(--t3);width:36px;flex:none">{{ l.dir }}</div>
+                  <button onClick="{{ l.onSelect }}" title="Select this card" style="flex:1;min-width:0;text-align:left;background:transparent;border:none;color:var(--t1);font-size:12.5px;padding:0;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" style-hover="color:var(--ring)">{{ l.label }}</button>
+                  <button onClick="{{ l.onUnlink }}" title="Remove this link" style="background:transparent;border:none;color:var(--t3);font-size:11.5px;padding:0 2px;cursor:pointer" style-hover="color:var(--bad)">✕</button>
+                </div>
+              </sc-for>
+              <sc-if value="{{ ins.noLinks }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11.5px;color:var(--t3);line-height:1.45">Not linked to anything yet. Drag from any of the four edge dots on a card onto another card. Click a wire to select it, ⌫ to delete.</div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ ins.frame }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.09em">Group name</div>
+            <input value="{{ ins.frameName }}" onChange="{{ ins.onFrameName }}" placeholder="Untitled group" aria-label="Group name" style="background:var(--card);border:1px solid var(--line);border-radius:7px;color:var(--t1);font-size:13px;padding:6px 9px;outline:none" style-focus="border-color:var(--ring)" />
+            <div style="font-size:12.5px;color:var(--t2);line-height:1.6">{{ ins.frameNote }}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ ins.multi }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:12.5px;color:var(--t2);line-height:1.6">{{ ins.multi }}</div>
+            <sc-for list="{{ ins.breakdown }}" as="b" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="{{ b.dotStyle }}"></div>
+                <div style="font-size:12.5px;color:var(--t2);flex:1">{{ b.label }}</div>
+                <div style="font-size:12.5px;color:var(--t1);font-variant-numeric:tabular-nums">{{ b.count }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ ins.hasActions }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:2px">
+            <sc-for list="{{ ins.actions }}" as="a" hint-placeholder-count="4">
+              <button onClick="{{ a.onClick }}" title="{{ a.title }}" style="{{ a.style }}" style-hover="border-color:var(--ring)">{{ a.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ toggleHelp }}" style="position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;background:color-mix(in oklab, var(--canvas) 58%, transparent)">
+      <div onClick="{{ stopClick }}" style="width:560px;max-width:100%;max-height:100%;overflow-y:auto;background:var(--card);border:1px solid var(--line-2);border-radius:16px;box-shadow:var(--sh-open);padding:20px 22px;animation:dcPop .16s ease">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <div style="flex:1;font-size:14px;font-weight:600;color:var(--t1)">Keyboard &amp; pointer</div>
+          <button onClick="{{ toggleHelp }}" aria-label="Close shortcuts" style="width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--line);border-radius:7px;color:var(--t3);font-size:12.5px;cursor:pointer" style-hover="border-color:var(--ring);color:var(--t1)">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 24px">
+          <sc-for list="{{ helpGroups }}" as="g" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:0.1em">{{ g.title }}</div>
+              <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex;align-items:baseline;gap:10px">
+                  <div style="flex:none;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--t1);background:var(--card-2);border:1px solid var(--line);border-radius:5px;padding:1px 6px;white-space:nowrap">{{ r.key }}</div>
+                  <div style="flex:1;font-size:12.5px;color:var(--t2);line-height:1.5">{{ r.what }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;startFolded&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Cards&quot;},&quot;showTransliteration&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Cards&quot;},&quot;edgeStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;curve&quot;,&quot;options&quot;:[&quot;curve&quot;,&quot;elbow&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Canvas&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;dark&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Canvas&quot;},&quot;edgeArrows&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Canvas&quot;},&quot;mapZoom&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.35,&quot;min&quot;:0.3,&quot;max&quot;:0.9,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Canvas&quot;}}">
+const TYPES = ['root', 'form', 'word', 'sentence', 'description'];
+const GRID = 8, GAPY = 56, GAPX = 156, WF = 248, WO = 344, HF = 112, HO = 360;
+const PORTS = [['n', 'left:50%;top:-5px;margin-left:-5px'], ['e', 'right:-5px;top:50%;margin-top:-5px'], ['s', 'left:50%;bottom:-5px;margin-left:-5px'], ['w', 'left:-5px;top:50%;margin-top:-5px']];
+const snap = v => Math.round(v / GRID) * GRID;
+const clone = o => JSON.parse(JSON.stringify(o));
+let SEQ = 0;
+const uid = p => p + (++SEQ) + Math.random().toString(36).slice(2, 5);
+
+const META = {
+  root: { label: 'Root', ar: 'جَذْر', color: 'var(--c-root)', childName: 'forms', hint: 'The consonantal skeleton a whole family of words grows from.' },
+  form: { label: 'Form', ar: 'وَزْن', color: 'var(--c-form)', childName: 'words', hint: 'A pattern the root is poured into — فَاعِل, مَفْعَل, تَفْعِيل.' },
+  word: { label: 'Word', ar: 'كَلِمَة', color: 'var(--c-word)', childName: 'sentences', hint: 'A realised lexeme: root plus form, with its own gloss.' },
+  sentence: { label: 'Sentence', ar: 'جُمْلَة', color: 'var(--c-sentence)', childName: 'links', hint: 'A citation. Draws its links from every root, form and word it uses.' },
+  description: { label: 'Description', ar: 'وَصْف', color: 'var(--c-desc)', childName: 'attachments', hint: 'A free note. Attaches to a card of any type.' }
+};
+
+const ALLOW = {
+  root: ['form', 'sentence', 'description'],
+  form: ['word', 'sentence', 'description'],
+  word: ['sentence', 'description'],
+  sentence: ['description'],
+  description: ['root', 'form', 'word', 'sentence']
+};
+
+const KINDS = [
+  { k: 'text', label: 'Short text' }, { k: 'notes', label: 'Notes' },
+  { k: 'number', label: 'Number' }, { k: 'select', label: 'Select' },
+  { k: 'tags', label: 'Tags' }, { k: 'audio', label: 'Audio' },
+  { k: 'image', label: 'Image' }, { k: 'file', label: 'File' },
+  { k: 'link', label: 'Link' }, { k: 'date', label: 'Date' }
+];
+const KIND_DEFAULT = { tags: [], number: 0, notes: '', text: '', select: 'one', audio: '', image: '', file: '', link: '', date: '' };
+
+const DICTS = [
+  { id: 'ayn', ar: 'كتاب العين', en: 'Kitab al-Ayn', by: 'al-Khalil ibn Ahmad al-Farahidi', d: 786, tag: 'earliest' },
+  { id: 'tahdhib', ar: 'تهذيب اللغة', en: 'Tahdhib al-Lugha', by: 'al-Azhari', d: 980, tag: 'general' },
+  { id: 'sihah', ar: 'الصحاح', en: 'al-Sihah', by: 'al-Jawhari', d: 1003, tag: 'selective' },
+  { id: 'maqayis', ar: 'مقاييس اللغة', en: 'Maqayis al-Lugha', by: 'Ibn Faris', d: 1004, tag: 'root-semantic' },
+  { id: 'mufradat', ar: 'المفردات', en: 'Mufradat al-Quran', by: 'al-Raghib al-Isfahani', d: 1108, tag: 'interpretive' },
+  { id: 'lisan', ar: 'لسان العرب', en: 'Lisan al-Arab', by: 'Ibn Manzur', d: 1311, tag: 'comprehensive' },
+  { id: 'qamus', ar: 'القاموس المحيط', en: 'al-Qamus al-Muhit', by: 'al-Fayruzabadi', d: 1414, tag: 'concise' },
+  { id: 'taj', ar: 'تاج العروس', en: 'Taj al-Arus', by: 'Murtada al-Zabidi', d: 1791, tag: 'encyclopedic' },
+  { id: 'lane', ar: 'معجم لين', en: "Lane's Lexicon", by: 'Edward William Lane', d: 1893, tag: 'english' }
+];
+
+const ROOTS = [
+  {
+    ar: 'ك ت ب', tr: 'k-t-b', en: 'writing, inscribing, recording',
+    note: 'Triliteral root. Everything under it turns on the act of setting marks down — from a single letter to a library.',
+    forms: [
+      { ar: 'فَعَلَ', tr: 'faʿala', en: 'Form I — base verb', words: [{ ar: 'كَتَبَ', tr: 'kataba', en: 'he wrote', pos: 'verb' }] },
+      { ar: 'فَاعِل', tr: 'fāʿil', en: 'active participle', words: [{ ar: 'كَاتِب', tr: 'kātib', en: 'writer, clerk', pos: 'noun' }, { ar: 'كَاتِبَة', tr: 'kātiba', en: 'writer (fem.)', pos: 'noun' }] },
+      { ar: 'مَفْعُول', tr: 'mafʿūl', en: 'passive participle', words: [{ ar: 'مَكْتُوب', tr: 'maktūb', en: 'written; a letter', pos: 'noun' }] },
+      { ar: 'مَفْعَل', tr: 'mafʿal', en: 'noun of place', words: [{ ar: 'مَكْتَب', tr: 'maktab', en: 'desk, office', pos: 'noun' }] },
+      { ar: 'مَفْعَلَة', tr: 'mafʿala', en: 'noun of place (fem.)', words: [{ ar: 'مَكْتَبَة', tr: 'maktaba', en: 'library, bookshop', pos: 'noun' }] },
+      { ar: 'فِعَال', tr: 'fiʿāl', en: 'verbal noun', words: [{ ar: 'كِتَاب', tr: 'kitāb', en: 'book', pos: 'noun' }] },
+      { ar: 'فِعَالَة', tr: 'fiʿāla', en: 'verbal noun (fem.)', words: [{ ar: 'كِتَابَة', tr: 'kitāba', en: 'writing, script', pos: 'noun' }] },
+      { ar: 'مُفَاعَلَة', tr: 'mufāʿala', en: 'Form III verbal noun', words: [{ ar: 'مُكَاتَبَة', tr: 'mukātaba', en: 'correspondence', pos: 'noun' }] }
+    ]
+  },
+  {
+    ar: 'د ر س', tr: 'd-r-s', en: 'studying, learning by repetition',
+    note: 'The older sense is to efface by treading over — repetition wearing a path, hence study.',
+    forms: [
+      { ar: 'فَعَلَ', tr: 'faʿala', en: 'Form I — base verb', words: [{ ar: 'دَرَسَ', tr: 'darasa', en: 'he studied', pos: 'verb' }] },
+      { ar: 'فَعَّلَ', tr: 'faʿʿala', en: 'Form II — causative', words: [{ ar: 'دَرَّسَ', tr: 'darrasa', en: 'he taught', pos: 'verb' }] },
+      { ar: 'مُفَعِّل', tr: 'mufaʿʿil', en: 'Form II participle', words: [{ ar: 'مُدَرِّس', tr: 'mudarris', en: 'teacher', pos: 'noun' }] },
+      { ar: 'مَفْعَلَة', tr: 'mafʿala', en: 'noun of place (fem.)', words: [{ ar: 'مَدْرَسَة', tr: 'madrasa', en: 'school', pos: 'noun' }] },
+      { ar: 'فَعْل', tr: 'faʿl', en: 'verbal noun', words: [{ ar: 'دَرْس', tr: 'dars', en: 'lesson', pos: 'noun' }] },
+      { ar: 'فِعَالَة', tr: 'fiʿāla', en: 'verbal noun (fem.)', words: [{ ar: 'دِرَاسَة', tr: 'dirāsa', en: 'study, studies', pos: 'noun' }] },
+      { ar: 'تَفْعِيل', tr: 'tafʿīl', en: 'Form II verbal noun', words: [{ ar: 'تَدْرِيس', tr: 'tadrīs', en: 'teaching', pos: 'noun' }] }
+    ]
+  },
+  {
+    ar: 'ع ل م', tr: 'ʿ-l-m', en: 'knowing, marking, signing',
+    note: 'From the sense of a mark or landmark — what is known is what has been marked out.',
+    forms: [
+      { ar: 'فَعِلَ', tr: 'faʿila', en: 'Form I — base verb', words: [{ ar: 'عَلِمَ', tr: 'ʿalima', en: 'he knew', pos: 'verb' }] },
+      { ar: 'فَعَّلَ', tr: 'faʿʿala', en: 'Form II — causative', words: [{ ar: 'عَلَّمَ', tr: 'ʿallama', en: 'he taught', pos: 'verb' }] },
+      { ar: 'فِعْل', tr: 'fiʿl', en: 'verbal noun', words: [{ ar: 'عِلْم', tr: 'ʿilm', en: 'knowledge, science', pos: 'noun' }] },
+      { ar: 'فَاعِل', tr: 'fāʿil', en: 'active participle', words: [{ ar: 'عَالِم', tr: 'ʿālim', en: 'scholar', pos: 'noun' }] },
+      { ar: 'مُفَعِّل', tr: 'mufaʿʿil', en: 'Form II participle', words: [{ ar: 'مُعَلِّم', tr: 'muʿallim', en: 'teacher', pos: 'noun' }] },
+      { ar: 'تَفْعِيل', tr: 'tafʿīl', en: 'Form II verbal noun', words: [{ ar: 'تَعْلِيم', tr: 'taʿlīm', en: 'education', pos: 'noun' }] },
+      { ar: 'مَفْعُولَة', tr: 'mafʿūla', en: 'passive participle (fem.)', words: [{ ar: 'مَعْلُومَة', tr: 'maʿlūma', en: 'a piece of information', pos: 'noun' }] },
+      { ar: 'فَاعَل', tr: 'fāʿal', en: 'noun', words: [{ ar: 'عَالَم', tr: 'ʿālam', en: 'world', pos: 'noun' }] }
+    ]
+  },
+  {
+    ar: 'ق ر أ', tr: 'q-r-ʾ', en: 'reading, reciting aloud',
+    note: 'To gather up and utter — letters collected into speech.',
+    forms: [
+      { ar: 'فَعَلَ', tr: 'faʿala', en: 'Form I — base verb', words: [{ ar: 'قَرَأَ', tr: 'qaraʾa', en: 'he read', pos: 'verb' }] },
+      { ar: 'فَاعِل', tr: 'fāʿil', en: 'active participle', words: [{ ar: 'قَارِئ', tr: 'qāriʾ', en: 'reader', pos: 'noun' }] },
+      { ar: 'فِعَالَة', tr: 'fiʿāla', en: 'verbal noun (fem.)', words: [{ ar: 'قِرَاءَة', tr: 'qirāʾa', en: 'reading, recitation', pos: 'noun' }] }
+    ]
+  },
+  {
+    ar: 'ج ل س', tr: 'j-l-s', en: 'sitting, being seated',
+    note: 'Sitting down, and by extension the place and the company one sits in.',
+    forms: [
+      { ar: 'فَعَلَ', tr: 'faʿala', en: 'Form I — base verb', words: [{ ar: 'جَلَسَ', tr: 'jalasa', en: 'he sat', pos: 'verb' }] },
+      { ar: 'فَاعِل', tr: 'fāʿil', en: 'active participle', words: [{ ar: 'جَالِس', tr: 'jālis', en: 'seated, sitting', pos: 'noun' }] },
+      { ar: 'مَفْعِل', tr: 'mafʿil', en: 'noun of place', words: [{ ar: 'مَجْلِس', tr: 'majlis', en: 'council, sitting-room', pos: 'noun' }] }
+    ]
+  },
+  {
+    ar: 'ف ي', tr: 'f-y', en: 'in, at, within',
+    note: 'A particle, not a triliteral root — carried here so a sentence can link every token it uses, function words included.',
+    forms: [
+      { ar: 'حَرْف', tr: 'ḥarf', en: 'particle — no pattern', words: [{ ar: 'فِي', tr: 'fī', en: 'in, at', pos: 'particle' }] }
+    ]
+  }
+];
+
+const SENTS = [
+  { ar: 'قَرَأْتُ كِتَابًا فِي المَكْتَبَةِ.', tr: 'qaraʾtu kitāban fī l-maktaba', en: 'I read a book in the library.', ment: ['qaraʾa', 'kitāb', 'fī', 'maktaba'], src: 'Modern Standard' },
+  { ar: 'الكَاتِبُ يَجْلِسُ إِلَى مَكْتَبِهِ.', tr: 'al-kātibu yajlisu ilā maktabih', en: 'The writer sits at his desk.', ment: ['kātib', 'jalasa', 'maktab'], src: 'Modern Standard' },
+  { ar: 'وَصَلَ المَكْتُوبُ أَمْسِ.', tr: 'waṣala l-maktūbu ams', en: 'The letter arrived yesterday.', ment: ['maktūb'], src: 'Colloquial' },
+  { ar: 'كَتَبَ الوَلَدُ رِسَالَةً طَوِيلَةً.', tr: 'kataba l-waladu risālatan ṭawīla', en: 'The boy wrote a long letter.', ment: ['kataba'], src: 'Modern Standard' },
+  { ar: 'دَامَتِ المُكَاتَبَةُ بَيْنَهُمَا سَنَوَاتٍ.', tr: 'dāmati l-mukātabatu baynahumā sanawāt', en: 'The correspondence between them lasted years.', ment: ['mukātaba'], src: 'Literary' },
+  { ar: 'يَدْرُسُ الطُّلَّابُ فِي المَدْرَسَةِ.', tr: 'yadrusu ṭ-ṭullābu fī l-madrasa', en: 'The students study at the school.', ment: ['darasa', 'fī', 'madrasa'], src: 'Modern Standard' },
+  { ar: 'شَرَحَ المُدَرِّسُ الدَّرْسَ.', tr: 'šaraḥa l-mudarrisu d-dars', en: 'The teacher explained the lesson.', ment: ['mudarris', 'dars'], src: 'Modern Standard' },
+  { ar: 'العِلْمُ نُورٌ.', tr: 'al-ʿilmu nūr', en: 'Knowledge is light.', ment: ['ʿilm'], src: 'Proverb' },
+  { ar: 'يُعَلِّمُ المُعَلِّمُ القِرَاءَةَ وَالكِتَابَةَ.', tr: 'yuʿallimu l-muʿallimu l-qirāʾata wa-l-kitāba', en: 'The teacher teaches reading and writing.', ment: ['muʿallim', 'qirāʾa', 'kitāba'], src: 'Modern Standard' },
+  { ar: 'سَافَرَ العَالِمُ حَوْلَ العَالَمِ.', tr: 'sāfara l-ʿālimu ḥawla l-ʿālam', en: 'The scholar travelled around the world.', ment: ['ʿālim', 'ʿālam'], src: 'Literary' }
+];
+
+const TRX = {};
+ROOTS.forEach((r, i) => r.forms.forEach((f, j) => f.words.forEach((w, k) => { TRX[w.tr] = { i: i, j: j, k: k }; })));
+
+const fld = (kind, label, value, options) => ({ id: uid('f'), kind: kind, label: label, value: value, options: options || null });
+const seedFields = (type, d) => {
+  if (type === 'root') return [fld('tags', 'Semantic field', d && d.tags ? d.tags : []), fld('number', 'Attestations', d && d.att ? d.att : 0)];
+  if (type === 'form') return [fld('select', 'Productivity', 'common', ['common', 'restricted', 'rare'])];
+  if (type === 'word') return [fld('select', 'Part of speech', d && d.pos ? d.pos : 'noun', ['noun', 'verb', 'adjective', 'particle']), fld('audio', 'Pronunciation', '')];
+  if (type === 'sentence') return [fld('text', 'Source', d && d.src ? d.src : ''), fld('select', 'Register', 'neutral', ['formal', 'neutral', 'literary', 'colloquial'])];
+  return [fld('notes', 'Body', d && d.body ? d.body : '')];
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const folded = props && props.startFolded === false ? false : true;
+    const nodes = [], edges = [];
+    const R = ROOTS[0];
+    const mk = (type, id, src, data, extra) => Object.assign({
+      id: id, type: type, src: src, x: 0, y: 0, folded: true,
+      ar: data.ar, tr: data.tr, en: data.en, fields: seedFields(type, extra || data)
+    });
+    nodes.push(mk('root', 'r0', { i: 0 }, R, { tags: ['writing', 'records', 'script'], att: 214 }));
+    nodes[0].folded = false;
+    [1, 4, 5].forEach(j => {
+      const f = R.forms[j], fid = 'r0f' + j;
+      nodes.push(mk('form', fid, { i: 0, j: j }, f));
+      edges.push({ id: uid('e'), source: 'r0', target: fid });
+      const w = f.words[0], wid = fid + 'w0';
+      nodes.push(mk('word', wid, { i: 0, j: j, k: 0 }, w, w));
+      edges.push({ id: uid('e'), source: fid, target: wid });
+    });
+    [0, 1].forEach(q => {
+      const s = SENTS[q], sid = 's' + q;
+      nodes.push(mk('sentence', sid, { q: q }, s, s));
+      s.ment.forEach(tr => {
+        const p = TRX[tr]; if (!p) return;
+        const wid = 'r' + p.i + 'f' + p.j + 'w' + p.k;
+        if (nodes.some(n => n.id === wid)) edges.push({ id: uid('e'), source: wid, target: sid });
+      });
+    });
+    const did = 'd0';
+    nodes.push(Object.assign(mk('description', did, null, { ar: 'وَصْف الجَذْر', tr: 'waṣf al-jaḏr', en: 'Root note' }), {
+      fields: [fld('notes', 'Body', R.note), fld('link', 'Reference', 'https://en.wikipedia.org/wiki/Semitic_root')]
+    }));
+    edges.push({ id: uid('e'), source: 'r0', target: did });
+    if (!folded) nodes.forEach(n => { n.folded = false; });
+    this.state = {
+      nodes: nodes, edges: edges, sel: [], tx: 60, ty: 60, k: 1,
+      marquee: null, connect: null, panning: false, spaceHeld: false,
+      undoStack: [], redoStack: [], save: 'idle',
+      theme: props && props.theme === 'dark' ? 'dark' : 'light',
+      title: 'Arabic lexicon graph', editingTitle: false, titleDraft: '',
+      filter: '', heights: {}, menuFor: null, linkMenu: null, insMenu: false, animating: false, toast: null,
+      sidebarOpen: true, tab: 'meaning', paletteHelp: false, selEdge: null, dictsOpen: true, openDicts: {}, labelsOpen: false, leftOpen: true,
+      ctx: null, helpOpen: false, toastUndo: false,
+      proposals: [], propSource: '', propTitle: '', comments: [], cDraft: ''
+    };
+    this.ro = false; this.embed = false; this.pubSlug = null;
+    try {
+      const qs = new URLSearchParams(window.location.search);
+      const view = qs.get('view');
+      if (view) {
+        this.ro = true; this.embed = qs.get('embed') === '1'; this.pubSlug = view;
+        const list = JSON.parse(localStorage.getItem('jadhr-published') || '[]');
+        const g = list.find(x => x.slug === view);
+        if (g && g.doc) {
+          this.state.nodes = clone(g.doc.nodes); this.state.edges = clone(g.doc.edges); this.state.title = g.title;
+        } else if (g && g.nodes) {
+          // legacy (stripped) publish format — rebuild cards from the summary
+          this.state.nodes = g.nodes.map(n => Object.assign(mk(n.type, n.id, null, { ar: n.ar, tr: n.tr || '', en: n.en || '' }), { x: n.x || 0, y: n.y || 0, folded: true }));
+          this.state.edges = g.edges.map(e => ({ id: uid('e'), source: Array.isArray(e) ? e[0] : e.source, target: Array.isArray(e) ? e[1] : e.target }));
+          this.state.title = g.title; this._legacyPub = true;
+        } else if (view !== 'sample') { this.state.title = 'Graph not found'; this.state.nodes = []; this.state.edges = []; this._pubMissing = true; }
+        if (qs.get('folded') === '1') this.state.nodes.forEach(n => { if (n.kind !== 'frame') n.folded = true; });
+        this.state.sidebarOpen = qs.get('entry') !== '0'; this.state.leftOpen = false; this.state.sel = [];
+        this.state.theme = qs.get('theme') === 'dark' ? 'dark' : 'light';
+      }
+    } catch (e) {}
+    try { this.state.comments = JSON.parse(localStorage.getItem('jadhr-comments') || '[]'); } catch (e) {}
+    try {
+      const ui = this.ro ? {} : JSON.parse(localStorage.getItem('lexicon-editor-v5-ui') || '{}');
+      if (typeof ui.sidebarOpen === 'boolean') this.state.sidebarOpen = ui.sidebarOpen;
+      if (typeof ui.leftOpen === 'boolean') this.state.leftOpen = ui.leftOpen;
+      if (typeof ui.paletteHelp === 'boolean') this.state.paletteHelp = ui.paletteHelp;
+      if (ui.theme === 'light' || ui.theme === 'dark') this.state.theme = ui.theme;
+      if (!this.ro) { const shared = localStorage.getItem('jadhr-theme'); if (shared === 'light' || shared === 'dark') this.state.theme = shared; }
+    } catch (e) {}
+    this.fileRef = React.createRef();
+    this.paneRef = React.createRef();
+    this.titleRef = React.createRef();
+    this.drag = null; this.space = false; this.timers = []; this._els = {}; this._refs = {}; this._h = {};
+  }
+
+  saveUi() {
+    clearTimeout(this._uiT);
+    this._uiT = setTimeout(() => { const s = this.state; try { localStorage.setItem('lexicon-editor-v5-ui', JSON.stringify({ sidebarOpen: s.sidebarOpen, leftOpen: s.leftOpen, paletteHelp: s.paletteHelp, theme: s.theme })); } catch (e) {} }, 200);
+  }
+  setState(patch, cb) {
+    super.setState(patch, cb);
+    if (typeof patch === 'function' || ['sidebarOpen', 'leftOpen', 'paletteHelp', 'theme'].some(k => patch && k in patch)) this.saveUi();
+  }
+  importFile(file) {
+    if (!file) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      let data;
+      try { data = JSON.parse(rd.result); } catch (e) { this.toast('Not valid JSON'); return; }
+      if (!data || !Array.isArray(data.nodes)) { this.toast('No "nodes" array in this file'); return; }
+      const known = data.nodes.filter(n => n && n.id && (n.kind === 'frame' || META[n.type]));
+      const ids = {}; known.forEach(n => { ids[n.id] = true; });
+      const edges = (Array.isArray(data.edges) ? data.edges : []).filter(e => e && ids[e.source] && ids[e.target]).map(e => Object.assign({ id: uid('e') }, e));
+      const pre = { nodes: clone(this.state.nodes), edges: clone(this.state.edges), sel: this.state.sel.slice() };
+      const skipped = data.nodes.length - known.length;
+      this.setState({ nodes: known, edges: edges, sel: [], selEdge: null, title: data.title || this.state.title, heights: {} }, () => {
+        this.pushUndo(pre, 'Import');
+        this.queueSave();
+        this.timers.push(setTimeout(() => this.measureAll(), 60));
+        this.timers.push(setTimeout(() => this.autoLayout(true), 200));
+      });
+      this.toast('Imported ' + known.length + ' cards · ' + edges.length + ' links' + (skipped ? ' · ' + skipped + ' unknown skipped' : ''), true);
+    };
+    rd.readAsText(file);
+  }
+  /* ---------- staged proposals (1h) ---------- */
+  loadSeed() {
+    let seed = null;
+    try {
+      const raw = new URLSearchParams(window.location.search).get('seed');
+      if (raw) seed = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    } catch (e) { seed = null; }
+    if (!seed || !Array.isArray(seed.words) || !seed.words.length) return;
+    const props = [], seen = {};
+    const byAr = {}; this.cards().forEach(n => { byAr[n.type + ':' + n.ar] = n.id; });
+    const add = (type, d, parentKey, conf, note) => {
+      const key = type + ':' + d.ar;
+      if (seen[key]) return key;
+      seen[key] = true;
+      const existing = byAr[key] || null;
+      const lex = type === 'word' ? TRX[d.tr] : null;
+      props.push({ key, type, ar: d.ar, tr: d.tr || '', en: d.en || '', pos: d.pos, src: d.src, parentKey, existing,
+        conf: existing ? 1 : (conf != null ? conf : (lex ? 0.98 : 0.72)), state: existing ? 'matched' : 'pending', note: note || '' });
+      return key;
+    };
+    seed.words.forEach(w => {
+      const rk = add('root', w.root, null, ROOTS.some(r => r.ar === w.root.ar) ? 0.98 : 0.7, ROOTS.some(r => r.ar === w.root.ar) ? 'in the lexicon' : 'not in the lexicon — check the root');
+      const fk = add('form', w.form, rk, 0.95, '');
+      add('word', w, fk, null, w.pos || '');
+    });
+    if (seed.sentence) {
+      const sk = add('sentence', Object.assign({ tr: seed.sentence.tr }, seed.sentence), null, 0.99, seed.sentence.src || '');
+      props.filter(p => p.type === 'word').forEach(p => { p.sentKey = sk; });
+    }
+    if (!props.some(p => p.state === 'pending')) return;
+    this.setState({ proposals: props, propSource: seed.sentence ? seed.sentence.ar : '', propTitle: seed.sentence ? 'Extracted from ' + (seed.sentence.src || 'a passage') : 'Extracted from the reader', sidebarOpen: true, tab: 'proposals' });
+  }
+  sendComment() {
+    const s = this.state; const t = (s.cDraft || '').trim(); if (!t) return;
+    const n = s.sel.length === 1 ? this.node(s.sel[0]) : null;
+    const cm = { id: 'c' + Date.now(), who: 'You', text: t, nodeId: n ? n.id : null, anchor: n ? n.ar : 'canvas', ts: Date.now(), color: 'var(--c-root)' };
+    const comments = s.comments.concat([cm]);
+    try { localStorage.setItem('jadhr-comments', JSON.stringify(comments)); } catch (e) {}
+    this.setState({ comments, cDraft: '' });
+  }
+  publish() {
+    const s = this.state;
+    const slug = 'you/' + (s.title || 'graph').toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36).slice(-4);
+    const cards = this.cards();
+    const roots = cards.filter(n => n.type === 'root').map(n => n.ar);
+    const g = { slug, title: s.title, by: 'you', ts: Date.now(), updated: new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
+      desc: cards.filter(n => n.type === 'word').length + ' words on ' + (roots.length === 1 ? 'the root ' + roots[0] : roots.length + ' roots') + ' — published from the graph editor.',
+      counts: { cards: cards.length, roots: roots.length, words: cards.filter(n => n.type === 'word').length },
+      doc: { nodes: clone(s.nodes), edges: clone(s.edges) }, forks: 0, cited: 0 };
+    try { const list = JSON.parse(localStorage.getItem('jadhr-published') || '[]'); list.push(g); localStorage.setItem('jadhr-published', JSON.stringify(list)); } catch (e) {}
+    this.toast('Published — opening the public page');
+    setTimeout(() => { location.href = 'Published%20Graph.dc.html?g=' + encodeURIComponent(slug); }, 700);
+  }
+  loadFork() {
+    try {
+      const qs = new URLSearchParams(location.search); const slug = qs.get('fork'); const note = qs.get('note');
+      if (slug) { const list = JSON.parse(localStorage.getItem('jadhr-published') || '[]'); const g = list.find(x => x.slug === slug); if (g) { const nodes = g.doc ? clone(g.doc.nodes) : g.nodes.map(n => Object.assign(this.mk(n.type, n.id, null, { ar: n.ar, tr: n.tr || '', en: n.en || '' }), { x: n.x || 0, y: n.y || 0, folded: true })); const edges = g.doc ? clone(g.doc.edges) : g.edges.map(e => ({ id: uid('e'), source: e.source, target: e.target })); this.setState({ nodes, edges, title: g.title + ' (fork)', sel: [] }); g.forks = (g.forks || 0) + 1; localStorage.setItem('jadhr-published', JSON.stringify(list)); this.toast('Forked “' + g.title + '” — it is yours now', false); this.timers.push(setTimeout(() => this.fit(), 200)); } }
+      if (note) { const id = uid('d'); this.commit('Add note card', st => { st.nodes.push(Object.assign(this.mk('description', id, null, { ar: 'وَصْف', tr: '', en: decodeURIComponent(note) }), { x: 80, y: 80, folded: false })); return { nodes: st.nodes, sel: [id] }; }); }
+    } catch (e) {}
+  }
+  ghostRects() {
+    const cards = this.cards();
+    let maxX = 0, minY = Infinity;
+    cards.forEach(n => { const r = this.rect(n); if (!r) return; maxX = Math.max(maxX, r.x + r.w); minY = Math.min(minY, r.y); });
+    if (!cards.length) { maxX = -180; minY = 60; }
+    if (minY === Infinity) minY = 60;
+    const col = { root: 0, form: 1, word: 2, sentence: 3, description: 3 };
+    const rows = { root: 0, form: 0, word: 0, sentence: 0, description: 0 };
+    const out = {};
+    this.state.proposals.filter(p => p.state === 'pending').forEach(p => {
+      out[p.key] = { x: maxX + 180 + col[p.type] * 290, y: minY + rows[p.type] * 118 };
+      rows[p.type] += 1;
+    });
+    return out;
+  }
+  acceptProposal(key, silent) {
+    const props = this.state.proposals;
+    const chain = [];
+    let k = key;
+    while (k) { const p = props.find(q => q.key === k); if (!p) break; chain.unshift(p); k = p.parentKey; }
+    const toAdd = chain.filter(p => p.state === 'pending');
+    if (!toAdd.length) return;
+    const rects = this.ghostRects();
+    const idOf = {};
+    props.forEach(p => { if (p.existing) idOf[p.key] = p.existing; if (p.acceptedId) idOf[p.key] = p.acceptedId; });
+    this.commit('Accept ' + META[toAdd[toAdd.length - 1].type].label, st => {
+      toAdd.forEach(p => {
+        const id = uid('p');
+        idOf[p.key] = id;
+        const r = rects[p.key] || { x: 0, y: 0 };
+        const node = Object.assign(this.mk(p.type, id, null, { ar: p.ar, tr: p.tr, en: p.en }, { pos: p.pos, src: p.src }), { x: snap(r.x), y: snap(r.y), folded: true });
+        st.nodes.push(node);
+        if (p.parentKey && idOf[p.parentKey]) st.edges.push({ id: uid('e'), source: idOf[p.parentKey], target: id });
+        if (p.type === 'word' && p.sentKey && idOf[p.sentKey]) st.edges.push({ id: uid('e'), source: id, target: idOf[p.sentKey] });
+        if (p.type === 'sentence') props.filter(q => q.type === 'word' && q.sentKey === p.key && idOf[q.key]).forEach(q => st.edges.push({ id: uid('e'), source: idOf[q.key], target: id }));
+      });
+      return { nodes: st.nodes, edges: st.edges, sel: [idOf[key]] };
+    });
+    const next = props.map(p => toAdd.indexOf(p) >= 0 ? Object.assign({}, p, { state: 'accepted', acceptedId: idOf[p.key] }) : p);
+    this.setState({ proposals: next });
+    if (!silent) this.toast('Accepted ' + toAdd.length + (toAdd.length > 1 ? ' cards' : ' card'), true);
+    this.timers.push(setTimeout(() => this.measureAll(), 60));
+    this.timers.push(setTimeout(() => this.autoLayout(true), 200));
+  }
+  skipProposal(key) {
+    const props = this.state.proposals;
+    const kids = k => props.filter(p => p.parentKey === k && p.state === 'pending').map(p => p.key);
+    const all = [key]; let q = [key];
+    while (q.length) { const n = q.shift(); const ks = kids(n); all.push(...ks); q.push(...ks); }
+    this.setState({ proposals: props.map(p => all.indexOf(p.key) >= 0 && p.state === 'pending' ? Object.assign({}, p, { state: 'skipped' }) : p) });
+  }
+  componentDidMount() {
+    if (!this.ro) { this.timers.push(setTimeout(() => this.loadSeed(), 320)); this.timers.push(setTimeout(() => this.loadFork(), 260)); }
+    this.onMove = e => this.handleMove(e); this.onUp = e => this.handleUp(e);
+    this.onKeyDown = e => this.handleKey(e);
+    this.onKeyUp = e => { if (e.code === 'Space') this.releaseSpace(); };
+    this.onBlurWin = () => this.releaseSpace();
+    window.addEventListener('mousemove', this.onMove); window.addEventListener('mouseup', this.onUp);
+    window.addEventListener('keydown', this.onKeyDown); window.addEventListener('keyup', this.onKeyUp);
+    window.addEventListener('blur', this.onBlurWin);
+    if (window.ResizeObserver) {
+      this._resizeObs = new ResizeObserver(entries => {
+        if (this.mapNow()) return;
+        let next = null;
+        entries.forEach(en => {
+          const id = en.target.__cardId; if (!id) return;
+          const h = en.target.offsetHeight;
+          if (!h) return;
+          this._h[id] = h;
+          if (Math.abs((this.state.heights[id] || 0) - h) > 0.5) { next = next || {}; next[id] = h; }
+        });
+        if (next) this.setState(s => ({ heights: Object.assign({}, s.heights, next) }));
+      });
+    }
+    Object.keys(this._els).forEach(id => { const el = this._els[id]; if (el && this._resizeObs) this._resizeObs.observe(el); });
+    this.applyTheme(this.state.theme);
+    this.syncHeights();
+    this.timers.push(setTimeout(() => this.measureAll(), 60));
+    this.timers.push(setTimeout(() => { if (this.ro && this.pubSlug !== 'sample' && !this._legacyPub) this.fit(); else this.autoLayout(true); }, 200));
+    if (this.ro) { this.onMsg = e => { const d = e.data || {}; if (d.type === 'jadhr-fit') this.fit(); if (d.type === 'jadhr-fold') this.setFoldAll(this.cards().map(n => n.id), !!d.folded); if (d.type === 'jadhr-theme') this.applyTheme(d.dark ? 'dark' : 'light'); }; window.addEventListener('message', this.onMsg); }
+  }
+  componentWillUnmount() {
+    if (this.onMsg) window.removeEventListener('message', this.onMsg);
+    window.removeEventListener('mousemove', this.onMove); window.removeEventListener('mouseup', this.onUp);
+    window.removeEventListener('keydown', this.onKeyDown); window.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('blur', this.onBlurWin);
+    if (this._resizeObs) this._resizeObs.disconnect();
+    this.timers.forEach(clearTimeout);
+  }
+
+  applyTheme(t) {
+    const on = t === 'dark';
+    document.documentElement.classList.toggle('dark', on);
+    document.body.classList.toggle('dark', on);
+  }
+  mapNow() { return this.state.k < (this.props.mapZoom || 0.65); }
+  syncNow() {
+    const els = this.liveEls();
+    Object.keys(els).forEach(id => { const h = els[id].offsetHeight; if (h) this._h[id] = h; });
+  }
+
+  /* ---------- model ---------- */
+  node(id) { return this.state.nodes.find(n => n.id === id); }
+  meta(n) { return META[n && n.type] || META.description; }
+  cardH(n) {
+    if (!n) return HF;
+    return this._h[n.id] || this.state.heights[n.id] || (n.folded ? HF : HO);
+  }
+  liveEls() {
+    const pane = this.paneRef.current, out = {};
+    if (!pane) return out;
+    const list = pane.querySelectorAll('[data-card]');
+    for (let i = 0; i < list.length; i++) {
+      const el = list[i], id = el.getAttribute('data-card');
+      if (id) { out[id] = el; el.__cardId = id; }
+    }
+    return out;
+  }
+  measureAll(cb) {
+    const els = this.liveEls();
+    this._els = els;
+    const next = {}; let changed = false, live = false;
+    Object.keys(els).forEach(id => {
+      const el = els[id];
+      const h = el.offsetHeight; if (!h) return;
+      if (this._resizeObs && !el.__obs) { el.__obs = 1; this._resizeObs.observe(el); }
+      if (Math.abs((this._h[id] || 0) - h) > 0.5) live = true;
+      this._h[id] = h;
+      if (Math.abs((this.state.heights[id] || 0) - h) > 0.5) { next[id] = h; changed = true; }
+    });
+    if (changed) this.setState(s => ({ heights: Object.assign({}, s.heights, next) }), cb);
+    else { if (live) this.forceUpdate(); if (cb) cb(); }
+  }
+  syncHeights() {
+    requestAnimationFrame(() => {
+      this.measureAll();
+      requestAnimationFrame(() => this.measureAll());
+    });
+  }
+  rect(n) {
+    if (!n) return null;
+    if (n.kind === 'frame') return { x: n.x, y: n.y, w: n.w, h: n.h };
+    return { x: n.x, y: n.y, w: n.folded ? WF : WO, h: this.cardH(n) };
+  }
+  visible() { return this.state.nodes; }
+  cards() { return this.state.nodes.filter(n => n.kind !== 'frame'); }
+  kidsOf(id) {
+    return this.state.edges.filter(e => e.source === id).map(e => e.target)
+      .filter(t => { const c = this.node(t); return c && c.type !== 'description'; });
+  }
+  descOf(id) {
+    return this.state.edges.filter(e => e.source === id).map(e => e.target)
+      .filter(t => { const c = this.node(t); return c && c.type === 'description'; });
+  }
+  parentsOf(id) { return this.state.edges.filter(e => e.target === id).map(e => e.source); }
+  descendants(id, type) {
+    const seen = {}, out = [];
+    const walk = q => this.kidsOf(q).forEach(c => {
+      if (seen[c]) return; seen[c] = 1;
+      const n = this.node(c); if (n && (!type || n.type === type)) out.push(c);
+      walk(c);
+    });
+    walk(id); return out;
+  }
+  matches(n) {
+    const q = this.state.filter.trim().toLowerCase(); if (!q) return true;
+    const hay = [n.ar, n.tr, n.en].concat((n.fields || []).map(f => String(f.value))).join(' ').toLowerCase();
+    return hay.indexOf(q) >= 0;
+  }
+
+  /* ---------- lexicon ---------- */
+  availForms(n) {
+    if (n.type !== 'root' || !n.src) return [];
+    return ROOTS[n.src.i].forms.map((f, j) => ({ f: f, j: j })).filter(o => !this.node('r' + n.src.i + 'f' + o.j));
+  }
+  availWords(n) {
+    if (n.type !== 'form' || !n.src) return [];
+    return ROOTS[n.src.i].forms[n.src.j].words.map((w, k) => ({ w: w, k: k })).filter(o => !this.node('r' + n.src.i + 'f' + n.src.j + 'w' + o.k));
+  }
+  availSents(n) {
+    if (n.type !== 'word' || !n.src) return [];
+    return SENTS.map((s, q) => ({ s: s, q: q })).filter(o => o.s.ment.indexOf(n.tr) >= 0 && !this.node('s' + o.q));
+  }
+  availLinks(n) {
+    if (n.type !== 'sentence' || !n.src) return [];
+    return SENTS[n.src.q].ment.filter(tr => {
+      const p = TRX[tr]; if (!p) return false;
+      const wid = 'r' + p.i + 'f' + p.j + 'w' + p.k;
+      return !this.node(wid) || !this.state.edges.some(e => e.source === wid && e.target === n.id);
+    });
+  }
+  availRoots(n) {
+    if (n.type !== 'sentence' || !n.src) return [];
+    const seen = {}, out = [];
+    SENTS[n.src.q].ment.forEach(tr => {
+      const p = TRX[tr]; if (!p || seen[p.i]) return;
+      seen[p.i] = 1;
+      const rid = 'r' + p.i;
+      const tied = this.node(rid) && this.state.edges.some(e => (e.source === rid && e.target === n.id) || (e.source === n.id && e.target === rid));
+      if (!tied) out.push(p.i);
+    });
+    return out;
+  }
+  available(n) {
+    if (n.type === 'root') return this.availForms(n);
+    if (n.type === 'form') return this.availWords(n);
+    if (n.type === 'word') return this.availSents(n);
+    if (n.type === 'sentence') return this.availLinks(n);
+    return [];
+  }
+  mk(type, id, src, data, extra) {
+    return {
+      id: id, type: type, src: src, x: 0, y: 0, folded: this.props.startFolded === false ? false : true,
+      ar: data.ar, tr: data.tr, en: data.en, fields: seedFields(type, extra || data)
+    };
+  }
+  extract(id) {
+    const n = this.node(id); if (!n) return;
+    if (n.type === 'sentence') return this.extractSentence(id, this.availLinks(n).length ? 'words' : 'roots');
+    const items = this.available(n); if (!items.length) return;
+    const label = { root: 'forms', form: 'words', word: 'sentences' }[n.type];
+    this.commit('Extract ' + items.length + ' ' + label, st => {
+      const has = q => st.nodes.some(x => x.id === q);
+      const push = nd => { if (!has(nd.id)) st.nodes.push(nd); };
+      const link = (a, b) => { if (!st.edges.some(e => e.source === a && e.target === b)) st.edges.push({ id: uid('e'), source: a, target: b }); };
+      if (n.type === 'root') items.forEach((o, q) => {
+        const fid = 'r' + n.src.i + 'f' + o.j;
+        push(Object.assign(this.mk('form', fid, { i: n.src.i, j: o.j }, o.f), { x: n.x + WO + GAPX, y: n.y + q * 130 }));
+        link(id, fid);
+      });
+      else if (n.type === 'form') items.forEach((o, q) => {
+        const wid = 'r' + n.src.i + 'f' + n.src.j + 'w' + o.k;
+        push(Object.assign(this.mk('word', wid, { i: n.src.i, j: n.src.j, k: o.k }, o.w, o.w), { x: n.x + WO + GAPX, y: n.y + q * 130 }));
+        link(id, wid);
+      });
+      else if (n.type === 'word') items.forEach((o, q) => {
+        const sid = 's' + o.q;
+        push(Object.assign(this.mk('sentence', sid, { q: o.q }, o.s, o.s), { x: n.x + WO + GAPX, y: n.y + q * 130 }));
+        link(id, sid);
+        o.s.ment.forEach(tr => { const p = TRX[tr]; if (!p) return; const wid = 'r' + p.i + 'f' + p.j + 'w' + p.k; if (has(wid)) link(wid, sid); });
+      });
+      return { nodes: st.nodes, edges: st.edges };
+    });
+    this.toast('Extracted ' + items.length + ' ' + label, true);
+    this.timers.push(setTimeout(() => this.autoLayout(true), 40));
+  }
+  extractSentence(id, mode) {
+    const n = this.node(id); if (!n || n.type !== 'sentence' || !n.src) return;
+    const words = mode === 'roots' ? [] : this.availLinks(n);
+    const roots = mode === 'words' ? [] : this.availRoots(n);
+    if (!words.length && !roots.length) return;
+    const parts = [];
+    if (words.length) parts.push(words.length + (words.length === 1 ? ' word' : ' words'));
+    if (roots.length) parts.push(roots.length + (roots.length === 1 ? ' root' : ' roots'));
+    const phrase = parts.join(' and ');
+    this.commit('Link ' + phrase, st => {
+      const has = q => st.nodes.some(x => x.id === q);
+      const push = nd => { if (!has(nd.id)) st.nodes.push(nd); };
+      const link = (a, b) => { if (!st.edges.some(e => e.source === a && e.target === b)) st.edges.push({ id: uid('e'), source: a, target: b }); };
+      const ensureRoot = (i, row) => {
+        const rid = 'r' + i;
+        if (!has(rid)) push(Object.assign(this.mk('root', rid, { i: i }, ROOTS[i], { tags: [], att: 0 }), { x: n.x - 460, y: n.y + row * 130 }));
+        return rid;
+      };
+      words.forEach((tr, row) => {
+        const p = TRX[tr]; if (!p) return;
+        const rid = ensureRoot(p.i, row), fid = rid + 'f' + p.j, wid = fid + 'w' + p.k;
+        const F = ROOTS[p.i].forms[p.j], W = F.words[p.k];
+        if (!has(fid)) { push(Object.assign(this.mk('form', fid, { i: p.i, j: p.j }, F), { x: n.x - 300, y: n.y + row * 130 })); link(rid, fid); }
+        if (!has(wid)) { push(Object.assign(this.mk('word', wid, { i: p.i, j: p.j, k: p.k }, W, W), { x: n.x - 160, y: n.y + row * 130 })); link(fid, wid); }
+        link(wid, id);
+      });
+      roots.forEach((i, row) => link(ensureRoot(i, row), id));
+      return { nodes: st.nodes, edges: st.edges };
+    });
+    this.setState({ linkMenu: null });
+    this.toast('Linked ' + phrase, true);
+    this.timers.push(setTimeout(() => this.autoLayout(true), 40));
+  }
+  addDescription(id) {
+    const n = this.node(id); if (!n) return;
+    const did = uid('d');
+    this.commit('Add description', st => {
+      st.nodes.push(Object.assign(this.mk('description', did, null, { ar: 'وَصْف', tr: '', en: 'New note' }), {
+        x: n.x + 24, y: n.y + 180, folded: false, fields: [fld('notes', 'Body', '')]
+      }));
+      st.edges.push({ id: uid('e'), source: id, target: did });
+      return { nodes: st.nodes, edges: st.edges, sel: [did] };
+    });
+  }
+  addCard(type, x, y) {
+    if (this.ro) return;
+    const id = uid('m');
+    const blank = { root: { ar: 'ج ذ ر', tr: '', en: '' }, form: { ar: 'وَزْن', tr: '', en: '' }, word: { ar: 'كَلِمَة', tr: '', en: '' }, sentence: { ar: 'جُمْلَة', tr: '', en: '' }, description: { ar: 'وَصْف', tr: '', en: '' } }[type];
+    this.commit('Add ' + META[type].label, st => {
+      st.nodes.push(Object.assign(this.mk(type, id, null, blank), { x: snap(x), y: snap(y), folded: false }));
+      return { nodes: st.nodes, sel: [id] };
+    });
+  }
+  addRootFromLex(i, x, y) {
+    const R = ROOTS[i], id = 'r' + i;
+    if (this.node(id)) { this.setState({ sel: [id] }); this.toast('That root is already on the canvas'); return; }
+    this.commit('Add root ' + R.tr, st => {
+      st.nodes.push(Object.assign(this.mk('root', id, { i: i }, R, { tags: [], att: 0 }), { x: snap(x), y: snap(y), folded: false }));
+      return { nodes: st.nodes, sel: [id] };
+    });
+  }
+
+  /* ---------- fields ---------- */
+  addField(id, kind) {
+    const k = KINDS.find(q => q.k === kind) || KINDS[0];
+    this.commit('Add ' + k.label.toLowerCase() + ' field', st => {
+      st.nodes.forEach(n => {
+        if (n.id !== id) return;
+        n.fields = (n.fields || []).concat([fld(kind, k.label, KIND_DEFAULT[kind] === undefined ? '' : clone(KIND_DEFAULT[kind]), kind === 'select' ? ['one', 'two', 'three'] : null)]);
+      });
+      return { nodes: st.nodes };
+    });
+    this.setState({ menuFor: null, insMenu: false });
+  }
+  setFieldValue(id, fid, value, fileName) {
+    this.commit('Edit field', st => {
+      st.nodes.forEach(n => {
+        if (n.id !== id) return;
+        n.fields = (n.fields || []).map(f => f.id === fid ? Object.assign({}, f, { value: value, fileName: fileName || f.fileName }) : f);
+      });
+      return { nodes: st.nodes };
+    });
+  }
+  setFieldLabel(id, fid, label) {
+    this.commit('Rename field', st => {
+      st.nodes.forEach(n => {
+        if (n.id !== id) return;
+        n.fields = (n.fields || []).map(f => f.id === fid ? Object.assign({}, f, { label: label }) : f);
+      });
+      return { nodes: st.nodes };
+    });
+  }
+  removeField(id, fid) {
+    this.commit('Remove field', st => {
+      st.nodes.forEach(n => { if (n.id === id) n.fields = (n.fields || []).filter(f => f.id !== fid); });
+      return { nodes: st.nodes };
+    });
+  }
+  setHead(id, key, value) {
+    this.commit('Edit headword', st => {
+      st.nodes.forEach(n => { if (n.id === id) n[key] = value; });
+      return { nodes: st.nodes };
+    });
+  }
+  unlink(source, target) {
+    this.commit('Remove link', st => ({ edges: st.edges.filter(e => !(e.source === source && e.target === target)) }));
+    this.setState({ selEdge: null });
+  }
+  removeEdge(id) {
+    const e = this.state.edges.find(x => x.id === id); if (!e) return;
+    this.commit('Remove link', st => ({ edges: st.edges.filter(x => x.id !== id) }));
+    this.setState({ selEdge: null });
+    this.toast('Wire deleted', true);
+  }
+
+  /* ---------- fold ---------- */
+  toggleFold(id) {
+    this.setState(s => ({ nodes: s.nodes.map(n => n.id === id ? Object.assign({}, n, { folded: !n.folded }) : n), menuFor: null, linkMenu: null }), () => this.syncHeights());
+    this.queueSave();
+  }
+  setFoldAll(ids, folded) {
+    this.setState(s => ({ nodes: s.nodes.map(n => ids.indexOf(n.id) >= 0 ? Object.assign({}, n, { folded: folded }) : n) }), () => this.syncHeights());
+    this.queueSave();
+  }
+
+  /* ---------- commits ---------- */
+  commit(label, mutate) {
+    if (this.ro) { this.toast('This is a published copy — fork it to edit'); return; }
+    if (this.state.ctx) this.setState({ ctx: null });
+    this.setState(s => {
+      const snapshot = { nodes: clone(s.nodes), edges: clone(s.edges), sel: s.sel.slice(), label: label };
+      const next = mutate({ nodes: clone(s.nodes), edges: clone(s.edges), sel: s.sel.slice() });
+      return Object.assign({ undoStack: s.undoStack.concat([snapshot]).slice(-60), redoStack: [] }, next);
+    });
+    this.queueSave();
+  }
+  pushUndo(pre, label) {
+    if (!pre || this.ro) return;
+    this.setState(s => ({ undoStack: s.undoStack.concat([Object.assign({}, pre, { label: label })]).slice(-60), redoStack: [] }));
+  }
+  queueSave() {
+    if (this.ro) return;
+    clearTimeout(this.saveT); clearTimeout(this.saveT2);
+    this.setState({ save: 'pending' });
+    this.saveT = setTimeout(() => {
+      this.setState({ save: 'saving' });
+      this.saveT2 = setTimeout(() => this.setState({ save: 'idle' }), 380);
+    }, 800);
+  }
+  undo() {
+    this.setState(s => {
+      if (!s.undoStack.length) return null;
+      const prev = s.undoStack[s.undoStack.length - 1];
+      const redo = { nodes: clone(s.nodes), edges: clone(s.edges), sel: s.sel.slice(), label: prev.label };
+      return { nodes: prev.nodes, edges: prev.edges, sel: prev.sel, undoStack: s.undoStack.slice(0, -1), redoStack: s.redoStack.concat([redo]) };
+    });
+    this.queueSave();
+  }
+  redo() {
+    this.setState(s => {
+      if (!s.redoStack.length) return null;
+      const next = s.redoStack[s.redoStack.length - 1];
+      const undo = { nodes: clone(s.nodes), edges: clone(s.edges), sel: s.sel.slice(), label: next.label };
+      return { nodes: next.nodes, edges: next.edges, sel: next.sel, redoStack: s.redoStack.slice(0, -1), undoStack: s.undoStack.concat([undo]) };
+    });
+    this.queueSave();
+  }
+  toast(msg, undoable) {
+    this.setState({ toast: msg, toastUndo: !!undoable });
+    clearTimeout(this.toastT);
+    this.toastT = setTimeout(() => this.setState({ toast: null, toastUndo: false }), undoable ? 5200 : 2600);
+  }
+  removeSelection() {
+    if (this.ro) return;
+    const sel = this.state.sel; if (!sel.length) return;
+    const c = sel.length;
+    this.commit('Delete ' + c + (c > 1 ? ' cards' : ' card'), st => ({
+      nodes: st.nodes.filter(n => sel.indexOf(n.id) < 0),
+      edges: st.edges.filter(e => sel.indexOf(e.source) < 0 && sel.indexOf(e.target) < 0),
+      sel: []
+    }));
+    this.toast('Deleted ' + c + (c > 1 ? ' cards' : ' card'), true);
+  }
+  duplicate() {
+    if (this.ro) return;
+    const sel = this.state.sel; if (!sel.length) return;
+    this.commit('Duplicate ' + sel.length + (sel.length > 1 ? ' cards' : ' card'), st => {
+      const add = [], ids = [];
+      st.nodes.forEach(n => {
+        if (sel.indexOf(n.id) < 0) return;
+        const id = uid('m');
+        ids.push(id);
+        add.push(Object.assign(clone(n), { id: id, src: null, x: n.x + GRID * 3, y: n.y + GRID * 3 }));
+      });
+      return { nodes: st.nodes.concat(add), sel: ids };
+    });
+  }
+  exportJson() {
+    const data = { title: this.state.title, nodes: this.state.nodes, edges: this.state.edges };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = this.state.title.replace(/\s+/g, '-').toLowerCase() + '.json';
+    a.click();
+    this.toast('Exported ' + this.state.nodes.length + ' cards');
+  }
+
+  /* ---------- layout ---------- */
+  autoLayout(fitAfter) {
+    const all = this.cards(); if (!all.length) return;
+    const pre = { nodes: clone(this.state.nodes), edges: clone(this.state.edges), sel: this.state.sel.slice() };
+    const frameMembers = {};
+    this.state.nodes.filter(n => n.kind === 'frame').forEach(f => { frameMembers[f.id] = this.frameContents(f.id); });
+    const W = {}, H = {}, rank = {};
+    const els = this.liveEls();
+    all.forEach(n => {
+      const el = els[n.id];
+      const live = el ? el.offsetHeight : 0;
+      if (live) this._h[n.id] = live;
+      W[n.id] = n.folded ? WF : WO;
+      H[n.id] = live || this.cardH(n);
+    });
+    const anchorOf = id => {
+      const e = this.state.edges.find(x => x.target === id) || this.state.edges.find(x => x.source === id);
+      if (!e) return null;
+      return e.target === id ? e.source : e.target;
+    };
+    all.forEach(n => { rank[n.id] = n.type === 'description' ? -1 : TYPES.indexOf(n.type); });
+    all.filter(n => n.type === 'description').forEach(n => {
+      const a = anchorOf(n.id);
+      rank[n.id] = a && rank[a] >= 0 ? rank[a] : 0;
+    });
+    const cols = {};
+    all.forEach(n => { const c = rank[n.id]; (cols[c] = cols[c] || []).push(n.id); });
+    const keys = Object.keys(cols).map(Number);
+    const maxC = Math.max.apply(null, keys);
+    const colW = {}, colX = {};
+    keys.forEach(c => { colW[c] = Math.max.apply(null, cols[c].map(id => W[id])); });
+    let x = 0;
+    for (let c = 0; c <= maxC; c++) { colX[c] = x; x += (colW[c] || 0) + GAPX; }
+    const y = {}, cur = {}, seen = {};
+    const place = id => {
+      if (y[id] !== undefined) return y[id];
+      seen[id] = 1;
+      const c = rank[id];
+      const kids = this.kidsOf(id).filter(q => !seen[q] && y[q] === undefined && rank[q] > c);
+      let v;
+      if (kids.length) {
+        kids.forEach(q => place(q));
+        const a = kids[0], b = kids[kids.length - 1];
+        v = (y[a] + H[a] / 2 + y[b] + H[b] / 2) / 2 - H[id] / 2;
+      } else v = cur[c] || 0;
+      v = Math.max(v, cur[c] || 0);
+      y[id] = v; cur[c] = v + H[id] + GAPY;
+      return v;
+    };
+    all.filter(n => n.type !== 'description').slice()
+      .sort((a, b) => rank[a.id] - rank[b.id] || a.y - b.y)
+      .forEach(n => place(n.id));
+    all.filter(n => n.type === 'description').forEach(n => {
+      const a = anchorOf(n.id), c = rank[n.id];
+      let v = a && y[a] !== undefined ? y[a] + H[a] + GAPY : (cur[c] || 0);
+      v = Math.max(v, cur[c] || 0);
+      y[n.id] = v; cur[c] = v + H[n.id] + GAPY;
+    });
+    const ys = Object.keys(y).map(q => y[q]);
+    const minY = ys.length ? Math.min.apply(null, ys) : 0;
+    this.setState(s => {
+      const nodes = s.nodes.map(n => {
+        if (n.kind === 'frame' || y[n.id] === undefined) return n;
+        return Object.assign({}, n, {
+          x: snap(colX[rank[n.id]] + (n.type === 'description' ? 28 : 0)),
+          y: snap(y[n.id] - minY)
+        });
+      });
+      const withFrames = nodes.map(f => {
+        if (f.kind !== 'frame') return f;
+        const mem = (frameMembers[f.id] || []).map(id => nodes.find(q => q.id === id)).filter(Boolean);
+        if (!mem.length) return f;
+        const rs = mem.map(m => ({ x: m.x, y: m.y, w: m.folded ? WF : WO, h: this.cardH(m) }));
+        const x0 = Math.min.apply(null, rs.map(r => r.x)) - 24, y0 = Math.min.apply(null, rs.map(r => r.y)) - 40;
+        const x1 = Math.max.apply(null, rs.map(r => r.x + r.w)) + 24, y1 = Math.max.apply(null, rs.map(r => r.y + r.h)) + 24;
+        return Object.assign({}, f, { x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+      });
+      return { nodes: withFrames, animating: true };
+    });
+    this.pushUndo(pre, 'Tidy layout');
+    this.timers.push(setTimeout(() => this.setState({ animating: false }), 460));
+    this.timers.push(setTimeout(() => this.measureAll(), 500));
+    if (fitAfter) this.timers.push(setTimeout(() => { this.measureAll(); this.fit(); }, 120));
+  }
+  fit() {
+    const pane = this.paneRef.current; if (!pane) return;
+    this.syncNow();
+    const rs = this.state.nodes.map(n => this.rect(n)).filter(Boolean);
+    if (!rs.length) return;
+    const r = pane.getBoundingClientRect();
+    const x0 = Math.min.apply(null, rs.map(v => v.x)), y0 = Math.min.apply(null, rs.map(v => v.y));
+    const x1 = Math.max.apply(null, rs.map(v => v.x + v.w)), y1 = Math.max.apply(null, rs.map(v => v.y + v.h));
+    const w = x1 - x0, h = y1 - y0, pad = 1.1;
+    const k = Math.max(0.34, Math.min(1, Math.min(r.width / (w * pad), r.height / (h * pad))));
+    this.setState({ k: k, tx: (r.width - w * k) / 2 - x0 * k, ty: (r.height - h * k) / 2 - y0 * k });
+  }
+
+  /* ---------- viewport + pointer ---------- */
+  flowPos(e) {
+    const r = this.paneRef.current.getBoundingClientRect();
+    return { x: (e.clientX - r.left - this.state.tx) / this.state.k, y: (e.clientY - r.top - this.state.ty) / this.state.k };
+  }
+  onWheel(e) {
+    e.preventDefault();
+    const r = this.paneRef.current.getBoundingClientRect();
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    if (e.ctrlKey || e.metaKey) {
+      this.setState(s => {
+        const k = Math.max(0.12, Math.min(2.4, s.k * Math.pow(0.99, e.deltaY)));
+        return { k: k, tx: mx - (mx - s.tx) * (k / s.k), ty: my - (my - s.ty) * (k / s.k) };
+      });
+      return;
+    }
+    const dx = e.shiftKey ? e.deltaY : e.deltaX, dy = e.shiftKey ? 0 : e.deltaY;
+    this.setState(s => ({ tx: s.tx - dx, ty: s.ty - dy }));
+  }
+  zoomTo(k, cx, cy) {
+    const pane = this.paneRef.current; if (!pane) return;
+    const r = pane.getBoundingClientRect();
+    const mx = cx === undefined ? r.width / 2 : cx, my = cy === undefined ? r.height / 2 : cy;
+    this.setState(s => {
+      const nk = Math.max(0.12, Math.min(2.4, k));
+      return { k: nk, tx: mx - (mx - s.tx) * (nk / s.k), ty: my - (my - s.ty) * (nk / s.k) };
+    });
+  }
+  centerOn(id) {
+    const pane = this.paneRef.current, n = this.node(id); if (!pane || !n) return;
+    const r = pane.getBoundingClientRect(), q = this.rect(n); if (!q) return;
+    this.setState(s => ({ tx: r.width / 2 - (q.x + q.w / 2) * s.k, ty: r.height / 2 - (q.y + q.h / 2) * s.k }));
+  }
+  ensureVisible(id) {
+    const pane = this.paneRef.current, n = this.node(id); if (!pane || !n) return;
+    const r = pane.getBoundingClientRect(), q = this.rect(n); if (!q) return;
+    const s = this.state, m = 44;
+    const sx = q.x * s.k + s.tx, sy = q.y * s.k + s.ty, sw = q.w * s.k, sh = q.h * s.k;
+    let tx = s.tx, ty = s.ty;
+    if (sx < m) tx += m - sx; else if (sx + sw > r.width - m) tx -= (sx + sw) - (r.width - m);
+    if (sy < m) ty += m - sy; else if (sy + sh > r.height - m) ty -= (sy + sh) - (r.height - m);
+    if (tx !== s.tx || ty !== s.ty) this.setState({ tx: tx, ty: ty });
+  }
+  releaseSpace() { if (!this.space && !this.state.spaceHeld) return; this.space = false; this.setState({ spaceHeld: false }); }
+  onPaneDown(e) {
+    if (this.space || e.button === 1) {
+      e.preventDefault();
+      this.drag = { mode: 'pan', sx: e.clientX, sy: e.clientY, tx: this.state.tx, ty: this.state.ty };
+      this.setState({ panning: true });
+      return;
+    }
+    if (e.button !== 0) return;
+    const p = this.flowPos(e);
+    const base = e.shiftKey ? this.state.sel.slice() : [];
+    this.drag = { mode: 'marquee', x0: p.x, y0: p.y, base: base };
+    this.setState({ sel: base, marquee: { x: p.x, y: p.y, w: 0, h: 0 }, menuFor: null, linkMenu: null, selEdge: null, ctx: null });
+  }
+  marqueeHits(m) {
+    return this.state.nodes.filter(n => {
+      const r = this.rect(n); if (!r) return false;
+      if (n.kind === 'frame') return r.x >= m.x && r.y >= m.y && r.x + r.w <= m.x + m.w && r.y + r.h <= m.y + m.h;
+      return r.x < m.x + m.w && r.x + r.w > m.x && r.y < m.y + m.h && r.y + r.h > m.y;
+    }).map(n => n.id);
+  }
+  frameContents(id) {
+    const f = this.node(id); if (!f || f.kind !== 'frame') return [];
+    const r = this.rect(f);
+    return this.cards().filter(n => {
+      const q = this.rect(n);
+      return q && q.x >= r.x && q.y >= r.y && q.x + q.w <= r.x + r.w && q.y + q.h <= r.y + r.h;
+    }).map(n => n.id);
+  }
+  frameResizeDown(id, dir, e) {
+    if (this.space || e.button === 1) return;
+    e.stopPropagation();
+    const n = this.node(id); if (!n) return;
+    const p = this.flowPos(e);
+    const pre = { nodes: clone(this.state.nodes), edges: clone(this.state.edges), sel: this.state.sel.slice() };
+    this.drag = { mode: 'resize', id: id, dir: dir, x0: p.x, y0: p.y, start: { x: n.x, y: n.y, w: n.w, h: n.h }, moved: false, pre: pre };
+    this.setState({ sel: [id] });
+  }
+  nodeDown(id, e) {
+    if (this.space || e.button === 1) return;
+    e.stopPropagation();
+    const pre = { nodes: clone(this.state.nodes), edges: clone(this.state.edges), sel: this.state.sel.slice() };
+    let sel = this.state.sel.slice();
+    if (e.shiftKey) sel = sel.indexOf(id) >= 0 ? sel.filter(q => q !== id) : sel.concat([id]);
+    else if (sel.indexOf(id) < 0) sel = [id];
+    const p = this.flowPos(e);
+    const moving = [];
+    sel.forEach(sid => {
+      if (moving.indexOf(sid) < 0) moving.push(sid);
+      const n = this.node(sid);
+      if (n && n.kind === 'frame') this.frameContents(sid).forEach(c => { if (moving.indexOf(c) < 0) moving.push(c); });
+    });
+    this.drag = { mode: 'node', x0: p.x, y0: p.y, ids: moving, count: sel.length, start: {}, moved: false, pre: pre };
+    moving.forEach(sid => { const n = this.node(sid); if (n) this.drag.start[sid] = { x: n.x, y: n.y }; });
+    const isFrame = sel.length === 1 && (this.node(sel[0]) || {}).kind === 'frame';
+    this.setState({ sel: sel, selEdge: null, sidebarOpen: true, tab: isFrame ? 'settings' : this.state.tab });
+  }
+  connectDown(id, side, e) {
+    if (this.ro) return;
+    if (this.space || e.button === 1) return;
+    e.stopPropagation();
+    const p = this.flowPos(e);
+    this.drag = { mode: 'connect', from: id };
+    this.setState({ connect: { from: id, side: side, x: p.x, y: p.y }, selEdge: null });
+  }
+  handleMove(e) {
+    const d = this.drag; if (!d) return;
+    if (d.mode === 'pan') { this.setState({ tx: d.tx + (e.clientX - d.sx), ty: d.ty + (e.clientY - d.sy) }); return; }
+    if (this.ro && (d.mode === 'node' || d.mode === 'resize' || d.mode === 'connect')) return;
+    const p = this.flowPos(e);
+    if (d.mode === 'marquee') {
+      const m = { x: Math.min(d.x0, p.x), y: Math.min(d.y0, p.y), w: Math.abs(p.x - d.x0), h: Math.abs(p.y - d.y0) };
+      const hit = (m.w > 3 || m.h > 3) ? this.marqueeHits(m) : [];
+      const sel = d.base.length ? d.base.concat(hit.filter(q => d.base.indexOf(q) < 0)) : hit;
+      this.setState({ marquee: m, sel: sel });
+    } else if (d.mode === 'resize') {
+      const MIN = GRID * 8, s0 = d.start, dx = snap(p.x - d.x0), dy = snap(p.y - d.y0);
+      if (dx || dy) d.moved = true;
+      let x = s0.x, y = s0.y, w = s0.w, h = s0.h;
+      if (d.dir.indexOf('e') >= 0) w = Math.max(MIN, s0.w + dx);
+      if (d.dir.indexOf('s') >= 0) h = Math.max(MIN, s0.h + dy);
+      if (d.dir.indexOf('w') >= 0) { x = Math.min(s0.x + dx, s0.x + s0.w - MIN); w = s0.w + (s0.x - x); }
+      if (d.dir.indexOf('n') >= 0) { y = Math.min(s0.y + dy, s0.y + s0.h - MIN); h = s0.h + (s0.y - y); }
+      this.setState(st => ({ nodes: st.nodes.map(n => n.id === d.id ? Object.assign({}, n, { x: x, y: y, w: w, h: h }) : n) }));
+    } else if (d.mode === 'node') {
+      const dx = snap(p.x - d.x0), dy = snap(p.y - d.y0);
+      if (dx || dy) d.moved = true;
+      this.setState(s => ({
+        nodes: s.nodes.map(n => d.start[n.id] ? Object.assign({}, n, { x: snap(d.start[n.id].x + dx), y: snap(d.start[n.id].y + dy) }) : n)
+      }));
+    } else if (d.mode === 'connect') {
+      this.setState(s => ({ connect: Object.assign({}, s.connect, { x: p.x, y: p.y }) }));
+    }
+  }
+  handleUp(e) {
+    const d = this.drag; this.drag = null; if (!d) return;
+    if (d.mode === 'pan') { this.setState({ panning: false }); return; }
+    if (d.mode === 'marquee') this.setState(st => ({ marquee: null, sidebarOpen: st.sel.length ? true : st.sidebarOpen }));
+    else if (d.mode === 'resize') { if (d.moved) { this.pushUndo(d.pre, 'Resize group'); this.queueSave(); } }
+    else if (d.mode === 'node' && d.moved) {
+      const c = d.count || d.ids.length;
+      this.pushUndo(d.pre, c > 1 ? 'Move ' + c + ' cards' : 'Move card');
+      this.queueSave();
+    } else if (d.mode === 'connect') {
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      this.setState({ connect: null });
+      const hEl = el && el.closest ? el.closest('[data-handle]') : null;
+      const cEl = el && el.closest ? el.closest('[data-card]') : null;
+      const target = hEl ? hEl.getAttribute('data-handle').split('|')[0] : (cEl ? cEl.getAttribute('data-card') : null);
+      if (!target) return;
+      const a = this.node(d.from), b = this.node(target);
+      if (!a || !b || a.id === b.id) return;
+      if (this.state.edges.some(x => x.source === a.id && x.target === b.id)) { this.toast('Those cards are already linked'); return; }
+      if ((ALLOW[a.type] || []).indexOf(b.type) < 0) {
+        this.toast(META[a.type].label + ' cannot link to ' + META[b.type].label.toLowerCase() + ' — try a description');
+        return;
+      }
+      if (this.reaches(b.id, a.id)) { this.toast('That would make a loop'); return; }
+      this.commit('Link ' + META[a.type].label + ' → ' + META[b.type].label, st => {
+        st.edges.push({ id: uid('e'), source: a.id, target: b.id });
+        return { edges: st.edges };
+      });
+    }
+  }
+  reaches(from, to) {
+    const seen = {};
+    const walk = id => {
+      if (id === to) return true;
+      if (seen[id]) return false;
+      seen[id] = 1;
+      return this.state.edges.filter(e => e.source === id).some(e => walk(e.target));
+    };
+    return walk(from);
+  }
+  onDragOver(e) { e.preventDefault(); }
+  onDrop(e) {
+    e.preventDefault();
+    const raw = e.dataTransfer.getData('text/plain'); if (!raw) return;
+    const p = this.flowPos(e);
+    if (raw.indexOf('lex:') === 0) this.addRootFromLex(parseInt(raw.slice(4), 10), p.x, p.y);
+    else if (TYPES.indexOf(raw) >= 0) this.addCard(raw, p.x, p.y);
+  }
+
+  group() {
+    const ids = this.state.sel.filter(id => { const n = this.node(id); return n && n.kind !== 'frame'; });
+    if (ids.length < 2) { this.toast('Select two or more cards to group them'); return; }
+    const rs = ids.map(id => this.rect(this.node(id))).filter(Boolean);
+    const x0 = Math.min.apply(null, rs.map(r => r.x)) - 24, y0 = Math.min.apply(null, rs.map(r => r.y)) - 44;
+    const x1 = Math.max.apply(null, rs.map(r => r.x + r.w)) + 24, y1 = Math.max.apply(null, rs.map(r => r.y + r.h)) + 24;
+    const gid = uid('g');
+    this.commit('Group ' + ids.length + ' cards', st => {
+      st.nodes.push({ id: gid, kind: 'frame', label: 'Group', x: snap(x0), y: snap(y0), w: snap(x1 - x0), h: snap(y1 - y0) });
+      return { nodes: st.nodes, sel: [gid] };
+    });
+    this.setState({ sidebarOpen: true, tab: 'settings' });
+    this.toast('Grouped ' + ids.length + ' cards — name it in Details', true);
+  }
+  ungroup() {
+    const ids = this.state.sel.filter(id => { const n = this.node(id); return n && n.kind === 'frame'; });
+    if (!ids.length) { this.toast('Select a group to release it'); return; }
+    this.commit('Ungroup', st => ({ nodes: st.nodes.filter(n => ids.indexOf(n.id) < 0), sel: [] }));
+    this.toast('Group released', true);
+  }
+  matchList() { return this.cards().filter(n => this.matches(n)).map(n => n.id); }
+  stepMatch(dir) {
+    const list = this.matchList();
+    if (!list.length) { this.toast('Nothing matches that search'); return; }
+    const cur = this.state.sel.length === 1 ? list.indexOf(this.state.sel[0]) : -1;
+    const ix = ((cur + dir) % list.length + list.length) % list.length;
+    const id = list[ix];
+    this.setState({ sel: [id], selEdge: null, sidebarOpen: true });
+    this.centerOn(id);
+    this.toast('Match ' + (ix + 1) + ' of ' + list.length);
+  }
+  arrowKey(e) {
+    const sel = this.state.sel.filter(id => this.node(id));
+    if (!sel.length) {
+      const step = e.shiftKey ? 160 : 56;
+      this.setState(s => ({
+        tx: s.tx + (e.key === 'ArrowRight' ? -step : e.key === 'ArrowLeft' ? step : 0),
+        ty: s.ty + (e.key === 'ArrowDown' ? -step : e.key === 'ArrowUp' ? step : 0)
+      }));
+      return;
+    }
+    if (e.altKey) {
+      const d = e.shiftKey ? GRID * 4 : GRID;
+      const dx = e.key === 'ArrowRight' ? d : e.key === 'ArrowLeft' ? -d : 0;
+      const dy = e.key === 'ArrowDown' ? d : e.key === 'ArrowUp' ? -d : 0;
+      if (!dx && !dy) return;
+      this.commit('Nudge selection', st => ({
+        nodes: st.nodes.map(n => sel.indexOf(n.id) >= 0 ? Object.assign({}, n, { x: snap(n.x + dx), y: snap(n.y + dy) }) : n)
+      }));
+      return;
+    }
+    const id = sel[0], n = this.node(id); if (!n) return;
+    let next = null;
+    if (e.key === 'ArrowRight') next = this.kidsOf(id)[0] || this.descOf(id)[0];
+    else if (e.key === 'ArrowLeft') next = this.parentsOf(id)[0];
+    else {
+      const ps = this.parentsOf(id);
+      const sibs = ps.length
+        ? this.state.edges.filter(x => x.source === ps[0]).map(x => x.target)
+        : this.cards().filter(q => q.type === n.type).map(q => q.id);
+      const ix = sibs.indexOf(id);
+      if (ix >= 0 && sibs.length > 1) next = sibs[(ix + (e.key === 'ArrowDown' ? 1 : -1) + sibs.length) % sibs.length];
+    }
+    if (!next) return;
+    this.setState({ sel: [next], selEdge: null, sidebarOpen: true });
+    this.ensureVisible(next);
+  }
+  pathOf(id) {
+    const out = []; let cur = id, guard = 0;
+    while (guard++ < 8) {
+      const ps = this.parentsOf(cur); if (!ps.length) break;
+      const p = this.node(ps[0]); if (!p) break;
+      out.unshift(p); cur = p.id;
+    }
+    return out;
+  }
+  openCtx(e, id) {
+    if (this.ro) { e.preventDefault(); return; }
+    const pane = this.paneRef.current; if (!pane) return;
+    e.preventDefault(); e.stopPropagation();
+    const r = pane.getBoundingClientRect();
+    const x = Math.max(6, Math.min(e.clientX - r.left, r.width - 214));
+    const y = Math.max(6, Math.min(e.clientY - r.top, r.height - 250));
+    this.setState({
+      ctx: { x: x, y: y, id: id || null, wx: (e.clientX - r.left - this.state.tx) / this.state.k, wy: (e.clientY - r.top - this.state.ty) / this.state.k },
+      menuFor: null, linkMenu: null
+    });
+  }
+
+  /* ---------- keyboard ---------- */
+  handleKey(e) {
+    const t = e.target, tag = t && t.tagName;
+    if (this.ro && (e.key === 'Delete' || e.key === 'Backspace' || ((e.metaKey || e.ctrlKey) && /^[zdavx]$/i.test(e.key)) || /^[tTeEgG]$/.test(e.key))) { return; }
+    if (this.state.ctx && e.key !== 'Escape') this.setState({ ctx: null });
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+    const mod = e.metaKey || e.ctrlKey;
+    if (e.code === 'Space') {
+      if (tag !== 'BUTTON' && tag !== 'A') { e.preventDefault(); if (!this.space) { this.space = true; this.setState({ spaceHeld: true }); } }
+      return;
+    }
+    if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); return; }
+    if (mod && e.key.toLowerCase() === 'a') { e.preventDefault(); this.setState({ sel: this.state.nodes.map(n => n.id), selEdge: null, sidebarOpen: true }); return; }
+    if (mod && e.key.toLowerCase() === 'd') { e.preventDefault(); this.duplicate(); return; }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      if (this.state.selEdge) this.removeEdge(this.state.selEdge); else this.removeSelection();
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const sel = this.state.sel.filter(id => { const n = this.node(id); return n && n.kind !== 'frame'; });
+      if (sel.length === 1) this.toggleFold(sel[0]);
+      else if (sel.length > 1) this.setFoldAll(sel, !this.node(sel[0]).folded);
+      return;
+    }
+    if (e.key === 'e' || e.key === 'E') {
+      const sel = this.state.sel; if (sel.length === 1) this.extract(sel[0]);
+      return;
+    }
+    if (e.key === '?') { e.preventDefault(); this.setState(st => ({ helpOpen: !st.helpOpen, ctx: null })); return; }
+    if (mod && e.key.toLowerCase() === 'g') { e.preventDefault(); if (e.shiftKey) this.ungroup(); else this.group(); return; }
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); this.zoomTo(this.state.k * 1.25); return; }
+    if (e.key === '-' || e.key === '_') { e.preventDefault(); this.zoomTo(this.state.k / 1.25); return; }
+    if (e.key.indexOf('Arrow') === 0) { e.preventDefault(); this.arrowKey(e); return; }
+    if (e.key === 't' || e.key === 'T') { this.autoLayout(false); return; }
+    if (e.key === 'f' || e.key === 'F') { this.fit(); return; }
+    if (e.key === '1') { this.setState({ k: 1 }); return; }
+    if (e.key === 'Escape') this.setState({ sel: [], menuFor: null, linkMenu: null, selEdge: null, ctx: null, helpOpen: false });
+  }
+
+  /* ---------- paths ---------- */
+  portPoint(r, side) {
+    if (side === 'n') return { x: r.x + r.w / 2, y: r.y, nx: 0, ny: -1 };
+    if (side === 's') return { x: r.x + r.w / 2, y: r.y + r.h, nx: 0, ny: 1 };
+    if (side === 'w') return { x: r.x, y: r.y + r.h / 2, nx: -1, ny: 0 };
+    return { x: r.x + r.w, y: r.y + r.h / 2, nx: 1, ny: 0 };
+  }
+  sidesFor(a, b) {
+    const dx = (b.x + b.w / 2) - (a.x + a.w / 2), dy = (b.y + b.h / 2) - (a.y + a.h / 2);
+    const gapX = dx >= 0 ? b.x - (a.x + a.w) : a.x - (b.x + b.w);
+    const gapY = dy >= 0 ? b.y - (a.y + a.h) : a.y - (b.y + b.h);
+    const CLEAR = 24;
+    let horiz;
+    if (gapX >= CLEAR && gapY < CLEAR) horiz = true;
+    else if (gapY >= CLEAR && gapX < CLEAR) horiz = false;
+    else horiz = Math.abs(dx) >= Math.abs(dy);
+    if (horiz) return dx >= 0 ? ['e', 'w'] : ['w', 'e'];
+    return dy >= 0 ? ['s', 'n'] : ['n', 's'];
+  }
+  edgeGeom(a, b) {
+    const sd = this.sidesFor(a, b);
+    const p = this.portPoint(a, sd[0]), q = this.portPoint(b, sd[1]);
+    const dist = Math.sqrt(Math.pow(q.x - p.x, 2) + Math.pow(q.y - p.y, 2));
+    const o = Math.max(34, Math.min(150, dist * 0.42));
+    return { p: p, q: q, c1: { x: p.x + p.nx * o, y: p.y + p.ny * o }, c2: { x: q.x + q.nx * o, y: q.y + q.ny * o } };
+  }
+  edgePath(a, b) {
+    const g = this.edgeGeom(a, b), p = g.p, q = g.q;
+    if ((this.props.edgeStyle || 'curve') === 'elbow') {
+      if (p.nx) { const mx = (p.x + q.x) / 2; return 'M' + p.x + ',' + p.y + ' L' + mx + ',' + p.y + ' L' + mx + ',' + q.y + ' L' + q.x + ',' + q.y; }
+      const my = (p.y + q.y) / 2;
+      return 'M' + p.x + ',' + p.y + ' L' + p.x + ',' + my + ' L' + q.x + ',' + my + ' L' + q.x + ',' + q.y;
+    }
+    return 'M' + p.x + ',' + p.y + ' C' + g.c1.x + ',' + g.c1.y + ' ' + g.c2.x + ',' + g.c2.y + ' ' + q.x + ',' + q.y;
+  }
+  edgeMid(a, b) {
+    const g = this.edgeGeom(a, b);
+    if ((this.props.edgeStyle || 'curve') === 'elbow') return { x: (g.p.x + g.q.x) / 2, y: (g.p.y + g.q.y) / 2 };
+    return { x: (g.p.x + 3 * g.c1.x + 3 * g.c2.x + g.q.x) / 8, y: (g.p.y + 3 * g.c1.y + 3 * g.c2.y + g.q.y) / 8 };
+  }
+  cardRef(id) {
+    if (!this._refs[id]) this._refs[id] = el => {
+      if (!el) { delete this._els[id]; return; }
+      el.__cardId = id;
+      this._els[id] = el;
+      const h = el.offsetHeight;
+      if (h && Math.abs((this._h[id] || 0) - h) > 0.5) {
+        this._h[id] = h;
+        if (!this._pend) this._pend = requestAnimationFrame(() => { this._pend = 0; this.measureAll(); });
+      }
+      if (this._resizeObs) this._resizeObs.observe(el);
+    };
+    return this._refs[id];
+  }
+
+  /* ---------- render ---------- */
+  fieldModel(nodeId, f, editableLabel) {
+    return {
+      id: f.id, kind: f.kind, label: f.label, value: f.value, options: f.options, fileName: f.fileName,
+      commit: (v, name) => this.setFieldValue(nodeId, f.id, v, name),
+      remove: () => this.removeField(nodeId, f.id),
+      onLabel: editableLabel ? v => this.setFieldLabel(nodeId, f.id, v) : null
+    };
+  }
+  statsFor(n) {
+    if (n.type === 'root') return [
+      { v: this.kidsOf(n.id).length, l: 'forms' },
+      { v: this.descendants(n.id, 'word').length, l: 'words' },
+      { v: this.availForms(n).length, l: 'to extract' }
+    ];
+    if (n.type === 'form') return [
+      { v: this.kidsOf(n.id).length, l: 'words' },
+      { v: this.descendants(n.id, 'sentence').length, l: 'sentences' },
+      { v: this.availWords(n).length, l: 'to extract' }
+    ];
+    if (n.type === 'word') return [
+      { v: this.kidsOf(n.id).filter(q => { const c = this.node(q); return c && c.type === 'sentence'; }).length, l: 'sentences' },
+      { v: this.parentsOf(n.id).length, l: 'parents' },
+      { v: this.availSents(n).length, l: 'to extract' }
+    ];
+    if (n.type === 'sentence') return [
+      { v: this.parentsOf(n.id).length, l: 'linked' },
+      { v: String(n.ar || '').trim().split(/\s+/).length, l: 'words' },
+      { v: this.availLinks(n).length + this.availRoots(n).length, l: 'to link' }
+    ];
+    return [
+      { v: this.parentsOf(n.id).length, l: 'attached to' },
+      { v: (n.fields || []).length, l: 'fields' }
+    ];
+  }
+  countsFor(n) {
+    const kids = this.kidsOf(n.id).map(q => this.node(q)).filter(Boolean);
+    const cnt = t => kids.filter(q => q.type === t).length;
+    const plural = (v, one, many) => v + ' ' + (v === 1 ? one : many);
+    const bits = [];
+    if (n.type === 'root') { bits.push(plural(cnt('form'), 'form', 'forms')); bits.push(plural(this.descendants(n.id, 'word').length, 'word', 'words')); }
+    else if (n.type === 'form') { bits.push(plural(cnt('word'), 'word', 'words')); bits.push(plural(this.descendants(n.id, 'sentence').length, 'sentence', 'sentences')); }
+    else if (n.type === 'word') { bits.push(plural(cnt('sentence'), 'sentence', 'sentences')); }
+    else if (n.type === 'sentence') { bits.push(plural(this.parentsOf(n.id).length, 'link', 'links')); }
+    else { bits.push('attached to ' + this.parentsOf(n.id).length); }
+    return bits.join(' · ');
+  }
+  extractModel(n) {
+    return Object.assign({ hasOptions: false, menuOpen: false, options: [], caretStyle: '', caretTitle: '', onToggleMenu: () => {} }, this.extractShape(n));
+  }
+  extractShape(n) {
+    const base = 'flex:1;min-width:0;border-radius:7px;font-size:12.5px;font-weight:500;padding:5px 8px;text-align:center;';
+    const items = this.available(n);
+    const nouns = { root: 'forms', form: 'words', word: 'sentences', sentence: 'words' };
+    if (n.type === 'description') return {
+      label: 'Attached note', disabled: true, title: 'Descriptions have no children',
+      note: 'Link this note to any card by dragging from one of its four edge dots.',
+      style: base + 'background:transparent;border:1px dashed var(--line-2);color:var(--t3);cursor:default',
+      onClick: () => {}
+    };
+    if (!n.src) return {
+      label: 'No lexicon entry', disabled: true, title: 'This card was created by hand',
+      note: 'Cards made by hand have nothing to extract from. Fill in the headword, then link children yourself.',
+      style: base + 'background:transparent;border:1px dashed var(--line-2);color:var(--t3);cursor:default',
+      onClick: () => {}
+    };
+    if (n.type === 'sentence') {
+      const words = this.availLinks(n), roots = this.availRoots(n);
+      const ar = tr => { const p = TRX[tr]; return p ? ROOTS[p.i].forms[p.j].words[p.k].ar : tr; };
+      if (!words.length && !roots.length) return {
+        label: 'All words and roots linked', disabled: true, title: 'Nothing left to link', note: null,
+        style: base + 'background:transparent;border:1px solid var(--line);color:var(--t3);cursor:default',
+        onClick: () => {}
+      };
+      const c = META.sentence.color;
+      const opts = [];
+      if (words.length) opts.push({
+        label: 'Link ' + words.length + (words.length === 1 ? ' word' : ' words'),
+        sub: words.map(ar).join('  ·  '), run: () => this.extractSentence(n.id, 'words')
+      });
+      if (roots.length) opts.push({
+        label: 'Extract ' + roots.length + (roots.length === 1 ? ' root' : ' roots'),
+        sub: roots.map(i => ROOTS[i].ar).join('  ·  '), run: () => this.extractSentence(n.id, 'roots')
+      });
+      if (words.length && roots.length) opts.push({
+        label: 'Link words and roots', sub: words.map(ar).concat(roots.map(i => ROOTS[i].ar)).join('  ·  '),
+        run: () => this.extractSentence(n.id, 'both')
+      });
+      return {
+        label: opts[0].label, disabled: false, title: opts[0].label + ' from the lexicon (E)', note: null,
+        style: base + 'background:' + c + ';border:1px solid ' + c + ';color:var(--card);cursor:pointer',
+        onClick: opts[0].run,
+        hasOptions: true, menuOpen: this.state.linkMenu === n.id,
+        caretTitle: 'Choose what to pull in — words, their roots, or both',
+        caretStyle: 'flex:0 0 32px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid ' + c + ';color:' + c + ';cursor:pointer',
+        options: opts.map(o => ({ label: o.label, sub: o.sub, onClick: o.run }))
+      };
+    }
+    if (!items.length) return {
+      label: 'All ' + nouns[n.type] + ' extracted', disabled: true, title: 'Nothing left to pull in',
+      note: null,
+      style: base + 'background:transparent;border:1px solid var(--line);color:var(--t3);cursor:default',
+      onClick: () => {}
+    };
+    const verb = n.type === 'sentence' ? 'Link' : 'Extract';
+    const c = META[n.type].color;
+    return {
+      label: verb + ' ' + items.length + ' ' + nouns[n.type], disabled: false,
+      title: verb + ' the related ' + nouns[n.type] + ' from the lexicon (E)',
+      note: null,
+      style: base + 'background:' + c + ';border:1px solid ' + c + ';color:var(--card);cursor:pointer',
+      onClick: () => this.extract(n.id)
+    };
+  }
+  cameFrom() {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      return { w: p.get('w') || '', tr: p.get('tr') || '', ar: p.get('ar') || '' };
+    } catch (e) { return { w: '', tr: '', ar: '' }; }
+  }
+  readerWord() {
+    const f = this.cameFrom();
+    return f.w ? { id: f.w, tr: f.tr || f.w, ar: f.ar } : null;
+  }
+  readerHref() {
+    const f = this.cameFrom();
+    return './Lexicon%20Reader%20v4.dc.html' + (f.w ? '?w=' + encodeURIComponent(f.w) : '');
+  }
+  renderVals() {
+    const s = this.state;
+    const dark = s.theme === 'dark';
+    const mapMode = s.k < (this.props.mapZoom || 0.65);
+    const showTr = this.props.showTransliteration !== false;
+    const sel = s.sel;
+    const linking = !!s.connect;
+    const rectOf = {};
+    s.nodes.forEach(n => { rectOf[n.id] = this.rect(n); });
+
+    const cards = this.cards().map(n => {
+      const m = this.meta(n), r = rectOf[n.id], on = sel.indexOf(n.id) >= 0;
+      const open = !n.folded, dim = !this.matches(n);
+      const hit = !!s.filter.trim() && !dim;
+      const lodSub = String((showTr && n.tr) ? n.tr : (n.en || '')).slice(0, 26);
+      const stats = this.statsFor(n);
+      return {
+        label: m.label + ' ' + (n.tr || n.ar),
+        ref: this.cardRef(n.id),
+        typeLabel: m.label,
+        ar: n.ar, tr: showTr ? n.tr : '', en: n.en || '—',
+        oneLine: [showTr ? n.tr : '', n.en].filter(Boolean).join(' · ') || '—',
+        counts: this.countsFor(n),
+        folded: !!n.folded, open: open,
+        stats: stats,
+        foldTitle: open ? 'Fold this card' : 'Unfold to see everything and extract related cards',
+        fieldRows: (n.fields || []).map(f => this.fieldModel(n.id, f, false)),
+        noFields: !(n.fields || []).length,
+        menuOpen: s.menuFor === n.id,
+        toggleLinkMenu: e => { e.stopPropagation(); this.setState(st => ({ linkMenu: st.linkMenu === n.id ? null : n.id })); },
+        kindOptions: KINDS.map(k => ({ label: k.label, onClick: () => this.addField(n.id, k.k) })),
+        extract: this.extractModel(n),
+        actions: [
+          { label: '+ Description', title: 'Attach a note to this card', onClick: () => this.addDescription(n.id) },
+          { label: 'Focus', title: 'Select this card and its children', onClick: () => this.setState({ sel: [n.id].concat(this.kidsOf(n.id)) }) }
+        ],
+        id: n.id,
+        lod: mapMode,
+        lodSub: lodSub,
+        detailStyle: mapMode ? 'visibility:hidden' : '',
+        lodStyle: 'position:absolute;left:0;top:0;right:0;bottom:0;display:flex;flex-direction:column;justify-content:center;gap:9px;padding:0 22px;overflow:hidden;border-radius:18px;background:var(--card);z-index:1',
+        lodArStyle: 'font-family:Amiri,serif;font-size:' + (n.type === 'sentence' ? 34 : 50) + 'px;line-height:1.22;color:var(--t1);'
+          + 'letter-spacing:' + (n.type === 'root' ? '0.08em' : '0') + ';text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis',
+        onCtx: e => { if (sel.indexOf(n.id) < 0) this.setState({ sel: [n.id], selEdge: null, sidebarOpen: true }); this.openCtx(e, n.id); },
+        ports: PORTS.map(pt => ({
+          handle: n.id + '|' + pt[0],
+          onDown: ev => this.connectDown(n.id, pt[0], ev),
+          style: 'position:absolute;' + pt[1] + ';width:10px;height:10px;border-radius:99px;background:var(--card);'
+            + 'border:2px solid currentColor;cursor:crosshair;z-index:2;'
+            + ((mapMode || this.ro) ? 'opacity:0;pointer-events:none;' : 'opacity:' + (on || linking ? 1 : 0.32) + ';')
+            + 'transition:transform .12s ease,opacity .12s ease'
+        })),
+        onDown: e => this.nodeDown(n.id, e),
+        onToggle: e => { if (e && e.stopPropagation) e.stopPropagation(); this.toggleFold(n.id); if (this.ro && window.parent !== window) window.parent.postMessage({ type: 'jadhr-card', id: n.id, ar: n.ar, tr: n.tr, type2: n.type }, '*'); },
+        openMenu: e => { e.stopPropagation(); if (this.ro) return; this.setState({ menuFor: s.menuFor === n.id ? null : n.id }); },
+        addFieldStyle: this.ro ? 'display:none;' : '',
+        stop: e => e.stopPropagation(),
+        arStyle: 'font-family:Amiri,serif;font-size:' + (open ? (n.type === 'sentence' ? 25 : 31) : 23) + 'px;line-height:1.45;color:var(--t1);text-align:left;'
+          + 'letter-spacing:' + (n.type === 'root' ? '0.08em' : '0') + ';'
+          + (open ? 'word-break:break-word;text-wrap:pretty' : 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis'),
+        style: 'position:absolute;left:' + r.x + 'px;top:' + r.y + 'px;width:' + r.w + 'px;'
+          + 'color:' + m.color + ';background:var(--card);border-radius:18px;'
+          + 'border:1px solid ' + (on ? 'currentColor' : hit ? 'color-mix(in oklab, var(--ring) 55%, var(--line))' : 'var(--line)') + ';'
+          + 'box-shadow:' + (open ? 'var(--sh-open)' : 'var(--sh)')
+          + (on ? ', 0 0 0 3.5px color-mix(in oklab, currentColor 22%, transparent)' : hit ? ', 0 0 0 3px color-mix(in oklab, var(--ring) 18%, transparent)' : '') + ';'
+          + 'opacity:' + (dim ? 0.22 : 1) + ';z-index:' + (on ? 30 : open ? 20 : 10) + ';'
+          + 'cursor:grab;user-select:none;'
+          + (s.animating ? 'transition:left .38s cubic-bezier(.22,.61,.36,1),top .38s cubic-bezier(.22,.61,.36,1);' : '')
+      };
+    });
+
+    const wScale = 1 / Math.max(0.4, Math.min(1, s.k));
+    const edges = s.edges.map(e => {
+      const a = rectOf[e.source], b = rectOf[e.target];
+      if (!a || !b) return null;
+      const src = this.node(e.source);
+      const hot = sel.indexOf(e.source) >= 0 || sel.indexOf(e.target) >= 0;
+      const picked = s.selEdge === e.id;
+      return {
+        d: this.edgePath(a, b),
+        marker: this.props.edgeArrows === false ? 'none' : 'url(#dcArrow)',
+        stroke: picked ? 'var(--ring)' : hot ? this.meta(src).color : 'var(--edge)',
+        width: (picked ? 2.4 : hot ? 1.9 : 1.25) * wScale,
+        dash: picked ? '7 5' : 'none',
+        opacity: picked ? 1 : hot ? 0.95 : (dark ? 0.8 : 0.68),
+        onDown: ev => ev.stopPropagation(),
+        onSelect: ev => { ev.stopPropagation(); this.setState({ selEdge: e.id, sel: [], menuFor: null }); }
+      };
+    }).filter(Boolean);
+
+    const frames = s.nodes.filter(n => n.kind === 'frame').map(n => {
+      const r = rectOf[n.id], on = sel.indexOf(n.id) >= 0;
+      const inside = this.frameContents(n.id);
+      const dirs = [['n', 'left:16px;right:16px;top:-5px;height:10px', 'ns-resize'], ['s', 'left:16px;right:16px;bottom:-5px;height:10px', 'ns-resize'],
+        ['w', 'top:16px;bottom:16px;left:-5px;width:10px', 'ew-resize'], ['e', 'top:16px;bottom:16px;right:-5px;width:10px', 'ew-resize'],
+        ['nw', 'left:-6px;top:-6px;width:13px;height:13px', 'nwse-resize'], ['ne', 'right:-6px;top:-6px;width:13px;height:13px', 'nesw-resize'],
+        ['se', 'right:-6px;bottom:-6px;width:13px;height:13px', 'nwse-resize'], ['sw', 'left:-6px;bottom:-6px;width:13px;height:13px', 'nesw-resize']];
+      return {
+        label: n.label, count: inside.length + (inside.length === 1 ? ' card' : ' cards'),
+        title: 'Group “' + n.label + '” — drag the bar to move it and the ' + inside.length + ' cards inside.',
+        style: 'position:absolute;pointer-events:none;left:' + r.x + 'px;top:' + r.y + 'px;width:' + r.w + 'px;height:' + r.h + 'px;'
+          + 'border:' + (on ? '2px solid var(--ring)' : '1.5px dashed var(--line-2)') + ';border-radius:16px;background:color-mix(in oklab, var(--card) 35%, transparent);z-index:1',
+        headerStyle: 'position:absolute;left:-1px;right:-1px;top:-1px;height:26px;display:flex;align-items:center;gap:8px;padding:0 12px;'
+          + 'pointer-events:auto;cursor:grab;border-radius:16px 16px 0 0;font-size:12.5px;color:var(--t2);background:var(--card-2);border-bottom:1px solid var(--line)',
+        onDown: e => this.nodeDown(n.id, e),
+        onCtx: e => { this.setState({ sel: [n.id], selEdge: null, sidebarOpen: true }); this.openCtx(e, n.id); },
+        selectInside: e => { e.stopPropagation(); if (inside.length) this.setState({ sel: inside }); },
+        handles: dirs.map(h => ({
+          style: 'position:absolute;pointer-events:auto;' + h[1] + ';cursor:' + h[2]
+            + (on && h[0].length === 2 ? ';background:var(--card);border:1.5px solid var(--ring);border-radius:3px' : ''),
+          onDown: e => this.frameResizeDown(n.id, h[0], e)
+        }))
+      };
+    });
+
+    const selCards = sel.map(id => this.node(id)).filter(n => n && n.kind !== 'frame');
+    const one = selCards.length === 1 ? selCards[0] : null;
+    const dotS = c => 'width:7px;height:7px;border-radius:99px;flex:none;background:' + c;
+    const btn = kind => 'background:' + (kind === 'danger' ? 'transparent' : 'var(--card)') + ';border:1px solid '
+      + (kind === 'danger' ? 'var(--line)' : 'var(--line)') + ';border-radius:7px;color:'
+      + (kind === 'danger' ? 'var(--bad)' : 'var(--t1)') + ';font-size:12.5px;padding:4px 9px;cursor:pointer';
+
+    const selFrames = sel.map(id => this.node(id)).filter(n => n && n.kind === 'frame');
+    const frameOne = !selCards.length && selFrames.length === 1 ? selFrames[0] : null;
+    const ins = { header: 'Nothing selected', empty: !selCards.length && !frameOne, single: null, multi: null, frame: null, actions: [], hasActions: false };
+    if (frameOne) {
+      const inside = this.frameContents(frameOne.id);
+      ins.header = 'Group · ' + (frameOne.label || 'untitled');
+      ins.badge = 'Group';
+      ins.badgeStyle = 'font-size:11px;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;color:var(--t2);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:2px 8px;white-space:nowrap';
+      ins.frame = true;
+      ins.frameName = frameOne.label || '';
+      ins.onFrameName = e => {
+        const v = e.target.value;
+        this.setState(st => ({ nodes: st.nodes.map(n => n.id === frameOne.id ? Object.assign({}, n, { label: v }) : n) }));
+        this.queueSave();
+      };
+      ins.frameNote = inside.length + (inside.length === 1 ? ' card sits' : ' cards sit') + ' inside. Dragging the group bar moves them all together.';
+      ins.actions = [
+        { label: 'Select inside', title: 'Select the cards in this group', style: btn(), onClick: () => { if (inside.length) this.setState({ sel: inside }); } },
+        { label: 'Ungroup', title: 'Release this group (⇧⌘G)', style: btn(), onClick: () => this.ungroup() },
+        { label: 'Delete', title: 'Delete the group frame (⌫)', style: btn('danger'), onClick: () => this.removeSelection() }
+      ];
+      ins.hasActions = true;
+    }
+    if (one) {
+      const m = this.meta(one);
+      ins.header = m.label + ' · ' + (one.tr || one.ar);
+      ins.badge = m.label;
+      ins.badgeStyle = 'font-size:11px;text-transform:uppercase;letter-spacing:0.1em;font-weight:600;color:' + m.color
+        + ';background:color-mix(in oklab, ' + m.color + ' 14%, transparent);border-radius:99px;padding:2px 8px;white-space:nowrap';
+      ins.single = true;
+      const trail = this.pathOf(one.id);
+      ins.hasPath = trail.length > 0;
+      ins.path = trail.map(p => ({
+        label: this.meta(p).label + ' · ' + (p.tr || p.ar),
+        title: 'Select this ' + this.meta(p).label.toLowerCase(),
+        onClick: () => this.setState({ sel: [p.id], selEdge: null }),
+        style: 'background:var(--card);border:1px solid var(--line);border-radius:99px;color:var(--t2);font-size:11.5px;padding:2px 9px;cursor:pointer;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis'
+      }));
+      ins.head = [
+        { id: 'ar', kind: 'text', label: 'Arabic', value: one.ar, commit: v => this.setHead(one.id, 'ar', v) },
+        { id: 'tr', kind: 'text', label: 'Translit.', value: one.tr, commit: v => this.setHead(one.id, 'tr', v) },
+        { id: 'en', kind: 'notes', label: 'English gloss', value: one.en, commit: v => this.setHead(one.id, 'en', v) }
+      ];
+      ins.fields = (one.fields || []).map(f => this.fieldModel(one.id, f, true));
+      ins.noFields = !(one.fields || []).length;
+      ins.openMenu = () => this.setState({ insMenu: !s.insMenu });
+      ins.menuOpen = s.insMenu;
+      ins.kindOptions = KINDS.map(k => ({ label: k.label, onClick: () => this.addField(one.id, k.k) }));
+      const links = [];
+      this.parentsOf(one.id).forEach(p => {
+        const q = this.node(p); if (!q) return;
+        links.push({ dir: 'from', label: this.meta(q).label + ' · ' + (q.tr || q.ar), dotStyle: dotS(this.meta(q).color), onSelect: () => this.setState({ sel: [p] }), onUnlink: () => this.unlink(p, one.id) });
+      });
+      this.state.edges.filter(e => e.source === one.id).forEach(e => {
+        const q = this.node(e.target); if (!q) return;
+        links.push({ dir: 'to', label: this.meta(q).label + ' · ' + (q.tr || q.ar), dotStyle: dotS(this.meta(q).color), onSelect: () => this.setState({ sel: [e.target] }), onUnlink: () => this.unlink(one.id, e.target) });
+      });
+      ins.links = links; ins.noLinks = !links.length;
+      ins.actions = this.ro ? [{ label: one.folded ? 'Unfold' : 'Fold', title: 'Toggle this card (Enter)', style: btn(), onClick: () => this.toggleFold(one.id) }] : [
+        { label: one.folded ? 'Unfold' : 'Fold', title: 'Toggle this card (Enter)', style: btn(), onClick: () => this.toggleFold(one.id) },
+        { label: 'Duplicate', title: 'Duplicate (⌘D)', style: btn(), onClick: () => this.duplicate() },
+        { label: '+ Description', title: 'Attach a note', style: btn(), onClick: () => this.addDescription(one.id) },
+        { label: 'Delete', title: 'Delete (⌫)', style: btn('danger'), onClick: () => this.removeSelection() }
+      ];
+      ins.hasActions = true;
+    } else if (selCards.length > 1) {
+      ins.header = selCards.length + ' cards selected';
+      ins.multi = 'Fold or delete them together, or tidy the graph to re-flow everything by type.';
+      ins.breakdown = TYPES.map(t => ({ label: META[t].label, count: selCards.filter(n => n.type === t).length, dotStyle: dotS(META[t].color) })).filter(b => b.count);
+      ins.actions = [
+        { label: 'Fold all', title: 'Fold every selected card', style: btn(), onClick: () => this.setFoldAll(sel, true) },
+        { label: 'Unfold all', title: 'Unfold every selected card', style: btn(), onClick: () => this.setFoldAll(sel, false) },
+        { label: 'Tidy', title: 'Re-layout the graph (T)', style: btn(), onClick: () => this.autoLayout(false) },
+        { label: 'Delete', title: 'Delete (⌫)', style: btn('danger'), onClick: () => this.removeSelection() }
+      ];
+      ins.hasActions = true;
+    }
+
+    const filtered = s.filter.trim() ? this.cards().filter(n => this.matches(n)).length : 0;
+    const saveText = s.save === 'pending' ? 'unsaved' : s.save === 'saving' ? 'saving…' : 'saved';
+    const saveStyle = 'display:flex;align-items:center;gap:6px;flex:none;font-size:12px;color:var(--t3);padding:3px 10px;border:1px solid var(--line);border-radius:99px;background:var(--card)';
+    const saveDotStyle = 'width:5px;height:5px;flex:none;border-radius:99px;background:' + (s.save === 'idle' ? 'var(--good)' : 'var(--ring)');
+
+    const tabBtn = active => 'flex:1;background:' + (active ? 'var(--card)' : 'transparent') + ';border:1px solid '
+      + (active ? 'var(--line-2)' : 'transparent') + ';border-radius:8px;color:' + (active ? 'var(--t1)' : 'var(--t3)')
+      + ';font-size:12.5px;font-weight:500;padding:5px 8px;cursor:pointer';
+
+    const mean = {
+      has: false, none: !one,
+      noneText: selCards.length > 1
+        ? selCards.length + ' cards selected. Pick a single card to read its entry.'
+        : 'Select a card on the canvas to read its entry.'
+    };
+    if (one) {
+      const upToRoot = (id, depth) => {
+        if (depth > 8) return null;
+        const ps = this.parentsOf(id);
+        for (let i = 0; i < ps.length; i++) {
+          const q = this.node(ps[i]); if (!q) continue;
+          if (q.type === 'root') return q;
+          const found = upToRoot(q.id, depth + 1); if (found) return found;
+        }
+        return null;
+      };
+      const rootNode = one.type === 'root' ? one : upToRoot(one.id, 0);
+      const lexIdx = one.src && one.src.i !== undefined ? one.src.i : (rootNode && rootNode.src ? rootNode.src.i : null);
+      const lex = lexIdx === null ? null : ROOTS[lexIdx];
+      const rootAr = rootNode ? rootNode.ar : (lex ? lex.ar : '—');
+      const rootTr = rootNode ? (rootNode.tr || '') : (lex ? lex.tr : '');
+      const pos = (one.fields || []).find(f => f.label === 'Part of speech');
+      const att = (one.fields || []).find(f => f.kind === 'number');
+      const body = (one.fields || []).find(f => f.kind === 'notes');
+      const letters = String(one.ar || '').trim().split(/\s+/).length;
+      mean.has = true;
+      mean.ar = one.ar || '—';
+      mean.tr = showTr && one.tr ? one.tr : '—';
+      mean.grammar = one.type === 'word' ? [(pos && pos.value) || 'lexeme', rootTr ? 'from ' + rootTr : 'root not linked'].join(' · ')
+        : one.type === 'root' ? letters + '-letter root · ' + this.kidsOf(one.id).length + ' forms on canvas'
+        : one.type === 'form' ? 'morphological pattern' : one.type === 'sentence' ? 'citation' : 'editorial note';
+      mean.gloss = one.en || 'No gloss written yet.';
+      mean.rootAr = rootAr; mean.rootTr = rootTr || '—';
+      mean.rootTitle = rootNode ? 'Select the root card' : lex ? 'Add this root to the canvas' : 'No root linked to this card yet';
+      mean.onRoot = () => {
+        if (rootNode) this.setState({ sel: [rootNode.id], selEdge: null });
+        else if (lex !== null && lexIdx !== null) this.addRootFromLex(lexIdx, (-s.tx + 320) / s.k, (-s.ty + 220) / s.k);
+        else this.toast('This card has no root linked yet');
+      };
+      mean.summary = (lex && lex.note) || (body && body.value) || 'No editorial summary written for this card yet — add a Notes field or type one in Settings.';
+      mean.occur = att && Number(att.value) ? Number(att.value) + ' attestations recorded in this lexicon' : 'No attestation count recorded yet.';
+      mean.onViewDicts = () => this.setState({ dictsOpen: true });
+      mean.dictsOpen = s.dictsOpen;
+      mean.dictsClosed = !s.dictsOpen;
+      mean.onToggleDicts = () => this.setState(st => ({ dictsOpen: !st.dictsOpen }));
+      mean.labelsOpen = s.labelsOpen;
+      mean.onLabels = () => this.setState({ labelsOpen: !s.labelsOpen });
+      mean.labelsText = 'Nine lexica, the same set the reader shows. Labels describe each lexicon\u2019s scope and transmission as catalogued by modern editors — not a ranking of authority.';
+      mean.dicts = DICTS.map((d, i) => {
+        const open = s.openDicts[d.en] === undefined ? i < 2 : s.openDicts[d.en];
+        const tools = [
+          { glyph: '+', title: 'Copy this entry onto the card' },
+          { glyph: 'Aa', title: 'Show transliteration' },
+          { glyph: '⧉', title: 'Copy the entry text' }
+        ];
+        return {
+          ar: d.ar, en: d.en, by: d.by + ' · d. ' + d.d, tag: d.tag, open: open, closed: !open,
+          stub: rootAr,
+          entryNote: 'entry text for ' + (rootTr || rootAr) + ' — drop a public-domain scan or corpus file here to import it',
+          source: 'no source file linked yet',
+          tagStyle: 'font-size:11px;color:var(--t3);border:1px solid var(--line);border-radius:99px;padding:1px 8px;white-space:nowrap',
+          onToggle: () => this.setState(st => {
+            const nextOpen = Object.assign({}, st.openDicts);
+            nextOpen[d.en] = nextOpen[d.en] === undefined ? !(i < 2) : !nextOpen[d.en];
+            return { openDicts: nextOpen };
+          }),
+          tools: tools.map(t => ({ glyph: t.glyph, title: t.title, onClick: () => this.toast(t.title + ' — not wired up in this prototype') }))
+        };
+      });
+    }
+
+    let ctxModel = null;
+    if (s.ctx) {
+      const cn = s.ctx.id ? this.node(s.ctx.id) : null;
+      const items = [];
+      const push = (label, key, run, danger) => items.push({
+        label: label, key: key || '',
+        onClick: () => { this.setState({ ctx: null }); run(); },
+        style: 'display:flex;align-items:center;gap:16px;width:100%;background:transparent;border:none;border-radius:7px;color:'
+          + (danger ? 'var(--bad)' : 'var(--t1)') + ';font-size:13px;padding:6px 9px;cursor:pointer;text-align:left'
+      });
+      if (cn && cn.kind === 'frame') {
+        push('Select cards inside', '', () => { const inside = this.frameContents(cn.id); if (inside.length) this.setState({ sel: inside }); });
+        push('Ungroup', '⇧⌘G', () => this.ungroup());
+        push('Delete group', '⌫', () => this.removeSelection(), true);
+      } else if (cn) {
+        const ex = this.extractShape(cn);
+        push(cn.folded ? 'Unfold card' : 'Fold card', '↵', () => this.toggleFold(cn.id));
+        if (!ex.disabled) push(ex.label, 'E', ex.onClick);
+        push('Attach description', '', () => this.addDescription(cn.id));
+        push('Duplicate', '⌘D', () => this.duplicate());
+        if (sel.length > 1) push('Group ' + sel.length + ' cards', '⌘G', () => this.group());
+        push(sel.length > 1 ? 'Delete ' + sel.length + ' cards' : 'Delete card', '⌫', () => this.removeSelection(), true);
+      } else {
+        TYPES.forEach(t => push('New ' + META[t].label.toLowerCase(), '', () => this.addCard(t, s.ctx.wx, s.ctx.wy)));
+        push('Tidy layout', 'T', () => this.autoLayout(false));
+        push('Fit to view', 'F', () => this.fit());
+      }
+      ctxModel = {
+        items: items,
+        stop: ev => ev.stopPropagation(),
+        wrapStyle: 'position:absolute;left:' + s.ctx.x + 'px;top:' + s.ctx.y + 'px;z-index:60;min-width:200px;display:flex;flex-direction:column;gap:1px;'
+          + 'padding:5px;background:var(--card);border:1px solid var(--line-2);border-radius:11px;box-shadow:var(--sh-open);animation:dcPop .12s ease'
+      };
+    }
+
+    const pickedEdge = s.selEdge ? s.edges.find(e => e.id === s.selEdge) : null;
+    const pe = pickedEdge && rectOf[pickedEdge.source] && rectOf[pickedEdge.target]
+      ? (() => {
+        const mid = this.edgeMid(rectOf[pickedEdge.source], rectOf[pickedEdge.target]);
+        const sa = this.node(pickedEdge.source), sb = this.node(pickedEdge.target);
+        const REL = { 'root>form': 'root → pattern · derives', 'form>word': 'pattern → word · realises', 'word>sentence': 'word → passage · attested in', 'sentence>word': 'passage → word · cites', 'sentence>root': 'passage → root · cites', 'root>word': 'root → word · derives' };
+        const relKey = sa && sb ? sa.type + '>' + sb.type : '';
+        const rel = REL[relKey] || (sb && sb.type === 'description' ? 'describes' : (sa && sb ? this.meta(sa).label.toLowerCase() + ' → ' + this.meta(sb).label.toLowerCase() : 'link'));
+        return {
+          rel: rel,
+          wrapStyle: 'position:absolute;left:' + mid.x + 'px;top:' + mid.y + 'px;transform:translate(-50%,-50%);z-index:40',
+          onDelete: () => this.removeEdge(pickedEdge.id),
+          stop: ev => ev.stopPropagation()
+        };
+      })() : null;
+
+    return {
+      shellStyle: 'position:fixed;inset:0;display:flex;flex-direction:column;background:var(--canvas);color:var(--t1);'
+        + "font-family:'IBM Plex Sans','IBM Plex Sans Arabic',ui-sans-serif,system-ui,sans-serif;font-size:12.5px;-webkit-font-smoothing:antialiased",
+      title: s.title, saveText: saveText, saveStyle: saveStyle, saveDotStyle: saveDotStyle,
+      editingTitle: s.editingTitle, notEditingTitle: !s.editingTitle, titleDraft: s.titleDraft, titleRef: this.titleRef,
+      startTitleEdit: () => { this.setState({ editingTitle: true, titleDraft: s.title }); setTimeout(() => this.titleRef.current && this.titleRef.current.select(), 0); },
+      onTitleInput: e => this.setState({ titleDraft: e.target.value }),
+      commitTitle: () => { this.setState(st => ({ title: st.titleDraft.trim() || st.title, editingTitle: false })); this.queueSave(); },
+      onTitleKey: e => { if (e.key === 'Enter') e.currentTarget.blur(); else if (e.key === 'Escape') this.setState({ editingTitle: false }); e.stopPropagation(); },
+      readerHref: this.readerHref(),
+      readerLabel: this.readerWord() ? 'Reader · ' + this.readerWord().tr : 'Reader',
+      readerTitle: this.readerWord()
+        ? 'Back to the reader at ' + this.readerWord().tr
+        : 'Back to the reader',
+      isDark: dark,
+      themeIcon: dark
+        ? 'M9.4 7.4A4 4 0 0 1 4.6 2.6 4 4 0 1 0 9.4 7.4'
+        : 'M6 1.4v1.3M6 9.3v1.3M1.4 6h1.3M9.3 6h1.3M2.7 2.7l.9.9M8.4 8.4l.9.9M9.3 2.7l-.9.9M3.6 8.4l-.9.9M6 3.8a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4',
+      fileRef: this.fileRef,
+      importJson: () => this.fileRef.current && this.fileRef.current.click(),
+      onFile: e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; this.importFile(f); },
+      headerStyle: (this.embed ? 'display:none;' : 'display:flex;') + 'height:52px;flex:none;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);overflow-x:auto',
+      emptyTitle: this._pubMissing ? 'Graph not found' : this.ro ? 'This published graph has no cards' : 'Nothing on the canvas',
+      emptyBody: this._pubMissing ? 'It may have been unpublished, or the link is from another device. Published graphs live with their author\u2019s account.' : this.ro ? 'The author published an empty canvas.' : 'Drag a root in from the library, or drop a card type to start from scratch. Right-click anywhere to add one here.',
+      ro: this.ro, edit: !this.ro, leftClosedEdit: !this.ro && !s.leftOpen, leftOpenEdit: !this.ro && s.leftOpen,
+      foldAllRo: () => this.setFoldAll(this.cards().map(n => n.id), true), unfoldAllRo: () => this.setFoldAll(this.cards().map(n => n.id), false),
+      forkHref: 'Lexicon%20Editor%20v5.dc.html?fork=' + encodeURIComponent(this.pubSlug || ''),
+      paletteOpen: !s.paletteHelp,
+      paletteHelpLabel: s.paletteHelp ? 'Show' : 'Hide',
+      togglePaletteHelp: () => this.setState(st => ({ paletteHelp: !st.paletteHelp })),
+      themeTitle: dark ? 'Switch to the light theme' : 'Switch to the dark theme',
+      toggleTheme: () => {
+        const next = dark ? 'light' : 'dark';
+        this.setState({ theme: next });
+        try { localStorage.setItem('jadhr-theme', next); } catch (e) {}
+        this.applyTheme(next);
+      },
+      tidy: () => this.autoLayout(false),
+      fitView: () => this.fit(),
+      undo: () => this.undo(), redo: () => this.redo(),
+      noUndo: !s.undoStack.length, noRedo: !s.redoStack.length,
+      undoTitle: s.undoStack.length ? 'Undo ' + String(s.undoStack[s.undoStack.length - 1].label || 'last change').toLowerCase() + ' (⌘Z)' : 'Nothing to undo yet',
+      redoTitle: s.redoStack.length ? 'Redo ' + String(s.redoStack[s.redoStack.length - 1].label || 'last change').toLowerCase() + ' (⇧⌘Z)' : 'Nothing to redo',
+      undoStyle: 'background:transparent;border:none;border-radius:7px;font-size:13px;font-weight:500;padding:5px 11px;'
+        + (s.undoStack.length ? 'color:var(--t1);cursor:pointer' : 'color:var(--t3);cursor:default'),
+      redoStyle: 'background:transparent;border:none;border-radius:7px;font-size:13px;font-weight:500;padding:5px 11px;'
+        + (s.redoStack.length ? 'color:var(--t1);cursor:pointer' : 'color:var(--t3);cursor:default'),
+      exportJson: () => this.exportJson(),
+      filter: s.filter,
+      onFilter: e => this.setState({ filter: e.target.value }),
+      filterNote: s.filter.trim() ? filtered + ' of ' + this.cards().length + ' cards match' : '',
+      palette: TYPES.map(t => ({
+        label: META[t].label, ar: META[t].ar, hint: META[t].hint, color: META[t].color,
+        draggable: true,
+        style: 'color:' + META[t].color + ';background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 9px;cursor:grab;transition:box-shadow .12s',
+        onDragStart: e => e.dataTransfer.setData('text/plain', t),
+        onAdd: () => this.addCard(t, (-s.tx + 320) / s.k, (-s.ty + 220) / s.k)
+      })),
+      lexRoots: ROOTS.map((r, i) => ({
+        ar: r.ar, tr: r.tr, en: r.en,
+        counts: r.forms.length + ' forms · ' + r.forms.reduce((a, f) => a + f.words.length, 0) + ' words',
+        hint: this.node('r' + i) ? 'Already on the canvas' : 'Drag onto the canvas to start from this root',
+        style: 'background:var(--card);border:1px solid ' + (this.node('r' + i) ? 'var(--line)' : 'var(--line)') + ';border-radius:10px;padding:9px 10px;cursor:grab;'
+          + 'opacity:' + (this.node('r' + i) ? 0.55 : 1),
+        onDragStart: e => e.dataTransfer.setData('text/plain', 'lex:' + i),
+        onAdd: () => this.addRootFromLex(i, (-s.tx + 320) / s.k, (-s.ty + 220) / s.k)
+      })),
+      hasFilter: !!s.filter.trim(),
+      prevMatch: () => this.stepMatch(-1),
+      nextMatch: () => this.stepMatch(1),
+      clearFilter: () => this.setState({ filter: '' }),
+      onFilterKey: e => {
+        if (e.key === 'Enter') { e.preventDefault(); this.stepMatch(e.shiftKey ? -1 : 1); }
+        else if (e.key === 'Escape') this.setState({ filter: '' });
+        e.stopPropagation();
+      },
+      helpOpen: s.helpOpen,
+      toggleHelp: () => this.setState(st => ({ helpOpen: !st.helpOpen, ctx: null })),
+      stopClick: e => e.stopPropagation(),
+      helpGroups: [
+        { title: 'Canvas', rows: [
+          { key: 'two-finger drag', what: 'pan the canvas' },
+          { key: '⌘ + scroll', what: 'zoom to the pointer' },
+          { key: 'space + drag', what: 'pan with a mouse' },
+          { key: 'drag empty', what: 'marquee-select cards' },
+          { key: 'F · 1 · ± ', what: 'fit · 100% · zoom step' }
+        ] },
+        { title: 'Cards', rows: [
+          { key: 'double-click', what: 'fold or unfold a card' },
+          { key: '↵', what: 'fold or unfold the selection' },
+          { key: 'E', what: 'extract the related cards' },
+          { key: '⌘D', what: 'duplicate the selection' },
+          { key: '⌘G · ⇧⌘G', what: 'group · release a group' },
+          { key: '⌫', what: 'delete the selection or wire' }
+        ] },
+        { title: 'Moving around', rows: [
+          { key: '← →', what: 'step to parent · to child' },
+          { key: '↑ ↓', what: 'step between siblings' },
+          { key: '⌥ + arrows', what: 'nudge 8px (⇧ for 32px)' },
+          { key: 'arrows', what: 'pan when nothing is selected' },
+          { key: 'right-click', what: 'context menu, anywhere' }
+        ] },
+        { title: 'Links & search', rows: [
+          { key: 'drag edge dot', what: 'link two cards' },
+          { key: 'click wire', what: 'select it — ⌫ cuts it' },
+          { key: '↵ in search', what: 'jump to the next match' },
+          { key: 'T', what: 'tidy the whole layout' },
+          { key: '?', what: 'open this list' }
+        ] }
+      ],
+      zoomIn: () => this.zoomTo(s.k * 1.25),
+      zoomOut: () => this.zoomTo(s.k / 1.25),
+      resetZoom: () => this.zoomTo(1),
+      mapMode: mapMode,
+      canvasEmpty: !this.cards().length,
+      onPaneCtx: e => this.openCtx(e, null),
+      hasCtx: !!ctxModel,
+      ctx: ctxModel || { wrapStyle: 'display:none', items: [], stop: () => {} },
+      paneRef: this.paneRef,
+      onPaneDown: e => this.onPaneDown(e),
+      onWheel: e => this.onWheel(e),
+      onDragOver: e => this.onDragOver(e),
+      onDrop: e => this.onDrop(e),
+      paneStyle: 'flex:1;min-width:0;position:relative;overflow:hidden;background:var(--canvas);'
+        + 'background-image:radial-gradient(circle at 1px 1px, var(--dot) 1.1px, transparent 0);'
+        + 'background-size:' + (24 * s.k) + 'px ' + (24 * s.k) + 'px;background-position:' + s.tx + 'px ' + s.ty + 'px;'
+        + 'cursor:' + (s.panning ? 'grabbing' : s.spaceHeld ? 'grab' : 'default'),
+      worldStyle: 'position:absolute;left:0;top:0;transform:translate(' + s.tx + 'px,' + s.ty + 'px) scale(' + s.k + ');transform-origin:0 0',
+      cards: cards, edges: edges, frames: frames,
+      connectPath: s.connect ? (() => {
+        const a = rectOf[s.connect.from]; if (!a) return '';
+        const pt = this.portPoint(a, s.connect.side || 'e');
+        const x1 = pt.x * s.k + s.tx, y1 = pt.y * s.k + s.ty;
+        const x2 = s.connect.x * s.k + s.tx, y2 = s.connect.y * s.k + s.ty;
+        const o = Math.max(30, Math.min(140, Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)) * 0.4));
+        return 'M' + x1 + ',' + y1 + ' C' + (x1 + pt.nx * o) + ',' + (y1 + pt.ny * o) + ' ' + x2 + ',' + y2 + ' ' + x2 + ',' + y2;
+      })() : '',
+      marqueeStyle: s.marquee ? 'position:absolute;pointer-events:none;left:' + (s.marquee.x * s.k + s.tx) + 'px;top:' + (s.marquee.y * s.k + s.ty) + 'px;'
+        + 'width:' + (s.marquee.w * s.k) + 'px;height:' + (s.marquee.h * s.k) + 'px;border:1px solid var(--ring);'
+        + 'background:color-mix(in oklab, var(--ring) 12%, transparent);border-radius:4px' : '',
+      toast: s.toast, toastUndo: s.toastUndo,
+      zoomLabel: Math.round(s.k * 100) + '%',
+      graphStats: TYPES.map(t => ({ label: META[t].label + 's', count: this.cards().filter(n => n.type === t).length, dotStyle: dotS(META[t].color) })),
+      ins: ins,
+      sidebarOpen: s.sidebarOpen,
+      sidebarClosed: !s.sidebarOpen,
+      leftOpen: s.leftOpen !== false,
+      leftClosed: s.leftOpen === false,
+      toggleLeft: () => this.setState(st => ({ leftOpen: st.leftOpen === false })),
+      closeSidebar: () => this.setState({ sidebarOpen: false }),
+      toggleSidebar: () => this.setState({ sidebarOpen: !s.sidebarOpen }),
+      sidebarBtnStyle: 'background:' + (s.sidebarOpen ? 'var(--card-2)' : 'var(--card)') + ';border:1px solid '
+        + (s.sidebarOpen ? 'var(--line-2)' : 'var(--line)') + ';border-radius:7px;color:'
+        + (s.sidebarOpen ? 'var(--t1)' : 'var(--t2)') + ';font-size:12.5px;padding:4px 10px;cursor:pointer',
+      tabs: [
+        { label: 'Meaning', style: tabBtn(s.tab !== 'settings' && s.tab !== 'proposals'), onClick: () => this.setState({ tab: 'meaning' }) },
+        { label: 'Settings', style: tabBtn(s.tab === 'settings'), onClick: () => this.setState({ tab: 'settings' }) }
+      ].concat(this.ro ? [] : [{ label: 'Comments' + (s.comments.length ? ' · ' + s.comments.length : ''), style: tabBtn(s.tab === 'comments'), onClick: () => this.setState({ tab: 'comments' }) }]).concat(s.proposals.length ? [{ label: 'Proposals · ' + s.proposals.filter(p => p.state === 'pending').length, style: tabBtn(s.tab === 'proposals'), onClick: () => this.setState({ tab: 'proposals' }) }] : []),
+      tabMeaning: s.tab !== 'settings' && s.tab !== 'proposals' && s.tab !== 'comments',
+      tabComments: s.tab === 'comments',
+      presence: [['You', 'var(--c-root)'], ['Layla', 'var(--c-form)'], ['Omar', 'var(--c-word)']].map((p, i) => ({ name: p[0], style: 'width:20px;height:20px;border-radius:99px;background:' + p[1] + ';border:2px solid var(--panel);display:inline-block;margin-left:' + (i ? -7 : 0) + 'px' })),
+      comments: s.comments.slice().reverse().map(cm => ({ who: cm.who, text: cm.text, anchor: cm.anchor || 'canvas', when: new Date(cm.ts).toLocaleString(), av: 'width:20px;height:20px;border-radius:99px;flex:none;background:' + (cm.color || 'var(--c-root)'), onJump: () => { if (cm.nodeId && this.node(cm.nodeId)) { this.setState({ sel: [cm.nodeId] }); this.centerOn(cm.nodeId); } } })),
+      noComments: !s.comments.length,
+      commentTarget: sel.length === 1 && this.node(sel[0]) ? 'Anchored to ' + this.meta(this.node(sel[0])).label.toLowerCase() + ' ' + (this.node(sel[0]).ar || '') : 'Select a card to anchor, or comment on the whole canvas',
+      cDraft: s.cDraft, onCDraft: e => this.setState({ cDraft: e.target.value }), onCKey: e => { e.stopPropagation(); if (e.key === 'Enter') this.sendComment(); },
+      sendComment: () => this.sendComment(),
+      publish: () => this.publish(),
+      tabSettings: s.tab === 'settings',
+      tabProposals: s.tab === 'proposals' && s.proposals.length > 0,
+      ghosts: (() => {
+        const rects = this.ghostRects();
+        return s.proposals.filter(p => p.state === 'pending').map(p => {
+          const r = rects[p.key], m = META[p.type];
+          return {
+            typeLabel: m.label, ar: p.ar, en: [p.tr, p.en].filter(Boolean).join(' · '),
+            title: 'Proposed ' + m.label.toLowerCase() + ' · confidence ' + Math.round(p.conf * 100) + '% — click to accept',
+            onAccept: e => { e.stopPropagation(); this.acceptProposal(p.key); },
+            stop: e => e.stopPropagation(),
+            arStyle: 'font-family:Amiri,serif;font-size:' + (p.type === 'sentence' ? 19 : 26) + 'px;line-height:1.4;color:var(--t1);text-align:left;letter-spacing:' + (p.type === 'root' ? '0.08em' : '0') + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis',
+            style: 'position:absolute;left:' + r.x + 'px;top:' + r.y + 'px;width:' + WF + 'px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;'
+              + 'color:' + m.color + ';background:var(--card);border-radius:18px;border:1.5px dashed ' + (p.conf < 0.8 ? '#b45309' : 'currentColor') + ';opacity:.85;cursor:pointer;z-index:9;transition:opacity .12s;user-select:none'
+          };
+        });
+      })(),
+      prop: (() => {
+        const ps = s.proposals;
+        const pending = ps.filter(p => p.state === 'pending');
+        const confident = pending.filter(p => p.conf >= 0.8);
+        return {
+          title: s.propTitle || 'Proposals', count: pending.length + ' pending',
+          source: s.propSource,
+          rows: ps.map((p, i) => ({
+            ar: p.ar,
+            line: META[p.type].label.toLowerCase() + (p.tr ? ' · ' + p.tr : '') + (p.state === 'pending' ? ' · confidence ' + Math.round(p.conf * 100) + '%' : ''),
+            note: p.state === 'matched' ? 'already on the canvas' : p.note,
+            noteStyle: 'font-size:11px;color:' + (p.conf < 0.8 && p.state === 'pending' ? '#b45309' : 'var(--t3)'),
+            dotStyle: 'width:8px;height:8px;border-radius:99px;flex:none;background:' + META[p.type].color,
+            pending: p.state === 'pending', settled: p.state !== 'pending',
+            state: p.state, stateStyle: 'font-size:11.5px;font-weight:500;color:' + (p.state === 'accepted' || p.state === 'matched' ? 'var(--good)' : 'var(--t3)'),
+            style: 'display:flex;align-items:center;gap:10px;padding:10px 24px;border-bottom:1px solid var(--line);background:' + (p.state === 'pending' && p.conf < 0.8 ? 'color-mix(in oklab, #b45309 8%, transparent)' : p.state === 'pending' ? 'var(--card)' : 'transparent') + (p.state === 'skipped' ? ';opacity:.55' : ''),
+            onAccept: () => this.acceptProposal(p.key),
+            onSkip: () => this.skipProposal(p.key)
+          })),
+          noConfident: !confident.length,
+          acceptLabel: confident.length ? 'Accept ' + confident.length + ' confident' + (pending.length - confident.length ? ' · review ' + (pending.length - confident.length) : '') : 'Nothing confident left',
+          acceptStyle: 'flex:2;border-radius:9px;font-size:13px;padding:9px;cursor:' + (confident.length ? 'pointer' : 'default') + ';background:' + (confident.length ? 'var(--t1)' : 'var(--card-2)') + ';border:1px solid ' + (confident.length ? 'var(--t1)' : 'var(--line)') + ';color:' + (confident.length ? 'var(--canvas)' : 'var(--t3)'),
+          onAcceptConfident: () => {
+            const order = ['sentence', 'root', 'form', 'word'];
+            const list = confident.slice().sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+            list.forEach(p => { const cur = this.state.proposals.find(q => q.key === p.key); if (cur && cur.state === 'pending') this.acceptProposal(p.key, true); });
+            this.toast('Accepted ' + list.length + ' proposals', true);
+          },
+          onDiscard: () => { this.setState({ proposals: [], tab: 'meaning' }); this.toast('Proposals discarded'); }
+        };
+      })(),
+      mean: mean,
+      hasEdgeMenu: !!pe,
+      edgeMenu: pe || { wrapStyle: 'display:none', rel: '', onDelete: () => {}, stop: () => {} }
+    };
+  }
+}
+</script>
+</body>
+</html>

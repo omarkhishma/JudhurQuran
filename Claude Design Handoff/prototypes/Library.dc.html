@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;background:#eeeef1}*{box-sizing:border-box}a{color:#2f6ae0;text-decoration:none}a:hover{color:#16161a}input,button,textarea{font-family:inherit}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+  <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;background:#f8f8fa;border-bottom:1px solid #e5e5ea">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;flex:none"><div style="width:18px;height:18px;border-radius:5px;background:#a8682c"></div><span style="font-size:14px;font-weight:600">Jadhr</span></a>
+    <div style="display:flex;gap:1px;padding:2px;background:#ecedf1;border-radius:9px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:0 1 auto"><sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><a href="{{ n.href }}" aria-current="{{ n.current }}" style="{{ n.style }}">{{ n.label }}</a></sc-for></div>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:2px;padding:2px;background:#ecedf1;border-radius:9px"><sc-for list="{{ filters }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button></sc-for></div>
+  </div>
+  <div style="flex:1;padding:24px clamp(16px,3vw,28px) 60px;display:flex;flex-direction:column;gap:22px;max-width:1200px;width:100%;margin:0 auto">
+    <sc-if value="{{ hasContinue }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Continue</div>
+        <a href="{{ cont.href }}" style="display:flex;align-items:center;gap:16px;padding:14px 16px;background:#fff;border:1px solid #e5e5ea;border-radius:12px;box-shadow:0 1px 2px rgba(20,20,35,.05),0 10px 24px -12px rgba(20,20,35,.2);color:#16161a" style-hover="border-color:#2f6ae0">
+          <div style="{{ cont.cover }}"></div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><div dir="rtl" style="font-family:Amiri,serif;font-size:20px">{{ cont.ar }}</div><div style="font-size:12px;color:#71717c">{{ cont.meta }}</div></div><div style="height:4px;border-radius:99px;background:#ecedf1;overflow:hidden"><div style="{{ cont.bar }}"></div></div></div>
+          <span style="background:#16161a;border-radius:8px;font-size:12.5px;padding:7px 14px;color:#fff">Resume</span>
+        </a>
+      </div>
+    </sc-if>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:baseline;gap:10px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c;flex:1">Shelf</div><div style="font-size:12px;color:#71717c">{{ shelfMeta }}</div></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">
+        <sc-for list="{{ shelf }}" as="b" hint-placeholder-count="4">
+          <a href="{{ b.href }}" style="padding:14px;background:#fff;border:1px solid #e5e5ea;border-radius:12px;display:flex;flex-direction:column;gap:8px;color:#16161a" style-hover="border-color:#2f6ae0">
+            <div style="{{ b.cover }}">{{ b.coverLabel }}</div>
+            <div dir="rtl" style="font-family:Amiri,serif;font-size:19px;text-align:right;line-height:1.3">{{ b.ar }}</div>
+            <div style="font-size:11.5px;color:#71717c">{{ b.sub }}</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px"><span style="{{ b.knownStyle }}">{{ b.known }}</span><div style="flex:1;height:3px;border-radius:99px;background:#ecedf1;overflow:hidden"><div style="{{ b.bar }}"></div></div><span style="color:#71717c">{{ b.prog }}</span></div>
+          </a>
+        </sc-for>
+        <button onClick="{{ openAdd }}" style="padding:14px;border:1.5px dashed #d3d3dc;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;color:#4f4f5a;text-align:center;background:transparent;cursor:pointer" style-hover="border-color:#2f6ae0"><div style="font-size:22px;color:#71717c;line-height:1">+</div><div style="font-size:12.5px;font-weight:500;color:#16161a">Add a text</div><div style="font-size:11.5px;color:#71717c">paste · URL · PDF or photo</div></button>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ adding }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeAdd }}" style="position:fixed;inset:0;z-index:90;background:rgba(10,10,16,.4);display:flex;align-items:center;justify-content:center;padding:20px">
+      <div onClick="{{ stop }}" style="width:min(900px,100%);max-height:100%;overflow:auto;background:#fff;border:1px solid #d3d3dc;border-radius:14px;box-shadow:0 2px 4px rgba(20,20,35,.06),0 30px 60px -20px rgba(20,20,35,.32);display:flex;flex-direction:column">
+        <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid #e5e5ea"><div style="font-size:13.5px;font-weight:600;flex:1">New text</div><div style="display:flex;gap:2px;padding:2px;background:#ecedf1;border-radius:9px"><sc-for list="{{ addModes }}" as="m" hint-placeholder-count="3"><button onClick="{{ m.onClick }}" style="{{ m.style }}">{{ m.label }}</button></sc-for></div><button onClick="{{ closeAdd }}" aria-label="Close" style="width:24px;height:24px;border:1px solid #e5e5ea;border-radius:6px;background:#fff;font-size:11px;color:#71717c;cursor:pointer">✕</button></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1px;background:#e5e5ea">
+          <div style="background:#fff;padding:18px 20px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Your text</div>
+            <sc-if value="{{ addPaste }}" hint-placeholder-val="{{ true }}">
+              <textarea value="{{ text }}" onChange="{{ onText }}" dir="rtl" rows="9" placeholder="الصق النص هنا…" style="width:100%;resize:vertical;border:1px solid #d3d3dc;border-radius:10px;padding:12px 14px;font-family:Amiri,serif;font-size:19px;line-height:1.9;color:#16161a;background:#fffffe;outline:none"></textarea>
+            </sc-if>
+            <sc-if value="{{ addUrl }}" hint-placeholder-val="{{ false }}">
+              <input value="{{ url }}" onChange="{{ onUrl }}" placeholder="https://… (article, Wikisource page, shamela.ws)" style="width:100%;border:1px solid #d3d3dc;border-radius:10px;padding:10px 12px;font-size:13.5px;outline:none" />
+              <div style="font-size:12.5px;color:#71717c;line-height:1.5">Fetching and extracting the article text is a server-side step in the full build. In this prototype, paste the text instead.</div>
+            </sc-if>
+            <sc-if value="{{ addFile }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1.5px dashed #d3d3dc;border-radius:10px;padding:26px;text-align:center;color:#4f4f5a;font-size:13px;line-height:1.5">Drop a PDF or a photo of a page<br /><span style="color:#71717c;font-size:12px">OCR with tashkīl restoration runs on the server — not wired in this prototype.</span></div>
+            </sc-if>
+            <div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#71717c;flex-wrap:wrap"><span>{{ textMeta }}</span><div style="flex:1"></div><label style="display:flex;align-items:center;gap:6px;color:#4f4f5a"><input type="checkbox" checked="checked" /> add tashkīl (auto, reviewable)</label></div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input value="{{ title }}" onChange="{{ onTitle }}" dir="rtl" placeholder="عنوان النص" style="flex:1;min-width:160px;font-family:Amiri,serif;font-size:16px;padding:7px 11px;border:1px solid #e5e5ea;border-radius:8px;outline:none" /><button onClick="{{ saveText }}" disabled="{{ cantSave }}" style="{{ saveStyle }}">Save to my library</button></div>
+          </div>
+          <div style="background:#fffffe;padding:18px 22px;display:flex;flex-direction:column;gap:12px;min-height:320px">
+            <div style="display:flex;align-items:center;gap:8px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c;flex:1">Live preview · annotated</div><span style="{{ matchStyle }}">{{ matchLabel }}</span></div>
+            <div dir="rtl" style="font-family:Amiri,serif;font-size:24px;line-height:2;color:#16161a;text-align:right;text-wrap:pretty;display:flex;flex-wrap:wrap;column-gap:7px;row-gap:6px">
+              <sc-for list="{{ preview }}" as="t" hint-placeholder-count="12"><span title="{{ t.hint }}" style="{{ t.style }}">{{ t.ar }}</span></sc-for>
+            </div>
+            <sc-if value="{{ hasReview }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <sc-for list="{{ reviewRows }}" as="r" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;gap:10px;padding:7px 11px;border-radius:8px;background:#fdf1e3;border:1px solid #f0d9b8;font-size:12.5px;color:#4f4f5a"><span dir="rtl" style="font-family:Amiri,serif;font-size:18px;color:#16161a">{{ r.ar }}</span><span style="flex:1">{{ r.text }}</span><a href="{{ r.href }}" style="font-size:12px">Analyse</a></div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <div style="display:flex;gap:16px;font-size:12px;color:#71717c;margin-top:auto;flex-wrap:wrap"><span><strong style="color:#16161a;font-weight:500">{{ nRoots }}</strong> roots</span><span><strong style="color:#16161a;font-weight:500">{{ nEntries }}</strong> entries</span><span><strong style="color:#16161a;font-weight:500">{{ nReview }}</strong> need review</span><span><strong style="color:#16161a;font-weight:500">{{ nUnknown }}</strong> not in lexicon</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { m: null, c: null, filter: 'All', adding: false, addMode: 'Paste', text: '', title: '', url: '', texts: [], states: {}, progress: {} };
+  componentDidMount() {
+    Promise.all([import('./lexicon-data.js'), import('./jadhr-chrome.js')]).then(([m, c]) => {
+      this.setState({ m, c, texts: m.load(m.KEYS.texts, []), states: m.load(m.KEYS.states, {}), progress: m.load(m.KEYS.progress, {}), adding: new URLSearchParams(location.search).get('add') === '1' });
+    });
+  }
+  renderVals() {
+    const s = this.state, m = s.m, c = s.c;
+    if (!m) return { nav: [], filters: [], shelf: [], preview: [], reviewRows: [], addModes: [] };
+    const books = [Object.assign({ id: 'base', kind: 'Classical' }, m.BOOK)].concat(m.SCRIPTURE).concat(s.texts.map(t => ({ id: t.id, ar: t.title, en: 'Your text', kind: 'Mine', user: true, ts: t.ts, words: t.words || [], review: t.review || 0, n: t.n || 0 })));
+    const covers = { base: 'linear-gradient(160deg,#a8682c,#6b3f14)', quran: 'linear-gradient(160deg,#177a44,#0d4a29)', bukhari: 'linear-gradient(160deg,#6f55c4,#3d2d7a)' };
+    const idsOf = b => { const ids = []; if (b.user) return b.words; (b.chapters || []).forEach(ch => (ch.passages || []).forEach(p => (p.toks || []).forEach(t => { const x = m.parseTok(t); if (x.word) ids.push(x.word); }))); return ids; };
+    const knownPct = b => { const ids = idsOf(b); return ids.length ? Math.round(ids.filter(id => s.states[id] === 'known').length / ids.length * 100) : 100; };
+    const progOf = b => { const p = s.progress[b.id]; if (!p || !b.chapters) return 0; const n = b.chapters.length || 1; const pl = ((b.chapters[p.ch] || {}).passages || []).length || 1; return Math.min(100, Math.round(((p.ch + (p.pi + 1) / pl) / n) * 100)); };
+    const shown = books.filter(b => s.filter === 'All' || (s.filter === 'Scripture' && (b.kind === 'Qurʾān' || b.kind === 'Ḥadīth')) || (s.filter === 'Classical' && b.kind === 'Classical') || (s.filter === 'Mine' && b.user));
+    const contB = books.map(b => ({ b, p: s.progress[b.id] })).filter(o => o.p && o.p.at).sort((a, b) => b.p.at - a.p.at)[0];
+    const toks = s.text.trim() ? s.text.trim().split(/\s+/).slice(0, 80) : [];
+    const an = toks.map(t => ({ t, a: m.analyse(t) }));
+    const matched = an.filter(o => o.a.word).length;
+    const review = an.filter(o => !o.a.word && o.a.candidates.length && o.a.candidates[0].score >= 0.6 && o.a.candidates[0].score < 0.95);
+    const unknown = an.filter(o => !o.a.word && !(o.a.candidates.length && o.a.candidates[0].score >= 0.6));
+    const roots = new Set(an.filter(o => o.a.word).map(o => o.a.word.root));
+    const pct = toks.length ? Math.round(matched / toks.length * 100) : 0;
+    const canSave = s.text.trim().length > 10 && s.title.trim().length > 0;
+    return {
+      nav: c.navModel('Library'),
+      filters: ['All', 'Scripture', 'Classical', 'Mine'].map(f => ({ label: f + (f === 'Mine' && s.texts.length ? ' ' + s.texts.length : ''), onClick: () => this.setState({ filter: f }), style: c.seg(s.filter === f) })),
+      hasContinue: !!contB,
+      cont: contB ? { ar: contB.b.ar, meta: 'ch. ' + (contB.p.ch + 1) + ' · passage ' + (contB.p.pi + 1) + ' · ' + new Date(contB.p.at).toLocaleDateString(), href: 'Lexicon%20Reader%20v4.dc.html?book=' + encodeURIComponent(contB.b.id), cover: 'width:44px;height:60px;border-radius:5px;flex:none;background:' + (covers[contB.b.id] || '#f5f5f8'), bar: 'height:100%;background:#a8682c;width:' + progOf(contB.b) + '%' } : {},
+      shelfMeta: shown.length + ' texts · ' + Object.values(s.states).filter(x => x === 'known').length + ' words known',
+      shelf: shown.map(b => { const k = knownPct(b), pr = progOf(b); return {
+        ar: b.ar, href: 'Lexicon%20Reader%20v4.dc.html?book=' + encodeURIComponent(b.id),
+        cover: 'height:64px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#71717c;letter-spacing:.08em;text-transform:uppercase;background:' + (covers[b.id] || '#f5f5f8') + (covers[b.id] ? '' : ';border:1px solid #e5e5ea'),
+        coverLabel: covers[b.id] ? '' : 'yours',
+        sub: b.user ? 'pasted · ' + b.n + ' words · ' + b.review + ' to review' : (b.chapters || []).length + ' chapters · ' + b.kind,
+        known: k + '% known', knownStyle: 'font-weight:500;color:' + (k >= 90 ? '#15803d' : k >= 75 ? '#b45309' : '#c02626'),
+        bar: 'height:100%;width:' + pr + '%;background:' + (covers[b.id] ? covers[b.id].split(',')[1] : '#a8682c'), prog: pr ? pr + '%' : 'new'
+      }; }),
+      adding: s.adding, openAdd: () => this.setState({ adding: true }), closeAdd: () => this.setState({ adding: false }), stop: e => e.stopPropagation(),
+      addModes: ['Paste', 'URL', 'PDF / image'].map(md => ({ label: md, onClick: () => this.setState({ addMode: md }), style: c.seg(s.addMode === md) })),
+      addPaste: s.addMode === 'Paste', addUrl: s.addMode === 'URL', addFile: s.addMode === 'PDF / image',
+      text: s.text, onText: e => this.setState({ text: e.currentTarget.value }), title: s.title, onTitle: e => this.setState({ title: e.currentTarget.value }), url: s.url, onUrl: e => this.setState({ url: e.currentTarget.value }),
+      textMeta: toks.length ? toks.length + ' words · ' + (/[\u064B-\u0652]/.test(s.text) ? 'tashkīl present' : 'no tashkīl detected') : 'paste Arabic text to see the annotation',
+      matchLabel: toks.length ? pct + '% of words matched' : '—', matchStyle: 'font-size:11.5px;font-weight:500;color:' + (pct >= 80 ? '#15803d' : pct >= 50 ? '#b45309' : '#71717c'),
+      preview: an.map(o => ({ ar: o.t, hint: o.a.word ? o.a.word.tr + ' — ' + o.a.word.en : (o.a.candidates[0] ? 'root ' + o.a.candidates[0].root.tr + '? (' + o.a.candidates[0].score + ')' : 'not in lexicon'),
+        style: o.a.word ? 'text-decoration:underline dotted #d3d3dc;text-underline-offset:6px' : (o.a.candidates[0] && o.a.candidates[0].score >= 0.6 ? 'background:#fdf1e3;border-radius:3px;padding:0 3px;box-shadow:inset 0 -2px 0 #b45309' : 'color:#4f4f5a') })),
+      hasReview: review.length > 0,
+      reviewRows: review.slice(0, 3).map(o => ({ ar: o.t, text: 'root uncertain — ' + o.a.candidates[0].root.ar + ' (' + o.a.candidates[0].score + ')', href: 'Analyser.dc.html?q=' + encodeURIComponent(o.t) })),
+      nRoots: roots.size, nEntries: matched, nReview: review.length, nUnknown: unknown.length,
+      cantSave: !canSave,
+      saveStyle: 'border-radius:8px;font-size:12.5px;padding:8px 14px;white-space:nowrap;cursor:' + (canSave ? 'pointer' : 'default') + ';background:' + (canSave ? '#16161a' : '#f5f5f8') + ';border:1px solid ' + (canSave ? '#16161a' : '#e5e5ea') + ';color:' + (canSave ? '#fff' : '#71717c'),
+      saveText: () => {
+        if (!canSave) return;
+        const id = 'txt' + Date.now();
+        const words = s.text.trim().split(/\s+/).map(t => m.analyse(t).word).filter(Boolean).map(w => w.id);
+        const t = { id, title: s.title.trim(), short: s.title.trim().split(/\s+/).slice(0, 2).join(' '), text: s.text.trim(), n: s.text.trim().split(/\s+/).length, words, review: review.length, ts: Date.now() };
+        const texts = s.texts.concat([t]); m.save(m.KEYS.texts, texts);
+        this.setState({ texts, adding: false, text: '', title: '', filter: 'Mine' });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>html,body{margin:0;padding:0;background:#eeeef1}*{box-sizing:border-box}a{color:#2f6ae0;text-decoration:none}a:hover{color:#16161a}input,button,textarea{font-family:inherit}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #2f6ae0;outline-offset:2px}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;font-family:'IBM Plex Sans',sans-serif;color:#16161a;-webkit-font-smoothing:antialiased">
+  <div style="height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;background:#f8f8fa;border-bottom:1px solid #e5e5ea">
+    <a href="Jadhr.dc.html" style="display:flex;align-items:center;gap:8px;color:#16161a;flex:none"><div style="width:18px;height:18px;border-radius:5px;background:#a8682c"></div><span style="font-size:14px;font-weight:600">Jadhr</span></a>
+    <div style="display:flex;gap:1px;padding:2px;background:#ecedf1;border-radius:9px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:0 1 auto"><sc-for list="{{ nav }}" as="n" hint-placeholder-count="6"><a href="{{ n.href }}" aria-current="{{ n.current }}" style="{{ n.style }}">{{ n.label }}</a></sc-for></div>
+    <div style="flex:1"></div>
+    <div style="display:flex;gap:2px;padding:2px;background:#ecedf1;border-radius:9px"><sc-for list="{{ tabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for></div>
+    <button onClick="{{ newNote }}" style="background:#16161a;border:1px solid #16161a;border-radius:8px;color:#fff;font-size:12.5px;padding:6px 12px;cursor:pointer;white-space:nowrap">+ New note</button>
+  </div>
+
+  <sc-if value="{{ tabNotes }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:grid;grid-template-columns:280px minmax(0,1fr);min-height:0">
+      <div style="background:#f8f8fa;border-right:1px solid #e5e5ea;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:10px 12px;border-bottom:1px solid #e5e5ea;display:flex;flex-direction:column;gap:8px">
+          <input value="{{ q }}" onChange="{{ onQ }}" placeholder="Search notes…" aria-label="Search notes" style="width:100%;font-size:12.5px;padding:6px 10px;border:1px solid #e5e5ea;border-radius:8px;background:#fff;outline:none" />
+          <div style="display:flex;gap:2px;font-size:12px;flex-wrap:wrap"><sc-for list="{{ groupings }}" as="g" hint-placeholder-count="3"><button onClick="{{ g.onClick }}" style="{{ g.style }}">{{ g.label }}</button></sc-for></div>
+        </div>
+        <div style="flex:1;overflow-y:auto">
+          <sc-for list="{{ list }}" as="n" hint-placeholder-count="4">
+            <button onClick="{{ n.onClick }}" style="{{ n.style }}"><div style="font-size:13px;color:#16161a;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ n.title }}</div><div style="font-size:11.5px;color:#71717c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ n.sub }}</div></button>
+          </sc-for>
+          <sc-if value="{{ noNotes }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 14px;font-size:12.5px;color:#71717c;line-height:1.55">No notes yet. Write one from any passage in the <a href="Lexicon%20Reader%20v4.dc.html">Reader</a> (Note action) or start here.</div></sc-if>
+        </div>
+      </div>
+      <div style="padding:22px 26px 40px;display:flex;flex-direction:column;gap:14px;background:#fffffe;min-width:0">
+        <sc-if value="{{ hasCur }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px">
+              <input value="{{ cur.title }}" onChange="{{ onTitle }}" placeholder="Untitled note" aria-label="Note title" style="font-size:18px;font-weight:600;color:#16161a;border:none;outline:none;background:transparent;padding:0;width:100%" />
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:#71717c"><span>{{ cur.when }} · private</span><sc-for list="{{ cur.tags }}" as="t" hint-placeholder-count="2"><span style="padding:1px 8px;border-radius:99px;background:#f5f5f8;border:1px solid #e5e5ea;color:#4f4f5a">{{ t }}</span></sc-for><input value="{{ tagDraft }}" onChange="{{ onTag }}" onKeyDown="{{ onTagKey }}" placeholder="+ tag" aria-label="Add tag" style="font-size:11.5px;border:1px dashed #d3d3dc;border-radius:99px;padding:1px 8px;width:70px;outline:none;background:transparent" /></div>
+            </div>
+            <div style="display:flex;gap:6px"><a href="{{ cur.cardHref }}" style="background:#fff;border:1px solid #e5e5ea;border-radius:8px;font-size:12px;padding:6px 10px;color:#16161a">→ Description card</a><button onClick="{{ propose }}" style="background:#fff;border:1px solid #e5e5ea;border-radius:8px;font-size:12px;padding:6px 10px;cursor:pointer;color:#16161a">→ Propose</button><button onClick="{{ del }}" style="background:transparent;border:1px solid transparent;border-radius:8px;font-size:12px;padding:6px 8px;cursor:pointer;color:#71717c" style-hover="color:#c02626">Delete</button></div>
+          </div>
+          <textarea value="{{ cur.body }}" onChange="{{ onBody }}" rows="9" placeholder="Write. Type @ to link — roots (@ع ل م or @k-t-b), words (@ʿilm), passages (@2:32), lexica (@Lisān)." style="width:100%;resize:vertical;font-size:14.5px;line-height:1.7;color:#16161a;padding:14px 16px;background:#fff;border:1px solid #e5e5ea;border-radius:10px;outline:none;font-family:inherit" style-focus="border-color:#2f6ae0"></textarea>
+          <div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Linked</div><div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px"><sc-for list="{{ links }}" as="l" hint-placeholder-count="3"><a href="{{ l.href }}" style="display:flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid #e5e5ea;border-radius:99px;background:#fff;color:#16161a"><span style="{{ l.dot }}"></span><span dir="auto" style="{{ l.arStyle }}">{{ l.label }}</span></a></sc-for><sc-if value="{{ noLinks }}" hint-placeholder-val="{{ false }}"><span style="color:#71717c">No links yet — anchors and @-mentions appear here; backlinks show on the linked entry.</span></sc-if></div></div>
+          <sc-if value="{{ hasAnchor }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 14px;background:#f8f8fa;border-left:2px solid #a8682c;border-radius:0 10px 10px 0;display:flex;flex-direction:column;gap:3px"><div style="font-size:11px;color:#71717c">Anchored to {{ cur.ref }} · {{ cur.bookAr }}</div><div dir="rtl" style="font-family:Amiri,serif;font-size:18px;color:#4f4f5a;text-align:right">{{ cur.anchor }}</div></div></sc-if>
+        </sc-if>
+        <sc-if value="{{ noCur }}" hint-placeholder-val="{{ true }}"><div style="padding:40px;text-align:center;color:#71717c;font-size:13.5px">Select a note, or create one.</div></sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ tabJournal }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) 280px;min-height:0">
+      <div style="padding:22px 26px 40px;display:flex;flex-direction:column;gap:14px;background:#fffffe">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><div style="font-size:18px;font-weight:600">This week</div><div style="font-size:12.5px;color:#71717c">{{ weekMeta }}</div></div>
+        <div style="display:flex;gap:6px;align-items:flex-end;height:60px;padding:0 2px"><sc-for list="{{ days }}" as="d" hint-placeholder-count="7"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end"><div style="{{ d.bar }}"></div><span style="{{ d.lab }}">{{ d.label }}</span></div></sc-for></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ sessions }}" as="x" hint-placeholder-count="3">
+            <div style="padding:12px 14px;background:#fff;border:1px solid #e5e5ea;border-radius:11px;display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><div style="font-size:13px;font-weight:500">{{ x.day }}</div><div dir="rtl" style="font-family:Amiri,serif;font-size:16px;color:#4f4f5a">{{ x.bookAr }}</div><div style="flex:1"></div><div style="font-size:11.5px;color:#71717c">{{ x.meta }}</div></div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:12px;color:#4f4f5a"><span>Roots met</span><sc-for list="{{ x.roots }}" as="r" hint-placeholder-count="3"><a href="{{ r.href }}" dir="rtl" style="font-family:Amiri,serif;font-size:16px;color:#a8682c;padding:0 8px;border:1px solid #e5e5ea;border-radius:99px;background:#fff">{{ r.ar }}</a></sc-for><span style="color:#71717c">· {{ x.words }} entries opened</span></div>
+              <sc-for list="{{ x.notes }}" as="n" hint-placeholder-count="0"><div style="font-size:12.5px;color:#4f4f5a;line-height:1.5;padding:8px 10px;background:#f8f8fa;border-radius:8px;border-left:2px solid #a8682c"><em>Note:</em> {{ n }}</div></sc-for>
+            </div>
+          </sc-for>
+          <sc-if value="{{ noSessions }}" hint-placeholder-val="{{ false }}"><div style="padding:24px;color:#71717c;font-size:13px;line-height:1.55">No sessions yet — every entry you open in the Reader is logged here, grouped by day and text.</div></sc-if>
+        </div>
+      </div>
+      <div style="background:#f8f8fa;border-left:1px solid #e5e5ea;padding:20px 18px;display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">All time</div>
+        <sc-for list="{{ totals }}" as="t" hint-placeholder-count="3"><div><div style="font-size:24px;font-weight:600">{{ t.v }}</div><div style="font-size:11.5px;color:#71717c">{{ t.l }}</div></div></sc-for>
+        <div style="height:1px;background:#e5e5ea"></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#71717c">Due for review</div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid #e5e5ea;border-radius:10px"><div style="flex:1;font-size:12.5px">{{ due }}</div><a href="Lexicon%20Reader%20v4.dc.html?mode=review" style="background:#16161a;border-radius:7px;font-size:12px;padding:5px 10px;color:#fff">Review</a></div>
+        <div style="font-size:11.5px;color:#71717c;line-height:1.5;margin-top:auto">Everything here is derived from reading; nothing asks you to keep a streak.</div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { m: null, c: null, tab: 'notes', notes: [], cur: null, q: '', group: 'All', tagDraft: '' };
+  componentDidMount() { Promise.all([import('./lexicon-data.js'), import('./jadhr-chrome.js')]).then(([m, c]) => { const notes = m.load(m.KEYS.notes, []); const qs = new URLSearchParams(location.search); this.setState({ m, c, notes, cur: notes.length ? notes[notes.length - 1].id : null, tab: qs.get('tab') === 'journal' ? 'journal' : 'notes' }); }); }
+  persist(notes) { this.state.m.save(this.state.m.KEYS.notes, notes); this.setState({ notes }); }
+  upd(patch) { const notes = this.state.notes.map(n => n.id === this.state.cur ? Object.assign({}, n, patch) : n); this.persist(notes); }
+  renderVals() {
+    const s = this.state, m = s.m, c = s.c;
+    if (!m) return { nav: [], tabs: [], list: [], groupings: [], days: [], sessions: [], totals: [], links: [], tabNotes: true, noCur: true };
+    const q = s.q.trim().toLowerCase();
+    const notes = s.notes.slice().reverse().filter(n => !q || (n.body + ' ' + (n.title || '')).toLowerCase().includes(q));
+    const cur = s.notes.find(n => n.id === s.cur);
+    const titleOf = n => n.title || (n.body || '').split(/\n/)[0].slice(0, 60) || 'Untitled note';
+    const mentions = body => { const out = []; (body || '').replace(/@([^\s,.;:()]+(?:\s[^\s,.;:()]+){0,2})/g, (_, t) => { out.push(t); return _; }); return out; };
+    const resolve = t => { const ta = m.stripDia(t).replace(/\s/g, ''); const r = m.ROOTS.find(r => r.bare === ta || r.tr === t.toLowerCase()); if (r) return { label: r.ar, href: 'Concordance.dc.html?root=' + r.key, dot: c.dot(c.C.root), arStyle: 'font-family:Amiri,serif;font-size:15px;letter-spacing:.06em' }; const w = m.WORDS.find(w => m.stripDia(w.ar) === ta || w.tr.toLowerCase() === t.toLowerCase()); if (w) return { label: w.ar + ' · ' + w.tr, href: 'Lexicon%20Reader%20v4.dc.html?w=' + w.id, dot: c.dot(c.C.word), arStyle: 'font-family:Amiri,serif;font-size:15px' }; const d = m.DICTS.find(d => d.en.toLowerCase().includes(t.toLowerCase()) || t.toLowerCase().includes(d.id)); if (d) return { label: d.en, href: 'Lexicon%20Reader%20v4.dc.html?w=ilm', dot: c.dot(c.C.desc), arStyle: '' }; if (/^\d+:\d+$/.test(t)) return { label: 'Q ' + t, href: 'Lexicon%20Reader%20v4.dc.html?book=quran', dot: c.dot(c.C.sentence), arStyle: '' }; return null; };
+    const links = cur ? [].concat(cur.key ? [{ label: cur.ref + ' · ' + (cur.bookAr || ''), href: 'Lexicon%20Reader%20v4.dc.html?book=' + (cur.book || 'base'), dot: c.dot(c.C.sentence), arStyle: 'font-family:Amiri,serif;font-size:15px' }] : [], (cur.roots || []).map(k => m.RMAP[k]).filter(Boolean).map(r => ({ label: r.ar, href: 'Concordance.dc.html?root=' + r.key, dot: c.dot(c.C.root), arStyle: 'font-family:Amiri,serif;font-size:15px;letter-spacing:.06em' })), mentions(cur.body).map(resolve).filter(Boolean)) : [];
+    const ss = m.load(m.KEYS.sessions, []).slice().reverse();
+    const today = new Date(); const days = [...Array(7)].map((_, i) => { const d = new Date(today); d.setDate(today.getDate() - (6 - i)); const key = d.toISOString().slice(0, 10); const n = ss.filter(x => x.day === key).reduce((a, x) => a + x.opened, 0); return { key, n, label: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()], isToday: i === 6 }; });
+    const maxD = Math.max(1, ...days.map(d => d.n));
+    const states = m.load(m.KEYS.states, {}); const marks = m.load(m.KEYS.marks, {});
+    return {
+      nav: c.navModel('Notebook'),
+      tabs: [['notes', 'Notes ' + s.notes.length], ['journal', 'Journal']].map(t => ({ label: t[1], onClick: () => this.setState({ tab: t[0] }), style: c.seg(s.tab === t[0]) })),
+      tabNotes: s.tab === 'notes', tabJournal: s.tab === 'journal',
+      newNote: () => { const n = { id: 'n' + Date.now(), title: '', body: '', tags: [], ts: Date.now(), roots: [] }; this.persist(s.notes.concat([n])); this.setState({ cur: n.id, tab: 'notes' }); },
+      q: s.q, onQ: e => this.setState({ q: e.currentTarget.value }),
+      groupings: ['All', 'By root', 'By text', 'Tags'].map(g => ({ label: g, onClick: () => this.setState({ group: g }), style: c.chip(s.group === g) })),
+      list: (s.group === 'By root' ? notes.slice().sort((a, b) => ((a.roots || [])[0] || '').localeCompare((b.roots || [])[0] || '')) : s.group === 'By text' ? notes.slice().sort((a, b) => (a.book || '').localeCompare(b.book || '')) : notes).map(n => ({ title: titleOf(n), sub: [(n.roots || []).map(k => (m.RMAP[k] || {}).ar).filter(Boolean).join(' · '), n.ref, (n.tags || []).join(', '), new Date(n.ts).toLocaleDateString()].filter(Boolean).join(' · '), onClick: () => this.setState({ cur: n.id }), style: 'display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;padding:11px 14px;border:none;border-bottom:1px solid #e5e5ea;cursor:pointer;background:' + (n.id === s.cur ? '#fff' : 'transparent') + ';border-left:3px solid ' + (n.id === s.cur ? '#a8682c' : 'transparent') })),
+      noNotes: !s.notes.length, hasCur: !!cur, noCur: !cur,
+      cur: cur ? { title: cur.title || '', body: cur.body || '', when: new Date(cur.ts).toLocaleString(), tags: cur.tags || [], ref: cur.ref || '', bookAr: cur.bookAr || '', anchor: cur.anchor || '', cardHref: 'Lexicon%20Editor%20v5.dc.html?note=' + encodeURIComponent(titleOf(cur)) } : {},
+      onTitle: e => this.upd({ title: e.currentTarget.value }), onBody: e => this.upd({ body: e.currentTarget.value }),
+      tagDraft: s.tagDraft, onTag: e => this.setState({ tagDraft: e.currentTarget.value }), onTagKey: e => { if (e.key === 'Enter' && s.tagDraft.trim() && cur) { this.upd({ tags: (cur.tags || []).concat([s.tagDraft.trim()]) }); this.setState({ tagDraft: '' }); } },
+      del: () => { if (!cur) return; const notes = s.notes.filter(n => n.id !== cur.id); this.persist(notes); this.setState({ cur: notes.length ? notes[notes.length - 1].id : null }); },
+      propose: () => { if (!cur) return; const ps = m.load(m.KEYS.proposals, []); ps.push({ id: 'p' + Date.now(), kind: 'note', wordId: cur.word || null, wordAr: cur.word && m.WMAP[cur.word] ? m.WMAP[cur.word].ar : (cur.roots && cur.roots[0] ? m.RMAP[cur.roots[0]].ar : '—'), text: cur.body, why: 'From my note “' + titleOf(cur) + '”', sources: [], status: 'pending', by: 'you', ts: Date.now() }); m.save(m.KEYS.proposals, ps); location.href = 'Review%20Queue.dc.html'; },
+      links, noLinks: !links.length, hasAnchor: !!(cur && cur.key),
+      weekMeta: ss.filter(x => days.some(d => d.key === x.day)).length + ' sessions · ' + days.reduce((a, d) => a + d.n, 0) + ' entries opened',
+      days: days.map(d => ({ label: d.label, bar: 'width:100%;border-radius:3px;background:#a8682c;opacity:' + (d.n ? 0.35 + 0.65 * d.n / maxD : 1) + ';height:' + (d.n ? Math.max(6, Math.round(d.n / maxD * 44)) : 4) + 'px' + (d.n ? '' : ';background:#ecedf1'), lab: 'font-size:10.5px;color:' + (d.isToday ? '#16161a' : '#71717c') + (d.isToday ? ';font-weight:500' : '') })),
+      sessions: ss.slice(0, 8).map(x => ({ day: new Date(x.day).toLocaleDateString(undefined, { weekday: 'long' }) + ' · ~' + x.minutes + ' min', bookAr: x.bookAr || x.book, meta: x.opened + ' lookups', words: x.words.length, roots: x.roots.map(k => m.RMAP[k]).filter(Boolean).map(r => ({ ar: r.ar, href: 'Concordance.dc.html?root=' + r.key })), notes: s.notes.filter(n => new Date(n.ts).toISOString().slice(0, 10) === x.day).map(n => n.body.slice(0, 120)) })),
+      noSessions: !ss.length,
+      totals: [{ v: String(new Set(ss.flatMap(x => x.roots)).size), l: 'roots met' }, { v: String(Object.values(states).filter(x => x === 'known').length), l: 'words known · ' + Object.values(states).filter(x => x === 'learning').length + ' learning' }, { v: String(s.notes.length), l: 'notes · ' + Object.keys(marks).filter(k => marks[k]).length + ' starred' }],
+      due: (new Set(Object.keys(marks).filter(k => marks[k]).map(k => (m.WMAP[k] || {}).root).filter(Boolean)).size || new Set(ss.flatMap(x => x.roots)).size) + ' root families'
+    };
+  }
+}
+</script>
+</body>
+</html>
