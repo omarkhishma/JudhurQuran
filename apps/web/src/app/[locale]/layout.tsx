@@ -5,7 +5,6 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { routing } from "@/i18n/routing";
 import { fontVariables } from "@/lib/fonts";
 import { SITE, THEME_KEY } from "@/lib/site";
-import { SiteHeader } from "@/components/shell/SiteHeader";
 import { Providers } from "@/components/shell/Providers";
 import "../globals.css";
 
@@ -62,12 +61,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
           {t("skipToContent")}
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <Providers>
-            <SiteHeader />
-            <main id="main" className="flex min-w-0 flex-1 flex-col">
-              {children}
-            </main>
-          </Providers>
+          {/* Each route group wears its own header: the shared shell, or the reader's and editor's bespoke ones. */}
+          <Providers>{children}</Providers>
         </NextIntlClientProvider>
       </body>
     </html>

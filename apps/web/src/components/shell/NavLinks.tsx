@@ -1,33 +1,49 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useEffect, useRef } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 
+/** The shared nav (design 01 §1.4), in its order. `match` decides the active item. */
 export const NAV_ITEMS = [
-  { href: "/quran", key: "read" },
-  { href: "/roots", key: "roots" },
-  { href: "/graph", key: "graph" },
-  { href: "/saved", key: "saved" },
+  { href: "/read", key: "read", match: ["/read", "/quran"] },
+  { href: "/explore", key: "explore", match: ["/explore"] },
+  { href: "/library", key: "library", match: ["/library"] },
+  { href: "/read?mode=lookup", key: "lookup", match: [] },
+  { href: "/concordance", key: "concordance", match: ["/concordance", "/roots"] },
+  { href: "/analyse", key: "analyser", match: ["/analyse"] },
+  { href: "/graph", key: "graph", match: ["/graph", "/g", "/split"] },
+  { href: "/notebook", key: "notebook", match: ["/notebook", "/saved"] },
+  { href: "/review", key: "reviewQueue", match: ["/review"] },
+  { href: "/classroom", key: "classroom", match: ["/classroom"] },
+  { href: "/data", key: "data", match: ["/data", "/developers", "/sources"] },
 ] as const;
 
+export function isActive(pathname: string, match: readonly string[]): boolean {
+  return match.some((m) => pathname === m || pathname.startsWith(m + "/"));
+}
+
+/**
+ * The nav strip scrolls sideways when it overflows; the page actions beside it stay pinned (a fix the
+ * design records). The active item is scrolled into view, so in Arabic the strip starts at the right.
+ */
 export function NavLinks() {
   const t = useTranslations("nav");
   const pathname = usePathname();
+  const track = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    track.current?.querySelector<HTMLElement>("[aria-current=page]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [pathname]);
+
   return (
-    <nav aria-label={t("primary")} className="hidden min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] md:block">
-      <ul className="flex w-max items-center gap-0.5 rounded-[10px] p-0.5">
+    <nav aria-label={t("primary")} className="hidden min-w-0 shrink min-[900px]:block">
+      <ul ref={track} className="nav-track">
         {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+          const active = isActive(pathname, item.match);
           return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={
-                  "inline-flex min-h-[32px] items-center rounded-[7px] px-2.5 text-[13.5px] whitespace-nowrap transition-colors max-[899px]:min-h-[40px] " +
-                  (active ? "bg-card font-medium text-t1 shadow-[0_1px_2px_rgba(0,0,0,.06)]" : "text-t2 hover:text-t1")
-                }
-              >
+            <li key={item.key}>
+              <Link href={item.href} aria-current={active ? "page" : undefined} className="nav-item">
                 {t(item.key)}
               </Link>
             </li>

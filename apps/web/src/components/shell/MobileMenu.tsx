@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
-import { NAV_ITEMS } from "./NavLinks";
+import { isActive, NAV_ITEMS } from "./NavLinks";
 
 export function MobileMenu() {
   const t = useTranslations("nav");
@@ -26,7 +26,7 @@ export function MobileMenu() {
   }, [open]);
 
   return (
-    <div className="md:hidden">
+    <div className="min-[900px]:hidden">
       <button
         type="button"
         className="btn icon-btn"
@@ -49,9 +49,9 @@ export function MobileMenu() {
           >
             <ul className="flex flex-col">
               {NAV_ITEMS.map((item) => {
-                const active = pathname === item.href || pathname.startsWith(item.href + "/");
+                const active = isActive(pathname, item.match);
                 return (
-                  <li key={item.href}>
+                  <li key={item.key}>
                     <Link
                       href={item.href}
                       aria-current={active ? "page" : undefined}
@@ -63,9 +63,9 @@ export function MobileMenu() {
                 );
               })}
               <li className="my-1 border-t border-line" />
-              {(["about", "sources", "developers"] as const).map((k) => (
+              {(["me", "about", "sources", "privacy"] as const).map((k) => (
                 <li key={k}>
-                  <Link href={`/${k}`} className="flex min-h-[44px] items-center rounded-lg px-3 text-[14px] text-t2">
+                  <Link href={k === "me" ? "/me" : `/${k}`} className="flex min-h-[44px] items-center rounded-lg px-3 text-[14px] text-t2">
                     {t(k)}
                   </Link>
                 </li>

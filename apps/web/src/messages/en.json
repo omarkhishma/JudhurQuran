@@ -37,13 +37,24 @@
     "read": "Read",
     "roots": "Roots",
     "search": "Search",
-    "graph": "Map",
+    "graph": "Graph",
     "saved": "Saved",
     "about": "About",
     "sources": "Sources & licenses",
     "developers": "Developers",
     "privacy": "Privacy",
-    "primary": "Main navigation"
+    "primary": "Main navigation",
+    "explore": "Explore",
+    "library": "Library",
+    "lookup": "Look up",
+    "concordance": "Concordance",
+    "analyser": "Analyser",
+    "notebook": "Notebook",
+    "reviewQueue": "Review queue",
+    "classroom": "Classroom",
+    "data": "Data & API",
+    "me": "My account",
+    "more": "More"
   },
   "home": {
     "rootLetters": "ع ل م",
@@ -409,5 +420,57 @@
     "murattal": "murattal",
     "mujawwad": "mujawwad",
     "muallim": "teaching"
+  },
+  "screens": {
+    "building": "This screen is being built as part of the plan and is not finished yet.",
+    "plan": "Plan phase",
+    "read": {
+      "title": "Reader",
+      "lead": "Read the Quran with every word open to its root and meaning."
+    },
+    "explore": {
+      "title": "Explore",
+      "lead": "Word of the day, curated sets of Quranic words, and study cards."
+    },
+    "library": {
+      "title": "Library",
+      "lead": "The Quran, the hadith collections, classical books, and your own texts."
+    },
+    "concordance": {
+      "title": "Concordance",
+      "lead": "Every occurrence of a root in context — sorted, filtered, and distributed."
+    },
+    "analyse": {
+      "title": "Analyser",
+      "lead": "Paste Arabic to see each word's parts, root and pattern, with a confidence."
+    },
+    "notebook": {
+      "title": "Notebook",
+      "lead": "Your notes on words and verses, your trails, and your reading journal."
+    },
+    "review": {
+      "title": "Review queue",
+      "lead": "Readers' proposals on meanings, merged only after two independent approvals."
+    },
+    "classroom": {
+      "title": "Classroom",
+      "lead": "Lessons for a cohort, a heat-map of what learners looked up, and a shared workspace."
+    },
+    "me": {
+      "title": "My account",
+      "lead": "Your contributions, graphs, texts and journal — and your data, to export or delete."
+    },
+    "data": {
+      "title": "Data & API",
+      "lead": "Versioned, citable dataset downloads, a public API, and the changelog."
+    },
+    "split": {
+      "title": "Split view",
+      "lead": "The reader and the graph side by side."
+    },
+    "published": {
+      "title": "Published graph",
+      "lead": "A root graph its author published — to read, fork and cite."
+    }
   }
 }
