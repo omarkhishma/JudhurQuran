@@ -8,7 +8,8 @@ import { hasArabic, hasMarks } from "@/lib/arabic/normalize";
 import { formatNumber } from "@/lib/format";
 import { getJSON, useWord } from "@/lib/reader/api";
 import { useBreakpoint } from "@/lib/reader/media";
-import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
+import { usePrefs, useReader } from "@/lib/reader/store";
+import { useStar } from "@/lib/store/saved";
 import type { WordPayload } from "@/lib/reader/types";
 import { useDebounced } from "@/lib/useDebounced";
 import { ListenOccurrence } from "./Listen";
@@ -122,12 +123,11 @@ function useAskActions(w: WordPayload) {
   const setAsk = useReader((s) => s.setAsk);
   const openWord = useReader((s) => s.openWord);
   const setPrefs = usePrefs((s) => s.set);
-  const star = usePersonal((s) => !!s.stars[w.slug]);
-  const toggleStar = usePersonal((s) => s.toggleStar);
+  const [star, toggleStar] = useStar(w.slug, w.ar.full);
   const first = w.attestations.items[0];
   return {
     star,
-    toggleStar: () => toggleStar(w.slug),
+    toggleStar,
     goDeeper: () => {
       setAsk(false);
       setPrefs({ panelOpen: true });

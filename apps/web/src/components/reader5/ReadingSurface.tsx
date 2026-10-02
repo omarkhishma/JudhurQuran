@@ -20,7 +20,9 @@ import { VerseDrawer, type DrawerTool } from "./VerseDrawer";
  * long-press), drawers, reading progress and the resume marker, keyboard movement between words, and a
  * copy handler that puts the reference after the copied text.
  */
-export function ReadingSurface({ chapter, children }: { chapter: ChapterInfo; children: React.ReactNode }) {
+export type InitialSelection = { verse?: string; word?: { slug: string; at: string } };
+
+export function ReadingSurface({ chapter, initial, children }: { chapter: ChapterInfo; initial?: InitialSelection; children: React.ReactNode }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const ref = useRef<HTMLDivElement>(null);
@@ -56,12 +58,13 @@ export function ReadingSurface({ chapter, children }: { chapter: ChapterInfo; ch
     if (ref.current) roving(ref.current, null);
   }, []);
 
-  // URL → state on arrival; and the resume marker from the last visit (shown, then the reader goes on).
+  // URL → state on arrival (a route's own verse or word first: /quran/2/255, /word/2:255:3); then the
+  // resume marker from the last visit (shown, then the reader goes on).
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    const w = p.get("w");
-    const at = p.get("at");
-    const v = p.get("v");
+    const w = p.get("w") ?? initial?.word?.slug ?? null;
+    const at = p.get("w") ? p.get("at") : (initial?.word?.at ?? null);
+    const v = p.get("v") ?? initial?.verse ?? null;
     if (w) {
       openWord({ slug: w, at: at && at.startsWith(`${chapter.number}:`) ? at : null });
       setPrefs({ panelOpen: true });
@@ -78,9 +81,11 @@ export function ReadingSurface({ chapter, children }: { chapter: ChapterInfo; ch
         setTimeout(() => el.removeAttribute("data-target"), 2400);
       }
     });
-  }, [chapter.number, openWord, openVerse, setPrefs, resume]);
+    // the route's initial selection is compared by value
+  }, [chapter.number, openWord, openVerse, setPrefs, resume, initial?.verse, initial?.word?.slug, initial?.word?.at]);
 
-  // State → URL, without navigation, once something changes.
+  // State → URL, without navigation, once something changes: a verse of this sūra is its own path
+  // (/quran/2/255), a word and the index are parameters on the sūra (?w=…&at=…, ?mode=lookup).
   const first = useRef(true);
   useEffect(() => {
     if (first.current) {
@@ -88,14 +93,19 @@ export function ReadingSurface({ chapter, children }: { chapter: ChapterInfo; ch
       return;
     }
     const url = new URL(window.location.href);
+    const prefix = /^\/en(\/|$)/.test(url.pathname) ? "/en" : "";
+    url.pathname = `${prefix}/quran/${chapter.number}`;
     for (const k of ["w", "at", "v", "mode", "q"]) url.searchParams.delete(k);
     if (mode === "word" && selection) {
       url.searchParams.set("w", selection.slug);
       if (selection.at) url.searchParams.set("at", selection.at);
-    } else if (mode === "verse" && verse) url.searchParams.set("v", verse);
-    else if (mode === "index") url.searchParams.set("mode", "lookup");
+    } else if (mode === "verse" && verse) {
+      const [s, a] = verse.split(":");
+      if (Number(s) === chapter.number) url.pathname += `/${a}`;
+      else url.searchParams.set("v", verse);
+    } else if (mode === "index") url.searchParams.set("mode", "lookup");
     if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url.href);
-  }, [mode, selection, verse]);
+  }, [mode, selection, verse, chapter.number]);
 
   // Selection, root-family and focus-root underlines; the hot passage.
   useEffect(() => {
@@ -163,7 +173,8 @@ export function ReadingSurface({ chapter, children }: { chapter: ChapterInfo; ch
     function onKey(e: KeyboardEvent) {
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
-      if (e.key === "Escape" && !document.querySelector("[role=dialog][aria-modal]")) {
+      // Esc closes the innermost layer only: a dialog, a term card or a popover handles its own Esc.
+      if (e.key === "Escape" && !document.querySelector("[role=dialog]:not(.onboarding)")) {
         if (drawer) setDrawer(null);
         else closeEntry();
         return;

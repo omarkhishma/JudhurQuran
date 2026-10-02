@@ -54,7 +54,7 @@ test("journey A: tap a word → entry with its root counts → family → verse 
 
   // The verse number opens verse mode with its tafsir, credited.
   await page.locator('[data-verse-btn="1:2"]').click();
-  await expect(page).toHaveURL(/[?&]v=1(:|%3A)2/);
+  await expect(page).toHaveURL(/\/quran\/1\/2$/);
   await expect(p.getByText("التفسير الميسر").first()).toBeVisible();
 });
 
@@ -142,7 +142,7 @@ test("omnibox: Ctrl+K, a verse reference, Enter opens the verse (RDR-565)", asyn
   await box.fill("٢:٢٥٥");
   await expect(page.getByRole("option").first()).toContainText("2:255");
   await box.press("Enter");
-  await expect(page).toHaveURL(/\/quran\/2\?v=2(:|%3A)255/);
+  await expect(page).toHaveURL(/\/quran\/2\/255$/);
 });
 
 test("cite: a dialog with a versioned permalink and the real access date; Esc returns focus (RDR-461/522)", async ({ page }) => {

@@ -4,7 +4,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 /** Personal, device-local state (never sent to a server): bookmarks, verse notes, recent words. */
-export type Bookmark = { kind: "verse" | "word" | "root"; key: string; label: string; at: number };
+/** A starred entry is a lemma keyed by its slug (the reader's ☆, RDR-520: one list for every screen);
+ * "word" keeps a word occurrence by its location. */
+export type Bookmark = { kind: "verse" | "word" | "lemma" | "root"; key: string; label: string; at: number };
 export type Note = { verse: string; text: string; at: number };
 export type Visit = { location: string; label: string; root: string | null; at: number };
 
@@ -44,6 +46,13 @@ export const useSaved = create<SavedState>()(
     { name: "jadhr-saved", version: 1 },
   ),
 );
+
+/** The reader's star for a lemma: one list that Saved, the Notebook and the review queue all read. */
+export function useStar(slug: string, label: string): [boolean, () => void] {
+  const on = useSaved((s) => s.bookmarks.some((b) => b.kind === "lemma" && b.key === slug));
+  const toggle = useSaved((s) => s.toggleBookmark);
+  return [on, () => toggle({ kind: "lemma", key: slug, label })];
+}
 
 export function isBookmarked(list: Bookmark[], kind: Bookmark["kind"], key: string): boolean {
   return list.some((x) => x.kind === kind && x.key === key);

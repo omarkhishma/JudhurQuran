@@ -7,7 +7,8 @@ import { Icon } from "@/components/Icon";
 import { Term } from "@/components/terms/Term";
 import { Link } from "@/i18n/navigation";
 import { formatNumber } from "@/lib/format";
-import { SECTIONS, type SectionId, usePersonal, usePrefs, useReader } from "@/lib/reader/store";
+import { SECTIONS, type SectionId, usePrefs, useReader } from "@/lib/reader/store";
+import { useStar } from "@/lib/store/saved";
 import type { WordPayload } from "@/lib/reader/types";
 import { FORM_TERM, TAG_TERM } from "@/lib/terms";
 import type { ChapterInfo } from "./ReaderShell";
@@ -77,8 +78,7 @@ function EntrySkeleton() {
 function EntryHeader({ w }: { w: WordPayload }) {
   const t = useTranslations("rd");
   const locale = useLocale();
-  const star = usePersonal((s) => !!s.stars[w.slug]);
-  const toggleStar = usePersonal((s) => s.toggleStar);
+  const [star, toggleStar] = useStar(w.slug, w.ar.full);
   const setCite = useReader((s) => s.setCite);
   const jumpTo = useReader((s) => s.jumpTo);
   const occ = w.occurrence;
@@ -140,7 +140,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" className="root-chip" onClick={() => jumpTo("family")} title={t("openRootFamily", { root: w.root.ar_spaced })}>
             <span className="ar-classical text-[17px] tracking-[.06em]" lang="ar">{w.root.ar_spaced}</span>
-            <span className="mono text-[11px]" dir="ltr">{w.root.translit}</span>
+            <span className="mono text-[11px] text-t2" dir="ltr">{w.root.translit}</span>
           </button>
           <span className="text-[12px] text-t3">
             <Term id="root">{t("root")}</Term> · {t("rootCounts", { n: formatNumber(w.root.occurrences, locale), lemmas: formatNumber(w.root.lemma_count, locale) })}
@@ -160,7 +160,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
           <Icon name="quote" size={13} />
           {t("cite")}
         </button>
-        <button type="button" className="btn icon-btn" aria-pressed={star} onClick={() => toggleStar(w.slug)} aria-label={star ? t("unstar") : t("star")} title={star ? t("unstar") : t("star")}>
+        <button type="button" className="btn icon-btn" aria-pressed={star} onClick={toggleStar} aria-label={star ? t("unstar") : t("star")} title={star ? t("unstar") : t("star")}>
           <Icon name="star" size={14} className={star ? "text-root [&_path]:fill-current" : ""} />
         </button>
       </div>

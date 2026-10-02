@@ -31,7 +31,6 @@
   --word-wash: color-mix(in srgb, var(--c-word) 10%, var(--card));
   --form-wash: color-mix(in srgb, var(--c-form) 10%, var(--card));
   --sentence-wash: color-mix(in srgb, var(--c-sentence) 10%, var(--card));
-  --reading-scale: 1;
   /* Chart mark colour for single-series root charts (validated: lightness band + contrast, light and dark) */
   --chart-root: #a8682c;
   color-scheme: light;
@@ -373,79 +372,15 @@ button:disabled {
   text-underline-offset: 3px;
 }
 
-/* ─── Reader ────────────────────────────────────────────────────────────── */
-.reader-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  min-height: calc(100dvh - 52px);
-  background: var(--paper);
-}
-@media (min-width: 1024px) {
-  .reader-layout:has(.side-panel) {
-    grid-template-columns: minmax(0, 1fr) 440px;
-  }
-}
-.reader-text {
-  --reading-size: calc(29px * var(--reading-scale, 1));
-}
-.verse {
-  padding: 14px 6px 18px;
-  border-bottom: 1px solid var(--line);
-  scroll-margin-top: 120px;
-  border-radius: 10px;
-  transition: background 0.4s ease-out;
-}
-.verse.is-target,
-.verse.is-verse-selected {
-  background: color-mix(in srgb, var(--c-sentence) 7%, transparent);
-}
-.verse-text {
-  font-size: var(--reading-size);
-  color: var(--t1);
-  text-align: start;
-}
-.reader-text[data-layout="flow"] .verse-list {
-  text-align: justify;
-}
-.reader-text[data-layout="flow"] .verse {
-  display: inline;
-  padding: 0;
-  border: 0;
-}
-.reader-text[data-layout="flow"] .verse-text {
-  display: inline;
-}
-.reader-text[data-layout="flow"] .inline-layer {
-  display: none;
-}
+/* ─── Mushaf text (the reader's words; Reader v5 styles them under .reading) ─── */
 .w {
   cursor: pointer;
-  border-radius: 6px;
-  padding: 0 1px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  transition: background 0.12s ease-out, color 0.12s ease-out;
-}
-.w:hover {
-  background: var(--word-wash);
-}
-.w.is-root {
-  background: var(--root-wash);
-  color: color-mix(in srgb, var(--c-root) 70%, var(--t1));
-}
-.w.is-selected {
-  background: color-mix(in srgb, var(--ring) 20%, var(--card));
-  color: var(--t1);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ring) 45%, transparent);
 }
 .hizb-mark {
   color: var(--c-root);
   user-select: none;
-}
-.w.is-reading {
-  background: var(--sentence-wash);
-  color: var(--t1);
-  box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--c-sentence) 70%, transparent);
 }
 .ayah-num {
   font-family: var(--font-quran);
@@ -460,24 +395,9 @@ button:disabled {
 .ayah-num:hover {
   background: var(--sentence-wash);
 }
-.inline-layer {
-  margin-top: 6px;
-  display: grid;
-  gap: 8px;
-}
 .inline-translation {
   font-family: var(--font-latin);
-  font-size: calc(15px * var(--reading-scale, 1));
-  line-height: 1.65;
   color: var(--t2);
-}
-.inline-tafsir {
-  font-family: var(--font-classical);
-  font-size: calc(16px * var(--reading-scale, 1));
-  line-height: 2;
-  color: var(--t2);
-  border-inline-start: 3px solid color-mix(in srgb, var(--c-sentence) 45%, transparent);
-  padding-inline-start: 10px;
 }
 }
 
@@ -1373,7 +1293,8 @@ textarea.field {
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--chip);
+  /* the chip hue pulled toward the text colour keeps 4.5:1 on its own wash in both themes */
+  color: color-mix(in srgb, var(--chip) 72%, var(--t1));
   background: color-mix(in srgb, var(--chip) 14%, transparent);
   border: 0;
 }
@@ -1404,7 +1325,7 @@ button.type-chip:hover {
   gap: 7px;
   padding: 2px 10px;
   border-radius: 9px;
-  color: var(--c-root);
+  color: color-mix(in srgb, var(--c-root) 85%, var(--t1));
   background: color-mix(in srgb, var(--c-root) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--c-root) 40%, transparent);
 }

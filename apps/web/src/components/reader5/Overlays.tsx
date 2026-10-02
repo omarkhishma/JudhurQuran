@@ -85,7 +85,7 @@ function Omnibox({ onClose }: { onClose: () => void }) {
         meta: v.key,
         go: () => {
           onClose();
-          router.push(`/quran/${v.surah}?v=${v.key}#v${v.ayah}`);
+          router.push(`/quran/${v.surah}/${v.ayah}`);
         },
       });
     for (const s of r.surahs.slice(0, 3))

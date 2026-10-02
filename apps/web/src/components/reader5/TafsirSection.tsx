@@ -3,10 +3,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
+import { getJSON } from "@/lib/reader/api";
 import { usePrefs } from "@/lib/reader/store";
 import { verseRef } from "@/lib/format";
 import type { Commentary, Work } from "@/lib/types";
-import { useCommentary } from "./hooks";
+
+export function useCommentary(verseKey: string | null, works: string[], initialData?: Commentary) {
+  return useQuery({
+    queryKey: ["commentary", verseKey, works.join(",")],
+    enabled: !!verseKey && works.length > 0,
+    queryFn: () => getJSON<Commentary>(`/verses/${verseKey}/commentary?works=${encodeURIComponent(works.join(","))}`),
+    initialData,
+  });
+}
 
 /** Tafsir chooser + passage + translation, with each work's credit line. Seedable from the server. */
 export function TafsirSection({

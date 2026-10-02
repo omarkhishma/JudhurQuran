@@ -211,7 +211,6 @@ export type Proposal = {
 
 type PersonalState = {
   wordStates: Record<string, WordState>;
-  stars: Record<string, boolean>;
   trail: TrailStep[];
   progress: Record<string, ProgressEntry>;
   visited: boolean;
@@ -219,7 +218,6 @@ type PersonalState = {
   proposals: Proposal[];
   savedTrails: SavedTrail[];
   setWordState: (slug: string, s: WordState) => void;
-  toggleStar: (slug: string) => void;
   recordTrail: (slug: string) => void;
   truncateTrail: (index: number) => void;
   clearTrail: () => void;
@@ -236,7 +234,6 @@ export const usePersonal = create<PersonalState>()(
   persist(
     (set) => ({
       wordStates: {},
-      stars: {},
       trail: [],
       progress: {},
       visited: false,
@@ -244,13 +241,6 @@ export const usePersonal = create<PersonalState>()(
       proposals: [],
       savedTrails: [],
       setWordState: (slug, s) => set((st) => ({ wordStates: { ...st.wordStates, [slug]: s } })),
-      toggleStar: (slug) =>
-        set((st) => {
-          const stars = { ...st.stars };
-          if (stars[slug]) delete stars[slug];
-          else stars[slug] = true;
-          return { stars };
-        }),
       recordTrail: (slug) =>
         set((st) => {
           const last = st.trail[st.trail.length - 1];

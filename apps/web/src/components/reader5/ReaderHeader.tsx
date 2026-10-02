@@ -9,6 +9,7 @@ import { formatNumber } from "@/lib/format";
 import { useBreakpoint } from "@/lib/reader/media";
 import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
 import { THEME_KEY } from "@/lib/site";
+import { useSaved } from "@/lib/store/saved";
 import type { ChapterInfo } from "./ReaderShell";
 import { ReadingPrefs } from "./ReadingPrefs";
 
@@ -33,7 +34,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
   const setRailOverlay = useReader((s) => s.setRailOverlay);
   const railOverlay = useReader((s) => s.railOverlay);
   const selection = useReader((s) => s.selection);
-  const stars = usePersonal((s) => s.stars);
+  const starredCount = useSaved((s) => s.bookmarks.filter((b) => b.kind === "lemma").length);
   const wordStates = usePersonal((s) => s.wordStates);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -79,7 +80,6 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
   const place = chapter.place === "meccan" ? t("meccan") : t("medinan");
   const meta = [place, t("verses", { n: formatNumber(chapter.verseCount, locale) }), t("juz", { n: formatNumber(chapter.juz, locale) })];
   if (wordStatesOn) meta.push(t("knownLearning", { known: formatNumber(known, locale), learning: formatNumber(learning, locale) }));
-  const starredCount = Object.keys(stars).length;
   const graphHref = selection ? `/graph?w=${encodeURIComponent(selection.slug)}` : "/graph";
 
   return (

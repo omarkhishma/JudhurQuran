@@ -2,13 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { api } from "@/lib/api";
-import type { SurahPayload, Verse } from "@/lib/types";
-import { AudioBar } from "@/components/audio/AudioBar";
-import { ReaderShell, type ChapterInfo } from "@/components/reader5/ReaderShell";
-import { ReadingSurface } from "@/components/reader5/ReadingSurface";
-import { SurahText } from "@/components/reader5/SurahText";
+import type { SurahPayload } from "@/lib/types";
+import { ReaderPage } from "@/components/reader5/ReaderPage";
 import { localized } from "@/lib/seo";
-import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 
 export const revalidate = 86400;
 
@@ -42,32 +38,5 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/quran/[s
 export default async function SurahPage({ params }: PageProps<"/[locale]/quran/[surah]">) {
   const { locale, surah } = await params;
   setRequestLocale(locale);
-  const n = parseSurah(surah);
-  const [payload, basmala] = await Promise.all([api<SurahPayload>(`/surahs/${n}`), api<Verse>("/verses/1:1")]);
-  const s = payload.surah;
-  const chapter: ChapterInfo = {
-    text: "quran",
-    number: n,
-    nameAr: s.name_ar,
-    nameTranslit: s.name_translit,
-    place: s.revelation_place as "meccan" | "medinan",
-    verseCount: s.verse_count,
-    juz: s.juz_start,
-  };
-  return (
-    <>
-      <JsonLd
-        data={breadcrumbs(locale, [
-          [locale === "ar" ? "الرئيسية" : "Home", "/"],
-          [locale === "ar" ? "القرآن الكريم" : "The Quran", "/quran"],
-          [locale === "ar" ? `سورة ${s.name_ar}` : `Surah ${s.name_translit}`, `/quran/${n}`],
-        ])}
-      />
-      <ReaderShell chapter={chapter} footer={<AudioBar surah={n} surahName={s.name_ar} />}>
-        <ReadingSurface chapter={chapter}>
-          <SurahText payload={payload} basmala={basmala} locale={locale} />
-        </ReadingSurface>
-      </ReaderShell>
-    </>
-  );
+  return <ReaderPage locale={locale} surah={parseSurah(surah)} />;
 }

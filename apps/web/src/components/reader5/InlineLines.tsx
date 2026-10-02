@@ -4,7 +4,7 @@ import { useLocale } from "next-intl";
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import { usePrefs } from "@/lib/reader/store";
-import { useWorkSurah } from "../reader/useWorkSurah";
+import { useWorkSurah } from "@/lib/reader/useWorkSurah";
 
 /** The lines under each verse (RDR-095/096, RDR-557): a translation (on by default in English) and,
  * in Arabic, al-Muyassar's plain explanation as an option — each portalled into its verse's slot. */

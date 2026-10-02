@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
-import { TafsirSection } from "@/components/reader/TafsirSection";
+import { TafsirSection } from "./TafsirSection";
 import { Link } from "@/i18n/navigation";
 import { formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
@@ -23,7 +23,6 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
   const playVerse = useAudio((s) => s.playVerse);
   const setCite = useReader((s) => s.setCite);
   const related = useQuery({ queryKey: ["related", verseKey], queryFn: () => getJSON<Related>(`/verses/${verseKey}/related?limit=6`) });
-  const [s, a] = verseKey.split(":");
   return (
     <article className="flex flex-col gap-3 p-3.5" aria-label={t("verseTitle", { ref: verseKey })}>
       <header className="flex flex-wrap items-center gap-2">
@@ -37,7 +36,6 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
           <Icon name="quote" size={13} />
           {t("cite")}
         </button>
-        <Link href={`/quran/${s}/${a}`} className="btn">{t("versePage")}</Link>
       </header>
       <section className="layer">
         <div className="layer-head"><span className="text-[13.5px] font-medium">{t("tafsir")}</span></div>
@@ -52,7 +50,7 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
         </div>
         <div className="layer-body flex flex-col gap-2">
           {(related.data?.data ?? []).map((r) => (
-            <Link key={r.verse.key} href={`/quran/${r.verse.surah}?v=${r.verse.key}#v${r.verse.ayah}`} className="related-row">
+            <Link key={r.verse.key} href={`/quran/${r.verse.surah}/${r.verse.ayah}`} className="related-row">
               <span className="flex items-center gap-2 text-[11.5px] text-t3">
                 <span className="mono" dir="ltr">{r.verse.key}</span>
                 <span>{r.verse.name_ar}</span>
