@@ -24,7 +24,20 @@ from pathlib import Path
 
 from judhur_arabic import bw_lemma_to_arabic, bw_to_arabic, from_qac, split_lemma_key
 
-ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10, "XI": 11, "XII": 12}
+ROMAN = {
+    "I": 1,
+    "II": 2,
+    "III": 3,
+    "IV": 4,
+    "V": 5,
+    "VI": 6,
+    "VII": 7,
+    "VIII": 8,
+    "IX": 9,
+    "X": 10,
+    "XI": 11,
+    "XII": 12,
+}
 PGN_RE = re.compile(r"^([123])?([MF])?([SDP])?$")
 CASES = {"NOM", "ACC", "GEN"}
 ASPECTS = {"PERF", "IMPF", "IMPV"}
@@ -154,7 +167,11 @@ class MorphWord:
 
     @property
     def suffix_pronouns(self) -> list[str]:
-        return [s.feature[5:] for s in self.segments if s.kind == "suffix" and (s.feature or "").startswith("PRON:")]
+        return [
+            s.feature[5:]
+            for s in self.segments
+            if s.kind == "suffix" and (s.feature or "").startswith("PRON:")
+        ]
 
 
 # ─── v0.4 ───────────────────────────────────────────────────────────────────
@@ -186,7 +203,13 @@ def parse_v04(path: Path) -> list[MorphWord]:
             raise MorphError(f"v0.4: segment {s}:{a}:{w}:{seg} out of order")
         toks = features.split("|")
         kind = toks[0]
-        segment = Segment(index=seg, kind=kind.lower(), tag=tag, form_bw=form_bw, form_ar=" ".join(bw_to_arabic(part) for part in form_bw.split(" ")))  # merged words (37:130) contain a space
+        segment = Segment(
+            index=seg,
+            kind=kind.lower(),
+            tag=tag,
+            form_bw=form_bw,
+            form_ar=" ".join(bw_to_arabic(part) for part in form_bw.split(" ")),
+        )  # merged words (37:130) contain a space
         if kind == "PREFIX":
             if len(toks) != 2:
                 raise MorphError(f"v0.4: prefix {s}:{a}:{w}:{seg} has {toks}")
@@ -229,13 +252,19 @@ def parse_v2(path: Path, locations: list[tuple[int, int, int]]) -> list[MorphWor
         current: Stem | None = None
         for tok in line.split(" "):
             if current is None and tok.endswith("+"):
-                word.segments.append(Segment(index=len(word.segments) + 1, kind="prefix", tag="", feature=tok))
+                word.segments.append(
+                    Segment(index=len(word.segments) + 1, kind="prefix", tag="", feature=tok)
+                )
                 continue
             if tok.startswith("POS:"):
                 current = Stem()
-                word.segments.append(Segment(index=len(word.segments) + 1, kind="stem", tag=tok[4:], stem=current))
+                word.segments.append(
+                    Segment(index=len(word.segments) + 1, kind="stem", tag=tok[4:], stem=current)
+                )
             elif current is not None and tok.startswith("PRON:"):
-                word.segments.append(Segment(index=len(word.segments) + 1, kind="suffix", tag="PRON", feature=tok))
+                word.segments.append(
+                    Segment(index=len(word.segments) + 1, kind="suffix", tag="PRON", feature=tok)
+                )
                 continue
             if current is None:
                 raise MorphError(f"v2: feature {tok!r} before any POS at {s}:{a}:{w}")

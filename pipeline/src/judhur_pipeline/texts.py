@@ -8,7 +8,6 @@ to be lossless against the original string.
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from xml.etree import ElementTree
@@ -92,7 +91,10 @@ def parse_tanzil_meta(path: Path) -> QuranMeta:
         node = root.find(group)
         if node is None:
             raise TextError(f"quran-data.xml: missing <{group}>")
-        return [(int(e.get("index", "0")), int(e.get("sura", "0")), int(e.get("aya", "0"))) for e in node.iter(tag)]
+        return [
+            (int(e.get("index", "0")), int(e.get("sura", "0")), int(e.get("aya", "0")))
+            for e in node.iter(tag)
+        ]
 
     surahs = []
     for e in root.find("suras").iter("sura"):  # type: ignore[union-attr]
@@ -138,36 +140,16 @@ def parse_tanzil_meta(path: Path) -> QuranMeta:
 class QpcVerse:
     surah: int
     ayah: int
-    text: str  # verbatim, including the separator and the verse-number digits
-    tokens: list[str]  # words, split on U+0020; the number is NOT a token
-    number_text: str  # e.g. '٢٥٥' — rendered by the font as an ayah medallion
-    number_sep: str  # U+00A0 in all but one verse (verbatim)
-
-
-_QPC_NUMBER = re.compile("([  ])([٠-٩]+)$")
-
-
-def parse_qpc_json(path: Path) -> dict[tuple[int, int], QpcVerse]:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    out: dict[tuple[int, int], QpcVerse] = {}
-    for v in data["verses"]:
-        key = (int(v["surah"]), int(v["ayah"]))
-        text: str = v["text"]
-        m = _QPC_NUMBER.search(text)
-        if not m:
-            raise TextError(f"QPC {key}: no trailing verse number")
-        if int(m.group(2).translate(_ARABIC_DIGITS)) != key[1]:
-            raise TextError(f"QPC {key}: trailing number {m.group(2)} ≠ ayah")
-        body = text[: m.start()]
-        tokens = body.split(" ")
-        if any(t == "" for t in tokens):
-            raise TextError(f"QPC {key}: empty token (double space)")
-        if " ".join(tokens) + m.group(1) + m.group(2) != text:
-            raise TextError(f"QPC {key}: token split is not lossless")
-        out[key] = QpcVerse(key[0], key[1], text, tokens, m.group(2), m.group(1))
-    if len(out) != TOTAL_VERSES:
-        raise TextError(f"QPC: {len(out)} verses, expected {TOTAL_VERSES}")
-    return out
+    text: str  # verbatim verse text as published, including the ayah-end mark
+    tokens: list[str]  # words, split on spaces; the ayah mark is NOT a token
+    number_text: str  # Arabic-Indic digits, e.g. '٢٥٥' — the font draws them as the ayah medallion
+    number_sep: str  # separator before the ayah mark, verbatim (U+00A0 in all but one verse)
+    page: int | None = None  # Madinah mushaf page (official KFGQPC data)
+    line_start: int | None = None
+    line_end: int | None = None
+    juz: int | None = None
+    imlaei: str | None = None  # KFGQPC's own imlāʾī text "used for search purpose"
+    hizb_mark: bool = False  # ۞ printed before this verse (start of a rub' al-hizb)
 
 
 def tanzil_tokens(text: str, surah: int, ayah: int) -> tuple[list[str], list[str]]:
@@ -178,3 +160,56 @@ def tanzil_tokens(text: str, surah: int, ayah: int) -> tuple[list[str], list[str
     if has_embedded_basmala(surah, ayah):
         return tokens[:BASMALA_TOKENS], tokens[BASMALA_TOKENS:]
     return [], tokens
+
+
+_DIGITS_AR = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
+
+
+def parse_kfgqpc_official(path: Path) -> dict[tuple[int, int], QpcVerse]:
+    """The official KFGQPC Hafs data (hafsData_v2-0.json, 2022-09-07).
+
+    Each ``aya_text`` ends with a separator and one ayah-mark code point (U+FC00 + ayah − 1) that
+    only the KFGQPC font draws as a medallion. The verbatim text is kept; for display the number is
+    rendered from Arabic-Indic digits, which the same font draws identically and which degrade safely
+    if the font is unavailable. Word tokens split on spaces; the official 2:6 contains one double space,
+    which is recorded, not "fixed".
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    out: dict[tuple[int, int], QpcVerse] = {}
+    for v in data:
+        key = (int(v["sura_no"]), int(v["aya_no"]))
+        text: str = v["aya_text"]
+        mark = text[-1]
+        if ord(mark) != 0xFC00 + key[1] - 1:
+            raise TextError(f"KFGQPC {key}: unexpected ayah mark U+{ord(mark):04X}")
+        sep = text[-2]
+        if sep not in ("\u00a0", " "):
+            raise TextError(f"KFGQPC {key}: unexpected separator before the ayah mark")
+        body = text[:-2]
+        hizb = body.startswith("\u06de\u00a0")  # ۞ rub' al-hizb sign, printed before the first word
+        if hizb:
+            body = body[2:]
+        if "\u06de" in body or "\u00a0" in body:
+            raise TextError(f"KFGQPC {key}: unexpected rub' sign or NBSP inside the verse body")
+        # Split on U+0020 only; the official 2:6 opens with one stray space, which yields an empty
+        # leading token that is dropped here (the stored verse text keeps it verbatim).
+        tokens = [t for t in body.split(" ") if t]
+        if not tokens or " ".join(tokens) != body.strip(" ") or "  " in body:
+            raise TextError(f"KFGQPC {key}: unexpected whitespace")
+        out[key] = QpcVerse(
+            surah=key[0],
+            ayah=key[1],
+            text=text,
+            tokens=tokens,
+            number_text=str(key[1]).translate(_DIGITS_AR),
+            number_sep=sep,
+            page=int(v["page"]),
+            line_start=int(v["line_start"]),
+            line_end=int(v["line_end"]),
+            juz=int(v["jozz"]),
+            imlaei=v["aya_text_emlaey"],
+            hizb_mark=hizb,
+        )
+    if len(out) != TOTAL_VERSES:
+        raise TextError(f"KFGQPC: {len(out)} verses, expected {TOTAL_VERSES}")
+    return out

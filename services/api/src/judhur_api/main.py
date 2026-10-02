@@ -51,7 +51,11 @@ def dataset_version() -> str:
 def cached(request: Request, payload: Any) -> Response:
     """Content is immutable within a dataset release: strong ETag over version + URL, long cache."""
     version = dataset_version()
-    etag = '"' + hashlib.sha256(f"{version}|{request.url.path}?{request.url.query}".encode()).hexdigest()[:32] + '"'
+    etag = (
+        '"'
+        + hashlib.sha256(f"{version}|{request.url.path}?{request.url.query}".encode()).hexdigest()[:32]
+        + '"'
+    )
     headers = {"ETag": etag, "Cache-Control": CONTENT_CACHE, "X-Dataset-Version": version}
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
@@ -90,6 +94,7 @@ def surah(
     number: int,
     start: int = Query(1, ge=1, description="first ayah"),
     end: int | None = Query(None, ge=1, description="last ayah (inclusive)"),
+    translation: str | None = Query(None, description="attach a translation work, e.g. saheeh"),
 ) -> Response:
     if not 1 <= number <= 114:
         raise not_found("surah")
@@ -100,7 +105,14 @@ def surah(
         last = min(end or s["verse_count"], s["verse_count"])
         if start > last:
             raise HTTPException(status_code=400, detail="start is after end")
-        return cached(request, {"surah": s, "verses": content.surah_verses(conn, number, start, last)})
+        verses = content.surah_verses(conn, number, start, last)
+        payload: dict[str, Any] = {"surah": s, "verses": verses}
+        if translation:
+            work = content.attach_translation(conn, verses, translation)
+            if work is None:
+                raise not_found("translation")
+            payload["translation"] = work
+        return cached(request, payload)
 
 
 @router.get("/verses/{key}", summary="One verse (e.g. 2:255) with full word morphology")
@@ -117,6 +129,41 @@ def verse(request: Request, key: str) -> Response:
         return cached(request, v)
 
 
+@router.get("/works", summary="Tafsir and translation works with their sources and licenses")
+def works(
+    request: Request,
+    kind: str | None = Query(None, pattern="^(tafsir|translation)$"),
+    lang: str | None = None,
+) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": content.works(conn, kind, lang)})
+
+
+@router.get("/works/{work_id}/surahs/{number}", summary="All passages of one work for one surah")
+def work_surah(request: Request, work_id: str, number: int) -> Response:
+    if not 1 <= number <= 114:
+        raise not_found("surah")
+    with connect() as conn:
+        out = content.work_surah(conn, work_id, number)
+        if out is None:
+            raise not_found("work")
+        return cached(request, out)
+
+
+@router.get(
+    "/verses/{key}/commentary", summary="Tafsir/translation passages covering a verse, per requested work"
+)
+def commentary(
+    request: Request, key: str, works: str = Query("muyassar", description="comma-separated work ids")
+) -> Response:
+    ids = [w for w in works.split(",") if w][:10]
+    with connect() as conn:
+        out = content.verse_commentary(conn, key, ids)
+        if out is None:
+            raise not_found("verse")
+        return cached(request, {"verse": key, "data": out})
+
+
 @router.get("/pages/{page}", summary="All verses on one Madinah-mushaf page (1–604)")
 def page(request: Request, page: int) -> Response:
     if not 1 <= page <= 604:
@@ -125,7 +172,9 @@ def page(request: Request, page: int) -> Response:
         return cached(request, {"page": page, "verses": content.verses_by_page(conn, page)})
 
 
-@router.get("/words/{location}", summary="Everything about one word (e.g. 2:255:1): morphology, lemma, root family")
+@router.get(
+    "/words/{location}", summary="Everything about one word (e.g. 2:255:1): morphology, lemma, root family"
+)
 def word(request: Request, location: str) -> Response:
     with connect() as conn:
         w = content.word(conn, location)
@@ -150,7 +199,9 @@ def roots(
         return cached(request, {"data": data, "total": total, "limit": limit, "offset": offset})
 
 
-@router.get("/roots/{root}", summary="A root (e.g. علم, ع ل م, ʿ-l-m): family by lemma and form, distribution")
+@router.get(
+    "/roots/{root}", summary="A root (e.g. علم, ع ل م, ʿ-l-m): family by lemma and form, distribution"
+)
 def root(request: Request, root: str) -> Response:
     with connect() as conn:
         r = content.root_detail(conn, root)
@@ -185,7 +236,9 @@ def lemma(request: Request, lemma_id: int) -> Response:
 
 
 @router.get("/search", summary="Search verses, surahs, roots, lemmas and word forms")
-def search(request: Request, q: str = Query(..., min_length=1, max_length=200), limit: int = Query(20, ge=1, le=100)) -> Response:
+def search(
+    request: Request, q: str = Query(..., min_length=1, max_length=200), limit: int = Query(20, ge=1, le=100)
+) -> Response:
     with connect() as conn:
         return cached(request, run_search(conn, q, limit))
 
@@ -222,7 +275,9 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def rate_limit(request: Request, call_next: Any) -> Response:
-        ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(",")[0]
+        ip = (
+            request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")
+        ).split(",")[0]
         now = time.monotonic()
         q = _hits[ip]
         while q and now - q[0] > 60:
@@ -238,7 +293,9 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(_: Request, exc: StarletteHTTPException) -> ORJSONResponse:
-        code = {400: "bad_request", 404: "not_found", 405: "bad_request", 429: "rate_limited"}.get(exc.status_code, "server_error")
+        code = {400: "bad_request", 404: "not_found", 405: "bad_request", 429: "rate_limited"}.get(
+            exc.status_code, "server_error"
+        )
         return error(exc.status_code, code, str(exc.detail))
 
     @app.exception_handler(RequestValidationError)

@@ -12,10 +12,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from sqlalchemy import Connection
-
 from judhur_arabic import has_arabic, is_uthmani, normalize, parse_root_input
 from judhur_arabic import key as root_key
+from sqlalchemy import Connection
 
 from .content import lemma_display
 from .db import one, rows
@@ -49,7 +48,11 @@ def _surah_by_name(conn: Connection, q: str) -> dict[str, Any] | None:
     for s in surahs:
         if qa and normalize(s["name_ar"]) == qa:
             return s
-        if ql and len(ql) >= 3 and (ql == _simplify_latin(s["name_translit"]) or ql == _simplify_latin(s["name_en"])):
+        if (
+            ql
+            and len(ql) >= 3
+            and (ql == _simplify_latin(s["name_translit"]) or ql == _simplify_latin(s["name_en"]))
+        ):
             return s
     return None
 
@@ -61,7 +64,11 @@ def detect(conn: Connection, q: str) -> tuple[str, dict[str, Any]]:
     ascii_q = raw.translate(_DIGITS)
     m = _REF_RE.match(ascii_q)
     if m:
-        return "verse_ref", {"surah": int(m.group(1)), "ayah": int(m.group(2)), "to": int(m.group(3) or 0) or None}
+        return "verse_ref", {
+            "surah": int(m.group(1)),
+            "ayah": int(m.group(2)),
+            "to": int(m.group(3) or 0) or None,
+        }
     m = _SURAH_NUM_RE.match(ascii_q)
     if m and 1 <= int(m.group(1)) <= 114:
         return "surah", {"surah": int(m.group(1))}
@@ -100,7 +107,13 @@ def _root_row(conn: Connection, key: str) -> dict[str, Any] | None:
 
 def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
     kind, info = detect(conn, q)
-    results: dict[str, list[dict[str, Any]]] = {"verses": [], "surahs": [], "roots": [], "lemmas": [], "words": []}
+    results: dict[str, list[dict[str, Any]]] = {
+        "verses": [],
+        "surahs": [],
+        "roots": [],
+        "lemmas": [],
+        "words": [],
+    }
     norm_q = normalize(q)
     # Text pasted from a mushaf is matched on the Uthmani shadow; everyday spelling on the imlāʾī one.
     wcol, vcol = ("norm_uthmani", "norm_uthmani") if is_uthmani(q) else ("norm", "norm")
@@ -121,7 +134,9 @@ def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
         r = _root_row(conn, root_key(info["letters"]))
         if r:
             results["roots"].append(r)
-    if kind in ("arabic_word", "arabic_phrase") or (kind == "surah" and has_arabic(q) and not norm_q.isdigit()):
+    if kind in ("arabic_word", "arabic_phrase") or (
+        kind == "surah" and has_arabic(q) and not norm_q.isdigit()
+    ):
         # A surah name (النور، الفجر) is also an Arabic word — search it as one too.
         if kind in ("arabic_word", "surah") and " " not in norm_q.strip():
             # exact forms first, then forms that start with the query; grouped by form + lemma
@@ -197,4 +212,8 @@ def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
             w["lemma"] = lemma_display(w["lemma"])
 
     ar, en = LABELS[kind]
-    return {"query": q, "detected": {"kind": kind, "label_ar": ar, "label_en": en, **info}, "results": results}
+    return {
+        "query": q,
+        "detected": {"kind": kind, "label_ar": ar, "label_en": en, **info},
+        "results": results,
+    }

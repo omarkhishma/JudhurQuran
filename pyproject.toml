@@ -23,7 +23,7 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
-ignore = ["RUF001", "RUF002", "RUF003"]  # Arabic text in strings/comments is intentional
+ignore = ["RUF001", "RUF002", "RUF003", "E501"]  # Arabic text is intentional; the formatter owns line length (SQL strings stay readable)
 
 [tool.pytest.ini_options]
 testpaths = ["packages/arabic-py/tests", "pipeline/tests", "services/api/tests"]

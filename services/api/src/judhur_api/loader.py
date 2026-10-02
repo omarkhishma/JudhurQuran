@@ -29,7 +29,8 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
     ("surahs", "surahs.jsonl", ["number", "name_ar", "name_translit", "name_en", "revelation_place",
                                 "revelation_order", "verse_count", "rukus", "page_start", "page_end",
                                 "juz_start", "word_count", "has_basmala"], set()),
-    ("verses", "verses.jsonl", ["id", "surah", "ayah", "key", "page", "juz", "hizb_quarter", "manzil", "ruku",
+    ("verses", "verses.jsonl", ["id", "surah", "ayah", "key", "page", "juz", "line_start", "line_end", "hizb_mark",
+                                "hizb_quarter", "manzil", "ruku",
                                 "sajda", "text_qpc", "number_text", "text_tanzil", "text_imlaei", "norm", "norm_uthmani",
                                 "word_count", "token_count", "sha256"], set()),
     ("tokens", "tokens.jsonl", ["id", "verse_id", "position", "text", "word_from", "word_to"], set()),
@@ -41,12 +42,30 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                               "text_uthmani", "text_imlaei", "norm", "norm_uthmani", "root_id", "lemma_id", "pos",
                               "definite", "features", "segments", "translit", "gloss_en"], {"features", "segments"}),
     ("root_variants", "root_variants.jsonl", ["word_id", "source", "root_key"], set()),
+    ("works", "works.jsonl", ["id", "kind", "lang", "level", "title_ar", "title_en", "author_ar", "author_en",
+                              "source_id", "version", "file_sha256", "sort_order", "default_for",
+                              "strip_leading_number", "verse_coverage", "passage_count"], set()),
+    ("work_passages", "work_passages.jsonl", ["id", "work_id", "verse_from", "verse_to", "text", "footnotes"], set()),
 ]  # fmt: skip
 
-TRUNCATE_ORDER = ["root_variants", "words", "lemmas", "roots", "tokens", "verses", "surahs", "sources", "dataset"]
+TRUNCATE_ORDER = [
+    "work_passages",
+    "works",
+    "root_variants",
+    "words",
+    "lemmas",
+    "roots",
+    "tokens",
+    "verses",
+    "surahs",
+    "sources",
+    "dataset",
+]
 
 
-def _rows(path: Path, columns: list[str], json_cols: set[str], rename: dict[str, str]) -> Iterator[tuple[Any, ...]]:
+def _rows(
+    path: Path, columns: list[str], json_cols: set[str], rename: dict[str, str]
+) -> Iterator[tuple[Any, ...]]:
     with path.open(encoding="utf-8") as fh:
         for line in fh:
             obj = json.loads(line)
@@ -69,9 +88,20 @@ def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[st
                 """insert into content.sources (id, kind, title_ar, title_en, version, url, license, license_url,
                    attribution_ar, attribution_en, role, files)
                    values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                (src["id"], src["kind"], src["title_ar"], src["title_en"], src.get("version"), src["url"],
-                 src["license"], src.get("license_url"), src["attribution_ar"], src["attribution_en"],
-                 src["role"], Jsonb(src.get("files", []))),
+                (
+                    src["id"],
+                    src["kind"],
+                    src["title_ar"],
+                    src["title_en"],
+                    src.get("version"),
+                    src["url"],
+                    src["license"],
+                    src.get("license_url"),
+                    src["attribution_ar"],
+                    src["attribution_en"],
+                    src["role"],
+                    Jsonb(src.get("files", [])),
+                ),
             )
         counts["sources"] = len(sources)
         for table, file, columns, json_cols in TABLES:

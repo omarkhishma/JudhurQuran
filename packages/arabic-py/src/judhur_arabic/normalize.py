@@ -32,7 +32,10 @@ _MARK_RANGES: tuple[tuple[int, int], ...] = (
     (0x0670, 0x0670),  # superscript (dagger) alef
     (0x06D6, 0x06DC),  # small high ligatures / pause marks ۖ ۗ ۘ ۙ ۚ ۛ ۜ
     (0x06DD, 0x06DE),  # end of ayah, rub el hizb
-    (0x06DF, 0x06E4),  # small high rounded zero, upright rect. zero, dotless head of khah (QPC sukun), meem, low seen, madda
+    (
+        0x06DF,
+        0x06E4,
+    ),  # small high rounded zero, upright rect. zero, dotless head of khah (QPC sukun), meem, low seen, madda
     (0x06E5, 0x06E6),  # small waw, small yeh (modifier letters, not base letters)
     (0x06E7, 0x06E8),  # small high yeh, small high noon
     (0x06E9, 0x06E9),  # place of sajdah ۩

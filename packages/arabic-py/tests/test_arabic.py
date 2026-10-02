@@ -2,7 +2,6 @@
 editors silently reorder marks in typed literals (Judhur lesson)."""
 
 import pytest
-
 from judhur_arabic import (
     BuckwalterError,
     bw_lemma_to_arabic,

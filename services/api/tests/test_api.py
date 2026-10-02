@@ -10,7 +10,6 @@ import hashlib
 
 import pytest
 from fastapi.testclient import TestClient
-
 from judhur_api.main import app
 
 client = TestClient(app)
@@ -42,10 +41,28 @@ def test_verse_text_is_byte_identical_to_its_recorded_hash() -> None:
     v = get("/api/v1/verses/2:255")
     full = get("/api/v1/surahs/2", start=255, end=255)["verses"][0]
     assert v["text_qpc"] == full["text_qpc"]
-    # tokens + separator + number reconstruct the verse exactly (lossless split)
-    rebuilt = " ".join(t["text"] for t in v["tokens"])
-    assert v["text_qpc"].startswith(rebuilt) and v["text_qpc"].endswith(v["number_text"])
     assert v["prev"] == "2:254" and v["next"] == "2:256"
+
+
+def test_display_tokens_reconstruct_the_verbatim_text() -> None:
+    """Tokens + the ۞ sign + separator + KFGQPC ayah mark rebuild every verse of al-Baqarah exactly
+    (the official 2:6 opens with one stray space, kept verbatim in the stored text)."""
+    for v in get("/api/v1/surahs/2")["verses"]:
+        body = " ".join(t["text"] for t in v["tokens"])
+        prefix = "\u06de\u00a0" if v["hizb_mark"] else ""
+        lead = " " if v["key"] == "2:6" else ""
+        mark = chr(0xFC00 + v["ayah"] - 1)
+        assert v["text_qpc"] in (prefix + lead + body + "\u00a0" + mark, prefix + lead + body + " " + mark), (
+            v["key"]
+        )
+        assert v["number_text"] == str(v["ayah"]).translate(str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩"))
+
+
+def test_juz_boundaries_follow_the_printed_hizb_signs() -> None:
+    # Juz 4 and juz 11 begin where the KFGQPC text prints ۞ (3:93, 9:93).
+    assert get("/api/v1/verses/3:92")["juz"] == 3 and get("/api/v1/verses/3:93")["juz"] == 4
+    assert get("/api/v1/verses/9:92")["juz"] == 10 and get("/api/v1/verses/9:93")["juz"] == 11
+    assert get("/api/v1/verses/3:93")["hizb_mark"] is True
 
 
 def test_every_token_maps_to_words_and_back() -> None:

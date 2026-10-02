@@ -1,0 +1,122 @@
+# Tafsir and translation works served by the product.
+# Each work names its source (see sources.yaml), the raw file it is imported from, and how it is shown.
+# Texts are stored verbatim; nothing here is generated or paraphrased.
+
+works:
+  - id: muyassar
+    kind: tafsir
+    lang: ar
+    level: concise
+    title_ar: التفسير الميسر
+    title_en: al-Tafsir al-Muyassar
+    author_ar: نخبة من العلماء — مجمع الملك فهد لطباعة المصحف الشريف
+    author_en: A committee of scholars — King Fahd Glorious Quran Printing Complex
+    source: quranenc
+    format: quranenc-sqlite
+    file: quranenc/arabic_moyassar/arabic_moyassar.sqlite
+    version: QuranEnc SQLite 2025-03-25
+    default_for: ar
+
+  - id: mukhtasar
+    kind: tafsir
+    lang: ar
+    level: concise
+    title_ar: المختصر في تفسير القرآن الكريم
+    title_en: al-Mukhtasar fi Tafsir al-Quran
+    author_ar: مركز تفسير للدراسات القرآنية
+    author_en: Tafsir Center for Quranic Studies
+    source: quranenc
+    format: quranenc-sqlite
+    file: quranenc/arabic_mokhtasar/arabic_mokhtasar.sqlite
+    version: QuranEnc SQLite 2025-03-25
+
+  - id: saadi
+    kind: tafsir
+    lang: ar
+    level: medium
+    title_ar: تيسير الكريم الرحمن في تفسير كلام المنان
+    title_en: Taysir al-Karim al-Rahman (al-Sa'di)
+    author_ar: الشيخ عبد الرحمن بن ناصر السعدي (ت ١٣٧٦هـ)
+    author_en: ʿAbd al-Raḥmān ibn Nāṣir al-Saʿdī (d. 1376 AH / 1956 CE)
+    source: tafsir-api-qul
+    format: tafsir-api
+    file: tafsir_api/ar-tafsir-as-saadi.json
+    version: tafsir_api v1.2.2 (QUL 308)
+
+  - id: baghawi
+    kind: tafsir
+    lang: ar
+    level: detailed
+    title_ar: معالم التنزيل
+    title_en: Maʿalim al-Tanzil (al-Baghawi)
+    author_ar: الإمام الحسين بن مسعود البغوي (ت ٥١٦هـ)
+    author_en: al-Ḥusayn ibn Masʿūd al-Baghawī (d. 516 AH / 1122 CE)
+    source: tafsir-api-qul
+    format: tafsir-api
+    file: tafsir_api/ar-tafsir-al-baghawi.json
+    version: tafsir_api v1.2.2 (QUL 27)
+
+  - id: ibn-kathir
+    kind: tafsir
+    lang: ar
+    level: detailed
+    title_ar: تفسير القرآن العظيم
+    title_en: Tafsir al-Quran al-ʿAzim (Ibn Kathir)
+    author_ar: الحافظ إسماعيل بن عمر ابن كثير (ت ٧٧٤هـ)
+    author_en: Ismāʿīl ibn ʿUmar Ibn Kathīr (d. 774 AH / 1373 CE)
+    source: tafsir-api-qul
+    format: tafsir-api
+    file: tafsir_api/ar-tafsir-ibn-kathir.json
+    version: tafsir_api v1.2.2 (QUL 22)
+
+  - id: qurtubi
+    kind: tafsir
+    lang: ar
+    level: detailed
+    title_ar: الجامع لأحكام القرآن
+    title_en: al-Jamiʿ li-Ahkam al-Quran (al-Qurtubi)
+    author_ar: الإمام محمد بن أحمد القرطبي (ت ٦٧١هـ)
+    author_en: Muḥammad ibn Aḥmad al-Qurṭubī (d. 671 AH / 1273 CE)
+    source: tafsir-api-qul
+    format: tafsir-api
+    file: tafsir_api/ar-tafseer-al-qurtubi.json
+    version: tafsir_api v1.2.2 (QUL 23)
+
+  - id: tabari
+    kind: tafsir
+    lang: ar
+    level: detailed
+    title_ar: جامع البيان عن تأويل آي القرآن
+    title_en: Jamiʿ al-Bayan (al-Tabari)
+    author_ar: الإمام محمد بن جرير الطبري (ت ٣١٠هـ)
+    author_en: Muḥammad ibn Jarīr al-Ṭabarī (d. 310 AH / 923 CE)
+    source: tafsir-api-qul
+    format: tafsir-api
+    file: tafsir_api/ar-tafsir-al-tabari.json
+    version: tafsir_api v1.2.2 (QUL 37)
+
+  - id: saheeh
+    kind: translation
+    lang: en
+    title_ar: صحيح إنترناشيونال (الإنجليزية)
+    title_en: Saheeh International
+    author_ar: صحيح إنترناشيونال — إصدار مركز نور الدولي
+    author_en: Saheeh International — issued by Noor International Center
+    source: quranenc
+    format: quranenc-sqlite
+    file: quranenc/english_saheeh/english_saheeh.sqlite
+    version: QuranEnc english_saheeh v1.1.2
+    strip_leading_number: true
+    default_for: en
+
+  - id: rwwad
+    kind: translation
+    lang: en
+    title_ar: ترجمة مركز رواد الترجمة (الإنجليزية)
+    title_en: Rowwad Translation Center
+    author_ar: مركز رواد الترجمة بالتعاون مع جمعية الربوة وجمعية خدمة المحتوى الإسلامي باللغات وإسلام هاوس
+    author_en: Rowwad Translation Center, with the Rabwah Dawah Association, the Islamic Content Service Association in Languages and IslamHouse.com
+    source: quranenc
+    format: quranenc-sqlite
+    file: quranenc/english_rwwad/english_rwwad.sqlite
+    version: QuranEnc english_rwwad v1.0.19

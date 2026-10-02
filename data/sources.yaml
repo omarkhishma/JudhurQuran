@@ -6,18 +6,19 @@
 sources:
   - id: qpc-hafs
     kind: quran-text
-    role: display text (Madinah mushaf, Hafs ʿan ʿĀṣim)
-    title_ar: نص مصحف المدينة النبوية (رواية حفص) — مجمع الملك فهد لطباعة المصحف الشريف
-    title_en: KFGQPC Hafs Uthmanic text (King Fahd Glorious Quran Printing Complex)
-    version: text_qpc_hafs (via QUL / qurancdn distribution)
-    url: https://qul.tarteel.ai/resources/quran-script
-    license: KFGQPC terms — free to use and distribute unmodified; may not be sold or altered
-    license_url: https://qurancomplex.gov.sa/
+    role: display text (Madinah mushaf, Hafs ʿan ʿĀṣim) with page, line and juz numbers, and the official imlāʾī search text
+    title_ar: بيانات مصحف المدينة النبوية برواية حفص (الإصدار ٢٫٠) — مجمع الملك فهد لطباعة المصحف الشريف
+    title_en: KFGQPC Hafs Uthmanic data v2.0 (King Fahd Glorious Quran Printing Complex)
+    version: "2.0 (2022-09-07)"
+    url: https://qurancomplex.gov.sa/techquran/dev/
+    license: KFGQPC terms — free to use in websites and software; the text may not be modified or sold
+    license_url: https://qurancomplex.gov.sa/techquran/dev/
     attribution_ar: النص القرآني من مجمع الملك فهد لطباعة المصحف الشريف بالمدينة المنورة.
     attribution_en: Quran text by the King Fahd Glorious Quran Printing Complex, Madinah.
     files:
-      - path: qpc/qpc-hafs-via-qul.json
-        sha256: 8a50e6e5743946ff30a80c4deda3bc3bf97deeeb40c6b17525ca89a6c2e392d2
+      - path: kfgqpc-uthmanic-hafs-v2-0/UthmanicHafs_v2-0 data/hafsData_v2-0.json
+        sha256: d2960b3217962e7e4252abdcece67bea3d6b48271e4cd3af45bbbb2dd5c872ca
+        md5: 2489c0e80ddd2e3505d9fce233567516
 
   - id: kfgqpc-hafs-font
     kind: font
@@ -106,3 +107,31 @@ sources:
     files:
       - path: qac-morphology-mustafa0x/quran-morphology.txt
         sha256: 742bfac59941b2cb09736d5b7aae694af50792261fb8450cbf6afafcc340645f
+
+  - id: quranenc
+    kind: tafsir-translation
+    role: al-Muyassar and al-Mukhtasar tafsir; Saheeh International and Rowwad English translations
+    title_ar: موسوعة القرآن الكريم (QuranEnc.com)
+    title_en: The Noble Qur'an Encyclopedia (QuranEnc.com)
+    url: https://quranenc.com/
+    license: "QuranEnc terms: may be downloaded and re-published without modification, addition or deletion; credit the publisher and QuranEnc.com; state and keep the version; update to new versions"
+    license_url: https://quranenc.com/en/home/api
+    attribution_ar: المصدر — موسوعة القرآن الكريم QuranEnc.com (مع ذكر الناشر ورقم الإصدار لكل ترجمة وتفسير).
+    attribution_en: Source — The Noble Qur'an Encyclopedia, QuranEnc.com (publisher and version stated per work).
+    files:
+      - path: quranenc/arabic_moyassar/arabic_moyassar.sqlite
+      - path: quranenc/arabic_mokhtasar/arabic_mokhtasar.sqlite
+      - path: quranenc/english_saheeh/english_saheeh.sqlite
+      - path: quranenc/english_rwwad/english_rwwad.sqlite
+
+  - id: tafsir-api-qul
+    kind: tafsir
+    role: digital text of classical tafsir works (public-domain authors)
+    title_ar: النصوص الرقمية للتفاسير (المكتبة القرآنية الشاملة QUL عبر مستودع tafsir_api)
+    title_en: Digital tafsir texts — Quranic Universal Library (QUL) via spa5k/tafsir_api v1.2.2
+    version: v1.2.2
+    url: https://github.com/spa5k/tafsir_api
+    license: Works by authors who died centuries ago (al-Tabari, al-Baghawi, al-Qurtubi, Ibn Kathir) are in the public domain; al-Sa'di (d. 1956) is public domain in life+50 jurisdictions and in life+70 ones from 2027-01-01. The repository's MIT license covers its code only.
+    license_url: https://qul.tarteel.ai/faq
+    attribution_ar: مصدر النص الرقمي — المكتبة القرآنية الشاملة (qul.tarteel.ai)
+    attribution_en: Digital text source — Quranic Universal Library (qul.tarteel.ai)

@@ -25,16 +25,17 @@ from judhur_arabic import normalize, plain_spelling, skeleton, spaced, strip_mar
 
 from . import labels
 from .align import AlignmentError, align, align_fuzzy
-from .morphology import ForkWord, MorphWord, Stem, group_by_verse, parse_fork, parse_v2, parse_v04
+from .morphology import ForkWord, MorphWord, Stem, group_by_verse, parse_fork, parse_v04, parse_v2
 from .texts import (
     BASMALA_TOKENS,
     TOTAL_VERSES,
     QuranMeta,
-    parse_qpc_json,
+    parse_kfgqpc_official,
     parse_tanzil_meta,
     parse_tanzil_txt,
     tanzil_tokens,
 )
+from .works import build_works
 
 EXPECTED_WORDS = 77429
 
@@ -44,18 +45,22 @@ class RawPaths:
     tanzil_uthmani: Path
     tanzil_simple_clean: Path
     tanzil_meta: Path
-    qpc: Path
+    kfgqpc: Path
     qac_v04: Path
     qac_v2: Path
     qac_fork: Path
+    root: Path
+    works_registry: Path | None = None
 
     @classmethod
-    def default(cls, raw: Path) -> RawPaths:
+    def default(cls, raw: Path, works_registry: Path | None = None) -> RawPaths:
         return cls(
+            root=raw,
+            works_registry=works_registry,
             tanzil_uthmani=raw / "tanzil/quran-uthmani.txt",
             tanzil_simple_clean=raw / "tanzil/quran-simple-clean.txt",
             tanzil_meta=raw / "tanzil/quran-data.xml",
-            qpc=raw / "qpc/qpc-hafs-via-qul.json",
+            kfgqpc=raw / "kfgqpc-uthmanic-hafs-v2-0/UthmanicHafs_v2-0 data/hafsData_v2-0.json",
             qac_v04=raw / "qac/quranic-corpus-morphology-0.4.txt",
             qac_v2=raw / "qac-v2-kaisdukes/morphology.txt",
             qac_fork=raw / "qac-morphology-mustafa0x/quran-morphology.txt",
@@ -158,7 +163,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
     tanzil = parse_tanzil_txt(raw.tanzil_uthmani)
     simple = parse_tanzil_txt(raw.tanzil_simple_clean)
     meta = parse_tanzil_meta(raw.tanzil_meta)
-    qpc = parse_qpc_json(raw.qpc)
+    qpc = parse_kfgqpc_official(raw.kfgqpc)
     v04 = parse_v04(raw.qac_v04)
     if len(v04) != EXPECTED_WORDS:
         raise ValueError(f"corpus v0.4 has {len(v04)} words, expected {EXPECTED_WORDS}")
@@ -201,7 +206,8 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         words = by_verse[k]
         q = qpc[k]
         _, t_tok = tanzil_tokens(tanzil.verses[k], s, a)
-        _, simple_tok = tanzil_tokens(simple.verses[k], s, a)
+        # Standard (imlāʾī) spelling for search: KFGQPC's own "emlaey" text, aligned word by word.
+        simple_tok = [x for x in (q.imlaei or simple.verses[k]).split(" ") if x]
         forms = [_word_form(w) for w in words]
 
         try:
@@ -209,7 +215,13 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         except AlignmentError:
             g_qpc = align(forms, q.tokens, skeleton)
             align_stats["qpc_skeleton_fallback"] += 1
-            report["findings"].append({"kind": "spelling-variant", "verse": f"{s}:{a}", "detail": "corpus text (Tanzil 1.0.2) differs in letters from QPC/Tanzil 1.1; aligned by consonant skeleton"})
+            report["findings"].append(
+                {
+                    "kind": "spelling-variant",
+                    "verse": f"{s}:{a}",
+                    "detail": "corpus text (Tanzil 1.0.2) differs in letters from QPC/Tanzil 1.1; aligned by consonant skeleton",
+                }
+            )
         try:
             g_tz = align(t_tok, simple_tok, skeleton)
         except AlignmentError:
@@ -331,14 +343,22 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             v2_letters = v2w.primary.root
             if v2_letters != primary_letters:
                 variants_out.append(
-                    {"word_id": word_id, "location": w.location, "source": "qac-v2",
-                     "root": root_key(v2_letters) if v2_letters else None}
+                    {
+                        "word_id": word_id,
+                        "location": w.location,
+                        "source": "qac-v2",
+                        "root": root_key(v2_letters) if v2_letters else None,
+                    }
                 )
             fork_letters = _fork_canon(fork_by_loc[w.location].root)
             if fork_letters != primary_letters:
                 variants_out.append(
-                    {"word_id": word_id, "location": w.location, "source": "qac-fork-mustafa0x",
-                     "root": root_key(fork_letters) if fork_letters else None}
+                    {
+                        "word_id": word_id,
+                        "location": w.location,
+                        "source": "qac-fork-mustafa0x",
+                        "root": root_key(fork_letters) if fork_letters else None,
+                    }
                 )
 
             tf, tt = word_tokens[i]
@@ -372,8 +392,14 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "surah": s,
                 "ayah": a,
                 "key": f"{s}:{a}",
-                "page": pos["page"],
+                "page": q.page,
+                # Juz from Tanzil: it agrees with the ۞ signs printed in the KFGQPC text itself, while the
+                # KFGQPC JSON's juz field starts juz 4 at 3:92 and juz 11 at 9:94 (see DECISIONS).
                 "juz": pos["juz"],
+                "kfgqpc_juz": q.juz,
+                "line_start": q.line_start,
+                "line_end": q.line_end,
+                "hizb_mark": q.hizb_mark,
                 "hizb_quarter": pos["hizb_quarter"],
                 "manzil": pos["manzil"],
                 "ruku": pos["ruku"],
@@ -381,8 +407,10 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "text_qpc": q.text,
                 "number_text": q.number_text,
                 "text_tanzil": tanzil.verses[k],
-                "text_imlaei": simple.verses[k],
+                "text_imlaei": q.imlaei or simple.verses[k],
                 "norm": normalize(" ".join(simple_tok)),
+                "tanzil_page": pos["page"],
+                "tanzil_juz": pos["juz"],
                 "norm_uthmani": normalize(" ".join(q.tokens)),
                 "word_count": len(words),
                 "token_count": len(q.tokens),
@@ -392,6 +420,19 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
 
     if len(verses_out) != TOTAL_VERSES or word_id != EXPECTED_WORDS:
         raise ValueError(f"build produced {len(verses_out)} verses / {word_id} words")
+
+    report["page_differences_vs_tanzil"] = [
+        {"verse": v["key"], "kfgqpc": v["page"], "tanzil": v["tanzil_page"]}
+        for v in verses_out
+        if v["page"] != v["tanzil_page"]
+    ]
+    report["juz_field_differences_kfgqpc_vs_used"] = [
+        {"verse": v["key"], "kfgqpc_field": v["kfgqpc_juz"], "used": v["juz"]}
+        for v in verses_out
+        if v["juz"] != v["kfgqpc_juz"]
+    ]
+    for v in verses_out:
+        del v["tanzil_page"], v["tanzil_juz"], v["kfgqpc_juz"]
 
     surahs_out = []
     for n in range(1, 115):
@@ -456,7 +497,16 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             }
         )
 
+    works_out, passages_out, works_report = (
+        build_works(raw.root, raw.works_registry, {(v["surah"], v["ayah"]): v["id"] for v in verses_out})
+        if raw.works_registry
+        else ([], [], {})
+    )
+    report["works"] = works_report
+
     for name, rows in (
+        ("works", works_out),
+        ("work_passages", passages_out),
         ("surahs", surahs_out),
         ("verses", verses_out),
         ("tokens", tokens_out),
@@ -495,4 +545,3 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
     )
     (out_dir / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     return report
-

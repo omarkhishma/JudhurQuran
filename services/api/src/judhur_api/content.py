@@ -4,12 +4,12 @@ shaped for the API schemas in ``schemas.py``."""
 from __future__ import annotations
 
 import hashlib
+import re
 from typing import Any
 
-from sqlalchemy import Connection
-
-from judhur_arabic import parse_root_input
 from judhur_arabic import key as root_key
+from judhur_arabic import parse_root_input
+from sqlalchemy import Connection
 
 from .db import one, rows, scalar
 
@@ -53,7 +53,8 @@ def surah(conn: Connection, number: int) -> dict[str, Any] | None:
     return one(conn, "select * from content.surahs where number = :n", {"n": number})
 
 
-_VERSE_COLS = """v.id, v.surah, v.ayah, v.key, v.page, v.juz, v.hizb_quarter, v.manzil, v.ruku, v.sajda,
+_VERSE_COLS = """v.id, v.surah, v.ayah, v.key, v.page, v.juz, v.line_start, v.line_end, v.hizb_mark,
+                 v.hizb_quarter, v.manzil, v.ruku, v.sajda,
                  v.text_qpc, v.number_text, v.text_imlaei, v.word_count, v.token_count"""
 
 
@@ -124,7 +125,9 @@ def verse(conn: Connection, surah_no: int, ayah: int) -> dict[str, Any] | None:
 
 
 def verses_by_page(conn: Connection, page: int) -> list[dict[str, Any]]:
-    verses = rows(conn, f"select {_VERSE_COLS} from content.verses v where v.page = :p order by v.id", {"p": page})
+    verses = rows(
+        conn, f"select {_VERSE_COLS} from content.verses v where v.page = :p order by v.id", {"p": page}
+    )
     _attach_tokens_and_words(conn, verses, full_words=False)
     return verses
 
@@ -179,7 +182,9 @@ def word(conn: Connection, location: str) -> dict[str, Any] | None:
         "select position, text, word_from, word_to from content.tokens where verse_id = :id order by position",
         {"id": w["verse_id"]},
     )
-    v["surah_name_ar"] = scalar(conn, "select name_ar from content.surahs where number = :n", {"n": v["surah"]})
+    v["surah_name_ar"] = scalar(
+        conn, "select name_ar from content.surahs where number = :n", {"n": v["surah"]}
+    )
     w["verse"] = v
 
     w["lemma"] = None
@@ -224,7 +229,8 @@ def word(conn: Connection, location: str) -> dict[str, Any] | None:
 def word_occurrence_counts(conn: Connection, w: dict[str, Any]) -> dict[str, Any]:
     """How often this exact form, its lemma and its root occur — descriptive counts only."""
     same_form = scalar(
-        conn, "select count(*) from content.words where norm = (select norm from content.words where id = :id)",
+        conn,
+        "select count(*) from content.words where norm = (select norm from content.words where id = :id)",
         {"id": w["id"]},
     )
     return {
@@ -243,7 +249,11 @@ def next_steps(conn: Connection, w: dict[str, Any]) -> list[dict[str, Any]]:
         cousins = [x for x in root["lemmas"] if x["id"] != lemma["id"]]
         if cousins:
             c = cousins[0]
-            sample = scalar(conn, "select location from content.words where lemma_id = :l order by id limit 1", {"l": c["id"]})
+            sample = scalar(
+                conn,
+                "select location from content.words where lemma_id = :l order by id limit 1",
+                {"l": c["id"]},
+            )
             steps.append({"kind": "cousin", "lemma": c, "location": sample})
     if lemma:
         others = rows(
@@ -253,7 +263,13 @@ def next_steps(conn: Connection, w: dict[str, Any]) -> list[dict[str, Any]]:
         )
         if others:
             pick = others[_stable_pick(w["location"], len(others))]
-            steps.append({"kind": "verse", "location": pick["location"], "verse_key": f"{pick['surah']}:{pick['ayah']}"})
+            steps.append(
+                {
+                    "kind": "verse",
+                    "location": pick["location"],
+                    "verse_key": f"{pick['surah']}:{pick['ayah']}",
+                }
+            )
     feats = w["features"]
     vf = (feats.get("verb_form") or {}).get("number")
     der = (feats.get("derivation") or {}).get("tag")
@@ -271,9 +287,20 @@ def next_steps(conn: Connection, w: dict[str, Any]) -> list[dict[str, Any]]:
         if cand:
             c = cand[_stable_pick(w["location"] + "#shape", len(cand))]
             c["ar"] = lemma_display(c["ar"])
-            sample = scalar(conn, "select location from content.words where lemma_id = :l order by id limit 1", {"l": c["id"]})
-            steps.append({"kind": "shape", "lemma": c, "location": sample,
-                          "verb_form": feats.get("verb_form"), "derivation": feats.get("derivation")})
+            sample = scalar(
+                conn,
+                "select location from content.words where lemma_id = :l order by id limit 1",
+                {"l": c["id"]},
+            )
+            steps.append(
+                {
+                    "kind": "shape",
+                    "lemma": c,
+                    "location": sample,
+                    "verb_form": feats.get("verb_form"),
+                    "derivation": feats.get("derivation"),
+                }
+            )
     return steps
 
 
@@ -435,3 +462,95 @@ def lemma_detail(conn: Connection, lemma_id: int) -> dict[str, Any] | None:
     )
     return lem
 
+
+# ─── tafsir & translations ──────────────────────────────────────────────────
+
+_LEADING_NUMBER = re.compile(r"^\(\d+\)\s*")
+
+_WORK_COLS = """w.id, w.kind, w.lang, w.level, w.title_ar, w.title_en, w.author_ar, w.author_en, w.version,
+                w.default_for, w.verse_coverage, w.passage_count, w.strip_leading_number,
+                s.id as source_id, s.title_ar as source_title_ar, s.title_en as source_title_en, s.url as source_url,
+                s.license as source_license, s.attribution_ar, s.attribution_en"""
+
+
+def works(conn: Connection, kind: str | None = None, lang: str | None = None) -> list[dict[str, Any]]:
+    return rows(
+        conn,
+        f"""select {_WORK_COLS} from content.works w join content.sources s on s.id = w.source_id
+            where (cast(:kind as text) is null or w.kind = :kind) and (cast(:lang as text) is null or w.lang = :lang)
+            order by w.sort_order""",
+        {"kind": kind, "lang": lang},
+    )
+
+
+def _clean(text: str, strip_number: bool) -> str:
+    return _LEADING_NUMBER.sub("", text) if strip_number else text
+
+
+def verse_commentary(conn: Connection, verse_key: str, work_ids: list[str]) -> list[dict[str, Any]] | None:
+    vid = scalar(conn, "select id from content.verses where key = :k", {"k": verse_key})
+    if vid is None:
+        return None
+    meta = {w["id"]: w for w in works(conn)}
+    out = []
+    for wid in work_ids:
+        w = meta.get(wid)
+        if w is None:
+            continue
+        p = one(
+            conn,
+            """select p.text, p.footnotes, vf.key as verse_from, vt.key as verse_to
+               from content.work_passages p
+               join content.verses vf on vf.id = p.verse_from join content.verses vt on vt.id = p.verse_to
+               where p.work_id = :w and p.verse_from <= :v and p.verse_to >= :v""",
+            {"w": wid, "v": vid},
+        )
+        entry = {"work": {k: v for k, v in w.items() if k != "strip_leading_number"}, "passage": None}
+        if p:
+            p["text"] = _clean(p["text"], w["strip_leading_number"])
+            entry["passage"] = p
+        out.append(entry)
+    return out
+
+
+def attach_translation(conn: Connection, verses: list[dict[str, Any]], work_id: str) -> dict[str, Any] | None:
+    w = one(
+        conn,
+        "select id, title_ar, title_en, strip_leading_number from content.works where id = :w and kind = 'translation'",
+        {"w": work_id},
+    )
+    if w is None or not verses:
+        return None
+    texts = rows(
+        conn,
+        "select verse_from, text, footnotes from content.work_passages where work_id = :w and verse_from = any(:ids)",
+        {"w": work_id, "ids": [v["id"] for v in verses]},
+    )
+    by_id = {t["verse_from"]: t for t in texts}
+    for v in verses:
+        t = by_id.get(v["id"])
+        v["translation"] = (
+            {"text": _clean(t["text"], w["strip_leading_number"]), "footnotes": t["footnotes"]} if t else None
+        )
+    return {"id": w["id"], "title_ar": w["title_ar"], "title_en": w["title_en"]}
+
+
+def work_surah(conn: Connection, work_id: str, surah_no: int) -> dict[str, Any] | None:
+    w = next((x for x in works(conn) if x["id"] == work_id), None)
+    if w is None:
+        return None
+    passages = rows(
+        conn,
+        """select vf.ayah as from_ayah, vt.ayah as to_ayah, vf.surah as from_surah, vt.surah as to_surah,
+                  p.text, p.footnotes
+           from content.work_passages p
+           join content.verses vf on vf.id = p.verse_from join content.verses vt on vt.id = p.verse_to
+           where p.work_id = :w and p.verse_to >= (select min(id) from content.verses where surah = :s)
+             and p.verse_from <= (select max(id) from content.verses where surah = :s)
+           order by p.verse_from""",
+        {"w": work_id, "s": surah_no},
+    )
+    strip = w.pop("strip_leading_number")
+    for p in passages:
+        p["text"] = _clean(p["text"], strip)
+    return {"work": w, "passages": passages}

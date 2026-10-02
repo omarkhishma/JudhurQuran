@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from alembic import context
-from sqlalchemy import create_engine
-
 from judhur_api.settings import get_settings
+from sqlalchemy import create_engine
 
 
 def run_migrations_online() -> None:
