@@ -217,3 +217,34 @@ def test_text_hash_matches_dataset_record() -> None:
         texts += [v["text_qpc"] for v in get(f"/api/v1/surahs/{n}")["verses"]]
     assert len(texts) == 6236
     assert hashlib.sha256("\n".join(texts).encode()).hexdigest() == meta["text_sha256"]
+
+
+# ─── Lexica ─────────────────────────────────────────────────────────────────
+
+
+def test_root_core_meaning_comes_from_maqayis_with_citation() -> None:
+    r = get("/api/v1/roots/علم")
+    core = r["lexicon"]["core_meaning"]
+    assert core and core["work_id"] == "maqayis" and core["text"].startswith("العين واللام والميم")
+    assert core["page_ref"]
+    works = {w["id"] for w in r["lexicon"]["works"]}
+    assert {"mufradat", "maqayis", "lisan", "sihah", "lane"} <= works
+    for w in r["lexicon"]["works"]:
+        assert w["attribution_ar"] and w["license"]
+        for e in w["entries"]:
+            assert e["confidence"] in ("exact", "manual", "high")
+
+
+def test_lexicon_entry_full_body_and_only_displayable() -> None:
+    r = get("/api/v1/roots/علم")
+    entry_id = r["lexicon"]["works"][0]["entries"][0]["id"]
+    e = get(f"/api/v1/lexicon/entries/{entry_id}")
+    assert e["entry_id"] == entry_id and len(e["body"]) >= len(r["lexicon"]["works"][0]["entries"][0]["excerpt"])
+    assert client.get("/api/v1/lexicon/entries/1").status_code in (200, 404)
+
+
+def test_word_panel_carries_root_meaning() -> None:
+    w = get("/api/v1/words/2:255:23")  # يَشۡفَعُ
+    assert w["root"]["key"] == "شفع"
+    assert "مقارن" in w["root_meaning"]["core"]["text"]
+    assert w["root_meaning"]["mufradat"]["entry"]["excerpt"]

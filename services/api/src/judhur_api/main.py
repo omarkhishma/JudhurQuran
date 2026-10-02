@@ -236,6 +236,15 @@ def root_graph(request: Request, root: str) -> Response:
         return cached(request, g)
 
 
+@router.get("/lexicon/entries/{entry_id}", summary="One classical lexicon article (display only; see license)")
+def lexicon_entry(request: Request, entry_id: int) -> Response:
+    with connect() as conn:
+        e = content.lexicon_entry(conn, entry_id)
+        if e is None:
+            raise not_found("lexicon entry")
+        return cached(request, e)
+
+
 @router.get("/lemmas/{lemma_id}", summary="One lemma with its surface forms")
 def lemma(request: Request, lemma_id: int) -> Response:
     with connect() as conn:

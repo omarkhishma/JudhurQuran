@@ -26,7 +26,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "build":
         out = args.out or REPO / "data/build" / args.version
         t = time.time()
-        report = build(RawPaths.default(args.raw, REPO / "data/works.yaml"), out, args.version)
+        report = build(
+            RawPaths.default(args.raw, REPO / "data/works.yaml", REPO / "data/lexica.yaml"), out, args.version
+        )
         print(
             json.dumps(
                 {"out": str(out), "seconds": round(time.time() - t, 1), **report["counts"]},

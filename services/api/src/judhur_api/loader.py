@@ -46,6 +46,13 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                               "source_id", "version", "file_sha256", "sort_order", "default_for",
                               "strip_leading_number", "verse_coverage", "passage_count"], set()),
     ("work_passages", "work_passages.jsonl", ["id", "work_id", "verse_from", "verse_to", "text", "footnotes"], set()),
+    ("lexicon_works", "lexicon_works.jsonl", ["id", "title_ar", "title_en", "author_ar", "author_en", "death_hijri",
+                                              "death_ce", "lang", "edition_note", "source_url", "license",
+                                              "attribution_ar", "attribution_en", "redistributable", "sort_order"], set()),
+    ("lexicon_entries", "lexicon_entries.jsonl", ["id", "work_id", "root_key", "headword", "match", "confidence",
+                                                  "displayable", "body", "core_meaning", "page_ref", "source_ref"], set()),
+    ("gharib_glosses", "gharib_glosses.jsonl", ["id", "work_id", "surah", "ayah", "phrase", "gloss", "word_locations",
+                                                "page_ref", "source_ref"], set()),
 ]  # fmt: skip
 
 TRUNCATE_ORDER = [
@@ -106,6 +113,9 @@ def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[st
         counts["sources"] = len(sources)
         for table, file, columns, json_cols in TABLES:
             path = build_dir / file
+            if not path.exists():
+                counts[table] = 0
+                continue
             rename = {"root": "root_key"} if table == "root_variants" else {}
             n = 0
             with cur.copy(f"copy content.{table} ({', '.join(columns)}) from stdin") as copy:

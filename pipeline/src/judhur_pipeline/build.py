@@ -51,12 +51,14 @@ class RawPaths:
     qac_fork: Path
     root: Path
     works_registry: Path | None = None
+    lexica_registry: Path | None = None
 
     @classmethod
-    def default(cls, raw: Path, works_registry: Path | None = None) -> RawPaths:
+    def default(cls, raw: Path, works_registry: Path | None = None, lexica_registry: Path | None = None) -> RawPaths:
         return cls(
             root=raw,
             works_registry=works_registry,
+            lexica_registry=lexica_registry,
             tanzil_uthmani=raw / "tanzil/quran-uthmani.txt",
             tanzil_simple_clean=raw / "tanzil/quran-simple-clean.txt",
             tanzil_meta=raw / "tanzil/quran-data.xml",
@@ -504,9 +506,38 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
     )
     report["works"] = works_report
 
+    lex_works, lex_entries, gharib, lex_report = ([], [], [], {})
+    if raw.lexica_registry:
+        from .lexica import build_lexica
+
+        lex_works, lex_entries, gharib, lex_report = build_lexica(
+            raw.root, raw.lexica_registry, roots_out, words=words_out, surahs=surahs_out
+        )
+        # Display policy: exact (strict) and hand-mapped articles always; approximate (loose) mappings
+        # only at high confidence and labelled as such; medium/low wait for human review.
+        review = {r["entry_id"]: r for r in lex_report.get("review", [])}
+        for e in lex_entries:
+            r = review.get(e["id"])
+            e["confidence"] = (
+                "exact" if e["match"] == "strict" else "manual" if e["match"] == "manual" else (r or {}).get("confidence", "low")
+            )
+            e["displayable"] = e["root_key"] is not None and e["confidence"] in ("exact", "manual", "high")
+        # Ibn Qutaybah verse glosses are held back until merged numbered items are split (see PLAN).
+        gharib = []
+    report["lexica"] = {
+        "works": len(lex_works),
+        "entries": len(lex_entries),
+        "displayable": sum(1 for e in lex_entries if e.get("displayable")),
+        "review_by_confidence": lex_report.get("review_by_confidence"),
+        "coverage": lex_report.get("coverage"),
+    }
+
     for name, rows in (
         ("works", works_out),
         ("work_passages", passages_out),
+        ("lexicon_works", lex_works),
+        ("lexicon_entries", lex_entries),
+        ("gharib_glosses", gharib),
         ("surahs", surahs_out),
         ("verses", verses_out),
         ("tokens", tokens_out),

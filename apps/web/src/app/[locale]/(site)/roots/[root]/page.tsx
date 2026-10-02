@@ -5,8 +5,9 @@ import { api } from "@/lib/api";
 import type { RootDetail, Source, Surah } from "@/lib/types";
 import { DistributionChart } from "@/components/roots/DistributionChart";
 import { Concordance } from "@/components/roots/Concordance";
+import { RootLexicon } from "@/components/lexicon/RootLexicon";
 import { Icon } from "@/components/Icon";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, toArabicDigits } from "@/lib/format";
 
 export const revalidate = 86400;
 
@@ -39,6 +40,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
   const { locale, root } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("roots");
+  const tl = await getTranslations("lexicon");
   const [r, surahs, sources] = await Promise.all([
     load(root),
     api<{ data: Surah[] }>("/surahs"),
@@ -92,10 +94,18 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
         <p className="mt-2 max-w-[80ch] leading-relaxed">{t("howWeCountBody")}</p>
       </details>
 
-      <section className="mt-10" aria-labelledby="core-meaning">
-        <h2 id="core-meaning" className="mb-2 text-[18px] font-semibold">{t("coreMeaning")}</h2>
-        <p className="rounded-xl bg-card-2 px-4 py-3 text-[13.5px] text-t3">{t("lexiconSoon")}</p>
-      </section>
+      {r.lexicon.core_meaning && (
+        <section className="mt-10" aria-labelledby="core-meaning">
+          <h2 id="core-meaning" className="mb-2 text-[18px] font-semibold">{t("coreMeaning")}</h2>
+          <blockquote className="card p-5">
+            <p className="ar-classical text-[22px] leading-[2] text-t1" lang="ar">{r.lexicon.core_meaning.text}</p>
+            <footer className="mt-2 text-[12.5px] text-t3">
+              {`${r.lexicon.core_meaning.title_ar} — ${r.lexicon.core_meaning.author_ar}`}
+              {r.lexicon.core_meaning.page_ref ? ` · ${locale === "ar" ? toArabicDigits(r.lexicon.core_meaning.page_ref) : r.lexicon.core_meaning.page_ref}` : ""}
+            </footer>
+          </blockquote>
+        </section>
+      )}
 
       <section className="mt-10" aria-labelledby="family">
         <h2 id="family" className="text-[18px] font-semibold">{t("family")}</h2>
@@ -143,6 +153,12 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="mt-10 scroll-mt-24" aria-labelledby="lexicon-h" id="lexicon">
+        <h2 id="lexicon-h" className="text-[18px] font-semibold">{tl("inLexicons")}</h2>
+        <p className="mb-3 max-w-[80ch] text-[13.5px] text-t2">{tl("lexiconsLead")}</p>
+        <RootLexicon lexicon={r.lexicon} />
       </section>
 
       <section className="mt-10" aria-labelledby="dist">

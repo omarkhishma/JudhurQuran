@@ -171,6 +171,11 @@ export type WordDetail = {
   variants: Variant[];
   occurrences: { form: number; lemma: number | null; root: number | null };
   next_steps: NextStep[];
+  root_meaning: {
+    core: RootLexicon["core_meaning"];
+    mufradat: (Pick<LexiconWork, "id" | "title_ar" | "title_en" | "author_ar" | "death_hijri" | "attribution_ar" | "attribution_en"> & { entry: LexiconEntrySummary }) | null;
+  } | null;
+  glosses: Gloss[];
 };
 
 export type RootDetail = RootSummary & {
@@ -184,6 +189,7 @@ export type RootDetail = RootSummary & {
   }[];
   variants: { source: string; location: string; form: string; other_root: string | null }[];
   also_attributed: { source: string; location: string; form: string; corpus_root: string | null }[];
+  lexicon: RootLexicon;
 };
 
 export type Occurrence = {
@@ -280,3 +286,38 @@ export type SearchResult = {
     }[];
   };
 };
+
+export type LexiconWork = {
+  id: string;
+  title_ar: string;
+  title_en: string;
+  author_ar: string;
+  author_en: string;
+  death_hijri: number | null;
+  death_ce: number | null;
+  lang: string;
+  edition_note: string;
+  source_url: string;
+  license: string;
+  attribution_ar: string;
+  attribution_en: string;
+  redistributable: boolean;
+};
+
+export type LexiconEntrySummary = {
+  id: number;
+  headword: string;
+  match: string | null;
+  confidence: "exact" | "manual" | "high";
+  core_meaning: string | null;
+  page_ref: string | null;
+  excerpt: string;
+  length: number;
+};
+
+export type RootLexicon = {
+  core_meaning: { text: string; work_id: string; title_ar: string; title_en: string; author_ar: string; page_ref: string | null; entry_id: number } | null;
+  works: (LexiconWork & { entries: LexiconEntrySummary[] })[];
+};
+
+export type Gloss = { id: number; phrase: string; gloss: string; page_ref: string | null; title_ar: string; title_en: string; author_ar: string; attribution_ar: string; attribution_en: string };

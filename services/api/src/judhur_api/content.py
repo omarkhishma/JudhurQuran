@@ -220,6 +220,21 @@ def word(conn: Connection, location: str) -> dict[str, Any] | None:
         {"id": w["id"]},
     )
     w["occurrences"] = word_occurrence_counts(conn, w)
+    if w["root"]:
+        lex = root_lexicon(conn, w["root"]["key"], excerpt=700)
+        mufradat = next((x for x in lex["works"] if x["id"] == "mufradat"), None)
+        w["root_meaning"] = {
+            "core": lex["core_meaning"],
+            "mufradat": (
+                {k: mufradat[k] for k in ("id", "title_ar", "title_en", "author_ar", "death_hijri", "attribution_ar", "attribution_en")}
+                | {"entry": mufradat["entries"][0]}
+                if mufradat
+                else None
+            ),
+        }
+    else:
+        w["root_meaning"] = None
+    w["glosses"] = word_glosses(conn, w["location"])
     w["next_steps"] = next_steps(conn, w)
     for k in ("root_id", "lemma_id", "verse_id"):
         w.pop(k, None)
@@ -357,6 +372,7 @@ def root_detail(conn: Connection, raw: str) -> dict[str, Any] | None:
            where rv.root_key = :k order by w.id limit 200""",
         {"k": r["key"]},
     )
+    r["lexicon"] = root_lexicon(conn, r["key"])
     r.pop("id")
     return r
 
@@ -614,3 +630,59 @@ def root_graph(conn: Connection, raw: str) -> dict[str, Any] | None:
         lem["forms"] = by_lemma.get(lem["id"], [])
     r.pop("id")
     return {"root": r, "lemmas": lemmas}
+
+
+# ─── lexica ─────────────────────────────────────────────────────────────────
+
+_LEX_WORK_COLS = """w.id, w.title_ar, w.title_en, w.author_ar, w.author_en, w.death_hijri, w.death_ce, w.lang,
+                    w.edition_note, w.source_url, w.license, w.attribution_ar, w.attribution_en, w.redistributable"""
+
+
+def root_lexicon(conn: Connection, root_key: str, excerpt: int = 600) -> dict[str, Any]:
+    """Displayable articles for a root, grouped by work, with an excerpt; full bodies load on demand."""
+    entries = rows(
+        conn,
+        f"""select e.id as entry_id, e.work_id, e.headword, e.match, e.confidence, e.core_meaning, e.page_ref,
+                   left(e.body, :n) as excerpt, length(e.body) as length, {_LEX_WORK_COLS}
+            from content.lexicon_entries e join content.lexicon_works w on w.id = e.work_id
+            where e.root_key = :k and e.displayable order by w.sort_order, e.id""",
+        {"k": root_key, "n": excerpt},
+    )
+    works_out: dict[str, dict[str, Any]] = {}
+    core = None
+    for e in entries:
+        w = works_out.setdefault(
+            e["work_id"],
+            {k: e[k] for k in ("id", "title_ar", "title_en", "author_ar", "author_en", "death_hijri", "death_ce", "lang",
+                               "edition_note", "source_url", "license", "attribution_ar", "attribution_en", "redistributable")}
+            | {"entries": []},
+        )
+        w["entries"].append(
+            {"id": e["entry_id"]} | {k: e[k] for k in ("headword", "match", "confidence", "core_meaning", "page_ref", "excerpt", "length")}
+        )
+        if e["core_meaning"] and core is None and e["confidence"] in ("exact", "manual"):
+            core = {"text": e["core_meaning"], "work_id": e["work_id"], "title_ar": e["title_ar"], "title_en": e["title_en"],
+                    "author_ar": e["author_ar"], "page_ref": e["page_ref"], "entry_id": e["entry_id"]}
+    return {"core_meaning": core, "works": list(works_out.values())}
+
+
+def lexicon_entry(conn: Connection, entry_id: int) -> dict[str, Any] | None:
+    e = one(
+        conn,
+        f"""select e.id as entry_id, e.work_id, e.root_key, e.headword, e.match, e.confidence, e.body, e.core_meaning,
+                   e.page_ref, e.source_ref, {_LEX_WORK_COLS}
+            from content.lexicon_entries e join content.lexicon_works w on w.id = e.work_id
+            where e.id = :id and e.displayable""",
+        {"id": entry_id},
+    )
+    return e
+
+
+def word_glosses(conn: Connection, location: str) -> list[dict[str, Any]]:
+    return rows(
+        conn,
+        """select g.id, g.phrase, g.gloss, g.page_ref, w.title_ar, w.title_en, w.author_ar, w.attribution_ar, w.attribution_en
+           from content.gharib_glosses g join content.lexicon_works w on w.id = g.work_id
+           where :loc = any(g.word_locations) order by g.id""",
+        {"loc": location},
+    )

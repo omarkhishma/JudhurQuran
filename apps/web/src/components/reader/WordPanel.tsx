@@ -3,11 +3,12 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
-import { citeVerse, cnt, formatNumber, verseRef } from "@/lib/format";
+import { citeVerse, cnt, formatNumber, toArabicDigits, verseRef } from "@/lib/format";
 import type { Commentary, Features, Label, OccurrencesPage, Segment, WordDetail } from "@/lib/types";
 import { useCommentary, useOccurrences, useWord } from "./hooks";
 import { PanelSection } from "./PanelSection";
 import { useReader } from "@/lib/store/reader";
+import { LexiconArticle } from "@/components/lexicon/LexiconArticle";
 
 function lab(l: Label | undefined, locale: string): string | null {
   if (!l) return null;
@@ -145,22 +146,39 @@ export function WordPanel({
 
 function MeaningSection({ w, initial }: { w: WordDetail; initial?: Commentary }) {
   const t = useTranslations("panel");
+  const tl = useTranslations("lexicon");
   const locale = useLocale();
   const openVerse = useReader((s) => s.openVerse);
   const { data } = useCommentary(w.verse.key, ["muyassar"], initial);
   const passage = data?.data[0]?.passage;
+  const core = w.root_meaning?.core;
+  const mufradat = w.root_meaning?.mufradat;
   return (
-    <div className="space-y-3">
-      {w.gloss_en && locale === "en" && (
+    <div className="space-y-4">
+      {locale === "en" && (w.gloss_en || w.lemma?.gloss_en) && (
         <p className="text-[15px] text-t1" dir="ltr" lang="en">
           <span className="text-t3">{t("glossEn")}: </span>
-          <i>{w.gloss_en}</i>
+          <i>{w.gloss_en ?? w.lemma?.gloss_en}</i>
         </p>
       )}
-      {w.lemma?.gloss_en && locale === "en" && (
-        <p className="text-[14px] text-t2" dir="ltr" lang="en">
-          {w.lemma.gloss_en}
-        </p>
+      {w.glosses.map((g) => (
+        <div key={g.id}>
+          <p className="label-caps mb-1">{tl("glossTitle", { title: g.title_ar })}</p>
+          <p className="ar-classical text-[16.5px] leading-[2] text-t1" dir="rtl" lang="ar">
+            <span className="text-word">{g.phrase}: </span>
+            {g.gloss}
+          </p>
+        </div>
+      ))}
+      {core && (
+        <div>
+          <p className="label-caps mb-1">{tl("coreMeaning")}</p>
+          <p className="ar-classical text-[18px] leading-[2] text-t1" dir="rtl" lang="ar">{core.text}</p>
+          <p className="text-[11.5px] text-t3">
+            {`${core.title_ar} — ${core.author_ar}`}
+            {core.page_ref ? ` · ${locale === "ar" ? toArabicDigits(core.page_ref) : core.page_ref}` : ""}
+          </p>
+        </div>
       )}
       <div>
         <p className="label-caps mb-1">{t("meaningInContext")}</p>
@@ -171,18 +189,37 @@ function MeaningSection({ w, initial }: { w: WordDetail; initial?: Commentary })
         ) : (
           <p className="text-t3">…</p>
         )}
-        <Link href={`/quran/${w.verse.surah}/${w.verse.ayah}`} className="btn mt-2" onClick={(e) => {
-          // Inside the reader, open the verse panel instead of navigating away.
-          if (document.querySelector(".reader-text")) {
-            e.preventDefault();
-            openVerse(w.verse.key, "tafsir");
-          }
-        }}>
+        <Link
+          href={`/quran/${w.verse.surah}/${w.verse.ayah}`}
+          className="btn mt-2"
+          onClick={(e) => {
+            // Inside the reader, open the verse panel instead of navigating away.
+            if (document.querySelector(".reader-text")) {
+              e.preventDefault();
+              openVerse(w.verse.key, "tafsir");
+            }
+          }}
+        >
           <Icon name="tafsir" />
           {t("readTafsir")}
         </Link>
       </div>
-      <p className="rounded-lg bg-card-2 px-3 py-2 text-[12.5px] text-t3">{t("meaningSoon")}</p>
+      {mufradat && (
+        <div>
+          <p className="label-caps mb-1">{`${tl("quranUsage")} — ${mufradat.title_ar}`}</p>
+          <LexiconArticle
+            work={{ ...mufradat, author_en: "", death_ce: null, lang: "ar", edition_note: "", source_url: "", license: "", redistributable: false }}
+            entry={mufradat.entry}
+            compact
+          />
+          <p className="mt-1 text-[11.5px] text-t3">{`${mufradat.author_ar}${mufradat.death_hijri ? ` (ت ${formatNumber(mufradat.death_hijri, locale)}هـ)` : ""}`}</p>
+        </div>
+      )}
+      {w.root && (
+        <Link href={`/roots/${encodeURIComponent(w.root.key)}#lexicon`} className="inline-block text-[13px] text-word hover:underline">
+          {tl("openInRoot")}
+        </Link>
+      )}
     </div>
   );
 }

@@ -185,7 +185,6 @@
     "pattern": "Pattern",
     "readTafsir": "Read the verse's tafsir",
     "meaningInContext": "Meaning of the verse",
-    "meaningSoon": "Root meanings from the classical lexicons (al-Mufradat, Maqayis al-Lugha) are coming soon.",
     "glossEn": "Word gloss",
     "nextCousin": "A cousin",
     "nextVerse": "Another verse",
@@ -332,5 +331,23 @@
     "loadingRoot": "Loading the root…",
     "imported": "Map imported",
     "importError": "Could not read the file"
+  },
+  "lexicon": {
+    "coreMeaning": "Core meaning of the root",
+    "quranUsage": "Its use in the Quran",
+    "readFull": "Read the full article",
+    "showLess": "Show less",
+    "inLexicons": "In the dictionaries",
+    "lexiconsLead": "What the masters of the Arabic language said about this root, credited to each dictionary, its author and edition. Texts are shown verbatim.",
+    "approxMatch": "Approximate match between this article and the root — not yet reviewed",
+    "headword": "Entry: {h}",
+    "page": "Vol./page: {p}",
+    "displayOnly": "Display only",
+    "edition": "Edition and source",
+    "glossTitle": "Meaning of the phrase — {title}",
+    "noLexicon": "No article for this root in the available dictionaries yet.",
+    "by": "{author} (d. {death} AH)",
+    "openInRoot": "Everything the dictionaries say about this root",
+    "loading": "Loading…"
   }
 }
