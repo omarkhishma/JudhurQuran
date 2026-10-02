@@ -56,7 +56,9 @@ LOOKAHEAD_SPAN = 40  # a span names its TOC entry exactly: skipped titles are he
 LOOKAHEAD_LINE = 4  # a bare line is matched by its letters only
 _ARABIC_WORD = re.compile("^[ء-يٱ]+$")
 _LETTERISH = re.compile("[ء-يً-ْٰٱ]")
-_SEPARATOR = re.compile(r"^\s*:\s*")
+# What the typing printed right after a heading: "(قبعر)", "[دغمس]", "أبأ:", "ع ز ر.", "بجن:)".
+_SEPARATOR = re.compile(r"^\s*(?:[:.)\]]\s*)+")
+_OPENER = re.compile(r"\s*[(\[]+\s*$")
 
 
 def _tokens(title: str) -> list[str]:
@@ -122,11 +124,12 @@ def _quote_candidates(p: str, quran: QuranPairs) -> list[_Quote]:
             share = quran.share(toks)
             letters = sum(len(t) for t in toks)
             ref = bool(_REF.match(p[j + 1 : j + 45]))
-            # Recognised by its words alone, a quotation must not straddle al-Qāmūs's parentheses —
-            # a marker pair cut through the matn does — and most of its word pairs must be Quranic.
+            # Recognised by its words alone, a quotation must not straddle al-Qāmūs's parentheses (a
+            # marker pair cut through the matn does), holds no lexicographer's colon ("الدين: ما له
+            # أجل") or editors' bracket, and most of its word pairs must be Quranic.
             bare = not (cue or ref)
             straddles = inner.count("(") != inner.count(")")
-            if bare and re.search(r"[()]", inner):
+            if bare and re.search(r"[()\[\]:]", inner):
                 share = 0.0
             match = (n >= 3 and share >= (0.6 if bare else 0.5)) or (n == 2 and share == 1.0 and letters >= 9)
             # After a citation, a span cut through al-Qāmūs's parentheses must still read as Quran
@@ -342,6 +345,15 @@ def split_taj(
             current.headword += " و" + title
             current.heads.append(title)
             return
+        if current is not None:
+            # The bracket that opens a bracketed heading ("(⏎قبعر⏎)") ends the previous line.
+            last = next(
+                (n for n in range(len(current.lines) - 1, -1, -1) if current.lines[n].text.strip()), None
+            )
+            if last is not None and _OPENER.search(current.lines[last].text):
+                ln = current.lines[last]
+                current.lines[last] = Line(_OPENER.sub("", ln.text), ln.page, ln.first_on_page, [])
+                counters.add("heading-separator-dropped:bracket-before-heading")
         close()
         current = _Open(title, f"shamela:{sid}:toc-{e.shamela_title_id}", [title])
 
