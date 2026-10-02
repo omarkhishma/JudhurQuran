@@ -1,0 +1,26 @@
+[project]
+name = "judhur-api"
+version = "0.1.0"
+description = "Judhur public API: Quran text, morphology, roots, lexica, tafsir — versioned, cited, read-only."
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "judhur-arabic",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy>=2.0.30",
+  "psycopg[binary,pool]>=3.2",
+  "alembic>=1.13",
+  "pydantic>=2.8",
+  "pydantic-settings>=2.4",
+  "orjson>=3.10",
+]
+
+[project.optional-dependencies]
+test = ["httpx>=0.27"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/judhur_api"]
