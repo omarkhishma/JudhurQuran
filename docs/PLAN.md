@@ -37,7 +37,7 @@ Status legend: ✅ done (verified) · 🔄 in progress · ⏳ next · ⛔ blocke
 - ✅ Research reports in `docs/research/`: 01 text+morphology · 02 Arabic lexica · 03 tafsir/translation/audio/hadith · 04 competitive analysis
 - ✅ Sibling project `../Judhur` found and used as research input (license register, lessons, pinned artefacts)
 - ✅ Source registry `data/sources.yaml` + works registry `data/works.yaml`
-- ✅ DECISIONS seeded and maintained; ⬜ project CLAUDE.md
+- ✅ DECISIONS seeded and maintained; ✅ project CLAUDE.md (conventions, commands, laws)
 **Exit:** every launch data source has a recorded license and a recommendation; stack decided.
 
 ### Phase 1 — Canonical dataset (pipeline) ✅
@@ -66,7 +66,7 @@ Done: schema + atomic loader (+ web cache expiry) · meta/sources/catalog/surahs
 **Exit:** screenshots at 1440 and 390 in both themes show correct Quranic rendering and mirrored layout.
 
 ### Phase 4 — Quran reader + word panel + tafsir ✅
-Done: surah index · reader (verse/flow layouts, size, translation/inline al-Muyassar, ۞ signs) · word panel (meaning in context, root family, morphology with wazn, counts, KWIC, variants, next steps) · verse panel (7 tafsirs, translation, copy/share) · verse page · word page · audio with word highlighting and listen-to-word · phone sheet · plain-language term cards (31 terms, "Explain terms" setting). The exit journey is an e2e test (desktop + phone).
+Done: surah index · reader (verse/flow layouts, size, translation/inline al-Muyassar, ۞ signs) · word panel (meaning in context, root family, morphology with wazn, counts, KWIC, variants, next steps) · verse panel (7 tafsirs, translation, copy/share) · verse page · word page · audio with word highlighting and listen-to-word · phone sheet · plain-language term cards (40 terms incl. the derived verb forms with their attributed meanings, "Explain terms" setting). The exit journey is an e2e test (desktop + phone).
 - Surah index, surah reader (verse markers, basmala rules, delegated word clicks, copy that never injects verse numbers), verse page
 - Word panel (layered): meaning · root & family · morphology (plain Arabic) · occurrences · dictionaries · where next; phone bottom sheet
 - Verse panel: tafsir selector, translation, audio, copy/share/cite
