@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
 import { citeVerse, cnt, formatNumber, verseRef } from "@/lib/format";
-import type { Features, Label, Segment, WordDetail } from "@/lib/types";
+import type { Commentary, Features, Label, OccurrencesPage, Segment, WordDetail } from "@/lib/types";
 import { useCommentary, useOccurrences, useWord } from "./hooks";
 import { PanelSection } from "./PanelSection";
 import { useReader } from "@/lib/store/reader";
@@ -14,19 +14,26 @@ function lab(l: Label | undefined, locale: string): string | null {
   return locale === "ar" ? l.ar : l.en;
 }
 
+export type WordInitial = { word: WordDetail; commentary?: Commentary; occurrences?: OccurrencesPage };
+
 export function WordPanel({
   location,
   onNavigate,
   onClose,
+  initial,
+  page = false,
 }: {
   location: string;
   onNavigate?: (dir: 1 | -1) => void;
   onClose?: () => void;
+  initial?: WordInitial;
+  /** Rendered as a standalone page: all layers open, no sticky header. */
+  page?: boolean;
 }) {
   const t = useTranslations("panel");
   const tc = useTranslations("common");
   const locale = useLocale();
-  const { data: w, isLoading, isError } = useWord(location);
+  const { data: w, isLoading, isError } = useWord(location, initial?.word);
 
   if (isLoading) return <p className="p-5 text-t3">{t("loadingWord")}</p>;
   if (isError || !w) return <p className="p-5 text-bad">{t("error")}</p>;
@@ -37,7 +44,7 @@ export function WordPanel({
 
   return (
     <div className="flex flex-col">
-      <header className="sticky top-0 z-10 border-b border-line bg-card px-5 pt-4 pb-3">
+      <header className={(page ? "" : "sticky top-0 z-10 ") + "border-b border-line bg-card px-5 pt-4 pb-3"}>
         <div className="mb-1 flex items-center justify-between gap-2">
           <p className="text-[12px] text-t3">
             {t("wordOf", { n: formatNumber(w.position, locale), ref: citeVerse(w.verse.surah_name_ar, w.verse.surah, w.verse.ayah, locale) })}
@@ -84,24 +91,24 @@ export function WordPanel({
         </div>
       </header>
 
-      <PanelSection id="meaning" title={t("sectionMeaning")} defaultOpen>
-        <MeaningSection w={w} />
+      <PanelSection id="meaning" title={t("sectionMeaning")} defaultOpen forceOpen={page}>
+        <MeaningSection w={w} initial={initial?.commentary} />
       </PanelSection>
 
-      <PanelSection id="root" title={t("sectionRoot")} defaultOpen>
+      <PanelSection id="root" title={t("sectionRoot")} defaultOpen forceOpen={page}>
         {w.root ? <RootSection w={w} /> : <NoRoot w={w} />}
       </PanelSection>
 
-      <PanelSection id="morphology" title={t("sectionMorphology")} defaultOpen={false}>
+      <PanelSection id="morphology" title={t("sectionMorphology")} defaultOpen={false} forceOpen={page}>
         <MorphologySection w={w} />
       </PanelSection>
 
-      <PanelSection id="inquran" title={t("sectionInQuran")} defaultOpen={false}>
-        <InQuranSection w={w} />
+      <PanelSection id="inquran" title={t("sectionInQuran")} defaultOpen={false} forceOpen={page}>
+        <InQuranSection w={w} initial={initial?.occurrences} />
       </PanelSection>
 
       {w.variants.length > 0 && (
-        <PanelSection id="variants" title={t("sectionVariants")} defaultOpen>
+        <PanelSection id="variants" title={t("sectionVariants")} defaultOpen forceOpen={page}>
           <ul className="space-y-1.5 text-[13.5px]">
             {w.variants.map((v) => (
               <li key={v.source}>
@@ -118,7 +125,7 @@ export function WordPanel({
       )}
 
       {w.next_steps.length > 0 && (
-        <PanelSection id="next" title={t("sectionNext")} defaultOpen>
+        <PanelSection id="next" title={t("sectionNext")} defaultOpen forceOpen={page}>
           <NextSteps w={w} />
         </PanelSection>
       )}
@@ -136,11 +143,11 @@ export function WordPanel({
   );
 }
 
-function MeaningSection({ w }: { w: WordDetail }) {
+function MeaningSection({ w, initial }: { w: WordDetail; initial?: Commentary }) {
   const t = useTranslations("panel");
   const locale = useLocale();
   const openVerse = useReader((s) => s.openVerse);
-  const { data } = useCommentary(w.verse.key, ["muyassar"]);
+  const { data } = useCommentary(w.verse.key, ["muyassar"], initial);
   const passage = data?.data[0]?.passage;
   return (
     <div className="space-y-3">
@@ -164,10 +171,16 @@ function MeaningSection({ w }: { w: WordDetail }) {
         ) : (
           <p className="text-t3">…</p>
         )}
-        <button type="button" className="btn mt-2" onClick={() => openVerse(w.verse.key, "tafsir")}>
+        <Link href={`/quran/${w.verse.surah}/${w.verse.ayah}`} className="btn mt-2" onClick={(e) => {
+          // Inside the reader, open the verse panel instead of navigating away.
+          if (document.querySelector(".reader-text")) {
+            e.preventDefault();
+            openVerse(w.verse.key, "tafsir");
+          }
+        }}>
           <Icon name="tafsir" />
           {t("readTafsir")}
-        </button>
+        </Link>
       </div>
       <p className="rounded-lg bg-card-2 px-3 py-2 text-[12.5px] text-t3">{t("meaningSoon")}</p>
     </div>
@@ -318,11 +331,11 @@ function SegmentChip({ s, locale }: { s: Segment; locale: string }) {
   );
 }
 
-function InQuranSection({ w }: { w: WordDetail }) {
+function InQuranSection({ w, initial }: { w: WordDetail; initial?: OccurrencesPage }) {
   const t = useTranslations("panel");
   const tc = useTranslations("common");
   const locale = useLocale();
-  const { data } = useOccurrences(w.root?.key ?? null, w.lemma?.id ?? null, 6);
+  const { data } = useOccurrences(w.root?.key ?? null, w.lemma?.id ?? null, 6, initial);
   return (
     <div className="space-y-3">
       <ul className="space-y-1 text-[13.5px]">

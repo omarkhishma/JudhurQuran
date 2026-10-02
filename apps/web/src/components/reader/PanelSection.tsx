@@ -18,11 +18,13 @@ export function PanelSection({
   id,
   title,
   defaultOpen,
+  forceOpen = false,
   children,
 }: {
   id: string;
   title: string;
   defaultOpen: boolean;
+  forceOpen?: boolean;
   children: React.ReactNode;
 }) {
   const raw = useLocalStorage(KEY);
@@ -34,7 +36,7 @@ export function PanelSection({
   } catch {
     stored = undefined;
   }
-  const open = override ?? stored ?? defaultOpen;
+  const open = override ?? (forceOpen ? true : (stored ?? defaultOpen));
   function toggle() {
     const next = !open;
     setOverride(next);
