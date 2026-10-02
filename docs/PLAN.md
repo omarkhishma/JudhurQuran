@@ -40,8 +40,8 @@ Status legend: ✅ done (verified) · 🔄 in progress · ⏳ next · ⛔ blocke
 - ✅ DECISIONS seeded and maintained; ⬜ project CLAUDE.md
 **Exit:** every launch data source has a recorded license and a recommendation; stack decided.
 
-### Phase 1 — Canonical dataset (pipeline) 🔄
-Done: official KFGQPC text (byte-identical, hash-checked) · Tanzil verification + juz · QAC v0.4 parse (multi-stem words) · token↔word alignment (7 known fusions/splits exposed) · imlāʾī search shadow · roots/lemmas/counts · root variants from QAC v2 + fork · 7 tafsirs + 2 English translations. Remaining: wazn derivation · DATA-VALIDATION.md · lexica (agent building) · transliteration · English glosses · release artefacts.
+### Phase 1 — Canonical dataset (pipeline) ✅
+Done: official KFGQPC text (byte-identical, hash-checked) · Tanzil verification + juz · QAC v0.4 parse (multi-stem words) · token↔word alignment (7 known fusions/splits exposed) · imlāʾī search shadow · roots/lemmas/counts · root variants from QAC v2 + fork · 7 tafsirs + 2 English translations · lexica (Mufradat, Maqayis, Lisan, Sihah, Lane, Ibn Qutaybah) · recitations (12 reciters, word timings) · wazn for every lemma where certain · every build verifies all source pins · DATA-VALIDATION.md generated from computed numbers · English lemma glosses (QAC v2) · English word glosses + transliteration for every word (corpus Word by Word, verbatim) · release artefacts (redistributable JSONL + CSV with manifest, hashes and exclusion reasons).
 - Pin + fetch sources with sha256 verification (fail on drift)
 - Parse Tanzil Uthmani + metadata (114 surahs, 6,236 verses, juz/hizb/page/sajdah) and the QPC Hafs text; letter-stream cross-verification
 - Parse QAC morphology (segments → words), align to Tanzil tokens (basmala convention, 4 known merges)
@@ -53,8 +53,8 @@ Done: official KFGQPC text (byte-identical, hash-checked) · Tanzil verification
 - Release artefacts (JSON + CSV) with license manifest; dataset version `YYYY.MM.N`
 **Exit:** `pipeline build` from a clean checkout reproduces the DB; all integrity tests green; validation report written from computed numbers.
 
-### Phase 2 — API 🔄
-Done: schema + atomic loader · meta/sources/surahs/verses/pages/words/roots/occurrences/lemmas/search/works/commentary · ETag + cache headers · error envelope · rate limit · 45 tests incl. Arabic search assertions. Remaining: lexicon endpoints · root graph document · audio timings.
+### Phase 2 — API ✅
+Done: schema + atomic loader (+ web cache expiry) · meta/sources/catalog/surahs/verses/pages/words/roots/occurrences/lemmas/search/works/commentary/lexicon/recitations/root graph · ETags tied to the loaded release · error envelope · rate limit · plain-ASCII root input · tests against the loaded dataset.
 - Schema + migrations (Alembic), loader from pipeline output
 - Endpoints: meta/sources · surahs · verses (with words) · words · roots (+family, distribution, occurrences/KWIC) · lemmas · search (Arabic/translit/English/ref/root-letters) · tafsir · translations · lexica · root graph document
 - Error envelope, cursor pagination, ETag/Cache-Control, rate limiting, CORS, OpenAPI docs
@@ -65,28 +65,32 @@ Done: schema + atomic loader · meta/sources/surahs/verses/pages/words/roots/occ
 - Next.js app, ar/en routing (RTL/LTR), tokens light/dark, fonts self-hosted (Quran font verified at reading size with all marks), shell + nav, error/404 pages
 **Exit:** screenshots at 1440 and 390 in both themes show correct Quranic rendering and mirrored layout.
 
-### Phase 4 — Quran reader + word panel + tafsir 🔄
-Done: surah index · reader (verse/flow layouts, size, translation/inline al-Muyassar, ۞ signs) · word panel (meaning in context, root family, morphology, counts, KWIC, variants, next steps) · verse panel (7 tafsirs, translation, copy/share) · phone sheet. Remaining: verse page · word page · audio + word highlighting · plain-language term cards.
+### Phase 4 — Quran reader + word panel + tafsir ✅
+Done: surah index · reader (verse/flow layouts, size, translation/inline al-Muyassar, ۞ signs) · word panel (meaning in context, root family, morphology with wazn, counts, KWIC, variants, next steps) · verse panel (7 tafsirs, translation, copy/share) · verse page · word page · audio with word highlighting and listen-to-word · phone sheet · plain-language term cards (31 terms, "Explain terms" setting). The exit journey is an e2e test (desktop + phone).
 - Surah index, surah reader (verse markers, basmala rules, delegated word clicks, copy that never injects verse numbers), verse page
 - Word panel (layered): meaning · root & family · morphology (plain Arabic) · occurrences · dictionaries · where next; phone bottom sheet
 - Verse panel: tafsir selector, translation, audio, copy/share/cite
 - Word audio + verse audio
 **Exit:** journey "open surah → tap word → see root family → open an occurrence → read its tafsir" works on desktop and phone.
 
-### Phase 5 — Roots, concordance, search, home ⬜
+### Phase 5 — Roots, concordance, search, home ✅
+Done and e2e-tested: root page (family with wazn, stats, distribution, KWIC, lexica, variants), search (Arabic with/without marks, mushaf paste, root letters, ASCII or dotted transliteration, English meaning, references), root builder, home.
 - Root page (family by lemma/form, stats, distribution, KWIC concordance, lexica), search page with root builder, omnibox ⌘K, home page
 **Exit:** any word findable four ways (Arabic with/without diacritics, root letters, transliteration, English); root page numbers match the dataset.
 
-### Phase 6 — Graph canvas ⬜
+### Phase 6 — Graph canvas ✅
+Done: root family map (bounded, expand on demand), editor with palette, labelled undo, autosave, PNG/JSON export, share links.
 - Auto root graph (root → lemmas → forms → verse cards, bounded, expand on demand), card anatomy per handoff, pan/zoom/fit/tidy, keyboard
 - Editor: topic and semantic-field graphs from any word/verse/root/note; labelled undo/redo; local autosave; import/export JSON; PNG export; share-by-link
 **Exit:** a user builds, saves, reloads and shares a graph; no work is ever lost.
 
-### Phase 7 — Personal layer (local-first) ⬜
+### Phase 7 — Personal layer (local-first) ✅
+Done: bookmarks, verse notes, history, reading resume, preferences, maps — in the browser only, export and delete all.
 - Bookmarks, notes, word states, reading progress/resume, preferences, trails — IndexedDB, export/delete
 **Exit:** all personal features work offline of any account; export/delete verified.
 
-### Phase 8 — Launch readiness ⬜
+### Phase 8 — Launch readiness 🔄
+Done: about/method (incl. wazn), sources & licenses, privacy, developers pages · SEO (per-page canonical + hreflang, sitemaps for every URL, robots, JSON-LD, share images) · axe WCAG 2.1 AA clean in both themes · CSP + security headers · production build with every content page cached (ISR) and no data needed at build · Docker images, production compose (Caddy TLS), CI, runbook (docs/DEPLOY.md) — all verified on local Docker. Performance: first-paint fonts only (711 → 443 KB), fonts compressed at the proxy; the longest surah page is 208 KB gzipped (2.2 MB raw, measured). 60 e2e tests and 156 Python tests pass. Deploy itself waits for the owner's go.
 - About / methodology / sources & licenses / privacy pages; developer page (API docs)
 - SEO: metadata, sitemaps, OG images for verses and roots, canonical/hreflang
 - a11y audit (axe), performance budgets, security headers/CSP, Dockerfiles, CI, deploy runbook
