@@ -12,6 +12,7 @@ from .normalize import (
     skeleton,
     strip_marks,
 )
+from .romanise import scholarly, slug_lemma, slug_pattern
 from .roots import display_letters, from_qac, key, parse_root_input, root_input_candidates, spaced, translit
 
 __all__ = [
@@ -30,7 +31,10 @@ __all__ = [
     "parse_root_input",
     "plain_spelling",
     "root_input_candidates",
+    "scholarly",
     "skeleton",
+    "slug_lemma",
+    "slug_pattern",
     "spaced",
     "split_lemma_key",
     "strip_marks",
