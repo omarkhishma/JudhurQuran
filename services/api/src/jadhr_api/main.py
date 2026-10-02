@@ -19,7 +19,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import content, lexicon
+from . import content, knowledge, lexicon
 from .db import connect
 from .search import search as run_search
 from .settings import get_settings
@@ -149,6 +149,43 @@ def related_verses(request: Request, key: str, limit: int = Query(10, ge=1, le=5
         out = content.related_verses(conn, key, limit)
         if out is None:
             raise not_found("verse")
+        return cached(request, out)
+
+
+@router.get(
+    "/verses/{key}/knowledge",
+    summary="Occasions of revelation, Makki/Madani notes, verses cited in its explanation, people and places",
+)
+def verse_knowledge(request: Request, key: str) -> Response:
+    with connect() as conn:
+        out = knowledge.verse_knowledge(conn, key)
+        if out is None:
+            raise not_found("verse")
+        return cached(request, out)
+
+
+@router.get(
+    "/surahs/{number}/card", summary="A sūra's card: names, revelation, virtues, counts, aims (verbatim)"
+)
+def surah_card(request: Request, number: int) -> Response:
+    with connect() as conn:
+        out = knowledge.surah_card(conn, number)
+        if out is None:
+            raise not_found("surah")
+        return cached(request, out)
+
+
+@router.get(
+    "/words/{slug}/relations",
+    summary="Classical wujūh senses with their verses, furūq contrasts and aḍdād for a lemma and its root",
+)
+def word_relations(
+    request: Request, slug: str, at: str | None = Query(None, pattern=r"^\d{1,3}:\d{1,3}(:\d{1,3})?$")
+) -> Response:
+    with connect() as conn:
+        out = knowledge.word_relations(conn, slug, at)
+        if out is None:
+            raise not_found("word")
         return cached(request, out)
 
 

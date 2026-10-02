@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 from .build import RawPaths, build
+from .layers import build_layers
 from .pins import verify_source_pins
 
 REPO = Path(__file__).resolve().parents[3]
@@ -40,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
             out,
             args.version,
         )
+        layers = build_layers(args.raw, out, REPO / "data/knowledge.yaml", REPO / "data/relations.yaml")
         print(
             json.dumps(
                 {
@@ -48,6 +50,7 @@ def main(argv: list[str] | None = None) -> int:
                     "pins_verified": len(pins["verified"]),
                     "unpinned": pins["unpinned"],
                     **report["counts"],
+                    **layers,
                 },
                 ensure_ascii=False,
             )
