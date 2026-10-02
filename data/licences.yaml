@@ -1,0 +1,1568 @@
+# Licence register — what every source the product uses says about its terms today, quoted verbatim,
+# set against what the product does with it. Re-checked before every release (PLAN P1.8): re-fetch every
+# URL in urls_checked, compare page_sha256, re-read the clauses, update `fetched`, and put any change in
+# front of the owner. The summary and the owner's decisions are in docs/research/07-licence-register.md.
+#
+# One entry per id in data/sources.yaml, data/lexica.yaml, data/works.yaml and data/recitations.yaml
+# (its reciter ids), plus `everyayah` and `quran-align`, the two upstreams recitations.yaml names in
+# audio_url and timings_zip.
+#
+# Fields
+#   urls_checked    every page, file or API answer read for this entry (pinned commits where a repo has one)
+#   fetched         date of the fetch run (UTC+3; the run itself was 2026-10-02 22:22–22:43 UTC)
+#   page_sha256     sha256 of the exact bytes each URL returned (MP3s: the first 16 KiB, read by HTTP range)
+#   fetch_failures  URLs that did not answer, and the Wayback capture used instead (latest 200 capture)
+#   clauses         {topic, quote, url}; topic is display | attribution | modification | redistribution |
+#                   commercial | retention | other. Quotes are verbatim in their original language; only
+#                   whitespace is normalised (line breaks and runs of spaces become one space), and the '#'
+#                   comment marker at the start of a file-header line is not part of a quote. Quotes from
+#                   inside binary files come from the font's name table (TTF) or the MP3's ID3 frames.
+#   our_use         what the product does with the source today (registry entry, research, code)
+#   status          ok        — terms read, unchanged in substance, and met by today's use
+#                   attention — met only in part, or a use the terms do not address, or a change since our
+#                               records: needs an owner decision or action
+#                   conflict  — the source's own statements contradict each other, or contradict our records,
+#                               on a point today's use depends on
+#   notes           one line each, plain English
+
+licences:
+- id: qpc-hafs
+  registry: data/sources.yaml
+  urls_checked:
+  - https://qurancomplex.gov.sa/techquran/dev/
+  - https://web.archive.org/web/20250901042942id_/https://qurancomplex.gov.sa/techquran/dev/
+  - https://dm.qurancomplex.gov.sa/copyright/
+  - https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  - https://web.archive.org/web/20250417225336id_/https://download.qurancomplex.gov.sa/resources_dev/UthmanicHafs_v2-0.zip
+  fetched: '2026-10-03'
+  page_sha256:
+    https://web.archive.org/web/20250901042942id_/https://qurancomplex.gov.sa/techquran/dev/: a38bc8bdd3d6d6cf57c7188a342b6506a56d835cca1694cf5e43b3d88822ceb1
+    https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/: a4c73753393aa25069cc0dfaf944d8bbe26198b3bef07cd3833482e73fa8c4f0
+    https://web.archive.org/web/20250417225336id_/https://download.qurancomplex.gov.sa/resources_dev/UthmanicHafs_v2-0.zip: a7b0e5591945712ec5e4d6142938ae4d1e9b49bdc89dff06222789bfebdfd72c
+  fetch_failures:
+  - url: https://qurancomplex.gov.sa/techquran/dev/
+    result: timed out after 40 s (the KFGQPC hosts do not answer from here)
+    used_instead: https://web.archive.org/web/20250901042942id_/https://qurancomplex.gov.sa/techquran/dev/
+  - url: https://dm.qurancomplex.gov.sa/copyright/
+    result: timed out after 40 s
+    used_instead: https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  clauses:
+  - topic: display
+    quote: ويمكن استخدام النسخة المذكورة مجاناً في المجالات الشخصية والأعمال الفردية كافة، وأعمال الجهات الحكومية والجهات والمؤسسات الخاصة والأهلية، وأعمال الطباعة الورقية*، والنشـر المكتبي والإعلامي، ومواقع الإنترنت والبرامج الحاسوبية وغيرها، وذلك داخل المملكة العربية السعودية وخارجها.
+    url: https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  - topic: other
+    quote: 'يتشـرَّف المجمع بإتاحة نسخة رقمية كاملة من مصحف المدينة النبوية المطبوع في المجمع، وذلك بالصيغ التالية:'
+    url: https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  - topic: other
+    quote: رسم المتجهات Illustrator
+    url: https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  - topic: commercial
+    quote: والذي وجه بمنع طباعة المصاحف في الداخل في غير المجمع، وكذلك منع استيرادها من الخارج لغرض البيع التجاري.
+    url: https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  - topic: other
+    quote: – طباعة القرآن الكريم ونشره (حسب سياسة حقوق الإستخدام)
+    url: https://web.archive.org/web/20250901042942id_/https://qurancomplex.gov.sa/techquran/dev/
+  - topic: redistribution
+    quote: جميع الحقوق محفوظة لمجمع الملك فهد لطباعة المصحف الشريف © 2025
+    url: https://web.archive.org/web/20250901042942id_/https://qurancomplex.gov.sa/techquran/dev/
+  - topic: other
+    quote: '-- KFGQPC Hafs Uthmanic Data -- Version: 2.0 -- Date: 2022-09-07'
+    url: https://web.archive.org/web/20250417225336id_/https://download.qurancomplex.gov.sa/resources_dev/UthmanicHafs_v2-0.zip
+  our_use: Display text of every verse (aya_text verbatim, hash-checked on every load) with Madinah page and line numbers; served verse by verse through the public JSON API (/api/v1, rate-limited); the full text (text_qpc) and the official imlāʾī text (text_imlaei) are written into the bulk release files verses.jsonl/csv (built, not yet published — publishing is the owner's call).
+  status: attention
+  notes:
+  - The KFGQPC hosts time out from here; the developer portal and the usage-rights page were read from their latest Wayback captures (2025-09-01 and 2024-05-18).
+  - The usage-rights page grants free use, websites and software included, but it introduces itself as covering the vector (Illustrator) digital copy of the mushaf; the Unicode data package has no licence of its own (its read.me has none) and the portal footer reserves all rights.
+  - Our registry says the text 'may not be modified or sold'; no KFGQPC page says that about the text — it is the font EULA's wording. Keeping the text verbatim remains right, but the record should quote what the source actually states.
+  - No KFGQPC statement addresses bulk redistribution, which the release files would be; research 01 §11 already asks the owner to confirm with KFGQPC before the release is published (D19).
+  - 'Pins hold: hafsData_v2-0.json inside the archived package equals our pin (d2960b32…) and the package''s MD5 equals the MD5 the portal publishes (CF6841AE…).'
+- id: kfgqpc-hafs-font
+  registry: data/sources.yaml
+  urls_checked:
+  - https://static-cdn.tarteel.ai/qul/fonts/UthmanicHafs_V22.ttf
+  - https://qul.tarteel.ai/resources/font
+  - https://qul.tarteel.ai/resources/font/245
+  - https://qul.tarteel.ai/resources/245/copyright
+  - https://fonts.qurancomplex.gov.sa/
+  - https://web.archive.org/web/20260208102015id_/https://fonts.qurancomplex.gov.sa/
+  - https://web.archive.org/web/20251209010416id_/https://fonts.qurancomplex.gov.sa/ten-readings/
+  - https://web.archive.org/web/20251206062122id_/https://fonts.qurancomplex.gov.sa/hafs-reading/
+  fetched: '2026-10-03'
+  page_sha256:
+    https://static-cdn.tarteel.ai/qul/fonts/UthmanicHafs_V22.ttf: aa68bffce289b4c0ebac68e90502eb69e42356abcd1603cb2b8e99c2c723f145
+    https://qul.tarteel.ai/resources/font: 3f1da3b907e3cc53435c5e8a7b8ca4a1f2794d791593468f9afb51ee11132def
+    https://qul.tarteel.ai/resources/font/245: fbec5a38129b10add569fcf551a11a070e95ffa566065b25409e62b525191dd2
+    https://qul.tarteel.ai/resources/245/copyright: d700b8aa61630d0d57358667c2db6e1c8329414b2dc560251c4f5c62c6d506a6
+    https://web.archive.org/web/20260208102015id_/https://fonts.qurancomplex.gov.sa/: 591d615da937e63c5c446c24f6879aaedae5304ac586e5a333b0dc2a262e0bb5
+    https://web.archive.org/web/20251209010416id_/https://fonts.qurancomplex.gov.sa/ten-readings/: 6e6445430cda2a4cbc0380fc04047ca8d3debb863d6074d7b480742df8402a4a
+    https://web.archive.org/web/20251206062122id_/https://fonts.qurancomplex.gov.sa/hafs-reading/: b7f1c05bb5e78fbe0e6ccc394a9dd1537b1484dccfdd83fbf8152f4648468fa2
+  fetch_failures:
+  - url: https://fonts.qurancomplex.gov.sa/
+    result: timed out after 40 s
+    used_instead: https://web.archive.org/web/20260208102015id_/https://fonts.qurancomplex.gov.sa/
+  clauses:
+  - topic: redistribution
+    quote: 'Permission is hereby granted, Free of Cost, to any person obtaining a copy of this Font accompanying this license, the rights to Use, Copy, Distribute, subject to the following conditions:'
+    url: https://static-cdn.tarteel.ai/qul/fonts/UthmanicHafs_V22.ttf
+  - topic: modification
+    quote: 1. The Font Software cannot be Sold, Modified, Altered, Translated, Reverse Engineered, Decompiled, Disassembled, Reproduced or Attempted to discover the Source Code of this Font in no means.
+    url: https://static-cdn.tarteel.ai/qul/fonts/UthmanicHafs_V22.ttf
+  - topic: other
+    quote: All rights reserved. This Font is the property of King Fahd Glorious Quran Printing Complex, and may not be reproduced, modified without the express written approval of King Fahd Glorious Quran Printing Complex.
+    url: https://static-cdn.tarteel.ai/qul/fonts/UthmanicHafs_V22.ttf
+  - topic: other
+    quote: This Agreement does not grant you any intellectual property rights in the Font.
+    url: https://static-cdn.tarteel.ai/qul/fonts/UthmanicHafs_V22.ttf
+  - topic: other
+    quote: 'خط رواية حفص عن عاصم – الإصدار: 2.2 – الحجم: 940 كيلوبايت'
+    url: https://web.archive.org/web/20251206062122id_/https://fonts.qurancomplex.gov.sa/hafs-reading/
+  - topic: other
+    quote: We don’t have copyright information for this resource.
+    url: https://qul.tarteel.ai/resources/245/copyright
+  our_use: 'Web font for all Quranic text: the TTF (sha256 aa68bffc…, equal to the pin and to today''s QUL CDN copy) is served byte-identical through next/font/local under a hashed file name — never converted or subset; the file is also committed in apps/web/src/fonts.'
+  status: conflict
+  notes:
+  - 'Unchanged since research 01: the same EULA in name ID 13 and the same reservation in name ID 0.'
+  - 'The EULA contradicts itself for web use: it grants the rights ''to Use, Copy, Distribute'' but condition 1 says the font cannot be ''Reproduced'', and name ID 0 says it ''may not be reproduced … without the express written approval'' of KFGQPC; serving it to every browser is copying and distribution.'
+  - 'No-modification is met: the file is served unmodified (QUL also offers a WOFF2 conversion of it, which we do not use).'
+  - The KFGQPC font site times out from here; its latest Wayback captures (2025-12) list the Hafs font at version 2.2, our file, with no licence text beyond the footer.
+  - 'Owner: accept the common reading (the grant covers distributing the unmodified file, as quran.com and QUL do) or ask KFGQPC for a written confirmation (D19).'
+- id: tanzil-uthmani
+  registry: data/sources.yaml
+  urls_checked:
+  - https://tanzil.net/docs/text_license
+  - https://tanzil.net/download/
+  - https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true
+  - https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true&marks=true&sajdah=true
+  - https://tanzil.net/res/text/metadata/quran-data.xml
+  - https://tanzil.net/updates/
+  fetched: '2026-10-03'
+  page_sha256:
+    https://tanzil.net/docs/text_license: 66f757202bbe413f00ab5471b81cc1b7c0563d087a7bd62cf2f6b1eb074d613f
+    https://tanzil.net/download/: 20c5ef2033d752d45602fd3d0932df394991e4ce9b8b3c9bd00e5c581b7b307a
+    https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true: bf4f57b968d03f4131c070b1e285da9be0e0a108a21c910e872801ca273312c8
+    https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true&marks=true&sajdah=true: 18c719bb3ba26d32ef457f40dad77cd28c4c5a34156833e26a8e5fcfdd246fb1
+    https://tanzil.net/res/text/metadata/quran-data.xml: 8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a
+    https://tanzil.net/updates/: ed396ad13623a6305a11ded03a13b8832336bc20c4e4a3a81d4153865e69835f
+  clauses:
+  - topic: modification
+    quote: Permission is granted to copy and distribute verbatim copies of this text, but CHANGING IT IS NOT ALLOWED.
+    url: https://tanzil.net/docs/text_license
+  - topic: attribution
+    quote: This Quran text can be used in any website or application, provided that its source (Tanzil Project) is clearly indicated, and a link is made to tanzil.net to enable users to keep track of changes.
+    url: https://tanzil.net/docs/text_license
+  - topic: redistribution
+    quote: This copyright notice shall be included in all verbatim copies of the text, and shall be reproduced appropriately in all files derived from or containing substantial portion of this text.
+    url: https://tanzil.net/docs/text_license
+  - topic: modification
+    quote: Permission is granted to copy and distribute verbatim copies of the Quran text provided here, but changing the text is not allowed.
+    url: https://tanzil.net/download/
+  - topic: other
+    quote: 'License: Creative Commons Attribution 3.0'
+    url: https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true
+  - topic: modification
+    quote: PLEASE DO NOT REMOVE OR CHANGE THIS COPYRIGHT BLOCK
+    url: https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=txt-2&agree=true
+  - topic: attribution
+    quote: <quran type="metadata" version="1.0" copyright="(C) 2008-2009 Tanzil.info" license="cc-by">
+    url: https://tanzil.net/res/text/metadata/quran-data.xml
+  our_use: Not displayed. The no-pause-marks text is the verification text and the alignment bridge between the KFGQPC words and the corpus morphology (stored verbatim as text_tanzil, not served by the API). quran-data.xml supplies the juz, hizb-quarter and sajda tables, which the site, the API and the bulk release verses file carry. The pause-marks file is pinned for the waqf layer (P3.9) and not used yet. Credited with a link on /sources and named in the footer.
+  status: attention
+  notes:
+  - Terms unchanged since research 01, and all three pinned files are byte-identical to today's downloads (no-marks bf4f57b9…, marks-sajdah 18c719bb…, quran-data.xml 8867c1d8…).
+  - 'Not met: the release''s verses file carries Tanzil''s juz, hizb-quarter and sajda columns, but the release MANIFEST credits only KFGQPC and the corpus; quran-data.xml is CC BY (license="cc-by"), so the release must name Tanzil with a link.'
+  - CC BY 3.0 itself allows adaptation while Tanzil's own term forbids changing the text; we follow the stricter term (verbatim storage; search shadows are never shown as Tanzil text). Check the waqf layer (P3.9), which keys Tanzil's marks onto our words, against the no-change term before it ships.
+  - 'Cosmetic: the licence page prints ''Copyright (C) 2007-2021'', the file notices print 2007-2026.'
+- id: tanzil-simple-clean
+  registry: data/sources.yaml
+  urls_checked:
+  - https://tanzil.net/docs/text_license
+  - https://tanzil.net/download/
+  - https://tanzil.net/pub/download/index.php?quranType=simple-clean&outType=txt-2&agree=true
+  fetched: '2026-10-03'
+  page_sha256:
+    https://tanzil.net/docs/text_license: 66f757202bbe413f00ab5471b81cc1b7c0563d087a7bd62cf2f6b1eb074d613f
+    https://tanzil.net/download/: 20c5ef2033d752d45602fd3d0932df394991e4ce9b8b3c9bd00e5c581b7b307a
+    https://tanzil.net/pub/download/index.php?quranType=simple-clean&outType=txt-2&agree=true: 228df2a717671aeb9d2ff573002bd28d6b3f973f4bc7153554e3a81663d67610
+  clauses:
+  - topic: modification
+    quote: Permission is granted to copy and distribute verbatim copies of this text, but CHANGING IT IS NOT ALLOWED.
+    url: https://tanzil.net/docs/text_license
+  - topic: attribution
+    quote: This Quran text can be used in any website or application, provided that its source (Tanzil Project) is clearly indicated, and a link is made to tanzil.net to enable users to keep track of changes.
+    url: https://tanzil.net/docs/text_license
+  - topic: redistribution
+    quote: This copyright notice shall be included in all verbatim copies of the text, and shall be reproduced appropriately in all files derived from or containing substantial portion of this text.
+    url: https://tanzil.net/docs/text_license
+  - topic: modification
+    quote: Permission is granted to copy and distribute verbatim copies of the Quran text provided here, but changing the text is not allowed.
+    url: https://tanzil.net/download/
+  - topic: other
+    quote: Tanzil Quran Text (Simple Clean, Version 1.1)
+    url: https://tanzil.net/pub/download/index.php?quranType=simple-clean&outType=txt-2&agree=true
+  - topic: other
+    quote: 'License: Creative Commons Attribution 3.0'
+    url: https://tanzil.net/pub/download/index.php?quranType=simple-clean&outType=txt-2&agree=true
+  our_use: 'Not displayed. Fallback for the imlāʾī search text and word alignment when a KFGQPC record has no aya_text_emlaey (build.py: `q.imlaei or simple.verses[k]`); used for diacritic-insensitive matching only.'
+  status: ok
+  notes:
+  - Terms unchanged; the pinned file (228df2a7…) is byte-identical to today's download.
+  - Used verbatim as a fallback input to search normalisation; nothing derived from it is presented as Tanzil text, and Tanzil is credited with a link on /sources.
+- id: qac
+  registry: data/sources.yaml
+  urls_checked:
+  - https://corpus.quran.com/download/
+  - https://corpus.quran.com/license.jsp
+  - https://corpus.quran.com/faq.jsp
+  - https://corpus.quran.com/wordbyword.jsp?chapter=1&verse=1
+  - https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt
+  fetched: '2026-10-03'
+  page_sha256:
+    https://corpus.quran.com/download/: 41521001870f944acbbacee7c38cde3e87c6395abf4d083c8b8c5faa361ccb78
+    https://corpus.quran.com/license.jsp: 8a446abf079da75e1392f96e16ce1f207b9d79723104ffed365ad2f57806e245
+    https://corpus.quran.com/faq.jsp: 3ac86391dbb4c7057c7ddd46cb6d120aaceb2ad027364e1ebe2a46213bbda81e
+    https://corpus.quran.com/wordbyword.jsp?chapter=1&verse=1: b420f773886dd2889b7c90bbf27578a07d0026f1b0d3b29c86368f9e67d9620f
+    https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt: a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46
+  clauses:
+  - topic: modification
+    quote: Permission is granted to copy and distribute verbatim copies of this file, but CHANGING IT IS NOT ALLOWED.
+    url: https://corpus.quran.com/download/
+  - topic: display
+    quote: This annotation can be used in any website or application, provided its source (the Quranic Arabic Corpus) is clearly indicated, and a link is made to http://corpus.quran.com to enable users to keep track of changes.
+    url: https://corpus.quran.com/download/
+  - topic: redistribution
+    quote: This copyright notice shall be included in all verbatim copies of the text, and shall be reproduced appropriately in all works derived from or containing substantial portion of this file.
+    url: https://corpus.quran.com/download/
+  - topic: other
+    quote: By downloading this data, you agree to the terms and conditions of the GNU License.
+    url: https://corpus.quran.com/download/
+  - topic: other
+    quote: The Quranic Arabic Corpus is available under the GNU public license with terms of use.
+    url: https://corpus.quran.com/download/
+  - topic: commercial
+    quote: 'We are happy to share the data for research purposes as long as: You do not use the data for commercial purposes. The data should be used purely for research and is made available under the GNU public license.'
+    url: https://corpus.quran.com/faq.jsp
+  - topic: commercial
+    quote: The final aim of the project will be to produce a highly accurate annotated Quran available freely for non-commercial use under the GNU public license.
+    url: https://corpus.quran.com/faq.jsp
+  - topic: modification
+    quote: If the Program as you received it, or any part of it, contains a notice stating that it is governed by this License along with a term that is a further restriction, you may remove that term.
+    url: https://corpus.quran.com/license.jsp
+  - topic: attribution
+    quote: Copyright (C) 2011 Kais Dukes
+    url: https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt
+  - topic: other
+    quote: The Quranic Arabic Corpus includes syntactic and morphological annotation of the Quran, and builds on the verified Arabic text distributed by the Tanzil project.
+    url: https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt
+  - topic: other
+    quote: Tanzil Quran Text (Uthmani, version 1.0.2)
+    url: https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt
+  - topic: modification
+    quote: 'License: Creative Commons BY-ND 3.0 Unported'
+    url: https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt
+  our_use: 'Primary morphology of every word (segments, part of speech, features, lemma, root): shown in the word panel with a credit and links to corpus.quran.com, and served by the public API. The bulk release (words, lemmas, roots files) carries data derived from it — Buckwalter converted to Arabic script, segments restructured as JSON, and words.text_uthmani built by joining the corpus''s segment forms.'
+  status: conflict
+  notes:
+  - Terms unchanged since research 01; the pinned file (a1d12923…) is still what the public mirror serves.
+  - 'The source contradicts itself: the GPL v3 it points to permits modification and commercial use and lets a recipient remove ''further restrictions'' (§7); the file header forbids changing the file; the FAQ calls the data free ''for non-commercial use''. Our registry records the first two, not the FAQ wording.'
+  - The bulk release ships changed, derived data (script converted, segments restructured) — allowed only if GPL §7 is relied on; the research-01 owner decision (treat as GPL / ask the maintainers / display only) is still open (D19).
+  - 'Not met: the release notice paraphrases the terms and omits the corpus copyright notice (''Copyright (C) 2011 Kais Dukes'' with its terms block), which must be ''reproduced appropriately in all works derived from'' the file.'
+  - The corpus's FORM column is Tanzil Uthmani 1.0.2 text (the file embeds Tanzil's 'Creative Commons BY-ND 3.0 Unported' notice); our words.text_uthmani and segments[].text are that text converted from Buckwalter, shown in the word panel's segment chips, served by the API and written to the release — where the words file is labelled with the KFGQPC notice ('reproduced verbatim'), a mislabel. PLAN P1.8's 'Tanzil 1.0.2 is read by nothing' holds for a separately bundled copy, not for this column.
+- id: qac-v2
+  registry: data/sources.yaml
+  urls_checked:
+  - https://api.github.com/repos/kaisdukes/quranic-corpus-api
+  - https://api.github.com/repos/kaisdukes/quranic-corpus-api/commits/main
+  - https://api.github.com/repos/kaisdukes/quranic-corpus-api/contents/src/main/resources/data
+  - https://raw.githubusercontent.com/kaisdukes/quranic-corpus-api/17a9062416eccc332111ef3e84f74072d709e187/src/main/resources/data/morphology.txt
+  - https://raw.githubusercontent.com/kaisdukes/quranic-corpus-api/17a9062416eccc332111ef3e84f74072d709e187/src/main/resources/data/lemmas.txt
+  - https://raw.githubusercontent.com/kaisdukes/quranic-corpus-api/17a9062416eccc332111ef3e84f74072d709e187/README.md
+  - https://api.github.com/repos/kaisdukes/quranic-corpus
+  - https://api.github.com/repos/kaisdukes/quranic-corpus/git/trees/ee7218ad8e68fe50486c0541e434d91a5998e5f7?recursive=1
+  - https://raw.githubusercontent.com/kaisdukes/quranic-corpus/ee7218ad8e68fe50486c0541e434d91a5998e5f7/LICENSE
+  - https://raw.githubusercontent.com/kaisdukes/quranic-corpus/ee7218ad8e68fe50486c0541e434d91a5998e5f7/README.md
+  fetched: '2026-10-03'
+  page_sha256:
+    https://api.github.com/repos/kaisdukes/quranic-corpus-api: 04add787cfb1197953f2ffb42dde17f1b207accbbc638b020248e1cacc91948d
+    https://api.github.com/repos/kaisdukes/quranic-corpus-api/commits/main: de5d994f64fb1f07c8b82b66f4abee551643818e88d420800b67b1ba7bac2fdd
+    https://api.github.com/repos/kaisdukes/quranic-corpus-api/contents/src/main/resources/data: 877e44754cc67dcc64c7c99d71f8c0b3541adb07c7e139eeb1f64bf4c72eecc0
+    ? https://raw.githubusercontent.com/kaisdukes/quranic-corpus-api/17a9062416eccc332111ef3e84f74072d709e187/src/main/resources/data/morphology.txt
+    : f1d3417be9aac22d54fff9ddc34db0818d7f490d836471a0d9163b3a2c11c065
+    ? https://raw.githubusercontent.com/kaisdukes/quranic-corpus-api/17a9062416eccc332111ef3e84f74072d709e187/src/main/resources/data/lemmas.txt
+    : 631fd141d1a0d7b771b638bf8a30a73c97391e5086af98978b9260062cf1ee04
+    https://raw.githubusercontent.com/kaisdukes/quranic-corpus-api/17a9062416eccc332111ef3e84f74072d709e187/README.md: 4b170aa0357d41f26bb2e52a06b763bd3819016c68e54308e1826034326fe470
+    https://api.github.com/repos/kaisdukes/quranic-corpus: 3a7dbcdc39a9399b1a0ada6ce1b224d7793ac83e5b93d999015606f4767be73b
+    https://api.github.com/repos/kaisdukes/quranic-corpus/git/trees/ee7218ad8e68fe50486c0541e434d91a5998e5f7?recursive=1: 7e7b85b4d9df368d174639251e8708811546cc630c08d75ee6ebe36381c98426
+    https://raw.githubusercontent.com/kaisdukes/quranic-corpus/ee7218ad8e68fe50486c0541e434d91a5998e5f7/LICENSE: 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986
+    https://raw.githubusercontent.com/kaisdukes/quranic-corpus/ee7218ad8e68fe50486c0541e434d91a5998e5f7/README.md: 3489ed2c21ef78527093e3ddde1551b76ca252d8b8933836146ccb258d2076f9
+  clauses:
+  - topic: other
+    quote: '"license":null'
+    url: https://api.github.com/repos/kaisdukes/quranic-corpus-api
+  - topic: other
+    quote: This repo contains the backend server API for the Quranic Arabic Corpus 2.0.
+    url: https://raw.githubusercontent.com/kaisdukes/quranic-corpus-api/17a9062416eccc332111ef3e84f74072d709e187/README.md
+  - topic: other
+    quote: 'More details on the Corpus 2.0 project (and frontend code) can be found here: https://github.com/kaisdukes/quranic-corpus'
+    url: https://raw.githubusercontent.com/kaisdukes/quranic-corpus-api/17a9062416eccc332111ef3e84f74072d709e187/README.md
+  - topic: redistribution
+    quote: GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
+    url: https://raw.githubusercontent.com/kaisdukes/quranic-corpus/ee7218ad8e68fe50486c0541e434d91a5998e5f7/LICENSE
+  - topic: other
+    quote: In line with our commitment to openness and shared learning, we aim to produce and distribute high-quality, standardized datasets, APIs, and code libraries.
+    url: https://raw.githubusercontent.com/kaisdukes/quranic-corpus/ee7218ad8e68fe50486c0541e434d91a5998e5f7/README.md
+  our_use: Root variants where the author's revision differs from v0.4 are shown as attributed alternatives; English lemma glosses (lemmas.txt) are shown on lemma views and served by the API; both are written into the bulk release (root_variants_qac_v2 file, lemmas.gloss_en) under the notice 'GPL-3.0'.
+  status: conflict
+  notes:
+  - The pinned morphology.txt (f1d3417b…) and lemmas.txt (631fd141…) equal kaisdukes/quranic-corpus-api at its HEAD (17a90624, 2023-09-04); that repository has no licence file and GitHub reports none.
+  - Our registry (license_url) and the release notice cite the GPL-3.0 LICENSE of a different repository, kaisdukes/quranic-corpus — the frontend, which holds no data files.
+  - The files descend from the corpus, so at least the corpus terms apply (verbatim only, credit and link, FAQ non-commercial); nothing grants more for the revised files.
+  - 'Owner: correct the licence record (registry and release notice) and decide whether the revised glosses and variants stay in the bulk release before Kais Dukes is asked (D19).'
+- id: qac-wbw
+  registry: data/sources.yaml
+  urls_checked:
+  - https://corpus.quran.com/wordbyword.jsp?chapter=1&verse=1
+  - https://corpus.quran.com/license.jsp
+  - https://corpus.quran.com/download/
+  - https://corpus.quran.com/faq.jsp
+  fetched: '2026-10-03'
+  page_sha256:
+    https://corpus.quran.com/wordbyword.jsp?chapter=1&verse=1: b420f773886dd2889b7c90bbf27578a07d0026f1b0d3b29c86368f9e67d9620f
+    https://corpus.quran.com/license.jsp: 8a446abf079da75e1392f96e16ce1f207b9d79723104ffed365ad2f57806e245
+    https://corpus.quran.com/download/: 41521001870f944acbbacee7c38cde3e87c6395abf4d083c8b8c5faa361ccb78
+    https://corpus.quran.com/faq.jsp: 3ac86391dbb4c7057c7ddd46cb6d120aaceb2ad027364e1ebe2a46213bbda81e
+  clauses:
+  - topic: other
+    quote: The Quranic Arabic Corpus is available under the GNU public license with terms of use.
+    url: https://corpus.quran.com/wordbyword.jsp?chapter=1&verse=1
+  - topic: attribution
+    quote: Copyright © Kais Dukes, 2009-2017. Maintained by the quran.com team. This is an open source project.
+    url: https://corpus.quran.com/wordbyword.jsp?chapter=1&verse=1
+  - topic: display
+    quote: This annotation can be used in any website or application, provided its source (the Quranic Arabic Corpus) is clearly indicated, and a link is made to http://corpus.quran.com to enable users to keep track of changes.
+    url: https://corpus.quran.com/download/
+  - topic: modification
+    quote: Permission is granted to copy and distribute verbatim copies of this file, but CHANGING IT IS NOT ALLOWED.
+    url: https://corpus.quran.com/download/
+  - topic: commercial
+    quote: The final aim of the project will be to produce a highly accurate annotated Quran available freely for non-commercial use under the GNU public license.
+    url: https://corpus.quran.com/faq.jsp
+  - topic: other
+    quote: 'It should be emphasised that the English translation in the word by word section of the website is not a new translation of the text. Corresponding English words are based on standard and accepted sources of English translation of the Quran, including: Sahih International Mohammed Pickthall Yusuf Ali'
+    url: https://corpus.quran.com/faq.jsp
+  our_use: English gloss and transliteration of every word, shown verbatim in the word panel with a per-word link to the corpus's word-by-word page, and returned in the API's word payloads; excluded from the bulk release (release.py EXCLUDED).
+  status: attention
+  notes:
+  - 'Terms unchanged since research 03: the same footer on the word-by-word pages and the same terms on the download page.'
+  - Our registry's license_url is license.jsp, which holds only the GPL v3 text; the 'terms of use' the footer refers to are printed on the download page — point the record there.
+  - Display with credit and link is met (WordPanel links every word to corpus.quran.com); the API's word-by-word exposure fits 'any website or application', but the FAQ's non-commercial wording ties this layer to D2.
+  - The FAQ says the glosses are based on Sahih International, Pickthall and Yusuf Ali; whether the corpus's terms reach every gloss is a question for the D19 message to the corpus maintainers, not something we can settle.
+- id: qac-fork-mustafa0x
+  registry: data/sources.yaml
+  urls_checked:
+  - https://api.github.com/repos/mustafa0x/quran-morphology
+  - https://api.github.com/repos/mustafa0x/quran-morphology/commits/master
+  - https://raw.githubusercontent.com/mustafa0x/quran-morphology/8f38b39016824284f9ed16ae15069ff9102c4acf/README.md
+  - https://raw.githubusercontent.com/mustafa0x/quran-morphology/8f38b39016824284f9ed16ae15069ff9102c4acf/quran-morphology.txt
+  - https://raw.githubusercontent.com/mustafa0x/quran-morphology/8f38b39016824284f9ed16ae15069ff9102c4acf/LICENSE
+  fetched: '2026-10-03'
+  page_sha256:
+    https://api.github.com/repos/mustafa0x/quran-morphology: ae756b1794988dddd8635657d25c20248019dae329f0728277460d725214e0b5
+    https://api.github.com/repos/mustafa0x/quran-morphology/commits/master: c4f0791586709e6fb5d3f56357060ef6329aa57808b37ca100e0a514ee4c5973
+    https://raw.githubusercontent.com/mustafa0x/quran-morphology/8f38b39016824284f9ed16ae15069ff9102c4acf/README.md: caec314d4c64cc26e27b3c45c12a33be7059a83fc3db385c43615d6a5792ba5f
+    https://raw.githubusercontent.com/mustafa0x/quran-morphology/8f38b39016824284f9ed16ae15069ff9102c4acf/quran-morphology.txt: 742bfac59941b2cb09736d5b7aae694af50792261fb8450cbf6afafcc340645f
+  fetch_failures:
+  - url: https://raw.githubusercontent.com/mustafa0x/quran-morphology/8f38b39016824284f9ed16ae15069ff9102c4acf/LICENSE
+    result: HTTP 404 — no LICENSE file at HEAD
+  clauses:
+  - topic: other
+    quote: '"license":null'
+    url: https://api.github.com/repos/mustafa0x/quran-morphology
+  - topic: modification
+    quote: This is a fork of [Quranic Arabic Corpus Morphology v0.4](http://corpus.quran.com),
+    url: https://raw.githubusercontent.com/mustafa0x/quran-morphology/8f38b39016824284f9ed16ae15069ff9102c4acf/README.md
+  - topic: modification
+    quote: Among many other changes; see [apply-changes.py](scripts/apply-changes.py) for what exactly was changed and how.
+    url: https://raw.githubusercontent.com/mustafa0x/quran-morphology/8f38b39016824284f9ed16ae15069ff9102c4acf/README.md
+  our_use: Root and lemma attributions that differ from the corpus are shown, credited, as other analyses in the word panel and served by the API; excluded from the bulk release.
+  status: attention
+  notes:
+  - 'Unchanged: no LICENSE file (404 at HEAD 8f38b390, 2018-06-19) and GitHub reports no licence; the pinned file (742bfac5…) equals HEAD.'
+  - It is a changed copy of the corpus file, whose terms forbid changing it, and it does not carry the corpus copyright notice — so neither its author nor the corpus grants the display of its changes.
+  - 'We show only its root/lemma differences, credited, as a cross-check; owner: keep as is, or ask the author (furqan.co) under D19.'
+- id: quranenc
+  registry: data/sources.yaml
+  urls_checked:
+  - https://quranenc.com/en/home/api
+  - https://quranenc.com/ar/home/api
+  - https://quranenc.com/en/home/about
+  - https://quranenc.com/ar/home/about
+  - https://quranenc.com/api/v1/translations/list
+  - https://quranenc.com/api/v1/translations/list/arabic
+  fetched: '2026-10-03'
+  page_sha256:
+    https://quranenc.com/en/home/api: 766ce669999779da8e7ef6ae106c4e0d1321158191d379cf1d33192a7d17f5a9
+    https://quranenc.com/ar/home/api: b61c4faf9d019c00c34cf6a466075b23171d3709aa87fdc347cb0697defdd888
+    https://quranenc.com/en/home/about: 9b4b414acd8846b94252fd9cca4014e5582259251984ce88aa8f9b84401c1fa6
+    https://quranenc.com/ar/home/about: 9d6c1313a8ffacab9e847c2b78fdf59efef3d6137379b263f4b76e75e14bf37f
+    https://quranenc.com/api/v1/translations/list: 044933a028f2cd47b66260ec6e5503a364e53710069ef214b16636849bc357ee
+    https://quranenc.com/api/v1/translations/list/arabic: d0305b6cafd7c4b172fdeac50e7db7b8f0a6d229659eafd8fa4582cfc4a6b919
+  clauses:
+  - topic: redistribution
+    quote: 'Contents of the translations can be downloaded and re-published, with the following terms and conditions:'
+    url: https://quranenc.com/en/home/api
+  - topic: modification
+    quote: 1. No modification, addition, or deletion of the content.
+    url: https://quranenc.com/en/home/api
+  - topic: attribution
+    quote: 2. Clearly referring to the publisher and the source (QuranEnc.com).
+    url: https://quranenc.com/en/home/api
+  - topic: attribution
+    quote: 3. Mentioning the version number when re-publishing the translation.
+    url: https://quranenc.com/en/home/api
+  - topic: other
+    quote: 4. Keeping the transcript information inside the document.
+    url: https://quranenc.com/en/home/api
+  - topic: other
+    quote: 5. Notifying the source (QuranEnc.com) of any note on the translation.
+    url: https://quranenc.com/en/home/api
+  - topic: retention
+    quote: 6. Updating the translation according to the latest version issued from the source (QuranEnc.com).
+    url: https://quranenc.com/en/home/api
+  - topic: commercial
+    quote: 7. Inappropriate advertisements must not be included when displaying translations of the meanings of the Noble Quran.
+    url: https://quranenc.com/en/home/api
+  - topic: redistribution
+    quote: 'يتاح تنزيل محتوى الترجمات وإعادة نشره، بالشروط والضوابط التالية:'
+    url: https://quranenc.com/ar/home/api
+  - topic: modification
+    quote: 1. عدم التعديل أو الإضافة أو الحذف على المحتوى.
+    url: https://quranenc.com/ar/home/api
+  - topic: attribution
+    quote: 2. الإشارة بوضوح للناشر وللمصدر (QuranEnc.com).
+    url: https://quranenc.com/ar/home/api
+  - topic: attribution
+    quote: 3. ذكر رقم الإصدار عند إعادة نشر الترجمة.
+    url: https://quranenc.com/ar/home/api
+  - topic: other
+    quote: 4. إبقاء معلومات نسخة الترجمة الموجودة داخل المستند.
+    url: https://quranenc.com/ar/home/api
+  - topic: retention
+    quote: 6. تطوير الترجمات وفق النسخ الجديدة الصادرة من المصدر (QuranEnc.com).
+    url: https://quranenc.com/ar/home/api
+  our_use: Source of four works — al-Muyassar, al-Mukhtasar, Saheeh International, Rowwad — shown verse by verse with footnotes, the publisher, QuranEnc.com and a version line, and re-published through the public API (/works/…); excluded from the bulk release.
+  status: attention
+  notes:
+  - 'Terms unchanged since research 02/03: the same seven conditions in English and Arabic on every page.'
+  - All four pinned SQLite files are byte-identical to today's downloads, so condition 6 (keep to the latest version) is met today.
+  - 'Condition 3 cannot be met for al-Muyassar and al-Mukhtasar: QuranEnc publishes no version for them (absent from /api/v1/translations/list, none in the API response); we show the file date 2025-03-25.'
+  - The terms are silent on commercial use; condition 7 bars inappropriate advertising, and the product carries none.
+  - Our registry's summary omits conditions 4, 5 and 7; the English condition 4 ('transcript information') reads in the Arabic as keeping the translation's version information inside the document.
+- id: tafsir-api-qul
+  registry: data/sources.yaml
+  urls_checked:
+  - https://api.github.com/repos/spa5k/tafsir_api
+  - https://api.github.com/repos/spa5k/tafsir_api/commits/main
+  - https://api.github.com/repos/spa5k/tafsir_api/tags
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/LICENSE
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/main/LICENSE
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/README.md
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/main/README.md
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - https://qul.tarteel.ai/faq
+  - https://qul.tarteel.ai/docs/faq
+  - https://qul.tarteel.ai/credits
+  - https://www.tarteel.ai/terms
+  fetched: '2026-10-03'
+  page_sha256:
+    https://api.github.com/repos/spa5k/tafsir_api: d917918d3f3354ca8561ec81b5370424ceacef8aa8fd0f57c7c49b9b3b6d3a82
+    https://api.github.com/repos/spa5k/tafsir_api/commits/main: 5a50876befb98894fc04b5bcf050ecbee50244741968a701ea711acf7ab3c024
+    https://api.github.com/repos/spa5k/tafsir_api/tags: 91ef08e0776aa20c573b9b8419941e0d28e25a80ed9cd94a3cab462bd2af3662
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/LICENSE: 92f3c7ee3a04599ab2327052570bc94a82ebf1fdd3d0e8cf5c9e2c3a9282b279
+    https://raw.githubusercontent.com/spa5k/tafsir_api/main/LICENSE: 92f3c7ee3a04599ab2327052570bc94a82ebf1fdd3d0e8cf5c9e2c3a9282b279
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/README.md: 4b59c60857217d238672fa76ac5e2e0d5d9baad677611ba05d03f5c575d6f39b
+    https://raw.githubusercontent.com/spa5k/tafsir_api/main/README.md: 4b59c60857217d238672fa76ac5e2e0d5d9baad677611ba05d03f5c575d6f39b
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json: f02c69bc447c7e1c6d388db27606ff83bc909cc269c22d565a109dfb9d747b06
+    https://qul.tarteel.ai/faq: 04294627b9d0fc07a59017243cedaac341b4e7abd92651da21f9d1196e875078
+    https://qul.tarteel.ai/docs/faq: 4bda477fe3f704c6fa618b0e5664c920c1dcd71f67a94b3a1dc96523c0f974ce
+    https://qul.tarteel.ai/credits: f6dd5b42d9c8a4e2466d687d2ecd6dd6511bed7e769ce72439d96de8992611d4
+    https://www.tarteel.ai/terms: a4ea2449cd075c29637528d248c1f74d28fedf7ac72c2359d63ceb1f52f163bf
+  clauses:
+  - topic: other
+    quote: Copyright (c) 2023 Spark
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/LICENSE
+  - topic: redistribution
+    quote: Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction,
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/LICENSE
+  - topic: other
+    quote: 'Most editions are generated from [QUL](https://qul.tarteel.ai/resources) SQLite exports:'
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/README.md
+  - topic: commercial
+    quote: Yes, you can use QUL data in commercial projects. However, please review the licensing terms for each resource. Some data may have restrictions or require attribution, while others are freely available for commercial use.
+    url: https://qul.tarteel.ai/faq
+  - topic: attribution
+    quote: The resources available on QUL vary in their copyright status. Some are in the public domain, while others may be subject to specific licenses. We recommend reviewing the licensing information provided by each resource’s author before use.
+    url: https://qul.tarteel.ai/faq
+  - topic: commercial
+    quote: Check repository license terms and dataset-specific licensing details before production use.
+    url: https://qul.tarteel.ai/docs/faq
+  - topic: other
+    quote: 'Last updated: April 2, 2021'
+    url: https://www.tarteel.ai/terms
+  - topic: redistribution
+    quote: You shall not (a) copy the Services or any part, feature, function or user interface thereof
+    url: https://www.tarteel.ai/terms
+  our_use: Digital text of five tafsirs (al-Sa'di, al-Baghawi, Ibn Kathir, al-Qurtubi, al-Tabari) from tag v1.2.2, regrouped into passages, with the modern editors' inline apparatus stripped from four of them (D22); shown in the reader and served by the public API; excluded from the bulk release.
+  status: attention
+  notes:
+  - HEAD of spa5k/tafsir_api is still the pinned v1.2.2 commit (eb82bb62, 2026-09-30); LICENSE and README are identical at both.
+  - The MIT licence covers 'this software and associated documentation files' — nothing for the texts, which the README says come from QUL exports.
+  - QUL allows commercial use subject to each resource's own licence, and the copyright notice of each of our five resources reads 'We don’t have copyright information for this resource.' — there is no grant anywhere in the chain; the basis is the authors' public-domain status (see each work).
+  - QUL's footer 'Terms of use' (tarteel.ai/terms, last updated 2021-04-02) are app terms; they bar copying 'the Services', which does not clearly reach QUL data. Research 01 had left them unread; they are now read (from the page's embedded data).
+- id: mufradat
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md
+  - https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB
+  - https://shamela.ws/page/terms
+  - https://shamela.ws/book/23636
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB: 52c0948da50553ea284b55bdc27b997519dc008fe2724d40aceab2b86f9fe198
+    https://shamela.ws/page/terms: eb8870a9607ca2943cc7fe3ac394cafc648457a61545d7f8cd4842a320f6bf1f
+    https://shamela.ws/book/23636: 352fba08c7b97a020d14ffd3fd8abd3ebdb95872449a4801ffe3a54272b3198b
+  clauses:
+  - topic: other
+    quote: 'license: mit'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: 'license_url: https://shamela.ws'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: The original texts are in the public domain. The compilation and digitization rights belong to their respective owners.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: display
+    quote: Research and personal use. Respect the intellectual property rights of muhaqqiqīn (editors) and publishers for critical editions.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: redistribution
+    quote: تبقى الحقوق في الكتب والطبعات والمواد لأصحابها حسب ما ينطبق. لا تمنحك هذه الشروط حقًا في إعادة استخدام المحتوى خارج ما يسمح به النظام أو إذن صاحب الحق.
+    url: https://shamela.ws/page/terms
+  - topic: redistribution
+    quote: Rights in books, editions, and other materials remain with their respective holders as applicable. These terms do not grant rights to reuse content beyond permission from the rights holder or applicable law.
+    url: https://shamela.ws/page/terms
+  - topic: other
+    quote: 'المحقق: صفوان عدنان الداودي'
+    url: https://shamela.ws/book/23636
+  our_use: 'Display only: al-Raghib (d. 502 AH)''s articles (editor footnotes, markers and front matter removed per lexica.yaml cleaning_rules) shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  status: conflict
+  notes:
+  - 'Dataset unchanged since our pin (HEAD = 07554bee, last modified 2026-05-19): its YAML still tags ''license: mit'' while its own licence section says ''Research and personal use''.'
+  - A public website and a public per-article API go beyond 'research and personal use'; Shamela's terms (unchanged, 19 Sept 2026) grant no reuse right at all. The author's text is public domain; the typing and the edition are not ours.
+  - Our lexica.yaml licence line records only the MIT packaging and Shamela's silence; it should quote the card's 'Research and personal use' sentence too (research 06 and DECISIONS already do).
+  - 'Edition: ed. Safwan Adnan al-Dawudi (Dar al-Qalam / al-Dar al-Shamiyya, 1st ed. 1412 AH); rights in the tahqiq stay with its holders. This is D22: display-only with apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
+- id: maqayis
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md
+  - https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB
+  - https://shamela.ws/page/terms
+  - https://shamela.ws/book/21710
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB: 52c0948da50553ea284b55bdc27b997519dc008fe2724d40aceab2b86f9fe198
+    https://shamela.ws/page/terms: eb8870a9607ca2943cc7fe3ac394cafc648457a61545d7f8cd4842a320f6bf1f
+    https://shamela.ws/book/21710: 5f53ec03d01c5c0a6ec32e956bea04578a657d93bee1fd1784eb81f22e00933e
+  clauses:
+  - topic: other
+    quote: 'license: mit'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: 'license_url: https://shamela.ws'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: The original texts are in the public domain. The compilation and digitization rights belong to their respective owners.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: display
+    quote: Research and personal use. Respect the intellectual property rights of muhaqqiqīn (editors) and publishers for critical editions.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: redistribution
+    quote: تبقى الحقوق في الكتب والطبعات والمواد لأصحابها حسب ما ينطبق. لا تمنحك هذه الشروط حقًا في إعادة استخدام المحتوى خارج ما يسمح به النظام أو إذن صاحب الحق.
+    url: https://shamela.ws/page/terms
+  - topic: redistribution
+    quote: Rights in books, editions, and other materials remain with their respective holders as applicable. These terms do not grant rights to reuse content beyond permission from the rights holder or applicable law.
+    url: https://shamela.ws/page/terms
+  - topic: other
+    quote: 'تحقيق وضبط: عبد السلام محمد هارون [ت ١٤٠٨ هـ]'
+    url: https://shamela.ws/book/21710
+  our_use: 'Display only: Ibn Faris (d. 395 AH)''s articles (editor footnotes, markers and front matter removed per lexica.yaml cleaning_rules) shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  status: conflict
+  notes:
+  - 'Dataset unchanged since our pin (HEAD = 07554bee, last modified 2026-05-19): its YAML still tags ''license: mit'' while its own licence section says ''Research and personal use''.'
+  - A public website and a public per-article API go beyond 'research and personal use'; Shamela's terms (unchanged, 19 Sept 2026) grant no reuse right at all. The author's text is public domain; the typing and the edition are not ours.
+  - Our lexica.yaml licence line records only the MIT packaging and Shamela's silence; it should quote the card's 'Research and personal use' sentence too (research 06 and DECISIONS already do).
+  - 'Edition: ed. Abd al-Salam Harun (d. 1408 AH / 1988), al-Babi al-Halabi 2nd ed. 1389–1392 AH — in life + 50 his edition''s rights run to 2038; rights in the tahqiq stay with its holders. This is D22: display-only with apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
+- id: lisan
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md
+  - https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB
+  - https://shamela.ws/page/terms
+  - https://shamela.ws/book/1687
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB: 52c0948da50553ea284b55bdc27b997519dc008fe2724d40aceab2b86f9fe198
+    https://shamela.ws/page/terms: eb8870a9607ca2943cc7fe3ac394cafc648457a61545d7f8cd4842a320f6bf1f
+    https://shamela.ws/book/1687: d67e682bfa8ed70699b85392008168d263cf87c8a7bd12e14570822e44dfc1f4
+  clauses:
+  - topic: other
+    quote: 'license: mit'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: 'license_url: https://shamela.ws'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: The original texts are in the public domain. The compilation and digitization rights belong to their respective owners.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: display
+    quote: Research and personal use. Respect the intellectual property rights of muhaqqiqīn (editors) and publishers for critical editions.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: redistribution
+    quote: تبقى الحقوق في الكتب والطبعات والمواد لأصحابها حسب ما ينطبق. لا تمنحك هذه الشروط حقًا في إعادة استخدام المحتوى خارج ما يسمح به النظام أو إذن صاحب الحق.
+    url: https://shamela.ws/page/terms
+  - topic: redistribution
+    quote: Rights in books, editions, and other materials remain with their respective holders as applicable. These terms do not grant rights to reuse content beyond permission from the rights holder or applicable law.
+    url: https://shamela.ws/page/terms
+  - topic: other
+    quote: 'الحواشي: لليازجي وجماعة من اللغويين'
+    url: https://shamela.ws/book/1687
+  our_use: 'Display only: Ibn Manzur (d. 711 AH)''s articles (editor footnotes, markers and front matter removed per lexica.yaml cleaning_rules) shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  status: conflict
+  notes:
+  - 'Dataset unchanged since our pin (HEAD = 07554bee, last modified 2026-05-19): its YAML still tags ''license: mit'' while its own licence section says ''Research and personal use''.'
+  - A public website and a public per-article API go beyond 'research and personal use'; Shamela's terms (unchanged, 19 Sept 2026) grant no reuse right at all. The author's text is public domain; the typing and the edition are not ours.
+  - Our lexica.yaml licence line records only the MIT packaging and Shamela's silence; it should quote the card's 'Research and personal use' sentence too (research 06 and DECISIONS already do).
+  - 'Edition: Dar Sadir 3rd ed. 1414 AH (no muhaqqiq; the footnotes by al-Yaziji and others are not imported); rights in the tahqiq stay with its holders. This is D22: display-only with apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
+- id: sihah
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md
+  - https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB
+  - https://shamela.ws/page/terms
+  - https://shamela.ws/book/23235
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB: 52c0948da50553ea284b55bdc27b997519dc008fe2724d40aceab2b86f9fe198
+    https://shamela.ws/page/terms: eb8870a9607ca2943cc7fe3ac394cafc648457a61545d7f8cd4842a320f6bf1f
+    https://shamela.ws/book/23235: d90d1e99a15cdaec12f9f6fcd321226f208a357a76b434ff3e69f17c8bd34309
+  clauses:
+  - topic: other
+    quote: 'license: mit'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: 'license_url: https://shamela.ws'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: The original texts are in the public domain. The compilation and digitization rights belong to their respective owners.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: display
+    quote: Research and personal use. Respect the intellectual property rights of muhaqqiqīn (editors) and publishers for critical editions.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: redistribution
+    quote: تبقى الحقوق في الكتب والطبعات والمواد لأصحابها حسب ما ينطبق. لا تمنحك هذه الشروط حقًا في إعادة استخدام المحتوى خارج ما يسمح به النظام أو إذن صاحب الحق.
+    url: https://shamela.ws/page/terms
+  - topic: redistribution
+    quote: Rights in books, editions, and other materials remain with their respective holders as applicable. These terms do not grant rights to reuse content beyond permission from the rights holder or applicable law.
+    url: https://shamela.ws/page/terms
+  - topic: other
+    quote: 'تحقيق: أحمد عبد الغفور عطار'
+    url: https://shamela.ws/book/23235
+  our_use: 'Display only: al-Jawhari (d. 393 AH)''s articles (editor footnotes, markers and front matter removed per lexica.yaml cleaning_rules) shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  status: conflict
+  notes:
+  - 'Dataset unchanged since our pin (HEAD = 07554bee, last modified 2026-05-19): its YAML still tags ''license: mit'' while its own licence section says ''Research and personal use''.'
+  - A public website and a public per-article API go beyond 'research and personal use'; Shamela's terms (unchanged, 19 Sept 2026) grant no reuse right at all. The author's text is public domain; the typing and the edition are not ours.
+  - Our lexica.yaml licence line records only the MIT packaging and Shamela's silence; it should quote the card's 'Research and personal use' sentence too (research 06 and DECISIONS already do).
+  - 'Edition: ed. Ahmad Abd al-Ghafur Attar (Dar al-Ilm lil-Malayin, 4th ed. 1407 AH / 1987); rights in the tahqiq stay with its holders. This is D22: display-only with apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
+- id: ibn-qutaybah-gharib
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md
+  - https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB
+  - https://shamela.ws/page/terms
+  - https://shamela.ws/book/3259
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB: 52c0948da50553ea284b55bdc27b997519dc008fe2724d40aceab2b86f9fe198
+    https://shamela.ws/page/terms: eb8870a9607ca2943cc7fe3ac394cafc648457a61545d7f8cd4842a320f6bf1f
+    https://shamela.ws/book/3259: 1d3bbf3f5b8021fe9b0eafc8fd5be974b9e3568148a8d5c4c01d3583cb2b1684
+  clauses:
+  - topic: other
+    quote: 'license: mit'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: 'license_url: https://shamela.ws'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: The original texts are in the public domain. The compilation and digitization rights belong to their respective owners.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: display
+    quote: Research and personal use. Respect the intellectual property rights of muhaqqiqīn (editors) and publishers for critical editions.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: redistribution
+    quote: تبقى الحقوق في الكتب والطبعات والمواد لأصحابها حسب ما ينطبق. لا تمنحك هذه الشروط حقًا في إعادة استخدام المحتوى خارج ما يسمح به النظام أو إذن صاحب الحق.
+    url: https://shamela.ws/page/terms
+  - topic: redistribution
+    quote: Rights in books, editions, and other materials remain with their respective holders as applicable. These terms do not grant rights to reuse content beyond permission from the rights holder or applicable law.
+    url: https://shamela.ws/page/terms
+  - topic: other
+    quote: 'المحقق: أحمد صقر'
+    url: https://shamela.ws/book/3259
+  our_use: 'Display only: Ibn Qutaybah (d. 276 AH)''s articles (editor footnotes, markers and front matter removed per lexica.yaml cleaning_rules) shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  status: conflict
+  notes:
+  - 'Dataset unchanged since our pin (HEAD = 07554bee, last modified 2026-05-19): its YAML still tags ''license: mit'' while its own licence section says ''Research and personal use''.'
+  - A public website and a public per-article API go beyond 'research and personal use'; Shamela's terms (unchanged, 19 Sept 2026) grant no reuse right at all. The author's text is public domain; the typing and the edition are not ours.
+  - Our lexica.yaml licence line records only the MIT packaging and Shamela's silence; it should quote the card's 'Research and personal use' sentence too (research 06 and DECISIONS already do).
+  - 'Edition: ed. Ahmad Saqr (Dar al-Kutub al-Ilmiyya, 1398 AH / 1978); rights in the tahqiq stay with its holders. This is D22: display-only with apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
+- id: lane
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://api.github.com/repos/laneslexicon/lexicon_xml
+  - https://api.github.com/repos/laneslexicon/lexicon_xml/commits/master
+  - https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/README.md
+  - https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/LICENSE
+  - https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/_A0.xml
+  - https://codeload.github.com/laneslexicon/lexicon_xml/tar.gz/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6
+  - https://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:2002.02.0015
+  - https://creativecommons.org/licenses/by-sa/3.0/us/
+  fetched: '2026-10-03'
+  page_sha256:
+    https://api.github.com/repos/laneslexicon/lexicon_xml: 920c8cf686de31a39ea534c086f9ee34cf234042cb29511a69c0271dc800f220
+    https://api.github.com/repos/laneslexicon/lexicon_xml/commits/master: e995cd8d2b975bcf40891b9d0c358a0ec694f4295958c76ffdd0b0a8bcabc5e1
+    https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/README.md: caea3c084c49a1e3b0e3d0390752113b4d72f3d06d5f4916b01a261ad17ca248
+    https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/_A0.xml: e59cfb6a3f1f94a7060b7ac7ef264d0bffda865fe6e3003e479daffa124eb3bb
+    https://codeload.github.com/laneslexicon/lexicon_xml/tar.gz/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6: 630d8bcdddf59bec019516631cb1290d26d016abdb378f3611df7b99cf190177
+    https://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:2002.02.0015: fb9a636897de197dced34ae749cd2d9ba0425192ce4ec085c42a502560d45c88
+    https://creativecommons.org/licenses/by-sa/3.0/us/: 04480dae5ee4aa74b489c665c4b6fa138ba2f24342429c8d8548d3f6d38471be
+  fetch_failures:
+  - url: https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/LICENSE
+    result: HTTP 404 — no LICENSE file at the pinned commit (= HEAD)
+  clauses:
+  - topic: other
+    quote: '"license":null'
+    url: https://api.github.com/repos/laneslexicon/lexicon_xml
+  - topic: other
+    quote: The original Perseus XML files are in the 'originals' branch.
+    url: https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/README.md
+  - topic: redistribution
+    quote: 'This text may be freely distributed, subject to the following restrictions:'
+    url: https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/_A0.xml
+  - topic: attribution
+    quote: Text provided by Perseus Digital Library, with funding from The U.S. Department of Education and The Max Planck Society.
+    url: https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/_A0.xml
+  - topic: other
+    quote: You leave this availability statement intact.
+    url: https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/_A0.xml
+  - topic: modification
+    quote: You offer Perseus any modifications you make.
+    url: https://raw.githubusercontent.com/laneslexicon/lexicon_xml/f3c19fb29f2cf2e12de3f97b7ce2b7a0d6682ea6/_A0.xml
+  - topic: redistribution
+    quote: This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 United States License.
+    url: https://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:2002.02.0015
+  - topic: modification
+    quote: An XML version of this text is available for download, with the additional restriction that you offer Perseus any modifications you make.
+    url: https://www.perseus.tufts.edu/hopper/text?doc=Perseus:text:2002.02.0015
+  - topic: commercial
+    quote: Share — copy and redistribute the material in any medium or format for any purpose, even commercially.
+    url: https://creativecommons.org/licenses/by-sa/3.0/us/
+  - topic: attribution
+    quote: Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+    url: https://creativecommons.org/licenses/by-sa/3.0/us/
+  - topic: redistribution
+    quote: ShareAlike — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
+    url: https://creativecommons.org/licenses/by-sa/3.0/us/
+  our_use: 'English lexicon layer: Lane''s articles per root, converted (TEI markup removed, Perseus Buckwalter turned into Arabic script), shown under the attribution line of lexica.yaml (linked to the pinned repository); served one article at a time by the public API; marked redistributable in lexica.yaml but not in the bulk release (release.py points to Perseus).'
+  status: attention
+  notes:
+  - 'Unchanged: the repository is still at f3c19fb (2018-02-20) with no licence file; the pinned archive equals GitHub''s tarball of that commit (630d8bcd…); Perseus still states CC BY-SA 3.0 US plus ''offer Perseus any modifications''.'
+  - 'Met in the English attribution: the exact Perseus credit sentence, the licence name and URL, and a ''modified'' note. The Arabic attribution — what the default locale shows under every article — names the licence but drops the required credit sentence (the funders) and the licence URL.'
+  - 'Not met yet: we modify the text but have not offered the modifications to Perseus (an outgoing message, the owner''s call, D19), and API responses do not carry the availability statement that must be left intact.'
+  - The two statements differ — the XML's availability note allows free distribution on three conditions with no share-alike, the Perseus page adds CC BY-SA 3.0 US; following both, as we do, satisfies each.
+- id: muyassar
+  registry: data/works.yaml
+  urls_checked:
+  - https://quranenc.com/ar/browse/arabic_moyassar
+  - https://quranenc.com/downloads/sqlite/arabic_moyassar.sqlite
+  - https://quranenc.com/downloads/sqlite/arabic_moyassar.zip
+  - https://quranenc.com/api/v1/translation/aya/arabic_moyassar/1/1
+  - https://quranenc.com/api/v1/translations/list
+  - https://quranenc.com/ar/home/api
+  fetched: '2026-10-03'
+  page_sha256:
+    https://quranenc.com/ar/browse/arabic_moyassar: 97049bcf84cf8fd56965eb8a4e68246c4e889efe4f7f60aa994b9a70e78f7044
+    https://quranenc.com/downloads/sqlite/arabic_moyassar.sqlite: eb384e586487b089b826375d3f705d07e775e0019325da405e0337a9f6b3da04
+    https://quranenc.com/downloads/sqlite/arabic_moyassar.zip: 96182831395a03e7497a8f398a960d45fcf90397dd72760ac35d735752a18046
+    https://quranenc.com/api/v1/translation/aya/arabic_moyassar/1/1: 0eb63f4a1b7fa73aeac2680c06a0ac26721c4e81094a73fc3e227c86797bda8f
+    https://quranenc.com/api/v1/translations/list: 044933a028f2cd47b66260ec6e5503a364e53710069ef214b16636849bc357ee
+    https://quranenc.com/ar/home/api: b61c4faf9d019c00c34cf6a466075b23171d3709aa87fdc347cb0697defdd888
+  clauses:
+  - topic: modification
+    quote: 1. عدم التعديل أو الإضافة أو الحذف على المحتوى.
+    url: https://quranenc.com/ar/home/api
+  - topic: attribution
+    quote: 2. الإشارة بوضوح للناشر وللمصدر (QuranEnc.com).
+    url: https://quranenc.com/ar/home/api
+  - topic: attribution
+    quote: 3. ذكر رقم الإصدار عند إعادة نشر الترجمة.
+    url: https://quranenc.com/ar/home/api
+  - topic: retention
+    quote: 6. تطوير الترجمات وفق النسخ الجديدة الصادرة من المصدر (QuranEnc.com).
+    url: https://quranenc.com/ar/home/api
+  - topic: other
+    quote: اللغة العربية - التفسير الميسر - موسوعة القرآن الكريم
+    url: https://quranenc.com/ar/browse/arabic_moyassar
+  our_use: 'Default Arabic tafsir: shown verbatim per verse with the author line ''نخبة من العلماء — مجمع الملك فهد لطباعة المصحف الشريف'', the QuranEnc.com credit and the version line ''QuranEnc SQLite 2025-03-25''; served by the public API; not in the bulk release.'
+  status: attention
+  notes:
+  - The pinned SQLite (eb384e58…) is byte-identical to today's download; the file inside today's zip is dated 2025-03-25.
+  - QuranEnc publishes no version number for arabic_moyassar (absent from its translations list, none in the API answer), so condition 3 is met only by a file date; ask QuranEnc for the version (research 03's owner list, D19).
+- id: mukhtasar
+  registry: data/works.yaml
+  urls_checked:
+  - https://quranenc.com/ar/browse/arabic_mokhtasar
+  - https://quranenc.com/downloads/sqlite/arabic_mokhtasar.sqlite
+  - https://quranenc.com/downloads/sqlite/arabic_mokhtasar.zip
+  - https://quranenc.com/api/v1/translation/aya/arabic_mokhtasar/1/1
+  - https://quranenc.com/api/v1/translations/list
+  - https://quranenc.com/ar/home/api
+  fetched: '2026-10-03'
+  page_sha256:
+    https://quranenc.com/ar/browse/arabic_mokhtasar: df174409c2ceb02ab151815b0114a5b169ea294e26d548de208cd1ddaf9c752f
+    https://quranenc.com/downloads/sqlite/arabic_mokhtasar.sqlite: 05086b0661250dca6c6cedd6c4503f169d14dc5fef81ae5042418c07817495e0
+    https://quranenc.com/downloads/sqlite/arabic_mokhtasar.zip: 111d23ab89f8c54dfe6e308920eef258408af0ca2deb2d87fe1babf691c490ab
+    https://quranenc.com/api/v1/translation/aya/arabic_mokhtasar/1/1: f8cb1e47d9d28fabf42d59278ca36081b6bec32d0677ab7a8b752e69814248ce
+    https://quranenc.com/api/v1/translations/list: 044933a028f2cd47b66260ec6e5503a364e53710069ef214b16636849bc357ee
+    https://quranenc.com/ar/home/api: b61c4faf9d019c00c34cf6a466075b23171d3709aa87fdc347cb0697defdd888
+  clauses:
+  - topic: modification
+    quote: 1. عدم التعديل أو الإضافة أو الحذف على المحتوى.
+    url: https://quranenc.com/ar/home/api
+  - topic: attribution
+    quote: 2. الإشارة بوضوح للناشر وللمصدر (QuranEnc.com).
+    url: https://quranenc.com/ar/home/api
+  - topic: attribution
+    quote: 3. ذكر رقم الإصدار عند إعادة نشر الترجمة.
+    url: https://quranenc.com/ar/home/api
+  - topic: retention
+    quote: 6. تطوير الترجمات وفق النسخ الجديدة الصادرة من المصدر (QuranEnc.com).
+    url: https://quranenc.com/ar/home/api
+  - topic: other
+    quote: اللغة العربية - المختصر في تفسير القرآن الكريم
+    url: https://quranenc.com/ar/browse/arabic_mokhtasar
+  our_use: 'Second concise Arabic tafsir: shown verbatim per verse with the author line ''مركز تفسير للدراسات القرآنية'', the QuranEnc.com credit and the version line ''QuranEnc SQLite 2025-03-25''; served by the public API; not in the bulk release.'
+  status: attention
+  notes:
+  - The pinned SQLite (05086b06…) is byte-identical to today's download.
+  - As for al-Muyassar, QuranEnc publishes no version number for arabic_mokhtasar; condition 3 is met only by a file date — ask QuranEnc (D19).
+- id: saheeh
+  registry: data/works.yaml
+  urls_checked:
+  - https://quranenc.com/en/browse/english_saheeh
+  - https://quranenc.com/en/browse/english_saheeh/1
+  - https://quranenc.com/downloads/sqlite/english_saheeh.sqlite
+  - https://quranenc.com/api/v1/translation/aya/english_saheeh/1/1
+  - https://quranenc.com/api/v1/translations/list
+  - https://quranenc.com/en/home/api
+  fetched: '2026-10-03'
+  page_sha256:
+    https://quranenc.com/en/browse/english_saheeh: 73369fd59964f61620bb856f4bdffa8bf122768603da3945112653cf888121cd
+    https://quranenc.com/en/browse/english_saheeh/1: 5fa14fb6b51f3c92bd0e53a8af10f25b0a9430783cda61827848ff9a21fbaf00
+    https://quranenc.com/downloads/sqlite/english_saheeh.sqlite: 8e3feedb9b6735d60355c53aef9ebc4b86a8b995d118c0387e7e1bd93b67eddb
+    https://quranenc.com/api/v1/translation/aya/english_saheeh/1/1: b76fdc2d8bc5370b43230602904751d2747bc491511460eec2b08481469f89f0
+    https://quranenc.com/api/v1/translations/list: 044933a028f2cd47b66260ec6e5503a364e53710069ef214b16636849bc357ee
+    https://quranenc.com/en/home/api: 766ce669999779da8e7ef6ae106c4e0d1321158191d379cf1d33192a7d17f5a9
+  clauses:
+  - topic: modification
+    quote: 1. No modification, addition, or deletion of the content.
+    url: https://quranenc.com/en/home/api
+  - topic: attribution
+    quote: 2. Clearly referring to the publisher and the source (QuranEnc.com).
+    url: https://quranenc.com/en/home/api
+  - topic: attribution
+    quote: 3. Mentioning the version number when re-publishing the translation.
+    url: https://quranenc.com/en/home/api
+  - topic: other
+    quote: '{"key":"english_saheeh","direction":"ltr","language_iso_code":"en","version":"1.1.2","last_update":1750772247,"title":"English Translation - Noor International Center","description":"Issued by Noor International Center."'
+    url: https://quranenc.com/api/v1/translations/list
+  - topic: other
+    quote: In the name of Allāh,[2] the Entirely Merciful, the Especially Merciful.[3]
+    url: https://quranenc.com/api/v1/translation/aya/english_saheeh/1/1
+  our_use: 'Default English translation: shown verse by verse with footnotes, ''Saheeh International — issued by Noor International Center'', the QuranEnc.com credit and ''v1.1.2''; the API and the page drop the leading ''(n) '' verse number every SQLite row starts with (stored verbatim, removed when served); not in the bulk release.'
+  status: attention
+  notes:
+  - v1.1.2 (updated 2025-06-24) is still the current version and the pinned SQLite (8e3feedb…) equals today's download.
+  - Removing the '(n) ' prefix is arguably a 'deletion' under condition 1; QuranEnc's own API serves the verse without it (1:1 reads 'In the name of Allāh,[2] …'), which supports treating it as presentation — still worth the one-line confirmation research 03 proposed (D19).
+  - QuranEnc's re-publication grant is the only permission we hold for this copyrighted translation.
+- id: rwwad
+  registry: data/works.yaml
+  urls_checked:
+  - https://quranenc.com/en/browse/english_rwwad
+  - https://quranenc.com/downloads/sqlite/english_rwwad.sqlite
+  - https://quranenc.com/api/v1/translations/list
+  - https://quranenc.com/en/home/api
+  fetched: '2026-10-03'
+  page_sha256:
+    https://quranenc.com/en/browse/english_rwwad: a8dbde2cde45889b27688280763242e4e38c667c7955b5a9762fd4bf8461cc7b
+    https://quranenc.com/downloads/sqlite/english_rwwad.sqlite: 77e2ede3d8e6d6b5c6e16ff78eda2d2b6cc0a6b7489c94a5dde4f7481f5fdee8
+    https://quranenc.com/api/v1/translations/list: 044933a028f2cd47b66260ec6e5503a364e53710069ef214b16636849bc357ee
+    https://quranenc.com/en/home/api: 766ce669999779da8e7ef6ae106c4e0d1321158191d379cf1d33192a7d17f5a9
+  clauses:
+  - topic: modification
+    quote: 1. No modification, addition, or deletion of the content.
+    url: https://quranenc.com/en/home/api
+  - topic: attribution
+    quote: 2. Clearly referring to the publisher and the source (QuranEnc.com).
+    url: https://quranenc.com/en/home/api
+  - topic: attribution
+    quote: 3. Mentioning the version number when re-publishing the translation.
+    url: https://quranenc.com/en/home/api
+  - topic: retention
+    quote: 6. Updating the translation according to the latest version issued from the source (QuranEnc.com).
+    url: https://quranenc.com/en/home/api
+  - topic: other
+    quote: '{"key":"english_rwwad","direction":"ltr","language_iso_code":"en","version":"1.0.19","last_update":1773348325,"title":"English Translation - Rowwad Translation Center"'
+    url: https://quranenc.com/api/v1/translations/list
+  our_use: 'Second English translation: shown verse by verse with footnotes, the translator credit, the QuranEnc.com credit and ''v1.0.19''; text served unmodified; not in the bulk release.'
+  status: ok
+  notes:
+  - v1.0.19 (updated 2026-03-12) is current and the pinned SQLite (77e2ede3…) equals today's download.
+  - Rows carry no verse-number prefix, so nothing is removed; publisher, source and version are all shown.
+- id: saadi
+  registry: data/works.yaml
+  urls_checked:
+  - https://qul.tarteel.ai/resources/tafsir/308
+  - https://qul.tarteel.ai/resources/308/copyright
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - https://qul.tarteel.ai/faq
+  fetched: '2026-10-03'
+  page_sha256:
+    https://qul.tarteel.ai/resources/tafsir/308: 3765e4636a08614343b1fc9eb840c654da94b9d07a8b4deeca99d7adf7f08132
+    https://qul.tarteel.ai/resources/308/copyright: aba288ce71b7b7d3245f3922a04cb4954217ac820eea57399698593b1663df1d
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json: f02c69bc447c7e1c6d388db27606ff83bc909cc269c22d565a109dfb9d747b06
+    https://qul.tarteel.ai/faq: 04294627b9d0fc07a59017243cedaac341b4e7abd92651da21f9d1196e875078
+  clauses:
+  - topic: other
+    quote: We don’t have copyright information for this resource.
+    url: https://qul.tarteel.ai/resources/308/copyright
+  - topic: other
+    quote: '"slug": "ar-tafsir-as-saadi", "source": "https://qul.tarteel.ai/resources/tafsir/308"'
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - topic: commercial
+    quote: Yes, you can use QUL data in commercial projects. However, please review the licensing terms for each resource. Some data may have restrictions or require attribution, while others are freely available for commercial use.
+    url: https://qul.tarteel.ai/faq
+  our_use: 'Medium-length Arabic tafsir shown in the reader (QUL 308 via tafsir_api v1.2.2, passages regrouped, text unchanged), credited to the author with ''مصدر النص الرقمي: QUL''; served by the public API; not in the bulk release.'
+  status: attention
+  notes:
+  - 'No licence anywhere in the chain (QUL: no copyright information; tafsir_api: MIT for its code only).'
+  - 'The author died in 1376 AH / 1956 CE: public domain under life + 50 (Saudi Arabia and most Arab states) and, in life + 70 countries, only from 2027-01-01.'
+  - The edition behind QUL's text is not named (research 03 points to al-Luwayhiq's Mu'assasat al-Risala edition); editor rights in a modern edition are the D22 question.
+- id: baghawi
+  registry: data/works.yaml
+  urls_checked:
+  - https://qul.tarteel.ai/resources/tafsir/27
+  - https://qul.tarteel.ai/resources/27/copyright
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - https://qul.tarteel.ai/faq
+  fetched: '2026-10-03'
+  page_sha256:
+    https://qul.tarteel.ai/resources/tafsir/27: 92e297541a9a93142565534529ec1bec389a21e60789d127a66e7f9313eb35e3
+    https://qul.tarteel.ai/resources/27/copyright: 23a3b9a4e9e211034b10b3a8ed5605e7323c1426b044c060dbc57096e10a3cdb
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json: f02c69bc447c7e1c6d388db27606ff83bc909cc269c22d565a109dfb9d747b06
+    https://qul.tarteel.ai/faq: 04294627b9d0fc07a59017243cedaac341b4e7abd92651da21f9d1196e875078
+  clauses:
+  - topic: other
+    quote: We don’t have copyright information for this resource.
+    url: https://qul.tarteel.ai/resources/27/copyright
+  - topic: other
+    quote: '"slug": "ar-tafsir-al-baghawi", "source": "https://qul.tarteel.ai/resources/tafsir/27"'
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - topic: attribution
+    quote: The resources available on QUL vary in their copyright status. Some are in the public domain, while others may be subject to specific licenses. We recommend reviewing the licensing information provided by each resource’s author before use.
+    url: https://qul.tarteel.ai/faq
+  our_use: Detailed tafsir shown in the reader (QUL 27 via tafsir_api v1.2.2), with the modern editor's inline footnotes ([[…]]) and manuscript folio marks stripped at build (D22); served by the public API; not in the bulk release.
+  status: attention
+  notes:
+  - 'Author d. 516 AH / 1122 CE: public domain everywhere; no licence is offered or needed for the author''s words.'
+  - QUL gives no copyright information and no edition, and works.yaml cites none — unlike the lexica, whose edition is cited. The inline footnotes we strip show the text comes from a modern critical edition, so the D22 edition question applies here too.
+  - 'Owner: have the edition identified and cited, or accept the risk, under D22; no stated term requires anything further.'
+- id: ibn-kathir
+  registry: data/works.yaml
+  urls_checked:
+  - https://qul.tarteel.ai/resources/tafsir/22
+  - https://qul.tarteel.ai/resources/22/copyright
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - https://qul.tarteel.ai/faq
+  fetched: '2026-10-03'
+  page_sha256:
+    https://qul.tarteel.ai/resources/tafsir/22: ced5f205cd879baa6177646c0b3e7f681b6cbb3a1090ea4df1512ea39b62a269
+    https://qul.tarteel.ai/resources/22/copyright: 8e178e526bb27eb998d5858bacf3574fcb5ef1fea78d194cf812fc1b6237bd1e
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json: f02c69bc447c7e1c6d388db27606ff83bc909cc269c22d565a109dfb9d747b06
+    https://qul.tarteel.ai/faq: 04294627b9d0fc07a59017243cedaac341b4e7abd92651da21f9d1196e875078
+  clauses:
+  - topic: other
+    quote: We don’t have copyright information for this resource.
+    url: https://qul.tarteel.ai/resources/22/copyright
+  - topic: other
+    quote: '"slug": "ar-tafsir-ibn-kathir", "source": "https://qul.tarteel.ai/resources/tafsir/22"'
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - topic: attribution
+    quote: The resources available on QUL vary in their copyright status. Some are in the public domain, while others may be subject to specific licenses. We recommend reviewing the licensing information provided by each resource’s author before use.
+    url: https://qul.tarteel.ai/faq
+  our_use: Detailed tafsir shown in the reader (QUL 22 via tafsir_api v1.2.2), with the modern editor's inline footnotes ([[…]]) stripped at build (D22); served by the public API; not in the bulk release.
+  status: attention
+  notes:
+  - 'Author d. 774 AH / 1373 CE: public domain everywhere; no licence is offered or needed for the author''s words.'
+  - QUL gives no copyright information and no edition, and works.yaml cites none — unlike the lexica, whose edition is cited. The inline footnotes we strip show the text comes from a modern critical edition, so the D22 edition question applies here too.
+  - 'Owner: have the edition identified and cited, or accept the risk, under D22; no stated term requires anything further.'
+- id: qurtubi
+  registry: data/works.yaml
+  urls_checked:
+  - https://qul.tarteel.ai/resources/tafsir/23
+  - https://qul.tarteel.ai/resources/23/copyright
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - https://qul.tarteel.ai/faq
+  fetched: '2026-10-03'
+  page_sha256:
+    https://qul.tarteel.ai/resources/tafsir/23: 27ed71285391b66dd81c92340d3171fed972523cde55111112b4245a2c113241
+    https://qul.tarteel.ai/resources/23/copyright: a28275d35b4272666b3e84ebb52d2d072ed823c24aae0d3b1b91c7a398792f6d
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json: f02c69bc447c7e1c6d388db27606ff83bc909cc269c22d565a109dfb9d747b06
+    https://qul.tarteel.ai/faq: 04294627b9d0fc07a59017243cedaac341b4e7abd92651da21f9d1196e875078
+  clauses:
+  - topic: other
+    quote: We don’t have copyright information for this resource.
+    url: https://qul.tarteel.ai/resources/23/copyright
+  - topic: other
+    quote: '"slug": "ar-tafseer-al-qurtubi", "source": "https://qul.tarteel.ai/resources/tafsir/23"'
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - topic: attribution
+    quote: The resources available on QUL vary in their copyright status. Some are in the public domain, while others may be subject to specific licenses. We recommend reviewing the licensing information provided by each resource’s author before use.
+    url: https://qul.tarteel.ai/faq
+  our_use: Detailed tafsir shown in the reader (QUL 23 via tafsir_api v1.2.2), with the modern editor's inline footnotes ([[…]]) stripped at build (D22); served by the public API; not in the bulk release.
+  status: attention
+  notes:
+  - 'Author d. 671 AH / 1273 CE: public domain everywhere; no licence is offered or needed for the author''s words.'
+  - QUL gives no copyright information and no edition, and works.yaml cites none — unlike the lexica, whose edition is cited. The inline footnotes we strip show the text comes from a modern critical edition, so the D22 edition question applies here too.
+  - 'Owner: have the edition identified and cited, or accept the risk, under D22; no stated term requires anything further.'
+- id: tabari
+  registry: data/works.yaml
+  urls_checked:
+  - https://qul.tarteel.ai/resources/tafsir/37
+  - https://qul.tarteel.ai/resources/37/copyright
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - https://qul.tarteel.ai/faq
+  fetched: '2026-10-03'
+  page_sha256:
+    https://qul.tarteel.ai/resources/tafsir/37: f3861fbd8886309dd76c7ffe0c8d44151518b047f23816917f5da2af536d5be3
+    https://qul.tarteel.ai/resources/37/copyright: 8021385cfa47a6f1b131f7ce8b6330f9b759d05dcce8cc86ed2fad0c630e9bb0
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json: f02c69bc447c7e1c6d388db27606ff83bc909cc269c22d565a109dfb9d747b06
+    https://qul.tarteel.ai/faq: 04294627b9d0fc07a59017243cedaac341b4e7abd92651da21f9d1196e875078
+  clauses:
+  - topic: other
+    quote: We don’t have copyright information for this resource.
+    url: https://qul.tarteel.ai/resources/37/copyright
+  - topic: other
+    quote: '"slug": "ar-tafsir-al-tabari", "source": "https://qul.tarteel.ai/resources/tafsir/37"'
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - topic: attribution
+    quote: The resources available on QUL vary in their copyright status. Some are in the public domain, while others may be subject to specific licenses. We recommend reviewing the licensing information provided by each resource’s author before use.
+    url: https://qul.tarteel.ai/faq
+  our_use: Detailed tafsir shown in the reader (QUL 37 via tafsir_api v1.2.2), with the modern editor's inline footnotes ([[…]]) stripped at build (D22); served by the public API; not in the bulk release.
+  status: attention
+  notes:
+  - 'Author d. 310 AH / 923 CE: public domain everywhere; no licence is offered or needed for the author''s words.'
+  - QUL gives no copyright information and no edition, and works.yaml cites none — unlike the lexica, whose edition is cited. The inline footnotes we strip show the text comes from a modern critical edition, so the D22 edition question applies here too.
+  - 'Owner: have the edition identified and cited, or accept the risk, under D22; no stated term requires anything further.'
+- id: everyayah
+  registry: data/recitations.yaml (audio_url)
+  urls_checked:
+  - https://everyayah.com/
+  - https://everyayah.com/data/
+  - https://everyayah.com/data/recitations.js
+  - https://everyayah.com/data/timings_files/000_disclaimer.txt
+  - https://everyayah.com/recitations_ayat.html
+  - https://everyayah.com/old_index.html
+  - http://www.versebyversequran.com/site/license
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/: 01aac4855b891fcff017f6de38738941e1e97a2323a57f2d272bb5c046e7c195
+    https://everyayah.com/data/: fc0ed8704ae3e5b9c9749b7410eff98a9565c01b5f9eb7e4d6ec0bdb8b22b6b5
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://everyayah.com/data/timings_files/000_disclaimer.txt: eaf3f4a5bd4e4b5df10dd9cfdbf256924584942b496312731010578cb1eabf66
+    https://everyayah.com/recitations_ayat.html: 9eeb9dd60f6d34d6d047b16f0bf7fbf04cca22026e8e9dddfc2456e5269b6c56
+    https://everyayah.com/old_index.html: 4edd437ab74c13a72367a3412e0ea96fc42fdda6723837a05f2cf33a14418024
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/: 801fca73ebcd160b0adc9d733859d914baa32417465e6a3891c232261b342843
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+  fetch_failures:
+  - url: http://www.versebyversequran.com/site/license
+    result: HTTP 404 (page gone; Wayback's captures after 2012 are 301/404 too)
+    used_instead: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  clauses:
+  - topic: attribution
+    quote: You must link back to our site from your product and web-site to use these timings.
+    url: https://everyayah.com/data/timings_files/000_disclaimer.txt
+  - topic: other
+    quote: Full License at http://versebyversequran.com/site/license
+    url: https://everyayah.com/data/timings_files/000_disclaimer.txt
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: other
+    quote: Copyright © 2012 Verse By Verse Quran (EveryAyah.com). All Rights Reserved.
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  - topic: attribution
+    quote: You must include a copy of, or the Uniform Resource Identifier for, this Licence with every copy or soundrecordings of the Work You Use.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  - topic: commercial
+    quote: NonCommercial — You may not use the material for commercial purposes.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/
+  our_use: 'Per-ayah MP3s for all 12 reciters stream straight from everyayah.com/data/{folder}/ (hotlinked, not copied); the API hands out these URLs; the player''s credit reads ''Recitations: EveryAyah · timing: quran-align'' and links to /sources. Planned: word-pronunciation slices cut from these files (D10, P3.7).'
+  status: attention
+  notes:
+  - 'The licence evidence is unchanged and only archival: the 2012 ''License for MP3s'' page embeds CC BY-NC 2.5 Canada; that page is gone (404 today; last good capture 2012-10-21) and EveryAyah''s current site states no licence.'
+  - The same 2012 page's footer says 'All Rights Reserved' — site boilerplate, but it leaves the CC grant resting on one embedded frame.
+  - 'Not met: the licence URI must accompany every use (legal code §4(a)) and the credit should reach EveryAyah; the player links to /sources, which lists neither EveryAyah nor quran-align (recitations.yaml has no licence or attribution fields and they are not loaded into content.sources), though /developers promises ''the source and license of every piece of data''.'
+  - Non-commercial only (D2). The D10 word slices are derivatives, which BY-NC allows (no no-derivatives term).
+  - EveryAyah's own rights in each recording are undocumented; several files name another origin in their ID3 tags (see the reciter entries; one is a conflict).
+- id: quran-align
+  registry: data/recitations.yaml (timings_zip)
+  urls_checked:
+  - https://api.github.com/repos/cpfair/quran-align
+  - https://api.github.com/repos/cpfair/quran-align/commits/master
+  - https://api.github.com/repos/cpfair/quran-align/releases
+  - https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip
+  - https://raw.githubusercontent.com/cpfair/quran-align/d2171edc076efbcbab0b4292f1f5759475e6e4a2/README.md
+  - https://raw.githubusercontent.com/cpfair/quran-align/d2171edc076efbcbab0b4292f1f5759475e6e4a2/LICENSE
+  fetched: '2026-10-03'
+  page_sha256:
+    https://api.github.com/repos/cpfair/quran-align: d76213a0217a75e8ec8118b48c5de863bfeb74933d528f61cb54f8d68638d730
+    https://api.github.com/repos/cpfair/quran-align/commits/master: b10bfcf996346d14252115ad0f22c46efa9bc812a9f12606f8aab500612bdaf6
+    https://api.github.com/repos/cpfair/quran-align/releases: 4596a331b1c852a03402a8536f4de79fc351af4080320821a29764f256ae748a
+    https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip: 5eeb045d8a7895208c94d2d7ec243567f8f550728835411527c4ffa1e789c9b7
+    https://raw.githubusercontent.com/cpfair/quran-align/d2171edc076efbcbab0b4292f1f5759475e6e4a2/README.md: 994353e9cb0356148e1e0ef40406c6426471e4f5e81d29d74d8152d1e9ec588c
+    https://raw.githubusercontent.com/cpfair/quran-align/d2171edc076efbcbab0b4292f1f5759475e6e4a2/LICENSE: 9eb7a9b311f5d341295261101e1b55d87e489b6c3006d434fbcf8824d626df04
+  clauses:
+  - topic: redistribution
+    quote: These data files are licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).
+    url: https://raw.githubusercontent.com/cpfair/quran-align/d2171edc076efbcbab0b4292f1f5759475e6e4a2/README.md
+  - topic: attribution
+    quote: Copyright (c) 2016 Collin Fair
+    url: https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip
+  - topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+    url: https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip
+  - topic: other
+    quote: Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
+    url: https://raw.githubusercontent.com/cpfair/quran-align/d2171edc076efbcbab0b4292f1f5759475e6e4a2/LICENSE
+  our_use: Word timings for the 12 reciters, remapped at build from the data's own word indexes onto the KFGQPC display tokens, drive word highlighting; served through the public API (/recitations/…); not in the bulk release.
+  status: attention
+  notes:
+  - 'Unchanged: one release (2016-11-24), the pinned zip (5eeb045d…) equals today''s download; data CC BY 4.0, code MIT.'
+  - 'Not met: CC BY 4.0 asks for the creator, the copyright notice, the licence link and a note that we modified the data (we remap the indexes); the API returns timings with none of these, and the player''s ''timing: quran-align'' links to /sources, where quran-align is not listed.'
+  - Commercial use is allowed; attribution is the only condition.
+- id: alafasy
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Alafasy_128kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  - https://everyayah.com/data/Alafasy_128kbps/
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Alafasy_128kbps/001001.mp3: 5479390af0256fe28c5fec95feac514043c3d43ea9e3fba573e7000cd0c0f2ef
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+    https://everyayah.com/data/Alafasy_128kbps/: fae96b099bbd57811c79579f0b637e9706c5bb8d2af26c886c42a190e08156ba
+  clauses:
+  - topic: other
+    quote: '"subfolder":"Alafasy_128kbps"'
+    url: https://everyayah.com/data/recitations.js
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Mishary Rashid Alafasy'' (murattal): per-ayah MP3s streamed from everyayah.com/data/Alafasy_128kbps/ with quran-align word timings (Alafasy_128kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The first-ayah file carries no ID3 tag, and the folder listing holds only audio, zips, an update zip and a checksum file — no per-reciter terms.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: husary
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Husary_64kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Husary_64kbps/001001.mp3: b75305972f9023f74752fc7122cc7d5de77d134d1b4394e4110ba3f19c2d978c
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+  clauses:
+  - topic: other
+    quote: '"subfolder":"Husary_64kbps"'
+    url: https://everyayah.com/data/recitations.js
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Mahmoud Khalil Al-Husary'' (murattal): per-ayah MP3s streamed from everyayah.com/data/Husary_64kbps/ with quran-align word timings (Husary_64kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The first-ayah file carries no ID3 tag; no per-reciter terms.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: husary-muallim
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Husary_Muallim_128kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  - http://www.allahsquran.com/
+  - http://www.allahsquran.com/about/
+  - http://www.allahsquran.com/privacy/
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Husary_Muallim_128kbps/001001.mp3: fac106e58116a0e3ea3fdb3f41694eebf9d5c6a2d5a5dc6733b18787d8635cd3
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+    http://www.allahsquran.com/: a855a49804127b29107642534a0315639ced5e5f79cd8791099c44220d1949ad
+    http://www.allahsquran.com/about/: 46850779c2af032e0775cbc97690e9bbde0953c8ce77cb6fed5ab3ef655385b2
+    http://www.allahsquran.com/privacy/: b318b58720d3255df01545443dc1b572eb8f33f1bc637295c053c51541e5b1c9
+  clauses:
+  - topic: other
+    quote: Mahmoud Khalil Al-Husari (Teacher)
+    url: https://everyayah.com/data/Husary_Muallim_128kbps/001001.mp3
+  - topic: other
+    quote: www.AllahsQuran.com
+    url: https://everyayah.com/data/Husary_Muallim_128kbps/001001.mp3
+  - topic: other
+    quote: © 2026 AllahsQuran.com · a project of The Estes Heritage Foundation
+    url: http://www.allahsquran.com/
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Al-Husary (teaching)'' (muallim): per-ayah MP3s streamed from everyayah.com/data/Husary_Muallim_128kbps/ with quran-align word timings (Husary_Muallim_128kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The ID3 comment points to www.AllahsQuran.com (album 'Noble Quran'); AllahsQuran.com's home, about and privacy pages state no licence for its audio — the upstream rights are undocumented.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: minshawy-murattal
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Minshawy_Murattal_128kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Minshawy_Murattal_128kbps/001001.mp3: 7be905cb8cac3ee2ae4a1135e5d3d01c108ea3155d1d3ad7085debcd6195d5a1
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+  clauses:
+  - topic: other
+    quote: '"subfolder":"Minshawy_Murattal_128kbps"'
+    url: https://everyayah.com/data/recitations.js
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Minshawy (murattal)'' (murattal): per-ayah MP3s streamed from everyayah.com/data/Minshawy_Murattal_128kbps/ with quran-align word timings (Minshawy_Murattal_128kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The first-ayah file carries no ID3 tag; no per-reciter terms.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: minshawy-mujawwad
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Minshawy_Mujawwad_192kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  - https://www.mp3quran.net/ar/privacy
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Minshawy_Mujawwad_192kbps/001001.mp3: 1875cf6eef3bfc75782b921695103f0eeb1ad0f256669594894a57a5f6b57a0b
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+    https://www.mp3quran.net/ar/privacy: 15921293d57451e20c4e8d069cc32b29ea4748af91507f957b16df420ca65ccc
+  clauses:
+  - topic: other
+    quote: (C) VerseByVerseQuran.Com. Original MP3s from MP3Quran.net
+    url: https://everyayah.com/data/Minshawy_Mujawwad_192kbps/001001.mp3
+  - topic: redistribution
+    quote: 'الحقوق: جميع الحقوق متاحة للجميع و يحق لأي زائر أو مطور استخدام اي مادة أو رابط من الموقع'
+    url: https://www.mp3quran.net/ar/privacy
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Minshawy (mujawwad)'' (mujawwad): per-ayah MP3s streamed from everyayah.com/data/Minshawy_Mujawwad_192kbps/ with quran-align word timings (Minshawy_Mujawwad_192kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The ID3 tag names MP3Quran.net as the origin; MP3Quran.net opens all rights to any visitor or developer, which is consistent with EveryAyah's grant.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: abdulbasit-murattal
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Abdul_Basit_Murattal_64kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Abdul_Basit_Murattal_64kbps/001001.mp3: 89d1da6c7f5a89ea65dc3b696b0847a2951dce54df9eff7a65b4494f8df7c722
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+  clauses:
+  - topic: other
+    quote: '"subfolder":"Abdul_Basit_Murattal_64kbps"'
+    url: https://everyayah.com/data/recitations.js
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Abdul Basit (murattal)'' (murattal): per-ayah MP3s streamed from everyayah.com/data/Abdul_Basit_Murattal_64kbps/ with quran-align word timings (Abdul_Basit_Murattal_64kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The first-ayah file carries no ID3 tag; no per-reciter terms.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: abdulbasit-mujawwad
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Abdul_Basit_Mujawwad_128kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Abdul_Basit_Mujawwad_128kbps/001001.mp3: 55d85e021308b08fd7fd1d1b1ca89c564f315beb8781ca32c9537a2c80f362ce
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+  clauses:
+  - topic: other
+    quote: VerseByVerseQuran Abdulbasit Abdussamad Mujawad
+    url: https://everyayah.com/data/Abdul_Basit_Mujawwad_128kbps/001001.mp3
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Abdul Basit (mujawwad)'' (mujawwad): per-ayah MP3s streamed from everyayah.com/data/Abdul_Basit_Mujawwad_128kbps/ with quran-align word timings (Abdul_Basit_Mujawwad_128kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The ID3 tag names only VerseByVerseQuran (EveryAyah) — no other origin.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: sudais
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Abdurrahmaan_As-Sudais_192kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  - https://quranicaudio.com/about
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Abdurrahmaan_As-Sudais_192kbps/001001.mp3: 4a1be062003aab02bc7c81b57b3d1eddc14fd114bfacee22ece6159563b79dd8
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+    https://quranicaudio.com/about: 4f805b52b50ec907f5ab717d6513926067e8870707dc7f80eb837f2cdffbcae7
+  clauses:
+  - topic: other
+    quote: (C) VerseByVerseQuran.com AbdurRahman As-Sudais
+    url: https://everyayah.com/data/Abdurrahmaan_As-Sudais_192kbps/001001.mp3
+  - topic: other
+    quote: Original MP3s from QuranicAudio.com
+    url: https://everyayah.com/data/Abdurrahmaan_As-Sudais_192kbps/001001.mp3
+  - topic: display
+    quote: Mp3s on this site may be downloaded and used for personal use free of charge. However, you may not use these files for commercial purposes as many of these files have rules and regulations that prevent their sale except by the publishing companies.
+    url: https://quranicaudio.com/about
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Abdurrahman As-Sudais'' (murattal): per-ayah MP3s streamed from everyayah.com/data/Abdurrahmaan_As-Sudais_192kbps/ with quran-align word timings (Abdurrahmaan_As-Sudais_192kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: conflict
+  notes:
+  - The ID3 tag says the original MP3s came from QuranicAudio.com, whose terms allow personal use only; public streaming on our site is not personal use, so EveryAyah's CC BY-NC grant may exceed what it received.
+  - 'Owner: keep the reciter, replace it with another Sudais source whose terms allow public use, or ask (D19).'
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: shuraym
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Saood_ash-Shuraym_128kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Saood_ash-Shuraym_128kbps/001001.mp3: 92c95db3e2d0ceb554c633678c156cfdf3907b04ca5e5f8f032c65d4999a7684
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+  clauses:
+  - topic: other
+    quote: '"subfolder":"Saood_ash-Shuraym_128kbps"'
+    url: https://everyayah.com/data/recitations.js
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Saud Ash-Shuraym'' (murattal): per-ayah MP3s streamed from everyayah.com/data/Saood_ash-Shuraym_128kbps/ with quran-align word timings (Saood_ash-Shuraym_128kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The first-ayah file has an ID3 tag with no text frames; no per-reciter terms.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: shaatree
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Abu_Bakr_Ash-Shaatree_128kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Abu_Bakr_Ash-Shaatree_128kbps/001001.mp3: 5ba73d175d13fa99adcc18114327d90bae6b7e5ad3ac98222e61cda07a10fa81
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+  clauses:
+  - topic: other
+    quote: '"subfolder":"Abu_Bakr_Ash-Shaatree_128kbps"'
+    url: https://everyayah.com/data/recitations.js
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Abu Bakr Ash-Shaatree'' (murattal): per-ayah MP3s streamed from everyayah.com/data/Abu_Bakr_Ash-Shaatree_128kbps/ with quran-align word timings (Abu_Bakr_Ash-Shaatree_128kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The first-ayah file carries no ID3 tag; no per-reciter terms.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: rifai
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Hani_Rifai_192kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Hani_Rifai_192kbps/001001.mp3: d5b42614d99c05d5fe0342650260496efb6bef9f3ae316ce788a51cd2de44120
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+  clauses:
+  - topic: other
+    quote: '"subfolder":"Hani_Rifai_192kbps"'
+    url: https://everyayah.com/data/recitations.js
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Hani Ar-Rifai'' (murattal): per-ayah MP3s streamed from everyayah.com/data/Hani_Rifai_192kbps/ with quran-align word timings (Hani_Rifai_192kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The first-ayah file carries no ID3 tag; no per-reciter terms.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: tablaway
+  registry: data/recitations.yaml
+  urls_checked:
+  - https://everyayah.com/data/Mohammad_al_Tablaway_128kbps/001001.mp3
+  - https://everyayah.com/data/recitations.js
+  - https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  - https://www.mp3quran.net/ar/privacy
+  fetched: '2026-10-03'
+  page_sha256:
+    https://everyayah.com/data/Mohammad_al_Tablaway_128kbps/001001.mp3: 9026cdb9cc0a5b1d4b573e49f0b88db32471e024b0e706383859ea26ea7f8b3a
+    https://everyayah.com/data/recitations.js: cde8cc62f7a6d830bd61934d279d8c4ab890d9db440087d1db51a9bd55864ee6
+    https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license: 4d202c654728dc4a1e9f022bbe9d158c209981af601249b8c06d04264816ad15
+    https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en: 35ab421f426304b4b7b8e5b78556dfdb38ac6cb66e14c473a67fd8423da885ed
+    https://www.mp3quran.net/ar/privacy: 15921293d57451e20c4e8d069cc32b29ea4748af91507f957b16df420ca65ccc
+  clauses:
+  - topic: other
+    quote: (C) VerseByVerseQuran.com Mohammad Al-Tab'laaway
+    url: https://everyayah.com/data/Mohammad_al_Tablaway_128kbps/001001.mp3
+  - topic: other
+    quote: MP3s from MP3Quran.net
+    url: https://everyayah.com/data/Mohammad_al_Tablaway_128kbps/001001.mp3
+  - topic: redistribution
+    quote: 'الحقوق: جميع الحقوق متاحة للجميع و يحق لأي زائر أو مطور استخدام اي مادة أو رابط من الموقع'
+    url: https://www.mp3quran.net/ar/privacy
+  - topic: other
+    quote: src="http://creativecommons.org/licenses/by-nc/2.5/ca/"
+    url: https://web.archive.org/web/20121021062917id_/http://www.versebyversequran.com/site/license
+  - topic: commercial
+    quote: You may not exercise any of the rights granted to You in Section 3 above in any manner that is primarily intended for or directed toward commercial advantage or private monetary compensation.
+    url: https://creativecommons.org/licenses/by-nc/2.5/ca/legalcode.en
+  our_use: 'Recitation ''Mohammad At-Tablaway'' (murattal): per-ayah MP3s streamed from everyayah.com/data/Mohammad_al_Tablaway_128kbps/ with quran-align word timings (Mohammad_al_Tablaway_128kbps.json) for highlighting; the API serves the URLs and the timings.'
+  status: attention
+  notes:
+  - The ID3 tag names MP3Quran.net as the origin; MP3Quran.net opens all rights to any visitor or developer, which is consistent with EveryAyah's grant.
+  - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
