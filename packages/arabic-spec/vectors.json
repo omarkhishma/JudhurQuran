@@ -1,0 +1,216 @@
+{
+ "spec": "Jadhr Arabic normalisation \u2014 shared test vectors (see README.md). Every implementation must pass all cases.",
+ "version": 1,
+ "cases": [
+  {
+   "name": "vocalised word",
+   "input": "\u0643\u0650\u062a\u064e\u0627\u0628\u064e\u0629",
+   "strip_marks": "\u0643\u062a\u0627\u0628\u0629",
+   "display_bare": "\u0643\u062a\u0627\u0628\u0629",
+   "normalize": "\u0643\u062a\u0627\u0628\u0647"
+  },
+  {
+   "name": "alef wasla + dagger alef",
+   "input": "\u0671\u0644\u0652\u0639\u064e\u0670\u0644\u064e\u0645\u0650\u064a\u0646\u064e",
+   "strip_marks": "\u0671\u0644\u0639\u0644\u0645\u064a\u0646",
+   "display_bare": "\u0627\u0644\u0639\u0644\u0645\u064a\u0646",
+   "normalize": "\u0627\u0644\u0639\u0644\u0645\u064a\u0646"
+  },
+  {
+   "name": "hamza above alef",
+   "input": "\u0623\u064e\u0645\u0652\u0631",
+   "strip_marks": "\u0623\u0645\u0631",
+   "display_bare": "\u0623\u0645\u0631",
+   "normalize": "\u0627\u0645\u0631"
+  },
+  {
+   "name": "hamza below alef + maksura",
+   "input": "\u0625\u0650\u0644\u064e\u0649",
+   "strip_marks": "\u0625\u0644\u0649",
+   "display_bare": "\u0625\u0644\u0649",
+   "normalize": "\u0627\u0644\u064a"
+  },
+  {
+   "name": "madda alef",
+   "input": "\u0622\u0645\u064e\u0646\u064f\u0648\u0627",
+   "strip_marks": "\u0622\u0645\u0646\u0648\u0627",
+   "display_bare": "\u0622\u0645\u0646\u0648\u0627",
+   "normalize": "\u0627\u0645\u0646\u0648\u0627"
+  },
+  {
+   "name": "waw with hamza",
+   "input": "\u0645\u064f\u0624\u0652\u0645\u0650\u0646",
+   "strip_marks": "\u0645\u0624\u0645\u0646",
+   "display_bare": "\u0645\u0624\u0645\u0646",
+   "normalize": "\u0645\u0648\u0645\u0646"
+  },
+  {
+   "name": "yeh with hamza",
+   "input": "\u0633\u064e\u0627\u0626\u0650\u0644",
+   "strip_marks": "\u0633\u0627\u0626\u0644",
+   "display_bare": "\u0633\u0627\u0626\u0644",
+   "normalize": "\u0633\u0627\u064a\u0644"
+  },
+  {
+   "name": "standalone hamza kept",
+   "input": "\u0634\u064e\u064a\u0652\u0621\u064c",
+   "strip_marks": "\u0634\u064a\u0621",
+   "display_bare": "\u0634\u064a\u0621",
+   "normalize": "\u0634\u064a\u0621"
+  },
+  {
+   "name": "tatweel",
+   "input": "\u0643\u062a\u0640\u0640\u0640\u0627\u0628",
+   "strip_marks": "\u0643\u062a\u0627\u0628",
+   "display_bare": "\u0643\u062a\u0627\u0628",
+   "normalize": "\u0643\u062a\u0627\u0628"
+  },
+  {
+   "name": "Quranic pause mark between words",
+   "input": "\u0671\u0644\u0652\u0643\u0650\u062a\u064e\u0670\u0628\u064f \u06db \u0641\u0650\u064a\u0647\u0650",
+   "strip_marks": "\u0671\u0644\u0643\u062a\u0628  \u0641\u064a\u0647",
+   "display_bare": "\u0627\u0644\u0643\u062a\u0628  \u0641\u064a\u0647",
+   "normalize": "\u0627\u0644\u0643\u062a\u0628 \u0641\u064a\u0647"
+  },
+  {
+   "name": "format characters",
+   "input": "\u0643\u062a\u0627\u0628\u200f\u200c",
+   "strip_marks": "\u0643\u062a\u0627\u0628",
+   "display_bare": "\u0643\u062a\u0627\u0628",
+   "normalize": "\u0643\u062a\u0627\u0628"
+  },
+  {
+   "name": "no-break space",
+   "input": "\u0641\u064a\u00a0\u0627\u0644\u0628\u064a\u062a",
+   "strip_marks": "\u0641\u064a\u00a0\u0627\u0644\u0628\u064a\u062a",
+   "display_bare": "\u0641\u064a\u00a0\u0627\u0644\u0628\u064a\u062a",
+   "normalize": "\u0641\u064a \u0627\u0644\u0628\u064a\u062a"
+  },
+  {
+   "name": "teh marbuta",
+   "input": "\u0631\u062d\u0645\u0629",
+   "strip_marks": "\u0631\u062d\u0645\u0629",
+   "display_bare": "\u0631\u062d\u0645\u0629",
+   "normalize": "\u0631\u062d\u0645\u0647"
+  },
+  {
+   "name": "alef maksura",
+   "input": "\u0647\u062f\u0649",
+   "strip_marks": "\u0647\u062f\u0649",
+   "display_bare": "\u0647\u062f\u0649",
+   "normalize": "\u0647\u062f\u064a"
+  },
+  {
+   "name": "Persian yeh and keheh",
+   "input": "\u06cc\u06a9",
+   "strip_marks": "\u06cc\u06a9",
+   "display_bare": "\u06cc\u06a9",
+   "normalize": "\u064a\u0643"
+  },
+  {
+   "name": "open tanwin (QPC encoding)",
+   "input": "\u0633\u064e\u0645\u0650\u064a\u0639\u08f1",
+   "strip_marks": "\u0633\u0645\u064a\u0639",
+   "display_bare": "\u0633\u0645\u064a\u0639",
+   "normalize": "\u0633\u0645\u064a\u0639"
+  },
+  {
+   "name": "small waw",
+   "input": "\u064a\u064e\u0644\u0652\u0648\u064f\u06e5\u0646\u064e",
+   "strip_marks": "\u064a\u0644\u0648\u0646",
+   "display_bare": "\u064a\u0644\u0648\u0646",
+   "normalize": "\u064a\u0644\u0648\u0646"
+  },
+  {
+   "name": "place of sajda",
+   "input": "\u0633\u064e\u062c\u064e\u062f\u064f\u0648\u0627\u06e9",
+   "strip_marks": "\u0633\u062c\u062f\u0648\u0627",
+   "display_bare": "\u0633\u062c\u062f\u0648\u0627",
+   "normalize": "\u0633\u062c\u062f\u0648\u0627"
+  },
+  {
+   "name": "end of ayah sign",
+   "input": "\u06dd\u0661",
+   "strip_marks": "\u0661",
+   "display_bare": "\u0661",
+   "normalize": "\u0661"
+  },
+  {
+   "name": "Latin transliteration untouched",
+   "input": "kit\u0101b",
+   "strip_marks": "kit\u0101b",
+   "display_bare": "kit\u0101b",
+   "normalize": "kit\u0101b"
+  },
+  {
+   "name": "empty",
+   "input": "",
+   "strip_marks": "",
+   "display_bare": "",
+   "normalize": ""
+  },
+  {
+   "name": "decomposed hamza composes under NFC",
+   "input": "\u0627\u0654",
+   "strip_marks": "\u0623",
+   "display_bare": "\u0623",
+   "normalize": "\u0627"
+  },
+  {
+   "name": "whitespace collapse in the key",
+   "input": "  \u0627\u0644\u0644\u0647   \u0623\u0643\u0628\u0631 ",
+   "strip_marks": "  \u0627\u0644\u0644\u0647   \u0623\u0643\u0628\u0631 ",
+   "display_bare": "  \u0627\u0644\u0644\u0647   \u0623\u0643\u0628\u0631 ",
+   "normalize": "\u0627\u0644\u0644\u0647 \u0627\u0643\u0628\u0631"
+  },
+  {
+   "name": "shadda with a vowel",
+   "input": "\u0645\u064f\u062d\u064e\u0645\u0651\u064e\u062f\u064c",
+   "strip_marks": "\u0645\u062d\u0645\u062f",
+   "display_bare": "\u0645\u062d\u0645\u062f",
+   "normalize": "\u0645\u062d\u0645\u062f"
+  },
+  {
+   "name": "rare alef variants fold for matching only",
+   "input": "\u0672\u0673\u0675",
+   "strip_marks": "\u0672\u0673\u0675",
+   "display_bare": "\u0672\u0673\u0675",
+   "normalize": "\u0627\u0627\u0627"
+  },
+  {
+   "name": "small high sign (salla)",
+   "input": "\u0645\u062d\u0645\u062f\u0610",
+   "strip_marks": "\u0645\u062d\u0645\u062f",
+   "display_bare": "\u0645\u062d\u0645\u062f",
+   "normalize": "\u0645\u062d\u0645\u062f"
+  },
+  {
+   "name": "dagger alef in a common word",
+   "input": "\u0647\u064e\u0670\u0630\u064e\u0627",
+   "strip_marks": "\u0647\u0630\u0627",
+   "display_bare": "\u0647\u0630\u0627",
+   "normalize": "\u0647\u0630\u0627"
+  },
+  {
+   "name": "Allah, Uthmani",
+   "input": "\u0671\u0644\u0644\u0651\u064e\u0647\u0650",
+   "strip_marks": "\u0671\u0644\u0644\u0647",
+   "display_bare": "\u0627\u0644\u0644\u0647",
+   "normalize": "\u0627\u0644\u0644\u0647"
+  },
+  {
+   "name": "Arabic-Indic digits untouched",
+   "input": "\u0662\u0665\u0665",
+   "strip_marks": "\u0662\u0665\u0665",
+   "display_bare": "\u0662\u0665\u0665",
+   "normalize": "\u0662\u0665\u0665"
+  },
+  {
+   "name": "newlines kept in display, collapsed in the key",
+   "input": "\u0633\u0637\u0631\n\u0633\u0637\u0631",
+   "strip_marks": "\u0633\u0637\u0631\n\u0633\u0637\u0631",
+   "display_bare": "\u0633\u0637\u0631\n\u0633\u0637\u0631",
+   "normalize": "\u0633\u0637\u0631 \u0633\u0637\u0631"
+  }
+ ]
+}

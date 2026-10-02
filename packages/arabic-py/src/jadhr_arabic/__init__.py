@@ -2,6 +2,7 @@
 
 from .buckwalter import BuckwalterError, bw_lemma_to_arabic, bw_to_arabic, split_lemma_key
 from .normalize import (
+    display_bare,
     fold,
     has_arabic,
     has_marks,
@@ -17,6 +18,7 @@ __all__ = [
     "BuckwalterError",
     "bw_lemma_to_arabic",
     "bw_to_arabic",
+    "display_bare",
     "display_letters",
     "fold",
     "from_qac",

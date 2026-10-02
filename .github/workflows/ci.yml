@@ -27,6 +27,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+      - run: pnpm test
       # Needs no API: nothing is prerendered at build time.
       - run: pnpm build
         env:

@@ -5,6 +5,8 @@ stored Quranic text stays byte-identical to its verified source; these
 functions build shadow columns and normalise user queries so that both sides
 of a comparison are folded the same way.
 
+Specification and shared test vectors: ``packages/arabic-spec`` (the TypeScript twin must agree).
+
 Three levels:
 
 * ``strip_marks``  — remove harakat, Quranic annotation signs, tatweel and
@@ -74,6 +76,12 @@ ARABIC_LETTERS = frozenset(chr(c) for c in range(0x0621, 0x064B) if c != 0x0640)
 def strip_marks(text: str) -> str:
     """Remove diacritics, Quranic annotation signs, tatweel and invisible format characters."""
     return _STRIP_RE.sub("", unicodedata.normalize("NFC", text))
+
+
+def display_bare(text: str) -> str:
+    """The tashkīl-off view of non-Quranic text: marks stripped, alef wasla written as a plain alef.
+    Hamza carriers and every other letter stay as written (spec: packages/arabic-spec/README.md)."""
+    return strip_marks(text).replace("\u0671", "\u0627")
 
 
 def fold(text: str) -> str:
