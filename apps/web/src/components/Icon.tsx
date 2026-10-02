@@ -26,9 +26,18 @@ const PATHS: Record<string, string> = {
   check: "M3 8.5 6.5 12 13 4.5",
   note: "M3 13h2.5L13 5.5 10.5 3 3 10.5V13Z",
   layers: "M8 2 2 5l6 3 6-3-6-3Zm-6 6 6 3 6-3M2 11l6 3 6-3",
+  calendar: "M2.5 4h11v9.5h-11V4Zm0 3h11M5.5 2.5v3M10.5 2.5v3",
+  sliders: "M2 4.5h7m3 0h2M2 11.5h2m3 0h7M9 3v3M5 10v3",
+  speaker: "M2.5 6h2.5l3.5-3v10L5 10H2.5V6Zm8 0a3 3 0 0 1 0 4m1.8-6a5.5 5.5 0 0 1 0 8",
+  branch: "M8 14V9m0 0L4.5 5.5M8 9l3.5-3.5M4.5 5.5V2.5M11.5 5.5V2.5",
+  star: "M8 2.2 9.8 6l4.1.5-3 2.8.8 4.1L8 11.4l-3.7 2 .8-4.1-3-2.8 4.1-.5L8 2.2Z",
+  starFill: "M8 2.2 9.8 6l4.1.5-3 2.8.8 4.1L8 11.4l-3.7 2 .8-4.1-3-2.8 4.1-.5L8 2.2Z",
+  quote: "M3 10.5c0-3 1.5-4.5 3.5-5M9 10.5c0-3 1.5-4.5 3.5-5M3 10.5h3v3H3zM9 10.5h3v3H9z",
+  map: "M2 4l4-1.5 4 1.5 4-1.5v9.5l-4 1.5-4-1.5-4 1.5V4Zm4-1.5V12m4-8v9.5",
+  index: "M3 3.5h10M3 6.5h10M3 9.5h6M3 12.5h6M11.5 9.5v3l1.5-1.5",
 };
 
-const DIRECTIONAL = new Set(["chevronStart", "chevronEnd", "external", "share"]);
+const DIRECTIONAL = new Set(["chevronStart", "chevronEnd", "external", "share", "index"]);
 
 export function Icon({ name, size = 14, className }: { name: keyof typeof PATHS | string; size?: number; className?: string }) {
   const cls = [className, DIRECTIONAL.has(name) ? "rtl:-scale-x-100" : null].filter(Boolean).join(" ") || undefined;
