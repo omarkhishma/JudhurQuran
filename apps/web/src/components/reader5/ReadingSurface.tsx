@@ -10,6 +10,8 @@ import { useAudio } from "@/lib/store/audio";
 import type { ChapterInfo } from "./ReaderShell";
 import { useDebounced } from "@/lib/useDebounced";
 import { GrammarBand } from "./GrammarBand";
+import { InlineGloss } from "./InlineGloss";
+import { useSaved } from "@/lib/store/saved";
 import { InlineLines } from "./InlineLines";
 import { VerseDrawer, type DrawerTool } from "./VerseDrawer";
 
@@ -41,12 +43,15 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const translitPref = usePrefs((s) => s.translitLine);
   const wordStatesOn = usePrefs((s) => s.wordStates);
   const grammarBand = usePrefs((s) => s.grammarBand);
+  const panelOpen = usePrefs((s) => s.panelOpen);
+  const notes = useSaved((s) => s.notes);
   const setPrefs = usePrefs((s) => s.set);
   const wordStates = usePersonal((s) => s.wordStates);
   const setWordState = usePersonal((s) => s.setWordState);
   const setProgress = usePersonal((s) => s.setProgress);
   const playVerse = useAudio((s) => s.playVerse);
   const [drawer, setDrawer] = useState<{ key: string; tool: DrawerTool } | null>(null);
+  const arrival = useRef(false);
   const [hover, setHover] = useState<{ slug: string; at: string } | null>(null);
   const hoverIntent = useDebounced(hover, 140);
   const mounted = useAfterMount();
@@ -66,6 +71,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     const w = p.get("w") ?? initial?.word?.slug ?? null;
     const at = p.get("w") ? p.get("at") : (initial?.word?.at ?? null);
     const v = p.get("v") ?? initial?.verse ?? null;
+    if (w || v) arrival.current = true;
     if (w) {
       openWord({ slug: w, at: at && at.startsWith(`${chapter.number}:`) ? at : null });
       setPrefs({ panelOpen: true });
@@ -86,7 +92,9 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   }, [chapter.number, openWord, openVerse, setPrefs, resume, initial?.verse, initial?.word?.slug, initial?.word?.at]);
 
   // State → URL, without navigation, once something changes: a verse of this sūra is its own path
-  // (/quran/2/255), a word and the index are parameters on the sūra (?w=…&at=…, ?mode=lookup).
+  // (/quran/2/255), a word and the index are parameters on the sūra (?w=…&at=…, ?mode=lookup). Each
+  // change is a history entry, so the browser's back and forward step through what was opened; the
+  // selection applied on arrival only replaces the entry it came from.
   const first = useRef(true);
   useEffect(() => {
     if (first.current) {
@@ -106,8 +114,38 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       else url.searchParams.set("v", verse);
     } else if (mode === "index") url.searchParams.set("mode", "lookup");
     else if (mode === "surah") url.searchParams.set("mode", "about");
-    if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url.href);
+    if (url.href === window.location.href) return;
+    // a word's own permalink (/word/2:255:3) stays in the address bar until the reader moves on
+    if (arrival.current && /^(\/en)?\/word\//.test(window.location.pathname)) {
+      arrival.current = false;
+      return;
+    }
+    if (arrival.current) {
+      arrival.current = false;
+      window.history.replaceState(window.history.state, "", url.href);
+    } else window.history.pushState(window.history.state, "", url.href);
   }, [mode, selection, verse, chapter.number]);
+
+  // Back and forward: read the entry's URL back into the reader (another sūra is Next's navigation).
+  useEffect(() => {
+    function onPop() {
+      const u = new URL(window.location.href);
+      const m = u.pathname.match(/\/quran\/(\d+)(?:\/(\d+))?\/?$/);
+      if (!m || Number(m[1]) !== chapter.number) return;
+      const w = u.searchParams.get("w");
+      const v = u.searchParams.get("v");
+      const mode = u.searchParams.get("mode");
+      const s = useReader.getState();
+      if (m[2]) s.openVerse(`${m[1]}:${m[2]}`);
+      else if (w) s.openWord({ slug: w, at: u.searchParams.get("at") }, { fromHistory: true });
+      else if (v) s.openVerse(v);
+      else if (mode === "lookup") s.setMode("index");
+      else if (mode === "about") s.setMode("surah");
+      else s.closeEntry();
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [chapter.number]);
 
   // Selection, root-family and focus-root underlines; the hot passage.
   useEffect(() => {
@@ -122,6 +160,15 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       familyRoot = tokens[0]?.dataset.r;
       tokens[0]?.closest(".passage")?.setAttribute("data-hot", "");
       tokens[0]?.scrollIntoView({ block: "nearest" });
+      // On phones the sheet covers the lower half: keep the tapped word above it (RDR-416).
+      const word = tokens[0];
+      const sheet = document.querySelector<HTMLElement>(".reader-sheet");
+      if (word && sheet)
+        requestAnimationFrame(() => {
+          const r = word.getBoundingClientRect();
+          const top = sheet.getBoundingClientRect().top;
+          if (r.bottom > top - 12) root.closest(".reader-surface")?.scrollBy({ top: r.bottom - top + 64, behavior: "smooth" });
+        });
       roving(root, tokens[0] ?? null);
     }
     if (mode === "verse" && verse) root.querySelector(`[data-verse="${CSS.escape(verse)}"]`)?.setAttribute("data-hot", "");
@@ -295,6 +342,13 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const bandWord = grammarBand ? (hoverIntent ?? (mode === "word" && selection?.at ? { slug: selection.slug, at: selection.at } : null)) : null;
   const bandEl = mounted && bandWord ? document.querySelector(`[data-band="${CSS.escape(bandWord.at.split(":").slice(0, 2).join(":"))}"]`) : null;
 
+  // Phone with the sheet put away: the selected word's gloss stands under its verse (RDR-605).
+  const phone = mounted && document.querySelector(".reader-v5")?.getAttribute("data-bp") === "phone";
+  const glossEl =
+    phone && !panelOpen && mode === "word" && selection?.at?.startsWith(`${chapter.number}:`)
+      ? document.querySelector(`[data-gloss="${CSS.escape(selection.at.split(":").slice(0, 2).join(":"))}"]`)
+      : null;
+
   const translitOn = translitPref ?? locale !== "ar";
   const resumeEl = mounted && resume ? document.querySelector(`#v${resume.passage} .passage-label`) : null;
   const drawerEl = mounted && drawer ? document.querySelector(`[data-drawer="${CSS.escape(drawer.key)}"]`) : null;
@@ -328,6 +382,23 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
           </span>,
           resumeEl,
         )}
+      {glossEl && selection?.at && createPortal(<InlineGloss key={selection.at} slug={selection.slug} at={selection.at} />, glossEl)}
+      {mounted &&
+        Object.values(notes)
+          .filter((n) => n.verse.startsWith(`${chapter.number}:`))
+          .map((n) => {
+            const slot = document.querySelector(`[data-note="${CSS.escape(n.verse)}"]`);
+            return slot
+              ? createPortal(
+                  <button type="button" className="margin-note" data-tool="note" data-verse-key={n.verse}>
+                    <em>{t("noteMark")}</em>
+                    <span className="line-clamp-2 flex-1" dir="auto">{n.text}</span>
+                  </button>,
+                  slot,
+                  `note-${n.verse}`,
+                )
+              : null;
+          })}
       {bandEl && bandWord && createPortal(<GrammarBand key={bandWord.at} slug={bandWord.slug} at={bandWord.at} />, bandEl)}
       {drawerEl && drawer && createPortal(<VerseDrawer verseKey={drawer.key} tool={drawer.tool} onClose={() => setDrawer(null)} />, drawerEl)}
     </div>

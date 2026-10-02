@@ -117,7 +117,8 @@ function AskCard({ slug, phone, onCousin }: { slug: string; phone: boolean; onCo
   const atFirst = useWord(first ? slug : null, first);
   const w = atFirst.data ?? base.data;
   if (!w) return <div className="ask-card h-[280px] animate-pulse" />;
-  return phone ? <PhoneDeck w={w} onCousin={onCousin} /> : <DesktopCard w={w} onCousin={onCousin} />;
+  // a new word starts its deck at the first card, dots included (RDR-530)
+  return phone ? <PhoneDeck key={w.slug} w={w} onCousin={onCousin} /> : <DesktopCard w={w} onCousin={onCousin} />;
 }
 
 function useAskActions(w: WordPayload) {

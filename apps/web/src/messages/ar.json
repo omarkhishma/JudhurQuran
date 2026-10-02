@@ -665,7 +665,7 @@
     "moreOccurrences": "مواضع أخرى",
     "openConcordance": "افتح الفهرس السياقي للجذر ←",
     "whereNext": "إلى أين بعد ذلك؟",
-    "trailMeta": "{count, plural, one {كلمة واحدة في مسارك} two {كلمتان في مسارك} few {{n} كلمات في مسارك} many {{n} كلمة في مسارك} other {{n} كلمة في مسارك}}",
+    "trailMeta": "{count, plural, one {خطوة واحدة في مسارك} two {خطوتان في مسارك} few {{n} خطوات في مسارك} many {{n} خطوة في مسارك} other {{n} خطوة في مسارك}}",
     "doorCousin": "قريب",
     "doorCousinWhy": "من الجذر نفسه بوزن آخر",
     "doorVerse": "آية",
@@ -872,6 +872,8 @@
     "cardPlaceOrder": "{place} · ترتيبها في النزول {order} (تنزيل)",
     "cardTcDiffers": "ومركز تفسير: {place}، ترتيبها {order}",
     "cardStudyPrefers": "ترجّح دراسة مركز تفسير أنها {period}.",
-    "cardTruncated": "النص مقطوع في قاعدة بيانات المصدر."
+    "cardTruncated": "النص مقطوع في قاعدة بيانات المصدر.",
+    "openEntry": "افتح مدخل {w}",
+    "noteMark": "ملاحظة ·"
   }
 }

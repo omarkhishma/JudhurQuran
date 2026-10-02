@@ -31,7 +31,6 @@ export function Panel({ chapter, docked, width }: { chapter: ChapterInfo; docked
   const setMode = useReader((s) => s.setMode);
   const sheet = useReader((s) => s.sheet);
   const setSheet = useReader((s) => s.setSheet);
-  const closeEntry = useReader((s) => s.closeEntry);
   const setPrefs = usePrefs((s) => s.set);
   const word = useWord(mode === "word" ? selection?.slug ?? null : null, selection?.at ?? null);
   const body = useRef<HTMLDivElement>(null);
@@ -50,9 +49,9 @@ export function Panel({ chapter, docked, width }: { chapter: ChapterInfo; docked
             ? t("aboutSurah")
             : t("dictionary");
 
+  // Closing keeps the selection: on phones the inline gloss then stands in for the sheet (RDR-605).
   function close() {
-    if (docked) setPrefs({ panelOpen: false });
-    else closeEntry();
+    setPrefs({ panelOpen: false });
   }
 
   return (
@@ -62,7 +61,7 @@ export function Panel({ chapter, docked, width }: { chapter: ChapterInfo; docked
       style={docked ? { width: Math.max(MIN_W, width) } : undefined}
       aria-label={t("dictionary")}
     >
-      {docked ? <ResizeHandle /> : <Grabber sheet={sheet} setSheet={setSheet} onClose={closeEntry} />}
+      {docked ? <ResizeHandle /> : <Grabber sheet={sheet} setSheet={setSheet} onClose={close} />}
       <div className="panel-top">
         <button type="button" className="panel-icon" onClick={back} disabled={cursor <= 0} aria-label={t("back")} title={t("back")}>
           <Icon name="chevronStart" size={14} />

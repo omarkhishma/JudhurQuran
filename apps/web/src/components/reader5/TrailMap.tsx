@@ -1,12 +1,10 @@
 "use client";
 
-import { useQueries } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { getJSON } from "@/lib/reader/api";
 import { usePersonal, useReader } from "@/lib/reader/store";
-import type { WordPayload } from "@/lib/reader/types";
+import { useGoToStep, useStepViews } from "./trailSteps";
 
 const STEP_X = 116;
 const STEP_Y = 78;
@@ -19,13 +17,11 @@ const PAD = 10;
  * card for where the reader is now. A card truncates the trail there; the trail can be saved for the
  * Notebook, handed to the graph editor, or started over.
  */
-export function TrailMap() {
+export function TrailMap({ chapter }: { chapter: number }) {
   const t = useTranslations("rd");
   const trail = usePersonal((s) => s.trail);
-  const truncate = usePersonal((s) => s.truncateTrail);
   const saveTrail = usePersonal((s) => s.saveTrail);
   const clearTrail = usePersonal((s) => s.clearTrail);
-  const openWord = useReader((s) => s.openWord);
   const setTrailMap = useReader((s) => s.setTrailMap);
   const showToast = useReader((s) => s.showToast);
   const box = useRef<HTMLDivElement>(null);
@@ -40,15 +36,14 @@ export function TrailMap() {
     return () => ro.disconnect();
   }, []);
 
+  const go = useGoToStep(chapter);
   const steps = trail.slice(-8);
   const offset = trail.length - steps.length;
-  const words = useQueries({
-    queries: steps.map((s) => ({ queryKey: ["word", s.id, null], queryFn: () => getJSON<WordPayload>(`/words/${encodeURIComponent(s.id)}?limit=12`), staleTime: Infinity })),
-  });
+  const views = useStepViews(steps);
   const pos = (i: number) => ({ x: PAD + (i % cols) * STEP_X, y: 12 + Math.floor(i / cols) * STEP_Y });
   const rows = Math.ceil(steps.length / cols);
   const height = Math.max(200, 12 + rows * STEP_Y + 30);
-  const slugs = [...new Set(trail.map((s) => s.id))];
+  const slugs = [...new Set(trail.filter((s) => s.kind === "word").map((s) => s.id))];
 
   return (
     <div className="trail-map">
@@ -58,7 +53,7 @@ export function TrailMap() {
             const i = k + 1;
             const a = pos(i - 1);
             const b = pos(i);
-            const same = !!words[i]?.data?.root && words[i]?.data?.root?.key === words[i - 1]?.data?.root?.key;
+            const same = !!views[i].root && views[i].root === views[i - 1].root;
             return (
               <line
                 key={`${s.id}-${i}`}
@@ -74,8 +69,8 @@ export function TrailMap() {
           })}
         </svg>
         <ol>
-          {steps.map((s, i) => {
-            const w = words[i]?.data;
+          {views.map((v, i) => {
+            const s = v.step;
             const p = pos(i);
             const last = i === steps.length - 1;
             return (
@@ -83,20 +78,17 @@ export function TrailMap() {
                 <button
                   type="button"
                   className="trail-node"
-                  style={{ insetInlineStart: p.x, top: p.y, width: NODE_W }}
+                  style={{ insetInlineStart: p.x, top: p.y, width: NODE_W, ["--node" as string]: v.color }}
                   aria-current={last ? "step" : undefined}
-                  title={w ? t("trailBackTo", { w: w.ar.translit }) : undefined}
-                  onClick={() => {
-                    truncate(offset + i);
-                    openWord({ slug: s.id, at: null });
-                  }}
+                  title={t("trailBackTo", { w: v.sub || v.label })}
+                  onClick={() => go(offset + i, s)}
                 >
                   <span className="flex justify-between gap-1.5 text-[10px] text-t3">
-                    <span className="font-semibold text-word">{t("typeWord")}</span>
+                    <span className="font-semibold" style={{ color: v.color }}>{t(s.kind === "word" ? "typeWord" : s.kind === "verse" ? "typeVerse" : "typeRoot")}</span>
                     <span className="mono">{i + 1}</span>
                   </span>
-                  <span className="ar-classical truncate text-[17px] leading-[1.5] text-t1" lang="ar" dir="rtl">{w ? w.ar.full : s.id}</span>
-                  <span className="mono truncate text-[10.5px] text-t2" dir="ltr">{w?.ar.translit ?? ""}</span>
+                  <span className={(s.kind === "verse" ? "mono text-[14px]" : "ar-classical text-[17px]") + " truncate leading-[1.5] text-t1"} lang={s.kind === "verse" ? undefined : "ar"} dir={s.kind === "verse" ? "ltr" : "rtl"}>{v.label}</span>
+                  <span className="mono truncate text-[10.5px] text-t2" dir="ltr">{v.sub}</span>
                 </button>
               </li>
             );

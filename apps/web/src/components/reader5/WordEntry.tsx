@@ -2,7 +2,7 @@
 
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Icon } from "@/components/Icon";
 import { Term } from "@/components/terms/Term";
 import { Link } from "@/i18n/navigation";
@@ -41,22 +41,44 @@ export function WordEntry({
   const trailMap = useReader((s) => s.trailMap);
 
   // Links into a section open it and scroll to it, in layers and tabs alike (RDR-209, RDR-527).
+  // Sections above the target may still be loading (the wujūh, the dictionaries) and push it down, so
+  // for a moment the target is held in place as the body grows — until the reader scrolls themselves.
+  const hold = useRef<() => void>(() => {});
   useEffect(() => {
     if (!scrollTo) return;
+    const body = bodyRef.current;
     const id = setTimeout(() => {
-      bodyRef.current?.querySelector(`[data-section="${scrollTo}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+      hold.current();
+      const target = () => body?.querySelector<HTMLElement>(`[data-section="${scrollTo}"]`);
+      target()?.scrollIntoView({ block: "start", behavior: "smooth" });
       jumpTo(null);
+      const inner = body?.firstElementChild;
+      if (!body || !inner) return;
+      const ro = new ResizeObserver(() => target()?.scrollIntoView({ block: "start" }));
+      ro.observe(inner);
+      const release = () => {
+        ro.disconnect();
+        clearTimeout(stop);
+        body.removeEventListener("wheel", release);
+        body.removeEventListener("touchstart", release);
+        hold.current = () => {};
+      };
+      const stop = setTimeout(release, 1500);
+      body.addEventListener("wheel", release, { passive: true });
+      body.addEventListener("touchstart", release, { passive: true });
+      hold.current = release;
     }, 80);
     return () => clearTimeout(id);
   }, [scrollTo, bodyRef, jumpTo]);
+  useEffect(() => () => hold.current(), []);
 
   if (query.isError) return <p className="p-4 text-[13px] text-bad">{t("loadFailed")}</p>;
   const w = query.data;
   if (!w) return <EntrySkeleton />;
   return (
     <article className="flex flex-col gap-3 p-3.5" aria-label={t("entryTitle", { tr: w.ar.translit })}>
-      <Trail />
-      {trailMap && <TrailMap />}
+      <Trail chapter={chapter.number} />
+      {trailMap && <TrailMap chapter={chapter.number} />}
       <EntryHeader w={w} />
       <Sections w={w} chapter={chapter} />
     </article>

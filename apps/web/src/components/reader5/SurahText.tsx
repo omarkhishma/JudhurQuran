@@ -56,6 +56,8 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
               {v.words.map((w) => w.translit ?? "").join(" ")}
             </p>
             <div data-inline={v.key} />
+            <div data-gloss={v.key} />
+            <div data-note={v.key} />
             <div data-drawer={v.key} />
           </article>
         ))}

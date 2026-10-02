@@ -665,7 +665,7 @@
     "moreOccurrences": "More occurrences",
     "openConcordance": "Open the root's concordance →",
     "whereNext": "Where next?",
-    "trailMeta": "{count, plural, one {{n} word in your trail} other {{n} words in your trail}}",
+    "trailMeta": "{count, plural, one {{n} step in your trail} other {{n} steps in your trail}}",
     "doorCousin": "A cousin",
     "doorCousinWhy": "same root, another shape",
     "doorVerse": "A verse",
@@ -872,6 +872,8 @@
     "cardPlaceOrder": "{place} · order of revelation {order} (Tanzil)",
     "cardTcDiffers": "Tafsir Center: {place}, order {order}",
     "cardStudyPrefers": "The Tafsir Center's study prefers that it is {period}.",
-    "cardTruncated": "The text is cut short in the source database."
+    "cardTruncated": "The text is cut short in the source database.",
+    "openEntry": "Open the entry for {w}",
+    "noteMark": "Note ·"
   }
 }

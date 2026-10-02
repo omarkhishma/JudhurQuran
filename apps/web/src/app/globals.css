@@ -959,6 +959,8 @@ button:disabled {
 }
 /* Empty portal slots take no gap in the passage column. */
 .passage > [data-inline]:empty,
+.passage > [data-gloss]:empty,
+.passage > [data-note]:empty,
 .passage > [data-drawer]:empty {
   display: none;
 }
@@ -1596,6 +1598,7 @@ button.type-chip:hover {
   transform: scaleX(-1);
 }
 .trail-node {
+  --node: var(--c-word);
   position: absolute;
   width: 112px;
   display: flex;
@@ -1603,17 +1606,17 @@ button.type-chip:hover {
   gap: 1px;
   padding: 5px 8px;
   background: var(--card);
-  border: 1.5px solid color-mix(in srgb, var(--c-word) 50%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--node) 50%, transparent);
   border-radius: 9px;
   text-align: start;
   box-shadow: var(--sh);
 }
 .trail-node:hover {
-  border-color: var(--c-word);
+  border-color: var(--node);
 }
 .trail-node[aria-current="step"] {
   border-style: dashed;
-  border-color: var(--c-word);
+  border-color: var(--node);
 }
 .trail-hint {
   position: absolute;
@@ -2034,5 +2037,57 @@ button.type-chip:hover {
 .about-btn:hover {
   border-color: var(--ring);
   color: var(--t1);
+}
+}
+
+@layer components {
+/* ─── Inline gloss (RDR-605) and verse notes in the text ─────────────────────── */
+.inline-gloss {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  text-align: start;
+  animation: dc-pop 0.12s ease-out;
+}
+.inline-gloss-go {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  color: var(--t2);
+  font-size: 16px;
+}
+[dir="ltr"] .inline-gloss-go {
+  transform: scaleX(-1);
+}
+.margin-note {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 11px;
+  border-radius: 0 8px 8px 0;
+  border-inline-start: 2px solid var(--c-root);
+  background: var(--card-2);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--t2);
+  text-align: start;
+}
+[dir="rtl"] .margin-note {
+  border-radius: 8px 0 0 8px;
+}
+.margin-note em {
+  font-style: normal;
+  color: var(--t3);
+  flex: none;
 }
 }

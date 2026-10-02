@@ -13,7 +13,11 @@ export function WhereNext({ w }: { w: WordPayload }) {
   const openWord = useReader((s) => s.openWord);
   const jumpTo = useReader((s) => s.jumpTo);
   const trail = usePersonal((s) => s.trail);
-  const distinct = new Set(trail.map((s) => s.id));
+  const distinct = new Set(trail.map((s) => `${s.kind}:${s.id}`));
+  // The cousin door prefers a family member not yet on the trail, to avoid loops (RDR-588).
+  const visited = new Set(trail.filter((s) => s.kind === "word").map((s) => s.id));
+  const family = w.family.flatMap((g) => g.members).filter((m) => m.slug !== w.slug);
+  const fresh = family.find((m) => !visited.has(m.slug));
   return (
     <section className="flex flex-col gap-2 pt-1" aria-label={t("whereNext")}>
       <div className="flex items-center gap-2">
@@ -23,14 +27,16 @@ export function WhereNext({ w }: { w: WordPayload }) {
       </div>
       <div className="doors">
         {w.next_steps.map((s) => {
-          if (s.kind === "cousin")
+          if (s.kind === "cousin") {
+            const c = visited.has(s.slug) && fresh ? { slug: fresh.slug, ar: fresh.ar } : s;
             return (
-              <button key="cousin" type="button" className="door" style={{ ["--door" as string]: "var(--c-word)" }} onClick={() => openWord({ slug: s.slug, at: null })}>
+              <button key="cousin" type="button" className="door" style={{ ["--door" as string]: "var(--c-word)" }} onClick={() => openWord({ slug: c.slug, at: null })}>
                 <span className="door-cap">{t("doorCousin")}</span>
-                <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{s.ar.full}</span>
+                <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{c.ar.full}</span>
                 <span className="text-[11.5px] text-t2">{t("doorCousinWhy")}</span>
               </button>
             );
+          }
           if (s.kind === "verse")
             return (
               <a key="verse" className="door" style={{ ["--door" as string]: "var(--c-sentence)" }} href={`${locale === "en" ? "/en" : ""}/quran/${s.verse_key.split(":")[0]}?w=${encodeURIComponent(w.slug)}&at=${s.location}#v${s.verse_key.split(":")[1]}`}>

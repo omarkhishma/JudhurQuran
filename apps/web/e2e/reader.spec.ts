@@ -276,3 +276,72 @@ test("About this sūra opens its card from the chapter head, verbatim (P3.9)", a
   await expect(p.getByRole("heading", { name: "سورة الفاتحة" })).toBeVisible();
   await expect(p).toContainText(card.card.names.replace(/\s+/g, " ").trim().slice(0, 20));
 });
+
+test("browser back and forward step through what was opened (P2.2)", async ({ page }) => {
+  await returning(page);
+  const [a, b] = [await slugAt(page, "1:1:3"), await slugAt(page, "1:2:2")];
+  await page.goto("/quran/1");
+  await page.locator('.w[data-w="1:1:3"]').click();
+  await expect(page).toHaveURL(new RegExp(`w=${a}`));
+  await page.locator('.w[data-w="1:2:2"]').click();
+  await expect(page).toHaveURL(new RegExp(`w=${b}`));
+  await page.locator('[data-verse-btn="1:3"]').click();
+  await expect(page).toHaveURL(/\/quran\/1\/3$/);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`w=${b}`));
+  await expect(page.locator('.w[data-w="1:2:2"]')).toHaveClass(/is-selected/);
+  await page.goBack();
+  await expect(page).toHaveURL(new RegExp(`w=${a}`));
+  await expect(page.locator('.w[data-w="1:1:3"]')).toHaveClass(/is-selected/);
+  await page.goForward();
+  await expect(page.locator('.w[data-w="1:2:2"]')).toHaveClass(/is-selected/);
+});
+
+test("the trail records verses and roots as steps (RDR-568)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the rail is an overlay on phones");
+  await returning(page);
+  await page.goto("/quran/1");
+  await page.locator('.w[data-w="1:1:3"]').click();
+  await page.locator('[data-verse-btn="1:2"]').click();
+  await page.locator(".reader-rail .rail-root").first().click();
+  await page.locator('.w[data-w="1:2:2"]').click();
+  const crumbs = panel(page).locator(".trail .trail-step");
+  await expect(crumbs).toHaveCount(4);
+  await expect(crumbs.nth(1)).toHaveAttribute("data-kind", "verse");
+  await expect(crumbs.nth(2)).toHaveAttribute("data-kind", "root");
+  await crumbs.nth(1).click();
+  await expect(page).toHaveURL(/\/quran\/1\/2$/);
+});
+
+test("phone: putting the sheet away keeps the word, with its gloss under the verse (RDR-605); the word stays above the sheet (RDR-416)", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone only");
+  await returning(page);
+  await page.goto("/quran/2");
+  const word = page.locator('.w[data-w="2:7:5"]');
+  await word.click();
+  const sheet = page.locator(".reader-sheet");
+  await expect(sheet).toBeVisible();
+  await page.waitForTimeout(500);
+  const [w, s] = [await word.boundingBox(), await sheet.boundingBox()];
+  expect(w!.y + w!.height).toBeLessThanOrEqual(s!.y);
+  await sheet.getByRole("button", { name: "إخفاء اللوحة" }).click();
+  await expect(sheet).toHaveCount(0);
+  const gloss = page.locator('[data-gloss="2:7"] .inline-gloss');
+  await expect(gloss).toBeVisible();
+  await expect(word).toHaveClass(/is-selected/);
+  await gloss.click();
+  await expect(page.locator(".reader-sheet")).toBeVisible();
+});
+
+test("a verse note shows under its verse (marginalia)", async ({ page }) => {
+  await returning(page);
+  await page.goto("/quran/1");
+  await page.locator('[data-verse-btn="1:2"]').click(); // the open verse shows all its tools, on phones too
+  await page.locator('[data-verse="1:2"] [data-tool="note"]').click();
+  await page.locator('[data-verse="1:2"] .drawer textarea').fill("الحمد ثناء");
+  await page.locator('[data-verse="1:2"] .drawer').getByRole("button", { name: "احفظ الملاحظة" }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator('[data-note="1:2"] .margin-note')).toContainText("الحمد ثناء");
+  await page.reload();
+  await expect(page.locator('[data-note="1:2"] .margin-note')).toContainText("الحمد ثناء");
+});

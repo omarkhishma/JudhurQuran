@@ -87,9 +87,12 @@ export const useReader = create<ReaderState>((set, get) => ({
     }
     // choosing any word while onboarding shows its first beat moves it to the second (RDR-406)
     set({ selection: sel, verse: null, mode: "word", history, cursor, ask: false, sheet: "half", onbBeat: s.onbBeat === 0 ? 1 : s.onbBeat });
-    usePersonal.getState().recordTrail(sel.slug);
+    usePersonal.getState().recordTrail("word", sel.slug);
   },
-  openVerse: (key) => set({ verse: key, selection: null, mode: "verse", ask: false, sheet: "half" }),
+  openVerse: (key) => {
+    set({ verse: key, selection: null, mode: "verse", ask: false, sheet: "half" });
+    usePersonal.getState().recordTrail("verse", key);
+  },
   setMode: (m) => set({ mode: m }),
   back: () => {
     const { cursor, history } = get();
@@ -109,7 +112,10 @@ export const useReader = create<ReaderState>((set, get) => ({
   setCite: (cite) => set({ cite }),
   setSuggest: (suggest) => set({ suggest }),
   setTrailMap: (trailMap) => set({ trailMap }),
-  setFocusRoot: (focusRoot) => set({ focusRoot }),
+  setFocusRoot: (focusRoot) => {
+    set({ focusRoot });
+    if (focusRoot) usePersonal.getState().recordTrail("root", focusRoot);
+  },
   showToast: (text) => set({ toast: { text, id: Date.now() } }),
   jumpTo: (scrollTo) => {
     if (scrollTo) usePrefs.getState().openLayer(scrollTo);
@@ -192,7 +198,8 @@ export const usePrefs = create<PrefsState>()(
 );
 
 export type WordState = "new" | "learning" | "known";
-export type TrailStep = { kind: "word"; id: string; ts: number };
+/** A step of the curiosity trail: a word (lemma slug), a verse (2:255) or a root (علم) — RDR-568. */
+export type TrailStep = { kind: "word" | "verse" | "root"; id: string; ts: number };
 export type ProgressEntry = { chapter: number; passage: number; at: number };
 export type SavedTrail = { id: string; steps: TrailStep[]; ts: number };
 export type Proposal = {
@@ -218,7 +225,7 @@ type PersonalState = {
   proposals: Proposal[];
   savedTrails: SavedTrail[];
   setWordState: (slug: string, s: WordState) => void;
-  recordTrail: (slug: string) => void;
+  recordTrail: (kind: TrailStep["kind"], id: string) => void;
   truncateTrail: (index: number) => void;
   clearTrail: () => void;
   saveTrail: () => void;
@@ -241,11 +248,11 @@ export const usePersonal = create<PersonalState>()(
       proposals: [],
       savedTrails: [],
       setWordState: (slug, s) => set((st) => ({ wordStates: { ...st.wordStates, [slug]: s } })),
-      recordTrail: (slug) =>
+      recordTrail: (kind, id) =>
         set((st) => {
           const last = st.trail[st.trail.length - 1];
-          if (last?.id === slug) return {}; // consecutive duplicates are not appended (RDR-587)
-          return { trail: [...st.trail, { kind: "word" as const, id: slug, ts: Date.now() }].slice(-TRAIL_CAP) };
+          if (last?.kind === kind && last.id === id) return {}; // consecutive duplicates are not appended (RDR-587)
+          return { trail: [...st.trail, { kind, id, ts: Date.now() }].slice(-TRAIL_CAP) };
         }),
       truncateTrail: (index) => set((st) => ({ trail: st.trail.slice(0, index + 1) })),
       clearTrail: () => set({ trail: [] }),
