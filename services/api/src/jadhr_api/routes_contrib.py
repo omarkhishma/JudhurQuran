@@ -1,6 +1,5 @@
 """Contribution and moderation endpoints (PLAN P7). Reading the queue and the changelog is public; proposing,
-deciding and the rest need an account. Nothing here is cached by a shared cache except the public changelog and
-a word's merged contributions, briefly."""
+deciding and the rest need an account. Nothing here is kept by a cache without asking again."""
 
 from __future__ import annotations
 
@@ -14,7 +13,8 @@ from . import accounts, contrib
 
 router = APIRouter(prefix="/api/v1")
 NO_STORE = {"Cache-Control": "no-store"}
-BRIEF = {"Cache-Control": "public, max-age=30"}
+# public, but asked again each time: a merge shows at once to whoever was part of it
+BRIEF = {"Cache-Control": "no-cache"}
 User = Annotated[dict[str, Any], Depends(accounts.current_user)]
 Viewer = Annotated[dict[str, Any] | None, Depends(accounts.optional_user)]
 

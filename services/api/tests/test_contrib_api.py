@@ -96,6 +96,8 @@ def test_proposing_needs_an_account_names_a_real_target_and_never_the_quranic_te
     p = r.json()
     assert p["status"] == "open" and p["has_source"] and p["current_text"] and p["proposer"]["mine"]
     assert p["sources"][0]["title_ar"]  # the lexicon named as the reader knows it
+    # the same proposal sent again (a draft from a second device) is the same proposal
+    assert client.post("/api/v1/proposals", headers=h, json=GLOSS).json()["id"] == p["id"]
     bad = [
         {**GLOSS, "lemma": "no-such-word"},  # not in the lexicon
         {**GLOSS, "kind": "edit"},  # an edit names its sense
@@ -175,6 +177,7 @@ def test_the_queue_is_public_and_two_approvals_one_the_boards_merge_into_the_cha
         and m["contributor"].startswith("proposer-")
     )
     assert len(m["reviewers"]) == 3 and any(r["board"] for r in m["reviewers"])
+    assert m["sources"][0]["title_ar"]  # the lexicon by its name, never its id (RVQ-78)
     log = client.get("/api/v1/changelog").json()["data"]
     assert log[0]["event"] == "merged" and log[0]["merge"]["proposal_id"] == pid
     assert (

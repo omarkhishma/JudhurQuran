@@ -164,6 +164,16 @@ def propose(u: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
                from contributions.proposals where proposer_id = :u""",
             {"u": u["id"]},
         )
+        # the same proposal sent twice (a draft from two devices) is the same proposal
+        same = q1(
+            conn,
+            """select id from contributions.proposals where proposer_id = :u and kind = :k and lemma = :l
+               and location is not distinct from :loc and field is not distinct from :f and text = :t
+               and status in ('open', 'approved', 'changes') limit 1""",
+            {"u": u["id"], "k": kind, "l": lemma, "loc": location, "f": field, "t": proposed},
+        )
+        if same:
+            return detail(str(same["id"]), u)
         if recent and (recent["day"] >= PER_DAY or recent["open"] >= MAX_OPEN):
             raise HTTPException(status_code=429, detail="That is as many proposals as can be sent for now.")
         row = q1(
@@ -352,6 +362,8 @@ def detail(pid: str, viewer: dict[str, Any] | None) -> dict[str, Any]:
         "revert": bool(v and v["board"]) and merge is not None and merge["reverted_at"] is None,
     }
     out["approved_by_me"] = approved_by_me
+    # who is asking, as the server knows them now (a role granted after sign-in counts at once)
+    out["viewer"] = v
     return out
 
 
@@ -394,11 +406,13 @@ def decide(u: dict[str, Any], pid: str, decision: str, note: str | None) -> dict
             {"id": p["id"], "r": p["revision"], "u": u["id"], "role": u["role"], "d": decision, "n": note},
         )
         if decision == "approve":
+            # in the order they approved, so the credit reads as it happened
             approvers = q(
                 conn,
-                """select distinct on (d.reviewer_id) d.reviewer_id, d.reviewer_role, u.display_name
+                """select d.reviewer_id, d.reviewer_role, u.display_name
                    from contributions.decisions d left join accounts.users u on u.id = d.reviewer_id
-                   where d.proposal_id = :id and d.revision = :r and d.decision = 'approve'""",
+                   where d.proposal_id = :id and d.revision = :r and d.decision = 'approve'
+                   order by d.created_at""",
                 {"id": p["id"], "r": p["revision"]},
             )
             if len(approvers) >= APPROVALS_TO_MERGE and any(a["reviewer_role"] in BOARD for a in approvers):
@@ -590,7 +604,19 @@ def revert(u: dict[str, Any], merge_id: str, note: str) -> dict[str, Any]:
 # ─── what readers see: the changelog, a word's merged contributions, their own ───
 
 
-def _merge_out(m: dict[str, Any], names: dict[str, str]) -> dict[str, Any]:
+def _titled(sources: list[dict[str, Any]], works: dict[str, Any]) -> list[dict[str, Any]]:
+    """A source as the reader knows it: the lexicon's title, never its id (RVQ-78)."""
+    return [
+        {
+            **s,
+            "title_ar": (works.get(s["work"]) or {}).get("title_ar"),
+            "title_en": (works.get(s["work"]) or {}).get("title_en"),
+        }
+        for s in sources
+    ]
+
+
+def _merge_out(m: dict[str, Any], names: dict[str, str], works: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": str(m["id"]),
         "proposal_id": str(m["proposal_id"]),
@@ -602,7 +628,7 @@ def _merge_out(m: dict[str, Any], names: dict[str, str]) -> dict[str, Any]:
         "field": m["field"],
         "previous_text": m["previous_text"],
         "text": m["text"],
-        "sources": m["sources"],
+        "sources": _titled(m["sources"] or [], works),
         # a contributor who deleted their account, or never chose a name, is not named
         "contributor": m["contributor_name"],
         "former": m["contributor_id"] is None,
@@ -623,6 +649,7 @@ def changelog(since: str | None, limit: int) -> dict[str, Any]:
             {"since": since, "n": limit},
         )
     names = _lemma_ar([m["lemma"] for m in found])
+    works = _works()
     return {
         "data": [
             {
@@ -630,7 +657,7 @@ def changelog(since: str | None, limit: int) -> dict[str, Any]:
                 "at": e["at"].isoformat(),
                 "event": e["event"],
                 "dataset_version": e["dataset_version"],
-                "merge": _merge_out(e, names),
+                "merge": _merge_out(e, names, works),
             }
             for e in found
         ]
@@ -650,7 +677,8 @@ def for_lemma(slug: str) -> dict[str, Any]:
             {"s": slug},
         )
     names = _lemma_ar([slug])
-    return {"data": [_merge_out(m, names) for m in found], "pending": pending["n"] if pending else 0}
+    works = _works()
+    return {"data": [_merge_out(m, names, works) for m in found], "pending": pending["n"] if pending else 0}
 
 
 def mine(u: dict[str, Any]) -> dict[str, Any]:
