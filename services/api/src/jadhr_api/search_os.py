@@ -142,6 +142,10 @@ def search(conn: Connection, es: OpenSearch, q: str, limit: int = 20) -> dict[st
         return base
 
     latin = kind == "latin"
+    if latin:
+        from .search import chat_alphabet
+
+        q = chat_alphabet(q)
     body: list[dict[str, Any]] = []
     plan: list[str] = []
     if kind == "root":

@@ -53,6 +53,19 @@ LABELS = {
 }
 
 
+_CHAT_DIGITS = str.maketrans({"2": "ʾ", "3": "ʿ", "5": "kh", "6": "ṭ", "7": "ḥ", "9": "ṣ"})
+
+
+def chat_alphabet(q: str) -> str:
+    """Arabic typed in Latin letters and digits, as in chat (RDR-602): 3ilm → ʿilm, ra7ma → raḥma,
+    3'afoor → ghafūr, Saabir → sābir (doubled vowels are long). Plain transliteration passes through."""
+    s = q.lower().replace("3'", "gh").replace("7'", "kh")
+    s = s.translate(_CHAT_DIGITS)
+    s = re.sub(r"a{2,}", "ā", s)
+    s = re.sub(r"(?:ee|ii)+", "ī", s)
+    return re.sub(r"(?:oo|uu)+", "ū", s)
+
+
 def _simplify_latin(s: str) -> str:
     s = s.lower().replace("al-", "").replace("an-", "").replace("ash-", "").replace("at-", "")
     s = _LATIN_SIMPLIFY.sub("", s)

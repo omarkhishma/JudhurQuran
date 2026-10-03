@@ -96,3 +96,17 @@ def test_index_counts_match_postgres() -> None:
     assert st["indices"]["roots"]["documents"] == meta["roots"]
     assert st["indices"]["passages"]["documents"] == meta["verses"]
     assert st["indices"]["occurrences"]["documents"] == meta["words"]
+
+
+def test_chat_alphabet_finds_the_word() -> None:
+    """Arabic typed with digits and doubled vowels, as in chat (RDR-602)."""
+    from jadhr_api.search import chat_alphabet
+
+    assert chat_alphabet("3ilm") == "ʿilm"
+    assert chat_alphabet("ra7ma") == "raḥma"
+    assert chat_alphabet("3'afoor") == "ghafūr"
+    assert chat_alphabet("Saabir") == "sābir"
+    assert chat_alphabet("qalb") == "qalb"
+    for q, slug in (("Saabir", "sabir"), ("3ilm", "ilm"), ("ra7ma", "rahma"), ("7amd", "hamd")):
+        d = client.get("/api/v1/search", params={"q": q, "limit": 3}).json()
+        assert slug in [x["slug"] for x in d["results"]["lemmas"]], q
