@@ -2630,3 +2630,23 @@ button.type-chip:hover {
   }
 }
 }
+
+@layer components {
+/* ─── Graph hand-off (RDR-362…368) ────────────────────────────────────────── */
+.handoff-rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.handoff-rows > li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 4px 10px;
+}
+.handoff-rows > li + li {
+  border-top: 1px solid var(--line);
+}
+}

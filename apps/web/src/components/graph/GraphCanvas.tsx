@@ -48,6 +48,13 @@ export type GraphCanvasProps = {
   registerAdd?: (add: (nodes: GraphNode[], edges: GraphEdge[], label: string) => void) => void;
 };
 
+/** The cards a first view opens on: the word and verse the reader came from, else every focus card. */
+function firstView(nodes: GraphNode[]): GraphNode[] {
+  const focus = nodes.filter((n) => n.data.focus);
+  const near = focus.filter((n) => n.data.kind === "word" || n.data.kind === "verse");
+  return near.length ? near : focus;
+}
+
 export function GraphCanvas(props: GraphCanvasProps) {
   return (
     <ReactFlowProvider>
@@ -79,6 +86,8 @@ function CanvasInner({
   const [past, setPast] = useState<Snapshot[]>([]);
   const [future, setFuture] = useState<Snapshot[]>([]);
   const laidOut = useRef(!autoLayout);
+  // a stored graph opens on its focus cards (a seed's path) at a legible zoom, not shrunk to fit everything
+  const [focusIds] = useState(() => firstView(initialNodes).map((n) => ({ id: n.id })));
   const wrapper = useRef<HTMLDivElement>(null);
 
   // Notify the owner (autosave) whenever the document changes.
@@ -118,8 +127,10 @@ function CanvasInner({
       void layout(rf.getNodes(), rf.getEdges()).then((laid) => {
         setNodes(laid);
         // Readable first view: fit, but never below a zoom where Arabic on the cards stays legible.
-        // Open on the root and its forms (the right edge), where the reading of the map begins.
-        const anchor = laid.filter((n) => n.data.kind === "root" || n.data.kind === "lemma" || n.data.focus);
+        // Open on the path the reader came by (root → lemma → word → verse) when there is one, else on the
+        // root and its forms (the right edge), where the reading of the map begins.
+        const focus = firstView(laid);
+        const anchor = focus.length ? focus : laid.filter((n) => n.data.kind === "root" || n.data.kind === "lemma");
         requestAnimationFrame(() =>
           rf.fitView({ nodes: anchor.length ? anchor : undefined, padding: 0.25, minZoom: 0.6, maxZoom: 1 }),
         );
@@ -390,6 +401,7 @@ function CanvasInner({
             minZoom={0.15}
             maxZoom={2}
             fitView={!autoLayout}
+            fitViewOptions={focusIds.length ? { nodes: focusIds, padding: 0.25, minZoom: 0.6, maxZoom: 1 } : undefined}
             proOptions={{ hideAttribution: false }}
             colorMode={theme === "dark" ? "dark" : "light"}
             defaultEdgeOptions={{ type: "default", style: { stroke: "var(--edge)", strokeWidth: 1.5 } }}

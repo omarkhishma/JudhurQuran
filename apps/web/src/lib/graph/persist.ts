@@ -71,7 +71,7 @@ export function decodeShare(fragment: string): GraphDoc | null {
 }
 
 /** Create and store a new graph; returns its id. (Timestamps and ids are made here, outside render.) */
-export async function createGraph(input: Pick<GraphDoc, "title" | "kind" | "nodes" | "edges">): Promise<string> {
+export async function createGraph(input: Pick<GraphDoc, "title" | "kind" | "nodes" | "edges" | "pendingLayout">): Promise<string> {
   const id = newId();
   const now = Date.now();
   await saveGraph({ version: 1, id, createdAt: now, updatedAt: now, ...input });

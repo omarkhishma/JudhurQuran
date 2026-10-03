@@ -6,6 +6,7 @@
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { Seed } from "@/lib/graph/seedCodec";
 
 export type Mode = "empty" | "word" | "verse" | "index" | "surah";
 export type Selection = { slug: string; at: string | null };
@@ -37,6 +38,7 @@ type ReaderState = {
   railOverlay: boolean;
   omnibox: boolean;
   cite: CiteTarget | null;
+  handoff: Seed | null;
   suggest: SuggestTarget | null;
   trailMap: boolean;
   focusRoot: string | null;
@@ -55,6 +57,7 @@ type ReaderState = {
   setRailOverlay: (on: boolean) => void;
   setOmnibox: (on: boolean) => void;
   setCite: (t: CiteTarget | null) => void;
+  setHandoff: (s: Seed | null) => void;
   setSuggest: (t: SuggestTarget | null) => void;
   setTrailMap: (on: boolean) => void;
   setFocusRoot: (k: string | null) => void;
@@ -78,6 +81,7 @@ export const useReader = create<ReaderState>((set, get) => ({
   railOverlay: false,
   omnibox: false,
   cite: null,
+  handoff: null,
   suggest: null,
   trailMap: false,
   focusRoot: null,
@@ -121,6 +125,7 @@ export const useReader = create<ReaderState>((set, get) => ({
   setRailOverlay: (on) => set({ railOverlay: on }),
   setOmnibox: (on) => set({ omnibox: on }),
   setCite: (cite) => set({ cite }),
+  setHandoff: (handoff) => set({ handoff }),
   setSuggest: (suggest) => set({ suggest }),
   setTrailMap: (trailMap) => set({ trailMap }),
   setFocusRoot: (focusRoot) => {

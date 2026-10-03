@@ -13,8 +13,9 @@ import { usePersonal, useReader, type SuggestTarget } from "@/lib/reader/store";
 import { SITE } from "@/lib/site";
 import { useDebounced } from "@/lib/useDebounced";
 import type { ChapterInfo } from "./ReaderShell";
+import { GraphHandoff } from "./GraphHandoff";
 
-/** Every reader overlay (design 03 §3.11): omnibox, cite, suggest, onboarding, toast, review. */
+/** Every reader overlay (design 03 §3.11): omnibox, cite, graph hand-off, suggest, onboarding, toast, review. */
 export function Overlays({ chapter }: { chapter: ChapterInfo }) {
   const omnibox = useReader((s) => s.omnibox);
   const setOmnibox = useReader((s) => s.setOmnibox);
@@ -36,6 +37,7 @@ export function Overlays({ chapter }: { chapter: ChapterInfo }) {
     <>
       {omnibox && <Omnibox onClose={() => setOmnibox(false)} />}
       <CiteDialog chapter={chapter} />
+      <GraphHandoff />
       <SuggestDialog />
       {!ask && <Onboarding chapter={chapter} />}
       <Toast />

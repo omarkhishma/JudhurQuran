@@ -36,7 +36,7 @@ function EditorInner({ doc }: { doc: GraphDoc }) {
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(async () => {
         setStatus("saving");
-        await saveGraph({ ...doc, title: nextTitle || t("untitled"), nodes: latest.current.nodes, edges: latest.current.edges });
+        await saveGraph({ ...doc, pendingLayout: false, title: nextTitle || t("untitled"), nodes: latest.current.nodes, edges: latest.current.edges });
         setStatus("saved");
       }, 800);
     },
@@ -64,6 +64,7 @@ function EditorInner({ doc }: { doc: GraphDoc }) {
         <GraphCanvas
           initialNodes={doc.nodes}
           initialEdges={doc.edges}
+          autoLayout={!!doc.pendingLayout}
           editable
           title={title}
           onTitleChange={(v) => {

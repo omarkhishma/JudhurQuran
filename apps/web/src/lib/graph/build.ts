@@ -5,6 +5,7 @@ export type RootGraphPayload = {
   root: { key: string; letters: string[]; spaced: string; translit: string; occurrences: number; verse_count: number; surah_count: number; lemma_count: number };
   lemmas: {
     id: number;
+    slug: string;
     ar: string;
     pos: string;
     verb_form: number | null;
@@ -23,7 +24,7 @@ export const wordId = (lemma: number, form: string) => `word:${lemma}:${form}`;
 export const verseId = (location: string) => `verse:${location}`;
 export const edgeId = (a: string, b: string) => `e:${a}->${b}`;
 
-const POS_AR: Record<string, string> = { V: "فعل", N: "اسم", ADJ: "صفة", PN: "علم", IMPN: "اسم فعل" };
+export const POS_AR: Record<string, string> = { V: "فعل", N: "اسم", ADJ: "صفة", PN: "علم", IMPN: "اسم فعل" };
 const DER_AR: Record<string, string> = { ACT_PCPL: "اسم فاعل", PASS_PCPL: "اسم مفعول", VN: "مصدر" };
 
 export function lemmaSub(l: RootGraphPayload["lemmas"][number]): string {
@@ -57,7 +58,11 @@ function wordNode(lemma: number, f: RootGraphPayload["lemmas"][number]["forms"][
  */
 export function buildRootGraph(
   g: RootGraphPayload,
-  { formsPerLemma = 3, focusLocation }: { formsPerLemma?: number; focusLocation?: string } = {},
+  {
+    formsPerLemma = 3,
+    focusLocation,
+    focus,
+  }: { formsPerLemma?: number; focusLocation?: string; focus?: { lemmaSlug: string; form?: string | null } } = {},
 ): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
@@ -67,11 +72,17 @@ export function buildRootGraph(
     id: rid,
     type: "card",
     position: { x: 0, y: 0 },
-    data: { kind: "root", ar: r.spaced, sub: r.translit, count: r.occurrences, rootKey: r.key, focus: !!focusLocation },
+    data: { kind: "root", ar: r.spaced, sub: r.translit, count: r.occurrences, rootKey: r.key, focus: !!focusLocation || !!focus },
   });
   for (const l of g.lemmas) {
     const lid = lemmaId(l.id);
-    const focusForm = focusLocation ? l.forms.find((f) => f.first.location === focusLocation)?.form : undefined;
+    // the word the reader came from: by its first location (?focus=) or by its lemma and surface form (a seed)
+    const onFocusLemma = focus?.lemmaSlug === l.slug;
+    const focusForm = focusLocation
+      ? l.forms.find((f) => f.first.location === focusLocation)?.form
+      : onFocusLemma && focus?.form && l.forms.some((f) => f.form === focus.form)
+        ? focus.form
+        : undefined;
     const shown = l.forms.slice(0, formsPerLemma);
     if (focusForm && !shown.some((f) => f.form === focusForm)) shown.push(l.forms.find((f) => f.form === focusForm)!);
     nodes.push({
@@ -86,7 +97,7 @@ export function buildRootGraph(
         rootKey: r.key,
         lemmaId: l.id,
         more: l.forms.length > shown.length ? { kind: "forms", remaining: l.forms.length - shown.length } : undefined,
-        focus: !!focusForm,
+        focus: !!focusForm || onFocusLemma,
       },
     });
     edges.push({ id: edgeId(rid, lid), source: rid, target: lid });

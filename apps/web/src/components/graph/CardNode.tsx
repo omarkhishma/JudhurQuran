@@ -142,7 +142,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
               )}
               {(data.kind === "word" || data.kind === "verse") && data.verse?.location && (
                 <Link
-                  href={`/quran/${data.verse.key.split(":")[0]}?w=${data.verse.location}#v${data.verse.key.split(":")[1]}`}
+                  href={`/word/${data.verse.location}`}
                   className="nodrag btn min-h-[26px] px-2 text-[11.5px]"
                 >
                   {t("openReader")}

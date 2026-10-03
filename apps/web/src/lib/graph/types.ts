@@ -36,6 +36,8 @@ export type GraphDoc = {
   edges: GraphEdge[];
   createdAt: number;
   updatedAt: number;
+  /** Made from a seed and not yet opened: the editor lays it out once with the cards' measured sizes. */
+  pendingLayout?: boolean;
 };
 
 export type GraphMeta = Pick<GraphDoc, "id" | "title" | "kind" | "createdAt" | "updatedAt"> & { nodeCount: number };

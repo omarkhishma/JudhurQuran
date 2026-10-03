@@ -151,6 +151,7 @@ export type Attestation = {
 
 export type WordPayload = {
   slug: string;
+  lemma_id: number;
   uri: string;
   ar: Ar;
   pos: PosLabel;

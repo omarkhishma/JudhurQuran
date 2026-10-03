@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "@/i18n/navigation";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import { useGoToStep, useStepViews } from "./trailSteps";
 
@@ -23,6 +22,7 @@ export function TrailMap({ chapter }: { chapter: number }) {
   const saveTrail = usePersonal((s) => s.saveTrail);
   const clearTrail = usePersonal((s) => s.clearTrail);
   const setTrailMap = useReader((s) => s.setTrailMap);
+  const setHandoff = useReader((s) => s.setHandoff);
   const showToast = useReader((s) => s.showToast);
   const box = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(3);
@@ -43,7 +43,6 @@ export function TrailMap({ chapter }: { chapter: number }) {
   const pos = (i: number) => ({ x: PAD + (i % cols) * STEP_X, y: 12 + Math.floor(i / cols) * STEP_Y });
   const rows = Math.ceil(steps.length / cols);
   const height = Math.max(200, 12 + rows * STEP_Y + 30);
-  const slugs = [...new Set(trail.filter((s) => s.kind === "word").map((s) => s.id))];
 
   return (
     <div className="trail-map">
@@ -107,9 +106,9 @@ export function TrailMap({ chapter }: { chapter: number }) {
         >
           {t("saveTrail")}
         </button>
-        <Link href={`/graph?trail=${encodeURIComponent(slugs.join(","))}`} className="btn text-[12px]">
+        <button type="button" className="btn text-[12px]" onClick={() => setHandoff({ seed: "trail", steps: trail.map(({ kind, id }) => ({ kind, id })) })}>
           {t("openTrailInEditor")}
-        </Link>
+        </button>
         <span className="flex-1" />
         <button
           type="button"

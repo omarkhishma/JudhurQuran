@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { Icon } from "@/components/Icon";
 import { Term } from "@/components/terms/Term";
-import { Link } from "@/i18n/navigation";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { SECTIONS, type SectionId, usePersonal, usePrefs, useReader } from "@/lib/reader/store";
 import { Segmented } from "@/components/ui/Segmented";
@@ -103,6 +102,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
   const locale = useLocale();
   const [star, toggleStar] = useStar(w.slug, w.ar.full);
   const setCite = useReader((s) => s.setCite);
+  const setHandoff = useReader((s) => s.setHandoff);
   const jumpTo = useReader((s) => s.jumpTo);
   const occ = w.occurrence;
   const posTerm = TAG_TERM[w.pos.tag];
@@ -176,10 +176,10 @@ function EntryHeader({ w }: { w: WordPayload }) {
       )}
       <WordStateControl slug={w.slug} />
       <div className="flex flex-wrap gap-2">
-        <Link href={`/graph?w=${encodeURIComponent(w.slug)}`} className="btn flex-1" title={t("openInGraphTitle")}>
+        <button type="button" className="btn flex-1" onClick={() => setHandoff({ seed: "word", slug: w.slug, at: occ?.location ?? null })} title={t("openInGraphTitle")}>
           <Icon name="graph" size={13} />
           {t("openInGraph")}
-        </Link>
+        </button>
         <button type="button" className="btn" onClick={() => setCite({ kind: "word", slug: w.slug, label: occ?.surface.full ?? w.ar.full, at: occ?.location ?? null })} title={t("citeTitle")}>
           <Icon name="quote" size={13} />
           {t("cite")}

@@ -36,6 +36,17 @@ export function WordChip({ m, current }: { m: LemmaLite; current?: boolean }) {
   );
 }
 
+/** "Graph the root": the whole family handed to the editor as a root seed (RDR-221, 222). */
+function GraphRootButton({ root }: { root: string }) {
+  const t = useTranslations("rd");
+  const setHandoff = useReader((s) => s.setHandoff);
+  return (
+    <button type="button" className="btn text-[12px]" onClick={() => setHandoff({ seed: "root", root })}>
+      {t("graphRoot")}
+    </button>
+  );
+}
+
 /** Word family (design 03 §3.5.2, RDR-221…225): every lemma on the root, grouped by pattern. */
 export function FamilySection({ w }: { w: WordPayload }) {
   const t = useTranslations("rd");
@@ -47,6 +58,8 @@ export function FamilySection({ w }: { w: WordPayload }) {
         <div className="flex items-baseline gap-2">
           <span className="ar-classical text-[30px] tracking-[.08em] text-root" lang="ar">{w.root.ar_spaced}</span>
           <span className="mono text-[11.5px] text-t3" dir="ltr">{w.root.translit}</span>
+          <span className="flex-1" />
+          <GraphRootButton root={w.root.key} />
         </div>
         {w.core_meaning && (
           <p className="mt-1 text-[13.5px] leading-[1.9] text-t2" lang="ar" dir="rtl">

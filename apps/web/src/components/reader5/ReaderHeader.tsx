@@ -97,7 +97,9 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
   const place = chapter.place === "meccan" ? t("meccan") : t("medinan");
   const meta = [place, t("verses", cnt(chapter.verseCount, locale)), t("juz", { n: formatNumber(chapter.juz, locale) })];
   if (wordStatesOn) meta.push(t("knownLearning", { known: formatNumber(known, locale), learning: formatNumber(learning, locale) }));
-  const graphHref = selection ? `/graph?w=${encodeURIComponent(selection.slug)}` : "/graph";
+  const setHandoff = useReader((s) => s.setHandoff);
+  // with a word selected the graph button hands that word to the editor (RDR-028, 361); otherwise it opens the editor
+  const handoff = selection?.slug ? () => setHandoff({ seed: "word", slug: selection.slug, at: selection.at }) : null;
 
   return (
     <header className="reader-header">
@@ -173,10 +175,17 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
         </button>
       )}
       {wide && (
-        <Link href={graphHref} className="hdr-btn" title={selection ? t("graphWordTitle") : t("graphTitle")}>
-          <Icon name="graph" size={13} />
-          {t("graph")}
-        </Link>
+        handoff ? (
+          <button type="button" className="hdr-btn" onClick={handoff} title={t("graphWordTitle")}>
+            <Icon name="graph" size={13} />
+            {t("graph")}
+          </button>
+        ) : (
+          <Link href="/graph" className="hdr-btn" title={t("graphTitle")}>
+            <Icon name="graph" size={13} />
+            {t("graph")}
+          </Link>
+        )
       )}
       {!wide && (
         <div className="relative">
@@ -194,7 +203,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
               setSize={setSize}
               theme={theme}
               toggleTheme={toggleTheme}
-              graphHref={graphHref}
+              onGraph={handoff}
             />
           )}
           {prefsOpen && <ReadingPrefs onClose={() => setPrefsOpen(false)} />}
@@ -246,7 +255,7 @@ function MoreMenu({
   setSize,
   theme,
   toggleTheme,
-  graphHref,
+  onGraph,
 }: {
   onClose: () => void;
   onPrefs: () => void;
@@ -254,7 +263,7 @@ function MoreMenu({
   setSize: (n: number) => void;
   theme: "light" | "dark" | null;
   toggleTheme: () => void;
-  graphHref: string;
+  onGraph: (() => void) | null;
 }) {
   const t = useTranslations("rd");
   const box = useRef<HTMLDivElement>(null);
@@ -292,9 +301,15 @@ function MoreMenu({
       <button type="button" role="menuitem" onClick={() => { toggleTheme(); onClose(); }}>
         {theme === "dark" ? t("themeLight") : t("themeDark")}
       </button>
-      <Link href={graphHref} role="menuitem" onClick={onClose}>
-        {t("graphEditor")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
-      </Link>
+      {onGraph ? (
+        <button type="button" role="menuitem" onClick={() => { onClose(); onGraph(); }}>
+          {t("graphEditor")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
+        </button>
+      ) : (
+        <Link href="/graph" role="menuitem" onClick={onClose}>
+          {t("graphEditor")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
+        </Link>
+      )}
       <Link href="/library" role="menuitem" onClick={onClose}>
         {t("library")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
       </Link>

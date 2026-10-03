@@ -388,7 +388,13 @@
     "rootNotFound": "Root not found.",
     "loadingRoot": "Loading the root…",
     "imported": "Map imported",
-    "importError": "Could not read the file"
+    "importError": "Could not read the file",
+    "wordTitle": "Word map: {word}",
+    "verseTitle": "Verse {key}",
+    "trailTitle": "Reading trail ({n} steps)",
+    "seedBuilding": "The editor is preparing the cards…",
+    "seedUnreadable": "This link carries no seed the editor can read.",
+    "seedFailed": "The cards could not be built from this link."
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",
@@ -942,7 +948,21 @@
     "divisionStart": "Start of {kind} {n}",
     "citedVia": "Accessed through",
     "readingPosition": "Reading position",
-    "positionText": "{surah} of the sūra · page {page} of 604 ({mushaf} of the mushaf)"
+    "positionText": "{surah} of the sūra · page {page} of 604 ({mushaf} of the mushaf)",
+    "handoffTitle": "Hand off to the graph editor",
+    "handoffSub_word": "The graph opens with this word at the centre: its root, the patterns built on it, its family words, and the verse you came from.",
+    "handoffSub_root": "The graph opens on the whole root family: the root, its patterns, then its words as they occur in the Quran.",
+    "handoffSub_verse": "The verse becomes one card, linked to every word in it that has a root, with its lemma and root.",
+    "handoffSub_trail": "Your reading trail becomes cards in the order you took them, the links numbered, each word with its root.",
+    "handoffRows": "Cards that will be created",
+    "handoffInto": "Add to",
+    "handoffNew": "a new graph",
+    "handoffFoot": "Links are drawn root → lemma → word → verse, as the editor's own layout expects. Nothing already on the graph is replaced; existing cards stay where they are.",
+    "handoffError": "The cards could not be prepared. Try again.",
+    "copySeed": "Copy seed JSON",
+    "seedCopied": "Seed JSON copied",
+    "openEditor": "Open graph editor",
+    "graphRoot": "Graph the root"
   },
   "concordance": {
     "title": "Concordance",

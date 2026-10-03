@@ -109,6 +109,7 @@ export function NoteDrawer({ verseKey }: { verseKey: string }) {
 
 function GraphDrawer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
+  const setHandoff = useReader((s) => s.setHandoff);
   const locale = useLocale();
   const v = useVerse(verseKey);
   const words = (v.data?.words ?? []).filter((w) => w.root);
@@ -121,7 +122,7 @@ function GraphDrawer({ verseKey }: { verseKey: string }) {
           <span key={r} className="chip"><span className="ar-classical text-[16px] text-root" lang="ar">{r.split("").join(" ")}</span></span>
         ))}
       </div>
-      <Link href={`/graph?verse=${verseKey}`} className="btn self-start">{t("openInEditor")}</Link>
+      <button type="button" className="btn self-start" onClick={() => setHandoff({ seed: "verse", key: verseKey })}>{t("openInEditor")}</button>
     </div>
   );
 }

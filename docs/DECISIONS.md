@@ -17,6 +17,8 @@
 
 - [2026-10-03] **Concordance: mushaf order is the default and every filter lives in the URL; collocates and forms filter the lines instead of leaving the screen.** — CON-Q01 (Quran-first order), CON-30 (shareable state), CON-Q05/CON-24 (a collocate or a form opens its own lines). English line tooltips show the verse in the reader's translation with the work credited under the lines; the CSV translation column names its work in the header, so the text never travels without its credit.
 
+- [2026-10-03] **The reader hands the graph editor a seed, not cards: `{seed: word|root|verse|trail, …}` as base64url UTF-8 JSON in `/graph/seed?s=`, and the editor builds the cards from the current dataset.** — RDR-369/601. A link stays valid across dataset releases and tabs; the dialog counts the cards from the same builder, so it never lists rows the editor will not create (the prototype's RDR-528 gap). Adding to an existing graph appends below it and moves nothing (RDR-367); a new graph is laid out once with measured card sizes and opens on the word and verse the reader came from.
+
 ### Architecture
 - [2026-10-02] **Next.js 16 App Router + React 19 + TypeScript for the web.** — SSR is required for verse/root/word pages (Arabic SEO is the clearest market gap per research 04), and the reader/editor are client-heavy.
 - [2026-10-02] **Previous caching model (fetch revalidate + tags), not Cache Components; a release expires the `dataset` tag.** — Stable with next-intl's static rendering; content is immutable per release. The loader POSTs to the web's `/api/revalidate` (bearer `JADHR_REVALIDATE_SECRET` in production) which calls `revalidateTag("dataset", { expire: 0 })` — not stale-while-revalidate, because a release can change payload shape and stale pages then crash. API ETags hash `version@loaded_at`, re-read every 30 s, so a corrected rebuild of the same version never answers 304 with old content. A CDN in front must be purged on release (runbook).
@@ -49,6 +51,8 @@
 - [2026-10-03] **al-Furūq is read from OpenITI's `Shamela0010414` version, not the `JK006960` the metadata flags primary.** — The same typing of the same edition (identical slips), but it carries the edition card (editor Muḥammad Ibrāhīm Salīm; JK006960 has none, author death «9999»), page markers that follow shamela.ws book 10414, a few corrections and no stray conversion marks. JK006960 stays pinned as a cross-check.
 
 ## Lessons
+
+- [2026-10-03] A page under `[locale]` that reads `searchParams` must say `export const dynamic = "force-dynamic"`: the locale layout prerenders it, the build passes, and every request fails with DYNAMIC_SERVER_USAGE (a 500). The graph seed page did exactly that.
 
 - [2026-10-03] A column flex container must not wrap: with `flex-wrap: wrap` each column line takes its content's width, so the concordance's chip rows grew to 1,140 px inside a 380 px bar and the phone's layout viewport widened to 1,167 px — every tap in the e2e run missed. The no-horizontal-scroll check caught it; keep it in every screen's phone test.
 - [2026-10-03] Nothing a server component calls may be exported from a `"use client"` module: the server receives a reference, the build passes, and the page fails with a 500 at request time. Shared helpers and types go in `lib/`.
