@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { pick, SCOPES } from "@/lib/i18nScopes";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
@@ -60,7 +61,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
         >
           {t("skipToContent")}
         </a>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        {/* only what every page's browser needs; each route group adds its own (lib/i18nScopes) */}
+        <NextIntlClientProvider locale={locale} messages={pick(messages, SCOPES.root)}>
           {/* Each route group wears its own header: the shared shell, or the reader's and editor's bespoke ones. */}
           <Providers>{children}</Providers>
         </NextIntlClientProvider>
