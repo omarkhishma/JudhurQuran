@@ -9,6 +9,7 @@ import hashlib
 import re
 import time
 from collections import defaultdict, deque
+from datetime import date, datetime, timedelta
 from typing import Annotated, Any
 
 import orjson
@@ -20,7 +21,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import analyse, concordance, content, knowledge, lexicon
+from . import analyse, concordance, content, daily, knowledge, lexicon
 from .db import connect
 from .search import search as run_search
 from .settings import get_settings
@@ -565,6 +566,34 @@ def analyse_tokens(body: _Tokens) -> Response:
 def analyse_phrase(request: Request, q: str = Query("", max_length=600)) -> Response:
     with connect() as conn:
         return cached(request, analyse.analyse(conn, q))
+
+
+@router.get(
+    "/word-of-the-day",
+    summary="The word of the day: one Quranic word per date in Mecca's time zone, the same for everyone",
+)
+def word_of_the_day(
+    request: Request,
+    day: Annotated[
+        date | None, Query(alias="date", description="YYYY-MM-DD; today in Asia/Riyadh when absent")
+    ] = None,
+) -> Response:
+    with connect() as conn:
+        if day is not None:
+            if not date(2000, 1, 1) <= day <= date(2200, 12, 31):
+                raise HTTPException(status_code=422, detail="date must be between 2000-01-01 and 2200-12-31")
+            return cached(request, daily.word_of_the_day(conn, day))
+        # undated: today's word, cached only until Mecca's midnight
+        now = datetime.now(daily.TZ)
+        left = int(
+            (
+                datetime.combine(now.date() + timedelta(days=1), datetime.min.time(), daily.TZ) - now
+            ).total_seconds()
+        )
+        return ORJSONResponse(
+            daily.word_of_the_day(conn, now.date()),
+            headers={"Cache-Control": f"public, max-age={max(60, min(left, 3600))}"},
+        )
 
 
 @router.get(
