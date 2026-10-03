@@ -12,7 +12,16 @@ describe("the review scheduler (P5.3, RDR-359)", () => {
     expect([b.interval, b.reps]).toEqual([3, 2]);
     const c = schedule(b, "علم", "good", b.due);
     expect(c.interval).toBe(Math.round(3 * c.ease));
-    expect(c.ease).toBeGreaterThan(2.5);
+    expect(c.ease).toBe(2.5); // good keeps the ease
+  });
+
+  it("sends an easy family further than a good one and raises its ease (the spec's fourth grade, RDR-351)", () => {
+    const good = schedule(undefined, "علم", "good", T);
+    const easy = schedule(undefined, "علم", "easy", T);
+    expect([good.interval, easy.interval]).toEqual([1, 4]);
+    expect(easy.ease).toBeGreaterThan(good.ease);
+    const later = schedule(schedule(easy, "علم", "easy", T), "علم", "easy", T);
+    expect(later.interval).toBeGreaterThan(schedule(schedule(good, "علم", "good", T), "علم", "good", T).interval);
   });
 
   it("brings a forgotten family back within minutes, first of all, and lowers its ease to no less than 1.3", () => {

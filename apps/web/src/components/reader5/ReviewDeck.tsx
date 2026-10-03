@@ -4,23 +4,28 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
+import { useFocusTrap } from "@/components/ui/useFocusTrap";
 import { Link } from "@/i18n/navigation";
 import { normalize } from "@/lib/arabic/normalize";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, toArabicDigits, verseRef } from "@/lib/format";
-import { getJSON, useSurahRoots } from "@/lib/reader/api";
+import { useSurahRoots } from "@/lib/reader/api";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import type { Ar } from "@/lib/reader/types";
 import { dueOrder, type Grade, type ReviewCard, useReview } from "@/lib/store/review";
 import { useSaved } from "@/lib/store/saved";
+import { useTranslitOn } from "@/lib/useTranslit";
 import type { ChapterInfo } from "./ReaderShell";
 
 type RootRef = { key: string; spaced: string };
-type Member = { slug: string; ar: Ar; pos: { tag: string; ar: string | null; en: string | null }; gloss_en: string | null; occurrences: number; pattern: { slug: string; ar: Ar } | null };
+type Pos = { tag: string; ar: string | null; en: string | null };
+type Member = { slug: string; ar: Ar; pos: Pos; gloss_en: string | null; occurrences: number; pattern: { slug: string; ar: Ar } | null };
+/** A blank: the mushaf's word and its everyday spelling, the hint before checking, what is revealed after. */
+type Blank = { location: string; token_from: number; token_to: number; surface: string; imlaei: string; translit: string | null; gloss_en: string | null; slug: string; lemma: Omit<Member, "pattern">; pattern: { slug: string; ar: Ar } | null };
 type RootReview = {
   root: { key: string; spaced: string; translit: string; occurrences: number; lemma_count: number; gist_ar: string | null; gist_page: string | null };
   family: Member[];
-  context: { verse_key: string; surah: { number: number; name_ar: string; name_translit: string }; ayah: number; tokens: string[]; blanks: { location: string; token_from: number; token_to: number; surface: string; slug: string | null }[]; translation: { text: string } | null; translation_work: { title_en: string } | null };
+  context: { verse_key: string; surah: { number: number; name_ar: string; name_translit: string }; ayah: number; tokens: string[]; blanks: Blank[]; translation: { text: string } | null; translation_work: { title_en: string } | null };
 };
 
 const SESSION = 20;
@@ -91,7 +96,7 @@ function ReviewSession({ chapter, onClose }: { chapter: ChapterInfo; onClose: ()
   const [start] = useState(() => ({ cards: useReview.getState().cards, now: Date.now() }));
   const [mode, setMode] = useState<"root" | "context">("root");
   const [results, setResults] = useState<{ root: RootRef; grade: Grade }[]>([]);
-  const endBtn = useRef<HTMLButtonElement>(null);
+  const overlay = useRef<HTMLDivElement>(null);
 
   const own = mine.data ?? [];
   const source: "mine" | "chapter" = own.length ? "mine" : "chapter";
@@ -102,17 +107,15 @@ function ReviewSession({ chapter, onClose }: { chapter: ChapterInfo; onClose: ()
   const current = queue[results.length];
   const done = !loading && results.length > 0 && results.length >= queue.length;
 
+  // a modal like every other (RDR-461): focus inside, Tab kept in, Esc closes, focus back to what opened it
+  useFocusTrap(overlay, true, onClose);
   useEffect(() => {
-    endBtn.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [onClose]);
+  }, []);
 
   function graded(g: Grade) {
     if (!current) return;
@@ -127,7 +130,7 @@ function ReviewSession({ chapter, onClose }: { chapter: ChapterInfo; onClose: ()
   const when = (ms: number) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }).format(new Date(ms));
 
   return (
-    <div className="review-overlay" role="dialog" aria-modal="true" aria-label={t("title")}>
+    <div ref={overlay} className="review-overlay" role="dialog" aria-modal="true" aria-label={t("title")}>
       <div className="review-bar">
         <span className="block h-[16px] w-[16px] rounded-[5px] bg-root" aria-hidden="true" />
         <span className="text-[13.5px] font-medium">{t("title")}</span>
@@ -142,7 +145,7 @@ function ReviewSession({ chapter, onClose }: { chapter: ChapterInfo; onClose: ()
             <span className="mono text-[12px] text-t3">{t("progress", { n: formatNumber(Math.min(results.length + 1, queue.length), locale), of: formatNumber(queue.length, locale) })}</span>
           </>
         )}
-        <button ref={endBtn} type="button" className="btn" onClick={onClose}>{t("end")}</button>
+        <button type="button" className="btn" onClick={onClose}>{t("end")}</button>
       </div>
       <div className="review-body">
         {loading ? (
@@ -150,7 +153,7 @@ function ReviewSession({ chapter, onClose }: { chapter: ChapterInfo; onClose: ()
         ) : done ? (
           <section className="review-card" aria-labelledby="review-done">
             <h2 id="review-done" className="text-[17px] font-semibold">{t("doneTitle")}</h2>
-            <p className="text-[13.5px] text-t2">{t("doneSummary", { k: formatNumber(results.filter((r) => r.grade === "good").length, locale), n: formatNumber(results.length, locale) })}</p>
+            <p className="text-[13.5px] text-t2">{t("doneSummary", { k: formatNumber(results.filter((r) => r.grade === "good" || r.grade === "easy").length, locale), ...cnt(results.length, locale) })}</p>
             <ul className="flex flex-col gap-1.5">
               {results.map((r) => {
                 const c = useReview.getState().cards[r.root.key];
@@ -158,7 +161,7 @@ function ReviewSession({ chapter, onClose }: { chapter: ChapterInfo; onClose: ()
                   <li key={r.root.key} className="flex items-center gap-3 border-b border-line py-1.5">
                     <span className="ar-classical text-[20px] text-root" lang="ar">{r.root.spaced}</span>
                     <span className="flex-1 text-[12px] text-t3">{c ? t("nextReview", { when: when(c.due) }) : ""}</span>
-                    <span className={"text-[12.5px] " + (r.grade === "good" ? "text-good" : r.grade === "forgot" ? "text-bad" : "text-t2")}>{t(r.grade)}</span>
+                    <span className={"text-[12.5px] " + (r.grade === "good" || r.grade === "easy" ? "text-good" : r.grade === "forgot" ? "text-bad" : "text-t2")}>{t(r.grade)}</span>
                   </li>
                 );
               })}
@@ -180,7 +183,16 @@ function ReviewSession({ chapter, onClose }: { chapter: ChapterInfo; onClose: ()
 
 function RootCardLoader({ root, mode, pick, onGrade, onLeave }: { root: RootRef; mode: "root" | "context"; pick: number; onGrade: (g: Grade) => void; onLeave: () => void }) {
   const t = useTranslations("review");
-  const q = useQuery({ queryKey: ["root-review", root.key, pick], queryFn: () => getJSON<RootReview>(`/roots/${encodeURIComponent(root.key)}/review?pick=${pick}`), staleTime: Infinity });
+  // which roots are due and how often each was reviewed are the reader's: asked in a body, never a URL (P5.6)
+  const q = useQuery({
+    queryKey: ["root-review", root.key, pick],
+    queryFn: async () => {
+      const r = await fetch("/api/v1/review/root", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ root: root.key, pick }) });
+      if (!r.ok) throw new Error(String(r.status));
+      return (await r.json()) as RootReview;
+    },
+    staleTime: Infinity,
+  });
   if (q.isLoading) return <div className="h-60 w-full max-w-[560px] animate-pulse rounded-2xl bg-card-2" role="status" aria-label={t("loading")} />;
   if (!q.data)
     return (
@@ -192,17 +204,39 @@ function RootCardLoader({ root, mode, pick, onGrade, onLeave }: { root: RootRef;
   return mode === "root" ? <RootCard d={q.data} onGrade={onGrade} onLeave={onLeave} /> : <ContextCard d={q.data} onGrade={onGrade} />;
 }
 
-/** The root card (RDR-349…351): name the family, reveal each word, grade the family. */
+const isTyping = (el: EventTarget | null) => el instanceof HTMLElement && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable);
+const GRADES: Grade[] = ["forgot", "partial", "good", "easy"];
+
+/** The root card (RDR-349…351, P2.0): name the family, reveal each word — or all at once with Space or a tap, the
+ * spec's flip — and grade the family with the spec's four grades (again, hard, good, easy; keys 1–4). */
 function RootCard({ d, onGrade, onLeave }: { d: RootReview; onGrade: (g: Grade) => void; onLeave: () => void }) {
   const t = useTranslations("review");
   const locale = useLocale();
   const [shown, setShown] = useState<Set<string>>(new Set());
+  const box = useRef<HTMLElement>(null);
   const ar = locale === "ar";
+  const translit = useTranslitOn();
+  const all = shown.size === d.family.length;
+  const revealAll = () => setShown(new Set(d.family.map((m) => m.slug)));
+  useEffect(() => {
+    box.current?.focus({ preventScroll: true });
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (isTyping(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === " " && !(e.target instanceof HTMLButtonElement) && !(e.target instanceof HTMLAnchorElement)) {
+        e.preventDefault();
+        revealAll();
+      } else if (/^[1-4]$/.test(e.key)) onGrade(GRADES[Number(e.key) - 1]);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
   return (
-    <section className="review-card" aria-label={d.root.spaced}>
+    <section ref={box} tabIndex={-1} className="review-card outline-none" aria-label={d.root.spaced}>
       <p className="mono text-[11px] uppercase tracking-[.09em] text-root">{t("rootCap", cnt(d.root.lemma_count, locale))}</p>
       <p className="ar-classical px-2 text-[52px] leading-[1.3] tracking-[.08em] text-root" lang="ar">{d.root.spaced}</p>
-      <p className="mono text-[12px] text-t3" dir="ltr">{d.root.translit}</p>
+      {translit && <p className="mono text-[12px] text-t3" dir="ltr">{d.root.translit}</p>}
       {d.root.gist_ar && (
         <p className="ar-classical text-[16px] leading-[1.8] text-t2" lang="ar" dir="rtl">
           «{d.root.gist_ar}» <span className="text-[11.5px] text-t3">— {t("gistBy", { page: d.root.gist_page ? (ar ? toArabicDigits(d.root.gist_page) : d.root.gist_page) : "" })}</span>
@@ -218,7 +252,7 @@ function RootCard({ d, onGrade, onLeave }: { d: RootReview; onGrade: (g: Grade) 
               {open ? (
                 <>
                   <span className="ar-classical min-w-[90px] text-[22px] text-word" lang="ar">{m.ar.full}</span>
-                  <span className="mono text-[11.5px] text-t3" dir="ltr">{m.ar.translit}</span>
+                  {translit && <span className="mono text-[11.5px] text-t3" dir="ltr">{m.ar.translit}</span>}
                   <span className="flex-1 truncate text-[12.5px] text-t2">{ar ? pos : (m.gloss_en ?? pos)}</span>
                   <Link href={`/read?w=${encodeURIComponent(m.slug)}`} className="btn" title={t("entryTitle")} onClick={onLeave}>{t("entry")}</Link>
                 </>
@@ -233,101 +267,154 @@ function RootCard({ d, onGrade, onLeave }: { d: RootReview; onGrade: (g: Grade) 
           );
         })}
       </ul>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn text-bad" onClick={() => onGrade("forgot")}>{t("forgot")}</button>
-        <button type="button" className="btn" onClick={() => onGrade("partial")}>{t("partial")}</button>
-        <button type="button" className="btn btn-primary" onClick={() => onGrade("good")}>{t("good")}</button>
+      {!all && (
+        <button type="button" className="btn self-start" onClick={revealAll} aria-keyshortcuts="Space">
+          {t("revealAll")}
+        </button>
+      )}
+      <div className="review-grades" role="group" aria-label={t("gradeLabel")}>
+        {GRADES.map((g, i) => (
+          <button key={g} type="button" className={"btn" + (g === "forgot" ? " text-bad" : g === "good" ? " btn-primary" : "")} onClick={() => onGrade(g)} aria-keyshortcuts={String(i + 1)}>
+            {t(g)}
+          </button>
+        ))}
       </div>
+      <p className="hidden text-[11.5px] text-t3 min-[900px]:block">{t("keys")}</p>
     </section>
   );
 }
 
-/** «وَٱعْلَمُوٓا۟» typed as «واعلموا» or «اعلموا»: marks and hamza seats aside, the conjunction optional. */
-const same = (answer: string, surface: string) => {
+/** «وَٱعْلَمُوٓا۟» typed as «واعلموا» or «اعلموا», «ٱلصَّلَوٰةَ» as «الصلاة»: the mushaf's spelling or the everyday one
+ * (RDR-355), marks and hamza seats aside, the conjunction optional. */
+const same = (answer: string, b: Pick<Blank, "surface" | "imlaei">) => {
   const a = normalize(answer);
-  const s = normalize(surface);
-  return !!a && (a === s || a === s.replace(/^[وف]/, ""));
+  return !!a && [b.surface, b.imlaei].some((x) => {
+    const s = normalize(x);
+    return a === s || a === s.replace(/^[وف]/, "");
+  });
 };
 
-/** The root in context (RDR-352…357): a verse with the family words blanked, typed, checked and graded by the
- * score. Every root has such a verse, so this card never dead-ends. */
+/** The root in context (RDR-352…357): a verse with the family words blanked, each with its hint (RDR-354), typed
+ * in either spelling, checked, then each word revealed with its reading, meaning and count (RDR-356), and graded
+ * by the score. Every root has such a verse, so this card never dead-ends. */
 function ContextCard({ d, onGrade }: { d: RootReview; onGrade: (g: Grade) => void }) {
   const t = useTranslations("review");
   const locale = useLocale();
+  const ar = locale === "ar";
+  const translit = useTranslitOn();
   const c = d.context;
   const [answers, setAnswers] = useState<string[]>(() => c.blanks.map(() => ""));
   const [checked, setChecked] = useState(false);
+  const first = useRef<HTMLInputElement>(null);
+  const next = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    first.current?.focus({ preventScroll: true });
+  }, []);
+  useEffect(() => {
+    if (checked) next.current?.focus({ preventScroll: true });
+  }, [checked]);
   const blankAt = new Map<number, number>();
   c.blanks.forEach((b, i) => {
     for (let p = b.token_from; p <= b.token_to; p++) blankAt.set(p, i);
   });
-  const right = c.blanks.map((b, i) => same(answers[i], b.surface));
+  const right = c.blanks.map((b, i) => same(answers[i], b));
   const score = right.filter(Boolean).length;
   const verdict: Grade = score === c.blanks.length ? "good" : score > 0 ? "partial" : "forgot";
-  const check = () => setChecked(true);
+  const pos = (b: Blank) => (ar ? b.lemma.pos.ar : b.lemma.pos.en) ?? b.lemma.pos.tag;
+  const spelled = (b: Blank) => (normalize(b.surface) === normalize(b.imlaei) ? b.surface : `${b.surface} (${b.imlaei})`);
   return (
-    <section className="review-card is-wide" aria-label={d.root.spaced}>
-      <div className="flex flex-wrap items-baseline gap-2">
-        <span className="mono text-[11.5px] text-t3" dir="ltr">{verseRef(c.verse_key, locale)}</span>
-        <span className="text-[11.5px] text-t3">{locale === "ar" ? c.surah.name_ar : c.surah.name_translit}</span>
-        <span className="flex-1" />
-        <span className="ar-classical text-[15px] text-root" lang="ar">{t("contextCap", { root: d.root.spaced })}</span>
-      </div>
-      <p className="quran text-[26px] leading-[2.3]" lang="ar" dir="rtl">
-        {c.tokens.map((tok, i) => {
-          const b = blankAt.get(i + 1);
-          if (b === undefined) return <span key={i}>{tok} </span>;
-          if (c.blanks[b].token_from !== i + 1) return null; // a word over several tokens is one blank
-          return (
-            <span key={i} className={"review-blank" + (checked ? (right[b] ? " is-right" : " is-wrong") : "")}>
-              {checked ? c.blanks[b].surface : <span className="mono text-[11px]">{formatNumber(b + 1, locale)}</span>}{" "}
-            </span>
-          );
-        })}
-      </p>
-      {locale !== "ar" && c.translation && (
-        <p className="text-[13px] leading-relaxed text-t2" lang="en">
-          {c.translation.text}
-          {c.translation_work && <span className="text-t3"> — {c.translation_work.title_en}</span>}
-        </p>
-      )}
-      <p className="text-[12.5px] text-t3">{checked ? t("score", { score: formatNumber(score, locale), n: formatNumber(c.blanks.length, locale) }) : t("contextNote", cnt(c.blanks.length, locale))}</p>
-      <form
-        className="flex flex-col gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!checked) check();
-        }}
-      >
-        {c.blanks.map((b, i) => (
-          <label key={b.location} className="flex flex-wrap items-center gap-2">
-            <span className="mono w-6 text-[12px] text-t3">{formatNumber(i + 1, locale)}</span>
-            <input
-              value={answers[i]}
-              onChange={(e) => setAnswers(answers.map((a, k) => (k === i ? e.target.value : a)))}
-              className="field ar-classical w-[200px] text-[20px]"
-              dir="rtl"
-              lang="ar"
-              placeholder="…"
-              aria-label={t("blank", { n: formatNumber(i + 1, locale) })}
-              readOnly={checked}
-              data-autofocus={i === 0 ? true : undefined}
-            />
-            {checked && (
-              <span className={"text-[12.5px] " + (right[i] ? "text-good" : answers[i].trim() ? "text-bad" : "text-t3")}>
-                {right[i] ? t("right") : answers[i].trim() ? t("wrong", { surface: b.surface }) : t("skipped", { surface: b.surface })}
+    <section className="review-card is-wide review-context" aria-label={d.root.spaced}>
+      <div className="review-context-main">
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="mono text-[11.5px] text-t3" dir="ltr">{verseRef(c.verse_key, locale)}</span>
+          <span className="text-[11.5px] text-t3">{ar ? c.surah.name_ar : c.surah.name_translit}</span>
+          <span className="flex-1" />
+          <span className="ar-classical text-[15px] text-root" lang="ar">{t("contextCap", { root: d.root.spaced })}</span>
+        </div>
+        <p className="quran text-[26px] leading-[2.3]" lang="ar" dir="rtl">
+          {c.tokens.map((tok, i) => {
+            const b = blankAt.get(i + 1);
+            if (b === undefined) return <span key={i}>{tok} </span>;
+            if (c.blanks[b].token_from !== i + 1) return null; // a word over several tokens is one blank
+            return (
+              <span key={i} className={"review-blank" + (checked ? (right[b] ? " is-right" : " is-wrong") : "")}>
+                {checked ? c.blanks[b].surface : <span className="mono text-[11px]">{formatNumber(b + 1, locale)}</span>}{" "}
               </span>
-            )}
-          </label>
-        ))}
-        {checked ? (
-          <button type="button" className={"btn self-start " + (verdict === "good" ? "btn-primary" : "")} onClick={() => onGrade(verdict)}>
-            {t(verdict === "good" ? "nextGood" : verdict === "partial" ? "nextPartial" : "nextForgot")}
-          </button>
-        ) : (
-          <button type="submit" className="btn btn-primary self-start">{t("check")}</button>
+            );
+          })}
+        </p>
+        {!ar && c.translation && (
+          <p className="text-[13px] leading-relaxed text-t2" lang="en">
+            {c.translation.text}
+            {c.translation_work && <span className="text-t3"> — {c.translation_work.title_en}</span>}
+          </p>
         )}
-      </form>
+        <form
+          className="flex flex-col gap-2.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!checked) setChecked(true);
+          }}
+        >
+          {c.blanks.map((b, i) => (
+            <div key={b.location} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="mono w-6 text-[12px] text-t3">{formatNumber(i + 1, locale)}</span>
+              <input
+                ref={i === 0 ? first : undefined}
+                value={answers[i]}
+                onChange={(e) => setAnswers(answers.map((a, k) => (k === i ? e.target.value : a)))}
+                className="field ar-classical min-h-[44px] w-[200px] text-[20px]"
+                dir="rtl"
+                lang="ar"
+                placeholder="…"
+                aria-label={t("blank", { n: formatNumber(i + 1, locale) })}
+                aria-describedby={`hint-${b.location}`}
+                readOnly={checked}
+              />
+              <span id={`hint-${b.location}`} className={"text-[12.5px] " + (checked ? (right[i] ? "text-good" : answers[i].trim() ? "text-bad" : "text-t3") : "text-t3")}>
+                {checked
+                  ? right[i]
+                    ? t("right", { pos: pos(b) })
+                    : answers[i].trim()
+                      ? t("wrong", { surface: spelled(b), pos: pos(b) })
+                      : t("skipped", { surface: spelled(b) })
+                  : b.pattern
+                    ? t("hint", { pattern: b.pattern.ar.full, pos: pos(b) })
+                    : t("hintNoPattern", { pos: pos(b) })}
+              </span>
+            </div>
+          ))}
+          {checked ? (
+            <button ref={next} type="button" className={"btn self-start " + (verdict === "good" ? "btn-primary" : "")} onClick={() => onGrade(verdict)}>
+              {t(verdict === "good" ? "nextGood" : verdict === "partial" ? "nextPartial" : "nextForgot")}
+            </button>
+          ) : (
+            <button type="submit" className="btn btn-primary self-start">{t("check")}</button>
+          )}
+        </form>
+      </div>
+      <aside className="review-context-side" aria-label={t("revealed")}>
+        <h3 className="mono text-[10.5px] uppercase tracking-[.09em] text-t3">{t("revealed")}</h3>
+        {checked ? (
+          <>
+            <p className="text-[12.5px] text-t2">{t("score", { score: formatNumber(score, locale), n: formatNumber(c.blanks.length, locale) })}</p>
+            <ul className="flex flex-col gap-2">
+              {c.blanks.map((b) => (
+                <li key={b.location} className="review-revealed">
+                  <span className="ar-classical text-[22px] text-word" lang="ar">{b.surface}</span>
+                  {translit && b.translit && <span className="mono text-[11.5px] text-t3" dir="ltr">{b.translit}</span>}
+                  {!ar && b.gloss_en && <span className="text-[12.5px] text-t2">{b.gloss_en}</span>}
+                  <span className="text-[11.5px] text-t3">
+                    {t("revealedMeta", { lemma: b.lemma.ar.full, pos: pos(b), ...cnt(b.lemma.occurrences, locale) })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p className="text-[12.5px] leading-relaxed text-t3">{t("contextNote", cnt(c.blanks.length, locale))}</p>
+        )}
+      </aside>
     </section>
   );
 }

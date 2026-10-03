@@ -4036,6 +4036,49 @@ a.wotd-pill:hover {
   color: var(--bad);
   border-color: var(--bad);
 }
+.review-grades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* the root in context: the verse and its blanks, and beside them what is revealed (RDR-352, 356) */
+.review-context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 20px;
+}
+.review-context-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+.review-context-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-inline-start: 16px;
+  border-inline-start: 1px solid var(--line);
+}
+.review-revealed {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--card-2);
+}
+@media (max-width: 760px) {
+  .review-context {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .review-context-side {
+    padding-inline-start: 0;
+    padding-top: 12px;
+    border-inline-start: 0;
+    border-top: 1px solid var(--line);
+  }
+}
 
 /* ─── Notebook (P5.4, inventory NTB) ─────────────────────────────────────────── */
 .notebook-screen {
