@@ -85,6 +85,10 @@ export type EdgeData = {
   source?: string; // where the relation is stated (a work and its place)
   place?: string; // `attests`: the word's place in the verse
   reading?: boolean; // rests on an uncertain reading (F4)
+  /** a classical relation the link draws (P8.4): its id in the dataset, quoted from there, never copied here */
+  relation?: string;
+  /** whether the editorial board had reviewed that relation when it was put on the map */
+  reviewed?: boolean;
 };
 
 export type GraphNode = Node<GraphNodeData>;

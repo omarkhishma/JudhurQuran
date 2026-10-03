@@ -147,8 +147,15 @@ function cleanEdgeData(raw: unknown, legacyLabel: unknown): EdgeData {
   if (source) out.source = source;
   if (typeof d.place === "string" && LOCATION.test(d.place)) out.place = d.place;
   if (d.reading === true) out.reading = true;
+  if (typeof d.relation === "string" && RELATION_ID.test(d.relation)) {
+    out.relation = d.relation;
+    out.reviewed = d.reviewed === true;
+  }
   return out;
 }
+
+/** A classical relation's id as the dataset makes them: `askari-furuq:0006:r`, `nuzha:0003:s01:n1`. */
+const RELATION_ID = /^[a-z][a-z0-9-]{1,40}(:[0-9a-z]{1,12}){1,4}$/;
 
 export type Cleaned = { nodes: GraphNode[]; edges: GraphEdge[]; skippedNodes: number; skippedEdges: number };
 

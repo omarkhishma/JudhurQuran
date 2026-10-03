@@ -38,6 +38,9 @@ export type GraphActions = {
   /** what a verse can still link, its words and their roots (EDT-123) */
   versePlan: (id: string, words: VerseWord[], particles: boolean) => { words: VerseWord[]; roots: string[] };
   toast: (text: string) => void;
+  /** the map takes meaning relations between roots, and a root's related roots are added (P8.4) */
+  relations: boolean;
+  relate: (id: string) => void;
 };
 
 export const GraphActionsContext = createContext<GraphActions>({
@@ -56,6 +59,8 @@ export const GraphActionsContext = createContext<GraphActions>({
   stats: () => ({ a: 0, b: 0, left: null }),
   versePlan: () => ({ words: [], roots: [] }),
   toast: () => {},
+  relations: false,
+  relate: () => {},
 });
 
 /**
@@ -184,6 +189,14 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
             <Stats id={id} data={data} />
             <Fields id={id} data={data} />
             <Extract id={id} data={data} />
+            {data.kind === "root" && data.rootKey && actions.relations && actions.editable && (
+              // a meaning map's roots: those the classical books relate to this one, reviewed by the board (P8.4)
+              <div className="extract-row nodrag">
+                <button type="button" className="extract-btn is-relate" disabled={!!actions.expanding} aria-busy={actions.expanding === id} title={t("relateHint")} onClick={() => actions.relate(id)}>
+                  {actions.expanding === id ? t("extracting") : t("relate")}
+                </button>
+              </div>
+            )}
 
             <div className="mt-2 flex flex-wrap gap-1.5">
               {data.kind === "verse" && data.verse && <VersePlay verseKey={data.verse.key} />}

@@ -19,6 +19,7 @@ import type { BoardSource, ClassicalRow, ClassicalSource, DictWork, WordPayload 
 import type { WorkSurah } from "@/lib/reader/useWorkSurah";
 import type { RootDetail, Verse } from "@/lib/types";
 import type { CanvasTools } from "./GraphCanvas";
+import { RootRelationsList } from "./Relations";
 
 /**
  * The Meaning tab (EDT-170…181, QAN-17, QAN-18): what a card stands for, every line from a cited source and shown
@@ -91,6 +92,7 @@ function RootMeaning({ tools, card, rootKey }: { tools: CanvasTools; card: Graph
             </div>
           )}
           <CoreIdea core={q.data.lexicon.core_meaning} usul={q.data.usul ?? card.data.usul ?? null} board={q.data.gist_board ? { ...q.data.gist_board, text: q.data.gist_ar } : null} />
+          <RootRelationsList tools={tools} card={card} rootKey={rootKey} />
           <p className="text-[12.5px] text-t2">
             {t("inQuranCount", cnt(q.data.occurrences, locale))} {t("inVerses", cnt(q.data.verse_count, locale))} {t("inSurahsOf", cnt(q.data.surah_count, locale))} · {t("ofWords", cnt(q.data.lemma_count, locale))}
           </p>

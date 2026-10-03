@@ -16,7 +16,7 @@ from datetime import date, datetime, timedelta
 from typing import Annotated, Any
 
 import orjson
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -502,6 +502,23 @@ def root_relations(request: Request, root: str) -> Response:
         if not one(conn, "select 1 as x from content.roots where key = :k", {"k": root}):
             raise not_found("root")
         return cached(request, relations.of_root(conn, root))
+
+
+@router.get("/roots/{root}/shared", summary="The verses where two roots both occur, in the mushaf's order")
+def roots_shared(
+    request: Request, root: str, other: str = Query(..., alias="with", max_length=20), limit: int = Query(50, ge=1, le=500)
+) -> Response:
+    with connect() as conn:
+        return cached(request, relations.shared(conn, root, other, limit))
+
+
+@router.get("/relations/{relation_id}", summary="One classical relation: in force, or extracted and said to be")
+def relation(request: Request, relation_id: Annotated[str, Path(max_length=80)]) -> Response:
+    with connect() as conn:
+        out = relations.one_relation(conn, relation_id)
+        if out is None:
+            raise not_found("relation")
+        return cached(request, out)
 
 
 @router.get("/relations", summary="The relations in force among a set of roots, with the verses each pair shares")

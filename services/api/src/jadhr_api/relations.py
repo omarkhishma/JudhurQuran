@@ -108,7 +108,66 @@ def of_root(conn: Connection, root: str) -> dict[str, Any]:
     )[0]["n"]
     order = {"near-in-meaning": 0, "didd": 1, "wujuh-sense": 2}
     edges.sort(key=lambda r: (order[REL[r["type"]]], r["source_id"], r["id"]))
-    return {"root": root, "data": [_edge(r, sources) for r in edges], "waiting": waiting}
+    # the pairs a book draws with this root that the board has not decided: shown as extracted, never as in force
+    pairs_where = """c.type in ('furuq_contrast', 'near_synonym_candidate') and c.root_key is not null
+              and c.target_root_key is not null and c.root_key <> c.target_root_key
+              and (c.root_key = :r or c.target_root_key = :r) and not (c.id = any(cast(:done as text[])))"""
+    extracted = rows(
+        conn,
+        f"""select {_COLS} from content.relation_candidates c left join content.relation_entries e on e.id = c.entry_id
+            where {pairs_where} order by c.type, c.source_id, c.id limit 60""",
+        {"r": root, "done": list(decided)},
+    )
+    extracted_total = rows(
+        conn,
+        f"select count(*)::int as n from content.relation_candidates c where {pairs_where}",
+        {"r": root, "done": list(decided)},
+    )[0]["n"]
+    for r in extracted:
+        r["review"] = None
+    sources |= _sources(conn, {r["source_id"] for r in extracted} - set(sources))
+    return {
+        "root": root,
+        "data": [_edge(r, sources) for r in edges],
+        "waiting": waiting,
+        "extracted": [_edge(r, sources) for r in extracted],
+        # the pairs with another root not yet decided, of which the first sixty are given
+        "extracted_total": extracted_total,
+    }
+
+
+def one_relation(conn: Connection, rid: str) -> dict[str, Any] | None:
+    """One relation by its id, for a link that carries it: in force (with the board's ends), or extracted and said to
+    be; a row the board rejected is not given."""
+    live = next((r for r in _in_force(conn) if r["id"] == rid), None)
+    if live:
+        return {**_edge(live, _sources(conn, {live["source_id"]})), "status": "in_force"}
+    if rid in board.layer(conn, LAYER):
+        return None
+    found = rows(
+        conn,
+        f"""select {_COLS} from content.relation_candidates c left join content.relation_entries e on e.id = c.entry_id
+            where c.id = :id""",
+        {"id": rid},
+    )
+    if not found:
+        return None
+    r = found[0]
+    r["root_key"] = r["root_key"] or r["entry_root"]
+    r["review"] = None
+    return {**_edge(r, _sources(conn, {r["source_id"]})), "status": "extracted"}
+
+
+def shared(conn: Connection, a: str, b: str, limit: int = 50) -> dict[str, Any]:
+    """The verses where two roots both occur, in the mushaf's order: counted from the corpus, never read as a relation."""
+    vs = rows(
+        conn,
+        """select w.surah, w.ayah from content.words w join content.roots r on r.id = w.root_id
+           where r.key in (:a, :b) group by w.surah, w.ayah having count(distinct r.key) = 2
+           order by w.surah, w.ayah""",
+        {"a": a, "b": b},
+    )
+    return {"count": len(vs), "verses": [f"{v['surah']}:{v['ayah']}" for v in vs[:limit]]}
 
 
 def among(conn: Connection, roots: list[str]) -> dict[str, Any]:
@@ -122,14 +181,7 @@ def among(conn: Connection, roots: list[str]) -> dict[str, Any]:
     ]
     sources = _sources(conn, {r["source_id"] for r in edges})
     pairs = sorted({tuple(sorted((r["root_key"], r["target_root_key"]))) for r in edges})
-    shared = {}
-    for a, b in pairs:
-        vs = rows(
-            conn,
-            """select w.surah, w.ayah from content.words w join content.roots r on r.id = w.root_id
-               where r.key in (:a, :b) group by w.surah, w.ayah having count(distinct r.key) = 2
-               order by w.surah, w.ayah""",
-            {"a": a, "b": b},
-        )
-        shared[f"{a}|{b}"] = {"count": len(vs), "verses": [f"{v['surah']}:{v['ayah']}" for v in vs[:50]]}
-    return {"data": [_edge(r, sources) for r in edges], "shared": shared}
+    return {
+        "data": [_edge(r, sources) for r in edges],
+        "shared": {f"{a}|{b}": shared(conn, a, b) for a, b in pairs},
+    }

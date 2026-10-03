@@ -26,6 +26,7 @@ import { Icon } from "@/components/Icon";
 import { link, verseId, type RootGraphPayload } from "@/lib/graph/build";
 import { fromPattern, fromRoot, fromVerses, linkVerse, versePlan, versesOf, type Added, type ExtractOptions, type RootRow, type VersePage, type VerseWord } from "@/lib/graph/extract";
 import { bundleFiles } from "@/lib/graph/files";
+import { endsOf, fromRelations, fromShared, relationLink, rootCardOf, type RelationEdge, type RootRelations } from "@/lib/graph/meaning";
 import { useEntryTitles } from "@/lib/graph/quote";
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
@@ -37,6 +38,7 @@ import { useGraphUi } from "@/lib/graph/uiPrefs";
 import { CanvasMenu, type MenuItem } from "./CanvasMenu";
 import { CardNode, FrameActionsContext, FrameNode, GraphActionsContext, type FrameActions, type GraphActions } from "./CardNode";
 import { RelEdge, WireContextValue, type WireContext } from "./RelEdge";
+import { RelationInfo } from "./Relations";
 
 type Snapshot = { label: string; nodes: GraphNode[]; edges: GraphEdge[] };
 
@@ -116,6 +118,14 @@ export type CanvasTools = {
   /** a card of the dataset beside another and linked to it — a word's root, a verse's word — or, already on the map,
    * selected and linked (EDT-173, QAN-17) */
   addLinked: (card: GraphNode, edge: GraphEdge, beside: string, label: string, places?: { verse: string; place: string }) => void;
+  /** whether this map's type takes a meaning relation between two roots (P8.4) */
+  meaningLinks: boolean;
+  /** a classical relation put on the map beside one of its roots: the other root and the link (P8.4) */
+  addRelation: (e: RelationEdge, beside: string, reviewed: boolean) => void;
+  /** the verses two linked roots share, ten at a time, as verse cards (P8.4) */
+  addShared: (edgeId: string) => void;
+  /** a card or link whose dataset is being read */
+  expanding: string | null;
 };
 
 const ToolsContext = createContext<CanvasTools | null>(null);
@@ -536,6 +546,61 @@ function CanvasInner({
     [expanding, tidy, t, locale, toast],
   );
 
+  // Meaning maps (P8.4, research 15): the roots a root is related to by relations the board has reviewed, each pair
+  // linked with its book; one named step that undo takes back whole. None in force is said, with how many wait.
+  const relate = useCallback(
+    async (id: string) => {
+      const key = live.current.nodes.find((n) => n.id === id)?.data.rootKey;
+      if (!key || expanding) return;
+      setExpanding(id);
+      try {
+        const rel = await getJSON<RootRelations>(`/roots/${encodeURIComponent(key)}/relations`);
+        const others = [...new Set(rel.data.flatMap((e) => endsOf(e) ?? []))].filter((k) => k !== key);
+        const rows = others.length ? (await getJSON<{ data: RootRow[] }>(`/roots?keys=${encodeURIComponent(others.join(","))}&limit=${others.length}`)).data : [];
+        const { nodes: now, edges: wires } = live.current;
+        const out = fromRelations(key, rel, new Map(rows.map((r) => [r.key, r])), now, wires, locale);
+        if (!out.nodes.length && !out.edges.length) {
+          toast(others.length ? t("relatedAll") : t("relatedNone", cnt(rel.waiting, locale)));
+          return;
+        }
+        await tidy(t("doRelate", cnt(out.count, locale)), { nodes: [...now, ...out.nodes], edges: [...wires, ...out.edges] }, [id, ...out.nodes.map((n) => n.id)]);
+        toast(t("related", cnt(out.count, locale)), true);
+      } catch {
+        toast(t("relateFailed"));
+      } finally {
+        setExpanding(null);
+      }
+    },
+    [expanding, tidy, t, locale, toast],
+  );
+  const addShared = useCallback(
+    async (edgeId: string) => {
+      const { nodes: now, edges: wires } = live.current;
+      const e = wires.find((x) => x.id === edgeId);
+      const a = now.find((n) => n.id === e?.source)?.data.rootKey;
+      const b = now.find((n) => n.id === e?.target)?.data.rootKey;
+      if (!e || !a || !b || expanding) return;
+      setExpanding(edgeId);
+      try {
+        const all = await getJSON<{ count: number; verses: string[] }>(`/roots/${encodeURIComponent(a)}/shared?with=${encodeURIComponent(b)}&limit=500`);
+        const keys = all.verses.filter((k) => !(wires.some((w) => w.target === verseId(k) && (w.source === e.source || w.source === e.target)))).slice(0, 10);
+        if (!keys.length) {
+          toast(t(all.count ? "sharedAllOn" : "sharedNone"));
+          return;
+        }
+        const got = await getJSON<{ data: { key: string; words: VerseWord[] }[] }>(`/verses?keys=${encodeURIComponent(keys.join(","))}`);
+        const out = fromShared(a, b, got.data, now, wires);
+        const updated = now.map((n) => (out.marks.has(n.id) ? { ...n, data: { ...n.data, places: out.marks.get(n.id) } } : n));
+        await tidy(t("doShared", cnt(out.count, locale)), { nodes: [...updated, ...out.nodes], edges: [...wires, ...out.edges] }, [e.source, e.target, ...out.nodes.map((n) => n.id)]);
+        toast(t("sharedAdded", { ...cnt(keys.length, locale), all: formatNumber(all.count, locale) }), true);
+      } catch {
+        toast(t("versesFailed"));
+      } finally {
+        setExpanding(null);
+      }
+    },
+    [expanding, tidy, t, locale, toast],
+  );
   // folding is a view of the card, not an edit: saved, never an undo step (EDT-099, EDT-210)
   // one card toggles; several all take the opposite of the first's state (EDT-163); frames have no fold
   const fold = useCallback((ids: string[]) => {
@@ -741,6 +806,23 @@ function CanvasInner({
     },
     [commit, select, center, reveal],
   );
+  const addRelation = useCallback(
+    async (e: RelationEdge, beside: string, reviewed: boolean) => {
+      const here = live.current.nodes.find((n) => n.id === beside)?.data.rootKey;
+      const ends = endsOf(e);
+      const l = relationLink(e, reviewed, locale);
+      if (!here || !ends || !l) return;
+      const other = ends[0] === here ? ends[1] : ends[0];
+      try {
+        const rows = (await getJSON<{ data: RootRow[] }>(`/roots?keys=${encodeURIComponent(other)}&limit=1`)).data;
+        addLinked(rootCardOf(other, rows[0]), l, beside, t(reviewed ? "doAddRelation" : "doAddOwnRelation", { a: e.a.word, b: e.b?.word ?? "" }));
+      } catch {
+        toast(t("relateFailed"));
+      }
+    },
+    [addLinked, locale, t, toast],
+  );
+
   /** A note beside a card, describing it (EDT-067's "Attach description"). */
   const attachNote = useCallback(
     (id: string) => {
@@ -860,8 +942,10 @@ function CanvasInner({
       stats: (id) => cardStats(id, nodes, edges),
       versePlan: (id, words, particles) => versePlan(id, words, edges, particles),
       toast: (text) => toast(text),
+      relations: allowedRels(kind, "root", "root").includes("near-in-meaning"),
+      relate: (id) => void relate(id),
     }),
-    [editable, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast],
+    [editable, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast, kind, relate],
   );
   const frameActions: FrameActions = useMemo(
     () => ({ members: (id) => membersOf(id, nodes), resize: resizeFrame, selectInside: (id) => selectIds(membersOf(id)) }),
@@ -1058,6 +1142,10 @@ function CanvasInner({
     unlink: unlinkEdge,
     attachQuote,
     addLinked,
+    meaningLinks: allowedRels(kind, "root", "root").includes("near-in-meaning"),
+    addRelation: (e, beside, reviewed) => void addRelation(e, beside, reviewed),
+    addShared: (id) => void addShared(id),
+    expanding,
   };
 
   const selectedEdge = editable ? edges.find((e) => e.selected) : undefined;
@@ -1210,6 +1298,7 @@ function CanvasInner({
                 onBlur={(e) => setEdgeField(selectedEdge, "source", e.target.value)}
               />
             </label>
+            <RelationInfo edge={selectedEdge} tools={tools} />
           </div>
         )}
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">

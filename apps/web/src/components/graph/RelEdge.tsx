@@ -28,8 +28,9 @@ function RelEdgeImpl({ id, source, target, sourceX, sourceY, targetX, targetY, s
     ? { stroke: "var(--ring)", strokeWidth: 2.4 * scale, strokeDasharray: "7 5", opacity: 1 }
     : hot
       ? { stroke: sourceKind ? KIND_COLOR[sourceKind] : "var(--edge)", strokeWidth: 1.9 * scale, opacity: 0.95 }
-      : data?.reading
-        ? { stroke: "var(--amber)", strokeWidth: 1.5 * scale, strokeDasharray: "5 4", opacity: 0.9 }
+      : data?.reading || (data?.relation && !data.reviewed)
+        ? // an uncertain reading (F4), or a relation the board has not reviewed (P8.4): dashed amber
+          { stroke: "var(--amber)", strokeWidth: 1.5 * scale, strokeDasharray: "5 4", opacity: 0.9 }
         : { stroke: "var(--edge)", strokeWidth: 1.25 * scale };
   const rel = data?.rel;
   const name = data?.label || (rel && NAMED_ON_CANVAS.includes(rel) ? t(`rel_${rel}`) : "");

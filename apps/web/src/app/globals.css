@@ -5967,6 +5967,17 @@ a.wotd-pill:hover {
   gap: 6px;
   margin-top: 10px;
 }
+/* a root's related roots in a meaning map (P8.4): drawn in the root's colour, outlined */
+.extract-btn.is-relate {
+  border: 1px solid var(--c-root);
+  background: transparent;
+  color: var(--c-root);
+}
+/* a relation only extracted, not reviewed by the board (P8.4): said by its frame as well as its words */
+.meaning-quote.is-extracted {
+  border-inline-start-style: dashed;
+  border-inline-start-color: var(--amber);
+}
 .extract-btn {
   flex: 1;
   min-height: 30px;

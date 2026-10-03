@@ -316,6 +316,12 @@ def test_relations_come_into_force_with_their_ends_as_the_board_maps_them(
     ).status_code in (404, 422)
     before = client.get("/api/v1/roots/سمو/relations").json()
     assert before["data"] == [] and before["waiting"] > 0
+    # the extracted pairs, said to be, counted whole though only the first are given; one by its id, extracted
+    assert before["extracted_total"] >= len(before["extracted"]) and all(
+        e["review"] is None for e in before["extracted"]
+    )
+    assert "askari-furuq:0006:r" in [e["id"] for e in before["extracted"]]
+    assert client.get("/api/v1/relations/askari-furuq:0006:r").json()["status"] == "extracted"
     # al-ʿAskarī's pair, its second end mapped anew by the board
     _approve(
         board,
@@ -351,6 +357,12 @@ def test_relations_come_into_force_with_their_ends_as_the_board_maps_them(
         )
     assert n is not None and among["shared"]["سمو|عرف"]["count"] == n["n"]
     assert client.get("/api/v1/relations", params={"roots": "سمو,حدد"}).json()["data"] == []
+    one = client.get("/api/v1/relations/askari-furuq:0006:r").json()
+    assert one["status"] == "in_force" and one["b"]["root"] == "عرف"
+    assert client.get("/api/v1/roots/سمو/shared", params={"with": "عرف"}).json()["count"] == n["n"]
+    assert "askari-furuq:0006:r" not in [
+        e["id"] for e in client.get("/api/v1/roots/سمو/relations").json()["extracted"]
+    ]
     # a wujūh sense reviewed: the root's sense with its verses
     _approve(board, "verdict", "relation_candidates:nuzha:0001:s01", {"verdict": "reviewed"})
     sense = next(
@@ -367,6 +379,7 @@ def test_relations_come_into_force_with_their_ends_as_the_board_maps_them(
     assert all(
         e["id"] != "askari-furuq:0020:r" for e in client.get("/api/v1/roots/دعو/relations").json()["data"]
     )
+    assert client.get("/api/v1/relations/askari-furuq:0020:r").status_code == 404
     lemma = client.get("/api/v1/words/hudud/relations").json()
     assert all(c["id"] != "askari-furuq:0006:r" for c in lemma["furuq"])  # mapped away from حدد
     arafa = accounts.q1(
