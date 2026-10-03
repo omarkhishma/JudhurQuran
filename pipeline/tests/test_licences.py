@@ -30,6 +30,7 @@ def _yaml(path: Path) -> Any:
 def registry_ids() -> set[str]:
     ids = {s["id"] for s in _yaml(REPO / "data/sources.yaml")["sources"]}
     ids |= {w["id"] for w in _yaml(REPO / "data/lexica.yaml")["works"]}
+    ids |= {w["id"] for w in _yaml(REPO / "data/gharib.yaml")["works"]}
     ids |= {w["id"] for w in _yaml(REPO / "data/works.yaml")["works"]}
     ids |= {r["id"] for r in _yaml(REPO / "data/recitations.yaml")["reciters"]}
     ids |= {s["id"] for s in _yaml(REPO / "data/patterns.yaml")["sources"]}

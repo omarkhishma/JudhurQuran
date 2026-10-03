@@ -1,0 +1,54 @@
+# Gharib registry — works that give a contextual Arabic meaning for the words of a verse, aligned to our word
+# locations (PLAN P3.1, decision D6). Built by pipeline/src/jadhr_pipeline/meanings (``python -m
+# jadhr_pipeline.meanings gharib <out>``) into the table gharib_meanings. The licence record for each work is
+# in data/licences.yaml (same id); the terms evidence fetched for it is in data/raw/gharib-terms/.
+#
+# Every row the pipeline emits is status `extracted`: a mechanical reading of the named work, never a reviewed
+# meaning. Meanings are the work's own words, verbatim (L2: no generated religious content); only the cleaning
+# rules below touch the text, and each is counted in the build report. Paths are relative to data/raw/. Each
+# file is sha256-pinned; the pipeline refuses to build from a file that differs.
+#
+# Ibn Qutaybah's Gharib al-Qur'an, the other gharib work we show, stays in data/lexica.yaml (gharib_glosses).
+
+cleaning_rules:
+  - id: verse-number
+    description: "A verse paragraph opens with its number in brackets — «(2)», or «(1، 2)» / «(20،19)» for entries that span two verses. The number moves to `ayah` (the printed label to `ayah_label`) and is not part of any entry."
+  - id: phrase-brackets
+    description: "An entry is the Quranic phrase inside ﴿…﴾ followed by a colon and its meaning. `phrase_ar` is the text inside the brackets; `meaning_ar` the text after the colon, verbatim, ends trimmed. The brackets and the colon are not kept. Where no colon follows the bracket the meaning starts after the bracket (counted as phrase-brackets:no-colon)."
+  - id: entries-on-one-line
+    description: "Where two entries were typed on one line, a bracketed phrase followed by a colon starts a new entry — unless a colon stands right before the bracket («وقيل: ﴿بِهِۦ﴾: أي: باللهِ» explains a word of the same entry and stays in it)."
+  - id: continuation-paragraph
+    description: "A paragraph that opens with neither «سورة», a verse number nor ﴿ continues the previous entry's meaning (the typist broke the paragraph at a bracketed note, «خَمْراً» + «(وهذا امتنانٌ قبلَ التحريمِ) .»); it is joined to it with one space. Its further lines are entries of the same verse."
+  - id: surah-heading
+    description: "«سورة X» paragraphs open each of the 114 sūras in order; the name is checked against the dataset's sūra names and is not text of any entry."
+  - id: empty-paragraph
+    description: Empty paragraphs (one after each sūra) are skipped.
+
+works:
+  - id: kfgqpc-muyassar-gharib
+    sort_order: 1
+    format: kfgqpc-gharib-docx
+    lang: ar
+    title_ar: الميسر في غريب القرآن الكريم
+    title_en: al-Muyassar fi Gharib al-Qur'an al-Karim
+    publisher_ar: مجمع الملك فهد لطباعة المصحف الشريف، المدينة المنورة
+    publisher_en: King Fahd Glorious Qur'an Printing Complex (KFGQPC), Madinah
+    # Quranpedia's catalogue card for the printed book (data/raw/gharib-terms/quranpedia.net_book_26883.html) names
+    # the Complex's Centre for Quranic Studies as author and 1433 AH / 2012 as the year; neither the Word file nor
+    # the Complex's developer page states either, so they are recorded as a catalogue note, not as our claim.
+    prepared_by_note: "Quranpedia's catalogue card for the printed book gives «المؤلف: مركز الدراسات القرآنية» and «سنة النشر: 2012 م 1433هـ»; the Word file and the developer page name only the Complex."
+    version: "KFGQPC developer platform item «الميسر في غريب القرآن الكريم»: created 6-4-2021, last modified 6-4-2021, «لا يوجد تحديثات» (page captured 2026-01-22); file served with Last-Modified 2023-01-12 (independent mirror record); document properties created 2020-06-23, revision 7."
+    source_url: https://qurancomplex.gov.sa/quran-dev/
+    download_url: https://download.qurancomplex.gov.sa/resources_dev/MuyassarGhareeb.docx
+    retrieved_from: https://web.archive.org/web/20250417141929id_/https://download.qurancomplex.gov.sa/resources_dev/MuyassarGhareeb.docx
+    files:
+      - path: lexica/kfgqpc-muyassar-gharib/MuyassarGhareeb.docx
+        sha256: 8a7af5decb94ee465b77c0eded05e018c6bf813fc544455bd0faebfcc84a8cb2
+    # The publisher's own statement on its developer platform, verbatim (Wayback 2026-01-22 and 2025-09-01).
+    licence_clause: "هي خدمة يقدمها مجمع الملك فهد لطباعة المصحف الشريف للمطورين والباحثين ودور النشر لاستخدامها في محتوى تطبيقاتهم (المكتبية ، والجوال ، والمتصفحات) وأبحاثهم، وهذا المحتوى موثوق به ومعتمد من قبل مجمع الملك فهد لطباعة المصحف الشريف، ويحتوي على بيانات الميسر في غريب القرآن الكريم برواية حفص."
+    licence_url: https://web.archive.org/web/20260122032746id_/https://qurancomplex.gov.sa/quran-dev/
+    licence: "Use in the content of applications (desktop, mobile, browsers) and in research, per the publisher's statement on its developer platform. No licence for redistribution: the statement does not mention a public API, bulk download or commercial use, and the site reserves all other rights («جميع الحقوق محفوظة لمجمع الملك فهد لطباعة المصحف الشريف»). Shown in the product with credit; served only for display, one verse at a time; excluded from the bulk release."
+    redistributable: false
+    display_only: true
+    attribution_ar: "المصدر: الميسر في غريب القرآن الكريم، مجمع الملك فهد لطباعة المصحف الشريف، المدينة المنورة. النص الرقمي: منصة مطوري برمجيات القرآن الكريم بالمجمع (MuyassarGhareeb.docx)."
+    attribution_en: "Source: al-Muyassar fi Gharib al-Qur'an al-Karim, King Fahd Glorious Qur'an Printing Complex, Madinah. Digital text: the Complex's Qur'an Software Developers Platform (MuyassarGhareeb.docx)."

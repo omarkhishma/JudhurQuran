@@ -3,8 +3,8 @@
 # URL in urls_checked, compare page_sha256, re-read the clauses, update `fetched`, and put any change in
 # front of the owner. The summary and the owner's decisions are in docs/research/07-licence-register.md.
 #
-# One entry per id in data/sources.yaml, data/lexica.yaml, data/works.yaml, data/recitations.yaml
-# (its reciter ids) and data/patterns.yaml, plus `everyayah` and `quran-align`, the two upstreams
+# One entry per id in data/sources.yaml, data/lexica.yaml, data/gharib.yaml, data/works.yaml,
+# data/recitations.yaml (its reciter ids) and data/patterns.yaml, plus `everyayah` and `quran-align`, the two upstreams
 # recitations.yaml names in audio_url and timings_zip.
 #
 # Fields
@@ -556,7 +556,7 @@ licences:
   - topic: other
     quote: 'المحقق: صفوان عدنان الداودي'
     url: https://shamela.ws/book/23636
-  our_use: 'Display only: al-Raghib (d. 502 AH)''s articles (editor footnotes, markers and front matter removed per lexica.yaml cleaning_rules) shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  our_use: 'Display only: al-Raghib (d. 502 AH)''s articles (editor footnotes, markers and front matter removed per lexica.yaml cleaning_rules) shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release. P3.1 cuts the same stored articles into sub-entries per word treated and numbered senses (mufradat_subentries, mufradat_senses: offsets into the article, no new text) for the same display-only use; the edition''s bracketed verse references are read only as hints for resolving quotations.'
   status: conflict
   notes:
   - 'Dataset unchanged since our pin (HEAD = 07554bee, last modified 2026-05-19): its YAML still tags ''license: mit'' while its own licence section says ''Research and personal use''.'
@@ -975,6 +975,98 @@ licences:
   - 'Met in the English attribution: the exact Perseus credit sentence, the licence name and URL, and a ''modified'' note. The Arabic attribution — what the default locale shows under every article — names the licence but drops the required credit sentence (the funders) and the licence URL.'
   - 'Not met yet: we modify the text but have not offered the modifications to Perseus (an outgoing message, the owner''s call, D19), and API responses do not carry the availability statement that must be left intact.'
   - The two statements differ — the XML's availability note allows free distribution on three conditions with no share-alike, the Perseus page adds CC BY-SA 3.0 US; following both, as we do, satisfies each.
+- id: kfgqpc-muyassar-gharib
+  registry: data/gharib.yaml
+  urls_checked:
+  - https://qurancomplex.gov.sa/quran-dev/
+  - https://web.archive.org/web/20260122032746id_/https://qurancomplex.gov.sa/quran-dev/
+  - https://web.archive.org/web/20250901042942id_/https://qurancomplex.gov.sa/techquran/dev/
+  - https://qurancomplex.gov.sa/kfgqpc-books-MuyassarGhareeb/
+  - https://web.archive.org/web/20250506112306id_/https://qurancomplex.gov.sa/kfgqpc-books-MuyassarGhareeb/
+  - https://download.qurancomplex.gov.sa/resources_dev/MuyassarGhareeb.docx
+  - https://web.archive.org/web/20250417141929id_/https://download.qurancomplex.gov.sa/resources_dev/MuyassarGhareeb.docx
+  - https://raw.githubusercontent.com/quran-ws/kfgqpc-resources/main/resources/quran-dev/muyassar-ghareeb/metadata.json
+  - https://raw.githubusercontent.com/quran-ws/kfgqpc-resources/main/README.md
+  - https://qul.tarteel.ai/resources/tafsir/519
+  - https://qul.tarteel.ai/resources/519/copyright
+  - https://api.quranpedia.net/dumps/LICENSE.md
+  - https://quranpedia.net/book/26883
+  - https://quranpedia.net/api/v1/ayah/2/15/meanings
+  - https://quran-uni.com/mos-haf/publications/muyassar_ghareeb
+  - https://quranenc.com/ar/home
+  fetched: '2026-10-03'
+  page_sha256:
+    https://web.archive.org/web/20260122032746id_/https://qurancomplex.gov.sa/quran-dev/: 97f552fac15752f7297e46acd200c0f0bc1b7b44ca360af0c29554e51728a885
+    https://web.archive.org/web/20250901042942id_/https://qurancomplex.gov.sa/techquran/dev/: a38bc8bdd3d6d6cf57c7188a342b6506a56d835cca1694cf5e43b3d88822ceb1
+    https://web.archive.org/web/20250506112306id_/https://qurancomplex.gov.sa/kfgqpc-books-MuyassarGhareeb/: 37527756d26a3a1393a271f0e4ba2c235f2659293d5cf5c27d1875f9b60385f4
+    https://web.archive.org/web/20250417141929id_/https://download.qurancomplex.gov.sa/resources_dev/MuyassarGhareeb.docx: 8a7af5decb94ee465b77c0eded05e018c6bf813fc544455bd0faebfcc84a8cb2
+    https://raw.githubusercontent.com/quran-ws/kfgqpc-resources/main/resources/quran-dev/muyassar-ghareeb/metadata.json: 783f1818ef5dcc7baa67d534afec7d8cfba7e1241bafc16331e35a1fdb142424
+    https://raw.githubusercontent.com/quran-ws/kfgqpc-resources/main/README.md: 45ff899e4a1ba6b40ca45f712d6e92b428bb496e62293ea260d53bbb85646b32
+    https://qul.tarteel.ai/resources/tafsir/519: c8295789a871916db8b562f331d49c49f9d5aa47a008d416af56cd9eda39ab3e
+    https://qul.tarteel.ai/resources/519/copyright: d2a909424b26e635f05021a2ad5dd3a3a69e9ce5230b71c70cf7cad4edbf41c3
+    https://api.quranpedia.net/dumps/LICENSE.md: 784d33f90a3159d685d9a66e6460389e7d4595f0b7e2f2be98bf0eca041fd75b
+    https://quranpedia.net/book/26883: e1cc7f4f0ee9bace7165d3b387e9b29dfa1c6aeea4e4eba95a1eeb9be9fc0824
+    https://quranpedia.net/api/v1/ayah/2/15/meanings: 0ebbeb698a6bd9e6663949f209cc13045637d1b9e732ee5548e0c4f6b8fb2f53
+    https://quran-uni.com/mos-haf/publications/muyassar_ghareeb: c37276f31fa0b0fd91fcb742ffc8b659b7e0de2ed44ea70b2f38d9c87f8b1da1
+    https://quranenc.com/ar/home: 08a84046c0c3d3e2feeacddb299b55e865632fef35b0345682540578c04f1ed3
+  fetch_failures:
+  - url: https://qurancomplex.gov.sa/quran-dev/
+    result: timed out after 25 s (the KFGQPC hosts do not answer from here)
+    used_instead: https://web.archive.org/web/20260122032746id_/https://qurancomplex.gov.sa/quran-dev/
+  - url: https://qurancomplex.gov.sa/kfgqpc-books-MuyassarGhareeb/
+    result: timed out after 25 s
+    used_instead: https://web.archive.org/web/20250506112306id_/https://qurancomplex.gov.sa/kfgqpc-books-MuyassarGhareeb/
+  - url: https://download.qurancomplex.gov.sa/resources_dev/MuyassarGhareeb.docx
+    result: timed out (research 02, 2026-10-02); the only Wayback capture of the file is 2025-04-17
+    used_instead: https://web.archive.org/web/20250417141929id_/https://download.qurancomplex.gov.sa/resources_dev/MuyassarGhareeb.docx
+  clauses:
+  - topic: display
+    quote: هي خدمة يقدمها مجمع الملك فهد لطباعة المصحف الشريف للمطورين والباحثين ودور النشر لاستخدامها في محتوى تطبيقاتهم (المكتبية ، والجوال ، والمتصفحات) وأبحاثهم، وهذا المحتوى موثوق به ومعتمد من قبل مجمع الملك فهد لطباعة المصحف الشريف، ويحتوي على بيانات الميسر في غريب القرآن الكريم برواية حفص.
+    url: https://web.archive.org/web/20260122032746id_/https://qurancomplex.gov.sa/quran-dev/
+  - topic: display
+    quote: هي خدمة يقدمها مجمع الملك فهد لطباعة المصحف الشريف للمطورين والباحثين ودور النشر لاستخدامها في محتوى تطبيقاتهم (المكتبية ، والجوال ، والمتصفحات) وأبحاثهم، وهذا المحتوى موثوق به ومعتمد من قبل مجمع الملك فهد لطباعة المصحف الشريف، ويحتوي على بيانات الميسر في غريب القرآن الكريم برواية حفص.
+    url: https://web.archive.org/web/20250901042942id_/https://qurancomplex.gov.sa/techquran/dev/
+  - topic: redistribution
+    quote: جميع الحقوق محفوظة لمجمع الملك فهد لطباعة المصحف الشريف © 2026
+    url: https://web.archive.org/web/20260122032746id_/https://qurancomplex.gov.sa/quran-dev/
+  - topic: other
+    quote: 'تاريخ الإنشاء: 6-4-2021'
+    url: https://web.archive.org/web/20260122032746id_/https://qurancomplex.gov.sa/quran-dev/
+  - topic: other
+    quote: 'تحديث: لا يوجد تحديثات'
+    url: https://web.archive.org/web/20260122032746id_/https://qurancomplex.gov.sa/quran-dev/
+  - topic: other
+    quote: 7E22381EEDB152EE7ED6488F2395C6CD
+    url: https://web.archive.org/web/20260122032746id_/https://qurancomplex.gov.sa/quran-dev/
+  - topic: other
+    quote: Published MD5/SHA-1 on the source page do not match the file currently served.
+    url: https://raw.githubusercontent.com/quran-ws/kfgqpc-resources/main/resources/quran-dev/muyassar-ghareeb/metadata.json
+  - topic: other
+    quote: Thu, 12 Jan 2023 11:38:48 GMT
+    url: https://raw.githubusercontent.com/quran-ws/kfgqpc-resources/main/resources/quran-dev/muyassar-ghareeb/metadata.json
+  - topic: other
+    quote: All rights remain with the Complex.
+    url: https://raw.githubusercontent.com/quran-ws/kfgqpc-resources/main/README.md
+  - topic: other
+    quote: We don’t have copyright information for this resource.
+    url: https://qul.tarteel.ai/resources/519/copyright
+  - topic: other
+    quote: Al-Muyassar fi Al-Gharib
+    url: https://qul.tarteel.ai/resources/tafsir/519
+  - topic: other
+    quote: Translations and contemporary works remain the intellectual property of their respective authors and publishers.
+    url: https://api.quranpedia.net/dumps/LICENSE.md
+  - topic: other
+    quote: يحتوي الميسر في غريب القرآن الكريم على 632 صفحة
+    url: https://quran-uni.com/mos-haf/publications/muyassar_ghareeb
+  our_use: Contextual Arabic meaning per Quranic phrase (P3.1, D6) — 11,384 entries parsed from the Complex's own Word file, each aligned to our word locations (gharib_meanings, status extracted), to be shown verbatim with the attribution line of data/gharib.yaml in the reader's Meanings section and served for display one verse at a time; not redistributable, excluded from the bulk release.
+  status: attention
+  notes:
+  - The KFGQPC hosts time out from here; the developer platform was read from its latest Wayback captures (quran-dev 2026-01-22; the older techquran/dev 2025-09-01), and both carry the same statement for this item.
+  - 'The statement is item-specific: the Complex offers this data to developers, researchers and publishers for use in the content of their applications — desktop, mobile and browsers — and in research. A website showing it with credit is that use. It names no conditions and no credit requirement; we credit anyway.'
+  - The statement says nothing about redistribution, a public API, bulk download or commercial use, and the site reserves all rights; so the work is display-only (redistributable false), out of the bulk release, and API exposure beyond what the reader displays needs the Complex's confirmation (D19, with the qpc-hafs question).
+  - 'Version: the platform gives no number — created 6-4-2021, last modified 6-4-2021, ''no updates'' (2026-01-22 capture). The MD5/SHA-1 it publishes do not match the served file; our file equals the 2025-04-17 Wayback copy and the independent byte-for-byte mirror quran-ws/kfgqpc-resources (sha256 8a7af5de…, served with Last-Modified 2023-01-12), whose own record notes the same mismatch. Ask the Complex which file the checksums belong to (D19).'
+  - 'Other places the text is published, none with better terms: QUL resource 519 (a variant recension; ''We don’t have copyright information for this resource.''); Quranpedia (page images of the printed book only; its data licence leaves contemporary works with their publishers, and its per-verse meanings dataset does not carry this book — for 2:15 it gives al-Siraj, Ibn al-Haim, Ibn al-Jawzi and Makhlouf); quran-uni.com (page images, all rights reserved); QuranEnc does not publish it (its only Arabic word-meaning work is al-Siraj).'
 - id: muyassar
   registry: data/works.yaml
   urls_checked:
