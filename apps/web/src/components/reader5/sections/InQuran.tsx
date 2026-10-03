@@ -112,7 +112,7 @@ export function InQuranSection({ w, chapter }: { w: WordPayload; chapter: Chapte
       )}
       {pages.data && (surah || form) && <p className="text-[11.5px] text-t3">{t("filteredN", { n: formatNumber(pages.data.pages[0].total, locale) })}</p>}
       {pages.isError && <p className="text-[12.5px] text-bad" role="alert">{t("loadFailed")}</p>}
-      <ol className="flex flex-col divide-y divide-line">
+      <ol className="long-list flex flex-col divide-y divide-line">
         {rows.map((r) => (
           <li key={r.location} className="kwic-row">
             <Link href={`/quran/${r.verse_key.split(":")[0]}?w=${encodeURIComponent(r.lemma_slug ?? w.slug)}&at=${r.location}#v${r.verse_key.split(":")[1]}`} className="mono text-[11px] text-t3 hover:text-t1" dir="ltr">

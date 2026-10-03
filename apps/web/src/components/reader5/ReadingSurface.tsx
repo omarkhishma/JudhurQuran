@@ -621,8 +621,8 @@ function roving(root: HTMLElement, el: HTMLElement | null) {
   (el ?? root.querySelector<HTMLElement>(".w"))?.setAttribute("tabindex", "0");
 }
 
-const MORE = ["tafsir", "related", "links", "topic", "copy", "cite", "note", "graph"] as const;
-const MORE_DRAWERS = new Set<string>(["related", "links", "topic", "note", "graph"]);
+const MORE = ["tafsir", "related", "concordance", "links", "topic", "copy", "cite", "note", "graph"] as const;
+const MORE_DRAWERS = new Set<string>(["related", "concordance", "links", "topic", "note", "graph"]);
 
 /** The six verse tools beyond Recite and Roots, drawn only into the verse being read (P2.10a). */
 function MoreTools({ verseKey, drawer }: { verseKey: string; drawer: { key: string; tool: DrawerTool } | null }) {

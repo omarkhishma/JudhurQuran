@@ -167,7 +167,7 @@ function PatternView({ slug, current, chapter }: { slug: string | null; current:
         ]}
       />
       {scope === "surah" && sets.data && members.length === 0 && <p className="text-[12.5px] text-t3">{t("noneInSurah")}</p>}
-      <ul className="flex flex-col divide-y divide-line">
+      <ul className="long-list flex flex-col divide-y divide-line">
         {shown.map((m) => (
           <li key={m.slug} className={"flex items-center gap-3 py-1.5" + (m.slug === current ? " is-current-row" : "")} aria-current={m.slug === current || undefined}>
             <WordChip m={m} current={m.slug === current} />

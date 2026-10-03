@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { Term } from "@/components/terms/Term";
 import { cnt, formatNumber } from "@/lib/format";
-import { useReader } from "@/lib/reader/store";
+import { usePersonal, useReader } from "@/lib/reader/store";
 import { showHemistichs } from "@/lib/openiti";
 import { getJSON } from "@/lib/reader/api";
 import type { Features, Label, Mufradat, ParticleEntry, ParticleLink, WordPayload } from "@/lib/reader/types";
@@ -22,6 +22,8 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const setSuggest = useReader((s) => s.setSuggest);
+  const proposals = usePersonal((s) => s.proposals);
+  const mine = proposals.filter((p) => p.slug === w.slug);
   const lines: { key: string; text: ReactNode; source: ReactNode; lang: string }[] = [];
   // the meaning of this very place first: al-Muyassar fī Gharīb, phrase by phrase (P3.1)
   for (const m of w.occurrence?.meanings_here ?? []) {
@@ -65,7 +67,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
     });
   }
   if (w.occurrence?.gloss_en) {
-    lines.push({ key: "wbw", text: w.occurrence.gloss_en, source: t("corpusGlossCredit"), lang: "en" });
+    lines.push({ key: "wbw", text: w.occurrence.gloss_en, source: t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }), lang: "en" });
   }
   if (w.gloss_en) {
     lines.push({ key: "lemma", text: w.gloss_en, source: t("lemmaGlossCredit"), lang: "en" });
@@ -114,11 +116,24 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
           )}
         </>
       )}
+      {mine.length > 0 && (
+        // what the reader proposed for this word, until the review queue (P7) takes it (RDR-322)
+        <section className="proposals-mine" aria-label={t("proposalsMine")}>
+          <p className="label-caps">{t("proposalsMine")}</p>
+          {mine.map((p) => (
+            <div key={p.id} className="proposal-row">
+              <p className="text-[12px] font-medium text-t2">{p.kind === "edit" ? t("proposalEdit", { n: formatNumber(p.ordinal ?? 0, locale) }) : t(p.kind === "sense" ? "proposalSense" : "proposalError")}</p>
+              <p className="text-[14px] leading-[1.8] text-t1" dir="auto">{p.text}</p>
+              <p className="text-[11px] text-amber">{t("proposalPending", { date: new Date(p.ts).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long" }) })}</p>
+            </div>
+          ))}
+        </section>
+      )}
       {w.particles.length > 0 && <ParticlesBlock items={w.particles} />}
       {w.mufradat && <MufradatBlock m={w.mufradat} />}
       <WujuhBlock w={w} />
       {w.senses.length === 0 && (
-        <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] leading-relaxed text-t3">{t("sensesPending")}</p>
+        <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] leading-relaxed text-t3">{t.rich("sensesPending", { term: (c) => <Term id="sense">{c}</Term> })}</p>
       )}
       <div className="flex flex-wrap gap-2">
         <button type="button" className="btn text-[12px]" onClick={() => setSuggest({ kind: "sense", slug: w.slug, label: w.ar.full, current: "" })}>

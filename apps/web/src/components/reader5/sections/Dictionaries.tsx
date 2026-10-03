@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Icon } from "@/components/Icon";
+import { Term } from "@/components/terms/Term";
 import { Segmented } from "@/components/ui/Segmented";
 import { cnt, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
@@ -72,7 +73,7 @@ export function DictionariesSection({ w }: { w: WordPayload }) {
               </button>
             ))}
           </div>
-          <p className="text-[11.5px] text-t3">{t("byDeathDate")}</p>
+          <p className="text-[11.5px] text-t3">{t.rich("byDeathDate", { term: (c) => <Term id="lexicon">{c}</Term> })}</p>
           {listed.length === 0 && <p className="text-[12.5px] text-t3">{t("noArticlesOfKind")}</p>}
           {listed.map((d) => (
             <Article key={d.id} d={d} w={w} />
@@ -99,7 +100,7 @@ function Article({ d, w }: { d: DictWork; w: WordPayload }) {
       <header className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="ar-classical text-[19px] text-t1" lang="ar">{d.title_ar}</span>
         {locale !== "ar" && <span className="text-[13px] font-medium">{d.title_en}</span>}
-        {k && <span className="tag-pill">{t(`tag_${k.tag}`)}</span>}
+        {k && <span className="tag-pill">{k.tag === "gharib" ? <Term id="gharib">{t(`tag_${k.tag}`)}</Term> : t(`tag_${k.tag}`)}</span>}
         <span className="flex-1" />
         <span className="text-[11.5px] text-t3">{(locale === "ar" ? d.author_ar : d.author_en) + " · " + deathLabel(d, locale, t)}</span>
         <button

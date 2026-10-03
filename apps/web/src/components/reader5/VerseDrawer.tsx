@@ -10,7 +10,7 @@ import { getJSON } from "@/lib/reader/api";
 import { usePersonal, useReader, verseRef } from "@/lib/reader/store";
 import { useSaved } from "@/lib/store/saved";
 
-export type DrawerTool = "roots" | "related" | "links" | "topic" | "note" | "graph";
+export type DrawerTool = "roots" | "related" | "concordance" | "links" | "topic" | "note" | "graph";
 type VersePayload = { key: string; words: { location: string; root: string | null; lemma: string | null; lemma_slug?: string | null; text_uthmani: string }[] };
 type Related = { data: { score: number; roots: string[]; verse: { key: string; surah: number; ayah: number; text_qpc: string; name_ar: string } }[] };
 
@@ -27,6 +27,7 @@ export function VerseDrawer({ verseKey, tool, onClose }: { verseKey: string; too
       </div>
       {tool === "roots" && <RootsDrawer verseKey={verseKey} />}
       {tool === "related" && <RelatedDrawer verseKey={verseKey} />}
+      {tool === "concordance" && <ConcordanceDrawer verseKey={verseKey} />}
       {tool === "links" && <LinksDrawer verseKey={verseKey} />}
       {tool === "topic" && <TopicDrawer verseKey={verseKey} />}
       {tool === "note" && <NoteDrawer verseKey={verseKey} />}
@@ -301,6 +302,41 @@ export function TopicDrawer({ verseKey }: { verseKey: string }) {
         <button type="submit" className="btn" disabled={!draft.trim()}>{t("topicAdd")}</button>
       </form>
     </div>
+  );
+}
+
+/** Concordance from a verse (RDR-150, 496): each root it is built on, opening the concordance across the
+ * Quran or in this sūra. */
+function ConcordanceDrawer({ verseKey }: { verseKey: string }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const v = useVerse(verseKey);
+  const surah = verseKey.split(":")[0];
+  const keys = [...new Set((v.data?.words ?? []).map((w) => w.root).filter((r): r is string => !!r))];
+  const info = useQuery({
+    queryKey: ["roots-by-key", keys.join(",")],
+    queryFn: () => getJSON<{ data: { key: string; translit: string; occurrences: number }[] }>(`/roots?keys=${encodeURIComponent(keys.join(","))}&limit=${keys.length}`),
+    enabled: keys.length > 0,
+    staleTime: Infinity,
+  });
+  const byKey = new Map((info.data?.data ?? []).map((r) => [r.key, r]));
+  if (v.isError) return <p className="text-[12.5px] text-bad" role="alert">{t("loadFailed")}</p>;
+  if (v.data && keys.length === 0) return <p className="text-[12.5px] text-t3">{t("noRootsInVerse")}</p>;
+  return (
+    <ul className="flex flex-col">
+      {keys.map((k) => (
+        <li key={k} className="link-row">
+          <span className="ar-classical min-w-[72px] text-[18px] tracking-[.06em] text-root" lang="ar">{k.split("").join(" ")}</span>
+          <span className="mono min-w-0 flex-1 truncate text-[11px] text-t3" dir="ltr" lang="en">{byKey.get(k)?.translit ?? ""}</span>
+          <Link href={`/concordance?root=${encodeURIComponent(k)}`} className="text-[12px] text-t2 underline-offset-2 hover:underline">
+            {t("concAll", { n: formatNumber(byKey.get(k)?.occurrences ?? 0, locale) })}
+          </Link>
+          <Link href={`/concordance?root=${encodeURIComponent(k)}&surah=${surah}`} className="text-[12px] text-t2 underline-offset-2 hover:underline">
+            {t("inThisSurah")}
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 

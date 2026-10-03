@@ -4,12 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog } from "@/components/ui/Dialog";
+import { Segmented } from "@/components/ui/Segmented";
 import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic } from "@/lib/arabic/normalize";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
-import { getJSON } from "@/lib/reader/api";
+import { getJSON, useWord } from "@/lib/reader/api";
 import { useIsClient } from "@/lib/client";
-import { usePersonal, usePrefs, useReader, type SuggestTarget } from "@/lib/reader/store";
+import { type CiteTarget, usePersonal, usePrefs, useReader, type SuggestTarget } from "@/lib/reader/store";
 import { SITE } from "@/lib/site";
 import { storageFailed } from "@/lib/store/safeStorage";
 import { useDebounced } from "@/lib/useDebounced";
@@ -202,14 +203,28 @@ const FORMATS = ["chicago", "apa", "mla", "bibtex", "ris", "plain"] as const;
  * matches its scope (RDR-387), the real access date (RDR-395), Quran conventions («[البقرة: ٢٥٥]»).
  */
 function CiteDialog({ chapter }: { chapter: ChapterInfo }) {
+  const cite = useReader((s) => s.cite);
+  if (!cite) return null;
+  return <CiteBody key={JSON.stringify(cite)} opened={cite} chapter={chapter} />;
+}
+
+function CiteBody({ opened, chapter }: { opened: CiteTarget; chapter: ChapterInfo }) {
   const t = useTranslations("rd");
   const locale = useLocale();
-  const cite = useReader((s) => s.cite);
   const setCite = useReader((s) => s.setCite);
   const showToast = useReader((s) => s.showToast);
   const [format, setFormat] = useState<(typeof FORMATS)[number]>("chicago");
-  const meta = useQuery({ queryKey: ["meta-version"], queryFn: () => getJSON<{ dataset: { version: string } }>("/meta"), staleTime: Infinity, enabled: !!cite });
-  if (!cite) return null;
+  const meta = useQuery({ queryKey: ["meta-version"], queryFn: () => getJSON<{ dataset: { version: string } }>("/meta"), staleTime: Infinity });
+  // a word can be cited as itself, by its root or by its verse (RDR-385)
+  const [scope, setScope] = useState<"word" | "root" | "verse">("word");
+  const w = useWord(opened.kind === "word" && opened.slug ? opened.slug : null, opened.kind === "word" ? (opened.at ?? null) : null);
+  const verseKey = opened.kind === "word" && opened.at ? opened.at.split(":").slice(0, 2).join(":") : null;
+  const cite: CiteTarget =
+    opened.kind === "word" && scope === "root" && w.data?.root
+      ? { kind: "root", key: w.data.root.key, label: w.data.root.ar_spaced }
+      : opened.kind === "word" && scope === "verse" && verseKey
+        ? { kind: "verse", key: verseKey, label: verseKey }
+        : opened;
   const version = meta.data?.dataset.version ?? "";
   const origin = typeof window !== "undefined" ? window.location.origin : SITE.url;
   const prefix = locale === "en" ? "/en" : "";
@@ -262,6 +277,24 @@ function CiteDialog({ chapter }: { chapter: ChapterInfo }) {
     ris: `TY  - ELEC\nTI  - ${title}\nT2  - ${name}\nET  - ${version}\nUR  - ${url}\nPY  - ${year}\nY2  - ${new Date().toISOString().slice(0, 10)}\nER  - `,
     plain: `${title} — ${name} (${version}) — ${url}`,
   };
+  function entryJson() {
+    const base = { kind: cite.kind, permalink: url, dataset: version, licences: `${origin}${prefix}/sources` };
+    if (cite.kind === "word" && w.data) {
+      const d = w.data;
+      return {
+        ...base,
+        slug: d.slug,
+        ar: d.ar.full,
+        translit: d.ar.translit,
+        pos: d.pos,
+        root: d.root ? { key: d.root.key, spaced: d.root.ar_spaced, translit: d.root.translit, occurrences: d.root.occurrences } : null,
+        pattern: d.pattern ? { slug: d.pattern.slug, ar: d.pattern.ar.full } : null,
+        occurrence: d.occurrence ? { location: d.occurrence.location, verse_key: d.occurrence.verse_key, surface: d.occurrence.surface.full } : null,
+        occurrences: d.corpus_freq,
+      };
+    }
+    return { ...base, key: cite.kind === "word" || cite.kind === "article" ? cite.slug : cite.key, label: cite.label };
+  }
   async function copy(text: string, msg: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -278,6 +311,18 @@ function CiteDialog({ chapter }: { chapter: ChapterInfo }) {
           <span className="flex-1" />
           <button type="button" className="btn icon-btn" onClick={() => setCite(null)} aria-label={t("close")}>✕</button>
         </div>
+        {opened.kind === "word" && (w.data?.root || verseKey) && (
+          <Segmented
+            label={t("citeScope")}
+            value={scope}
+            onChange={setScope}
+            options={[
+              { value: "word" as const, label: t("citeScopeWord") },
+              ...(w.data?.root ? [{ value: "root" as const, label: t("citeScopeRoot") }] : []),
+              ...(verseKey ? [{ value: "verse" as const, label: t("citeScopeVerse") }] : []),
+            ]}
+          />
+        )}
         <p className="label-caps">{t("permalink")}</p>
         <div className="flex items-center gap-2">
           <code className="mono min-w-0 flex-1 truncate rounded-md bg-card-2 px-2 py-1.5 text-[12px]" dir="ltr">{`${url} · ${version}`}</code>
@@ -291,6 +336,16 @@ function CiteDialog({ chapter }: { chapter: ChapterInfo }) {
         <pre className="whitespace-pre-wrap rounded-md bg-card-2 p-3 text-[12.5px] leading-relaxed" dir="ltr">{texts[format]}</pre>
         <button type="button" className="btn btn-primary self-start" onClick={() => copy(texts[format], t("citationCopied"))}>{t("copyCitation")}</button>
         <p className="text-[11.5px] text-t3">{t("citeSourcesNote")}</p>
+        {/* the entry as data (RDR-398): what we derived, with the permalink, the dataset version and where the licences are */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-line pt-2">
+          <button type="button" className="btn text-[12px]" onClick={() => copy(JSON.stringify(entryJson(), null, 2), t("jsonCopied"))}>
+            {t("exportJson")}
+          </button>
+          <span className="flex-1" />
+          <Link href="/sources" className="text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setCite(null)}>
+            {t("licencesLink")}
+          </Link>
+        </div>
       </div>
     </Dialog>
   );
