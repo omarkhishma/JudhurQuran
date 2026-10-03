@@ -17,11 +17,12 @@ test("a starred word appears in Saved and in the Review count, and stays after a
   await expect(page.locator("main")).toContainText(lemma.ar.full);
 });
 
-test("the root map draws the family: the root and each of its words", async ({ page }) => {
-  const g = await api<{ lemmas: unknown[] }>(page, `/roots/${encodeURIComponent("رحم")}/graph`);
+test("the root map draws the family: the root, its patterns and each of its words (P8.2)", async ({ page }) => {
+  const g = await api<{ lemmas: unknown[]; patterns: unknown[] }>(page, `/roots/${encodeURIComponent("رحم")}/graph`);
+  expect(g.patterns.length).toBeGreaterThan(0);
   await page.goto(`/graph/root/${encodeURIComponent("رحم")}`);
   await expect(page.locator(".react-flow__node").first()).toBeVisible();
-  await expect(page.locator(".react-flow__node")).toHaveCount(g.lemmas.length + 1);
+  await expect(page.locator(".react-flow__node")).toHaveCount(1 + g.patterns.length + g.lemmas.length);
 });
 
 test("delete in Saved removes every store and document this site keeps, the reader's own texts included", async ({ page }) => {
