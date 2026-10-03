@@ -390,7 +390,8 @@ def resolve_root(conn: Connection, raw: str) -> dict[str, Any] | None:
         return None
     return one(
         conn,
-        """select id, key, letters, spaced, translit, occurrences, verse_count, surah_count, lemma_count
+        """select id, key, letters, spaced, translit, occurrences, verse_count, surah_count, lemma_count,
+                  gist_source->>'usul' as usul
            from content.roots where key = any(:ks) order by occurrences desc, id limit 1""",
         {"ks": keys},
     )

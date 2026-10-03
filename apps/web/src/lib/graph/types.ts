@@ -11,6 +11,8 @@ export type GraphNodeData = {
   sub?: string; // secondary line (transliteration, pattern, label)
   count?: number; // occurrences in the Quran
   rootKey?: string;
+  /** how many uṣūl Ibn Fāris gives the root: its words share the letters, not always one meaning (P3.7a) */
+  usul?: "one" | "several" | "unrelated" | null;
   lemmaId?: number;
   form?: string; // imlaei surface form (word cards)
   verse?: VerseExcerpt; // word cards: first occurrence · verse cards: the occurrence

@@ -30,3 +30,14 @@ test("a root with unrelated uṣūl, one with several, and one with a single a�
     else await expect(fam.locator(".usul-note")).toHaveCount(0);
   }
 });
+
+test("the graph's root card says it too, from the same statement (P3.7a)", async ({ page }) => {
+  const seed = (root: string) => Buffer.from(JSON.stringify({ seed: "root", root }), "utf8").toString("base64url");
+  await page.goto(`/graph/seed?s=${seed("فدي")}`);
+  await expect(page).toHaveURL(/\/graph\/edit\//, { timeout: 30_000 });
+  await expect(page.locator(".usul-chip")).toContainText("أصول هذا الجذر عند ابن فارس متباينة");
+  await page.goto(`/graph/seed?s=${seed("علم")}`);
+  await expect(page).toHaveURL(/\/graph\/edit\//, { timeout: 30_000 });
+  await expect(page.locator(".graph-card").first()).toBeVisible();
+  await expect(page.locator(".usul-chip")).toHaveCount(0);
+});

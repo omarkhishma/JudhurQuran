@@ -121,6 +121,11 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
               <p className="mt-1 text-[11.5px] text-t3">{citeVerse(data.verse.surahName, Number(data.verse.key.split(":")[0]), Number(data.verse.key.split(":")[1]), locale)}</p>
             )}
             {data.kind === "note" && <p className="mt-1 text-[10.5px] text-t3">{t("personalNote")}</p>}
+            {data.kind === "root" && (data.usul === "several" || data.usul === "unrelated") && (
+              <p className="usul-chip mt-1.5 rounded-md bg-card-2 px-2 py-1 text-[11.5px] leading-relaxed text-t2" data-usul={data.usul}>
+                {t(data.usul === "unrelated" ? "usulUnrelatedCard" : "usulSeveralCard")}
+              </p>
+            )}
 
             <div className="mt-2 flex flex-wrap gap-1.5">
               {data.more && data.more.remaining > 0 && (

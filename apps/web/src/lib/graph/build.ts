@@ -2,7 +2,7 @@ import type { PatternMethod } from "@/lib/types";
 import type { GraphEdge, GraphNode, VerseExcerpt } from "./types";
 
 export type RootGraphPayload = {
-  root: { key: string; letters: string[]; spaced: string; translit: string; occurrences: number; verse_count: number; surah_count: number; lemma_count: number };
+  root: { key: string; letters: string[]; spaced: string; translit: string; occurrences: number; verse_count: number; surah_count: number; lemma_count: number; usul?: "one" | "several" | "unrelated" | null };
   lemmas: {
     id: number;
     slug: string;
@@ -72,7 +72,7 @@ export function buildRootGraph(
     id: rid,
     type: "card",
     position: { x: 0, y: 0 },
-    data: { kind: "root", ar: r.spaced, sub: r.translit, count: r.occurrences, rootKey: r.key, focus: !!focusLocation || !!focus },
+    data: { kind: "root", ar: r.spaced, sub: r.translit, count: r.occurrences, rootKey: r.key, usul: r.usul ?? null, focus: !!focusLocation || !!focus },
   });
   for (const l of g.lemmas) {
     const lid = lemmaId(l.id);

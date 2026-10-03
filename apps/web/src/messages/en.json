@@ -352,6 +352,8 @@
     "unfold": "Unfold card",
     "openReader": "Open in the mushaf",
     "openRoot": "Root page",
+    "usulSeveralCard": "Ibn Fāris gives this root more than one aṣl: its words share the letters, not one meaning.",
+    "usulUnrelatedCard": "Ibn Fāris holds this root's uṣūl to be unrelated: its words share the letters, not the meaning.",
     "firstVerse": "First occurrence",
     "editorTitle": "My maps",
     "editorLead": "Build your own maps: a topic map, a semantic field gathering words close in meaning with the distinctions between them, or a free map. Maps are saved in this browser only.",
