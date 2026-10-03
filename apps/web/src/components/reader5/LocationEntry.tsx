@@ -7,7 +7,7 @@ import { Term } from "@/components/terms/Term";
 import { useWordAt } from "@/lib/reader/api";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import type { Features } from "@/lib/reader/types";
-import { ListenOccurrence } from "./Listen";
+import { ListenOccurrence, WordAudioNote } from "./Listen";
 import { GrammarHere } from "./sections/Meanings";
 
 /**
@@ -37,7 +37,7 @@ export function LocationEntry({ at }: { at: string }) {
         <div className="flex items-start gap-3">
           <h2 className="quran text-[40px] leading-[1.6] text-t1" lang="ar" dir="rtl">{w.text_uthmani}</h2>
           <span className="flex-1" />
-          <ListenOccurrence location={w.location} tokenFrom={w.token_from} tokenTo={w.token_to} />
+          <ListenOccurrence verseKey={w.verse.key} audio={w.audio} />
         </div>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-t2">
           {w.translit && <span className="mono" dir="ltr" lang="en">{w.translit}</span>}
@@ -49,6 +49,7 @@ export function LocationEntry({ at }: { at: string }) {
             {w.gloss_en} <span className="not-italic text-t3">— {t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> })}</span>
           </p>
         )}
+        <WordAudioNote audio={w.audio} />
         <p className="text-[13px] leading-relaxed text-t2">
           <Term id="noRoot">{t("noRoot")}</Term> — {initials ? t("initialsExplain") : t("noRootExplain")}
         </p>

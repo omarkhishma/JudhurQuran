@@ -1070,7 +1070,15 @@
     "suggestGloss": "اقترح معنى حرفيًا أدق",
     "suggestMorph": "اقترح تصحيحًا",
     "proposalGloss": "معنى حرفي اقترحته",
-    "proposalMorph": "تصحيح اقترحته · {field}"
+    "proposalMorph": "تصحيح اقترحته · {field}",
+    "hearItBy": "استمع إليها بصوت {reciter}",
+    "audioCut": "مقطع من تلاوة متصلة، فتُسمع الكلمة كما تُقرأ في الوصل",
+    "audioNoteLead": "مقطع من تلاوة {reciter} المتصلة:",
+    "audioFlag_wasl": "تبدأ بهمزة وصل، فلا يُسمع أولها كما يُنطق في الابتداء.",
+    "audioFlag_joined": "يتصل صوتها بالكلمة المجاورة، فلا يبين حدّها تمامًا.",
+    "audioFlag_shared": "وُقّتت مع كلمة أخرى، فقد يُسمع معها شيء منها.",
+    "audioFlag_uncertain": "توقيت الكلمات في هذه الآية أقل يقينًا.",
+    "audioFlag_short": "المقطع قصير جدًا."
   },
   "concordance": {
     "title": "الفهرس السياقي",

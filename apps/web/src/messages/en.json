@@ -1070,7 +1070,15 @@
     "suggestGloss": "Suggest a better gloss",
     "suggestMorph": "Suggest a correction",
     "proposalGloss": "Your gloss",
-    "proposalMorph": "Your correction · {field}"
+    "proposalMorph": "Your correction · {field}",
+    "hearItBy": "Hear it, recited by {reciter}",
+    "audioCut": "a cut from continuous recitation, so the word sounds as it does when read on",
+    "audioNoteLead": "A cut from {reciter}'s continuous recitation:",
+    "audioFlag_wasl": "it opens with hamzat al-waṣl, so its first vowel is not heard as it is when starting here.",
+    "audioFlag_joined": "it runs into the word beside it, so its edge is not clean.",
+    "audioFlag_shared": "it was timed together with another word, which may be heard with it.",
+    "audioFlag_uncertain": "the word timings in this verse are less certain.",
+    "audioFlag_short": "the cut is very short."
   },
   "concordance": {
     "title": "Concordance",

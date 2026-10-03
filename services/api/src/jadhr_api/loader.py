@@ -74,8 +74,10 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                                               "kind", "shamela_id"], set()),
     ("lexicon_entries", "lexicon_entries.jsonl", ["id", "work_id", "root_key", "headword", "match", "confidence",
                                                   "displayable", "body", "core_meaning", "page_ref", "source_ref"], set()),
-    ("reciters", "reciters.jsonl", ["id", "name_ar", "name_en", "style", "folder", "audio_url", "is_default", "sort_order"], set()),
-    ("recitation_timings", "recitation_timings.jsonl", ["reciter_id", "verse_id", "segments"], {"segments"}),
+    ("reciters", "reciters.jsonl", ["id", "name_ar", "name_en", "style", "folder", "audio_url", "is_default", "sort_order",
+                                    "word_audio"], set()),
+    ("recitation_timings", "recitation_timings.jsonl", ["reciter_id", "verse_id", "segments", "quality"],
+     {"segments", "quality"}),
     ("gharib_glosses", "gharib_glosses.jsonl", ["id", "work_id", "surah", "ayah", "phrase", "gloss", "word_locations",
                                                 "page_ref", "source_ref"], set()),
     # Quran knowledge layers (P3.9) and relation seeds (P8.4/P3.1), built by jadhr_pipeline.layers

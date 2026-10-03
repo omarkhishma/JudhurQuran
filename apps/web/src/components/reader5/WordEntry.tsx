@@ -21,7 +21,7 @@ import { DictionariesSection } from "./sections/Dictionaries";
 import { CenturiesSection } from "./sections/Centuries";
 import { InQuranSection } from "./sections/InQuran";
 import { WhereNext } from "./sections/WhereNext";
-import { ListenOccurrence } from "./Listen";
+import { ListenOccurrence, WordAudioNote } from "./Listen";
 
 /** One spec order for both layouts (P2.0 resolution of RDR-207). */
 export const SECTION_ORDER: SectionId[] = SECTIONS;
@@ -121,7 +121,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
           {w.ar.full}
         </h2>
         <span className="flex-1" />
-        {occ && <ListenOccurrence location={occ.location} tokenFrom={occ.token_from} tokenTo={occ.token_to} />}
+        {occ && <ListenOccurrence verseKey={occ.verse_key} audio={occ.audio} />}
       </div>
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-t2">
         <span className="mono" dir="ltr" lang="en">{w.ar.translit}</span>
@@ -164,6 +164,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
               {occ.gloss_en} <span className="not-italic text-t3">— {t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> })}</span>
             </p>
           )}
+          <WordAudioNote audio={occ.audio} />
         </div>
       )}
       {w.root ? (

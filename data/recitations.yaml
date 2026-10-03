@@ -4,6 +4,9 @@
 audio_url: https://everyayah.com/data/{folder}/{surah:03d}{ayah:03d}.mp3
 timings_zip: quran-align/quran-align-data-2016-11-24.zip
 timings_zip_sha256: 5eeb045d8a7895208c94d2d7ec243567f8f550728835411527c4ffa1e789c9b7
+# words are heard as slices of one recitation, whatever reciter the verses play in (D10): al-Ḥuṣarī's
+# teaching recitation, the slowest and most clearly separated
+word_audio: husary-muallim
 reciters:
   - { id: alafasy, folder: Alafasy_128kbps, name_ar: مشاري راشد العفاسي, name_en: Mishary Rashid Alafasy, style: murattal, default: true }
   - { id: husary, folder: Husary_64kbps, name_ar: محمود خليل الحصري, name_en: Mahmoud Khalil Al-Husary, style: murattal }

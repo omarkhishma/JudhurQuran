@@ -256,6 +256,7 @@ def word(conn: Connection, location: str) -> dict[str, Any] | None:
         assert root is not None
         root["lemmas"] = root_lemmas(conn, w["root_id"])
         w["root"] = root
+    w["audio"] = word_audio(conn, v["key"], w["token_from"], w["token_to"])
 
     w["variants"] = rows(
         conn,
@@ -932,12 +933,89 @@ AUDIO_CREDIT = {
 
 def reciters(conn: Connection) -> list[dict[str, Any]]:
     return rows(
-        conn, "select id, name_ar, name_en, style, is_default from content.reciters order by sort_order"
+        conn,
+        "select id, name_ar, name_en, style, is_default, word_audio from content.reciters order by sort_order",
     )
 
 
 def _audio_url(template: str, surah: int, ayah: int) -> str:
     return template.replace("{surah:03d}", f"{surah:03d}").replace("{ayah:03d}", f"{ayah:03d}")
+
+
+# Word audio (P3.7, D10): a word is heard as its slice of one recitation, al-Ḥuṣarī's teaching one, whose
+# boundaries are refined against the audio. What keeps a slice from being clean is said, never hidden.
+WORD_AUDIO_SHORT_MS = 200
+_SHADDA = "\u0651"
+_MARK = re.compile("[\u064b-\u065f\u0670\u06d6-\u06ed\u08f0-\u08ff]")
+
+
+def _shadda_on_first(text: str) -> bool:
+    """The first letter carries a shadda: the word before ran into it (idghām, «مِن رَّبِّهِمۡ»)."""
+    for ch in text[1:]:
+        if ch == _SHADDA:
+            return True
+        if not _MARK.match(ch):
+            return False
+    return False
+
+
+def word_audio(conn: Connection, verse_key: str, token_from: int, token_to: int) -> dict[str, Any] | None:
+    """The slice of the word-audio recitation for these display tokens, or None where they are untimed
+    (no button then). Flags: ``wasl`` (opens with hamzat al-waṣl, whose vowel continuous reading drops),
+    ``joined`` (runs into the next word or the last one runs into it, no audible dip), ``shared`` (timed by
+    a segment that also holds another word), ``uncertain`` (the aligner missed or swapped words in this
+    verse), ``short`` (under 200 ms)."""
+    v = one(
+        conn,
+        """select v.id, v.surah, v.ayah, r.id as reciter_id, r.name_ar, r.name_en, r.audio_url, t.segments, t.quality
+           from content.verses v join content.reciters r on r.word_audio
+           join content.recitation_timings t on t.verse_id = v.id and t.reciter_id = r.id
+           where v.key = :k""",
+        {"k": verse_key},
+    )
+    if v is None:
+        return None
+    segs = [x for x in v["segments"] if token_from <= x[0] <= token_to]
+    if not segs:
+        return None
+    start, end = min(x[1] for x in segs), max(x[2] for x in segs)
+    q = v["quality"] or {}
+    toks = {
+        t["position"]: t["text"]
+        for t in rows(
+            conn,
+            "select position, text from content.tokens where verse_id = :id and position between :a and :b",
+            {"id": v["id"], "a": token_from, "b": token_to + 1},
+        )
+    }
+    first, nxt = toks.get(token_from, ""), toks.get(token_to + 1)
+    joined_next = set(q.get("joined_next") or [])
+    flags: list[str] = []
+    if token_from > 1 and first.startswith("\u0671"):
+        flags.append("wasl")
+    if (
+        token_to in joined_next
+        or (token_from - 1) in joined_next
+        or _shadda_on_first(first)
+        or (nxt is not None and _shadda_on_first(nxt))
+    ):
+        flags.append("joined")
+    if any(p in (q.get("shared") or []) for p in range(token_from, token_to + 1)):
+        flags.append("shared")
+    if q.get("deletions") or q.get("transpositions"):
+        flags.append("uncertain")
+    if end - start < WORD_AUDIO_SHORT_MS:
+        flags.append("short")
+    return {
+        "reciter_id": v["reciter_id"],
+        "name_ar": v["name_ar"],
+        "name_en": v["name_en"],
+        "url": _audio_url(v["audio_url"], v["surah"], v["ayah"]),
+        "start_ms": start,
+        "end_ms": end,
+        "refined": bool(q.get("refined")),
+        "flags": flags,
+    }
 
 
 def recitation_surah(conn: Connection, reciter_id: str, surah_no: int) -> dict[str, Any] | None:

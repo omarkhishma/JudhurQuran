@@ -172,7 +172,7 @@ function DesktopCard({ w, onCousin }: { w: WordPayload; onCousin: (slug: string)
               {meaning && <> · {meaning.source === "corpus" ? t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }) : meaning.source}</>}
             </p>
           </div>
-          {w.occurrence && <ListenOccurrence location={w.occurrence.location} tokenFrom={w.occurrence.token_from} tokenTo={w.occurrence.token_to} />}
+          {w.occurrence && <ListenOccurrence verseKey={w.occurrence.verse_key} audio={w.occurrence.audio} />}
         </div>
       </div>
       {w.root && (
@@ -260,7 +260,7 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
       ),
       action: (
         <div className="flex gap-2">
-          {w.occurrence && <ListenOccurrence location={w.occurrence.location} tokenFrom={w.occurrence.token_from} tokenTo={w.occurrence.token_to} />}
+          {w.occurrence && <ListenOccurrence verseKey={w.occurrence.verse_key} audio={w.occurrence.audio} />}
           <button type="button" className="btn min-h-[44px]" aria-pressed={a.star} onClick={a.toggleStar}>{a.star ? `★ ${t("saved")}` : `☆ ${t("save")}`}</button>
         </div>
       ),

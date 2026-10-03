@@ -129,7 +129,26 @@ def test_dictionaries_carry_licences() -> None:
 
 def test_root_gist_is_ibn_faris_statement_cited_by_its_entry() -> None:
     """P3.4: the root record's Arabic core idea is Maqāyīs's statement, the same text the entry shows."""
-    w = get("/api/v1/words/karim?limit=0")
+    w = get("/api/v1/words/karim", limit=0)
     assert w["root"]["gist_ar"] == w["core_meaning"]["text"]
-    assert w["root"]["gist_source"] == {"work_id": "maqayis", "entry_id": w["core_meaning"]["entry_id"], "page_ref": w["core_meaning"]["page_ref"]}
-    assert " … والأصل الآخر" in w["root"]["gist_ar"]  # both uṣūl of ك ر م, the second where Ibn Fāris turns to it
+    assert w["root"]["gist_source"] == {
+        "work_id": "maqayis",
+        "entry_id": w["core_meaning"]["entry_id"],
+        "page_ref": w["core_meaning"]["page_ref"],
+    }
+    assert (
+        " … والأصل الآخر" in w["root"]["gist_ar"]
+    )  # both uṣūl of ك ر م, the second where Ibn Fāris turns to it
+
+
+def test_word_audio_is_a_slice_of_the_teaching_recitation_with_its_flags() -> None:
+    """P3.7, D10: every word is heard from al-Ḥuṣarī's teaching recitation; what keeps a slice from being
+    clean is flagged from the text and the alignment; an untimed word has no audio at all."""
+    huda = get("/api/v1/words/huda", at="2:2:6", limit=0)["occurrence"]["audio"]
+    assert huda["reciter_id"] == "husary-muallim" and "Husary_Muallim_128kbps/002002.mp3" in huda["url"]
+    assert 0 <= huda["start_ms"] < huda["end_ms"]
+    assert "joined" in huda["flags"]  # «هُدٗى لِّلۡمُتَّقِينَ»: the tanwīn runs into the doubled lām
+    assert "wasl" in get("/api/v1/words/allah", at="1:1:2", limit=0)["occurrence"]["audio"]["flags"]
+    assert get("/api/v1/words/alim", at="2:181:13", limit=0)["occurrence"]["audio"] is None
+    reciters = get("/api/v1/recitations")["data"]
+    assert [r["id"] for r in reciters if r.get("word_audio")] == ["husary-muallim"]

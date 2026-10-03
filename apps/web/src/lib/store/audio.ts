@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { safeJSONStorage } from "@/lib/store/safeStorage";
+import type { WordAudio } from "@/lib/types";
 
 export type VerseAudio = { key: string; ayah: number; url: string; segments: [number, number, number][] };
 
@@ -33,7 +34,8 @@ type AudioState = {
   setRepeat: (v: boolean) => void;
   playSurah: (surah: number, fromAyah: number) => void;
   playVerse: (key: string) => void;
-  playWord: (key: string, tokenFrom: number, tokenTo: number) => void;
+  /** a word's slice of the word-audio recitation (D10), whatever reciter the verses play in */
+  playSlice: (key: string, audio: WordAudio) => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -101,20 +103,16 @@ export const useAudio = create<AudioState>()(
           set({ error: String(e), playing: false });
         }
       },
-      playWord: async (key, tokenFrom, tokenTo) => {
-        const r = await fetch(`/api/v1/recitations/${get().reciter}/verses/${key}`);
-        if (!r.ok) return;
-        const v = (await r.json()) as VerseAudio & { surah: number };
-        const segs = v.segments.filter(([pos]) => pos >= tokenFrom && pos <= tokenTo);
-        if (!segs.length) return;
+      playSlice: (key, audio) => {
+        const [s, a] = key.split(":").map(Number);
         set({
           mode: "word",
-          surah: v.surah,
-          queue: [v],
+          surah: s,
+          queue: [{ key, ayah: a, url: audio.url, segments: [] }],
           index: 0,
           basmalaUrl: null,
           inBasmala: false,
-          slice: { start: Math.min(...segs.map((x) => x[1])), end: Math.max(...segs.map((x) => x[2])) },
+          slice: { start: audio.start_ms, end: audio.end_ms },
           token: null,
           playing: true,
           error: null,

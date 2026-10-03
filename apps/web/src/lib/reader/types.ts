@@ -1,5 +1,7 @@
 /** Shapes of the lexeme API (/api/v1/words/:slug and friends). Kept in sync with services/api lexicon.py. */
 
+import type { WordAudio } from "@/lib/types";
+
 export type Ar = { full: string; bare: string; translit: string };
 export type PosLabel = { tag: string; ar: string | null; en: string | null };
 
@@ -161,6 +163,7 @@ export type Occurrence = {
   segments: Segment[];
   glosses: Gloss[];
   meanings_here: MeaningHere[];
+  audio: WordAudio | null;
   variants: { source: string; root_key: string | null; source_title_ar: string; source_title_en: string }[];
 };
 

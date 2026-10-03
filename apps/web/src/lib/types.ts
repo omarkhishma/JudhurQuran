@@ -143,8 +143,14 @@ export type NextStep =
       derivation?: Label;
     };
 
+/** A word as recited at one place (P3.7, D10): its slice of the word-audio recitation and what keeps the
+ * slice from being clean. None where the place is untimed — then there is no play button. */
+export type WordAudioFlag = "wasl" | "joined" | "shared" | "uncertain" | "short";
+export type WordAudio = { reciter_id: string; name_ar: string; name_en: string; url: string; start_ms: number; end_ms: number; refined: boolean; flags: WordAudioFlag[] };
+
 export type WordDetail = {
   id: number;
+  audio: WordAudio | null;
   location: string;
   surah: number;
   ayah: number;

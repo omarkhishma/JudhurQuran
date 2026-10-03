@@ -116,6 +116,7 @@ def _occurrence(conn: Connection, location: str, lemma_id: int) -> dict[str, Any
         "features": w["features"],
         "segments": w["segments"],
         "glosses": content.word_glosses(conn, w["location"]),
+        "audio": content.word_audio(conn, f"{w['surah']}:{w['ayah']}", w["token_from"], w["token_to"]),
         "meanings_here": content.word_meanings_here(conn, w["location"]),
         "variants": rows(
             conn,
