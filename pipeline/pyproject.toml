@@ -11,6 +11,10 @@ dependencies = [
   "lxml>=5",
 ]
 
+[project.optional-dependencies]
+# audio analysis for refined word boundaries (jadhr_pipeline.recitation_refine); the build itself never needs it
+audio = ["numpy>=2.1"]
+
 [project.scripts]
 jadhr-pipeline = "jadhr_pipeline.cli:main"
 
