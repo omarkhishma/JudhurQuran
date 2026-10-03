@@ -4,6 +4,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { Term } from "@/components/terms/Term";
 import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic } from "@/lib/arabic/normalize";
 import { useIsClient } from "@/lib/client";
@@ -26,7 +27,7 @@ export type SearchPayload = {
     surahs: { number: number; name_ar: string; name_translit: string; verse_count: number; revelation_place?: string }[];
     roots: Root[];
     lemmas: Lemma[];
-    words: { form: string; display: string; occurrences: number; sample: string; lemma_id: number | null; lemma: string | null; root: string | null; exact: boolean }[];
+    words: { form: string; display: string; occurrences: number; sample: string; lemma_id: number | null; lemma: string | null; root: string | null; exact: boolean; rasm_differs?: boolean; mushaf?: string }[];
     patterns?: { slug: string; ar: { full: string; translit: string }; lemma_count: number; occurrences?: number; form_number?: number | null }[];
     passages?: Passage[];
     dictionary?: DictEntry[];
@@ -195,6 +196,9 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
   // initial results come from the server render, so "has data" — not "has fetched" — decides
   const empty = !!dq && !!data && !res.isError && total === 0 && !mine.isFetching;
   const onPattern = detected?.kind === "pattern";
+  // plan B28: the word typed as everyday spelling is written otherwise in the mushaf — said, with the term
+  const spelled = (r?.words ?? []).filter((w) => w.exact).sort((a, b) => b.occurrences - a.occurrences)[0];
+  const spelledNote = spelled?.rasm_differs && spelled.mushaf ? spelled : null;
 
   function setLetter(i: number, v: string) {
     const ch = [...v.replace(/[^ء-ي]/g, "")].pop() ?? "";
@@ -382,6 +386,18 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
                 ))}
               </ul>
               {!lettered && <More paged={words} />}
+              {spelledNote && (
+                <p className="mt-2 text-[12.5px] text-t2" data-testid="rasm-note">
+                  {t.rich("rasmNote", {
+                    mushaf: () => (
+                      <span className="quran text-[17px]" lang="ar" dir="rtl">
+                        {spelledNote.mushaf}
+                      </span>
+                    ),
+                    term: (c) => <Term id="rasm">{c}</Term>,
+                  })}
+                </p>
+              )}
               {(r?.words.length ?? 0) > 0 && (
                 <p className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] text-t3">
                   {t("formsLead")}

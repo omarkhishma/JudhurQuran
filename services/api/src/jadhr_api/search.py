@@ -428,7 +428,10 @@ def search_pg(
                 conn,
                 f"""select w.norm as form, min(w.text_imlaei) as display, count(*)::int as occurrences,
                           (array_agg(w.location order by w.id))[1] as sample, l.id as lemma_id, l.ar as lemma, r.key as root,
-                          bool_or({eq("w", "q")}) as exact
+                          bool_or({eq("w", "q")}) as exact,
+                          -- typed as everyday spelling, a word the mushaf writes otherwise (plan B28)
+                          {"false" if cols == ("norm_uthmani",) else f"bool_or(({eq('w', 'q')}) and w.norm_uthmani <> w.norm)"} as rasm_differs,
+                          min(w.text_uthmani) as mushaf
                    from content.words w
                    left join content.lemmas l on l.id = w.lemma_id
                    left join content.roots r on r.id = w.root_id

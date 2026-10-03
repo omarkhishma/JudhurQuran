@@ -486,7 +486,8 @@
     "lettersNarrow": "The letters narrow roots and words: {letters}",
     "kindPattern": "Pattern",
     "noteWordLoc": "press Enter to open the word there",
-    "goToWord": "Open the word at {ref}"
+    "goToWord": "Open the word at {ref}",
+    "rasmNote": "The mushaf writes it <mushaf></mushaf>: its <term>spelling</term> differs from today's in some words, and either finds the word."
   },
   "footer": {
     "label": "Site links",

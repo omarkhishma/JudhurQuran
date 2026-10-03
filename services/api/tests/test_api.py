@@ -11,6 +11,7 @@ import hashlib
 import pytest
 from fastapi.testclient import TestClient
 from jadhr_api.main import app
+from jadhr_arabic import normalize
 
 client = TestClient(app)
 
@@ -224,6 +225,20 @@ def test_search_word_locations() -> None:
         assert d["detected"]["kind"] == "word_loc" and d["detected"]["word"] == 3, q
         assert [v["key"] for v in d["results"]["verses"]] == ["2:255"], q
     assert get("/api/v1/search", q="2:255:99")["results"]["verses"] == []
+
+
+def test_search_says_when_the_mushaf_writes_the_word_otherwise() -> None:
+    """Plan B28: a word typed as everyday spelling (السماوات, الصلاة) that the mushaf writes with other letters is
+    flagged, with the mushaf's spelling; a word written the same way is not."""
+    for q in ("السماوات", "الصلاة", "الكتاب"):
+        w = next(x for x in get("/api/v1/search", q=q)["results"]["words"] if x["exact"])
+        assert w["rasm_differs"] is True and w["mushaf"], q
+        assert normalize(w["mushaf"]) != normalize(q), q
+    top = max(
+        (x for x in get("/api/v1/search", q="علم")["results"]["words"] if x["exact"]),
+        key=lambda x: x["occurrences"],
+    )
+    assert top["rasm_differs"] is False
 
 
 def test_search_surah_name_also_searches_the_word() -> None:

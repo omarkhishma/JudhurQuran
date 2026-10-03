@@ -63,3 +63,14 @@ test("search: an empty result offers Ask mode (SRC-39)", async ({ page }) => {
   await page.goto(`/search?q=${encodeURIComponent("zzqqxx")}`);
   await expect(page.getByRole("link", { name: /اسأل عنها/ })).toHaveAttribute("href", /\/read\?mode=ask&q=zzqqxx/);
 });
+
+test("a word typed as everyday spelling that the mushaf writes otherwise says so, with the term (plan B28)", async ({ page }) => {
+  await page.goto(`/search?q=${encodeURIComponent("السماوات")}`);
+  const note = page.getByTestId("rasm-note");
+  await expect(note).toContainText("تُكتب في المصحف");
+  await expect(note.getByRole("button", { name: "رسم المصحف" })).toBeVisible();
+  // a word the mushaf writes as today: nothing to say
+  await page.goto(`/search?q=${encodeURIComponent("علم")}`);
+  await expect(page.locator(".result-row, .chip").first()).toBeVisible();
+  await expect(page.getByTestId("rasm-note")).toHaveCount(0);
+});
