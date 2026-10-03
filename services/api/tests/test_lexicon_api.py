@@ -199,7 +199,13 @@ def test_loanword_claims_and_the_dispute_with_its_views() -> None:
 
 
 def test_the_text_catalogue_gives_the_qurans_lemma_count_for_coverage_by_unique_word() -> None:
-    """LIB-Q04: the Library measures what a reader knows over the Quran's distinct lemmas."""
+    """LIB-Q04, LIB-11: the Library measures what a reader knows over the Quran's distinct content lemmas —
+    particles and pronouns out, by the rule the Analyser applies to the reader's own texts."""
+    from jadhr_api.analyse import CONTENT_POS
+
     (q,) = [t for t in get("/api/v1/texts")["data"] if t["kind"] == "quran"]
-    lemmas = sum(1 for _ in (REPO / "data/build/2026.10.0/lemmas.jsonl").open(encoding="utf-8"))
-    assert q["lemma_count"] == lemmas and q["chapter_count"] == 114 and q["passage_count"] == 6236
+    lemmas = [json.loads(x) for x in (REPO / "data/build/2026.10.0/lemmas.jsonl").open(encoding="utf-8")]
+    content = [x for x in lemmas if x.get("root_id") is not None or x["pos"] in CONTENT_POS]
+    assert q["lemma_count"] == len(content) and q["chapter_count"] == 114 and q["passage_count"] == 6236
+    assert len(q["function_lemmas"]) == len(lemmas) - len(content) > 0
+    assert set(q["function_lemmas"]).isdisjoint({x["slug"] for x in content})
