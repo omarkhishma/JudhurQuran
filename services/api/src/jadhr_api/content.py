@@ -554,6 +554,22 @@ def root_occurrences(
     }
 
 
+def lemmas_by_id(conn: Connection, ids: list[int]) -> list[dict[str, Any]]:
+    """Lemmas by their database id, with the stable slug a map keys them by: what reads a map saved before maps
+    were keyed by slug (graph document version 1, P8.1a)."""
+    if not ids:
+        return []
+    out = rows(
+        conn,
+        """select l.id, l.slug, l.ar, l.pos, l.occurrences, r.key as root, r.spaced as root_spaced
+           from content.lemmas l left join content.roots r on r.id = l.root_id where l.id = any(:ids) order by l.id""",
+        {"ids": ids},
+    )
+    for x in out:
+        x["ar"] = lemma_display(x["ar"])
+    return out
+
+
 def lemma_detail(conn: Connection, lemma_id: int) -> dict[str, Any] | None:
     lem = one(
         conn,

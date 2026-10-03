@@ -785,6 +785,18 @@ def lexicon_entry(request: Request, entry_id: int) -> Response:
         return cached(request, e)
 
 
+@router.get("/lemmas", summary="Lemmas by database id (up to 200), with their stable slugs")
+def lemmas(request: Request, ids: str = Query(..., max_length=2000, description="comma-separated ids")) -> Response:
+    try:
+        wanted = list(dict.fromkeys(int(x) for x in ids.split(",") if x.strip()))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="ids must be whole numbers") from exc
+    if len(wanted) > 200:
+        raise HTTPException(status_code=422, detail="at most 200 lemmas at once")
+    with connect() as conn:
+        return cached(request, {"data": content.lemmas_by_id(conn, wanted)})
+
+
 @router.get("/lemmas/{lemma_id}", summary="One lemma with its surface forms")
 def lemma(request: Request, lemma_id: int) -> Response:
     with connect() as conn:

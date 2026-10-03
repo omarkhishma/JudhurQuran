@@ -234,6 +234,19 @@ def test_verses_by_key_for_a_maps_cards() -> None:
     )
 
 
+def test_lemmas_by_id_give_their_slugs() -> None:
+    """P8.1a: a map saved before maps were keyed by slug names its lemmas by database id; the batch lookup gives
+    each one's slug, in id order, and leaves out an unknown id."""
+    ilm = get("/api/v1/words/ilm", limit=0)
+    nur = get("/api/v1/words/nur", limit=0)
+    d = get("/api/v1/lemmas", ids=f"{nur['lemma_id']},{ilm['lemma_id']},99999999")
+    by = {x["id"]: x for x in d["data"]}
+    assert set(by) == {ilm["lemma_id"], nur["lemma_id"]}
+    assert by[ilm["lemma_id"]]["slug"] == "ilm" and by[ilm["lemma_id"]]["root"] == "علم"
+    assert client.get("/api/v1/lemmas", params={"ids": "a,b"}).status_code == 400
+    assert client.get("/api/v1/lemmas", params={"ids": ",".join(str(i) for i in range(1, 202))}).status_code == 422
+
+
 def test_search_word_locations() -> None:
     """A word's place, as the reader's addresses and the citations write it, finds its verse; a place with no word
     finds nothing."""
