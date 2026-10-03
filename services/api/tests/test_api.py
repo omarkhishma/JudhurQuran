@@ -265,6 +265,18 @@ def test_root_core_meaning_comes_from_maqayis_with_citation() -> None:
             assert e["confidence"] in ("exact", "manual", "high")
 
 
+def test_nine_dictionaries_and_ibn_qutaybah_in_the_order_their_compilers_died() -> None:
+    d = get("/api/v1/dictionaries")["data"]
+    ids = [x["key"] for x in d]
+    assert {"ayn", "tahdhib", "sihah", "maqayis", "mufradat", "lisan", "qamus", "taj", "lane"} <= set(ids)
+    deaths = [x["death_ce"] if x["death_ce"] is not None else 9999 for x in d]
+    assert deaths == sorted(deaths) and ids[0] == "ayn"
+    kinds = {x["key"]: x["kind"] for x in d}
+    assert kinds["ayn"] == "earliest" and kinds["maqayis"] == "root" and kinds["lane"] == "english"
+    for key in ("ayn", "tahdhib", "qamus", "taj"):
+        assert next(x for x in d if x["key"] == key)["displayed_entries"] > 1000
+
+
 def test_lexicon_entry_full_body_and_only_displayable() -> None:
     r = get("/api/v1/roots/علم")
     entry_id = r["lexicon"]["works"][0]["entries"][0]["id"]

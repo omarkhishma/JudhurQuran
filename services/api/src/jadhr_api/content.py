@@ -673,7 +673,8 @@ def root_graph(conn: Connection, raw: str) -> dict[str, Any] | None:
 # ─── lexica ─────────────────────────────────────────────────────────────────
 
 _LEX_WORK_COLS = """w.id, w.title_ar, w.title_en, w.author_ar, w.author_en, w.death_hijri, w.death_ce, w.lang,
-                    w.edition_note, w.source_url, w.license, w.attribution_ar, w.attribution_en, w.redistributable"""
+                    w.edition_note, w.source_url, w.license, w.attribution_ar, w.attribution_en, w.redistributable,
+                    w.kind, w.sort_order"""
 
 
 def root_lexicon(conn: Connection, root_key: str, excerpt: int = 600) -> dict[str, Any]:

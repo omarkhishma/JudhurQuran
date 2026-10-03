@@ -454,6 +454,22 @@ test("cite a dictionary article by the Arabic convention (RDR-566)", async ({ pa
   await expect(dlg).toContainText(`${title}، مادة (ع ل م)`);
 });
 
+test("the dictionaries come in the order their compilers died, Kitāb al-ʿAyn first, and Tāj al-ʿArūs is among them (RDR-047, 048…056, 235)", async ({ page }) => {
+  await returning(page);
+  await page.addInitScript(() =>
+    localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { layerOpen: { senses: false, family: false, patterns: false, lexica: true, timeline: false, usage: false } }, version: 2 })),
+  );
+  const w = await api<{ dict_articles: { id: string; death_ce: number | null }[] }>(page, "/words/ilm?limit=0&at=20:114:17");
+  const byDeath = [...w.dict_articles].sort((a, b) => (a.death_ce ?? 9999) - (b.death_ce ?? 9999)).map((d) => d.id);
+  expect(w.dict_articles.map((d) => d.id)).toEqual(byDeath);
+  expect(byDeath[0]).toBe("ayn");
+  for (const id of ["ayn", "tahdhib", "qamus", "taj"]) expect(byDeath).toContain(id);
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  const lex = panel(page).locator('[data-section="lexica"]');
+  await expect(lex.locator(".dict-article")).toHaveCount(byDeath.length);
+  expect(await lex.locator(".dict-article").evaluateAll((els) => els.map((e) => e.getAttribute("data-dict")))).toEqual(byDeath);
+});
+
 test("omnibox: a juzʾ number opens the reader where it begins (RDR-565)", async ({ page, isMobile }) => {
   test.skip(isMobile, "keyboard shortcut");
   await returning(page);

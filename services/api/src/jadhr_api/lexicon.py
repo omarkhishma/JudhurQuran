@@ -535,7 +535,7 @@ def dictionaries(conn: Connection) -> list[dict[str, Any]]:
         conn,
         """select w.id as key, w.title_ar as name_ar, w.title_en as name_en, w.author_ar, w.author_en,
                   w.death_hijri, w.death_ce, w.lang, w.edition_note, w.source_url, w.license,
-                  w.attribution_ar, w.attribution_en, w.redistributable, w.sort_order,
+                  w.attribution_ar, w.attribution_en, w.redistributable, w.sort_order, w.kind, w.shamela_id,
                   (select count(*) from content.lexicon_entries e where e.work_id = w.id and e.displayable)::int
                     as displayed_entries
            from content.lexicon_works w order by w.sort_order""",

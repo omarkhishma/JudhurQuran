@@ -695,6 +695,178 @@ licences:
   - A public website and a public per-article API go beyond 'research and personal use'; Shamela's terms (unchanged, 19 Sept 2026) grant no reuse right at all. The author's text is public domain; the typing and the edition are not ours.
   - Our lexica.yaml licence line records only the MIT packaging and Shamela's silence; it should quote the card's 'Research and personal use' sentence too (research 06 and DECISIONS already do).
   - 'Edition: ed. Ahmad Abd al-Ghafur Attar (Dar al-Ilm lil-Malayin, 4th ed. 1407 AH / 1987); rights in the tahqiq stay with its holders. This is D22: display-only with apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
+- id: ayn
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md
+  - https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB
+  - https://shamela.ws/page/terms
+  - https://shamela.ws/book/1682
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB: 52c0948da50553ea284b55bdc27b997519dc008fe2724d40aceab2b86f9fe198
+    https://shamela.ws/page/terms: 869ff92235f397d3274426fae52e17f330075ccb26e74daca38839d26c186eb8
+    https://shamela.ws/book/1682: 4f84557a5e3bf3cfda3b55770ce4dea8d8dce0bf0135a3c3d714dc81c91aa6e8
+  clauses:
+  - topic: other
+    quote: 'license: mit'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: The original texts are in the public domain. The compilation and digitization rights belong to their respective owners.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: display
+    quote: Research and personal use. Respect the intellectual property rights of muhaqqiqīn (editors) and publishers for critical editions.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: redistribution
+    quote: تبقى الحقوق في الكتب والطبعات والمواد لأصحابها حسب ما ينطبق. لا تمنحك هذه الشروط حقًا في إعادة استخدام المحتوى خارج ما يسمح به النظام أو إذن صاحب الحق.
+    url: https://shamela.ws/page/terms
+  - topic: redistribution
+    quote: Rights in books, editions, and other materials remain with their respective holders as applicable. These terms do not grant rights to reuse content beyond permission from the rights holder or applicable law.
+    url: https://shamela.ws/page/terms
+  - topic: other
+    quote: 'المحقق: د مهدي المخزومي، د إبراهيم السامرائي'
+    url: https://shamela.ws/book/1682
+  - topic: other
+    quote: 'الناشر: دار ومكتبة الهلال'
+    url: https://shamela.ws/book/1682
+  our_use: 'Display only: al-Khalīl b. Aḥmad (d. 170 AH)''s articles, split per root from the Shamela 4 typing (book 1682; lexica.yaml cleaning_rules), shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  status: conflict
+  notes:
+  - 'The dataset card tags ''license: mit'' while its own licence section says ''Research and personal use''; a public website and a public per-article API go beyond that, and Shamela''s terms grant no reuse right. The author''s text is public domain; the typing and the edition are not ours.'
+  - 'Edition: ed. Mahdī al-Makhzūmī and Ibrāhīm al-Sāmarrāʾī (Dār wa-Maktabat al-Hilāl); the editors'' supplements «[…]» are shown as printed (editor_supplements: keep, a decision for the owner in research 06), their footnotes and markers are not imported.'
+  - 'This is D22: display-only with the apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
+- id: tahdhib
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md
+  - https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB
+  - https://shamela.ws/page/terms
+  - https://shamela.ws/book/7031
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB: 52c0948da50553ea284b55bdc27b997519dc008fe2724d40aceab2b86f9fe198
+    https://shamela.ws/page/terms: 869ff92235f397d3274426fae52e17f330075ccb26e74daca38839d26c186eb8
+    https://shamela.ws/book/7031: 9965a1b8bdca8c9ecd595ac444c7b928c8c45309ceab9de0e2156581e016f9e7
+  clauses:
+  - topic: other
+    quote: 'license: mit'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: The original texts are in the public domain. The compilation and digitization rights belong to their respective owners.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: display
+    quote: Research and personal use. Respect the intellectual property rights of muhaqqiqīn (editors) and publishers for critical editions.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: redistribution
+    quote: تبقى الحقوق في الكتب والطبعات والمواد لأصحابها حسب ما ينطبق. لا تمنحك هذه الشروط حقًا في إعادة استخدام المحتوى خارج ما يسمح به النظام أو إذن صاحب الحق.
+    url: https://shamela.ws/page/terms
+  - topic: redistribution
+    quote: Rights in books, editions, and other materials remain with their respective holders as applicable. These terms do not grant rights to reuse content beyond permission from the rights holder or applicable law.
+    url: https://shamela.ws/page/terms
+  - topic: other
+    quote: 'المحقق: محمد عوض مرعب'
+    url: https://shamela.ws/book/7031
+  - topic: other
+    quote: 'الناشر: دار إحياء التراث العربي - بيروت'
+    url: https://shamela.ws/book/7031
+  our_use: 'Display only: al-Azharī (d. 370 AH)''s articles, split per root from the Shamela 4 typing (book 7031; lexica.yaml cleaning_rules), shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  status: conflict
+  notes:
+  - 'The dataset card tags ''license: mit'' while its own licence section says ''Research and personal use''; a public website and a public per-article API go beyond that, and Shamela''s terms grant no reuse right. The author''s text is public domain; the typing and the edition are not ours.'
+  - 'Edition: ed. Muḥammad ʿAwaḍ Murʿib (Beirut: Dār Iḥyāʾ al-Turāth al-ʿArabī, 1st ed. 2001); al-Azharī''s closing chapters on the letters and the colophons are not imported.'
+  - 'This is D22: display-only with the apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
+- id: qamus
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md
+  - https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB
+  - https://shamela.ws/page/terms
+  - https://shamela.ws/book/7283
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB: 52c0948da50553ea284b55bdc27b997519dc008fe2724d40aceab2b86f9fe198
+    https://shamela.ws/page/terms: 869ff92235f397d3274426fae52e17f330075ccb26e74daca38839d26c186eb8
+    https://shamela.ws/book/7283: 34fceca84893cf1e306f98d93a3ef64acf4c95a9e30d99204e64b0ff53ec6d6d
+  clauses:
+  - topic: other
+    quote: 'license: mit'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: The original texts are in the public domain. The compilation and digitization rights belong to their respective owners.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: display
+    quote: Research and personal use. Respect the intellectual property rights of muhaqqiqīn (editors) and publishers for critical editions.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: redistribution
+    quote: تبقى الحقوق في الكتب والطبعات والمواد لأصحابها حسب ما ينطبق. لا تمنحك هذه الشروط حقًا في إعادة استخدام المحتوى خارج ما يسمح به النظام أو إذن صاحب الحق.
+    url: https://shamela.ws/page/terms
+  - topic: redistribution
+    quote: Rights in books, editions, and other materials remain with their respective holders as applicable. These terms do not grant rights to reuse content beyond permission from the rights holder or applicable law.
+    url: https://shamela.ws/page/terms
+  - topic: other
+    quote: 'تحقيق: مكتب تحقيق التراث في مؤسسة الرسالة'
+    url: https://shamela.ws/book/7283
+  - topic: other
+    quote: 'الناشر: مؤسسة الرسالة للطباعة والنشر والتوزيع، بيروت - لبنان'
+    url: https://shamela.ws/book/7283
+  our_use: 'Display only: al-Fayrūzābādī (d. 817 AH)''s articles, split per root from the Shamela 4 typing (book 7283; lexica.yaml cleaning_rules), shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  status: conflict
+  notes:
+  - 'The dataset card tags ''license: mit'' while its own licence section says ''Research and personal use''; a public website and a public per-article API go beyond that, and Shamela''s terms grant no reuse right. The author''s text is public domain; the typing and the edition are not ours.'
+  - 'Edition: Maktab Taḥqīq al-Turāth, Muʾassasat al-Risāla (Beirut, 8th ed. 1426/2005); each article''s root comes from aligning it to Tāj al-ʿArūs, nothing of Tāj is shown with it.'
+  - 'This is D22: display-only with the apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
+- id: taj
+  registry: data/lexica.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md
+  - https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB
+  - https://shamela.ws/page/terms
+  - https://shamela.ws/book/7030
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/main/README.md: d833f67a67a6e636bd506f167b191706126adb2c282d999077bd53f0bff11630
+    https://huggingface.co/api/datasets/AuthenticIlm/Shamela4_Full_DB: 52c0948da50553ea284b55bdc27b997519dc008fe2724d40aceab2b86f9fe198
+    https://shamela.ws/page/terms: 869ff92235f397d3274426fae52e17f330075ccb26e74daca38839d26c186eb8
+    https://shamela.ws/book/7030: d10f288f8d5db28c4a2b42ec48c001b28ae3c832ac81a1f04ca958124e263d1d
+  clauses:
+  - topic: other
+    quote: 'license: mit'
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: other
+    quote: The original texts are in the public domain. The compilation and digitization rights belong to their respective owners.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: display
+    quote: Research and personal use. Respect the intellectual property rights of muhaqqiqīn (editors) and publishers for critical editions.
+    url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/raw/07554bee488a12955dd5231d08487ae7ce767d1e/README.md
+  - topic: redistribution
+    quote: تبقى الحقوق في الكتب والطبعات والمواد لأصحابها حسب ما ينطبق. لا تمنحك هذه الشروط حقًا في إعادة استخدام المحتوى خارج ما يسمح به النظام أو إذن صاحب الحق.
+    url: https://shamela.ws/page/terms
+  - topic: redistribution
+    quote: Rights in books, editions, and other materials remain with their respective holders as applicable. These terms do not grant rights to reuse content beyond permission from the rights holder or applicable law.
+    url: https://shamela.ws/page/terms
+  - topic: other
+    quote: 'تحقيق: جماعة من المختصين'
+    url: https://shamela.ws/book/7030
+  - topic: other
+    quote: 'عدد الأجزاء: ٤٠'
+    url: https://shamela.ws/book/7030
+  our_use: 'Display only: Murtaḍā al-Zabīdī (d. 1205 AH)''s articles, split per root from the Shamela 4 typing (book 7030; lexica.yaml cleaning_rules), shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  status: conflict
+  notes:
+  - 'The dataset card tags ''license: mit'' while its own licence section says ''Research and personal use''; a public website and a public per-article API go beyond that, and Shamela''s terms grant no reuse right. The author''s text is public domain; the typing and the edition are not ours.'
+  - 'Edition: the Kuwait edition by a committee of specialists (40 volumes); the headword marks the typing turned into ﴿ ﴾ ! are removed, typing defects are counted, not edited.'
+  - 'This is D22: display-only with the apparatus stripped, legal advice before launch, ask Shamela (D19), rebase on public-domain printings over time.'
 - id: ibn-qutaybah-gharib
   registry: data/lexica.yaml
   urls_checked:
