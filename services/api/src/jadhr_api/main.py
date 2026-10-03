@@ -19,7 +19,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import content, knowledge, lexicon
+from . import concordance, content, knowledge, lexicon
 from .db import connect
 from .search import search as run_search
 from .settings import get_settings
@@ -417,6 +417,74 @@ def root_family(request: Request, root: str) -> Response:
         if out is None:
             raise not_found("root")
         return cached(request, out)
+
+
+@router.get("/concordance", summary="KWIC lines of a root with filters, sorts and server totals")
+def concordance_lines(
+    request: Request,
+    root: str = Query(..., max_length=20),
+    lemma: str | None = Query(None, max_length=80, description="a lemma slug"),
+    pattern: str | None = Query(None, max_length=40, description="a pattern slug"),
+    surah: int | None = Query(None, ge=1, le=114),
+    place: str | None = Query(None, pattern="^(meccan|medinan)$"),
+    sort: str = Query("mushaf", pattern="^(mushaf|following|preceding)$"),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=500),
+) -> Response:
+    with connect() as conn:
+        out = concordance.concordance(
+            conn,
+            root,
+            lemma=lemma,
+            pattern=pattern,
+            surah=surah,
+            place=place,
+            sort=sort,
+            offset=offset,
+            limit=limit,
+        )
+        if out is None:
+            raise not_found("root")
+        return cached(request, out)
+
+
+@router.get(
+    "/concordance/distribution", summary="A root's hits per sūra (per 100 words), by form, and its collocates"
+)
+def concordance_distribution(
+    request: Request,
+    root: str = Query(..., max_length=20),
+    lemma: str | None = Query(None, max_length=80),
+    pattern: str | None = Query(None, max_length=40),
+) -> Response:
+    with connect() as conn:
+        out = concordance.distribution(conn, root, lemma, pattern)
+        if out is None:
+            raise not_found("root")
+        return cached(request, out)
+
+
+@router.get("/concordance.csv", summary="Every KWIC line under the filters as CSV (UTF-8 with BOM)")
+def concordance_csv(
+    root: str = Query(..., max_length=20),
+    lemma: str | None = Query(None, max_length=80),
+    pattern: str | None = Query(None, max_length=40),
+    surah: int | None = Query(None, ge=1, le=114),
+    place: str | None = Query(None, pattern="^(meccan|medinan)$"),
+    sort: str = Query("mushaf", pattern="^(mushaf|following|preceding)$"),
+) -> Response:
+    with connect() as conn:
+        out = concordance.concordance_csv(
+            conn, root, lemma=lemma, pattern=pattern, surah=surah, place=place, sort=sort
+        )
+    if out is None:
+        raise not_found("root")
+    body, name = out
+    return Response(
+        content=body.encode("utf-8"),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
 
 
 @router.get("/roots/{root}/occurrences", summary="Concordance (KWIC) rows for a root")
