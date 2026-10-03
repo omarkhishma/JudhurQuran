@@ -27,9 +27,9 @@ export function VerseVocabulary({ verseKey }: { verseKey: string }) {
   return (
     <p className="vocab-line text-[12px] leading-relaxed text-t2" data-level={p.level}>
       <span className="vocab-level">{t.rich("vocabLevel", { n: formatNumber(p.level, locale), max: formatNumber(5, locale), term: (c) => <Term id="lexicalLevel">{c}</Term> })}</span>
-      {" · "}
+      {" • "}
       {t("vocabCommon", { pct: pct.format(common(p)) })}
-      {p.c1 > 0 && <> · {t("vocabOnce", cnt(p.c1, locale))}</>}
+      {p.c1 > 0 && <> • {t("vocabOnce", cnt(p.c1, locale))}</>}
     </p>
   );
 }
@@ -48,7 +48,7 @@ export function SurahVocabulary({ surah }: { surah: number }) {
       <p className="label-caps">{t("vocabSurahTitle")}</p>
       <p className="text-[12.5px] leading-relaxed text-t2">
         {t("vocabCommon", { pct: pct.format(common(p)) })}
-        {p.c1 > 0 && <> · {t("vocabOnceSurah", cnt(p.c1, locale))}</>}
+        {p.c1 > 0 && <> • {t("vocabOnceSurah", cnt(p.c1, locale))}</>}
       </p>
       <p className="text-[12px] text-t3">
         {t.rich("vocabSurahLevels", { term: (c) => <Term id="lexicalLevel">{c}</Term> })}{" "}

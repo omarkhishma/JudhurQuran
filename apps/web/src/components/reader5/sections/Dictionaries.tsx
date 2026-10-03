@@ -102,7 +102,7 @@ function Article({ d, w }: { d: DictWork; w: WordPayload }) {
         {locale !== "ar" && <span className="text-[13px] font-medium">{d.title_en}</span>}
         {k && <span className="tag-pill">{k.tag === "gharib" ? <Term id="gharib">{t(`tag_${k.tag}`)}</Term> : t(`tag_${k.tag}`)}</span>}
         <span className="flex-1" />
-        <span className="text-[11.5px] text-t3">{(locale === "ar" ? d.author_ar : d.author_en) + " · " + deathLabel(d, locale, t)}</span>
+        <span className="text-[11.5px] text-t3">{(locale === "ar" ? d.author_ar : d.author_en) + " • " + deathLabel(d, locale, t)}</span>
         <button
           type="button"
           className="text-[11.5px] text-t3 hover:text-t1"
@@ -125,7 +125,7 @@ function Article({ d, w }: { d: DictWork; w: WordPayload }) {
       ))}
       <p className="text-[11px] leading-relaxed text-t3">
         {locale === "ar" ? d.attribution_ar : d.attribution_en}
-        {!d.redistributable && <> · {t("displayOnly")}</>}
+        {!d.redistributable && <> • {t("displayOnly")}</>}
       </p>
     </section>
   );

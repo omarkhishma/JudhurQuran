@@ -19,7 +19,7 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
     title: { text: locale === "ar" ? `سورة ${s.name_ar}` : `Surah ${s.name_translit}`, size: 104, bold: true },
     lines: [
       ...(locale === "ar" ? [] : [{ text: `سورة ${s.name_ar}`, size: 48, color: OG_COLORS.ROOT }]),
-      { text: `${ts("versesCount", cnt(s.verse_count, locale))} · ${place}`, size: 40, color: OG_COLORS.MUTED },
+      { text: `${ts("versesCount", cnt(s.verse_count, locale))} • ${place}`, size: 40, color: OG_COLORS.MUTED },
     ],
   });
 }

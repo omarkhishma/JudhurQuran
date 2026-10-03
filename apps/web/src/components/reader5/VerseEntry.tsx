@@ -62,7 +62,7 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
               <span className="mono" dir="ltr">{r.verse.key}</span>
               <span>{r.verse.name_ar}</span>
               <span className="flex-1" />
-              <span className="ar-classical text-[13px] text-root" lang="ar">{r.roots.slice(0, 4).join(" · ")}</span>
+              <span className="ar-classical text-[13px] text-root" lang="ar">{r.roots.slice(0, 4).join(" • ")}</span>
             </span>
             <span className="quran line-clamp-2 text-[18px] leading-[2]" lang="ar" dir="rtl">{r.verse.text_qpc}</span>
           </Link>

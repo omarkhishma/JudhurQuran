@@ -511,7 +511,7 @@ button:disabled {
 
 @layer components {
 /* ─── Reader v5 (design 03, prototype "Lexicon Reader v5") ──────────────────
-   A full-viewport shell: header, then rail · reading surface · panel; a bottom sheet below 900 px.
+   A full-viewport shell: header, then rail • reading surface • panel; a bottom sheet below 900 px.
    Values follow the prototype's inline styles; Arabic never gets letter-spacing (it breaks joining). */
 .reader-v5 {
   display: flex;

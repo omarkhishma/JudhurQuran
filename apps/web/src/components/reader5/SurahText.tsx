@@ -31,7 +31,7 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
           {t("aboutSurah")}
         </button>
         <p className="text-[12px] text-t3">
-          {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " · " + tc("verses", cnt(s.verse_count, locale)) + " · " + t("pagesRange", { from: formatNumber(s.page_start, locale), to: formatNumber(s.page_end, locale) })}
+          {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " • " + tc("verses", cnt(s.verse_count, locale)) + " • " + t("pagesRange", { from: formatNumber(s.page_start, locale), to: formatNumber(s.page_end, locale) })}
         </p>
         {showBasmala && (
           <p className="quran basmala" dir="rtl" lang="ar" aria-label={t("basmala")}>

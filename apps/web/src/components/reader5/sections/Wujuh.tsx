@@ -31,7 +31,7 @@ function SourceLine({ s, vol, page }: { s: RelationSource | undefined; vol: numb
   return (
     <p className="text-[11px] text-t3">
       {locale === "ar" ? `${s.author_ar.split("،")[0]}${died}، ${s.title_ar}` : `${s.author_en}${died}, ${s.title_en}`}
-      {page ? ` · ${pageRef(vol, page, locale)}` : ""}
+      {page ? ` • ${pageRef(vol, page, locale)}` : ""}
     </p>
   );
 }

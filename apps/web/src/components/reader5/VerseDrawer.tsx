@@ -70,7 +70,7 @@ export function RootsDrawer({ verseKey }: { verseKey: string }) {
             <span className="flex-1" />
             <span className="mono text-[11px] text-t3">
               {t("timesHere", cnt(n, locale))}
-              {byKey.get(k) && ` · ${t("inQuranN", { n: formatNumber(byKey.get(k)!.occurrences, locale) })}`}
+              {byKey.get(k) && ` • ${t("inQuranN", { n: formatNumber(byKey.get(k)!.occurrences, locale) })}`}
             </span>
           </button>
         </li>
@@ -93,7 +93,7 @@ function RelatedDrawer({ verseKey }: { verseKey: string }) {
             <span className="mono" dir="ltr">{r.verse.key}</span>
             <span>{r.verse.name_ar}</span>
             <span className="flex-1" />
-            <span className="ar-classical text-[13px] text-root" lang="ar">{r.roots.slice(0, 3).join(" · ")}</span>
+            <span className="ar-classical text-[13px] text-root" lang="ar">{r.roots.slice(0, 3).join(" • ")}</span>
           </span>
           <span className="quran line-clamp-2 text-[17px] leading-[2]" lang="ar" dir="rtl">{r.verse.text_qpc}</span>
         </Link>
@@ -149,7 +149,7 @@ function GraphDrawer({ verseKey }: { verseKey: string }) {
           ] as const
         ).map(([label, list, color]) => (
           <div key={label} className="flex min-w-0 flex-col gap-1">
-            <p className="label-caps">{tg(label)} · {formatNumber(list.length, locale)}</p>
+            <p className="label-caps">{tg(label)} • {formatNumber(list.length, locale)}</p>
             <div className="flex flex-wrap gap-1">
               {list.map((n) => (
                 <span key={n.id} className={`ar-classical text-[16px] ${color}`} lang="ar">{n.data.ar}</span>

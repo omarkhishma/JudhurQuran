@@ -30,7 +30,7 @@ test("explain-terms off shows plain labels", async ({ page }) => {
   );
   await page.goto("/word/2:255:23");
   const entry = page.locator(".reader-panel, .reader-sheet");
-  await expect(entry.getByText(/^الجذر · /).first()).toBeVisible();
+  await expect(entry.getByText(/^الجذر • /).first()).toBeVisible();
   await expect(entry.locator(".term")).toHaveCount(0);
 });
 

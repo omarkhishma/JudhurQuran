@@ -48,7 +48,7 @@ test("journey A: tap a word → entry with its root counts → family → verse 
   await expect(p.getByRole("button", { name: new RegExp(w.root!.ar_spaced) }).first()).toBeVisible();
   const occ = arCount(w.root!.occurrences, { one: "موضع واحد", two: "موضعان", few: "# مواضع", many: "# موضعًا", other: "# موضع" });
   const lem = arCount(w.root!.lemma_count, { one: "صيغة واحدة", two: "صيغتان", few: "# صيغ", many: "# صيغة", other: "# صيغة" });
-  await expect(p.getByText(`${occ} · ${lem}`).first()).toBeVisible();
+  await expect(p.getByText(`${occ} • ${lem}`).first()).toBeVisible();
   // Every lemma on the root is in the family section.
   const family = p.locator('[data-section="family"]');
   await expect(family.locator(".family-group .word-chip")).toHaveCount(w.family.reduce((a, g) => a + g.members.length, 0));
@@ -620,7 +620,7 @@ test("the hairline reports the reading position in the sūra and the mushaf", as
   await returning(page);
   await page.goto("/quran/2#v100");
   const bar = page.getByRole("progressbar", { name: "موضع القراءة" });
-  await expect(bar).toHaveAttribute("aria-valuetext", /من السورة · الصفحة .+ من ٦٠٤/);
+  await expect(bar).toHaveAttribute("aria-valuetext", /من السورة • الصفحة .+ من ٦٠٤/);
   const now = Number(await bar.getAttribute("aria-valuenow"));
   expect(now).toBeGreaterThan(0);
 });

@@ -41,12 +41,12 @@ export function LexiconArticle({ work, entry, compact = false }: { work: Lexicon
       {!compact && (
         <p className="border-t border-line pt-2 text-[11.5px] leading-relaxed text-t3">
           {t("headword", { h: entry.headword })}
-          {entry.page_ref ? ` · ${t("page", { p: locale === "ar" ? toArabicDigits(entry.page_ref) : entry.page_ref })}` : ""}
-          {" · "}
+          {entry.page_ref ? ` • ${t("page", { p: locale === "ar" ? toArabicDigits(entry.page_ref) : entry.page_ref })}` : ""}
+          {" • "}
           <a href={work.source_url} target="_blank" rel="noreferrer" className="hover:underline">
             {locale === "ar" ? work.attribution_ar : work.attribution_en}
           </a>
-          {!work.redistributable && ` · ${t("displayOnly")}`}
+          {!work.redistributable && ` • ${t("displayOnly")}`}
         </p>
       )}
     </article>

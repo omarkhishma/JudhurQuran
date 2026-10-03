@@ -82,7 +82,7 @@ function EditorInner({ doc }: { doc: GraphDoc }) {
             <span className="flex items-center gap-1.5 text-[12px] text-t3" aria-live="polite">
               <span className="dot" style={{ background: status === "saved" ? "var(--good)" : "var(--amber)" }} />
               {status === "saved" ? t("saved") : status === "saving" ? t("saving") : t("unsaved")}
-              <span className="hidden sm:inline">· {t("localOnly")}</span>
+              <span className="hidden sm:inline">• {t("localOnly")}</span>
             </span>
           }
           toolbarExtra={

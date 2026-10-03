@@ -239,7 +239,7 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
               }}
               className="letter-box"
               aria-label={t("letter", { n: formatNumber(i + 1, locale) })}
-              placeholder="·"
+              placeholder="–"
               lang="ar"
               dir="rtl"
               inputMode="text"
@@ -372,7 +372,7 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
                       <span className="dot" style={{ background: "var(--c-word)" }} />
                       <span className="ar-classical min-w-[80px] text-[20px] text-word" lang="ar" dir="rtl">{l.ar}</span>
                       <span className="min-w-0 flex-1 truncate text-[12px] text-t2">
-                        {[l.envelope?.translit ?? l.translit, locale === "ar" ? l.pos_label?.ar : (l.gloss_en ?? l.senses_en?.[0])].filter(Boolean).join(" · ")}
+                        {[l.envelope?.translit ?? l.translit, locale === "ar" ? l.pos_label?.ar : (l.gloss_en ?? l.senses_en?.[0])].filter(Boolean).join(" • ")}
                       </span>
                       {l.root_spaced && <span className="ar-classical shrink-0 text-[15px] text-root" lang="ar">{l.root_spaced}</span>}
                     </Link>

@@ -120,7 +120,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
         <span className="ar-classical truncate text-[15px] leading-[1.35] text-t1" lang="ar" dir="rtl">
           {`سورة ${chapter.nameAr}`}
         </span>
-        <span className="truncate text-[11px] text-t3">{meta.join(" · ")}</span>
+        <span className="truncate text-[11px] text-t3">{meta.join(" • ")}</span>
       </div>
       <span className="flex-1" />
       {wide && (

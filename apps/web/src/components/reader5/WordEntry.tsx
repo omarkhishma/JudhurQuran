@@ -176,7 +176,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
             <span className="mono text-[11px] text-t2" dir="ltr">{w.root.translit}</span>
           </button>
           <span className="text-[12px] text-t3">
-            <Term id="root">{t("root")}</Term> · {t("rootCounts", { ...cnt(w.root.occurrences, locale), ...cnt2(w.root.lemma_count, locale) })}
+            <Term id="root">{t("root")}</Term> • {t("rootCounts", { ...cnt(w.root.occurrences, locale), ...cnt2(w.root.lemma_count, locale) })}
           </span>
         </div>
       ) : (

@@ -15,13 +15,13 @@ export function CreditLine({ s }: { s: { attribution_ar: string; attribution_en:
       {locale === "ar" ? s.attribution_ar : s.attribution_en}
       {s.licence_url && (
         <>
-          {" · "}
+          {" • "}
           <a href={s.licence_url} target="_blank" rel="noreferrer license" className="underline-offset-2 hover:text-t1 hover:underline">
             {s.licence ?? t("licence")}
           </a>
         </>
       )}
-      {" · "}
+      {" • "}
       {t("creditChanges")}
     </li>
   );

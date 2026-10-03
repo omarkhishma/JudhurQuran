@@ -31,7 +31,7 @@ export function InlineGloss({ slug, at }: { slug: string; at: string }) {
           ) : null}
           <span className="truncate text-[11.5px] text-t3">
             {d.translit && <span className="mono" dir="ltr">{d.translit}</span>}
-            {f.pos ? ` · ${locale === "ar" ? f.pos.ar : f.pos.en}` : ""} · {t("noRoot")}
+            {f.pos ? ` • ${locale === "ar" ? f.pos.ar : f.pos.en}` : ""} • {t("noRoot")}
           </span>
         </span>
         <span className="inline-gloss-go" aria-hidden="true">‹</span>
@@ -52,8 +52,8 @@ export function InlineGloss({ slug, at }: { slug: string; at: string }) {
           <span className="truncate text-[13.5px] text-t1" lang="en" dir="ltr">{en}</span>
         ) : null}
         <span className="truncate text-[11.5px] text-t3">
-          <span className="mono" dir="ltr">{w.ar.translit}</span> · {locale === "ar" ? w.pos.ar : w.pos.en}
-          {w.root ? ` · ${w.root.ar_spaced}` : ""}
+          <span className="mono" dir="ltr">{w.ar.translit}</span> • {locale === "ar" ? w.pos.ar : w.pos.en}
+          {w.root ? ` • ${w.root.ar_spaced}` : ""}
         </span>
       </span>
       <span className="inline-gloss-go" aria-hidden="true">‹</span>

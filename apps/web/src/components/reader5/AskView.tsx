@@ -177,8 +177,8 @@ function DesktopCard({ w, onCousin }: { w: WordPayload; onCousin: (slug: string)
               </p>
             )}
             <p className="text-[13px] text-t3">
-              <span className="mono" dir="ltr">{w.ar.translit}</span> · {locale === "ar" ? w.pos.ar : w.pos.en}
-              {meaning && <> · {meaning.source === "corpus" ? t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }) : meaning.source}</>}
+              <span className="mono" dir="ltr">{w.ar.translit}</span> • {locale === "ar" ? w.pos.ar : w.pos.en}
+              {meaning && <> • {meaning.source === "corpus" ? t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }) : meaning.source}</>}
             </p>
           </div>
           {w.occurrence && <ListenOccurrence verseKey={w.occurrence.verse_key} audio={w.occurrence.audio} />}
@@ -212,7 +212,7 @@ function DesktopCard({ w, onCousin }: { w: WordPayload; onCousin: (slug: string)
             {first.left} <mark className="kwic-key">{first.keyword}</mark> {first.right}
           </p>
           <p className="text-[12px] text-t3">
-            {first.surah_name_ar} · <span className="mono" dir="ltr">{first.verse_key}</span> · {t("occursN", cnt(w.corpus_freq, locale))}
+            {first.surah_name_ar} • <span className="mono" dir="ltr">{first.verse_key}</span> • {t("occursN", cnt(w.corpus_freq, locale))}
           </p>
         </div>
       )}
@@ -264,7 +264,7 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
         <>
           <p className="ar-classical text-[44px] leading-[1.4]" lang="ar" dir="rtl">{w.ar.full}</p>
           {meaning && <p className={meaning.lang === "ar" ? "text-[17px] font-semibold" : "text-[16px] font-semibold italic"} lang={meaning.lang}>{meaning.text}</p>}
-          <p className="text-[12.5px] text-t3"><span className="mono" dir="ltr">{w.ar.translit}</span> · {locale === "ar" ? w.pos.ar : w.pos.en}</p>
+          <p className="text-[12.5px] text-t3"><span className="mono" dir="ltr">{w.ar.translit}</span> • {locale === "ar" ? w.pos.ar : w.pos.en}</p>
         </>
       ),
       action: (
@@ -303,7 +303,7 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
       body: first ? (
         <>
           <p className="quran text-[22px] leading-[1.9]" lang="ar" dir="rtl">{first.left} <mark className="kwic-key">{first.keyword}</mark> {first.right}</p>
-          <p className="text-[12.5px] text-t3">{first.surah_name_ar} · <span className="mono" dir="ltr">{first.verse_key}</span></p>
+          <p className="text-[12.5px] text-t3">{first.surah_name_ar} • <span className="mono" dir="ltr">{first.verse_key}</span></p>
         </>
       ) : (
         <p className="text-[13px] text-t3">{t("noAttestation")}</p>
@@ -340,7 +340,7 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
     <div className="flex w-full flex-col items-center gap-3">
       <div ref={rail} className="ask-deck" onScroll={onScroll}>
         {cards.map((c, i) => (
-          <article key={c.cap} className="ask-deck-card" aria-label={`${c.cap} · ${i + 1}/4`}>
+          <article key={c.cap} className="ask-deck-card" aria-label={`${c.cap} • ${i + 1}/4`}>
             <p className="label-caps">{t("deckCap", { cap: c.cap, i: formatNumber(i + 1, locale), n: formatNumber(4, locale) })}</p>
             <div className="flex flex-1 flex-col gap-2">{c.body}</div>
             {c.action}

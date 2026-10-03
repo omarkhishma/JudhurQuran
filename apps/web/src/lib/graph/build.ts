@@ -31,7 +31,7 @@ export function lemmaSub(l: RootGraphPayload["lemmas"][number]): string {
   const wazn = l.pattern ? `على وزن ${l.pattern}` : l.pattern_method === "verb-form-I" ? "ثلاثي مجرد" : null;
   return [POS_AR[l.pos] ?? l.pos, l.derivation ? DER_AR[l.derivation] : null, wazn]
     .filter(Boolean)
-    .join(" · ");
+    .join(" • ");
 }
 
 function wordNode(lemma: number, f: RootGraphPayload["lemmas"][number]["forms"][number], rootKey: string, focus: boolean): GraphNode {

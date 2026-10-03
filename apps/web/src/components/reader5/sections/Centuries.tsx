@@ -32,7 +32,7 @@ export function CenturiesSection({ w }: { w: WordPayload }) {
       <div className="timeline" role="group" aria-label={t("timelineAria", { n: formatNumber(withArticle.length, locale) })}>
         <div className="timeline-track">
           {w.timeline.corpora.map((c) => (
-            <span key={c.id} className="timeline-corpus" style={{ insetInlineStart: x(c.year) }} title={`${locale === "ar" ? c.label_ar : c.label_en} · ${c.year}`} />
+            <span key={c.id} className="timeline-corpus" style={{ insetInlineStart: x(c.year) }} title={`${locale === "ar" ? c.label_ar : c.label_en} • ${c.year}`} />
           ))}
           {dicts.map((d) => (
             <button
@@ -40,7 +40,7 @@ export function CenturiesSection({ w }: { w: WordPayload }) {
               type="button"
               className={"timeline-dot" + (d.has_article ? "" : " is-empty")}
               style={{ insetInlineStart: x(d.death_ce) }}
-              title={`${locale === "ar" ? d.title_ar : d.title_en} · ${locale === "ar" ? d.author_ar : d.author_en} · ${d.death_ce}`}
+              title={`${locale === "ar" ? d.title_ar : d.title_en} • ${locale === "ar" ? d.author_ar : d.author_en} • ${d.death_ce}`}
               aria-label={`${locale === "ar" ? d.title_ar : d.title_en} ${d.death_ce}`}
               onClick={() => jumpTo("lexica")}
               disabled={!d.has_article}

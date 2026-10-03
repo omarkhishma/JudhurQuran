@@ -90,8 +90,8 @@ test("a gloss and a morphology tag can be proposed for this place, and nothing r
   await m.getByRole("button", { name: "أرسل للمراجعة" }).click();
 
   const box = p.getByRole("region", { name: "ما اقترحته" });
-  await expect(box).toContainText("معنى حرفي اقترحته · 20:114:17");
-  await expect(box).toContainText("تصحيح اقترحته · الحالة الإعرابية · 20:114:17");
+  await expect(box).toContainText("معنى حرفي اقترحته • 20:114:17");
+  await expect(box).toContainText("تصحيح اقترحته • الحالة الإعرابية • 20:114:17");
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state.proposals);
   expect(stored).toEqual([
     expect.objectContaining({ kind: "gloss", slug: "ilm", at: "20:114:17", current: w.occurrence.gloss_en, status: "pending" }),

@@ -48,8 +48,8 @@ export function LoanwordsBlock({ items }: { items: LoanwordEntry[] }) {
             )}
             <p className="text-[11px] text-t3">
               {locale === "ar" ? e.attribution_ar : e.attribution_en}
-              {e.page != null && ` · ${t("loanPage", { page: formatNumber(e.page, locale) })}`}
-              {e.confidence !== "exact" ? ` · ${t("loanLinkInferred")}` : ""}
+              {e.page != null && ` • ${t("loanPage", { page: formatNumber(e.page, locale) })}`}
+              {e.confidence !== "exact" ? ` • ${t("loanLinkInferred")}` : ""}
             </p>
           </article>
         );

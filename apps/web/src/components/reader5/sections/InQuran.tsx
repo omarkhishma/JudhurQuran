@@ -78,7 +78,7 @@ export function InQuranSection({ w, chapter }: { w: WordPayload; chapter: Chapte
             type="button"
             className={"dist-bar" + (c.surah === chapter.number ? " is-here" : "") + (c.surah === surah ? " is-on" : "")}
             style={{ blockSize: `${Math.max(8, (c.occurrences / maxCh) * 100)}%` }}
-            title={`${c.name_ar} · ${formatNumber(c.occurrences, locale)}`}
+            title={`${c.name_ar} • ${formatNumber(c.occurrences, locale)}`}
             aria-label={`${c.name_ar} ${formatNumber(c.occurrences, locale)}`}
             aria-pressed={c.surah === surah}
             tabIndex={-1}
@@ -125,7 +125,7 @@ export function InQuranSection({ w, chapter }: { w: WordPayload; chapter: Chapte
             </span>
             {/* this occurrence's inflection, and a graph seeded from it (RDR-269) */}
             <span className="kwic-meta">
-              {r.features && <span className="text-[11px] text-t3">{tags(r.features, locale).join(" · ")}</span>}
+              {r.features && <span className="text-[11px] text-t3">{tags(r.features, locale).join(" • ")}</span>}
               <button type="button" className="text-[11px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setHandoff({ seed: "word", slug: r.lemma_slug ?? w.slug, at: r.location })}>
                 {t("tool_graph")}
               </button>

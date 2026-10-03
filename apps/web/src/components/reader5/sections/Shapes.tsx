@@ -210,8 +210,8 @@ function Classical({ rows, sources }: { rows: ClassicalRow[]; sources: Classical
             <p className="ar-classical text-[17px] leading-[1.9] text-t1" lang="ar" dir="rtl">{r.text_ar}</p>
             <p className="text-[11px] text-t3">
               {cite(r.source_id, r.page_vol, r.page)}
-              {r.via !== "direct" && ` · ${t(r.via === "inflected" ? "classicalViaBase" : "classicalViaSuffix")}`}
-              {r.match_confidence === "medium" && ` · ${t("classicalMatchedByExamples")}`}
+              {r.via !== "direct" && ` • ${t(r.via === "inflected" ? "classicalViaBase" : "classicalViaSuffix")}`}
+              {r.match_confidence === "medium" && ` • ${t("classicalMatchedByExamples")}`}
             </p>
             {r.commentary.length > 0 && (
               <details className="mt-1">

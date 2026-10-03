@@ -70,7 +70,7 @@ export function HoverCard({ word, onEnter, onLeave, onClose }: { word: HoverWord
         {meaning && (
           <p className="text-[13px] leading-relaxed text-t1" lang={locale === "ar" && (here || occ?.glosses[0]) ? "ar" : "en"} dir="auto">{meaning}</p>
         )}
-        {occ && <p className="text-[11.5px] text-t3">{tags(occ.features, locale).join(" · ")}</p>}
+        {occ && <p className="text-[11.5px] text-t3">{tags(occ.features, locale).join(" • ")}</p>}
         <WordStateControl slug={w.slug} />
       </>
     );
@@ -84,7 +84,7 @@ export function HoverCard({ word, onEnter, onLeave, onClose }: { word: HoverWord
           <span className="text-[11.5px] text-t3">{t("noRoot")}</span>
         </div>
         {(here || d.glosses[0]) && <p className="text-[13px] leading-relaxed text-t1" lang="ar" dir="rtl">{here ? `${here.phrase_ar}: ${here.meaning_ar}` : d.glosses[0].gloss}</p>}
-        <p className="text-[11.5px] text-t3">{tags(d.features as unknown as Features, locale).join(" · ")}</p>
+        <p className="text-[11.5px] text-t3">{tags(d.features as unknown as Features, locale).join(" • ")}</p>
       </>
     );
   }

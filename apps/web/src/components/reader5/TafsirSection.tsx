@@ -121,9 +121,9 @@ function WorkCredit({ work }: { work: Work }) {
   return (
     <p className="mt-1 border-t border-line pt-2 text-[11.5px] leading-relaxed text-t3">
       {locale === "ar" ? `${work.title_ar} — ${work.author_ar}` : `${work.title_en} — ${work.author_en}`}
-      {" · "}
+      {" • "}
       {t("version", { version: work.version })}
-      {" · "}
+      {" • "}
       <a href={work.source_url} target="_blank" rel="noreferrer" className="hover:underline">
         {locale === "ar" ? work.attribution_ar : work.attribution_en}
       </a>

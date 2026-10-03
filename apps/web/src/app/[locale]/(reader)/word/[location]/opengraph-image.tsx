@@ -12,7 +12,7 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
   const w = await api<WordDetail>(`/words/${decodeURIComponent(location)}`);
   const ar = locale === "ar";
   const where = ar
-    ? `سورة ${w.verse.surah_name_ar} · الآية ${formatNumber(w.ayah, locale)}`
+    ? `سورة ${w.verse.surah_name_ar} • الآية ${formatNumber(w.ayah, locale)}`
     : `Quran ${w.verse.key}`;
   const root = w.root ? w.root.spaced : null;
   return ogCard({

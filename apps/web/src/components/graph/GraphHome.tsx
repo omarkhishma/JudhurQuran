@@ -82,7 +82,7 @@ export function GraphHome() {
         </form>
         {message && <p className="mt-2 text-[13px] text-t2" role="status">{message}</p>}
 
-        <h2 className="label-caps mt-10 mb-3">{t("editorTitle")} · <span className="normal-case">{t("localOnly")}</span></h2>
+        <h2 className="label-caps mt-10 mb-3">{t("editorTitle")} • <span className="normal-case">{t("localOnly")}</span></h2>
         {graphs && graphs.length === 0 && <p className="rounded-xl bg-card p-5 text-t2">{t("noGraphs")}</p>}
         <ul className="grid gap-2 sm:grid-cols-2">
           {graphs?.map((g) => (
@@ -90,7 +90,7 @@ export function GraphHome() {
               <Link href={`/graph/edit/${g.id}`} className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{g.title}</span>
                 <span className="text-[12.5px] text-t3">
-                  {t("cards", { n: formatNumber(g.nodeCount, locale) })} · {t("updated", { date: new Date(g.updatedAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB") })}
+                  {t("cards", { n: formatNumber(g.nodeCount, locale) })} • {t("updated", { date: new Date(g.updatedAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB") })}
                 </span>
               </Link>
               <button

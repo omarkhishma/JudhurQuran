@@ -53,7 +53,7 @@ export function termTags(f: Features, locale: string): ReactNode[] {
     term(f.case, f.case ? TAG_TERM[f.case.tag] : undefined),
     term(f.mood, f.mood ? TAG_TERM[f.mood.tag] : undefined),
   ];
-  return out.filter((x) => x != null && x !== "").flatMap((x, i) => (i ? [" · ", x] : [x]));
+  return out.filter((x) => x != null && x !== "").flatMap((x, i) => (i ? [" • ", x] : [x]));
 }
 
 export function tags(f: Features, locale: string): string[] {

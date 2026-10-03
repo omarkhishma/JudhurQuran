@@ -31,7 +31,7 @@ export function RootOfTheDay({ initial }: { initial: WordOfTheDay | null }) {
       </Link>
       <p className="hub-rotd-cap">
         <span className="label-caps">{t("rootOfDay")}</span>
-        <span aria-hidden="true">·</span>
+        <span aria-hidden="true">•</span>
         <Link href={`/read?w=${encodeURIComponent(w.lemma.slug)}`} className="hub-rotd-word">
           {t.rich("wordOfDay", { word: w.lemma.ar.full, w: (c) => <span className="ar-classical text-[17px] text-word" lang="ar">{c}</span> })}
         </Link>

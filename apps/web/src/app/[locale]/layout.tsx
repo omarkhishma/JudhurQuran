@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Pr
   const t = await getTranslations({ locale, namespace: "common" });
   return {
     metadataBase: new URL(SITE.url),
-    title: { default: `${t("siteName")} — ${t("tagline")}`, template: `%s · ${t("siteName")}` },
+    title: { default: `${t("siteName")} — ${t("tagline")}`, template: `%s • ${t("siteName")}` },
     description: t("tagline"),
     applicationName: t("siteName"),
     openGraph: { siteName: t("siteName"), locale: locale === "ar" ? "ar_AR" : "en_US", type: "website" },

@@ -53,7 +53,7 @@ test("pick up where you left off: sūra and verse, word and root; Clear hides it
   await page.addInitScript((v) => { if (!localStorage.getItem("jadhr-personal")) localStorage.setItem("jadhr-personal", JSON.stringify(v)); }, seed({ progress: { quran: { chapter: 18, passage: 10, at: Date.now() } }, context: { word: "ilm", wordAr: "عِلْم", root: "علم", verse: "18:10", ts: Date.now() } }));
   await page.goto("/");
   const strip = page.getByRole("region", { name: "تابع من حيث توقفت" });
-  await expect(strip.locator('[data-kind="text"]')).toHaveText(`سورة الكهف · الآية ${ar(10)}`);
+  await expect(strip.locator('[data-kind="text"]')).toHaveText(`سورة الكهف • الآية ${ar(10)}`);
   await expect(strip.locator('[data-kind="text"]')).toHaveAttribute("href", "/quran/18#v10");
   await expect(strip.locator('[data-kind="word"]')).toHaveAttribute("href", "/read?w=ilm");
   await expect(strip.locator('[data-kind="root"]')).toHaveAttribute("href", `/concordance?root=${encodeURIComponent("علم")}`);

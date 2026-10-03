@@ -84,8 +84,8 @@ export function ReadingPrefs({ onClose }: { onClose: (how?: "key" | "pointer") =
           label={isAr ? d.name_ar : d.name_en}
           hint={
             isAr
-              ? `${d.author_ar}${d.death_hijri ? ` · ت ${formatNumber(d.death_hijri, locale)}هـ` : ""}${d.death_ce ? ` / ${formatNumber(d.death_ce, locale)}م` : ""}`
-              : `${d.author_en}${d.death_ce ? ` · d. ${d.death_ce}` : ""}`
+              ? `${d.author_ar}${d.death_hijri ? ` • ت ${formatNumber(d.death_hijri, locale)}هـ` : ""}${d.death_ce ? ` / ${formatNumber(d.death_ce, locale)}م` : ""}`
+              : `${d.author_en}${d.death_ce ? ` • d. ${d.death_ce}` : ""}`
           }
         />
       ))}

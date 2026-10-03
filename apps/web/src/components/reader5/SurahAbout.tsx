@@ -41,7 +41,7 @@ export function SurahAbout({ chapter }: { chapter: ChapterInfo }) {
             order: formatNumber(c.revelation_order, locale),
           })}
           {!c.place_agrees || !c.order_agrees ? (
-            <span className="text-t3"> · {t("cardTcDiffers", { place: c.tc_place_ar, order: formatNumber(c.tc_revelation_order, locale) })}</span>
+            <span className="text-t3"> • {t("cardTcDiffers", { place: c.tc_place_ar, order: formatNumber(c.tc_revelation_order, locale) })}</span>
           ) : null}
         </p>
         {c.tc_study_preferred_period && (

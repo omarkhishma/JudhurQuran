@@ -58,7 +58,7 @@ test("a topic of the reader's own gathers verses and shows under each", async ({
   await drawer.getByRole("button", { name: "أضف" }).click();
   await expect(drawer.getByRole("button", { name: "الحمد" })).toHaveAttribute("aria-pressed", "true");
   await page.keyboard.press("Escape");
-  await expect(page.locator('[data-note="1:2"] .mark')).toHaveText("موضوع · الحمد");
+  await expect(page.locator('[data-note="1:2"] .mark')).toHaveText("موضوع • الحمد");
   // the same topic offered on another verse
   await page.locator('[data-verse-btn="1:3"]').click();
   await page.locator('[data-verse="1:3"] [data-tool="topic"]').click();
@@ -67,7 +67,7 @@ test("a topic of the reader's own gathers verses and shows under each", async ({
   expect(st.topics).toHaveLength(1);
   expect(st.verseTopics).toEqual({ "quran:1:2": [st.topics[0].id], "quran:1:3": [st.topics[0].id] });
   await page.reload();
-  await expect(page.locator('[data-note="1:3"] .mark')).toHaveText("موضوع · الحمد");
+  await expect(page.locator('[data-note="1:3"] .mark')).toHaveText("موضوع • الحمد");
 });
 
 test("the Roots tool counts the verse's distinct roots (RDR-145)", async ({ page }) => {

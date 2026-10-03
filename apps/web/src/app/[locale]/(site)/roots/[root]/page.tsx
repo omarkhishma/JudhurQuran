@@ -122,7 +122,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
             <p className="ar-classical text-[22px] leading-[2] text-t1" lang="ar">{r.lexicon.core_meaning.text}</p>
             <footer className="mt-2 text-[12.5px] text-t3">
               {`${r.lexicon.core_meaning.title_ar} — ${r.lexicon.core_meaning.author_ar}`}
-              {r.lexicon.core_meaning.page_ref ? ` · ${locale === "ar" ? toArabicDigits(r.lexicon.core_meaning.page_ref) : r.lexicon.core_meaning.page_ref}` : ""}
+              {r.lexicon.core_meaning.page_ref ? ` • ${locale === "ar" ? toArabicDigits(r.lexicon.core_meaning.page_ref) : r.lexicon.core_meaning.page_ref}` : ""}
             </footer>
           </blockquote>
         </section>

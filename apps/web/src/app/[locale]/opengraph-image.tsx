@@ -18,7 +18,7 @@ export default async function Image({ params }: { params: Promise<{ locale: stri
     title: { text: SITE.tagline[locale === "ar" ? "ar" : "en"], size: 60, bold: true },
     lines: [
       {
-        text: [tc("verses", cnt(c.verses, locale)), tc("words", cnt(c.words, locale)), tc("rootsCount", cnt(c.roots, locale))].join(" · "),
+        text: [tc("verses", cnt(c.verses, locale)), tc("words", cnt(c.words, locale)), tc("rootsCount", cnt(c.roots, locale))].join(" • "),
         size: 38,
         color: OG_COLORS.ROOT,
       },

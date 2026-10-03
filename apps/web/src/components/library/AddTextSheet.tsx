@@ -161,7 +161,7 @@ export function AddTextSheet({ onClose, onSaved }: { onClose: () => void; onSave
             {rows.length > 0 && (
               <p className="text-[11.5px] text-t3">
                 {t("previewCounts", { roots: formatNumber(roots, locale), entries: formatNumber(entries, locale), review: formatNumber(review.length, locale), none: formatNumber(unknown, locale) })}
-                {all.length > PREVIEW_WORDS && ` · ${t("previewFirst", { n: formatNumber(PREVIEW_WORDS, locale) })}`}
+                {all.length > PREVIEW_WORDS && ` • ${t("previewFirst", { n: formatNumber(PREVIEW_WORDS, locale) })}`}
               </p>
             )}
           </section>

@@ -38,9 +38,9 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
       source: (
         <>
           {t("meaningHere")} — {locale === "ar" ? m.title_ar : m.title_en}
-          {m.mushaf_page ? ` · ${t("mushafPage", { n: formatNumber(m.mushaf_page, locale) })}` : ""}
-          {m.match_confidence === "medium" ? ` · ${t("placementInferred")}` : ""}
-          {m.display_only ? ` · ${t("displayOnly")}` : ""}
+          {m.mushaf_page ? ` • ${t("mushafPage", { n: formatNumber(m.mushaf_page, locale) })}` : ""}
+          {m.match_confidence === "medium" ? ` • ${t("placementInferred")}` : ""}
+          {m.display_only ? ` • ${t("displayOnly")}` : ""}
         </>
       ),
       lang: "ar",
@@ -50,7 +50,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
     lines.push({
       key: `g${g.id}`,
       text: g.gloss,
-      source: <>{locale === "ar" ? g.attribution_ar : g.attribution_en}{g.page_ref ? ` · ${g.page_ref}` : ""}</>,
+      source: <>{locale === "ar" ? g.attribution_ar : g.attribution_en}{g.page_ref ? ` • ${g.page_ref}` : ""}</>,
       lang: "ar",
     });
   }
@@ -61,7 +61,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
       source: (
         <>
           {t("coreMeaningOf", { root: w.root?.ar_spaced ?? "" })} — {w.core_meaning.author_ar}، {w.core_meaning.title_ar}
-          {w.core_meaning.page_ref ? ` · ${w.core_meaning.page_ref}` : ""}
+          {w.core_meaning.page_ref ? ` • ${w.core_meaning.page_ref}` : ""}
         </>
       ),
       lang: "ar",
@@ -147,7 +147,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
             <div key={p.id} className="proposal-row">
               <p className="text-[12px] font-medium text-t2">
                 {proposalTitle(p)}
-                {p.at ? ` · ${p.at}` : ""}
+                {p.at ? ` • ${p.at}` : ""}
               </p>
               <p className="text-[14px] leading-[1.8] text-t1" dir="auto">{p.text}</p>
               <p className="text-[11px] text-amber">{t("proposalPending", { date: new Date(p.ts).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long" }) })}</p>
@@ -222,7 +222,7 @@ export function GrammarHere({ features: f, surface, verseKey, onSuggest }: { fea
   add("gAspect", termed(f.aspect, locale), lab(f.aspect, locale));
   add("gVoice", termed(f.voice, locale), lab(f.voice, locale));
   add("gDerivation", termed(f.derivation, locale), lab(f.derivation, locale));
-  const pgn = [lab(f.person, locale), lab(f.gender, locale), lab(f.number, locale)].filter(Boolean).join(" · ");
+  const pgn = [lab(f.person, locale), lab(f.gender, locale), lab(f.number, locale)].filter(Boolean).join(" • ");
   add("gPgn", pgn || null, pgn || null);
   add("gCase", termed(f.case, locale), lab(f.case, locale));
   add("gMood", termed(f.mood, locale), lab(f.mood, locale));
@@ -294,9 +294,9 @@ function MufradatBlock({ m }: { m: Mufradat }) {
           )}
           <p className="text-[11px] text-t3">
             {work}
-            {s.page_ref ? ` · ${s.page_ref}` : ""}
-            {s.senses.length > 0 ? ` · ${t("sensesAsNumbered")}` : ""}
-            {s.match_confidence === "medium" ? ` · ${t("matchedMedium")}` : ""}
+            {s.page_ref ? ` • ${s.page_ref}` : ""}
+            {s.senses.length > 0 ? ` • ${t("sensesAsNumbered")}` : ""}
+            {s.match_confidence === "medium" ? ` • ${t("matchedMedium")}` : ""}
           </p>
         </article>
       ))}
@@ -339,7 +339,7 @@ function ParticleItem({ p }: { p: ParticleLink }) {
           <span className="text-[11.5px] text-t3">{t("particleViaAffix", { text: p.via.text, label: locale === "ar" ? p.via.label.ar : p.via.label.en })}</span>
         )}
         <span className="flex-1" />
-        <span className="text-[11.5px] text-t3">{`${author} · ${locale === "ar" ? p.title_ar : p.title_en}`}</span>
+        <span className="text-[11.5px] text-t3">{`${author} • ${locale === "ar" ? p.title_ar : p.title_en}`}</span>
         <span className="mono text-[11px] text-t3">{t("particleSenses", cnt(p.sense_count, locale))}</span>
       </button>
       {open && (q.isLoading ? <div className="h-16 animate-pulse rounded-lg bg-card-2" /> : q.data ? <ParticleSenses e={q.data} /> : null)}

@@ -15,7 +15,7 @@ export type GraphNodeData = {
   usul?: "one" | "several" | "unrelated" | null;
   lemmaId?: number;
   form?: string; // imlaei surface form (word cards)
-  verse?: VerseExcerpt; // word cards: first occurrence · verse cards: the occurrence
+  verse?: VerseExcerpt; // word cards: first occurrence • verse cards: the occurrence
   text?: string; // note cards: free text written by the user
   folded?: boolean;
   more?: { kind: "forms" | "verses"; remaining: number }; // expansion still available

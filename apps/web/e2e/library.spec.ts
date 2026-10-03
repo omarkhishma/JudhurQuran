@@ -38,12 +38,12 @@ test("adding a text: a live preview read against the Quran, saved privately, rea
   await expect(sheet.locator(".pv-word.is-hit").first()).toBeVisible();
   await expect(sheet.locator(".pv-word.is-review")).toHaveCount(2); // بالتعلم (clitic), مستكتبون (pattern)
   await expect(sheet.locator(".review-rows li").first().getByRole("link", { name: "حلّلها" })).toHaveAttribute("href", /\/analyse\?q=/);
-  await expect(sheet).toContainText("الكلمات ٩ · بلا تشكيل");
+  await expect(sheet).toContainText("الكلمات ٩ • بلا تشكيل");
   await sheet.getByRole("textbox", { name: "عنوان النص" }).fill("نص للتجربة");
   await sheet.getByRole("button", { name: "احفظ في مكتبتي" }).click();
   await expect(sheet).toHaveCount(0);
   const mine = page.locator(".book-card", { hasText: "نص للتجربة" });
-  await expect(mine).toContainText("الكلمات ٩ · للمراجعة ٢");
+  await expect(mine).toContainText("الكلمات ٩ • للمراجعة ٢");
   await mine.click();
   await expect(page.getByRole("heading", { name: "نص للتجربة" })).toBeVisible();
   await expect(page.locator(".user-passage")).toHaveCount(2);

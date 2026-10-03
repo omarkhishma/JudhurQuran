@@ -173,7 +173,7 @@ export function seedRows(g: SeedGraph): { kind: NodeKind; n: number; detail: str
   return order
     .map((kind) => {
       const of = g.nodes.filter((n) => n.data.kind === kind);
-      const detail = of.slice(0, 8).map((n) => (kind === "verse" ? n.data.verse?.key ?? n.data.ar : n.data.ar)).join("  ·  ");
+      const detail = of.slice(0, 8).map((n) => (kind === "verse" ? n.data.verse?.key ?? n.data.ar : n.data.ar)).join("  •  ");
       return { kind, n: of.length, detail };
     })
     .filter((r) => r.n > 0);

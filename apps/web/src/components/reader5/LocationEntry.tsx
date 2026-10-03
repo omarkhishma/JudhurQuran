@@ -63,7 +63,7 @@ export function LocationEntry({ at }: { at: string }) {
             {w.glosses.map((g) => (
               <div key={g.id} className="flex flex-col gap-1">
                 <p className="ar-classical text-[15px] leading-[1.95] text-t1" lang="ar" dir="rtl">{g.gloss}</p>
-                <p className="text-[11px] text-t3">{locale === "ar" ? g.attribution_ar : g.attribution_en}{g.page_ref ? ` · ${g.page_ref}` : ""}</p>
+                <p className="text-[11px] text-t3">{locale === "ar" ? g.attribution_ar : g.attribution_en}{g.page_ref ? ` • ${g.page_ref}` : ""}</p>
               </div>
             ))}
           </div>

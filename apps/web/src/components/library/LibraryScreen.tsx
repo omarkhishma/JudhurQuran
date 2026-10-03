@@ -213,7 +213,7 @@ function KnownLine({ known, total, seen }: { known: number; total: number; seen:
   return (
     <span className="text-[12px] text-t2">
       {known ? t("knownOf", { known: formatNumber(known, locale), total: formatNumber(total, locale) }) : t("noneKnown")}
-      {seen > 0 && <span className="text-t3"> · {t("seenWords", cnt(seen, locale))}</span>}
+      {seen > 0 && <span className="text-t3"> • {t("seenWords", cnt(seen, locale))}</span>}
     </span>
   );
 }
@@ -267,7 +267,7 @@ function QuranEntry() {
       ) : (
         <select value={n} onChange={(e) => setN(e.target.value)} className="field" aria-label={t(by === "juz" ? "byJuz" : "byHizb")}>
           {list.map((d) => (
-            <option key={d.number} value={d.number}>{`${formatNumber(d.number, locale)} · ${locale === "ar" ? d.name_ar : d.name_translit} ${formatNumber(d.surah, locale)}:${formatNumber(d.ayah, locale)}`}</option>
+            <option key={d.number} value={d.number}>{`${formatNumber(d.number, locale)} • ${locale === "ar" ? d.name_ar : d.name_translit} ${formatNumber(d.surah, locale)}:${formatNumber(d.ayah, locale)}`}</option>
           ))}
         </select>
       )}

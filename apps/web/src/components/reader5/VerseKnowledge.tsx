@@ -40,7 +40,7 @@ export function SourceCredit({ s }: { s: KnowledgeSource | undefined }) {
       </a>
       {s.license_url && (
         <>
-          {" · "}
+          {" • "}
           <a href={s.license_url} target="_blank" rel="noreferrer license" className="underline-offset-2 hover:text-t1 hover:underline">
             {locale === "ar" && s.license_ar ? s.license_ar : s.license}
           </a>
@@ -104,7 +104,7 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
   const classical = k.asbab.filter((a) => a.work !== "tafsircenter");
   const asbabItem = (a: (typeof k.asbab)[number]) => (
     <article key={a.id} className="kn-item">
-      <p className="text-[11.5px] font-medium text-t2">{t(`work_${a.work}`)}{a.heading ? <span className="font-normal text-t3"> · {a.heading.replace(/\s+/g, " ").slice(0, 80)}</span> : null}</p>
+      <p className="text-[11.5px] font-medium text-t2">{t(`work_${a.work}`)}{a.heading ? <span className="font-normal text-t3"> • {a.heading.replace(/\s+/g, " ").slice(0, 80)}</span> : null}</p>
       <Fold text={a.text} className="ar-classical text-[15px] leading-[2]" />
       {a.takhrij && (
         <details className="kn-notes">
@@ -145,13 +145,13 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
             <article key={p.id} className="kn-item">
               <p className="text-[11.5px] font-medium text-t2">
                 {t(`placeRole_${p.role}`)}
-                {p.scope === "surah" && <span className="font-normal text-t3"> · {t("wholeSurah")}</span>}
-                {p.attributed_to && <span className="font-normal text-t3"> · {p.attributed_to}</span>}
+                {p.scope === "surah" && <span className="font-normal text-t3"> • {t("wholeSurah")}</span>}
+                {p.attributed_to && <span className="font-normal text-t3"> • {p.attributed_to}</span>}
               </p>
               {p.role === "source-note" ? (
                 <>
                   <p className="text-[13px] text-t1">
-                    {[p.place && PLACE_KEYS.has(p.place) ? t(`place_${p.place.replace(/-/g, "_")}`) : null, p.period ? t(`period_${p.period}`) : null].filter(Boolean).join(" · ")}
+                    {[p.place && PLACE_KEYS.has(p.place) ? t(`place_${p.place.replace(/-/g, "_")}`) : null, p.period ? t(`period_${p.period}`) : null].filter(Boolean).join(" • ")}
                     {p.ayah_from !== p.ayah_to ? ` (${formatNumber(p.ayah_from, locale)}–${formatNumber(p.ayah_to, locale)})` : ""}
                   </p>
                   <p className="text-[12px] italic text-t3" lang="en" dir="ltr">“{p.quote}”</p>

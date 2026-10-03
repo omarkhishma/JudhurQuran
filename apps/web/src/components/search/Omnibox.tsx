@@ -48,7 +48,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         href: `/quran/${s.number}`,
         kind: t("kindSurah"),
         primary: <span className="ar-classical text-[18px]" dir="rtl" lang="ar">{`سورة ${s.name_ar}`}</span>,
-        secondary: <span dir="ltr">{`${s.number} · ${s.name_translit}`}</span>,
+        secondary: <span dir="ltr">{`${s.number} • ${s.name_translit}`}</span>,
       });
     for (const r of data.results.roots)
       out.push({
@@ -67,7 +67,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         secondary: (
           <span>
             {t("formMeta", cnt(w.occurrences, locale))}
-            {w.root ? <span className="text-root" dir="rtl" lang="ar">{` · ${w.root}`}</span> : null}
+            {w.root ? <span className="text-root" dir="rtl" lang="ar">{` • ${w.root}`}</span> : null}
           </span>
         ),
       });
@@ -80,7 +80,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         primary: <span className="ar-classical text-[19px] text-form" dir="rtl" lang="ar">{p.ar.full}</span>,
         secondary: (
           <span>
-            <span dir="ltr">{p.ar.translit}</span> · {t("wordsOnPattern", cnt(p.lemma_count, locale))}
+            <span dir="ltr">{p.ar.translit}</span> • {t("wordsOnPattern", cnt(p.lemma_count, locale))}
           </span>
         ),
       });

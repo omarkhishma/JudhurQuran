@@ -126,7 +126,7 @@ export function UserTextReader({ id }: { id: string }) {
         <h1 className="ar-classical text-[28px]" lang="ar" dir="rtl">{d.title}</h1>
       )}
       <p className="text-[12.5px] text-t3">
-        {t("mineMeta", { words: formatNumber(d.words, locale), review: formatNumber(d.review, locale) })} · {t("privateNote")}
+        {t("mineMeta", { words: formatNumber(d.words, locale), review: formatNumber(d.review, locale) })} • {t("privateNote")}
       </p>
       {position && position.passage > 1 && (
         <a href={`#p${position.passage}`} className="btn self-start">

@@ -82,7 +82,7 @@ test("the verse drawers: roots with their transliteration and Quran count; the g
   await page.locator('[data-verse-btn="1:2"]').click();
   await page.locator('[data-verse="1:2"] .ptool[data-tool="graph"]').click();
   const g = page.locator('[data-verse="1:2"] .drawer .graph-cols');
-  await expect(g.locator(".label-caps").first()).toContainText(`جذر · ${ar(keys.length)}`);
+  await expect(g.locator(".label-caps").first()).toContainText(`جذر • ${ar(keys.length)}`);
   await expect(page.locator('[data-verse="1:2"] .drawer')).toContainText("وبطاقة للآية نفسها");
 });
 

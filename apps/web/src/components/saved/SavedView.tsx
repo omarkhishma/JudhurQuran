@@ -67,7 +67,7 @@ export function SavedView() {
                 <li key={`${b.kind}:${b.key}`}>
                   <Link href={hrefFor(b.kind, b.key)} className="card flex items-center justify-between p-4 hover:border-ring">
                     <span className="ar-classical text-[18px]" lang="ar">{b.label}</span>
-                    <span className="text-[12px] text-t3">{t(b.kind === "verse" ? "kindVerse" : b.kind === "word" || b.kind === "lemma" ? "kindWord" : "kindRoot")} · {date(b.at)}</span>
+                    <span className="text-[12px] text-t3">{t(b.kind === "verse" ? "kindVerse" : b.kind === "word" || b.kind === "lemma" ? "kindWord" : "kindRoot")} • {date(b.at)}</span>
                   </Link>
                 </li>
               ))}

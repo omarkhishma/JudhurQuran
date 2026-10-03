@@ -12,7 +12,7 @@ test("the design's sample: particles, a word from the Quran, a clitic reading ma
   await expect(page.getByRole("textbox", { name: "العبارة المراد تحليلها" })).toHaveValue(sample);
   const rows = page.locator(".analyse-row:not(.analyse-head)");
   await expect(rows).toHaveCount(a.tokens.length);
-  await expect(page.locator(".analyse-meta")).toHaveText(`الكلمات ${ar(a.counts.tokens)} · الجذور ${ar(a.counts.roots)} · للمراجعة ${ar(a.counts.to_review)}`);
+  await expect(page.locator(".analyse-meta")).toHaveText(`الكلمات ${ar(a.counts.tokens)} • الجذور ${ar(a.counts.roots)} • للمراجعة ${ar(a.counts.to_review)}`);
   // the unsure row is tinted and offers nothing it cannot back: its root is a Quranic root
   const unsure = page.locator(".analyse-row.is-unsure");
   await expect(unsure).toHaveCount(a.counts.to_review);

@@ -121,7 +121,7 @@ function Omnibox({ onClose }: { onClose: () => void }) {
     for (const s of r.surahs.slice(0, 3))
       out.push({ group: t("omniSurahs"), key: `s${s.number}`, dot: "var(--c-sentence)", ar: s.name_ar, sub: s.name_translit, meta: String(s.number), go: () => { onClose(); router.push(`/quran/${s.number}`); } });
     for (const l of r.lemmas.slice(0, 5))
-      out.push({ group: t("omniWords"), key: `w${l.slug}`, dot: "var(--c-word)", ar: l.ar, sub: `${l.envelope.translit}${l.gloss_en ?? l.senses_en?.[0] ? ` · ${l.gloss_en ?? l.senses_en?.[0]}` : ""}`, meta: t("inQuranCount", cnt(l.occurrences, locale)), go: () => { onClose(); openWord({ slug: l.slug, at: null }); } });
+      out.push({ group: t("omniWords"), key: `w${l.slug}`, dot: "var(--c-word)", ar: l.ar, sub: `${l.envelope.translit}${l.gloss_en ?? l.senses_en?.[0] ? ` • ${l.gloss_en ?? l.senses_en?.[0]}` : ""}`, meta: t("inQuranCount", cnt(l.occurrences, locale)), go: () => { onClose(); openWord({ slug: l.slug, at: null }); } });
     for (const x of r.roots.slice(0, 3))
       out.push({ group: t("omniRoots"), key: `r${x.key}`, dot: "var(--c-root)", ar: x.spaced, sub: x.translit, meta: t("rootCounts", { ...cnt(x.occurrences, locale), ...cnt2(x.lemma_count, locale) }), go: () => { onClose(); router.push(`/roots/${encodeURIComponent(x.key)}`); } });
     for (const p of (r.patterns ?? []).slice(0, 2))
@@ -326,7 +326,7 @@ function CiteBody({ opened, chapter }: { opened: CiteTarget; chapter: ChapterInf
         )}
         <p className="label-caps">{t("permalink")}</p>
         <div className="flex items-center gap-2">
-          <code className="mono min-w-0 flex-1 truncate rounded-md bg-card-2 px-2 py-1.5 text-[12px]" dir="ltr">{`${url} · ${version}`}</code>
+          <code className="mono min-w-0 flex-1 truncate rounded-md bg-card-2 px-2 py-1.5 text-[12px]" dir="ltr">{`${url} • ${version}`}</code>
           <button type="button" className="btn" onClick={() => copy(url, t("permalinkCopied"))}>{t("copy")}</button>
         </div>
         <div className="seg-group flex-wrap" role="group" aria-label={t("citationFormat")}>

@@ -33,7 +33,7 @@ export default async function SourcesPage({ params }: PageProps<"/[locale]/sourc
           : "Everything on this site is credited to its source. This list is generated from the same registry the database is built from, so it cannot drift from it."}
       </p>
       <p className="text-[13px] text-t3">
-        {ar ? "إصدار البيانات" : "Dataset version"}: <span className="mono" dir="ltr">{meta.dataset.version}</span> ·{" "}
+        {ar ? "إصدار البيانات" : "Dataset version"}: <span className="mono" dir="ltr">{meta.dataset.version}</span> •{" "}
         {ar ? "بصمة النص القرآني" : "Quran text fingerprint"}: <span className="mono break-all" dir="ltr">{meta.dataset.text_sha256}</span>
       </p>
 
@@ -68,7 +68,7 @@ export default async function SourcesPage({ params }: PageProps<"/[locale]/sourc
         <SourceCard
           key={w.id}
           title={`${ar ? w.title_ar : w.title_en} — ${ar ? w.author_ar : w.author_en}`}
-          role={`${ar ? "مواد معروضة" : "Articles shown"}: ${formatNumber(w.displayed_entries, locale)}${w.redistributable ? "" : ar ? " · للعرض فقط" : " · display only"}`}
+          role={`${ar ? "مواد معروضة" : "Articles shown"}: ${formatNumber(w.displayed_entries, locale)}${w.redistributable ? "" : ar ? " • للعرض فقط" : " • display only"}`}
           license={w.license}
           attribution={ar ? w.attribution_ar : w.attribution_en}
           url={w.source_url}

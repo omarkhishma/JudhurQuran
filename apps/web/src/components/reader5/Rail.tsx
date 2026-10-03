@@ -101,7 +101,7 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="ar-classical truncate text-[15px] leading-[1.5]" lang="ar">{s.name_ar}</span>
                   <span className="truncate text-[10.5px] text-t3">
-                    {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " · " + t("verses", cnt(s.verse_count, locale))}
+                    {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " • " + t("verses", cnt(s.verse_count, locale))}
                   </span>
                   {last?.chapter === s.number && (
                     <span className="rail-resume">
@@ -191,7 +191,7 @@ function JuzList({ chapter, onNavigate }: { chapter: ChapterInfo; onNavigate: ()
               <span className="mono w-[26px] text-[11px] text-t3">{formatNumber(j.number, locale)}</span>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[13px] text-t1">{t("juz", { n: formatNumber(j.number, locale) })}</span>
-                <span className="truncate text-[10.5px] text-t3">{`${j.name_ar} ${formatNumber(j.ayah, locale)} · ${t("pageN", { n: formatNumber(j.page, locale) })}`}</span>
+                <span className="truncate text-[10.5px] text-t3">{`${j.name_ar} ${formatNumber(j.ayah, locale)} • ${t("pageN", { n: formatNumber(j.page, locale) })}`}</span>
               </span>
             </Link>
             <span className="flex gap-1 ps-9 pb-1">

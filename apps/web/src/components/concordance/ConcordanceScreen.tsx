@@ -156,7 +156,7 @@ export function ConcordanceScreen({ initial, initialPage, initialTr }: { initial
         <span className="flex-1" />
         {first && (
           <span className="mono text-[12px] text-t3">
-            {t("metaHits", cnt(first.total, locale))} · <bdi dir="ltr">{first.root.translit}</bdi> · {t("metaWords", cnt(first.facets.lemmas.length, locale))}
+            {t("metaHits", cnt(first.total, locale))} • <bdi dir="ltr">{first.root.translit}</bdi> • {t("metaWords", cnt(first.facets.lemmas.length, locale))}
           </span>
         )}
       </div>
@@ -275,7 +275,7 @@ export function ConcordanceScreen({ initial, initialPage, initialTr }: { initial
       {lines.isError && <p className="text-[13px] text-bad" role="alert">{t("notFound")}</p>}
 
       {view === "kwic" ? (
-        // the lines read right to left in both interface languages: source · preceding · keyword · following
+        // the lines read right to left in both interface languages: source • preceding • keyword • following
         <div className="conc-kwic" dir="rtl">
           <div className="conc-head" aria-hidden>
             <span>{t("colSource")}</span>
@@ -296,7 +296,7 @@ export function ConcordanceScreen({ initial, initialPage, initialTr }: { initial
                 <Link
                   href={`/quran/${x.surah}?${x.lemma_slug ? `w=${encodeURIComponent(x.lemma_slug)}&` : ""}at=${x.location}#v${x.ayah}`}
                   className="conc-row"
-                  title={(locale === "ar" ? [x.lemma, x.pattern] : [x.translation]).filter(Boolean).join(" · ") || undefined}
+                  title={(locale === "ar" ? [x.lemma, x.pattern] : [x.translation]).filter(Boolean).join(" • ") || undefined}
                   data-loc={x.location}
                 >
                   <span className="conc-src">
@@ -443,11 +443,11 @@ function Distribution({
             <li key={s.surah}>
               <button type="button" className="dist-row" onClick={() => onSurah(s.surah)} title={t("hitsOfWords", { ...cnt(s.hits, locale), ...cnt2(s.words, locale) })}>
                 <span className="w-[120px] truncate text-start text-[12.5px]">
-                  {order === "revelation" && <span className="mono text-[10.5px] text-t3">{`${formatNumber(s.revelation_order, locale)} · `}</span>}
+                  {order === "revelation" && <span className="mono text-[10.5px] text-t3">{`${formatNumber(s.revelation_order, locale)} • `}</span>}
                   {`${formatNumber(s.surah, locale)}. ${locale === "ar" ? s.name_ar : s.name_translit}`}
                 </span>
                 <span className="dist-track"><span style={{ width: `${(s.per100 / maxRate) * 100}%`, background: s.place === "meccan" ? MECCAN : MEDINAN }} /></span>
-                <span className="mono w-[86px] text-end text-[11px] text-t3">{`${formatNumber(s.hits, locale)} · ${formatNumber(s.per100, locale)}`}</span>
+                <span className="mono w-[86px] text-end text-[11px] text-t3">{`${formatNumber(s.hits, locale)} • ${formatNumber(s.per100, locale)}`}</span>
               </button>
             </li>
           ))}

@@ -115,9 +115,9 @@ export function AudioBar({ surah, surahName }: { surah: number; surahName: strin
                 <p className="px-3 pb-2 text-[11px] leading-relaxed text-t3">
                   {t("creditRecitations")}{" "}
                   <a href="https://everyayah.com/" target="_blank" rel="noreferrer" className="underline">EveryAyah.com</a>{" "}
-                  (<a href="https://creativecommons.org/licenses/by-nc/2.5/ca/" target="_blank" rel="noreferrer" className="underline">CC BY-NC 2.5 CA</a>) · {t("creditTimings")}{" "}
+                  (<a href="https://creativecommons.org/licenses/by-nc/2.5/ca/" target="_blank" rel="noreferrer" className="underline">CC BY-NC 2.5 CA</a>) • {t("creditTimings")}{" "}
                   <a href="https://github.com/cpfair/quran-align" target="_blank" rel="noreferrer" className="underline">quran-align</a>{" "}
-                  (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" className="underline">CC BY 4.0</a>, {t("modified")}) ·{" "}
+                  (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" className="underline">CC BY 4.0</a>, {t("modified")}) •{" "}
                   <Link href="/sources" className="underline">{t("allSources")}</Link>
                 </p>
               </div>

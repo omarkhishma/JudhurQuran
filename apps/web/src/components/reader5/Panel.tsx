@@ -226,7 +226,7 @@ function PanelSearch() {
                   {/* its transliteration and part of speech, and its root (RDR-193) */}
                   <span className="mono truncate text-[10.5px] text-t3" dir="ltr">
                     {x.envelope.translit}
-                    {x.pos_label ? ` · ${locale === "ar" ? x.pos_label.ar : x.pos_label.en}` : ""}
+                    {x.pos_label ? ` • ${locale === "ar" ? x.pos_label.ar : x.pos_label.en}` : ""}
                   </span>
                 </span>
                 {x.root_spaced ? (

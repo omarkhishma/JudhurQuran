@@ -62,7 +62,7 @@ export function SurahIndex({ surahs }: { surahs: Surah[] }) {
                   {locale === "en" ? `${s.name_translit}` : s.name_translit}
                 </span>
                 <span className="block text-[12.5px] text-t3">
-                  {s.revelation_place === "meccan" ? t("meccan") : t("medinan")} · {t("versesCount", cnt(s.verse_count, locale))}
+                  {s.revelation_place === "meccan" ? t("meccan") : t("medinan")} • {t("versesCount", cnt(s.verse_count, locale))}
                 </span>
               </span>
               <span className="ar-classical shrink-0 text-[22px] text-t1" dir="rtl" lang="ar">

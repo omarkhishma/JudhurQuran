@@ -250,7 +250,7 @@ function TokenRow({ tk, pick, onPick }: { tk: AnalysedToken; pick: number; onPic
   const gram = (placed
     ? [label(f?.pos, locale), label(f?.derivation, locale), label(f?.aspect, locale), label(f?.voice, locale), label(f?.case, locale), label(f?.mood, locale)]
     : [label(f?.pos, locale), label(f?.derivation, locale)]
-  ).filter(Boolean).join(" · ");
+  ).filter(Boolean).join(" • ");
   const posTerm = c?.pos ? TAG_TERM[c.pos] : undefined;
   return (
     <div className={"analyse-row" + (unsure ? " is-unsure" : "")} role="row" data-kind={tk.kind}>
@@ -270,14 +270,14 @@ function TokenRow({ tk, pick, onPick }: { tk: AnalysedToken; pick: number; onPic
       </span>
       <span role="cell" className="flex min-w-0 flex-col gap-0.5 text-[12.5px]">
         {tk.kind === "particle" ? (
-          <span>{t("particle")}{label(c?.features?.pos, locale) ? ` · ${label(c?.features?.pos, locale)}` : ""}</span>
+          <span>{t("particle")}{label(c?.features?.pos, locale) ? ` • ${label(c?.features?.pos, locale)}` : ""}</span>
         ) : tk.kind === "none" ? (
           <span className="text-t3">{t("nothingFound")}</span>
         ) : (
           <>
             <span>
               {posTerm && gram ? <Term id={posTerm}>{gram}</Term> : gram || (tk.kind === "pattern" ? t("byPattern", { pattern: c?.pattern?.ar ?? "" }) : "")}
-              {c?.lemma && <span className="ar-classical text-[14px]" lang="ar">{" · "}{c.lemma.ar}</span>}
+              {c?.lemma && <span className="ar-classical text-[14px]" lang="ar">{" • "}{c.lemma.ar}</span>}
             </span>
             {/* English on its own line, never inside the Arabic run (SHL-F07) */}
             {c?.gloss_en && (
@@ -289,13 +289,13 @@ function TokenRow({ tk, pick, onPick }: { tk: AnalysedToken; pick: number; onPic
               {t(tk.kind === "pattern" && tk.clitics.length ? "how_pattern_clitic" : `how_${tk.kind}`, { ...cnt(c?.count ?? 0, locale), clitics: tk.clitics.join("، ") })}
               {c?.location && (
                 <>
-                  {" · "}
+                  {" • "}
                   <Link href={`/word/${c.location}`} className="underline-offset-2 hover:underline" dir="ltr">{locale === "ar" ? toArabicDigits(c.location) : c.location}</Link>
                 </>
               )}
               {c?.lemma && (
                 <>
-                  {" · "}
+                  {" • "}
                   <Link href={`/read?w=${encodeURIComponent(c.lemma.slug)}`} className="underline-offset-2 hover:underline">{t("entry")}</Link>
                 </>
               )}
