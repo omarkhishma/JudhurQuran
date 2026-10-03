@@ -107,8 +107,10 @@ def _passages_query(q: str, latin: bool) -> dict[str, Any]:
         should = [
             {"match_phrase": {"ar": {"query": q, "boost": 8}}},
             {"match_phrase": {"ar_uthmani": {"query": q, "boost": 8}}},
+            {"match_phrase": {"ar_plain": {"query": q, "boost": 7}}},
             {"match": {"ar": {"query": q, "operator": "and", "boost": 3}}},
             {"match": {"ar_uthmani": {"query": q, "operator": "and", "boost": 3}}},
+            {"match": {"ar_plain": {"query": q, "operator": "and", "boost": 2.5}}},
         ]
     return {"bool": {"should": should, "minimum_should_match": 1}}
 

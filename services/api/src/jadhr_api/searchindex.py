@@ -117,7 +117,7 @@ MAPPINGS: dict[str, dict[str, Any]] = {
     "passages": {
         "uri": KW, "ref": KW, "text_slug": KW, "text_kind": KW, "chapter": INT, "ordinal": INT,
         "chapter_name_ar": KW, "chapter_name_translit": KW,
-        "ar": AR_FIELD, "ar_uthmani": AR_FIELD, "trans_en": {"type": "text", "analyzer": "english"},
+        "ar": AR_FIELD, "ar_uthmani": AR_FIELD, "ar_plain": AR_FIELD, "trans_en": {"type": "text", "analyzer": "english"},
         "era_year": INT,
     },
     "occurrences": {
@@ -178,9 +178,13 @@ def _words(conn: Connection) -> Iterator[dict[str, Any]]:
     glosses: dict[int, Counter[str]] = {}
     for f in rows(
         conn,
-        "select lemma_id, text_imlaei, text_uthmani, translit, gloss_en from content.words where lemma_id is not null",
+        """select lemma_id, text_imlaei, text_uthmani, norm_plain, translit, gloss_en from content.words
+           where lemma_id is not null""",
     ):
-        forms.setdefault(f["lemma_id"], set()).update(x for x in (f["text_imlaei"], f["text_uthmani"]) if x)
+        # the everyday spelling read off the mushaf too: السماوات finds its word (migration 0017)
+        forms.setdefault(f["lemma_id"], set()).update(
+            x for x in (f["text_imlaei"], f["text_uthmani"], f["norm_plain"]) if x
+        )
         if f["translit"]:
             translits.setdefault(f["lemma_id"], set()).add(f["translit"])
         if f["gloss_en"]:
@@ -244,7 +248,7 @@ def _passages(conn: Connection) -> Iterator[dict[str, Any]]:
     }
     for v in rows(
         conn,
-        """select v.id, v.key, v.surah, v.ayah, v.text_imlaei, v.text_qpc, s.name_ar, s.name_translit
+        """select v.id, v.key, v.surah, v.ayah, v.text_imlaei, v.text_qpc, v.norm_plain, s.name_ar, s.name_translit
            from content.verses v join content.surahs s on s.number = v.surah order by v.id""",
     ):
         yield {
@@ -259,6 +263,7 @@ def _passages(conn: Connection) -> Iterator[dict[str, Any]]:
             "chapter_name_translit": v["name_translit"],
             "ar": v["text_imlaei"],
             "ar_uthmani": v["text_qpc"],
+            "ar_plain": v["norm_plain"],
             "trans_en": trans.get(v["id"]),
             "era_year": 632,
         }

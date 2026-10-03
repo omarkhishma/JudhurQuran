@@ -180,6 +180,25 @@ def test_search_finds_uthmani_rasm_by_standard_spelling() -> None:
     assert "العالمين" in _word_forms("العالمين")
 
 
+def test_the_everyday_spelling_finds_what_the_imlaei_text_spells_otherwise() -> None:
+    """Tanzil's imlāʾī keeps السموات and إسمعيل-like spellings; a reader types السماوات. The everyday spelling
+    read off the mushaf (norm_plain, migration 0017) finds the same verses and word, in both engines."""
+    from jadhr_api.db import connect
+    from jadhr_api.search import search_pg
+
+    modern = get("/api/v1/search", q="السماوات", limit=5)
+    tanzil = get("/api/v1/search", q="السموات", limit=5)
+    assert modern["totals"]["verses"] > 100 and modern["totals"]["verses"] >= tanzil["totals"]["verses"] * 0.9
+    assert "sama" in [x["slug"] for x in modern["results"]["lemmas"]]
+    with connect() as conn:
+        assert (
+            search_pg(conn, "السماوات", 5)["totals"]["verses"]
+            == search_pg(conn, "السموات", 5)["totals"]["verses"]
+        )
+    a = client.get("/api/v1/analyse", params={"q": "السماوات"}).json()["tokens"][0]
+    assert a["kind"] == "form" and a["candidates"][0]["root"]["key"] == "سمو"
+
+
 def test_search_root_letters_return_the_root() -> None:
     for q in ("ك ت ب", "k-t-b"):
         d = get("/api/v1/search", q=q)

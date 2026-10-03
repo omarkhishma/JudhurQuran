@@ -407,6 +407,8 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                     "text_imlaei": imlaei,
                     "norm": normalize(imlaei) if imlaei else normalize(_word_form(w)),
                     "norm_uthmani": normalize(_word_form(w)),
+                    # the everyday spelling read off the mushaf's (السماوات from ٱلسَّمَٰوَٰتِ), for matching only
+                    "norm_plain": plain_spelling(_word_form(w)),
                     "root_id": root_id,
                     "lemma_id": lemma_id,
                     "pos": st.pos,
@@ -445,6 +447,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "tanzil_page": pos["page"],
                 "tanzil_juz": pos["juz"],
                 "norm_uthmani": normalize(" ".join(q.tokens)),
+                "norm_plain": plain_spelling(" ".join(q.tokens)),
                 "word_count": len(words),
                 "token_count": len(q.tokens),
                 "sha256": hashlib.sha256(q.text.encode("utf-8")).hexdigest(),

@@ -116,7 +116,7 @@ def _candidate(r: dict[str, Any], total: int, factor: float = 1.0) -> dict[str, 
 _FORM_SQL = """
     with m as (
       select w.lemma_id, w.root_id, w.pos, count(*)::int as n, min(w.id) as first_id
-      from content.words w where w.norm = :k or w.norm_uthmani = :k
+      from content.words w where w.norm = :k or w.norm_uthmani = :k or w.norm_plain = :k
       group by w.lemma_id, w.root_id, w.pos)
     select m.n, m.pos, w.features, w.segments, w.gloss_en, w.location, w.translit as word_translit,
            l.slug, l.ar as lemma_ar, r.key as root_key, r.spaced, r.translit,
@@ -296,7 +296,7 @@ def _verse_by_phrase(conn: Connection, keys: list[str]) -> tuple[dict[str, Any],
     phrase = " ".join(keys)
     hits = rows(
         conn,
-        "select id, key from content.verses where norm like :p or norm_uthmani like :p limit 3",
+        "select id, key from content.verses where norm like :p or norm_uthmani like :p or norm_plain like :p limit 3",
         {"p": f"%{phrase}%"},
     )
     if len(hits) != 1:
@@ -304,13 +304,14 @@ def _verse_by_phrase(conn: Connection, keys: list[str]) -> tuple[dict[str, Any],
     v = hits[0]
     toks = rows(
         conn,
-        """select t.position, t.text, string_agg(w.norm, '' order by w.position) as imlaei
+        """select t.position, t.text, string_agg(w.norm, '' order by w.position) as imlaei,
+                  string_agg(w.norm_plain, '' order by w.position) as plain
            from content.tokens t left join content.words w
              on w.verse_id = t.verse_id and t.position between w.token_from and w.token_to
            where t.verse_id = :v group by t.position, t.text order by t.position""",
         {"v": v["id"]},
     )
-    forms = [{_key(t["text"]), t["imlaei"] or ""} for t in toks]
+    forms = [{_key(t["text"]), t["imlaei"] or "", t["plain"] or ""} for t in toks]
     for i in range(len(forms) - len(keys) + 1):
         if all(keys[j] in forms[i + j] for j in range(len(keys))):
             return v, [toks[i + j]["position"] for j in range(len(keys))]
@@ -381,9 +382,10 @@ def analyse_many(conn: Connection, tokens: list[str]) -> dict[str, Any]:
     found = rows(
         conn,
         """with m as (
-             select coalesce(case when w.norm = any(:ks) then w.norm end, w.norm_uthmani) as k,
+             select coalesce(case when w.norm = any(:ks) then w.norm end,
+                             case when w.norm_plain = any(:ks) then w.norm_plain end, w.norm_uthmani) as k,
                     w.lemma_id, w.root_id, w.pos, count(*)::int as n
-             from content.words w where w.norm = any(:ks) or w.norm_uthmani = any(:ks)
+             from content.words w where w.norm = any(:ks) or w.norm_uthmani = any(:ks) or w.norm_plain = any(:ks)
              group by 1, 2, 3, 4)
            select m.k, m.n, m.pos, l.slug, l.ar as lemma_ar, r.key as root_key, r.spaced, l.gloss_en
            from m left join content.lemmas l on l.id = m.lemma_id left join content.roots r on r.id = m.root_id

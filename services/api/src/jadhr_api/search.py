@@ -332,7 +332,15 @@ def search_pg(
     norm_q = normalize(q)
     page = {"limit": limit, "offset": offset}
     # Text pasted from a mushaf is matched on the Uthmani shadow; everyday spelling on the imlāʾī one.
-    wcol, vcol = ("norm_uthmani", "norm_uthmani") if is_uthmani(q) else ("norm", "norm")
+    # Typed text is matched on the imlāʾī shadow and on the everyday spelling read off the mushaf
+    # (السماوات finds ٱلسَّمَٰوَٰتِ, which Tanzil's imlāʾī writes السموات); pasted mushaf text on its own shadow.
+    cols = ("norm_uthmani",) if is_uthmani(q) else ("norm", "norm_plain")
+
+    def eq(alias: str, param: str) -> str:
+        return "(" + " or ".join(f"{alias}.{c} = :{param}" for c in cols) + ")"
+
+    def like(alias: str, param: str) -> str:
+        return "(" + " or ".join(f"{alias}.{c} like :{param}" for c in cols) + ")"
 
     if kind in ("juz", "hizb", "page"):
         # the division's first verse, which the reader opens at
@@ -400,13 +408,13 @@ def search_pg(
                 conn,
                 f"""select w.norm as form, min(w.text_imlaei) as display, count(*)::int as occurrences,
                           (array_agg(w.location order by w.id))[1] as sample, l.id as lemma_id, l.ar as lemma, r.key as root,
-                          bool_or(w.{wcol} = :q) as exact
+                          bool_or({eq("w", "q")}) as exact
                    from content.words w
                    left join content.lemmas l on l.id = w.lemma_id
                    left join content.roots r on r.id = w.root_id
-                   where w.{wcol} = :q or w.{wcol} like :prefix
+                   where {eq("w", "q")} or {like("w", "prefix")}
                    group by w.norm, l.id, l.ar, r.key
-                   order by bool_or(w.{wcol} = :q) desc, count(*) desc
+                   order by bool_or({eq("w", "q")}) desc, count(*) desc
                    limit :limit""",
                 {"q": norm_q, "prefix": norm_q.replace("%", "").replace("_", "") + "%", "limit": limit},
             )
@@ -451,11 +459,11 @@ def search_pg(
             conn,
             f"""select v.key, v.surah, v.ayah, v.text_qpc, v.text_imlaei, s.name_ar, s.name_translit
                from content.verses v join content.surahs s on s.number = v.surah
-               where v.{vcol} like :p order by v.id limit :limit offset :offset""",
+               where {like("v", "p")} order by v.id limit :limit offset :offset""",
             {"p": pattern, **page},
         )
         totals["verses"] = int(
-            scalar(conn, f"select count(*) from content.verses v where v.{vcol} like :p", {"p": pattern}) or 0
+            scalar(conn, f"select count(*) from content.verses v where {like('v', 'p')}", {"p": pattern}) or 0
         )
     if kind in LATIN_KINDS:
         like = "%" + q.strip().lower().replace("%", "").replace("_", "") + "%"
