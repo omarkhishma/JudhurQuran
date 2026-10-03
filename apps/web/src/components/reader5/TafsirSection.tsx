@@ -47,7 +47,7 @@ export function TafsirSection({ verseKey }: { verseKey: string }) {
 
   return (
     <>
-      <section className="flex flex-col gap-2 border-b border-line px-4 py-3">
+      <section className="passage-tools flex flex-col gap-2 border-b border-line px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
           <p className="label-caps flex-1">{t("chooseTafsir")}</p>
           <Segmented
@@ -104,7 +104,7 @@ export function TafsirSection({ verseKey }: { verseKey: string }) {
           <p className="text-[15px] leading-relaxed text-t1" dir="ltr" lang="en">{trans.passage.text}</p>
           {trans.passage.footnotes && (
             <details className="mt-2 text-[13px] text-t2" dir="ltr" lang="en">
-              <summary className="cursor-pointer text-t3">{t("footnotes")}</summary>
+              <summary className="more-toggle cursor-pointer text-t3">{t("footnotes")}</summary>
               <p className="mt-1 whitespace-pre-line">{trans.passage.footnotes}</p>
             </details>
           )}

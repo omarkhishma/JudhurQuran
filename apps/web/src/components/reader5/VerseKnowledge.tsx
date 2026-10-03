@@ -80,7 +80,7 @@ export function Fold({ text, lines = 6, className = "" }: { text: string; lines?
         {text}
       </div>
       {long && (
-        <button type="button" className="self-start text-[11.5px] text-t3 hover:text-t1" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <button type="button" className="more-toggle self-start text-[11.5px] text-t3 hover:text-t1" onClick={() => setOpen(!open)} aria-expanded={open}>
           {open ? t("showLess") : t("readAll")}
         </button>
       )}

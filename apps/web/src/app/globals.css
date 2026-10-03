@@ -4413,6 +4413,28 @@ a.wotd-pill:hover {
   }
 }
 
+/* ─── The dictionary sheet's controls 44 px, passage tools 40 (RDR-415, 586; e2e phone-targets.spec.ts) — outside
+   the layers, as the phone rule below is, so the sheet's larger size wins over it ─── */
+.reader-sheet .btn,
+.reader-sheet .root-chip,
+.reader-sheet .word-chip,
+.reader-sheet .panel-search {
+  min-height: 44px;
+}
+.reader-sheet .listen-btn {
+  width: 44px;
+  height: 44px;
+}
+.reader-sheet .more-toggle,
+.reader-sheet .passage-tools .seg,
+.reader-sheet .passage-tools .chip {
+  min-height: 40px;
+}
+.reader-sheet summary.more-toggle {
+  display: flex;
+  align-items: center;
+}
+
 /* ─── Touch targets on phones (02 §2.6, L7; P5.6 from audit 10): every control at least 40 px, 44 in overlays ─── */
 @media (max-width: 899px) {
   .hub-try,
