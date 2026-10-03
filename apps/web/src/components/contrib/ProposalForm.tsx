@@ -1,15 +1,16 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { SignInPanel } from "@/components/account/SignInPanel";
 import { Link, usePathname } from "@/i18n/navigation";
-import { ApiError, useAccount } from "@/lib/account/store";
-import { type Kind, type Source, submit } from "@/lib/contrib";
-import { getJSON } from "@/lib/reader/api";
+import { useAccount } from "@/lib/account/store";
+import { type Kind, submit } from "@/lib/contrib";
 import { type MorphKey, type SuggestTarget, usePersonal } from "@/lib/reader/store";
 import { verseRef } from "@/lib/format";
+import { useRefusal } from "./refusal";
+import { emptyDraft, SourceFields, toSources, verseOk } from "./SourceFields";
 
 const TITLE: Record<Kind, string> = { edit: "suggestTitle", sense: "proposeTitle", error: "errorTitle", gloss: "glossTitle", morphology: "morphTitle", attest: "attestTitle", entry: "entryTitle" };
 
@@ -19,7 +20,6 @@ export function useProposalHeading(): (kind: Kind, ordinal?: number | null) => s
   const tc = useTranslations("contrib");
   return (kind, ordinal) => (kind === "edit" ? t("suggestTitle", { n: String(ordinal ?? 0).padStart(2, "0") }) : kind === "attest" || kind === "entry" ? tc(TITLE[kind]) : t(TITLE[kind]));
 }
-const VERSE = /^\d{1,3}:\d{1,3}$/;
 
 /**
  * A proposal (RDR-311…325, RVQ-49…57, P7.1): the current text, the reader's wording, why — required — and its
@@ -35,6 +35,8 @@ export function ProposalForm({ target, kinds, initialText, onClose }: { target: 
   const pathname = usePathname();
   const signedIn = useAccount((s) => !!s.session);
   const addProposal = usePersonal((s) => s.addProposal);
+  const qc = useQueryClient();
+  const refusal = useRefusal();
   const [kind, setKind] = useState<Kind>((kinds?.[0] as Kind) ?? (target.kind as Kind));
   const morph = kind === "morphology";
   const fields = target.fields ?? [];
@@ -42,15 +44,11 @@ export function ProposalForm({ target, kinds, initialText, onClose }: { target: 
   const startsFromCurrent = kind === "edit" || kind === "gloss";
   const [text, setText] = useState(initialText ?? (startsFromCurrent ? target.current : ""));
   const [why, setWhy] = useState("");
-  const [works, setWorks] = useState<string[]>([]);
-  const [ref, setRef] = useState("");
-  const [verse, setVerse] = useState("");
-  const [grammar, setGrammar] = useState("");
+  const [draft, setDraft] = useState(emptyDraft);
   const [state, setState] = useState<{ step: "write" | "sending" | "sent" | "kept"; error?: string; id?: string }>({ step: "write" });
-  const dicts = useQuery({ queryKey: ["dictionaries"], queryFn: () => getJSON<{ data: { key: string; name_ar: string; name_en: string }[] }>("/dictionaries"), staleTime: Infinity, enabled: !morph });
   const current = morph ? (fields.find((f) => f.key === field)?.value ?? "") : kind === "edit" || kind === "gloss" ? target.current : kind === "error" ? target.current : "";
-  const sources: Source[] = [...works.map((w) => ({ work: w, ref: ref.trim() })), ...(VERSE.test(verse.trim()) ? [{ work: "quran", ref: verse.trim() }] : []), ...(grammar.trim() ? [{ work: "grammar", ref: grammar.trim() }] : [])];
-  const valid = text.trim().length > 0 && why.trim().length > 0 && (!startsFromCurrent || text.trim() !== current.trim()) && (!morph || !!field) && (!verse.trim() || VERSE.test(verse.trim()));
+  const sources = toSources(draft);
+  const valid = text.trim().length > 0 && why.trim().length > 0 && (!startsFromCurrent || text.trim() !== current.trim()) && (!morph || !!field) && verseOk(draft.verse);
   const heading = useProposalHeading()(kind, target.ordinal);
 
   async function send(e: React.FormEvent) {
@@ -67,8 +65,12 @@ export function ProposalForm({ target, kinds, initialText, onClose }: { target: 
     try {
       const p = await submit({ kind, lemma: target.slug, sense_ordinal: target.ordinal ?? null, location: target.at ?? null, field: body.field, current_text: current, text: body.text, why: body.why, sources });
       setState({ step: "sent", id: p.id });
+      // the queue, "What you proposed" and the word's own list show it now, not in an hour (audit 12 F2)
+      void qc.invalidateQueries({ queryKey: ["queue"] });
+      void qc.invalidateQueries({ queryKey: ["my-proposals"] });
+      void qc.invalidateQueries({ queryKey: ["lemma-contrib", target.slug] });
     } catch (err) {
-      setState({ step: "write", error: err instanceof ApiError ? (err.status === 429 ? tc("tooMany") : err.detail) : tc("failed") });
+      setState({ step: "write", error: refusal(err) });
     }
   }
 
@@ -143,24 +145,7 @@ export function ProposalForm({ target, kinds, initialText, onClose }: { target: 
         </span>
         <input value={why} onChange={(e) => setWhy(e.target.value)} placeholder={morph ? t("morphWhyPlaceholder") : t("whyPlaceholder")} className="field min-h-[40px]" dir="auto" required />
       </label>
-      {!morph && (
-        <fieldset className="flex flex-col gap-2">
-          <legend className="label-caps">{t("sources")}</legend>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label={tc("lexicons")}>
-            {(dicts.data?.data ?? []).map((d) => (
-              <button key={d.key} type="button" className={"chip" + (works.includes(d.key) ? " is-on" : "")} aria-pressed={works.includes(d.key)} onClick={() => setWorks((s) => (s.includes(d.key) ? s.filter((x) => x !== d.key) : [...s, d.key]))}>
-                {locale === "ar" ? d.name_ar : d.name_en}
-              </button>
-            ))}
-          </div>
-          {works.length > 0 && <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={tc("refPlaceholder")} aria-label={tc("ref")} className="field min-h-[40px]" dir="auto" />}
-          <div className="grid gap-2 sm:grid-cols-2">
-            <input value={verse} onChange={(e) => setVerse(e.target.value)} placeholder={tc("versePlaceholder")} aria-label={tc("verse")} className="field min-h-[40px]" dir="ltr" inputMode="numeric" aria-invalid={!!verse.trim() && !VERSE.test(verse.trim())} />
-            <input value={grammar} onChange={(e) => setGrammar(e.target.value)} placeholder={tc("grammarPlaceholder")} aria-label={tc("grammar")} className="field min-h-[40px]" dir="auto" />
-          </div>
-          {(kind === "edit" || kind === "sense" || kind === "gloss") && !sources.some((s) => s.work !== "grammar" || s.ref) && <p className="text-[11.5px] text-amber">{tc("needsSource")}</p>}
-        </fieldset>
-      )}
+      {!morph && <SourceFields draft={draft} onChange={setDraft} needsSource={kind === "edit" || kind === "sense" || kind === "gloss"} />}
       {state.error && (
         <p className="text-[12.5px] text-bad" role="alert">
           {state.error}

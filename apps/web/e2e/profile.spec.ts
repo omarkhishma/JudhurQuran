@@ -81,7 +81,7 @@ test("signed out: the local reader, what they have, their records in tabs linkin
   if (isMobile) await expectNoHorizontalScroll(page);
   await page.evaluate(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true, proposals: [] }, version: 2 })));
   await page.goto("/me");
-  await expect(page.locator(".profile-empty")).toHaveText("لا مقترحات بعد — استعمل «اقترح تعديلًا» على أي معنى في القارئ.");
+  await expect(page.locator(".profile-empty")).toHaveText("لا مقترحات بعد — افتح كلمة في القارئ واقترح لها معنى أدق أو معنى جديدًا أو تصحيحًا.");
 });
 
 test("your data: the export holds every key the site keeps, every key is the site's, and deleting leaves nothing of the reader (PRF-09…13, Q03, P6.4)", async ({ page }) => {

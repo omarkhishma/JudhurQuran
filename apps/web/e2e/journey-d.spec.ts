@@ -115,8 +115,18 @@ test("journey D: proposed in the Reader, approved by a reviewer and the board, c
     // the board approves and merges
     await test.step("editor opens", () => e.goto(`/review?id=${id}`));
     await e.getByRole("button", { name: "وافق واعتمد" }).click();
+    // the outcome is said, and the queue moves on from the settled proposal (RVQ-44; audit 12 F27, F29)
+    await expect(e.locator(".queue-screen [role=status]").first()).toContainText("وُوفق عليه واعتُمد");
+    await expect
+      .poll(() => {
+        const u = new URL(e.url());
+        return u.searchParams.get("id") !== id || u.searchParams.get("filter") === "merged";
+      })
+      .toBe(true);
+    // under Merged, credited
+    await e.goto(`/review?filter=merged&id=${id}`);
+    await expect(e.getByRole("button", { name: /^اعتُمدت/ })).toHaveAttribute("aria-pressed", "true");
     await expect(e.locator(".settled-banner.is-merged")).toContainText(`يُنسب إلى أمل ${t}`);
-    await expect(e.getByRole("button", { name: "اعتُمدت" })).toBeVisible();
 
     // the Reader: beside the corpus gloss, never over it, with its credit line
     await test.step("reader", () => a.goto(`/quran/2?w=ilm&at=${PLACE}`));

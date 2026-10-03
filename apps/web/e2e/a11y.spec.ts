@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { followSignInLink } from "./helpers";
 
-const PAGES = ["/", "/quran", "/quran/1", "/quran/2/255", "/word/2:255:23", `/roots/${encodeURIComponent("علم")}`, "/search?q=%D8%B5%D8%A8%D8%B1", "/concordance", "/concordance?view=dist", "/about", "/sources", "/saved", "/en", "/en/word/1:1:1", "/analyse", "/analyse?q=2%3A255&view=interlinear", "/library", "/library/text/missing", "/explore", "/notebook"];
+const PAGES = ["/", "/quran", "/quran/1", "/quran/2/255", "/word/2:255:23", `/roots/${encodeURIComponent("علم")}`, "/search?q=%D8%B5%D8%A8%D8%B1", "/concordance", "/concordance?view=dist", "/about", "/sources", "/saved", "/en", "/en/word/1:1:1", "/analyse", "/analyse?q=2%3A255&view=interlinear", "/library", "/library/text/missing", "/explore", "/notebook", "/data", "/review/guidelines"];
 
 for (const path of PAGES) {
   test(`axe: ${decodeURIComponent(path)}`, async ({ page }) => {
@@ -83,6 +83,27 @@ const STATES: { name: string; path: string; act?: (page: Page) => Promise<void>;
   { name: "the profile's account tab, signed out", path: "/me?tab=account", act: async (page) => void (await page.getByLabel("بريدك الإلكتروني").waitFor()) },
   { name: "the profile's account tab, signed in", path: "/", act: signedIn, after: dropAccount },
   { name: "the sign-in page", path: "/signin" },
+  // the review queue and a proposal (audit 12 F28): the first in the list, whatever the database holds
+  {
+    name: "the review queue",
+    path: "/review",
+    act: async (page) => {
+      await page.locator(".queue-list .queue-row, .queue-list p").first().waitFor();
+      if (await page.locator(".queue-row").count()) {
+        // a phone shows the list, then the proposal (RVQ-81)
+        if ((page.viewportSize()?.width ?? 1440) < 900) await page.locator(".queue-row").first().click();
+        await page.locator("#proposal-title").waitFor();
+      }
+    },
+  },
+  {
+    name: "the proposal form",
+    path: "/quran/2?w=ilm&at=2:32:4",
+    act: async (page) => {
+      await page.getByRole("button", { name: "اقترح معنى حرفيًا أدق" }).first().click();
+      await page.getByRole("dialog").waitFor();
+    },
+  },
   { name: "a sign-in link's page", path: "/auth/verify?token=not-a-real-token-but-shaped-like-one", act: async (page) => void (await page.getByRole("button", { name: "ادخل", exact: true }).waitFor()) },
   { name: "the privacy page", path: "/privacy" },
   {

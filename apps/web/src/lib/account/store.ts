@@ -45,9 +45,17 @@ export class ApiError extends Error {
   constructor(
     readonly status: number,
     readonly detail: string,
+    /** the API's reason, which the reader is told in their own language (lib/account/errors) */
+    readonly code: string | null = null,
   ) {
     super(`${status} ${detail}`);
   }
+}
+
+/** The API's error envelope, read into an ApiError. */
+export async function apiError(r: Response, fallback: string): Promise<ApiError> {
+  const body = (await r.json().catch(() => null)) as { error?: { message?: string; code?: string }; detail?: string } | null;
+  return new ApiError(r.status, body?.error?.message ?? body?.detail ?? fallback, body?.error?.code ?? null);
 }
 
 /** The API as the signed-in reader: a 401 means the session ended elsewhere, so this device signs out too. */
@@ -59,10 +67,7 @@ export async function authFetch<T>(path: string, init: RequestInit = {}): Promis
     useAccount.getState().signOut();
     throw new SignedOut();
   }
-  if (!r.ok) {
-    const body = (await r.json().catch(() => null)) as { error?: { message?: string }; detail?: string } | null;
-    throw new ApiError(r.status, body?.error?.message ?? body?.detail ?? path);
-  }
+  if (!r.ok) throw await apiError(r, path);
   return (await r.json()) as T;
 }
 

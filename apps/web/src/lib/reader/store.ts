@@ -288,6 +288,8 @@ export type Proposal = {
   sources: (string | { work: string; ref: string })[];
   status: "pending";
   ts: number;
+  /** the queue refused it, and why (its reason code): kept, and not sent again until the reader asks (audit 12 F17) */
+  refused?: { code: string | null; at: number };
 };
 
 type PersonalState = {

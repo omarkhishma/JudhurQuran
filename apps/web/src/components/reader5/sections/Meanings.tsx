@@ -86,7 +86,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
         <ol className="flex flex-col gap-2">
           {w.senses.map((s) => (
             <li key={s.id} className="sense-row">
-              <span className="mono text-[11px] text-t3">{String(s.ordinal).padStart(2, "0")}</span>
+              <span className="mono text-[11px] text-t3">{formatNumber(s.ordinal, locale).padStart(2, locale === "ar" ? "٠" : "0")}</span>
               <div className="flex min-w-0 flex-col gap-1">
                 {/* a merged edit above the source's wording, which stays (D4, L2) */}
                 {merges.filter((m) => m.kind === "edit" && m.sense_ordinal === s.ordinal).map((m) => (
@@ -102,6 +102,8 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
           ))}
         </ol>
       ) : null}
+      {/* a word with a sense list keeps its merged glosses too, beside the list (audit 12 F30) */}
+      {w.senses.length > 0 && merges.filter((m) => m.kind === "gloss").map((m) => <MergedLine key={m.id} m={m} />)}
       {w.senses.length === 0 && (
         <>
           {lines.length > 0 ? (
@@ -135,7 +137,8 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
           )}
         </>
       )}
-      <MergedSenses items={merges.filter((m) => m.kind === "sense")} />
+      {/* numbered after the sourced lines above, never from 01 again (audit 12 F12) */}
+      <MergedSenses items={merges.filter((m) => m.kind === "sense")} after={w.senses.length > 0 ? Math.max(...w.senses.map((s) => s.ordinal)) : lines.length} />
       <EditorsNotes items={merges.filter((m) => ["morphology", "error", "attest", "entry"].includes(m.kind))} />
       <MyProposals slug={w.slug} drafts={drafts} />
       {w.particles.length > 0 && <ParticlesBlock items={w.particles} />}
@@ -149,7 +152,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
         <button type="button" className="btn text-[12px]" onClick={() => setSuggest({ kind: "sense", slug: w.slug, label: w.ar.full, current: "" })}>
           + {t("proposeSense")}
         </button>
-        <button type="button" className="btn text-[12px]" onClick={() => setSuggest({ kind: "error", slug: w.slug, label: w.ar.full, current: `${w.ar.full} — ${w.gloss_en ?? ""}` })}>
+        <button type="button" className="btn text-[12px]" onClick={() => setSuggest({ kind: "error", slug: w.slug, label: w.ar.full, current: w.ar.full })}>
           {t("reportError")}
         </button>
       </div>
