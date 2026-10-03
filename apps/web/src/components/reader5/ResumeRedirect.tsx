@@ -39,10 +39,14 @@ export function ResumeRedirect() {
         }
         keep.set("w", w);
       }
-      const prog = usePersonal.getState().progress.quran;
+      // a stored position is only trusted when it names a real sūra and verse: a stale or edited one
+      // opens al-Fātiḥa instead of a missing page (RDR-538)
+      const saved = usePersonal.getState().progress.quran;
+      const prog = saved && Number.isInteger(saved.chapter) && saved.chapter >= 1 && saved.chapter <= 114 ? saved : null;
+      const passage = prog && Number.isInteger(prog.passage) && prog.passage > 1 && prog.passage <= 286 ? prog.passage : null;
       const qs = keep.toString();
       if (cancelled) return;
-      router.replace(`/quran/${prog?.chapter ?? 1}${qs ? `?${qs}` : ""}${prog && prog.passage > 1 && !qs ? `#v${prog.passage}` : ""}`);
+      router.replace(`/quran/${prog?.chapter ?? 1}${qs ? `?${qs}` : ""}${passage && !qs ? `#v${passage}` : ""}`);
     }
     // the persisted store hydrates synchronously from localStorage; wait one frame for it to settle
     const id = requestAnimationFrame(() => void go());
