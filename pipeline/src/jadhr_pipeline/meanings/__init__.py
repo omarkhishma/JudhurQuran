@@ -1,11 +1,15 @@
 """Meanings (PLAN P3.1, decision D6): the sourced material behind the panel's «المعاني» section.
 
-Builders, each ``(raw, build_dir, registry) -> (tables, report)``, with a CLI that writes JSONL
-(``python -m jadhr_pipeline.meanings gharib <out_dir>``):
+Two builders, each ``(raw, build_dir, registry) -> (tables, report)``, with a CLI that writes JSONL
+(``python -m jadhr_pipeline.meanings gharib|mufradat <out_dir>``):
 
 * ``build_gharib`` — a contextual Arabic meaning per Quranic phrase from the King Fahd Complex's «الميسر في غريب
   القرآن الكريم», read from the Complex's own Word file and aligned to our word locations (``gharib.py``;
   registry ``data/gharib.yaml``). Tables ``gharib_works`` and ``gharib_meanings``.
+* ``build_mufradat`` — al-Rāghib al-Iṣfahānī's «المفردات في غريب القرآن» cut, article by article, into the
+  words each article treats, mapped to our lemmas, with the senses the text numbers and the Quran quotations
+  resolved to verses (``mufradat.py``; the work's registry is ``data/lexica.yaml``). Tables
+  ``mufradat_subentries``, ``mufradat_senses`` and ``mufradat_citations``.
 
 Every row is a verbatim slice of its source with a locator and status ``extracted`` — never ``reviewed``;
 editors review in the workbench (P3.0). Mappings are mechanical and store their method and confidence; what
@@ -24,8 +28,9 @@ import yaml
 
 from .docx import paragraphs
 from .gharib import STATUS, ParseError, VerseTokens, build_rows, parse
+from .mufradat import build_mufradat
 
-__all__ = ["STATUS", "GharibRegistryError", "ParseError", "build_gharib", "write_tables"]
+__all__ = ["STATUS", "GharibRegistryError", "ParseError", "build_gharib", "build_mufradat", "write_tables"]
 
 WORK_FIELDS = (
     "id",

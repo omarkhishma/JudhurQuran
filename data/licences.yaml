@@ -556,7 +556,7 @@ licences:
   - topic: other
     quote: 'المحقق: صفوان عدنان الداودي'
     url: https://shamela.ws/book/23636
-  our_use: 'Display only: al-Raghib (d. 502 AH)''s articles (editor footnotes, markers and front matter removed per lexica.yaml cleaning_rules) shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release.'
+  our_use: 'Display only: al-Raghib (d. 502 AH)''s articles (editor footnotes, markers and front matter removed per lexica.yaml cleaning_rules) shown per root with the edition cited; served one article at a time by the public API (/lexicon/entries/{id}, labelled display-only); excluded from the bulk release. P3.1 cuts the same stored articles into sub-entries per word treated and numbered senses (mufradat_subentries, mufradat_senses: offsets into the article, no new text) for the same display-only use; the edition''s bracketed verse references are read only as hints for resolving quotations.'
   status: conflict
   notes:
   - 'Dataset unchanged since our pin (HEAD = 07554bee, last modified 2026-05-19): its YAML still tags ''license: mit'' while its own licence section says ''Research and personal use''.'
