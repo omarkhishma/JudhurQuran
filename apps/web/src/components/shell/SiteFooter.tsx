@@ -23,6 +23,8 @@ export async function SiteFooter() {
           <Link href="/sources" className="hover:text-t1">{t("sources")}</Link>
           <Link href="/developers" className="hover:text-t1">{t("developers")}</Link>
           <Link href="/privacy" className="hover:text-t1">{t("privacy")}</Link>
+          {/* the footer's Contribute (SHL-40): the review queue, where proposals are read and decided */}
+          <Link href="/review" className="hover:text-t1">{t("contribute")}</Link>
         </nav>
       </div>
       <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 border-t border-line px-4 py-3 text-center text-[12px] text-t3" lang={locale}>

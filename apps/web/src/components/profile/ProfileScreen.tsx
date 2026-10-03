@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { initial, SignInSheet } from "@/components/account/AccountButton";
 import { Link, usePathname } from "@/i18n/navigation";
 import { authFetch, useAccount } from "@/lib/account/store";
+import { myProposals, type ProposalOut } from "@/lib/contrib";
 import { useIsClient } from "@/lib/client";
 import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
 import { listGraphs } from "@/lib/graph/persist";
@@ -138,13 +139,17 @@ function Counts() {
   const verseNotes = useSaved((s) => Object.keys(s.notes).length);
   const notes = useNotebook((s) => s.notes.length);
   const cards = useReview((s) => Object.keys(s.cards).length);
+  const session = useAccount((s) => s.session);
+  const server = useQuery({ queryKey: ["my-proposals", session], queryFn: myProposals, enabled: client && !!session, staleTime: 30_000 });
+  const merged = server.data?.data.filter((p) => p.status === "merged").length ?? 0;
+  const inQueue = server.data?.data.filter((p) => p.status === "open" || p.status === "approved" || p.status === "changes").length ?? 0;
   const graphs = useQuery({ queryKey: ["my-graphs"], queryFn: listGraphs, enabled: client });
   const texts = useQuery({ queryKey: ["user-texts"], queryFn: listTexts, enabled: client });
   const n = (x: number | undefined) => (client && x !== undefined ? formatNumber(x, locale) : "–");
   const rows: [string, string][] = [
-    // merged contributions come with the review queue (P7): until then none can be, and the count says so
-    [t("merged"), n(0)],
-    [t("pending"), n(proposals)],
+    // merged and pending: the account's proposals in the queue, and the drafts kept here (PRF-08, P7)
+    [t("merged"), n(merged)],
+    [t("pending"), n(proposals + inQueue)],
     [t("graphs"), n(graphs.data?.length)],
     [t("texts"), n(texts.data?.length)],
     [t("notes"), ready ? n(notes + verseNotes) : "–"],
@@ -261,10 +266,16 @@ type Row = { id: string; dot: string; ar: string | null; text: string; when: str
 /** PRF-15…28: the reader's own records, each linking back to where it was made, with copy naming what fills an empty tab. */
 function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
   const t = useTranslations("me");
+  const tc = useTranslations("contrib");
+  const tw = useTranslations("wordContrib");
   const locale = useLocale();
+  const statusText = (p: ProposalOut) =>
+    p.status === "merged" ? tc("filter.merged") : p.status === "withdrawn" ? tc("withdrawn") : tw(`status.${p.status}`, { n: formatNumber(p.approvals, locale) });
   const ready = useNotebookReady();
   const proposals = usePersonal((s) => s.proposals);
   const sessions = usePersonal((s) => s.sessions);
+  const session = useAccount((s) => s.session);
+  const server = useQuery({ queryKey: ["my-proposals", session], queryFn: myProposals, enabled: tab === "contributions" && !!session, staleTime: 30_000 });
   const bookmarks = useSaved((s) => s.bookmarks);
   const verseNotes = useSaved((s) => s.notes);
   const notes = useNotebook((s) => s.notes);
@@ -274,10 +285,21 @@ function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
   const day = (d: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${d}T12:00:00`));
 
   const rows: Row[] | null = useMemo(() => {
-    if (tab === "contributions")
-      return [...proposals]
-        .sort((a, b) => b.ts - a.ts)
-        .map((p) => ({ id: p.id, dot: "var(--amber)", ar: p.label, text: `${t("kind." + p.kind)} • ${p.text.slice(0, 90)}`, when: t("draft", { date: date(p.ts) }), href: `/read?w=${encodeURIComponent(p.slug)}` }));
+    if (tab === "contributions") {
+      // PRF-17…19: the account's proposals with their status (merged green, waiting amber, settled grey), the
+      // drafts kept here; each links to where it is decided, and every label is a word, never a raw id
+      const sent = (server.data?.data ?? []).map((p) => ({
+        id: p.id,
+        dot: p.status === "merged" ? "var(--good)" : p.status === "declined" || p.status === "withdrawn" ? "var(--line-2)" : "var(--amber)",
+        ar: p.lemma_ar,
+        text: `${tc("kind." + p.kind)} • ${p.text.slice(0, 90)}`,
+        when: `${statusText(p)} • ${date(Date.parse(p.created_at))}`,
+        href: `/review?filter=mine&id=${p.id}`,
+        at: Date.parse(p.created_at),
+      }));
+      const drafts = proposals.map((p) => ({ id: p.id, dot: "var(--amber)", ar: p.label, text: `${tc("kind." + p.kind)} • ${p.text.slice(0, 90)}`, when: t("draft", { date: date(p.ts) }), href: `/read?w=${encodeURIComponent(p.slug)}`, at: p.ts }));
+      return [...drafts, ...sent].sort((a, b) => b.at - a.at).map((r) => ({ id: r.id, dot: r.dot, ar: r.ar, text: r.text, when: r.when, href: r.href }));
+    }
     if (tab === "bookmarks")
       return [...bookmarks]
         .sort((a, b) => b.at - a.at)
@@ -310,7 +332,7 @@ function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
     return mergeSessions(sessions)
       .sort((a, b) => b.day.localeCompare(a.day))
       .map((s) => ({ id: `${s.day}:${s.text}`, dot: "var(--c-root)", ar: s.roots.slice(0, 3).join(" • ") || null, text: `${s.text === "quran" ? t("quran") : s.text} • ${t("lookupsCount", cnt(s.lookups, locale))}`, when: day(s.day), href: "/notebook?tab=journal" }));
-  }, [tab, proposals, bookmarks, notes, verseNotes, graphs.data, texts.data, sessions, ready, t, locale]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, proposals, server.data, bookmarks, notes, verseNotes, graphs.data, texts.data, sessions, ready, t, locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!rows) return <div className="h-24 animate-pulse rounded-xl bg-card-2" aria-hidden="true" />;
   if (!rows.length) return <p className="profile-empty">{t("empty." + tab)}</p>;

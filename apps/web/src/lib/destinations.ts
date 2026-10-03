@@ -22,7 +22,7 @@ export const DESTINATIONS: Destination[] = [
   { key: "review", href: "/read?mode=review" },
   { key: "notebook", href: "/notebook" },
   { key: "saved", href: "/saved" },
-  { key: "reviewQueue", href: "/review", phase: "P7" },
+  { key: "reviewQueue", href: "/review" },
   { key: "classroom", href: "/classroom", phase: "P9" },
   { key: "published", href: null, phase: "P8" },
   { key: "profile", href: "/me" },

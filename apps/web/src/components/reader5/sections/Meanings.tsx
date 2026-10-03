@@ -5,7 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { Term } from "@/components/terms/Term";
 import { cnt, formatNumber } from "@/lib/format";
-import { type Proposal, type SuggestField, type SuggestTarget, usePersonal, useReader } from "@/lib/reader/store";
+import { EditorsNotes, MergedLine, MergedSenses, MyProposals, useDrafts, useWordContributions } from "@/components/contrib/WordContributions";
+import { type SuggestField, type SuggestTarget, useReader } from "@/lib/reader/store";
 import { showHemistichs } from "@/lib/openiti";
 import { getJSON } from "@/lib/reader/api";
 import type { Features, Label, Mufradat, ParticleEntry, ParticleLink, WordPayload } from "@/lib/reader/types";
@@ -23,9 +24,12 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const setSuggest = useReader((s) => s.setSuggest);
-  const proposals = usePersonal((s) => s.proposals);
-  const mine = proposals.filter((p) => p.slug === w.slug);
-  const lines: { key: string; text: ReactNode; source: ReactNode; lang: string; suggest?: SuggestTarget }[] = [];
+  const drafts = useDrafts(w.slug);
+  // what readers proposed and two reviewers, one of the board, approved: shown beside the sources (P7.3)
+  const merges = useWordContributions(w.slug).data?.data ?? [];
+  const glossHere = merges.filter((m) => m.kind === "gloss" && m.location && m.location === w.occurrence?.location);
+  const glossLemma = merges.filter((m) => m.kind === "gloss" && !m.location);
+  const lines: { key: string; text: ReactNode; source: ReactNode; lang: string; suggest?: SuggestTarget; merged?: typeof merges }[] = [];
   // the meaning of this very place first: al-Muyassar fī Gharīb, phrase by phrase (P3.1)
   for (const m of w.occurrence?.meanings_here ?? []) {
     lines.push({
@@ -70,26 +74,11 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
   if (w.occurrence?.gloss_en) {
     // a gloss is open to proposals, for this place or for the lemma (RDR-567)
     const at = w.occurrence.location;
-    lines.push({ key: "wbw", text: w.occurrence.gloss_en, source: t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }), lang: "en", suggest: { kind: "gloss", slug: w.slug, label: w.occurrence.surface.full, at, current: w.occurrence.gloss_en } });
+    lines.push({ key: "wbw", text: w.occurrence.gloss_en, source: t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }), lang: "en", suggest: { kind: "gloss", slug: w.slug, label: w.occurrence.surface.full, at, current: w.occurrence.gloss_en }, merged: glossHere });
   }
   if (w.gloss_en) {
-    lines.push({ key: "lemma", text: w.gloss_en, source: t("lemmaGlossCredit"), lang: "en", suggest: { kind: "gloss", slug: w.slug, label: w.ar.full, current: w.gloss_en } });
+    lines.push({ key: "lemma", text: w.gloss_en, source: t("lemmaGlossCredit"), lang: "en", suggest: { kind: "gloss", slug: w.slug, label: w.ar.full, current: w.gloss_en }, merged: glossLemma });
   }
-
-  const proposalTitle = (p: Proposal) => {
-    switch (p.kind) {
-      case "edit":
-        return t("proposalEdit", { n: formatNumber(p.ordinal ?? 0, locale) });
-      case "sense":
-        return t("proposalSense");
-      case "gloss":
-        return t("proposalGloss");
-      case "morphology":
-        return t("proposalMorph", { field: p.field ? t(p.field) : "" });
-      default:
-        return t("proposalError");
-    }
-  };
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -99,6 +88,10 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
             <li key={s.id} className="sense-row">
               <span className="mono text-[11px] text-t3">{String(s.ordinal).padStart(2, "0")}</span>
               <div className="flex min-w-0 flex-col gap-1">
+                {/* a merged edit above the source's wording, which stays (D4, L2) */}
+                {merges.filter((m) => m.kind === "edit" && m.sense_ordinal === s.ordinal).map((m) => (
+                  <MergedLine key={m.id} m={m} />
+                ))}
                 {s.text_ar && <p className="text-[15px] leading-[1.8] text-t1" lang="ar" dir="rtl">{s.text_ar}</p>}
                 {s.text_en && <p className="text-[13.5px] italic text-t2" lang="en" dir="ltr">{s.text_en}</p>}
                 <button type="button" className="suggest-link self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest({ kind: "edit", slug: w.slug, label: w.ar.full, ordinal: s.ordinal, current: s.text_ar ?? s.text_en ?? "" })}>
@@ -125,6 +118,9 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
                       {l.text}
                     </p>
                     <p className="text-[11px] text-t3">{l.source}</p>
+                    {l.merged?.map((m) => (
+                      <MergedLine key={m.id} m={m} />
+                    ))}
                     {l.suggest && (
                       <button type="button" className="suggest-link self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest(l.suggest!)}>
                         {t("suggestGloss")}
@@ -139,22 +135,9 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
           )}
         </>
       )}
-      {mine.length > 0 && (
-        // what the reader proposed for this word, until the review queue (P7) takes it (RDR-322)
-        <section className="proposals-mine" aria-label={t("proposalsMine")}>
-          <p className="label-caps">{t("proposalsMine")}</p>
-          {mine.map((p) => (
-            <div key={p.id} className="proposal-row">
-              <p className="text-[12px] font-medium text-t2">
-                {proposalTitle(p)}
-                {p.at ? ` • ${p.at}` : ""}
-              </p>
-              <p className="text-[14px] leading-[1.8] text-t1" dir="auto">{p.text}</p>
-              <p className="text-[11px] text-amber">{t("proposalPending", { date: new Date(p.ts).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long" }) })}</p>
-            </div>
-          ))}
-        </section>
-      )}
+      <MergedSenses items={merges.filter((m) => m.kind === "sense")} />
+      <EditorsNotes items={merges.filter((m) => ["morphology", "error", "attest", "entry"].includes(m.kind))} />
+      <MyProposals slug={w.slug} drafts={drafts} />
       {w.particles.length > 0 && <ParticlesBlock items={w.particles} />}
       {w.loanwords?.length > 0 && <LoanwordsBlock items={w.loanwords} />}
       {w.mufradat && <MufradatBlock m={w.mufradat} />}

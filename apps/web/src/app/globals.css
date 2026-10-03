@@ -4873,3 +4873,22 @@ a.wotd-pill:hover {
   background: color-mix(in srgb, var(--good) 12%, var(--card));
   color: var(--good);
 }
+/* a contribution merged after review, beside the source it concerns (P7.3) */
+.merged-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-inline-start: 3px solid var(--good);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--good) 7%, var(--card));
+}
+.changelog-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}

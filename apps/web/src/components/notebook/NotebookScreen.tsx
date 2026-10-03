@@ -5,6 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { useDueCount } from "@/components/reader5/ReviewDeck";
 import { useStepViews } from "@/components/reader5/trailSteps";
+import { ProposalForm } from "@/components/contrib/ProposalForm";
+import { Dialog } from "@/components/ui/Dialog";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link } from "@/i18n/navigation";
 import { normalize } from "@/lib/arabic/normalize";
@@ -263,6 +265,7 @@ function NoteEditor({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
       </div>
       <textarea value={x.body} onChange={(e) => update(x.id, { body: e.target.value })} rows={10} className="field notebook-body" placeholder={t("bodyPlaceholder")} aria-label={t("bodyLabel")} dir="auto" />
       <LinkedChips resolved={resolved} />
+      <ProposeFromNote words={resolved.filter((r) => r.kind === "word" && r.slug)} body={x.body} />
       <div className="flex flex-wrap gap-2">
         <button type="button" className="btn" onClick={() => download(`${(x.title || "note").replace(/[\\/:*?"<>|]/g, "-")}.md`, toMarkdown(x, locale), "text/markdown")}>{t("export")}</button>
         <span className="flex-1" />
@@ -412,6 +415,38 @@ function useResolved(body: string): Resolved[] {
     if (w?.slug) return { mention: m, href: `/read?w=${encodeURIComponent(w.slug)}`, label: w.ar, kind: "word", root: w.root ?? undefined, slug: w.slug };
     return { mention: m, href: null, label: m.raw, kind: d ? "none" : "word" };
   });
+}
+
+/**
+ * Propose from a note (NTB-22, 23, Q07): a word the note mentions, a proposal form prefilled with the note — a new
+ * sense, an error report or an attestation — that the reader edits and sends themselves; a private note is never
+ * sent by itself. With no word mentioned, it says how to name one.
+ */
+function ProposeFromNote({ words, body }: { words: Resolved[]; body: string }) {
+  const t = useTranslations("notebook");
+  const tc = useTranslations("contrib");
+  const [word, setWord] = useState<Resolved | null>(null);
+  return (
+    <section className="flex flex-col gap-1.5" aria-label={t("propose")}>
+      <p className="label-caps">{t("propose")}</p>
+      {words.length === 0 ? (
+        <p className="text-[12.5px] text-t3">{t("proposeNeedsWord")}</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {words.slice(0, 6).map((w) => (
+            <button key={w.slug} type="button" className="btn min-h-[40px]" onClick={() => setWord(w)}>
+              {t("proposeOn")} <span className="ar-classical text-[16px]" lang="ar">{w.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {word?.slug && (
+        <Dialog open onClose={() => setWord(null)} label={tc("dialogLabel")} width={480}>
+          <ProposalForm target={{ kind: "sense", slug: word.slug, label: word.label, current: "" }} kinds={["sense", "error", "attest"]} initialText={body} onClose={() => setWord(null)} />
+        </Dialog>
+      )}
+    </section>
+  );
 }
 
 function LinkedChips({ resolved }: { resolved: Resolved[] }) {

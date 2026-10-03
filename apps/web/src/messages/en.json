@@ -58,7 +58,8 @@
     "data": "Data & API",
     "me": "My account",
     "more": "More",
-    "ask": "Ask"
+    "ask": "Ask",
+    "contribute": "Contribute"
   },
   "hub": {
     "rootOfDay": "Root of the day",
@@ -382,7 +383,10 @@
     "back": "← All notes",
     "emptied": "You emptied this note. Delete it, or bring its text back?",
     "restoreText": "Bring the text back",
-    "backlinks": "In your notes"
+    "backlinks": "In your notes",
+    "propose": "Propose from this note",
+    "proposeOn": "Propose on",
+    "proposeNeedsWord": "Mention a word with @ to propose a meaning, an error report or an attestation for it; nothing of your note is sent but what you choose."
   },
   "surah": {
     "index": "Surah index",
@@ -1918,5 +1922,39 @@
     "keptTitle": "Your proposal is kept on this device. Sign in to send it for review; nothing you wrote is lost.",
     "footSigned": "It goes to the review queue, where reviewers and readers see it under the name you chose. Two independent approvals, one of them the editorial board's, merge it.",
     "footLocal": "It is kept on your device, then sent to the review queue when you sign in. Two independent approvals, one of them the editorial board's, merge it."
+  },
+  "wordContrib": {
+    "former": "a former contributor",
+    "credit": "proposed by {who} • reviewed by {reviewers}",
+    "decisions": "decisions",
+    "label": {
+      "edit": "wording reviewed by the editors",
+      "sense": "meaning reviewed by the editors",
+      "gloss": "gloss reviewed by the editors",
+      "morphology": "correction accepted by the editors",
+      "error": "error report accepted by the editors",
+      "attest": "attestation accepted by the editors",
+      "entry": "entry accepted by the editors"
+    },
+    "senses": "Meanings proposed by readers and reviewed by the editors",
+    "notes": "Editors' notes",
+    "mine": "What you proposed",
+    "draft": "kept on this device • sent for review when you sign in • {date}",
+    "draftSending": "kept on this device • being sent for review • {date}",
+    "status": {
+      "open": "in the review queue • {n} of 2 approvals",
+      "approved": "approved by two reviewers • waiting for the editorial board",
+      "changes": "changes requested",
+      "declined": "declined"
+    },
+    "follow": "follow it"
+  },
+  "changelog": {
+    "title": "Changelog",
+    "lead": "Every reader's proposal the editors merged and every one they reverted, newest first, with the dataset release it was proposed against.",
+    "failed": "The changelog could not be loaded just now.",
+    "empty": "Nothing merged yet.",
+    "merged": "merged",
+    "reverted": "reverted"
   }
 }
