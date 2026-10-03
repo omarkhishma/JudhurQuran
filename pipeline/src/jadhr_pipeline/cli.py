@@ -51,6 +51,7 @@ def main(argv: list[str] | None = None) -> int:
             REPO / "data/lexica.yaml",
             REPO / "data/particles.yaml",
             REPO / "data/loanwords.yaml",
+            REPO / "data/collections.yaml",
         )
         print(
             json.dumps(

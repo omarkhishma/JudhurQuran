@@ -15,6 +15,7 @@ from typing import Any
 
 import yaml
 
+from .collections import build_collections
 from .knowledge import build_knowledge
 from .loanwords import build_loanwords
 from .meanings import build_gharib, build_mufradat
@@ -54,6 +55,7 @@ def build_layers(
     lexica_registry: Path | None = None,
     particles_registry: Path | None = None,
     loanwords_registry: Path | None = None,
+    collections_registry: Path | None = None,
 ) -> dict[str, Any]:
     """Build the layers into ``out`` and merge their reports into ``out/report.json``: the Quran knowledge
     layers, the relation seeds and, when its registry is given, the pattern catalog (P3.3)."""
@@ -109,6 +111,13 @@ def build_layers(
         report["loanwords"] = w_report.get("totals")
     for name, rows in m_tables.items():
         _write(out, name, rows)
+    # P5.2 curated sets: computed from the tables above (lemmas, loanword links, the pattern catalogue)
+    c_tables: dict[str, list[dict[str, Any]]] = {}
+    if collections_registry is not None:
+        c_tables, c_report = build_collections(out, collections_registry)
+        for name, rows in c_tables.items():
+            _write(out, name, rows)
+        report["collections"] = c_report
 
     report["knowledge"] = k_report
     report["relations"] = r_report
@@ -117,6 +126,7 @@ def build_layers(
         | {name: len(rows) for name, rows in r_tables.items()}
         | {name: len(rows) for name, rows in p_tables.items()}
         | {name: len(rows) for name, rows in m_tables.items()}
+        | {name: len(rows) for name, rows in c_tables.items()}
     )
     (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     return {
@@ -124,4 +134,5 @@ def build_layers(
         "relations": r_report.get("totals"),
         "patterns_catalog": {name: len(rows) for name, rows in p_tables.items()},
         "meanings": {name: len(rows) for name, rows in m_tables.items()},
+        "collections": {name: len(rows) for name, rows in c_tables.items()},
     }

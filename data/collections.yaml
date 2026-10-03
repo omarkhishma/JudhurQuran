@@ -1,0 +1,83 @@
+# Curated sets of Quranic words (PLAN P5.2, inventory COL with COL-Q03). Editorial: the title, the copy and the
+# rule are ours; the items are computed from the build by the rule, so every claim in a set's copy holds for
+# its items. A word the copy names goes in `mentions` and the build fails if it is not among the items
+# (the prototype's "teacher" promise its items broke, COL-23). Copy is UI and plain grammar, Arabic first;
+# no meaning is given here — each item opens its entry, where meanings come from cited sources (L2).
+#
+# rule keys: root (root keys), patterns (pattern slugs) with optional pos and derivation, frequent (content
+# lemmas by occurrences), function_words (no root, not a content part of speech), loanwords (lemmas al-Suyūṭī's
+# claim is about as a whole — not one place or one form of them). `limit` caps the items, most frequent first.
+
+collections:
+  - id: ilm
+    colour: root
+    title_ar: "عائلة واحدة: ع ل م"
+    title_en: "One family: ʿ-l-m"
+    intro_ar: "ثلاثة أحرف، وكل كلمة هنا مبنية عليها، من العِلْم والعالِم إلى العالَمين. تأمّل كيف يغيّر الوزنُ عملَ الكلمة والجذرُ واحد."
+    intro_en: "Three letters, and every word here is built on them, from ʿilm and ʿālim to ʿālamīn. Watch how the shape changes the word's job while the root stays the same."
+    why_ar: "أوضح مثال على طريقة العربية في بناء الكلمات: الحروف نفسها، وأوزان مختلفة."
+    why_en: "The clearest example of how Arabic builds its words: the same letters, different shapes."
+    rule: { root: ["علم"] }
+    mentions: [ilm, alim, alamin]
+
+  - id: doers
+    colour: form
+    title_ar: "على وزن فاعِل"
+    title_en: "The shape fāʿil"
+    intro_ar: "كل كلمة هنا اسمُ فاعلٍ على وزن فاعِل، الوزن الذي يُصاغ عليه اسم الفاعل من الفعل الثلاثي المجرد. إذا عرفت الوزن عرفت كلمات كثيرة قبل أن تلقاها."
+    intro_en: "Every word here is an active participle on the shape fāʿil, the shape of the active participle of a plain three-letter verb. Know the shape and you know many words before you meet them."
+    why_ar: "معرفة الوزن أسرع مكسب للمبتدئ: وزن واحد يتكرر في جذور كثيرة."
+    why_en: "Knowing a shape is a beginner's fastest win: one shape repeats across many roots."
+    rule: { patterns: [faa3il], derivation: ACT_PCPL }
+    limit: 12
+
+  - id: places
+    colour: sentence
+    title_ar: "على وزنَي مَفْعَل ومَفْعِل"
+    title_en: "The shapes mafʿal and mafʿil"
+    intro_ar: "على هذين الوزنين تُصاغ أسماء الزمان والمكان من الفعل الثلاثي، وتأتي عليهما أيضًا مصادر تُسمّى الميمية؛ فاقرأ كل كلمة في آيتها لتعرف أيّها هي."
+    intro_en: "On these two shapes Arabic forms the nouns of time and place from a three-letter verb, and some verbal nouns too; read each word in its verse to tell which it is."
+    why_ar: "وزنان كثيرا الورود في القرآن، يجمعان الزمان والمكان والحدث في حروف قليلة."
+    why_en: "Two shapes the Quran uses often, holding time, place and the act itself in a few letters."
+    rule: { patterns: [maf3al, maf3il], pos: [N] }
+    limit: 12
+    # the rule as al-Shāfiya states it, quoted from the pattern catalogue (P3.3) with its source
+    quote: { section: time-place, kind: statement, source_id: shafiya }
+
+  - id: frequent
+    colour: word
+    title_ar: "الكلمات الأكثر ورودًا"
+    title_en: "The most frequent words"
+    # {coverage} is the share of the Quran's words these items account for, computed by the build
+    intro_ar: "هذه الكلمات وحدها {coverage} من كلمات القرآن. ابدأ بها تجد في كل صفحة شيئًا تعرفه."
+    intro_en: "These words alone are {coverage} of the Quran's words. Start with them and every page holds something you know."
+    why_ar: "الأكثر ورودًا أولًا: أقصر طريق إلى فهم ما تقرأ."
+    why_en: "The most frequent first: the shortest way to understanding what you read."
+    rule: { frequent: true }
+    limit: 12
+
+  - id: particles
+    colour: desc
+    title_ar: "الحروف والأدوات"
+    title_en: "Particles and function words"
+    intro_ar: "كلمات صغيرة تربط الكلام: حروف الجر والعطف والنفي والاستفهام والضمائر. لا جذر لها، ولمعانيها كتب تُسمّى كتب حروف المعاني."
+    intro_en: "Small words that hold speech together: prepositions, conjunctions, negation, questions and pronouns. They have no root, and their meanings have books of their own."
+    why_ar: "قليلة العدد كثيرة الورود؛ معرفتها تفتح بنية الجملة."
+    why_en: "Few in number, everywhere in the text: knowing them opens the sentence's frame."
+    rule: { function_words: true }
+    limit: 12
+
+  - id: loanwords
+    colour: amber
+    title_ar: "ما قيل إنه مُعرَّب"
+    title_en: "Words said to come from other languages"
+    intro_ar: "كلمات ذكرها السيوطي في «المهذّب فيما وقع في القرآن من المعرّب» على أن أصلها غير عربي. والمسألة خلافية بين العلماء، ولكلِّ رأيٍ قائلوه في مدخل الكلمة."
+    intro_en: "Words al-Suyūṭī lists in al-Muhadhdhab as of non-Arabic origin. Scholars disagree on the question, and each view is given with those who held it in the word's entry."
+    why_ar: "باب من أبواب تاريخ الكلمة، يُعرض بنسبته إلى قائله."
+    why_en: "A chapter in a word's history, shown with whoever claimed it."
+    rule: { loanwords: true }
+    # a name of God is not shown in a casual set as possibly foreign (respect, L5); al-Suyūṭī's claim about it
+    # stays in its entry with its attribution, so the disagreement is not hidden (L3). Flagged to the owner.
+    exclude: [rahman]
+    limit: 12
+    source: { work_ar: "السيوطي، المهذّب فيما وقع في القرآن من المعرّب", work_en: "al-Suyūṭī, al-Muhadhdhab fīmā waqaʿa fī l-Qurʾān min al-muʿarrab" }

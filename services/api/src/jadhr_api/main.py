@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import analyse, concordance, content, daily, knowledge, lexicon
+from . import analyse, collections, concordance, content, daily, knowledge, lexicon
 from .db import connect
 from .search import search as run_search
 from .settings import get_settings
@@ -552,6 +552,36 @@ def root_graph(request: Request, root: str) -> Response:
 def loanword_dispute(request: Request) -> Response:
     with connect() as conn:
         return cached(request, content.loanword_dispute(conn))
+
+
+@router.get("/collections", summary="Curated sets of Quranic words, with every member's slug")
+def collections_index(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": collections.collections_list(conn)})
+
+
+@router.get(
+    "/collections/{set_id}", summary="One curated set: its copy, its words with root, pattern and first place"
+)
+def collection_detail(request: Request, set_id: str) -> Response:
+    with connect() as conn:
+        out = collections.collection(conn, set_id[:40])
+        if out is None:
+            raise not_found("collection")
+        return cached(request, out)
+
+
+class _Slugs(BaseModel):
+    slugs: list[str] = Field(max_length=collections.MAX_SLUGS)
+
+
+@router.post(
+    "/lemmas/coverage", summary="How much of the Quran a reader's words cover (not stored, not cached)"
+)
+def lemmas_coverage(body: _Slugs) -> Response:
+    # the reader's word list is personal: it comes in a body, and nothing about it is kept or cached
+    with connect() as conn:
+        return ORJSONResponse(collections.coverage(conn, body.slugs), headers={"Cache-Control": "no-store"})
 
 
 class _Tokens(BaseModel):
