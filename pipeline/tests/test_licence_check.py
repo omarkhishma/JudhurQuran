@@ -18,6 +18,9 @@ def test_quote_found_in_every_form_a_page_holds_it() -> None:
         b'licensed under a <a href="x">Creative Commons</a> Attribution',
     )
     assert _quote_in(Q, b"#  This annotation can be used in any website\n#    or application\n")
+    assert _quote_in(
+        Q, b"<pre>\n*  - This annotation can be used in any website\n*    or application,\n</pre>"
+    )
     assert _quote_in("In the name of Allāh", json.dumps({"t": "In the name of Allāh"}).encode())
     assert _quote_in(
         "VerseByVerseQuran Abdulbasit", b"ID3\x00\x00" + "VerseByVerseQuran Abdulbasit".encode("utf-16-le")
@@ -31,3 +34,4 @@ def test_quote_found_in_every_form_a_page_holds_it() -> None:
 def test_a_changed_or_absent_quote_is_reported() -> None:
     assert not _quote_in(Q, b"<p>This annotation may be used in websites</p>")
     assert not _quote_in("CHANGING IT IS NOT ALLOWED", b"changing it is allowed")
+    assert not _quote_in(Q, b"*  This annotation can be used in any website\n*    or service\n")
