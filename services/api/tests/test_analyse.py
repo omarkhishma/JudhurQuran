@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
-
 from jadhr_api.main import app
 
 client = TestClient(app)
