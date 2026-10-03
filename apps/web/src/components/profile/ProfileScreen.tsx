@@ -62,6 +62,10 @@ export function ProfileScreen({ initialTab }: { initialTab: Tab }) {
       <aside className="profile-id" aria-label={t("counts")}>
         <Identity signedIn={signedIn} me={me.data} />
         <Counts />
+        {/* on a phone the data controls come after the open tab's list: one tap away from the top (PRF-35, F27) */}
+        <a href="#your-data" className="btn self-start min-[900px]:hidden">
+          {t("toData")}
+        </a>
       </aside>
       <div className="profile-main">
         <div className="flex flex-wrap items-center gap-3">

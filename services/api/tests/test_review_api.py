@@ -53,6 +53,11 @@ def test_a_readers_words_are_mapped_to_their_roots_and_kept_nowhere() -> None:
         and by["min"] is None
         and "no-such" not in by
     )
+    # the word itself, in Arabic, for naming it where the reader sees it
+    ar = {x["slug"]: x["ar"] for x in r.json()["data"]}
+    assert (
+        normalize(ar["ilm"]) == "\u0639\u0644\u0645" and ar["kitab"] == "\u0643\u0650\u062a\u064e\u0670\u0628"
+    )
 
 
 def test_each_blank_takes_the_everyday_spelling_and_carries_its_hint_and_what_is_revealed() -> None:

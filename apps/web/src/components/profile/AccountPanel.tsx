@@ -2,17 +2,24 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SignInPanel } from "@/components/account/SignInPanel";
 import { usePathname } from "@/i18n/navigation";
 import { signOutHere } from "@/lib/account/actions";
-import { type Account, ApiError, authFetch, useAccount } from "@/lib/account/store";
+import { errorKind } from "@/lib/account/errors";
+import { type Account, authFetch, useAccount } from "@/lib/account/store";
+import { formatNumber, verseRef } from "@/lib/format";
+import type { ReadingContext, Session } from "@/lib/reader/store";
 import { runSync } from "@/lib/sync/run";
 
 export type Me = Account & { created_at: string; devices: { id: string; device: string | null; created_at: string; last_seen_at: string; current: boolean }[]; records: number };
 type Version = { id: number; store: string; key: string; value: unknown; deleted: boolean; updated_at: number; replaced_at: number };
 
-const errorText = (e: unknown) => (e instanceof ApiError ? e.detail : e instanceof Error ? e.message : String(e));
+/** An error as the reader is told it, in their language (F21). */
+function useErrorText() {
+  const t = useTranslations("account");
+  return (e: unknown, sent?: { orcid?: string }) => t(`err.${errorKind(e, sent)}`);
+}
 
 /**
  * The account (PRF-14, Q02, Q04; NTB-Q02; P6.1): the name contributions are credited to, with affiliation and ORCID
@@ -64,6 +71,7 @@ function ProfileForm() {
   const setUser = useAccount((s) => s.setUser);
   const [f, setF] = useState({ display_name: user.display_name ?? "", affiliation: user.affiliation ?? "", orcid: user.orcid ?? "" });
   const [said, setSaid] = useState<{ ok: boolean; text: string } | null>(null);
+  const errorText = useErrorText();
   async function save(e: React.FormEvent) {
     e.preventDefault();
     try {
@@ -71,7 +79,7 @@ function ProfileForm() {
       setUser({ id: out.id, email: out.email, display_name: out.display_name, affiliation: out.affiliation, orcid: out.orcid, role: out.role, settings: out.settings });
       setSaid({ ok: true, text: t("saved") });
     } catch (err) {
-      setSaid({ ok: false, text: t("saveFailed", { error: errorText(err) }) });
+      setSaid({ ok: false, text: t("saveFailed", { error: errorText(err, f) }) });
     }
   }
   const field = (k: keyof typeof f, label: string, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
@@ -113,6 +121,7 @@ function Choices({ onChanged }: { onChanged: () => void }) {
   // the choice shows at once, and goes back if the server does not take it
   const [pending, setPending] = useState<Partial<Record<"sync_journal" | "share_lookups", boolean>>>({});
   const [error, setError] = useState<string | null>(null);
+  const errorText = useErrorText();
   async function set(k: "sync_journal" | "share_lookups", v: boolean) {
     setPending((p) => ({ ...p, [k]: v }));
     setError(null);
@@ -170,7 +179,12 @@ function Devices({ me, onChanged }: { me: Me | null; onChanged: () => void }) {
               <span className="text-[11.5px] text-t3">{d.current ? t("thisDevice") : t("lastSeen", { when: when(d.last_seen_at) })}</span>
             </span>
             {!d.current && (
-              <button type="button" className="btn min-h-[40px]" onClick={() => void authFetch(`/me/sessions/${d.id}`, { method: "DELETE" }).then(onChanged)}>
+              <button
+                type="button"
+                className="btn min-h-[40px]"
+                aria-label={t("signOutDeviceNamed", { device: d.device || t("unknownDevice"), when: when(d.last_seen_at) })}
+                onClick={() => void authFetch(`/me/sessions/${d.id}`, { method: "DELETE" }).then(onChanged)}
+              >
                 {t("signOutDevice")}
               </button>
             )}
@@ -184,10 +198,12 @@ function Devices({ me, onChanged }: { me: Me | null; onChanged: () => void }) {
 /** PRF-33: what sync replaced, kept thirty days, each restorable — a merge never destroys anything. */
 function History() {
   const t = useTranslations("me");
+  const ta = useTranslations("account");
   const locale = useLocale();
   const session = useAccount((s) => s.session);
   const q = useQuery({ queryKey: ["me-history", session], queryFn: () => authFetch<{ data: Version[] }>("/me/history"), staleTime: 10_000 });
   const [restored, setRestored] = useState<number | null>(null);
+  const describe = useDescribe(q.data?.data ?? []);
   const when = (ms: number) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }).format(new Date(ms));
   async function restore(id: number) {
     await authFetch(`/me/history/${id}/restore`, { method: "POST" });
@@ -209,33 +225,79 @@ function History() {
         <p className="text-[12.5px] text-t3">{t("historyEmpty")}</p>
       ) : (
         <ul className="flex max-h-[360px] flex-col gap-1.5 overflow-y-auto">
-          {list.slice(0, 100).map((v) => (
-            <li key={v.id} className="account-row">
-              <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-[13px]" dir="auto">
-                  {t("store." + v.store)} • {v.deleted ? t("aDeletion") : preview(v)}
+          {list.slice(0, 100).map((v) => {
+            const what = v.deleted ? `${describe(v)} (${t("aDeletion")})` : describe(v);
+            return (
+              <li key={v.id} className="account-row">
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-[13px]" dir="auto">
+                    {ta(`store.${v.store}`)} • {what}
+                  </span>
+                  <span className="text-[11.5px] text-t3">{t("replacedAt", { when: when(v.replaced_at) })}</span>
                 </span>
-                <span className="text-[11.5px] text-t3">{t("replacedAt", { when: when(v.replaced_at) })}</span>
-              </span>
-              <button type="button" className="btn min-h-[40px]" onClick={() => void restore(v.id)}>
-                {t("restore")}
-              </button>
-            </li>
-          ))}
+                <button type="button" className="btn min-h-[40px]" aria-label={t("restoreNamed", { what, when: when(v.replaced_at) })} onClick={() => void restore(v.id)}>
+                  {t("restore")}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </Card>
   );
 }
 
-/** A replaced version, named by what the reader would recognise in it. */
-function preview(v: Version): string {
-  const x = v.value as Record<string, unknown> | string | number | boolean | null;
-  if (x && typeof x === "object") {
-    for (const k of ["label", "title", "text", "body", "root"]) if (typeof x[k] === "string" && x[k]) return String(x[k]).slice(0, 80);
-  }
-  if (typeof x === "string" || typeof x === "number" || typeof x === "boolean") return `${v.key.replace(/^[a-z]+:/, "")} — ${String(x)}`;
-  return v.key;
+/**
+ * A replaced version named by what the reader would recognise in it, in their language — never a record's key or a
+ * raw value (F20): a note by its title, a word by its Arabic, a day by its date, a setting as a setting.
+ */
+function useDescribe(list: Version[]): (v: Version) => string {
+  const t = useTranslations("me");
+  const locale = useLocale();
+  // word states are keyed by the word's slug: its Arabic is asked for in a body, kept nowhere (as the review deck does)
+  const slugs = [...new Set(list.filter((v) => v.store === "personal" && v.key.startsWith("w:")).map((v) => v.key.slice(2)))].sort();
+  const words = useQuery({
+    queryKey: ["history-words", slugs],
+    enabled: slugs.length > 0,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const r = await fetch("/api/v1/lemmas/roots", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slugs }) });
+      if (!r.ok) return {};
+      return Object.fromEntries(((await r.json()) as { data: { slug: string; ar: string }[] }).data.map((x) => [x.slug, x.ar]));
+    },
+  });
+  const day = (d: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${d}T12:00:00`));
+  const text = (id: string) => (id === "quran" ? t("quran") : t("pv.yourText"));
+  const verse = (ref: string) => verseRef(ref.replace(/^quran:/, ""), locale);
+  return (v) => {
+    const x = v.value as Record<string, unknown> | string | number | boolean | null;
+    const [kind, rest] = v.key.includes(":") ? [v.key.slice(0, v.key.indexOf(":")), v.key.slice(v.key.indexOf(":") + 1)] : [v.key, ""];
+    switch (v.store) {
+      case "personal":
+        if (kind === "w") return t("pv.word", { word: words.data?.[rest] ?? t("pv.aWord"), state: t(`pv.state.${typeof x === "string" ? x : "new"}`) });
+        if (kind === "p") return t("pv.position", { text: text(rest) });
+        if (kind === "r") return t("pv.furthest", { surah: formatNumber(Number(rest.split(":").pop()), locale) });
+        if (kind === "l") return t("pv.links", { verse: verse(rest) });
+        if (kind === "vt") return t("pv.verseTopics", { verse: verse(rest) });
+        if (kind === "t") return t("pv.trail");
+        if (kind === "f") return t("pv.flag");
+        break;
+      case "journal":
+        if (kind === "s") return t("pv.day", { day: day((x as Session | null)?.day ?? rest.split(":")[0]) });
+        if (kind === "rm") return t("pv.root", { root: rest });
+        if (kind === "ctx") return (x as ReadingContext | null)?.wordAr ? t("pv.placeAt", { word: (x as ReadingContext).wordAr ?? "" }) : t("pv.place");
+        if (kind === "cc") return t("pv.cleared");
+        break;
+      case "review":
+        if (kind === "c") return t("pv.card", { root: rest });
+        break;
+      case "analyse":
+        return t("pv.analyse", { form: v.key.split("|")[0] });
+    }
+    // a note, a star, a proposal, a map or a text: by its own words
+    if (x && typeof x === "object") for (const k of ["label", "title", "text", "body"]) if (typeof x[k] === "string" && (x[k] as string).trim()) return (x[k] as string).slice(0, 80);
+    return t(`pv.of.${v.store as "saved"}`);
+  };
 }
 
 function SignOut() {
@@ -255,17 +317,27 @@ function SignOut() {
   );
 }
 
-/** PRF-14: two steps — a confirmation token valid ten minutes, then the deletion of everything the account holds. */
+/** PRF-14: two steps — a confirmation token valid ten minutes, then the deletion of everything the account holds. The
+ * focus moves with the step (F25): to the confirmation when it appears, back to the first button when it goes. */
 function DeleteAccount() {
   const t = useTranslations("me");
   const [token, setToken] = useState<string | null>(null);
   const [state, setState] = useState<{ ok: boolean; text: string } | null>(null);
+  const errorText = useErrorText();
+  const askRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  const moved = useRef(false);
   useEffect(() => {
     if (!token) return;
     const id = setTimeout(() => setToken(null), 10 * 60_000);
     return () => clearTimeout(id);
   }, [token]);
+  useEffect(() => {
+    if (!moved.current) return;
+    (token ? confirmRef : askRef).current?.focus();
+  }, [token]);
   async function ask() {
+    moved.current = true;
     try {
       setToken((await authFetch<{ confirm: string }>("/me/delete", { method: "POST" })).confirm);
     } catch (err) {
@@ -288,7 +360,7 @@ function DeleteAccount() {
       <div className="flex flex-wrap gap-2">
         {token ? (
           <>
-            <button type="button" className="btn btn-danger min-h-[40px]" onClick={() => void confirm()}>
+            <button ref={confirmRef} type="button" className="btn btn-danger min-h-[40px]" onClick={() => void confirm()}>
               {t("deleteConfirm")}
             </button>
             <button type="button" className="btn min-h-[40px]" onClick={() => setToken(null)}>
@@ -296,7 +368,7 @@ function DeleteAccount() {
             </button>
           </>
         ) : (
-          <button type="button" className="btn min-h-[40px] text-bad" onClick={() => void ask()}>
+          <button ref={askRef} type="button" className="btn min-h-[40px] text-bad" onClick={() => void ask()}>
             {t("deleteAsk")}
           </button>
         )}

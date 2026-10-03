@@ -21,16 +21,18 @@ TRANSLATION = "saheeh"
 
 
 def lemma_roots(conn: Connection, slugs: list[str]) -> list[dict[str, Any]]:
-    """The root of each lemma the reader starred or knows; a lemma with no root (a particle) has none."""
+    """The root of each lemma the reader starred or knows, and the word in Arabic (a replaced word state is named
+    by it, never by its slug); a lemma with no root (a particle) has none."""
     found = rows(
         conn,
-        """select l.slug, r.key, r.spaced, r.translit from content.lemmas l
+        """select l.slug, l.ar, r.key, r.spaced, r.translit from content.lemmas l
            left join content.roots r on r.id = l.root_id where l.slug = any(:s)""",
         {"s": list(dict.fromkeys(slugs))[:MAX_SLUGS]},
     )
     return [
         {
             "slug": x["slug"],
+            "ar": x["ar"],
             "root": {"key": x["key"], "spaced": x["spaced"], "translit": x["translit"]} if x["key"] else None,
         }
         for x in found

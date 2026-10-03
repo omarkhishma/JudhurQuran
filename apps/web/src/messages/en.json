@@ -1710,6 +1710,15 @@
       "graphs": "Maps",
       "texts": "Your texts"
     },
+    "err": {
+      "offline": "you seem to be offline. Try again once you are back.",
+      "invalid": "check what you entered.",
+      "orcid": "check the ORCID: four groups of four digits, the last of which may end in X.",
+      "busy": "too many requests just now. Try again in a minute.",
+      "expired": "this confirmation has expired. Ask again.",
+      "signedOut": "you were signed out. Sign in again.",
+      "failed": "that did not work just now. Try again in a moment."
+    },
     "verifyTitle": "Sign in on this browser",
     "verifyHelp": "Press the button to finish signing in. The link works once, and is used only when you press it.",
     "verifyButton": "Sign in"
@@ -1826,22 +1835,48 @@
     "deleteCancel": "Cancel",
     "deleted": "The account and everything it held on the server are deleted.",
     "deleteFailed": "Could not delete: {error}",
+    "signOutDeviceNamed": "Sign out {device}, last used {when}",
+    "restoreNamed": "Restore {what}, replaced {when}",
+    "pv": {
+      "word": "{word}: {state}",
+      "aWord": "a word",
+      "state": {
+        "new": "unmarked",
+        "learning": "learning",
+        "known": "known"
+      },
+      "position": "reading place in {text}",
+      "yourText": "one of your texts",
+      "furthest": "furthest verse read in sūra {surah}",
+      "links": "links of verse {verse}",
+      "verseTopics": "topics of verse {verse}",
+      "trail": "a saved trail",
+      "flag": "a choice on the home page",
+      "day": "reading on {day}",
+      "root": "root met: {root}",
+      "place": "last place looked up",
+      "placeAt": "last place looked up: {word}",
+      "cleared": "the resume strip cleared",
+      "card": "review card: {root}",
+      "analyse": "a reading chosen for {form}",
+      "of": {
+        "saved": "a saved item",
+        "personal": "an item",
+        "journal": "a reading record",
+        "notebook": "a note",
+        "review": "a review card",
+        "prefs": "a reading setting",
+        "audio": "a recitation setting",
+        "analyse": "an Analyser choice",
+        "graphs": "a map",
+        "texts": "a text"
+      }
+    },
     "statusSyncedPlain": "synced",
     "syncDone": "Synced at {when}.",
     "full": "{count, plural, one {One new item stays} other {{n} new items stay}} on this device: the account holds as many as it can.",
     "unreadable": "Not synced this time, because this browser could not read it: {stores}.",
-    "store": {
-      "saved": "Saved",
-      "personal": "Word states and places",
-      "journal": "Reading journal",
-      "notebook": "Notebook",
-      "review": "Review",
-      "prefs": "Reading settings",
-      "audio": "Recitation settings",
-      "analyse": "Analyser choices",
-      "graphs": "Maps",
-      "texts": "Your texts"
-    }
+    "toData": "Your data: export or delete it"
   },
   "contrib": {
     "title": "Review queue",

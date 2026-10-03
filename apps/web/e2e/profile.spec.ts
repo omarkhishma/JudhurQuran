@@ -160,7 +160,8 @@ test("signed in: the name credited, the journal synced only when turned on, this
   await page.reload();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-saved") ?? "{}").state?.bookmarks?.[0]?.label)).toBe("عِلْم — بعد");
   const replaced = page.locator(".account-row").filter({ hasText: "المحفوظات • عِلْم" }).first();
-  await replaced.getByRole("button", { name: "استرجعها" }).click();
+  // named by what it is and when it was replaced, not one of a hundred "Restore" buttons (F26)
+  await replaced.getByRole("button", { name: /^استرجع عِلْم، استُبدلت / }).click();
   await expect(page.getByText("استُرجعت، وتصل إلى أجهزتك.")).toBeVisible();
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-saved") ?? "{}").state?.bookmarks?.[0]?.label)).toBe("عِلْم");
   // two steps, then everything on the server is gone; this device keeps its own copy and is signed out

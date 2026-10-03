@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { followSignInLink } from "./helpers";
 
 const PAGES = ["/", "/quran", "/quran/1", "/quran/2/255", "/word/2:255:23", `/roots/${encodeURIComponent("علم")}`, "/search?q=%D8%B5%D8%A8%D8%B1", "/concordance", "/concordance?view=dist", "/about", "/sources", "/saved", "/en", "/en/word/1:1:1", "/analyse", "/analyse?q=2%3A255&view=interlinear", "/library", "/library/text/missing", "/explore", "/notebook"];
 
@@ -39,7 +40,33 @@ const SEED = {
   "jadhr-notebook": { state: { notes: [NOTE] }, version: 1 },
 };
 type Page = import("@playwright/test").Page;
-const STATES: { name: string; path: string; act?: (page: Page) => Promise<void> }[] = [
+
+/** Signed in through the development outbox, as a reader would be (F28: the account tab is checked signed in too). */
+async function signedIn(page: Page): Promise<void> {
+  const email = `e2e-axe-${test.info().project.name}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}@example.org`;
+  expect((await page.request.post("/api/v1/auth/email", { data: { email, return_to: "/me?tab=account", locale: "ar" } })).status()).toBe(202);
+  let link = "";
+  await expect
+    .poll(async () => {
+      const m = ((await (await page.request.get(`/api/v1/auth/dev/outbox?email=${encodeURIComponent(email)}`)).json()) as { messages: { link: string }[] }).messages;
+      return (link = m.at(-1)?.link ?? "");
+    })
+    .not.toBe("");
+  const u = new URL(link);
+  await followSignInLink(page, u.pathname + u.search);
+  await expect(page).toHaveURL(/\/me\?tab=account$/);
+  await page.getByRole("heading", { name: "حذف الحساب" }).waitFor();
+  await page.getByText(/لا نسخ مستبدلة|استُبدلت/).first().waitFor();
+}
+
+/** The account made for a state, deleted after it. */
+async function dropAccount(page: Page): Promise<void> {
+  const h = { Authorization: `Bearer ${await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-auth") ?? "{}").state?.session)}` };
+  const c = (await (await page.request.post("/api/v1/me/delete", { headers: h })).json()) as { confirm?: string };
+  if (c.confirm) await page.request.post("/api/v1/me/delete/confirm", { headers: h, data: { confirm: c.confirm } });
+}
+
+const STATES: { name: string; path: string; act?: (page: Page) => Promise<void>; after?: (page: Page) => Promise<void> }[] = [
   { name: "a set", path: "/explore?set=ilm" },
   {
     name: "the study deck",
@@ -54,7 +81,9 @@ const STATES: { name: string; path: string; act?: (page: Page) => Promise<void> 
   { name: "an open note", path: "/notebook?note=n1", act: async (page) => void (await page.locator(".notebook-editor").waitFor()) },
   { name: "the profile", path: "/me", act: async (page) => void (await page.locator(".profile-counts").waitFor()) },
   { name: "the profile's account tab, signed out", path: "/me?tab=account", act: async (page) => void (await page.getByLabel("بريدك الإلكتروني").waitFor()) },
+  { name: "the profile's account tab, signed in", path: "/", act: signedIn, after: dropAccount },
   { name: "the sign-in page", path: "/signin" },
+  { name: "a sign-in link's page", path: "/auth/verify?token=not-a-real-token-but-shaped-like-one", act: async (page) => void (await page.getByRole("button", { name: "ادخل", exact: true }).waitFor()) },
   { name: "the privacy page", path: "/privacy" },
   {
     name: "the sign-in sheet",
@@ -84,6 +113,7 @@ for (const theme of ["light", "dark"] as const)
       await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
       const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+      await s.after?.(page);
       expect(serious.map((v) => `${v.id} (${v.impact}): ${v.nodes.length} × ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
     });
   }
