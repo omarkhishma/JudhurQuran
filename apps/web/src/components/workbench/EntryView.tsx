@@ -225,6 +225,11 @@ function ValueView({ kind, value, sources }: { kind: Kind; value: Value; sources
           {t(`verdict_${value.verdict}`)}
           {value.note && <span className="text-t2"> — {value.note}</span>}
           {value.correction && <span className="block text-t1" dir="auto">{value.correction}</span>}
+          {value.ends && (
+            <span className="block text-[12.5px] text-t2">
+              {Object.entries(value.ends as Record<string, string>).map(([end, root]) => t(end === "root" ? "remappedFirst" : "remappedSecond", { root: [...root].join(" ") })).join(" · ")}
+            </span>
+          )}
         </p>
       )}
       <SourceList sources={sources} />

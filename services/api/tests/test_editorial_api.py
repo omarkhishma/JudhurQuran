@@ -294,3 +294,108 @@ def test_what_is_in_force_is_read_beside_the_content(board: dict[str, dict[str, 
     _approve(board, "glossary", key, {"body_ar": "شرح راجعته الهيئة", "body_en": ""})
     term = next(t for t in client.get("/api/v1/glossary").json()["terms"] if t["key"] == key)
     assert term["body_ar"] == "شرح راجعته الهيئة" and term["reviewed_at"]
+
+
+def test_relations_come_into_force_with_their_ends_as_the_board_maps_them(
+    board: dict[str, dict[str, str]],
+) -> None:
+    """P8.4a (research 15): a relation is in force once the board reviews it; a correction may map an end to another
+    root; a rejected row stays out; the pair's shared verses are counted from the corpus; the word panel marks it."""
+    a = board["a"]
+    url = "/api/v1/editorial/verdict/relation_candidates:askari-furuq:0006:r"
+    # a re-mapping is a correction, of an end the row has, to a root the corpus holds
+    bad = {"value": {"verdict": "reviewed", "ends": {"target_root": "عرف"}}, "sources": []}
+    assert client.put(url, headers=a, json=bad).status_code == 422
+    bad = {"value": {"verdict": "corrected", "note": "x", "ends": {"target_root": "ققق"}}, "sources": []}
+    assert client.put(url, headers=a, json=bad).json()["error"]["code"] == "unknown_root"
+    wujuh = "/api/v1/editorial/verdict/relation_candidates:nuzha:0001:s01"
+    bad = {"value": {"verdict": "corrected", "note": "x", "ends": {"target_root": "عرف"}}, "sources": []}
+    assert client.put(wujuh, headers=a, json=bad).status_code == 422
+    assert client.put(
+        "/api/v1/editorial/verdict/pattern_functions:shafiya:0001", headers=a, json=bad
+    ).status_code in (404, 422)
+    before = client.get("/api/v1/roots/سمو/relations").json()
+    assert before["data"] == [] and before["waiting"] > 0
+    # al-ʿAskarī's pair, its second end mapped anew by the board
+    _approve(
+        board,
+        "verdict",
+        "relation_candidates:askari-furuq:0006:r",
+        {"verdict": "corrected", "note": "الحد هنا من باب العلم", "ends": {"target_root": "عرف"}},
+    )
+    on = client.get("/api/v1/roots/سمو/relations").json()
+    edge = on["data"][0]
+    assert (
+        edge["rel"] == "near-in-meaning"
+        and edge["a"] == {"root": "سمو", "word": "الاسم"}
+        and edge["b"]["root"] == "عرف"
+    )
+    assert (
+        edge["quote"].startswith("أن الحد يوجب")
+        and edge["source"]["id"] == "askari-furuq"
+        and edge["source"]["locator"]
+    )
+    assert edge["review"]["verdict"] == "corrected" and on["waiting"] == before["waiting"] - 1
+    assert [e["id"] for e in client.get("/api/v1/roots/عرف/relations").json()["data"]] == [
+        "askari-furuq:0006:r"
+    ]
+    assert client.get("/api/v1/roots/حدد/relations").json()["data"] == []
+    # among a set: the edge, and the verses where both roots occur, as the corpus counts them
+    among = client.get("/api/v1/relations", params={"roots": "سمو,عرف,حدد"}).json()
+    assert [e["id"] for e in among["data"]] == ["askari-furuq:0006:r"]
+    with accounts.tx() as conn:
+        n = accounts.q1(
+            conn,
+            """select count(*)::int as n from (select w.surah, w.ayah from content.words w join content.roots r on r.id = w.root_id
+                 where r.key in ('سمو', 'عرف') group by 1, 2 having count(distinct r.key) = 2) x""",
+        )
+    assert n is not None and among["shared"]["سمو|عرف"]["count"] == n["n"]
+    assert client.get("/api/v1/relations", params={"roots": "سمو,حدد"}).json()["data"] == []
+    # a wujūh sense reviewed: the root's sense with its verses
+    _approve(board, "verdict", "relation_candidates:nuzha:0001:s01", {"verdict": "reviewed"})
+    sense = next(
+        e for e in client.get("/api/v1/roots/تبع/relations").json()["data"] if e["id"] == "nuzha:0001:s01"
+    )
+    assert sense["rel"] == "wujuh-sense" and sense["b"] is None and sense["verses"] == ["20:78", "26:60"]
+    # rejected: out of force, and out of the word panel
+    _approve(
+        board,
+        "verdict",
+        "relation_candidates:askari-furuq:0020:r",
+        {"verdict": "rejected", "note": "not the Quranic sense"},
+    )
+    assert all(
+        e["id"] != "askari-furuq:0020:r" for e in client.get("/api/v1/roots/دعو/relations").json()["data"]
+    )
+    lemma = client.get("/api/v1/words/hudud/relations").json()
+    assert all(c["id"] != "askari-furuq:0006:r" for c in lemma["furuq"])  # mapped away from حدد
+    arafa = accounts.q1(
+        accounts.write_engine().connect(),
+        "select l.slug from content.lemmas l join content.roots r on r.id = l.root_id where r.key = 'عرف' limit 1",
+    )
+    assert arafa is not None
+    moved = [
+        c
+        for c in client.get(f"/api/v1/words/{arafa['slug']}/relations").json()["furuq"]
+        if c["id"] == "askari-furuq:0006:r"
+    ]
+    assert moved and moved[0]["target_root_key"] == "عرف" and moved[0]["review"]["verdict"] == "corrected"
+    slug = accounts.q1(
+        accounts.write_engine().connect(),
+        "select l.slug from content.lemmas l join content.roots r on r.id = l.root_id where r.key = 'دعو' limit 1",
+    )
+    assert slug is not None
+    words = client.get(f"/api/v1/words/{slug['slug']}/relations").json()
+    assert all(c["id"] != "askari-furuq:0020:r" for c in words["furuq"])
+    tabi = accounts.q1(
+        accounts.write_engine().connect(),
+        "select l.slug from content.lemmas l join content.roots r on r.id = l.root_id where r.key = 'تبع' limit 1",
+    )
+    assert tabi is not None
+    marked = [
+        s
+        for w in client.get(f"/api/v1/words/{tabi['slug']}/relations").json()["wujuh"]
+        for s in w["senses"]
+        if s["id"] == "nuzha:0001:s01"
+    ]
+    assert marked and marked[0]["review"]["verdict"] == "reviewed"

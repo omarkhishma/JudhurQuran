@@ -4,11 +4,14 @@ import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { ApiError } from "@/lib/account/store";
-import { decideMany, getAwaiting, getTargets, saveVerdicts, STATES, type Layer, type State, type VerdictItem } from "@/lib/editorial";
-import { cnt, formatNumber } from "@/lib/format";
+import { decideMany, getAwaiting, getTargets, saveVerdicts, STATES, type Ends, type Layer, type RelationRow, type State, type VerdictItem } from "@/lib/editorial";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
 import type { Place } from "./Workbench";
 
-type Mark = { verdict: VerdictItem["verdict"]; note: string; correction: string };
+type Mark = { verdict: VerdictItem["verdict"]; note: string; correction: string; ends: Ends };
+/** A root as an editor types it — "ع ر ف" or "عرف" — as the corpus keys it. */
+const rootKey = (s: string) => s.replace(/[\s\u0640]+/g, "");
+const remapped = (m: Mark) => Object.values(m.ends).some((v) => v && rootKey(v));
 
 /**
  * The rows a book gave (P3.0): each with what the book says, the board's verdict — reviewed, corrected with the
@@ -36,7 +39,7 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
   const mineToDecide = (waiting.data?.data ?? []).filter((e) => e.kind === "verdict" && e.target.startsWith(`${layer}:`));
   const rows = list.data?.pages.flatMap((p) => p.data) ?? [];
   const total = list.data?.pages[0]?.total ?? 0;
-  const marked = Object.entries(marks).filter(([, m]) => m.verdict === "reviewed" || (m.note.trim() && (m.verdict !== "corrected" || m.correction.trim())));
+  const marked = Object.entries(marks).filter(([, m]) => m.verdict === "reviewed" || (m.note.trim() && (m.verdict !== "corrected" || m.correction.trim() || remapped(m))));
 
   async function run(fn: () => Promise<unknown>, done: string) {
     setBusy(true);
@@ -102,7 +105,11 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
                 <span className="flex-1" />
                 <span className={`state-chip is-${r.state}`}>{t(`state_${r.state}`)}</span>
               </div>
+              {r.relation && <RelationHead rel={r.relation} />}
               {r.sub && <p className="ar-classical line-clamp-4 text-[14px] leading-[1.9] text-t2" lang="ar" dir="rtl">{r.sub}</p>}
+              {r.relation && r.relation.verses.length > 0 && (
+                <p className="text-[11.5px] text-t3">{t("relVerses", { ...cnt(r.relation.verses.length, locale), list: r.relation.verses.slice(0, 6).map((v) => verseRef(v, locale)).join("، ") })}</p>
+              )}
               {free && (
                 <div className="flex flex-col gap-1.5">
                   <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("verdict")}>
@@ -113,7 +120,7 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
                         role="radio"
                         aria-checked={m?.verdict === v}
                         className={"chip" + (m?.verdict === v ? " is-on" : "")}
-                        onClick={() => setMarks((x) => (x[id]?.verdict === v ? Object.fromEntries(Object.entries(x).filter(([k]) => k !== id)) : { ...x, [id]: { verdict: v, note: x[id]?.note ?? "", correction: x[id]?.correction ?? "" } }))}
+                        onClick={() => setMarks((x) => (x[id]?.verdict === v ? Object.fromEntries(Object.entries(x).filter(([k]) => k !== id)) : { ...x, [id]: { verdict: v, note: x[id]?.note ?? "", correction: x[id]?.correction ?? "", ends: x[id]?.ends ?? {} } }))}
                       >
                         {t(`verdict_${v}`)}
                       </button>
@@ -124,6 +131,27 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
                   )}
                   {m?.verdict === "corrected" && (
                     <textarea className="field-input min-h-[52px]" value={m.correction} onChange={(e) => setMarks((x) => ({ ...x, [id]: { ...m, correction: e.target.value } }))} placeholder={t("correction")} aria-label={t("correction")} dir="auto" />
+                  )}
+                  {m?.verdict === "corrected" && r.relation && (
+                    // the commonest fault in an extracted relation: a word mapped to the wrong root
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11.5px] text-t3">{t("remapHint")}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(r.relation.target_ar ? (["root", "target_root"] as const) : (["root"] as const)).map((end) => (
+                          <label key={end} className="flex items-center gap-1.5 whitespace-nowrap text-[12px] text-t3">
+                            {t("endRoot", { word: end === "root" ? r.relation!.headword_ar : r.relation!.target_ar! })}
+                            <input
+                              className="field-input ar-classical w-28 text-[16px]"
+                              lang="ar"
+                              dir="rtl"
+                              value={m.ends[end] ?? ""}
+                              placeholder={[...((end === "root" ? r.relation!.root : r.relation!.target_root) ?? "")].join(" ")}
+                              onChange={(e) => setMarks((x) => ({ ...x, [id]: { ...m, ends: { ...m.ends, [end]: e.target.value } } }))}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -144,7 +172,15 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
           disabled={busy || !marked.length}
           onClick={() =>
             void run(
-              () => saveVerdicts(layer, marked.map(([row, m]) => ({ row, verdict: m.verdict, ...(m.note.trim() ? { note: m.note.trim() } : {}), ...(m.verdict === "corrected" ? { correction: m.correction.trim() } : {}) })), true),
+              () =>
+                saveVerdicts(
+                  layer,
+                  marked.map(([row, m]) => {
+                    const ends = Object.fromEntries(Object.entries(m.ends).map(([k, v]) => [k, rootKey(v ?? "")]).filter(([, v]) => v));
+                    return { row, verdict: m.verdict, ...(m.note.trim() ? { note: m.note.trim() } : {}), ...(m.verdict === "corrected" ? { correction: m.correction.trim() } : {}), ...(m.verdict === "corrected" && Object.keys(ends).length ? { ends } : {}) };
+                  }),
+                  true,
+                ),
               t("saidBatchSent", cnt(marked.length, locale)),
             )
           }
@@ -155,5 +191,30 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
         <span className="sr-only">{formatNumber(rows.length, locale)}</span>
       </div>
     </section>
+  );
+}
+
+/** A relation row's head (P8.4): what kind of relation the book draws, its ends with the roots they were mapped to
+ * (said when the mapping is unsure), and the sense it names. */
+function RelationHead({ rel }: { rel: RelationRow }) {
+  const t = useTranslations("workbench");
+  const end = (word: string, root: string | null, sure: string | null) => (
+    <span className="inline-flex items-baseline gap-1">
+      <span className="ar-classical text-[16px] text-t1" lang="ar">{word}</span>
+      <span className="text-[12px] text-t3">({root ? <span lang="ar">{[...root].join(" ")}</span> : t("noRootMapped")}{root && sure && sure !== "high" ? ` · ${t("unsure")}` : ""})</span>
+    </span>
+  );
+  return (
+    <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[12.5px]">
+      <span className="state-chip">{t(`relType_${rel.type}`)}</span>
+      {end(rel.headword_ar, rel.root, rel.match_confidence)}
+      {rel.target_ar && (
+        <>
+          <span className="text-t3" aria-hidden="true">↔</span>
+          {end(rel.target_ar, rel.target_root, rel.target_match_confidence)}
+        </>
+      )}
+      {rel.sense_label_ar && <span className="text-t2">— {rel.sense_label_ar}</span>}
+    </p>
   );
 }

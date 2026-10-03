@@ -9,6 +9,7 @@ from typing import Any
 
 from sqlalchemy import Connection
 
+from . import board
 from .db import one, rows
 
 _KS_COLS = "id, kind, use, title_ar, title_en, version, url, license, license_ar, license_url, attribution_ar, attribution_en"
@@ -158,6 +159,8 @@ def word_relations(conn: Connection, slug: str, at: str | None = None) -> dict[s
            order by entry_id, sense_index""",
         {"ids": list(by_entry)},
     )
+    # the board's verdict on each sense; a rejected one is left out (P3.0c, P8.4)
+    senses = board.marked(conn, "relation_candidates", senses)
     wujuh: dict[str, dict[str, Any]] = {}
     for s in senses:
         e = by_entry[s["entry_id"]]
@@ -190,14 +193,21 @@ def word_relations(conn: Connection, slug: str, at: str | None = None) -> dict[s
         wujuh[e["id"]]["senses"].append(s)
     contrasts = []
     if lem["root"]:
+        # rows the board mapped onto this root count here too (P8.4); those it mapped away are dropped below
+        moved = [
+            i
+            for i, v in board.layer(conn, "relation_candidates").items()
+            if lem["root"] in (v["value"].get("ends") or {}).values()
+        ]
         contrasts = rows(
             conn,
             """select id, type, source_id, entry_id, headword_ar, target_ar, root_key, target_root_key, text_ar,
                       verses, locator, page_vol, page, status
                from content.relation_candidates
-               where type in ('furuq_contrast', 'didd') and (root_key = :r or target_root_key = :r)
+               where type in ('furuq_contrast', 'didd')
+                 and (root_key = :r or target_root_key = :r or id = any(cast(:moved as text[])))
                order by type, source_id, id""",
-            {"r": lem["root"]},
+            {"r": lem["root"], "moved": moved},
         )
         heading = {
             e["id"]: e["heading_ar"]
@@ -209,6 +219,11 @@ def word_relations(conn: Connection, slug: str, at: str | None = None) -> dict[s
         }
         for c in contrasts:
             c["heading_ar"] = heading.get(c["entry_id"])
+        contrasts = [
+            c
+            for c in board.marked(conn, "relation_candidates", contrasts)
+            if lem["root"] in (c["root_key"], c["target_root_key"])
+        ]
     source_ids = {w["source_id"] for w in wujuh.values()} | {c["source_id"] for c in contrasts}
     sources = (
         {

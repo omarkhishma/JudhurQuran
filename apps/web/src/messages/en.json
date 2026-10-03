@@ -2841,6 +2841,17 @@
     "saidBatchApproved": "{count, plural, =0 {{n} verdicts approved} one {1 verdict approved} other {{n} verdicts approved}}",
     "saidBatchChanges": "{count, plural, =0 {Changes asked to {n} verdicts} one {Changes asked to 1 verdict} other {Changes asked to {n} verdicts}}",
     "saidBatchSent": "{count, plural, =0 {{n} verdicts sent to review} one {1 verdict sent to review} other {{n} verdicts sent to review}}",
-    "countOf": "{done}/{total}"
+    "countOf": "{done}/{total}",
+    "relVerses": "{count, plural, one {One verse} other {{n} verses}}: {list}",
+    "remapHint": "If either word was mapped to the wrong root, type its right root (like ع ر ف); it is kept as the board's correction, and the book's words stay as they are.",
+    "endRoot": "Root of «{word}»",
+    "relType_furuq_contrast": "Difference",
+    "relType_near_synonym_candidate": "Near in meaning",
+    "relType_wujuh_sense": "Sense",
+    "relType_didd": "Ḍidd",
+    "noRootMapped": "no root",
+    "unsure": "unsure",
+    "remappedFirst": "First word's root: {root}",
+    "remappedSecond": "Second word's root: {root}"
   }
 }

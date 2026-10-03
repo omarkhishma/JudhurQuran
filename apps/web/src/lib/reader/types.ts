@@ -411,6 +411,8 @@ export type WujuhSense = {
   page_vol: number | null;
   page: number | null;
   cites_here: boolean;
+  /** the editorial board's verdict on the sense (P3.0c, P8.4) */
+  review?: BoardReview;
 };
 export type WujuhEntry = {
   id: string;
@@ -443,6 +445,7 @@ export type Contrast = {
   locator: string;
   page_vol: number | null;
   page: number | null;
+  review?: BoardReview;
 };
 export type WordRelations = {
   slug: string;

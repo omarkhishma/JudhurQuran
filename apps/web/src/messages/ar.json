@@ -2841,6 +2841,17 @@
     "saidBatchApproved": "{count, plural, zero {اعتُمد {n} حكم} one {اعتُمد حكم واحد} two {اعتُمد حكمان} few {اعتُمدت {n} أحكام} many {اعتُمد {n} حكمًا} other {اعتُمد {n} حكم}}",
     "saidBatchChanges": "{count, plural, zero {طُلب تعديل {n} حكم} one {طُلب تعديل حكم واحد} two {طُلب تعديل حكمين} few {طُلب تعديل {n} أحكام} many {طُلب تعديل {n} حكمًا} other {طُلب تعديل {n} حكم}}",
     "saidBatchSent": "{count, plural, zero {أُرسل {n} حكم إلى المراجعة} one {أُرسل حكم واحد إلى المراجعة} two {أُرسل حكمان إلى المراجعة} few {أُرسلت {n} أحكام إلى المراجعة} many {أُرسل {n} حكمًا إلى المراجعة} other {أُرسل {n} حكم إلى المراجعة}}",
-    "countOf": "{done} من {total}"
+    "countOf": "{done} من {total}",
+    "relVerses": "{count, plural, one {آية واحدة} two {آيتان} few {{n} آيات} many {{n} آية} other {{n} آية}}: {list}",
+    "remapHint": "إن رُبطت إحدى الكلمتين بجذر خطأ، اكتب جذرها الصحيح (مثل ع ر ف)؛ يُحفظ تصحيحًا من الهيئة، ويبقى نص الكتاب كما هو.",
+    "endRoot": "جذر «{word}»",
+    "relType_furuq_contrast": "فرق",
+    "relType_near_synonym_candidate": "قرب في المعنى",
+    "relType_wujuh_sense": "وجه",
+    "relType_didd": "ضد",
+    "noRootMapped": "بلا جذر",
+    "unsure": "غير مؤكد",
+    "remappedFirst": "جذر الطرف الأول: {root}",
+    "remappedSecond": "جذر الطرف الثاني: {root}"
   }
 }

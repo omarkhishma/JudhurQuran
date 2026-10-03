@@ -33,7 +33,22 @@ export type Entry = {
 
 type Counts = { total: number; draft: number; review: number; changes: number; approved: number };
 export type Worklists = { kinds: (Counts & { kind: Kind })[]; layers: (Counts & { layer: Layer })[]; awaiting_me: number; my_open: number };
-export type TargetRow = { key: string; label: string; sub: string; occurrences?: number; state: Exclude<State, "all">; source_status?: string };
+/** A relation row's details (P8.4): its two ends as the book words them, the roots they were mapped to and how surely,
+ * the sense it names, its verses. */
+export type RelationRow = {
+  type: "furuq_contrast" | "near_synonym_candidate" | "wujuh_sense" | "didd";
+  source_id: string;
+  headword_ar: string;
+  target_ar: string | null;
+  root: string | null;
+  target_root: string | null;
+  match_confidence: string | null;
+  target_match_confidence: string | null;
+  sense_label_ar: string | null;
+  verses: string[];
+  locator: string;
+};
+export type TargetRow = { key: string; label: string; sub: string; occurrences?: number; state: Exclude<State, "all">; source_status?: string; relation?: RelationRow };
 
 export type EntryPage = {
   kind: Kind;
@@ -72,7 +87,8 @@ export const decideEntry = (id: string, decision: "approve" | "changes", note: s
 export type Work = { id: string; title_ar: string; title_en: string };
 export const getWorks = () => authFetch<{ data: Work[] }>("/editorial/works");
 export const getAwaiting = () => authFetch<{ data: Entry[] }>("/editorial/awaiting");
-export type VerdictItem = { row: string; verdict: "reviewed" | "corrected" | "rejected"; note?: string; correction?: string };
+export type Ends = { root?: string; target_root?: string };
+export type VerdictItem = { row: string; verdict: "reviewed" | "corrected" | "rejected"; note?: string; correction?: string; ends?: Ends };
 export const saveVerdicts = (layer: Layer, items: VerdictItem[], submit: boolean) =>
   authFetch<{ data: Entry[] }>("/editorial/verdicts", { method: "POST", body: JSON.stringify({ layer, items, submit }) });
 export const decideMany = (ids: string[], decision: "approve" | "changes", note: string) =>

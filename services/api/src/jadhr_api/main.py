@@ -36,13 +36,14 @@ from . import (
     knowledge,
     lexicon,
     path,
+    relations,
     review,
     routes_contrib,
     routes_editorial,
     routes_graphs,
     routes_me,
 )
-from .db import connect
+from .db import connect, one
 from .search import search as run_search
 from .settings import get_settings
 
@@ -490,6 +491,26 @@ def root_family(request: Request, root: str) -> Response:
         if out is None:
             raise not_found("root")
         return cached(request, out)
+
+
+@router.get(
+    "/roots/{root}/relations",
+    summary="The classical relations in force on a root (reviewed by the editorial board), and how many wait",
+)
+def root_relations(request: Request, root: str) -> Response:
+    with connect() as conn:
+        if not one(conn, "select 1 as x from content.roots where key = :k", {"k": root}):
+            raise not_found("root")
+        return cached(request, relations.of_root(conn, root))
+
+
+@router.get("/relations", summary="The relations in force among a set of roots, with the verses each pair shares")
+def relations_among(
+    request: Request, roots: str = Query(..., max_length=600, description="comma-separated root keys, at most 50")
+) -> Response:
+    keys = [k.strip() for k in roots.split(",") if k.strip()][:50]
+    with connect() as conn:
+        return cached(request, relations.among(conn, keys))
 
 
 class _ConcordanceFilters:

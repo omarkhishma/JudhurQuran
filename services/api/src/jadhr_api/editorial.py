@@ -164,12 +164,20 @@ def _value(kind: str, raw: Any) -> tuple[dict[str, Any], bool]:
         verdict = v.get("verdict")
         if verdict not in ("reviewed", "corrected", "rejected"):
             raise Refusal(422, "bad_value", "A verdict is reviewed, corrected or rejected.")
+        raw_ends = v.get("ends")
+        ends: dict[str, Any] = raw_ends if isinstance(raw_ends, dict) else {}
+        remap = {k: _str(ends.get(k), 20) for k in ("root", "target_root") if _str(ends.get(k), 20)}
         out_v: dict[str, Any] = {
             "verdict": verdict,
             "note": _str(v.get("note"), 2000, need=verdict != "reviewed"),
         }
         if verdict == "corrected":
-            out_v["correction"] = _str(v.get("correction"), 4000, need=True)
+            # a relation's end mapped to another root is a correction of its own; words may say why
+            out_v["correction"] = _str(v.get("correction"), 4000, need=not remap)
+        if remap:
+            if verdict != "corrected":
+                raise Refusal(422, "bad_value", "A root mapped anew is a correction.")
+            out_v["ends"] = remap
         return out_v, False
     raise Refusal(404, "not_found", "No such kind of entry.")
 
@@ -226,6 +234,17 @@ def _target(conn: Connection, kind: str, target: str) -> dict[str, Any]:
         raise Refusal(404, "not_found", "The content holds nothing by that key.")
     # numbers the database keeps as decimals travel as numbers
     return {k: float(v) if isinstance(v, Decimal) else v for k, v in t.items()}
+
+
+def _check_ends(conn: Connection, t: dict[str, Any], ends: dict[str, str]) -> None:
+    """A re-mapping only on a relation's row, only of an end it has, and only to a root the corpus holds."""
+    if t.get("layer") != "relation_candidates":
+        raise Refusal(422, "bad_value", "Only a relation's ends are mapped anew.")
+    if "target_root" in ends and not t.get("target_ar"):
+        raise Refusal(422, "bad_value", "This row names one word: it has no second end.")
+    for k in ends.values():
+        if not one(conn, "select 1 as x from content.roots where key = :k", {"k": k}):
+            raise Refusal(422, "unknown_root", f"No root {k} in the corpus.")
 
 
 def _who(conn: Connection, ids: list[Any]) -> dict[str, str | None]:
@@ -429,6 +448,21 @@ def targets(
                 }
                 for r in all_rows
             ]
+            if layer == "relation_candidates":
+                # a relation's two ends with the roots they were mapped to, the sense it names, its verses (P8.4)
+                rel = {
+                    r["id"]: r
+                    for r in rows(
+                        conn,
+                        """select c.id, c.type, c.source_id, c.headword_ar, c.target_ar,
+                                  coalesce(c.root_key, e.root_key) as root, c.target_root_key as target_root,
+                                  c.match_confidence, c.target_match_confidence, c.sense_label_ar, c.verses, c.locator
+                           from content.relation_candidates c left join content.relation_entries e on e.id = c.entry_id""",
+                    )
+                }
+                for it in items:
+                    r = rel[it["key"].split(":", 1)[1]]
+                    it["relation"] = {k: r[k] for k in r if k != "id"}
         else:
             sql, col = _LISTS[kind]
             where = f" where {col} ilike :q" if query else ""
@@ -618,7 +652,9 @@ def save(u: dict[str, Any], kind: str, target: str, raw_value: Any, raw_sources:
     value, needs = _value(kind, raw_value)
     sources = _sources(raw_sources, need=needs)
     with connect() as conn:
-        _target(conn, kind, target)
+        t = _target(conn, kind, target)
+        if value.get("ends"):
+            _check_ends(conn, t, value["ends"])
     with tx() as conn:
         e = q1(
             conn,
@@ -816,7 +852,7 @@ def save_verdicts(
             u,
             "verdict",
             f"{layer}:{_str(it.get('row'), 120, need=True)}",
-            {k: it.get(k) for k in ("verdict", "note", "correction")},
+            {k: it.get(k) for k in ("verdict", "note", "correction", "ends")},
             [],
         )
         if submit_now:

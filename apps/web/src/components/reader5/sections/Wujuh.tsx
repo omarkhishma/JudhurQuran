@@ -9,6 +9,7 @@ import { getJSON } from "@/lib/reader/api";
 import type { Contrast, RelationSource, WordPayload, WordRelations, WujuhEntry } from "@/lib/reader/types";
 import { Fold } from "../VerseKnowledge";
 import { showHemistichs } from "@/lib/openiti";
+import { ReviewMark, ReviewStatus } from "../BoardMark";
 import { CreditLine } from "../CreditLine";
 
 export function useWordRelations(slug: string, at: string | null) {
@@ -77,6 +78,7 @@ function Entry({ e, src, here }: { e: WujuhEntry; src: RelationSource | undefine
                 </p>
                 <Fold text={showHemistichs(s.text_ar)} lines={3} className="ar-classical text-[14.5px] leading-[1.95] text-t2" />
                 {s.verses.length > 0 && <VerseChips verses={s.verses} here={here} />}
+                <ReviewMark review={s.review} />
               </li>
             ))}
           </ol>
@@ -102,6 +104,7 @@ function ContrastList({ items, sources, title, lead }: { items: Contrast[]; sour
           <p className="ar-classical text-[15px] font-bold text-t1" lang="ar">{c.heading_ar ?? `${c.headword_ar}${c.target_ar ? ` / ${c.target_ar}` : ""}`}</p>
           <Fold text={showHemistichs(c.text_ar)} lines={3} className="ar-classical text-[14.5px] leading-[1.95] text-t2" />
           <SourceLine s={sources[c.source_id]} vol={c.page_vol} page={c.page} />
+          <ReviewMark review={c.review} />
         </div>
       ))}
       {items.length > 4 && (
@@ -150,7 +153,7 @@ export function WujuhBlock({ w }: { w: WordPayload }) {
       )}
       <ContrastList items={r.furuq} sources={r.sources} title={t("secFuruq")} lead={t("furuqLead")} />
       <ContrastList items={r.addad} sources={r.sources} title={t("secAddad")} lead={t("addadLead")} />
-      <p className="text-[11px] text-t3">{t("extractedNote")}</p>
+      <ReviewStatus items={[...r.wujuh.flatMap((e) => e.senses), ...r.furuq, ...r.addad]} none={t("extractedNote")} />
       <ul className="flex flex-col gap-0.5">
         {[...new Set([...r.wujuh, ...r.furuq, ...r.addad].map((x) => x.source_id))].map((id) => r.sources[id] && <CreditLine key={id} s={r.sources[id]} />)}
       </ul>

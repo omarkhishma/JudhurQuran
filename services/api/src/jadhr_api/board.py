@@ -121,6 +121,25 @@ def forced(conn: Connection, kind: str, targets: list[str]) -> dict[str, dict[st
     }
 
 
+def layer(conn: Connection, name: str) -> dict[str, dict[str, Any]]:
+    """Every verdict in force on one layer's rows, by row id (for a layer read by what its rows touch, not by id:
+    the relations, P8.4). Kept as the small kinds are, and cleared by an approval."""
+    hit = _cache.get(f"layer:{name}")
+    if hit and time.monotonic() - hit[0] < TTL:
+        return hit[1]
+    found = {
+        r["target"].split(":", 1)[1]: _out(r)
+        for r in rows(
+            conn,
+            """select target, value, sources, decided_at from editorial.entries
+               where kind = 'verdict' and status = 'approved' and target like :p""",
+            {"p": f"{name}:%"},
+        )
+    }
+    _cache[f"layer:{name}"] = (time.monotonic(), found)
+    return found
+
+
 def root(conn: Connection, r: dict[str, Any] | None) -> dict[str, Any] | None:
     """A root with the board's English gloss, and its correction of Ibn Fāris's statement as cut, when in force."""
     if not r or not r.get("key"):
@@ -194,6 +213,10 @@ def marked(
                 "correction": d["value"].get("correction"),
                 "approved_at": d["approved_at"],
             }
+            # a relation's end the board mapped to another root (P8.4)
+            for end, col in (("root", "root_key"), ("target_root", "target_root_key")):
+                if (d["value"].get("ends") or {}).get(end) and col in x:
+                    x[col] = d["value"]["ends"][end]
         out.append(x)
     return out
 

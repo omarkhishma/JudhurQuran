@@ -227,3 +227,47 @@ test("what the board approves is shown beside the sources: a root's English glos
     await drop(b);
   }
 });
+
+test("a relation from al-Furūq: its two words and their roots shown, one mapped anew as the board's correction, approved by another editor, in force on the new root and marked in the reader (P8.4a)", async ({ browser, isMobile }) => {
+  test.skip(isMobile, "two accounts in desktop windows");
+  test.setTimeout(120_000);
+  const t = tag();
+  const a = await person(browser, `e2e-wb-g-${t}@example.org`, "editor");
+  const b = await person(browser, `e2e-wb-h-${t}@example.org`, "editor");
+  try {
+    await a.page.goto(`/workbench?kind=verdict&layer=relation_candidates&state=todo&q=${encodeURIComponent("يوجب المعرفة بالمحدود")}`);
+    const row = a.page.locator(".workbench-box").filter({ hasText: "askari-furuq:0006:r" });
+    await expect(row).toContainText("فرق");
+    await expect(row).toContainText("س م و");
+    await expect(row).toContainText("ح د د");
+    await row.getByRole("radio", { name: "صُحّح" }).click();
+    await row.getByRole("textbox", { name: "لماذا؟" }).fill("الحد هنا من المعرفة، لا من المنع");
+    await row.getByRole("textbox", { name: "جذر «الحد»" }).fill("ع ر ف");
+    await expect(a.page.getByText("حكم واحد جاهز")).toBeVisible();
+    await a.page.getByRole("button", { name: "أرسلها إلى المراجعة" }).click();
+    await expect(a.page.getByRole("status").filter({ hasText: "أُرسل حكم واحد إلى المراجعة" })).toBeVisible();
+    // another editor approves; the relation is in force between the first word's root and the root it was mapped to
+    await b.page.goto("/workbench?kind=verdict&layer=relation_candidates");
+    await b.page.getByRole("button", { name: "اعتمدها كلها" }).click();
+    await expect(b.page.getByRole("status").filter({ hasText: "اعتُمد حكم واحد" })).toBeVisible();
+    const on = (await (await b.page.request.get(`/api/v1/roots/${encodeURIComponent("عرف")}/relations`)).json()) as { data: { id: string; a: { root: string }; b: { root: string } }[] };
+    expect(on.data.map((e) => [e.id, e.a.root, e.b.root])).toEqual([["askari-furuq:0006:r", "سمو", "عرف"]]);
+    // the reader: the passage under al-Furūq on a word of the new root, marked as the board's correction
+    const fam = (await (await b.page.request.get(`/api/v1/roots/${encodeURIComponent("عرف")}/family`)).json()) as { family: { members: { slug: string }[] }[] };
+    const slug = fam.family.flatMap((g) => g.members)[0].slug;
+    const at = ((await (await b.page.request.get(`/api/v1/words/${slug}/verses?limit=1`)).json()) as { data: { locations: string[] }[] }).data[0].locations[0];
+    await expire(b.page);
+    const reader = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+    await reader.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+    await reader.goto(`/word/${at}`);
+    const passage = reader.locator(".wujuh-sense").filter({ hasText: "يوجب المعرفة بالمحدود" });
+    await expect(passage.locator(".board-mark")).toContainText("صحّحته هيئة التحرير");
+    await expect(passage.locator(".board-mark")).toContainText("الحد هنا من المعرفة");
+    await reader.context().close();
+  } finally {
+    clean([a.email, b.email]);
+    await expire(a.page);
+    await drop(a);
+    await drop(b);
+  }
+});
