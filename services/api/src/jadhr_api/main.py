@@ -9,10 +9,10 @@ import hashlib
 import re
 import time
 from collections import defaultdict, deque
-from typing import Any
+from typing import Annotated, Any
 
 import orjson
-from fastapi import APIRouter, FastAPI, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -419,29 +419,45 @@ def root_family(request: Request, root: str) -> Response:
         return cached(request, out)
 
 
+class _ConcordanceFilters:
+    """The filters every concordance endpoint takes (CON-14…18, CON-Q03, CON-Q05)."""
+
+    def __init__(
+        self,
+        lemma: str | None = Query(None, max_length=80, description="a lemma slug"),
+        pattern: str | None = Query(None, max_length=40, description="a pattern slug"),
+        surah: int | None = Query(None, ge=1, le=114),
+        place: str | None = Query(None, pattern="^(meccan|medinan)$"),
+        juz: int | None = Query(None, ge=1, le=30),
+        pos: str | None = Query(None, max_length=8, pattern="^[A-Z]+$", description="a part-of-speech tag"),
+        form: str | None = Query(None, max_length=60, description="a surface form in standard spelling"),
+        near: str | None = Query(None, max_length=80, description="a lemma slug found within two words"),
+    ) -> None:
+        self.values = {
+            "lemma": lemma,
+            "pattern": pattern,
+            "surah": surah,
+            "place": place,
+            "juz": juz,
+            "pos": pos,
+            "form": form,
+            "near": near,
+        }
+
+
 @router.get("/concordance", summary="KWIC lines of a root with filters, sorts and server totals")
 def concordance_lines(
     request: Request,
+    f: Annotated[_ConcordanceFilters, Depends()],
     root: str = Query(..., max_length=20),
-    lemma: str | None = Query(None, max_length=80, description="a lemma slug"),
-    pattern: str | None = Query(None, max_length=40, description="a pattern slug"),
-    surah: int | None = Query(None, ge=1, le=114),
-    place: str | None = Query(None, pattern="^(meccan|medinan)$"),
     sort: str = Query("mushaf", pattern="^(mushaf|following|preceding)$"),
+    tr: str | None = Query(None, max_length=40, description="a translation work id for each line's verse"),
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=500),
 ) -> Response:
     with connect() as conn:
         out = concordance.concordance(
-            conn,
-            root,
-            lemma=lemma,
-            pattern=pattern,
-            surah=surah,
-            place=place,
-            sort=sort,
-            offset=offset,
-            limit=limit,
+            conn, root, sort=sort, offset=offset, limit=limit, translation=tr, **f.values
         )
         if out is None:
             raise not_found("root")
@@ -453,12 +469,11 @@ def concordance_lines(
 )
 def concordance_distribution(
     request: Request,
+    f: Annotated[_ConcordanceFilters, Depends()],
     root: str = Query(..., max_length=20),
-    lemma: str | None = Query(None, max_length=80),
-    pattern: str | None = Query(None, max_length=40),
 ) -> Response:
     with connect() as conn:
-        out = concordance.distribution(conn, root, lemma, pattern)
+        out = concordance.distribution(conn, root, **f.values)
         if out is None:
             raise not_found("root")
         return cached(request, out)
@@ -466,17 +481,13 @@ def concordance_distribution(
 
 @router.get("/concordance.csv", summary="Every KWIC line under the filters as CSV (UTF-8 with BOM)")
 def concordance_csv(
+    f: Annotated[_ConcordanceFilters, Depends()],
     root: str = Query(..., max_length=20),
-    lemma: str | None = Query(None, max_length=80),
-    pattern: str | None = Query(None, max_length=40),
-    surah: int | None = Query(None, ge=1, le=114),
-    place: str | None = Query(None, pattern="^(meccan|medinan)$"),
     sort: str = Query("mushaf", pattern="^(mushaf|following|preceding)$"),
+    tr: str | None = Query(None, max_length=40),
 ) -> Response:
     with connect() as conn:
-        out = concordance.concordance_csv(
-            conn, root, lemma=lemma, pattern=pattern, surah=surah, place=place, sort=sort
-        )
+        out = concordance.concordance_csv(conn, root, sort=sort, translation=tr, **f.values)
     if out is None:
         raise not_found("root")
     body, name = out

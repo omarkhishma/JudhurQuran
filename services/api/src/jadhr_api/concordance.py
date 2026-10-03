@@ -16,7 +16,7 @@ from typing import Any
 from jadhr_arabic import normalize
 from sqlalchemy import Connection
 
-from .content import lemma_display, resolve_root
+from .content import clean_passage, lemma_display, resolve_root, works
 from .db import rows
 
 SORTS = ("mushaf", "following", "preceding")
@@ -28,41 +28,72 @@ _FUNCTION_TAGS = {
 }  # fmt: skip
 
 
-def _hits(
-    conn: Connection,
-    root_id: int,
-    lemma: str | None,
-    pattern: str | None,
-    surah: int | None,
-    place: str | None,
-) -> list[dict[str, Any]]:
+FILTERS = ("lemma", "pattern", "surah", "place", "juz", "pos", "form", "near")
+
+
+def _hits(conn: Connection, root_id: int, f: dict[str, Any]) -> list[dict[str, Any]]:
+    """Every hit of the root under the filters: lemma and pattern slugs, sūra, Makki/Madani, juzʾ, part of
+    speech, the surface form as written in standard spelling, and a lemma found within two words."""
     cond = ["w.root_id = :r"]
     params: dict[str, Any] = {"r": root_id}
-    if lemma:
-        cond.append("l.slug = :lemma")
-        params["lemma"] = lemma
-    if pattern:
-        cond.append("p.slug = :pattern")
-        params["pattern"] = pattern
-    if surah:
-        cond.append("w.surah = :surah")
-        params["surah"] = surah
-    if place in ("meccan", "medinan"):
+    simple = {
+        "lemma": "l.slug = :lemma",
+        "pattern": "p.slug = :pattern",
+        "surah": "w.surah = :surah",
+        "juz": "v.juz = :juz",
+        "pos": "w.pos = :pos",
+        "form": "w.text_imlaei = :form",
+    }
+    for k, sql in simple.items():
+        if f.get(k):
+            cond.append(sql)
+            params[k] = f[k]
+    if f.get("place") in ("meccan", "medinan"):
         cond.append("s.revelation_place = :place")
-        params["place"] = place
+        params["place"] = f["place"]
+    if f.get("near"):
+        cond.append(
+            """exists (select 1 from content.words w2 join content.lemmas l2 on l2.id = w2.lemma_id
+                       where w2.verse_id = w.verse_id and w2.id <> w.id and l2.slug = :near
+                         and w2.position between w.position - 2 and w.position + 2)"""
+        )
+        params["near"] = f["near"]
     return rows(
         conn,
         f"""select w.id, w.location, w.surah, w.ayah, w.position, w.verse_id, w.token_from, w.token_to,
                    w.text_uthmani as surface, w.text_imlaei as form, w.pos, l.slug as lemma_slug, l.ar as lemma_ar,
                    p.slug as pattern_slug, p.ar as pattern_ar, s.name_ar as surah_name_ar,
-                   s.name_translit as surah_name_translit, s.revelation_place
+                   s.name_translit as surah_name_translit, s.revelation_place, v.juz
             from content.words w
             join content.surahs s on s.number = w.surah
+            join content.verses v on v.id = w.verse_id
             left join content.lemmas l on l.id = w.lemma_id
             left join content.patterns p on p.id = l.pattern_id
             where {" and ".join(cond)} order by w.id""",
         params,
     )
+
+
+def _translations(conn: Connection, work_id: str | None, hits: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Each hit's verse in one translation (the row tooltip and the CSV column, CON-08, CON-Q08)."""
+    if not work_id:
+        return None
+    w = next((x for x in works(conn, kind="translation") if x["id"] == work_id), None)
+    if w is None:
+        return None
+    found = rows(
+        conn,
+        """select v.id as vid, p.text from content.verses v
+           join content.work_passages p on p.work_id = :w and v.id between p.verse_from and p.verse_to
+           where v.id = any(:ids) order by v.id, p.verse_from""",
+        {"w": work_id, "ids": sorted({h["verse_id"] for h in hits})},
+    )
+    by_v: dict[int, str] = {}
+    for x in found:
+        by_v.setdefault(x["vid"], clean_passage(x["text"], w["strip_leading_number"]))
+    for h in hits:
+        h["translation"] = by_v.get(h["verse_id"])
+    return {k: w[k] for k in ("id", "title_ar", "title_en", "author_ar", "author_en")}
 
 
 def _kwic(conn: Connection, hits: list[dict[str, Any]]) -> None:
@@ -114,25 +145,37 @@ def _facets(conn: Connection, root_id: int) -> dict[str, Any]:
            group by s.number order by s.number""",
         {"r": root_id},
     )
-    return {"lemmas": lemmas, "patterns": patterns, "surahs": surahs}
+    pos = rows(
+        conn,
+        """select w.pos as tag, min(w.features #>> '{pos,ar}') as ar, min(w.features #>> '{pos,en}') as en,
+                  count(*)::int as n
+           from content.words w where w.root_id = :r group by w.pos order by count(*) desc, w.pos""",
+        {"r": root_id},
+    )
+    juz = rows(
+        conn,
+        """select v.juz, count(*)::int as n from content.words w join content.verses v on v.id = w.verse_id
+           where w.root_id = :r group by v.juz order by v.juz""",
+        {"r": root_id},
+    )
+    return {"lemmas": lemmas, "patterns": patterns, "surahs": surahs, "pos": pos, "juz": juz}
 
 
 def concordance(
     conn: Connection,
     root_raw: str,
     *,
-    lemma: str | None = None,
-    pattern: str | None = None,
-    surah: int | None = None,
-    place: str | None = None,
     sort: str = "mushaf",
     offset: int = 0,
     limit: int = 50,
+    translation: str | None = None,
+    **filters: Any,
 ) -> dict[str, Any] | None:
     r = resolve_root(conn, root_raw)
     if r is None:
         return None
-    hits = _hits(conn, r["id"], lemma, pattern, surah, place)
+    f = {k: filters.get(k) for k in FILTERS}
+    hits = _hits(conn, r["id"], f)
     total = len(hits)
     if sort != "mushaf":
         _kwic(conn, hits)
@@ -141,15 +184,24 @@ def concordance(
     else:
         page = hits[offset : offset + limit]
         _kwic(conn, page)
+    work = _translations(conn, translation, page)
     return {
         "root": {k: r[k] for k in ("key", "spaced", "translit", "occurrences")},
-        "filters": {"lemma": lemma, "pattern": pattern, "surah": surah, "place": place, "sort": sort},
+        "filters": {**f, "sort": sort, "near_ar": _lemma_ar(conn, f["near"])},
         "facets": _facets(conn, r["id"]),
         "total": total,
         "offset": offset,
+        "translation": work,
         "data": [_row(h) for h in page],
         "next_offset": offset + limit if offset + limit < total else None,
     }
+
+
+def _lemma_ar(conn: Connection, slug: str | None) -> str | None:
+    if not slug:
+        return None
+    found = rows(conn, "select ar from content.lemmas where slug = :s", {"s": slug})
+    return lemma_display(found[0]["ar"]) if found else None
 
 
 def _row(h: dict[str, Any]) -> dict[str, Any]:
@@ -169,25 +221,27 @@ def _row(h: dict[str, Any]) -> dict[str, Any]:
         "pattern_slug": h["pattern_slug"],
         "pattern": h["pattern_ar"],
         "pos": h["pos"],
+        "juz": h["juz"],
         "left": h["left"],
         "keyword": h["keyword"],
         "right": h["right"],
+        "translation": h.get("translation"),
     }
 
 
-def distribution(
-    conn: Connection, root_raw: str, lemma: str | None = None, pattern: str | None = None
-) -> dict[str, Any] | None:
-    """Hits per sūra normalised per 100 words, the Makki/Madani split, hits per surface form, and the
-    content words found within two words of a hit (CON-21…24, CON-Q04/Q05)."""
+def distribution(conn: Connection, root_raw: str, **filters: Any) -> dict[str, Any] | None:
+    """Hits per sūra normalised per 100 words (with each sūra's revelation order), the Makki/Madani split,
+    hits per surface form, and the content words found within two words of a hit — all under the same
+    filters as the lines (CON-21…24, CON-Q04/Q05)."""
     r = resolve_root(conn, root_raw)
     if r is None:
         return None
-    hits = _hits(conn, r["id"], lemma, pattern, None, None)
+    hits = _hits(conn, r["id"], {k: filters.get(k) for k in FILTERS})
     words = {
         x["number"]: x
         for x in rows(
-            conn, "select number, name_ar, name_translit, revelation_place, word_count from content.surahs"
+            conn,
+            "select number, name_ar, name_translit, revelation_place, revelation_order, word_count from content.surahs",
         )
     }
     per: dict[int, int] = {}
@@ -201,6 +255,7 @@ def distribution(
             "name_ar": words[s]["name_ar"],
             "name_translit": words[s]["name_translit"],
             "place": words[s]["revelation_place"],
+            "revelation_order": words[s]["revelation_order"],
             "hits": n,
             "words": words[s]["word_count"],
             "per100": round(100 * n / words[s]["word_count"], 2),
@@ -210,15 +265,19 @@ def distribution(
     place = {"meccan": 0, "medinan": 0}
     for p in per_surah:
         place[p["place"]] += p["hits"]
-    near = rows(
-        conn,
-        """select l.slug, l.ar, w2.pos, count(*)::int as n
+    near = (
+        rows(
+            conn,
+            """select l.slug, l.ar, w2.pos, count(*)::int as n
            from content.words w join content.words w2
              on w2.verse_id = w.verse_id and w2.position between w.position - 2 and w.position + 2 and w2.id <> w.id
            join content.lemmas l on l.id = w2.lemma_id
            where w.id = any(:ids) and (w2.root_id is null or w2.root_id <> :r)
            group by l.id, w2.pos order by count(*) desc, l.slug""",
-        {"ids": [h["id"] for h in hits], "r": r["id"]},
+            {"ids": [h["id"] for h in hits], "r": r["id"]},
+        )
+        if hits
+        else []
     )
     collocates: dict[str, dict[str, Any]] = {}
     for x in near:
@@ -237,7 +296,7 @@ def distribution(
 
 
 CSV_COLUMNS = (
-    "surah", "ayah", "position", "location", "surah_name", "surface", "lemma", "pattern", "pos",
+    "surah", "ayah", "position", "location", "surah_name", "surface", "lemma", "root", "pattern", "pos",
     "preceding", "keyword", "following",
 )  # fmt: skip
 
@@ -250,7 +309,9 @@ def concordance_csv(conn: Connection, root_raw: str, **filters: Any) -> tuple[st
         return None
     buf = io.StringIO()
     w = csv.writer(buf, quoting=csv.QUOTE_ALL, lineterminator="\r\n")
-    w.writerow(CSV_COLUMNS)
+    tr = out["translation"]
+    # the translation column names its work, so the text never travels without its credit
+    w.writerow(CSV_COLUMNS + ((f"translation: {tr['title_en']} ({tr['author_en']})",) if tr else ()))
     for x in out["data"]:
         w.writerow(
             [
@@ -261,12 +322,14 @@ def concordance_csv(conn: Connection, root_raw: str, **filters: Any) -> tuple[st
                 x["surah_name_ar"],
                 x["surface"],
                 x["lemma"] or "",
+                out["root"]["key"],
                 x["pattern"] or "",
                 x["pos"],
                 x["left"],
                 x["keyword"],
                 x["right"],
             ]
+            + ([x["translation"] or ""] if tr else [])
         )
     ascii_tr = unicodedata.normalize("NFKD", out["root"]["translit"].replace("ʿ", "3").replace("ʾ", "2"))
     name = (

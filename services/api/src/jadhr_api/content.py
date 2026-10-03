@@ -530,7 +530,7 @@ def works(conn: Connection, kind: str | None = None, lang: str | None = None) ->
     )
 
 
-def _clean(text: str, strip_number: bool) -> str:
+def clean_passage(text: str, strip_number: bool) -> str:
     return _LEADING_NUMBER.sub("", text) if strip_number else text
 
 
@@ -554,7 +554,7 @@ def verse_commentary(conn: Connection, verse_key: str, work_ids: list[str]) -> l
         )
         entry = {"work": {k: v for k, v in w.items() if k != "strip_leading_number"}, "passage": None}
         if p:
-            p["text"] = _clean(p["text"], w["strip_leading_number"])
+            p["text"] = clean_passage(p["text"], w["strip_leading_number"])
             entry["passage"] = p
         out.append(entry)
     return out
@@ -577,7 +577,9 @@ def attach_translation(conn: Connection, verses: list[dict[str, Any]], work_id: 
     for v in verses:
         t = by_id.get(v["id"])
         v["translation"] = (
-            {"text": _clean(t["text"], w["strip_leading_number"]), "footnotes": t["footnotes"]} if t else None
+            {"text": clean_passage(t["text"], w["strip_leading_number"]), "footnotes": t["footnotes"]}
+            if t
+            else None
         )
     return {"id": w["id"], "title_ar": w["title_ar"], "title_en": w["title_en"]}
 
@@ -599,7 +601,7 @@ def work_surah(conn: Connection, work_id: str, surah_no: int) -> dict[str, Any] 
     )
     strip = w.pop("strip_leading_number")
     for p in passages:
-        p["text"] = _clean(p["text"], strip)
+        p["text"] = clean_passage(p["text"], strip)
     return {"work": w, "passages": passages}
 
 

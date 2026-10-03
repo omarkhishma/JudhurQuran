@@ -33,7 +33,9 @@ def test_kwic_lines_rebuild_their_verse() -> None:
     d = get("/api/v1/concordance", root="رحم", limit=20)
     for x in d["data"]:
         v = get(f"/api/v1/verses/{x['verse_key']}")
-        assert " ".join(p for p in (x["left"], x["keyword"], x["right"]) if p) == " ".join(t["text"] for t in v["tokens"])
+        assert " ".join(p for p in (x["left"], x["keyword"], x["right"]) if p) == " ".join(
+            t["text"] for t in v["tokens"]
+        )
 
 
 def test_filters_narrow_and_facets_count() -> None:
@@ -77,3 +79,86 @@ def test_csv_has_a_bom_an_ascii_name_and_every_line() -> None:
     lines = r.content.decode("utf-8-sig").strip().split("\r\n")
     assert len(lines) == 1 + get("/api/v1/roots/علم")["occurrences"]
     assert client.get("/api/v1/concordance", params={"root": "zzz"}).status_code == 404
+
+
+def test_juz_and_part_of_speech_facets_count_and_filter() -> None:
+    d = get("/api/v1/concordance", root="علم", limit=1)
+    assert sum(j["n"] for j in d["facets"]["juz"]) == d["total"]
+    assert sum(p["n"] for p in d["facets"]["pos"]) == d["total"]
+    j = d["facets"]["juz"][3]
+    by_juz = get("/api/v1/concordance", root="علم", juz=j["juz"], limit=500)
+    assert by_juz["total"] == j["n"]
+    for x in by_juz["data"]:
+        assert get(f"/api/v1/verses/{x['verse_key']}")["juz"] == j["juz"] == x["juz"]
+    for p in d["facets"]["pos"]:
+        assert p["ar"] and p["en"]
+        lines = get("/api/v1/concordance", root="علم", pos=p["tag"], limit=500)
+        assert lines["total"] == p["n"]
+        assert {x["pos"] for x in lines["data"]} == {p["tag"]}
+
+
+def test_a_surface_form_from_the_distribution_filters_the_lines() -> None:
+    d = get("/api/v1/concordance/distribution", root="علم")
+    f = d["forms"][2]
+    lines = get("/api/v1/concordance", root="علم", form=f["form"], limit=500)
+    assert lines["total"] == f["n"]
+    assert {x["form"] for x in lines["data"]} == {f["form"]}
+
+
+def test_a_collocate_filters_the_lines_to_hits_with_it_nearby() -> None:
+    d = get("/api/v1/concordance/distribution", root="علم")
+    c = d["collocates"][0]
+    lines = get("/api/v1/concordance", root="علم", near=c["slug"], limit=500)
+    assert 0 < lines["total"] <= c["n"]
+    for x in lines["data"][:40]:
+        words = get(f"/api/v1/verses/{x['verse_key']}")["words"]
+        near = [
+            w["lemma_slug"]
+            for w in words
+            if abs(w["position"] - x["position"]) <= 2 and w["location"] != x["location"]
+        ]
+        assert c["slug"] in near, (x["location"], c["slug"], near)
+
+
+def test_each_line_can_carry_its_verse_in_a_translation_with_the_work_named() -> None:
+    d = get("/api/v1/concordance", root="رحم", limit=30, tr="saheeh")
+    assert d["translation"]["title_en"] == "Saheeh International"
+    by_surah: dict[int, dict] = {}
+    for x in d["data"]:
+        if x["surah"] not in by_surah:
+            by_surah[x["surah"]] = get(f"/api/v1/works/saheeh/surahs/{x['surah']}")
+        expected = next(
+            p["text"]
+            for p in by_surah[x["surah"]]["passages"]
+            if p["from_surah"] == x["surah"] and p["from_ayah"] <= x["ayah"] <= p["to_ayah"]
+        )
+        assert x["translation"] == expected
+    assert get("/api/v1/concordance", root="رحم", limit=1)["translation"] is None
+
+
+def test_the_distribution_follows_the_filters_and_gives_revelation_order() -> None:
+    mec = get("/api/v1/concordance/distribution", root="علم", place="meccan")
+    assert mec["total"] == get("/api/v1/concordance", root="علم", place="meccan", limit=1)["total"]
+    assert {s["place"] for s in mec["per_surah"]} == {"meccan"}
+    orders = {
+        s["surah"]: s["revelation_order"]
+        for s in get("/api/v1/concordance/distribution", root="علم")["per_surah"]
+    }
+    surahs = {s["number"]: s for s in get("/api/v1/surahs")["data"]}
+    assert all(orders[n] == surahs[n]["revelation_order"] for n in orders)
+
+
+def test_csv_names_the_translation_and_gives_the_root() -> None:
+    r = client.get("/api/v1/concordance.csv", params={"root": "علم", "tr": "saheeh", "place": "medinan"})
+    assert r.status_code == 200
+    import csv
+    import io
+
+    table = list(csv.reader(io.StringIO(r.content.decode("utf-8-sig"))))
+    assert (
+        table[0][-1]
+        == "translation: Saheeh International (Saheeh International — issued by Noor International Center)"
+    )
+    assert table[0][7] == "root" and {row[7] for row in table[1:]} == {"علم"}
+    assert all(row[-1] for row in table[1:])
+    assert len(table) - 1 == get("/api/v1/concordance", root="علم", place="medinan", limit=1)["total"]
