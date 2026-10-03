@@ -67,7 +67,8 @@ export function InlineLines({ chapter }: { chapter: number }) {
             {tfText && <p className="inline-muyassar" dir="rtl" lang="ar">{tfText}</p>}
             {trText && (
               <p className="inline-translation" dir="ltr" lang="en" data-credit={tr.data ? `${tr.data.work.title_en} (${tr.data.work.author_en})` : undefined}>
-                {trText}
+                <span className="inline-tr-text">{trText}</span>
+                {tr.data && <span className="inline-credit">{` — ${tr.data.work.title_en}`}</span>}
               </p>
             )}
           </div>,

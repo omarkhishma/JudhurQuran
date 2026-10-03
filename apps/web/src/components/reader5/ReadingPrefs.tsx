@@ -8,6 +8,7 @@ import { formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { usePrefs } from "@/lib/reader/store";
 
+type Work = { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string };
 type Dict = { key: string; name_ar: string; name_en: string; author_ar: string; author_en: string; death_hijri: number | null; death_ce: number | null };
 
 /** Reading preferences popover (design 03 §3.2, inventory RDR-032…059): the union of the spec's four
@@ -18,6 +19,7 @@ export function ReadingPrefs({ onClose }: { onClose: () => void }) {
   const p = usePrefs();
   const box = useRef<HTMLDivElement>(null);
   const dicts = useQuery({ queryKey: ["dictionaries"], queryFn: () => getJSON<{ data: Dict[] }>("/dictionaries"), staleTime: Infinity });
+  const works = useQuery({ queryKey: ["works", "translation"], queryFn: () => getJSON<{ data: Work[] }>("/works?kind=translation"), staleTime: Infinity });
 
   useEffect(() => {
     box.current?.querySelector<HTMLElement>("button")?.focus();
@@ -44,6 +46,17 @@ export function ReadingPrefs({ onClose }: { onClose: () => void }) {
     <div ref={box} className="popover prefs-popover" role="dialog" aria-label={t("readingTitle")}>
       <p className="label-caps px-1.5 pb-1">{t("readingTitle")}</p>
       <Switch checked={translationOn} onChange={(v) => p.set({ translationLine: v })} label={t("prefTranslation")} hint={t("prefTranslationHint")} />
+      {translationOn && (works.data?.data.length ?? 0) > 1 && (
+        // which translation the line under each verse shows (RDR-557)
+        <label className="prefs-select">
+          <span>{t("prefTranslationWork")}</span>
+          <select value={p.translation} onChange={(e) => p.set({ translation: e.target.value })}>
+            {works.data!.data.map((w) => (
+              <option key={w.id} value={w.id}>{isAr ? w.title_ar : w.title_en}</option>
+            ))}
+          </select>
+        </label>
+      )}
       {isAr && <Switch checked={p.muyassarLine} onChange={(v) => p.set({ muyassarLine: v })} label={t("prefMuyassar")} hint={t("prefMuyassarHint")} />}
       <Switch checked={p.imlaeiLine} onChange={(v) => p.set({ imlaeiLine: v })} label={t("prefImlaei")} hint={t("prefImlaeiHint")} />
       <Switch checked={translitOn} onChange={(v) => p.set({ translitLine: v })} label={t("prefTranslit")} hint={t("prefTranslitHint")} />

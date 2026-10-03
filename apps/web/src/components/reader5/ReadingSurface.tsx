@@ -336,7 +336,8 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       const words = Array.from(ref.current?.querySelectorAll<HTMLElement>(`[data-verse="${CSS.escape(key)}"] .w`) ?? []).map((w) => w.textContent);
       // the translation shown under the verse goes with it, credited (RDR-555)
       const tr = ref.current?.querySelector<HTMLElement>(`[data-inline="${CSS.escape(key)}"] .inline-translation`);
-      const text = `﴿${words.join(" ")}﴾ [${chapter.nameAr}: ${formatNumber(ayah, "ar")}]` + (tr ? `\n${tr.textContent} — ${tr.dataset.credit ?? ""}` : "");
+      const trText = tr?.querySelector(".inline-tr-text")?.textContent;
+      const text = `﴿${words.join(" ")}﴾ [${chapter.nameAr}: ${formatNumber(ayah, "ar")}]` + (tr && trText ? `\n${trText} — ${tr.dataset.credit ?? ""}` : "");
       try {
         await navigator.clipboard.writeText(text);
         showToast(t("verseCopied"));

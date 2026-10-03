@@ -418,16 +418,16 @@ test("study mode: words are marked only by the reader, and the rail shows each s
   const slug = await first.getAttribute("data-l");
   await panel(page).getByRole("button", { name: "معروفة" }).click();
   expect((await states())[slug!]).toBe("known");
+  await expect(first).not.toHaveClass(/is-new/);
+  // set back to "new" explicitly, the word is marked new again (RDR-106, 535)
+  await panel(page).getByRole("button", { name: "جديدة" }).click();
+  expect((await states())[slug!]).toBe("new");
+  await expect(first).toHaveClass(/is-new/);
+  await panel(page).getByRole("button", { name: "معروفة" }).click();
   const pct = new Intl.NumberFormat("ar-EG", { style: "percent", maximumFractionDigits: 0 }).format(1 / sets.data["112"].length);
   await expect(page.locator('.reader-rail [aria-current="page"]')).toContainText(pct);
 });
 
-test("rail: ajzāʾ and a mushaf page take the reader where they begin (P2.1)", async ({ page, isMobile }) => {
-  test.skip(isMobile, "the rail is an overlay on phones");
-  await returning(page);
-  const d = await api<{ juz: { number: number; surah: number; ayah: number }[] }>(page, "/divisions");
-  await page.goto("/quran/1");
-  const rail = page.locator(".reader-rail");
 test("rail: every root of the sūra is reachable, each with its transliteration (RDR-073)", async ({ page, isMobile }) => {
   test.skip(isMobile, "the rail is an overlay on phones");
   await returning(page);
@@ -441,6 +441,12 @@ test("rail: every root of the sūra is reachable, each with its transliteration 
   await expect(list.locator("li").last()).toContainText(r.data[r.data.length - 1].translit);
 });
 
+test("rail: ajzāʾ and a mushaf page take the reader where they begin (P2.1)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the rail is an overlay on phones");
+  await returning(page);
+  const d = await api<{ juz: { number: number; surah: number; ayah: number }[] }>(page, "/divisions");
+  await page.goto("/quran/1");
+  const rail = page.locator(".reader-rail");
   await rail.getByRole("button", { name: "الأجزاء" }).click();
   const j4 = d.juz[3];
   await rail.locator(`a[href$="/quran/${j4.surah}#v${j4.ayah}"]`).first().click();
@@ -451,12 +457,6 @@ test("rail: every root of the sūra is reachable, each with its transliteration 
   await rail.getByRole("textbox").fill("٣٠٠");
   await rail.getByRole("button", { name: "اذهب إلى الصفحة" }).click();
   await expect(page).toHaveURL(new RegExp(`/quran/${pg.verses[0].surah}#v${pg.verses[0].ayah}$`));
-  await expect(first).not.toHaveClass(/is-new/);
-  // set back to "new" explicitly, the word is marked new again (RDR-106, 535)
-  await panel(page).getByRole("button", { name: "جديدة" }).click();
-  expect((await states())[slug!]).toBe("new");
-  await expect(first).toHaveClass(/is-new/);
-  await panel(page).getByRole("button", { name: "معروفة" }).click();
 });
 
 test("In the Quran: the whole root and a sūra filter (RDR-558)", async ({ page }) => {
@@ -588,3 +588,19 @@ test("the hairline reports the reading position in the sūra and the mushaf", as
   const now = Number(await bar.getAttribute("aria-valuenow"));
   expect(now).toBeGreaterThan(0);
 });
+
+test("English: the translation under each verse names its work, and the reader can choose another (RDR-557)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the Reading popover sits in the ⋯ menu on phones");
+  await returning(page);
+  type W = { work: { title_en: string }; passages: { from_ayah: number; text: string }[] };
+  const [saheeh, rwwad] = await Promise.all([api<W>(page, "/works/saheeh/surahs/1"), api<W>(page, "/works/rwwad/surahs/1")]);
+  await page.goto("/en/quran/1");
+  const line = page.locator('[data-inline="1:2"] .inline-translation');
+  await expect(line.locator(".inline-tr-text")).toHaveText(saheeh.passages.find((p) => p.from_ayah === 2)!.text);
+  await expect(line.locator(".inline-credit")).toContainText(saheeh.work.title_en);
+  await page.getByRole("button", { name: "Reading", exact: true }).click();
+  await page.getByRole("dialog", { name: "Reading preferences" }).getByRole("combobox", { name: "Translation" }).selectOption("rwwad");
+  await expect(line.locator(".inline-tr-text")).toHaveText(rwwad.passages.find((p) => p.from_ayah === 2)!.text);
+  await expect(line.locator(".inline-credit")).toContainText(rwwad.work.title_en);
+});
+
