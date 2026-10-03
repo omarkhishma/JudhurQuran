@@ -439,8 +439,61 @@ def pattern_payload(conn: Connection, slug: str, limit: int = 200) -> dict[str, 
             _lemma_out(x)
             | {"root": {"key": x["root_key"], "ar_spaced": x["root_spaced"]} if x["root_key"] else None}
             for x in members
-        ]
+        ],
+        "classical": pattern_classical(conn, slug),
     }
+
+
+_CLASSICAL_COLS = """id, source_id, kind, section, heading_ar, pattern_ar, form_number, match_method,
+                     match_confidence, text_ar, examples_ar, cue_ar, locator, page_vol, page, status, seq"""
+
+
+def pattern_classical(conn: Connection, slug: str) -> dict[str, Any]:
+    """What the sarf works say about a pattern, verbatim (P3.3): the rows naming it (``direct``), naming the
+    base it inflects (``inflected``, e.g. the ‑ūn plural of a participle), or defining its suffix class
+    (``suffix``), each with al-Raḍī's commentary on it and the source's attribution. Rows stay
+    ``extracted`` until reviewed, and say how their pattern was matched."""
+    found = rows(
+        conn,
+        f"""select {_CLASSICAL_COLS},
+                   case when :s = any(f.pattern_slugs) then 'direct'
+                        when :s = any(f.inflected_slugs) then 'inflected' else 'suffix' end as via
+            from content.pattern_functions f
+            where f.kind <> 'commentary'
+              and (:s = any(f.pattern_slugs) or :s = any(f.inflected_slugs) or :s = any(f.suffix_slugs))
+            order by case when :s = any(f.pattern_slugs) then 0 when :s = any(f.inflected_slugs) then 1 else 2 end,
+                     (select ps.sort_order from content.pattern_sources ps where ps.id = f.source_id), f.seq""",
+        {"s": slug},
+    )
+    comments = (
+        rows(
+            conn,
+            f"""select {_CLASSICAL_COLS}, comments_on from content.pattern_functions
+                where kind = 'commentary' and comments_on && cast(:ids as text[]) order by seq""",
+            {"ids": [r["id"] for r in found]},
+        )
+        if found
+        else []
+    )
+    for r in found:
+        r["commentary"] = [
+            {
+                k: c[k]
+                for k in ("id", "source_id", "text_ar", "cue_ar", "locator", "page_vol", "page", "status")
+            }
+            for c in comments
+            if r["id"] in c["comments_on"]
+        ]
+        r.pop("seq")
+    used = {r["source_id"] for r in found} | {c["source_id"] for r in found for c in r["commentary"]}
+    sources = rows(
+        conn,
+        """select id, role, comments_on, title_ar, title_en, author_ar, author_en, death_hijri, death_ce,
+                  edition_ar, edition_en, page_numbering, licence, licence_url, attribution_ar, attribution_en
+           from content.pattern_sources where id = any(:ids) order by sort_order""",
+        {"ids": sorted(used)},
+    )
+    return {"rows": found, "sources": sources}
 
 
 def patterns_list(conn: Connection) -> list[dict[str, Any]]:

@@ -128,6 +128,21 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                                                           "sense_list", "sense_label_ar", "text_ar", "verses",
                                                           "derived_from", "derivation", "status"],
      {"terms_ar", "match_candidates", "target_match_candidates", "verses"}),
+    # Pattern catalog (P3.3), built by jadhr_pipeline.patterns_catalog through the layers step
+    ("pattern_sources", "pattern_sources.jsonl", ["id", "role", "comments_on", "sort_order", "title_ar", "title_en",
+                                                  "author_ar", "author_en", "death_hijri", "death_ce", "edition_ar",
+                                                  "edition_en", "openiti_uri", "openiti_release", "openiti_commit",
+                                                  "source_url", "file_sha256", "page_numbering", "licence",
+                                                  "licence_url", "licence_clause", "redistributable",
+                                                  "attribution_ar", "attribution_en"], set()),
+    ("pattern_functions", "pattern_functions.jsonl", ["id", "source_id", "seq", "section", "heading_ar", "kind",
+                                                      "statement_index", "sense_index", "pattern_ar",
+                                                      "pattern_slugs", "inflected_slugs", "suffix_slugs",
+                                                      "form_number", "match_method", "match_confidence",
+                                                      "match_candidates", "unmapped_reason", "text_ar",
+                                                      "examples_ar", "mentions", "comments_on", "cue_ar", "locator",
+                                                      "page_vol", "page", "milestone", "notes", "status"],
+     {"mentions"}),
     ("relation_citations", "relation_citations.jsonl", ["id", "candidate_id", "ordinal", "kind", "marked_by",
                                                         "quote", "start", "end", "surah", "surah_hint", "verse_keys",
                                                         "status", "method", "score", "exact", "candidates",
@@ -135,6 +150,8 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
 ]  # fmt: skip
 
 TRUNCATE_ORDER = [
+    "pattern_functions",
+    "pattern_sources",
     "relation_citations",
     "relation_candidates",
     "relation_entries",

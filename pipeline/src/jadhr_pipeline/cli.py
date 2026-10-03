@@ -41,7 +41,13 @@ def main(argv: list[str] | None = None) -> int:
             out,
             args.version,
         )
-        layers = build_layers(args.raw, out, REPO / "data/knowledge.yaml", REPO / "data/relations.yaml")
+        layers = build_layers(
+            args.raw,
+            out,
+            REPO / "data/knowledge.yaml",
+            REPO / "data/relations.yaml",
+            REPO / "data/patterns.yaml",
+        )
         print(
             json.dumps(
                 {

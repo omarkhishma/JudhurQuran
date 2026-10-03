@@ -16,6 +16,7 @@ from typing import Any
 import yaml
 
 from .knowledge import build_knowledge
+from .patterns_catalog import build_pattern_catalog
 from .relations import build_relations
 
 SOURCE_FIELDS = (
@@ -40,8 +41,15 @@ def _write(out: Path, name: str, rows: list[dict[str, Any]]) -> None:
             fh.write(json.dumps(r, ensure_ascii=False, separators=(",", ":")) + "\n")
 
 
-def build_layers(raw: Path, out: Path, knowledge_registry: Path, relations_registry: Path) -> dict[str, Any]:
-    """Build both layers into ``out`` and merge their reports into ``out/report.json``."""
+def build_layers(
+    raw: Path,
+    out: Path,
+    knowledge_registry: Path,
+    relations_registry: Path,
+    patterns_registry: Path | None = None,
+) -> dict[str, Any]:
+    """Build the layers into ``out`` and merge their reports into ``out/report.json``: the Quran knowledge
+    layers, the relation seeds and, when its registry is given, the pattern catalog (P3.3)."""
     report = json.loads((out / "report.json").read_text(encoding="utf-8"))
 
     tables, k_report = build_knowledge(raw, out, knowledge_registry)
@@ -62,11 +70,26 @@ def build_layers(raw: Path, out: Path, knowledge_registry: Path, relations_regis
     for name, rows in r_tables.items():
         _write(out, name, rows)
 
+    p_tables: dict[str, list[dict[str, Any]]] = {}
+    if patterns_registry is not None:
+        p_tables, p_report = build_pattern_catalog(raw, out, patterns_registry)
+        missing = [k for k, v in p_report["sources"].items() if v.get("status") == "missing-file"]
+        if missing:
+            raise FileNotFoundError(f"pattern catalog sources missing from data/raw: {missing}")
+        for name, rows in p_tables.items():
+            _write(out, name, rows)
+        report["patterns_catalog"] = {k: p_report[k] for k in ("totals", "coverage") if k in p_report}
+
     report["knowledge"] = k_report
     report["relations"] = r_report
     report.setdefault("counts", {}).update(
         {name: len(rows) for name, rows in tables.items()}
         | {name: len(rows) for name, rows in r_tables.items()}
+        | {name: len(rows) for name, rows in p_tables.items()}
     )
     (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
-    return {"knowledge": k_report.get("counts"), "relations": r_report.get("totals")}
+    return {
+        "knowledge": k_report.get("counts"),
+        "relations": r_report.get("totals"),
+        "patterns_catalog": {name: len(rows) for name, rows in p_tables.items()},
+    }
