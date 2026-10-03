@@ -864,11 +864,18 @@ test("menus on the canvas and on a card, a wire's pill, and the keyboard: steps 
   await expect(undo).toHaveAttribute("title", "تراجع: تحريك المحدد");
   await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === sel)!.position, { timeout: 10_000 }).toEqual({ x: at.x, y: at.y - 8 });
   for (const n of (await storedGraph(page, id))!.nodes) expect([n.position.x % 8, n.position.y % 8], n.id).toEqual([0, 0]);
-  // nothing selected: the arrows pan
+  // nothing selected: the arrows pan; so does the middle button, over a card too
   await page.keyboard.press("Escape");
   const v0 = await viewport(page);
   await page.keyboard.press("ArrowDown");
   await expect.poll(async () => (await viewport(page)).y).toBe(v0.y - 56);
+  const v1 = await viewport(page);
+  const pb2 = (await page.locator(".react-flow__pane").boundingBox())!;
+  await page.mouse.move(pb2.x + 60, pb2.y + 60);
+  await page.mouse.down({ button: "middle" });
+  await page.mouse.move(pb2.x + 100, pb2.y + 60, { steps: 4 });
+  await page.mouse.up({ button: "middle" });
+  await expect.poll(async () => Math.round((await viewport(page)).x - v1.x)).toBe(40);
 
   // two cards linked by keyboard: the first picked to the second (F14)
   // a card picked by its kind label, at its top right, away from the fold button and the note's field

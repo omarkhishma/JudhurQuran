@@ -843,6 +843,8 @@ function CanvasInner({
               // a wheel or two fingers pan, ⌘ or Ctrl with them zooms (EDT-051); the 8 px grid (HWF-12)
               panOnScroll
               panOnScrollSpeed={1}
+              // the left button on empty space and the middle button anywhere pan (EDT-254)
+              panOnDrag={[0, 1]}
               zoomOnScroll={false}
               zoomActivationKeyCode={["Meta", "Control"]}
               snapToGrid

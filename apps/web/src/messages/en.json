@@ -873,7 +873,7 @@
     "helpLinks": "Links & search",
     "helpMap": "The map",
     "helpPan": "pan the canvas",
-    "helpKeySpaceDrag": "space + drag",
+    "helpKeySpaceDrag": "space + drag, or the middle button",
     "helpPanMouse": "pan over the cards",
     "helpKeyWheel": "scroll or two fingers",
     "helpZoom": "zoom to the pointer",
