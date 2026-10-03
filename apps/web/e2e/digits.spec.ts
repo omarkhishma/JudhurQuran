@@ -46,3 +46,14 @@ test("Arabic digits in the omnibox's references", async ({ page, isMobile }) => 
   await expect(page.getByRole("option").first()).toContainText("٢:٢٥٥:٣");
   expect(await latinKeys(page)).toEqual([]);
 });
+
+test("Arabic digits in the site header's search, on the pages outside the reader", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the header's search box is the desktop's");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto("/graph");
+  await page.getByRole("banner").getByRole("button", { name: /بحث/ }).click();
+  await page.getByRole("combobox", { name: /اكتب كلمة أو جذرًا/ }).fill("2:255");
+  await expect(page.getByRole("option").first()).toContainText("٢:٢٥٥");
+  // the footer's «all results for 2:255» repeats what the reader typed, which is left as typed
+  expect((await latinKeys(page)).filter((k) => !k.startsWith("button.w-full.border-t "))).toEqual([]);
+});

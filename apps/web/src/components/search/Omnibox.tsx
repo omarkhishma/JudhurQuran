@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
-import { cnt, formatNumber } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
 import type { SearchResult } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
 
@@ -40,7 +40,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         href: `/quran/${v.surah}/${v.ayah}`,
         kind: t("kindVerse"),
         primary: <span className="quran line-clamp-1 text-[19px] leading-[1.9]" dir="rtl" lang="ar">{v.text_qpc}</span>,
-        secondary: <span className="mono" dir="ltr">{v.key}</span>,
+        secondary: <span className="mono" dir="ltr">{verseRef(v.key, locale)}</span>,
       });
     for (const s of data.results.surahs)
       out.push({
@@ -48,7 +48,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         href: `/quran/${s.number}`,
         kind: t("kindSurah"),
         primary: <span className="ar-classical text-[18px]" dir="rtl" lang="ar">{`سورة ${s.name_ar}`}</span>,
-        secondary: <span dir="ltr">{`${s.number} • ${s.name_translit}`}</span>,
+        secondary: <span dir="ltr">{`${formatNumber(s.number, locale)} • ${s.name_translit}`}</span>,
       });
     for (const r of data.results.roots)
       out.push({
