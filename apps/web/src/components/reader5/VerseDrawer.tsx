@@ -8,7 +8,7 @@ import { cnt, cnt2, formatNumber, toArabicDigits } from "@/lib/format";
 import { buildSeedGraph } from "@/lib/graph/seed";
 import { getJSON } from "@/lib/reader/api";
 import { usePersonal, useReader, verseRef } from "@/lib/reader/store";
-import { useSaved } from "@/lib/store/saved";
+import { noteOn, useSaved } from "@/lib/store/saved";
 
 export type DrawerTool = "roots" | "related" | "concordance" | "links" | "topic" | "note" | "graph";
 type VersePayload = { key: string; words: { location: string; root: string | null; lemma: string | null; lemma_slug?: string | null; text_uthmani: string }[] };
@@ -104,7 +104,7 @@ function RelatedDrawer({ verseKey }: { verseKey: string }) {
 
 export function NoteDrawer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
-  const note = useSaved((s) => s.notes[verseKey]);
+  const note = useSaved((s) => noteOn(s, verseKey));
   const setNote = useSaved((s) => s.setNote);
   const showToast = useReader((s) => s.showToast);
   const [draft, setDraft] = useState(note?.text ?? "");

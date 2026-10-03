@@ -3,13 +3,13 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useIsClient } from "@/lib/client";
-import { useSaved } from "@/lib/store/saved";
+import { noteOn, useSaved } from "@/lib/store/saved";
 
 /** A personal note on a verse — clearly the reader's own words, kept on this device. */
 export function VerseNote({ verseKey }: { verseKey: string }) {
   const t = useTranslations("saved");
   const client = useIsClient();
-  const note = useSaved((s) => s.notes[verseKey]);
+  const note = useSaved((s) => noteOn(s, verseKey));
   const setNote = useSaved((s) => s.setNote);
   const [draft, setDraft] = useState<string | null>(null);
   const value = draft ?? (client ? (note?.text ?? "") : "");

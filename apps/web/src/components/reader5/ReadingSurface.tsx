@@ -14,7 +14,7 @@ import { useDebounced } from "@/lib/useDebounced";
 import { GrammarBand } from "./GrammarBand";
 import { HoverCard, type HoverWord } from "./HoverCard";
 import { InlineGloss } from "./InlineGloss";
-import { useSaved } from "@/lib/store/saved";
+import { noteOn, useSaved } from "@/lib/store/saved";
 import { InlineLines } from "./InlineLines";
 import { VerseDrawer, type DrawerTool } from "./VerseDrawer";
 
@@ -57,7 +57,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const inChapter = (k: string) => k.startsWith(`quran:${chapter.number}:`);
   const markedVerses = [
     ...new Set([
-      ...Object.keys(notes).filter((k) => k.startsWith(`${chapter.number}:`)),
+      ...Object.keys(notes).filter(inChapter).map((k) => k.slice(6)),
       ...Object.keys(links).filter(inChapter).map((k) => k.slice(6)),
       ...Object.keys(verseTopics).filter(inChapter).map((k) => k.slice(6)),
     ]),
@@ -553,7 +553,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
         markedVerses.map((key) => {
           const slot = document.querySelector(`[data-note="${CSS.escape(key)}"]`);
           if (!slot) return null;
-          const n = notes[key];
+          const n = notes[verseRef(key)];
           const linkCount = links[verseRef(key)]?.length ?? 0;
           const verseTopicIds = verseTopics[verseRef(key)] ?? [];
           return createPortal(
@@ -633,7 +633,7 @@ function MoreTools({ verseKey, drawer }: { verseKey: string; drawer: { key: stri
   // the count on each tool, hidden at zero (RDR-146, 147)
   const links = usePersonal((s) => s.links[me]?.length ?? 0);
   const topics = usePersonal((s) => s.verseTopics[me]?.length ?? 0);
-  const note = useSaved((s) => (s.notes[verseKey] ? 1 : 0));
+  const note = useSaved((s) => (noteOn(s, verseKey) ? 1 : 0));
   const badge: Partial<Record<(typeof MORE)[number], number>> = { links, topic: topics, note };
   return (
     <>
