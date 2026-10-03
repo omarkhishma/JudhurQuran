@@ -37,6 +37,7 @@ from . import (
     path,
     review,
     routes_contrib,
+    routes_editorial,
     routes_me,
 )
 from .db import connect
@@ -976,6 +977,7 @@ def create_app() -> FastAPI:
     app.include_router(router)
     app.include_router(routes_me.router)
     app.include_router(routes_contrib.router)
+    app.include_router(routes_editorial.router)
     return app
 
 
