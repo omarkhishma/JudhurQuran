@@ -167,6 +167,14 @@ def _radicals_fit(got: str, radicals: str) -> bool:
     return len(got) == 2 and len(radicals) == 3 and radicals[1] in "وي" and got == radicals[0] + radicals[2]
 
 
+def _other_middle_vowel(v: Voc, lemma: Voc, radicals: str) -> bool:
+    """Both are Form I perfects written with their middle vowel, and the vowels differ (فَعَلَ / فَعِلَ / فَعُلَ)."""
+    if len(v) < 3 or len(lemma) < 3 or lemma[0][0] != radicals[0]:
+        return False
+    a, b = v[1][1], lemma[1][1]
+    return a in (FATHA, KASRA, DAMMA) and b in (FATHA, KASRA, DAMMA) and a != b
+
+
 class LemmaMapper:
     def __init__(
         self, roots: list[dict[str, Any]], lemmas: list[dict[str, Any]], words: list[dict[str, Any]]
@@ -349,6 +357,10 @@ class LemmaMapper:
             if vf == 1 and len(stem) == 3 and v[1][2] and radicals[1] != radicals[2]:
                 vf = 2  # «حَوَّلْتُ»: the doubled middle radical is Form II
             hits = [lm for lm in verbs if self.verb_form(lm, radicals) == vf]
+            if vf == 1 and len(stem) == 3:
+                # a Form I perfect lemma with another middle vowel is another verb: «عَسِيَ» (to harden) is not
+                # the Quran's «عَسَى» (perhaps)
+                hits = [lm for lm in hits if not _other_middle_vowel(v, self.voc[lm["key"]][0], radicals)]
             if len(hits) == 1:
                 return LemmaMatch(hits[0]["key"], "verb-citation", "medium", form=bare)
             if hits:

@@ -7,9 +7,9 @@ with that reason, where either is absent, and fail instead when JADHR_REQUIRE_DA
 
 The hand-checked sample (``SAMPLE``) is twenty articles: every 81st article with a Quranic root from the 8th
 (19 articles) and «علم». Each was read against its cuts, headwords, lemma mappings and senses. Verdict, recorded
-here and in docs/DECISIONS.md: 99 sub-entries; every one of the 35 headwords mapped to a lemma is the right lemma
-(form level; three at medium confidence: two verb citations and one twin-root); 4 shortfalls, all of the kind
-"a word is treated without a cut": «فَالْغُلُّ مختصّ» stays under «انْغَلَّ» (غل), «والْمَشِيئَةُ» starts its
+here and in docs/DECISIONS.md: 99 sub-entries, 34 of them mapped to a lemma, every one the right lemma (form
+level; the check caught «عَسِيَ» (to harden) mapped to the Quran's «عَسَى» and «نَكَرْتُ» to «نَكِرَ», both now refused
+by the middle-vowel rule); 4 shortfalls, all of the kind "a word is treated without a cut": «فَالْغُلُّ مختصّ» stays under «انْغَلَّ» (غل), «والْمَشِيئَةُ» starts its
 entry one sentence late (شيء), «أَطْرَدَهُ السّلطانُ» stays in the opening entry (طرد), «ودَرَسْتُ العلم:» is kept in
 «دَرَسَ» (درس, same lemma); no spurious cut and no wrong lemma.
 """
@@ -77,6 +77,7 @@ ROOTS = [
     {"id": 2, "key": "طلع", "letters": ["ط", "ل", "ع"]},
     {"id": 3, "key": "زيد", "letters": ["ز", "ي", "د"]},
     {"id": 4, "key": "زود", "letters": ["ز", "و", "د"]},
+    {"id": 5, "key": "عسي", "letters": ["ع", "س", "ي"]},
 ]
 LEMMAS = [
     {"key": "Eilom", "ar": "عِلْم", "pos": "N", "verb_form": None, "root_id": 1},
@@ -89,6 +90,7 @@ LEMMAS = [
     {"key": "TalaEat", "ar": "طَلَعَت", "pos": "V", "verb_form": None, "root_id": 2},
     {"key": "ziyaAdap", "ar": "زِيَادَة", "pos": "N", "verb_form": None, "root_id": 3},
     {"key": "z~aAd", "ar": "زَّاد", "pos": "N", "verb_form": None, "root_id": 4},
+    {"key": "EasaY", "ar": "عَسَى", "pos": "V", "verb_form": None, "root_id": 5},
 ]
 
 
@@ -120,6 +122,9 @@ def test_lemma_mapping_rules() -> None:
         "زود",
     )
     assert got["العلم"].reason == "article-not-quranic"
+    # a Form I perfect with another middle vowel is another verb: «عَسِيَ» (to harden) is not «عَسَى» (perhaps)
+    assert m.map("عَسِيَ", "عسي").lemma_key is None
+    assert m.map("عَسَى", "عسي").lemma_key == "EasaY"
 
 
 def test_vocalised_reads_hamza_and_madd() -> None:
@@ -197,18 +202,18 @@ def test_counts_match_the_report(built) -> None:
     )
     heads = [h for s in subs for h in s["headwords"]]
     assert (rep["articles"], rep["articles_with_root"]) == (1624, 1519)
-    assert len(subs) == rep["subentries"] == 5626
+    assert len(subs) == rep["subentries"] == 5624
     assert Counter(s["cut_rule"] for s in subs) == {
         "article-start": 1624,
-        "colon": 3698,
+        "colon": 3696,
         "paragraph-initial": 36,
         "vocalised-clause-initial": 268,
     }
-    assert (len(heads), sum(1 for h in heads if h["lemma_key"])) == (5760, 2014)
+    assert (len(heads), sum(1 for h in heads if h["lemma_key"])) == (5758, 1993)
     assert Counter(h["match_method"] or "unmapped" for h in heads) == {
-        "unmapped": 3746,
+        "unmapped": 3765,
         "lemma": 1636,
-        "verb-citation": 252,
+        "verb-citation": 231,
         "quran-form": 63,
         "plural-lemma": 47,
         "lemma+twin-root": 8,
@@ -217,11 +222,11 @@ def test_counts_match_the_report(built) -> None:
         "plural-lemma+twin-root": 1,
     }
     assert Counter(h["unmapped_reason"] for h in heads if not h["lemma_key"]) == {
-        "no-lemma-of-the-root": 3710,
+        "no-lemma-of-the-root": 3729,
         "same-letters": 36,
     }
-    assert (sum(1 for s in subs if s["lemma_keys"]), rep["lemmas_with_a_subentry"]) == (1968, 1663)
-    assert rep["rooted_lemma_occurrences_covered_pct"] == 51.89
+    assert (sum(1 for s in subs if s["lemma_keys"]), rep["lemmas_with_a_subentry"]) == (1948, 1650)
+    assert rep["rooted_lemma_occurrences_covered_pct"] == 51.79
     lists = {(x["subentry_id"], x["list_no"]) for x in senses}
     assert (len(senses), len(lists)) == (339, 131)
     assert Counter(x["list_kind"] for x in senses if x["sense_index"] == 1) == {
@@ -234,7 +239,7 @@ def test_counts_match_the_report(built) -> None:
     assert (len(cites), len(quotes)) == (8708, 8705)
     assert Counter(c["status"] for c in quotes) == {"resolved": 8691, "unresolved": 9, "ambiguous": 5}
     assert sum(1 for c in quotes if c["ref_mismatch"]) == 38
-    assert Counter(s["page_method"] for s in subs) == {"located": 5605, "article-range": 21}
+    assert Counter(s["page_method"] for s in subs) == {"located": 5603, "article-range": 21}
     assert {s["status"] for s in [*subs, *senses]} == {STATUS}
 
 
@@ -264,7 +269,7 @@ SAMPLE: dict[int, list[tuple[str, str | None]]] = {
     1000713: [("سنم", None)],
     1000799: [("الشَّيْءُ", "$aYo'"), ("المشيئة", None)],
     1000885: [("الطَّرْدُ", None), ("طَرَدَهُ", "Tarad"), ("مُطَارَدَةُ", None), ("المِطْرَدُ", None)],
-    1000969: [("عَسَى", "EasaY"), ("المُعْسِيَاتُ", None), ("عَسِيَ", "EasaY")],
+    1000969: [("عَسَى", "EasaY"), ("المُعْسِيَاتُ", None), ("عَسِيَ", None)],
     1001053: [
         ("الغَلَلُ", None), ("انْغَلَّ", None), ("غُلَّ", None), ("الْغُلَالَةُ", None), ("الْغُلَالَةُ", None),
         ("الْغُلُولُ", None), ("الغِلُّ", "gil~"), ("غَلَّ", None), ("غَلَّ", "gal~a"), ("أَغْلَلْتُ", None),
@@ -274,7 +279,7 @@ SAMPLE: dict[int, list[tuple[str, str | None]]] = {
     1001218: [("القُوَّةُ", "quw~ap"), ("أَقْوَى", None)],
     1001302: [("اللَّفْظُ", None)],
     1001390: [("المَيْزُ", None), ("تَمَيَّزَ", "tamay~azu")],
-    1001475: [("الإِنْكَارُ", None), ("المُنْكَرُ", "munkar"), ("نَكَرْتُ", "nakira"), ("النُّكْرُ", "n~ukor")],
+    1001475: [("الإِنْكَارُ", None), ("المُنْكَرُ", "munkar"), ("نَكَرْتُ", "yunkiru"), ("النُّكْرُ", "n~ukor")],
     1001565: [("الوَسْوَسَةُ", None)],
     1000995: [
         ("العِلْمُ", "Eilom"), ("التَّعْلِيمُ", None), ("التَّعَلُّمُ", None), ("تَعْلِيمُهُ", None), ("عَلِيمٌ", "Ealiym"),
@@ -291,7 +296,7 @@ def test_hand_checked_sample(built) -> None:
             got.setdefault(s["entry_id"], []).append((s["headword_ar"], s["lemma_key"]))
     assert N(got) == N(SAMPLE)
     assert sum(len(v) for v in SAMPLE.values()) == 99
-    assert sum(1 for v in SAMPLE.values() for _, k in v if k) == 35
+    assert sum(1 for v in SAMPLE.values() for _, k in v if k) == 34
 
 
 def test_hand_checked_details(built, bodies) -> None:
