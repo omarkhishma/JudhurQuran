@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { api } from "./helpers";
+import { api, arKey } from "./helpers";
 
 /**
  * One regression test for each prototype bug of RDR-516…540 that applies to the Quran reader and had none
@@ -33,7 +33,7 @@ test("RDR-517: Grammar here is read from the occurrence opened, not from one sto
   for (const o of [gen, nom]) {
     await page.goto(`/quran/${o.verse_key.split(":")[0]}?w=ilm&at=${o.location}`);
     const box = panel(page).locator('[data-section="senses"]');
-    await expect(box).toContainText(`كما وردت في الآية ${o.verse_key}`);
+    await expect(box).toContainText(`كما وردت في الآية ${arKey(o.verse_key)}`);
     await expect(box.locator("dd", { hasText: o.features.case!.ar })).toHaveCount(1);
   }
 });

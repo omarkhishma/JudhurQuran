@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link } from "@/i18n/navigation";
-import { cnt, cnt2, formatNumber } from "@/lib/format";
+import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { useReader } from "@/lib/reader/store";
 import type { Attestation, WordPayload } from "@/lib/reader/types";
@@ -119,7 +119,7 @@ export function InQuranSection({ w, chapter }: { w: WordPayload; chapter: Chapte
         {rows.map((r) => (
           <li key={r.location} className="kwic-row">
             <Link href={`/quran/${r.verse_key.split(":")[0]}?w=${encodeURIComponent(r.lemma_slug ?? w.slug)}&at=${r.location}#v${r.verse_key.split(":")[1]}`} className="mono text-[11px] text-t3 hover:text-t1" dir="ltr">
-              {r.verse_key}
+              {verseRef(r.verse_key, locale)}
             </Link>
             <span className="kwic quran" dir="rtl" lang="ar">
               <span className="kwic-side kwic-before">{r.left}</span>

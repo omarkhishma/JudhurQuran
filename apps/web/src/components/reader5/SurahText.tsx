@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { cnt, formatNumber } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
 import type { SurahPayload, Verse } from "@/lib/types";
 import { VerseLines } from "./VerseLines";
 
@@ -41,12 +41,12 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
       </header>
       <div className="passages">
         {payload.verses.map((v) => (
-          <article key={v.key} id={`v${v.ayah}`} data-verse={v.key} data-page={v.page} className="passage" aria-label={t("verseLabel", { ref: v.key })}>
+          <article key={v.key} id={`v${v.ayah}`} data-verse={v.key} data-page={v.page} className="passage" aria-label={t("verseLabel", { ref: verseRef(v.key, locale) })}>
             <div className="passage-label">
-              <span className="mono" dir="ltr">{v.key}</span>
+              <span className="mono" dir="ltr">{verseRef(v.key, locale)}</span>
               <span className="passage-rule" aria-hidden="true" />
             </div>
-            <div className="passage-tools" role="toolbar" aria-label={t("verseTools", { ref: v.key })}>
+            <div className="passage-tools" role="toolbar" aria-label={t("verseTools", { ref: verseRef(v.key, locale) })}>
               {PRIMARY.map((tool) => (
                 <button key={tool} className="ptool" data-tool={tool} data-verse-key={v.key} aria-pressed={tool === "audio" || DRAWERS.has(tool) ? false : undefined} title={t(`tool_${tool}_hint`)}>
                   {t(`tool_${tool}`)}

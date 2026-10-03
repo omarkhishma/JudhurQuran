@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { api, ar, arCount, expectNoHorizontalScroll } from "./helpers";
+import { api, ar, arCount, arKey, expectNoHorizontalScroll } from "./helpers";
 
 /**
  * Reader v5 (PLAN P2, design 03): journey A and a regression test for each prototype bug that applies
@@ -164,7 +164,7 @@ test("omnibox: Ctrl+K, a verse reference, Enter opens the verse (RDR-565)", asyn
   const box = page.getByRole("combobox", { name: "ابحث في كل شيء" });
   await expect(box).toBeFocused();
   await box.fill("٢:٢٥٥");
-  await expect(page.getByRole("option").first()).toContainText("2:255");
+  await expect(page.getByRole("option").first()).toContainText(arKey("2:255"));
   await box.press("Enter");
   await expect(page).toHaveURL(/\/quran\/2\/255$/);
 });
@@ -322,7 +322,7 @@ test("wujūh: a Quranic word's senses from the classical books, the sense citing
   const p = panel(page);
   await expect(p.getByText("الوجوه في القرآن")).toBeVisible();
   await expect(p.locator(".wujuh-sense.is-here").first()).toBeVisible();
-  await expect(p.locator(".wujuh-sense.is-here .verse-chip.is-here").first()).toHaveText(hit.verse_key);
+  await expect(p.locator(".wujuh-sense.is-here .verse-chip.is-here").first()).toHaveText(arKey(hit.verse_key));
 });
 
 test("About this sūra opens its card from the chapter head, verbatim (P3.9)", async ({ page }) => {
@@ -505,7 +505,7 @@ test("In the Quran: the whole root and a sūra filter (RDR-558)", async ({ page 
   await usage.getByRole("button", { name: /الجذر كله/ }).click();
   await usage.getByRole("combobox").selectOption("2");
   await expect(usage).toContainText(`المطابق: ${new Intl.NumberFormat("ar-EG").format(all.total)}`);
-  await expect(usage.locator(".kwic-row").first()).toContainText("2:");
+  await expect(usage.locator(".kwic-row").first()).toContainText("٢:");
 });
 
 test("tafsir side by side: up to three works at once (P2.10)", async ({ page }) => {

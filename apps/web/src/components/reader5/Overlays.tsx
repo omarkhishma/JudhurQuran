@@ -8,7 +8,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic } from "@/lib/arabic/normalize";
-import { cnt, cnt2, formatNumber } from "@/lib/format";
+import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
 import { getJSON, useWord } from "@/lib/reader/api";
 import { tokenText } from "@/lib/reader/verseText";
 import { useIsClient } from "@/lib/client";
@@ -99,7 +99,7 @@ function Omnibox({ onClose }: { onClose: () => void }) {
         dot: "var(--c-sentence)",
         ar: v.text_qpc.length > 60 ? v.text_qpc.slice(0, 60) + "…" : v.text_qpc,
         sub: division ? t("divisionStart", { kind: locale === "ar" ? det.label_ar : det.label_en, n: formatNumber(det.number ?? 0, locale) }) : word ? t("omniWordAt", { n: formatNumber(word, locale), name: v.name_ar }) : v.name_ar,
-        meta: word ? `${v.key}:${word}` : v.key,
+        meta: verseRef(word ? `${v.key}:${word}` : v.key, locale),
         go: () => {
           onClose();
           router.push(division ? `/quran/${v.surah}#v${v.ayah}` : word ? `/word/${v.key}:${word}` : `/quran/${v.surah}/${v.ayah}`);

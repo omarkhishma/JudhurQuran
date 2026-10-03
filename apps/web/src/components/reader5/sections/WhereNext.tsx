@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { cnt } from "@/lib/format";
+import { cnt, verseRef } from "@/lib/format";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import type { WordPayload } from "@/lib/reader/types";
 
@@ -48,7 +48,7 @@ export function WhereNext({ w }: { w: WordPayload }) {
             return (
               <a key="verse" className="door" style={{ ["--door" as string]: "var(--c-sentence)" }} href={`${locale === "en" ? "/en" : ""}/quran/${s.verse_key.split(":")[0]}?w=${encodeURIComponent(w.slug)}&at=${s.location}#v${s.verse_key.split(":")[1]}`}>
                 <span className="door-cap">{t("doorVerse")}</span>
-                <span className="mono text-[15px]" dir="ltr">{s.verse_key}</span>
+                <span className="mono text-[15px]" dir="ltr">{verseRef(s.verse_key, locale)}</span>
                 <span className="text-[11.5px] text-t2">{t("doorVerseWhy")}</span>
               </a>
             );

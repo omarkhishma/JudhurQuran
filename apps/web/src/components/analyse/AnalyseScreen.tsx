@@ -113,7 +113,8 @@ export function AnalyseScreen({ initialQ, initialView, initial }: { initialQ: st
       />
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[12.5px] text-t3">{t("try")}</span>
-        {TRY.map((x) => (
+        {/* a reference written as the interface writes numbers (the API reads either) */}
+        {TRY.map((raw) => locale === "ar" && /^[\d:]+$/.test(raw) ? toArabicDigits(raw) : raw).map((x) => (
           <button key={x} type="button" className="chip" onClick={() => setQ(x)} title={x}>
             <span className="ar-classical text-[15px]" lang="ar" dir="rtl">{x.split(/\s+/).length > 3 ? `${x.split(/\s+/).slice(0, 3).join(" ")}…` : x}</span>
           </button>

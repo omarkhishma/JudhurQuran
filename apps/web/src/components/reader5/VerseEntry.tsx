@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { Icon } from "@/components/Icon";
 import { Link } from "@/i18n/navigation";
-import { cnt } from "@/lib/format";
+import { cnt, verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import { useAudio } from "@/lib/store/audio";
@@ -33,9 +33,9 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
   // a verse opened is part of the reading context and of today's session (RDR-441, 437)
   useEffect(() => usePersonal.getState().recordLookup({ verse: verseKey }), [verseKey]);
   return (
-    <article className="flex flex-col gap-2 p-3.5" aria-label={t("verseTitle", { ref: verseKey })}>
+    <article className="flex flex-col gap-2 p-3.5" aria-label={t("verseTitle", { ref: verseRef(verseKey, locale) })}>
       <header className="flex flex-wrap items-center gap-2 pb-1">
-        <h2 className="text-[15px] font-medium">{t("verseTitle", { ref: verseKey })}</h2>
+        <h2 className="text-[15px] font-medium">{t("verseTitle", { ref: verseRef(verseKey, locale) })}</h2>
         <span className="flex-1" />
         <button type="button" className="btn" onClick={() => void playVerse(verseKey)}>
           <Icon name="play" size={13} />

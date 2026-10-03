@@ -13,6 +13,7 @@ import { VerseEntry } from "./VerseEntry";
 import { IndexBody } from "./IndexBody";
 import { SurahAbout } from "./SurahAbout";
 import { LocationEntry } from "./LocationEntry";
+import { verseRef } from "@/lib/format";
 
 const MIN_W = 320;
 
@@ -22,6 +23,7 @@ const MIN_W = 320;
  */
 export function Panel({ chapter, docked, width }: { chapter: ChapterInfo; docked: boolean; width: number }) {
   const t = useTranslations("rd");
+  const locale = useLocale();
   const mode = useReader((s) => s.mode);
   const selection = useReader((s) => s.selection);
   const verse = useReader((s) => s.verse);
@@ -45,7 +47,7 @@ export function Panel({ chapter, docked, width }: { chapter: ChapterInfo; docked
       : mode === "index"
         ? t("allEntries")
         : mode === "verse" && verse
-          ? t("verseTitle", { ref: verse })
+          ? t("verseTitle", { ref: verseRef(verse, locale) })
           : mode === "surah"
             ? t("aboutSurah")
             : t("dictionary");

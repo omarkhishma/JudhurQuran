@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { Term } from "@/components/terms/Term";
-import { cnt, formatNumber } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { EditorsNotes, MergedLine, MergedSenses, MyProposals, useDrafts, useWordContributions } from "@/components/contrib/WordContributions";
 import { type SuggestField, type SuggestTarget, useReader } from "@/lib/reader/store";
 import { showHemistichs } from "@/lib/openiti";
@@ -224,7 +224,7 @@ export function GrammarHere({ features: f, surface, verseKey, onSuggest }: { fea
           ))}
         </dl>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3">
-          <p className="text-[11px] text-t3">{t("grammarAt", { ref: verseKey })}</p>
+          <p className="text-[11px] text-t3">{t("grammarAt", { ref: verseRef(verseKey, locale) })}</p>
           {onSuggest && (
             <button type="button" className="suggest-link text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => onSuggest(rows.map(([key, , value]) => ({ key, value })))}>
               {t("suggestMorph")}

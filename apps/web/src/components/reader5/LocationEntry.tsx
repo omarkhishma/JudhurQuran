@@ -10,6 +10,7 @@ import type { Features } from "@/lib/reader/types";
 import { ListenOccurrence, WordAudioNote } from "./Listen";
 import { WordSigns } from "./MushafSigns";
 import { GrammarHere } from "./sections/Meanings";
+import { verseRef } from "@/lib/format";
 
 /**
  * The entry for a word that has no lemma in the corpus — a free-standing pronoun (هُوَ) or the Quranic
@@ -44,7 +45,7 @@ export function LocationEntry({ at }: { at: string }) {
           {w.translit && <span className="mono" dir="ltr" lang="en">{w.translit}</span>}
           {pos && <span className="type-chip" style={{ ["--chip" as string]: "var(--c-word)" }}>{locale === "ar" ? pos.ar : pos.en}</span>}
         </p>
-        <p className="text-[12px] text-t3">{t("thisOccurrence", { ref: w.verse.key, surah: w.verse.surah_name_ar })}</p>
+        <p className="text-[12px] text-t3">{t("thisOccurrence", { ref: verseRef(w.verse.key, locale), surah: w.verse.surah_name_ar })}</p>
         {w.gloss_en && (
           <p className="text-[13px] italic text-t2" lang="en" dir="ltr">
             {w.gloss_en} <span className="not-italic text-t3">— {t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> })}</span>
@@ -72,7 +73,7 @@ export function LocationEntry({ at }: { at: string }) {
       <GrammarHere features={f} surface={w.text_uthmani} verseKey={w.verse.key} />
       <button type="button" className="btn self-start" onClick={() => openVerse(w.verse.key)}>
         <Icon name="tafsir" size={13} />
-        {t("verseTafsirOf", { ref: w.verse.key })}
+        {t("verseTafsirOf", { ref: verseRef(w.verse.key, locale) })}
       </button>
     </article>
   );

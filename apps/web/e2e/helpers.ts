@@ -9,6 +9,8 @@ export async function api<T>(page: Page, path: string): Promise<T> {
 
 /** Arabic-Indic digits with the Arabic thousands separator, as the UI formats numbers in Arabic. */
 export const ar = (n: number) => new Intl.NumberFormat("ar-EG").format(n);
+/** A verse key or a word's place as the Arabic interface writes it («٢٠:١١٤:١٧»). */
+export const arKey = (k: string) => k.replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]);
 
 /** No horizontal page scroll — the phone layout must fit its width. */
 export async function expectNoHorizontalScroll(page: Page) {

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { cnt, formatNumber } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import type { Contrast, RelationSource, WordPayload, WordRelations, WujuhEntry } from "@/lib/reader/types";
 import { Fold } from "../VerseKnowledge";
@@ -37,13 +37,14 @@ function SourceLine({ s, vol, page }: { s: RelationSource | undefined; vol: numb
 }
 
 function VerseChips({ verses, here }: { verses: string[]; here: string | null }) {
+  const locale = useLocale();
   return (
     <span className="flex flex-wrap gap-1">
       {verses.map((k) => {
         const [s, a] = k.split(":");
         return (
           <Link key={k} href={`/quran/${s}/${a}`} className={"verse-chip" + (k === here ? " is-here" : "")} dir="ltr">
-            {k}
+            {verseRef(k, locale)}
           </Link>
         );
       })}

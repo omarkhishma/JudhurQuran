@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { Icon } from "@/components/Icon";
 import { Term } from "@/components/terms/Term";
-import { cnt, cnt2, formatNumber } from "@/lib/format";
+import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
 import { SECTIONS, type SectionId, usePersonal, usePrefs, useReader } from "@/lib/reader/store";
 import { Segmented } from "@/components/ui/Segmented";
 import { useStar } from "@/lib/store/saved";
@@ -147,7 +147,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
       {occ && (
         <div className="rounded-[10px] border border-line bg-card-2 px-3 py-2">
           <p className="text-[12px] text-t3">
-            {t("thisOccurrence", { ref: occ.verse_key, surah: occ.surah.name_ar })}
+            {t("thisOccurrence", { ref: verseRef(occ.verse_key, locale), surah: occ.surah.name_ar })}
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-1.5" dir="rtl">
             {occ.segments.map((s) => (

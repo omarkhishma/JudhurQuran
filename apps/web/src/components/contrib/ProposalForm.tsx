@@ -9,6 +9,7 @@ import { ApiError, useAccount } from "@/lib/account/store";
 import { type Kind, type Source, submit } from "@/lib/contrib";
 import { getJSON } from "@/lib/reader/api";
 import { type MorphKey, type SuggestTarget, usePersonal } from "@/lib/reader/store";
+import { verseRef } from "@/lib/format";
 
 const TITLE: Record<Kind, string> = { edit: "suggestTitle", sense: "proposeTitle", error: "errorTitle", gloss: "glossTitle", morphology: "morphTitle", attest: "attestTitle", entry: "entryTitle" };
 
@@ -99,7 +100,7 @@ export function ProposalForm({ target, kinds, initialText, onClose }: { target: 
   return (
     <form className="flex flex-col gap-3 p-4" onSubmit={send}>
       <h2 className="text-[15px] font-semibold">{heading}</h2>
-      {target.at && <p className="text-[12px] text-t3">{t("suggestAt", { word: target.label, ref: target.at })}</p>}
+      {target.at && <p className="text-[12px] text-t3">{t("suggestAt", { word: target.label, ref: verseRef(target.at, locale) })}</p>}
       {kinds && kinds.length > 1 && (
         <label className="conc-select">
           <span>{tc("kindLabel")}</span>

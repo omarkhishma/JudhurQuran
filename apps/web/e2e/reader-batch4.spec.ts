@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { api } from "./helpers";
+import { api, arKey } from "./helpers";
 
 /** Verse furniture that is not a control (RDR-547) and proposals on glosses and morphology (RDR-567). */
 
@@ -65,7 +65,7 @@ test("a gloss and a morphology tag can be proposed for this place, and nothing r
 
   await p.locator('[data-section="senses"]').getByRole("button", { name: "اقترح معنى حرفيًا أدق" }).first().click();
   const g = page.getByRole("dialog", { name: "اقترح معنى حرفيًا أدق" });
-  await expect(g).toContainText("20:114:17");
+  await expect(g).toContainText(arKey("20:114:17"));
   await expect(g).toContainText(w.occurrence.gloss_en!);
   await expect(g).toContainText("أما النص القرآني نفسه فلا يدخل في أي اقتراح");
   const send = g.getByRole("button", { name: "أرسل للمراجعة" });

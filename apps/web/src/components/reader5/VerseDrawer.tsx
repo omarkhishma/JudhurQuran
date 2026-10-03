@@ -104,6 +104,7 @@ function RelatedDrawer({ verseKey }: { verseKey: string }) {
 
 export function NoteDrawer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
+  const locale = useLocale();
   const note = useSaved((s) => noteOn(s, verseKey));
   const setNote = useSaved((s) => s.setNote);
   const showToast = useReader((s) => s.showToast);
@@ -119,7 +120,7 @@ export function NoteDrawer({ verseKey }: { verseKey: string }) {
     >
       <textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} className="field" placeholder={t("notePlaceholder")} aria-label={t("tool_note")} dir="auto" />
       <div className="flex items-center gap-2">
-        <span className="text-[11.5px] text-t3">{t("notePrivate", { ref: verseKey })}</span>
+        <span className="text-[11.5px] text-t3">{t("notePrivate", { ref: locale === "ar" ? toArabicDigits(verseKey) : verseKey })}</span>
         <span className="flex-1" />
         <button type="submit" className="btn btn-primary" disabled={!draft.trim() && !note}>{t("saveNote")}</button>
       </div>
