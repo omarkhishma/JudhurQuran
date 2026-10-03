@@ -18,7 +18,6 @@ export function VerseLines({ v }: { v: Verse }) {
         return (
           <span key={tk.position}>
             <button
-              type="button"
               className="w"
               data-t={tk.position}
               data-w={`${v.surah}:${v.ayah}:${tk.word_from}`}
@@ -26,8 +25,6 @@ export function VerseLines({ v }: { v: Verse }) {
               data-l={first?.lemma_slug ?? undefined}
               data-l2={second?.lemma_slug ?? undefined}
               data-r={first?.root ?? undefined}
-              data-pos={first?.pos ?? undefined}
-              tabIndex={-1}
             >
               {tk.text}
             </button>
@@ -35,7 +32,7 @@ export function VerseLines({ v }: { v: Verse }) {
           </span>
         );
       })}{" "}
-      <button type="button" className="ayah-num" data-verse-btn={v.key} tabIndex={-1}>
+      <button className="ayah-num" data-verse-btn={v.key} tabIndex={-1}>
         {v.number_text}
       </button>
     </p>

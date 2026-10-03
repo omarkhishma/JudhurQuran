@@ -4,8 +4,11 @@ import { cnt, formatNumber } from "@/lib/format";
 import type { SurahPayload, Verse } from "@/lib/types";
 import { VerseLines } from "./VerseLines";
 
-const TOOLS = ["audio", "roots", "tafsir", "related", "copy", "cite", "note", "graph"] as const;
-const DRAWERS = new Set<string>(["roots", "related", "note", "graph"]);
+// Recite and Roots stand in every verse (the design's primary tools); the other six are drawn by the
+// reading surface into the verse being read — hovered, focused, long-pressed or open — so al-Baqara's
+// 286 verses do not each carry eight buttons (P2.10a).
+const PRIMARY = ["audio", "roots"] as const;
+const DRAWERS = new Set<string>(["roots"]);
 
 /**
  * The reading surface's text, rendered on the server (design 03 §3.4): every word a focusable control
@@ -43,21 +46,16 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
               <span className="mono" dir="ltr">{v.key}</span>
               <span className="passage-rule" aria-hidden="true" />
             </div>
-            <div className="passage-tools" data-tools role="toolbar" aria-label={t("verseTools", { ref: v.key })}>
-              {TOOLS.map((tool) => (
-                <button key={tool} type="button" className="ptool" data-tool={tool} data-verse-key={v.key} aria-pressed={DRAWERS.has(tool) ? false : undefined} title={t(`tool_${tool}_hint`)}>
+            <div className="passage-tools" role="toolbar" aria-label={t("verseTools", { ref: v.key })}>
+              {PRIMARY.map((tool) => (
+                <button key={tool} className="ptool" data-tool={tool} data-verse-key={v.key} aria-pressed={DRAWERS.has(tool) ? false : undefined} title={t(`tool_${tool}_hint`)}>
                   {t(`tool_${tool}`)}
                 </button>
               ))}
+              <span className="ptool-more" data-more={v.key} />
             </div>
             <VerseLines v={v} />
             <div className="gram-band" data-band={v.key} />
-            <p className="verse-imlaei" dir="rtl" lang="ar">
-              <span className="verse-imlaei-label">{t("imlaeiLabel")}</span> {v.text_imlaei}
-            </p>
-            <p className="verse-translit" data-translit dir="ltr" lang="en">
-              {v.words.map((w) => w.translit ?? "").join(" ")}
-            </p>
             <div data-inline={v.key} />
             <div data-gloss={v.key} />
             <div data-note={v.key} />

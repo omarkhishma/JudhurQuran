@@ -738,12 +738,11 @@ button:disabled {
   background: var(--paper);
   border-inline: 1px solid var(--line);
 }
+/* Phones keep room below the last verse for the half sheet at all times: changing the padding when
+   the sheet opened re-laid out the whole sūra on every tap. */
 .reader-v5[data-bp="phone"] .paper {
-  padding: 20px 10px 96px;
+  padding: 20px 10px min(56vh, 480px);
   border-inline: 0;
-}
-.reader-v5[data-sheet="open"] .paper {
-  padding-bottom: min(56vh, 480px);
 }
 .chapter-head {
   display: flex;
@@ -772,6 +771,9 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* verses off screen skip layout and paint (P2.10a): al-Baqara is 286 verses, 17k elements */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 240px;
   padding: 16px 18px 18px;
   border: 1px solid transparent;
   border-radius: 12px;
@@ -813,12 +815,19 @@ button:disabled {
   color: var(--c-root);
   letter-spacing: 0;
 }
+/* One row that never grows taller: tools drawn into the verse being read must not move its words
+   (a tap or a quick click would land on the verse instead) — extra tools scroll sideways on phones. */
 .passage-tools {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 5px;
   min-height: 28px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.passage-tools::-webkit-scrollbar {
+  display: none;
 }
 .ptool {
   display: inline-flex;
@@ -846,23 +855,9 @@ button:disabled {
   border-color: var(--ring);
   color: var(--t1);
 }
-/* Recite and Roots stay; the rest appear on hover, keyboard focus, the open verse, or a long-press
-   (RDR-149). Not on any focus: a tap focuses the word on mousedown, and tools appearing then would move
-   the word from under the finger before the click lands. */
-.passage .ptool:nth-child(n + 3) {
-  display: none;
-}
-.passage:is([data-hot], [data-pressed]) .ptool:nth-child(n + 3),
-.passage:has(.drawer, .w:focus-visible) .ptool:nth-child(n + 3),
-.passage-tools:focus-within .ptool:nth-child(n + 3) {
-  display: inline-flex;
-  animation: dc-fade 0.2s ease-out;
-}
-@media (hover: hover) {
-  .passage:hover .ptool:nth-child(n + 3) {
-    display: inline-flex;
-    animation: dc-fade 0.2s ease-out;
-  }
+/* Recite and Roots stand in every verse; the other tools are drawn only into the verse being read. */
+.ptool-more {
+  display: contents;
 }
 .reader-v5[data-bp="phone"] .ptool {
   font-size: 12.5px;
@@ -929,16 +924,12 @@ button:disabled {
 .reading[data-translit="off"] .verse-translit {
   display: none;
 }
-/* D7: the standard spelling is a labelled line under the mushaf text, shown only when asked */
+/* D7: the standard spelling is a labelled line under the mushaf text, drawn only when asked */
 .verse-imlaei {
-  display: none;
   font-family: var(--font-ui);
   font-size: calc(16px * min(var(--size, 1), 1.2));
   line-height: 1.9;
   color: var(--t2);
-}
-.reading[data-imlaei="on"] .verse-imlaei {
-  display: block;
 }
 .verse-imlaei-label {
   font-size: 11.5px;

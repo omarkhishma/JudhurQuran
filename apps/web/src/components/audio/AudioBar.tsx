@@ -75,7 +75,7 @@ export function AudioBar({ surah, surahName }: { surah: number; surahName: strin
           <Icon name="chevronEnd" />
         </button>
         <button type="button" className="btn mono min-w-[52px] text-[12px]" onClick={a.cycleSpeed} title={t("speed")} aria-label={`${t("speed")} ${a.speed}×`}>
-          {`${client ? a.speed : 1}×`}
+          <span dir="ltr">{`${client ? a.speed : 1}×`}</span>
         </button>
         <button type="button" className="btn icon-btn" aria-pressed={client && a.repeat} onClick={() => a.setRepeat(!a.repeat)} title={t("repeat")} aria-label={t("repeat")}>
           <Icon name="repeat" />

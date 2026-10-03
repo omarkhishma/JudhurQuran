@@ -53,6 +53,10 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const setProgress = usePersonal((s) => s.setProgress);
   const playVerse = useAudio((s) => s.playVerse);
   const [drawer, setDrawer] = useState<{ key: string; tool: DrawerTool } | null>(null);
+  // The verse whose full toolbar is drawn: hovered, else focused, else long-pressed, else open.
+  const [hoverVerse, setHoverVerse] = useState<string | null>(null);
+  const [focusVerse, setFocusVerse] = useState<string | null>(null);
+  const [pressed, setPressed] = useState<string | null>(null);
   const arrival = useRef(false);
   const [hover, setHover] = useState<{ slug: string; at: string } | null>(null);
   const hoverIntent = useDebounced(hover, 140);
@@ -62,8 +66,12 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     const prev = usePersonal.getState().progress.quran;
     return prev && prev.chapter === chapter.number && prev.passage > 1 ? { passage: prev.passage, at: prev.at } : null;
   });
+  // Words are buttons; only one of them is in the tab order at a time (the server markup leaves that
+  // to the browser, to keep al-Baqara light).
   useEffect(() => {
-    if (ref.current) roving(ref.current, null);
+    if (!ref.current) return;
+    ref.current.querySelectorAll<HTMLElement>(".w").forEach((w) => (w.tabIndex = -1));
+    roving(ref.current, null);
   }, []);
 
   // URL → state on arrival (a route's own verse or word first: /quran/2/255, /word/2:255:3); then the
@@ -157,7 +165,12 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     root.querySelectorAll("[data-hot]").forEach((el) => el.removeAttribute("data-hot"));
     let familyRoot: string | undefined;
     if (mode === "word" && selection?.at) {
-      const tokens = Array.from(root.querySelectorAll<HTMLElement>(".w")).filter((el) => covers(el, selection.at!));
+      const [vs, va] = selection.at.split(":");
+      const direct = Array.from(root.querySelectorAll<HTMLElement>(`.w[data-w="${CSS.escape(selection.at)}"], .w[data-w2="${CSS.escape(selection.at)}"]`));
+      // a word inside a mushaf token that holds several corpus words (rare): look within its verse only
+      const tokens = direct.length
+        ? direct
+        : Array.from(root.querySelectorAll<HTMLElement>(`[data-verse="${vs}:${va}"] .w[data-w2]`)).filter((el) => covers(el, selection.at!));
       tokens.forEach((el) => el.classList.add("is-selected"));
       familyRoot = tokens[0]?.dataset.r;
       tokens[0]?.closest(".passage")?.setAttribute("data-hot", "");
@@ -272,10 +285,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   function onTouchStart(e: React.TouchEvent) {
     const passage = (e.target as HTMLElement).closest<HTMLElement>(".passage");
     if (!passage) return;
-    press.current.timer = setTimeout(() => {
-      ref.current?.querySelectorAll("[data-pressed]").forEach((x) => x.removeAttribute("data-pressed"));
-      passage.setAttribute("data-pressed", "");
-    }, 420);
+    press.current.timer = setTimeout(() => setPressed(passage.dataset.verse ?? null), 420);
   }
   function cancelPress() {
     if (press.current.timer) clearTimeout(press.current.timer);
@@ -357,7 +367,12 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   }
 
   // The grammar band follows the hovered word (after a short intent delay), else the selected one.
-  function onMouseOver(e: React.MouseEvent) {
+  function onPointerOver(e: React.PointerEvent) {
+    // A real mouse only: a tap emits pointer/mouse-over first, and tools drawn then would move the word
+    // from under the finger before the click lands (the lesson of the first phone build).
+    if (e.pointerType !== "mouse") return;
+    const pv = (e.target as HTMLElement).closest<HTMLElement>(".passage")?.dataset.verse ?? null;
+    if (pv !== hoverVerse) setHoverVerse(pv);
     if (!grammarBand) return;
     const w = (e.target as HTMLElement).closest<HTMLElement>(".w");
     const next = w?.dataset.l && w.dataset.w ? { slug: w.dataset.l, at: w.dataset.w } : null;
@@ -373,6 +388,11 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       ? document.querySelector(`[data-gloss="${CSS.escape(selection.at.split(":").slice(0, 2).join(":"))}"]`)
       : null;
 
+  const hotVerse = mode === "verse" && verse ? verse : mode === "word" && selection?.at ? selection.at.split(":").slice(0, 2).join(":") : null;
+  const openDrawerVerse = drawer?.key ?? null;
+  const activeVerse = hoverVerse ?? focusVerse ?? pressed ?? openDrawerVerse ?? hotVerse;
+  const moreEl = mounted && activeVerse ? document.querySelector(`[data-more="${CSS.escape(activeVerse)}"]`) : null;
+
   const translitOn = translitPref ?? locale !== "ar";
   const resumeEl = mounted && resume ? document.querySelector(`#v${resume.passage} .passage-label`) : null;
   const drawerEl = mounted && drawer ? document.querySelector(`[data-drawer="${CSS.escape(drawer.key)}"]`) : null;
@@ -386,15 +406,23 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       data-imlaei={imlaeiLine ? "on" : undefined}
       style={{ ["--size" as string]: String(size), ["--band-hint" as string]: JSON.stringify(t("bandHint")) }}
       onClick={onClick}
-      onMouseOver={onMouseOver}
-      onMouseLeave={() => setHover(null)}
+      onPointerOver={onPointerOver}
+      onMouseLeave={() => {
+        setHover(null);
+        setHoverVerse(null);
+      }}
       onCopy={onCopy}
       onTouchStart={onTouchStart}
       onTouchMove={cancelPress}
       onTouchEnd={cancelPress}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocusVerse(null);
+      }}
       onFocus={(e) => {
+        const el = e.target as HTMLElement;
         // the first Tab into the text lands on one word; arrows move from there
-        if ((e.target as HTMLElement).classList.contains("w")) roving(ref.current!, e.target as HTMLElement);
+        if (el.classList.contains("w")) roving(ref.current!, el);
+        setFocusVerse(el.matches(":focus-visible") ? (el.closest<HTMLElement>(".passage")?.dataset.verse ?? null) : null);
       }}
     >
       {children}
@@ -425,6 +453,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
               : null;
           })}
       {bandEl && bandWord && createPortal(<GrammarBand key={bandWord.at} slug={bandWord.slug} at={bandWord.at} />, bandEl)}
+      {moreEl && activeVerse && createPortal(<MoreTools verseKey={activeVerse} drawer={drawer} />, moreEl, `more-${activeVerse}`)}
       {drawerEl && drawer && createPortal(<VerseDrawer verseKey={drawer.key} tool={drawer.tool} onClose={() => setDrawer(null)} />, drawerEl)}
     </div>
   );
@@ -444,3 +473,29 @@ function roving(root: HTMLElement, el: HTMLElement | null) {
   root.querySelectorAll<HTMLElement>(".w[tabindex='0']").forEach((x) => x.setAttribute("tabindex", "-1"));
   (el ?? root.querySelector<HTMLElement>(".w"))?.setAttribute("tabindex", "0");
 }
+
+const MORE = ["tafsir", "related", "copy", "cite", "note", "graph"] as const;
+const MORE_DRAWERS = new Set<string>(["related", "note", "graph"]);
+
+/** The six verse tools beyond Recite and Roots, drawn only into the verse being read (P2.10a). */
+function MoreTools({ verseKey, drawer }: { verseKey: string; drawer: { key: string; tool: DrawerTool } | null }) {
+  const t = useTranslations("rd");
+  return (
+    <>
+      {MORE.map((tool) => (
+        <button
+          key={tool}
+          type="button"
+          className="ptool"
+          data-tool={tool}
+          data-verse-key={verseKey}
+          aria-pressed={MORE_DRAWERS.has(tool) ? drawer?.key === verseKey && drawer.tool === tool : undefined}
+          title={t(`tool_${tool}_hint`)}
+        >
+          {t(`tool_${tool}`)}
+        </button>
+      ))}
+    </>
+  );
+}
+
