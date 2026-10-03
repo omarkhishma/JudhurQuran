@@ -77,7 +77,16 @@ def pull(u: dict[str, Any], since: int) -> dict[str, Any]:
         "records": [_out(u["id"], r) for r in rows],
         "cursor": rows[-1]["seq"] if rows else since,
         "more": more,
+        # every device learns the account's choices with its changes (the journal turned off elsewhere stops here)
+        "settings": u["settings"] or {},
     }
+
+
+def _same(user_id: Any, cur: dict[str, Any], value: Any, deleted: bool) -> bool:
+    """The incoming version says what the server already holds: nothing to replace, nothing to keep."""
+    if cur["deleted"] or deleted:
+        return bool(cur["deleted"]) and deleted
+    return cur["value"] is not None and _out(user_id, cur)["value"] == value
 
 
 def push(u: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
@@ -106,25 +115,29 @@ def push(u: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
                 "select store, key, value, deleted, updated_at, seq from accounts.records where user_id = :u and store = :st and key = :k for update",
                 {"u": u["id"], "st": store, "k": key},
             )
+            if cur is not None and _same(u["id"], cur, rec.get("value"), deleted):
+                # a device that signs in again sends what it already synced: no copy, no change
+                applied.append({"store": store, "key": key})
+                continue
             if cur is not None and cur["updated_at"] >= when:
                 # the server's version is as new or newer: it stays, and the client learns it; the version that
-                # lost is kept with the replaced ones, so a merge never destroys anything (P6.2)
-                if cur["updated_at"] > when:
-                    conn.execute(
-                        text(
-                            """insert into accounts.record_history (user_id, store, key, value, deleted, updated_at)
-                               values (:u, :st, :k, :v, :d, :t)"""
-                        ),
-                        {
-                            "u": u["id"],
-                            "st": store,
-                            "k": key,
-                            "v": None if body is None else seal(body, _aad(u["id"], store, key)),
-                            "d": deleted,
-                            "t": when,
-                        },
-                    )
-                    rejected.append({"store": store, "key": key, "server": _out(u["id"], cur)})
+                # lost is kept with the replaced ones, so a merge never destroys anything (P6.2) — a tie too, since
+                # two devices' first syncs can both carry the same placeholder time
+                conn.execute(
+                    text(
+                        """insert into accounts.record_history (user_id, store, key, value, deleted, updated_at)
+                           values (:u, :st, :k, :v, :d, :t)"""
+                    ),
+                    {
+                        "u": u["id"],
+                        "st": store,
+                        "k": key,
+                        "v": None if body is None else seal(body, _aad(u["id"], store, key)),
+                        "d": deleted,
+                        "t": when,
+                    },
+                )
+                rejected.append({"store": store, "key": key, "server": _out(u["id"], cur)})
                 continue
             if cur is None and total and total["n"] >= MAX_RECORDS:
                 raise HTTPException(status_code=413, detail="This account holds as many records as it can")

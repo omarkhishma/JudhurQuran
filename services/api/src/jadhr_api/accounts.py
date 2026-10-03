@@ -294,6 +294,13 @@ def update_me(u: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
             )
         except Exception as e:  # the orcid check, most likely
             raise HTTPException(status_code=422, detail="Check the ORCID (0000-0000-0000-0000).") from e
+        if (u["settings"] or {}).get("sync_journal") and not settings.get("sync_journal"):
+            # the journal syncs only by choice (NTB-Q02): turning it off takes it off the server, every copy
+            for table in ("records", "record_history"):
+                conn.execute(
+                    text(f"delete from accounts.{table} where user_id = :u and store = 'journal'"),
+                    {"u": u["id"]},
+                )
     return {**u, **fields, "settings": settings}
 
 

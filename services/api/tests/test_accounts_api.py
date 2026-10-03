@@ -166,6 +166,28 @@ def test_records_sync_newest_wins_nothing_is_destroyed_and_values_are_encrypted(
     back = client.post(f"/api/v1/me/history/{hist[0]['id']}/restore", headers=h).json()
     assert back["applied"] == [{"store": "saved", "key": "lemma:ilm"}]
     assert client.get("/api/v1/me/export", headers=h).json()["records"][0]["value"]["label"] == "عِلْم"
+    # a device that sends what the server already holds changes nothing and leaves no copy
+    n_hist = len(client.get("/api/v1/me/history", headers=h).json()["data"])
+    same = client.post(
+        "/api/v1/me/sync",
+        headers=h,
+        json={
+            "records": [{**rec, "value": {"label": "عِلْم", "key": "ilm", "kind": "lemma"}, "updated_at": 1}]
+        },
+    ).json()
+    assert same == {"applied": [{"store": "saved", "key": "lemma:ilm"}], "rejected": []}
+    assert len(client.get("/api/v1/me/history", headers=h).json()["data"]) == n_hist
+    # a tie with a different value keeps the server's and keeps the other as a replaced version
+    cur = client.get("/api/v1/me/export", headers=h).json()["records"][0]
+    tie = client.post(
+        "/api/v1/me/sync",
+        headers=h,
+        json={"records": [{**rec, "value": {"label": "tie"}, "updated_at": cur["updated_at"]}]},
+    ).json()
+    assert tie["applied"] == [] and tie["rejected"][0]["server"]["value"]["label"] == "عِلْم"
+    assert "tie" in [
+        x["value"]["label"] for x in client.get("/api/v1/me/history", headers=h).json()["data"] if x["value"]
+    ]
     # at rest the value is ciphertext, bound to its user, store and key
     with accounts.tx() as conn:
         raw = accounts.q1(
@@ -200,6 +222,15 @@ def test_the_journal_syncs_only_when_turned_on_and_lookups_are_shared_only_by_ch
         client.post("/api/v1/me/sync", headers=h, json={"records": [{**rec, "store": "nope"}]}).status_code
         == 422
     )
+    # every device learns the choice with its changes, and turning the journal off takes it off the server
+    assert client.get("/api/v1/me/sync", headers=h).json()["settings"]["sync_journal"] is True
+    client.patch("/api/v1/me", headers=h, json={"settings": {"sync_journal": False}})
+    pulled = client.get("/api/v1/me/sync", headers=h).json()
+    assert pulled["settings"]["sync_journal"] is False
+    assert [r for r in pulled["records"] if r["store"] == "journal"] == []
+    assert [
+        r for r in client.get("/api/v1/me/history", headers=h).json()["data"] if r["store"] == "journal"
+    ] == []
 
 
 def test_deleting_the_account_takes_two_steps_and_removes_everything(email: str) -> None:
