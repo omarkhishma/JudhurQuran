@@ -448,3 +448,60 @@ works, entries, glosses, report = build_lexica(
 
 Command (repo root): `uv run pytest pipeline/tests/test_lexica.py -q` → `24 passed in 7.69s`; with the Arabic helper tests `uv run pytest pipeline/tests packages/arabic-py/tests -q` → `41 passed in 7.73s`. `uv run ruff check` / `ruff format --check` → "All checks passed!" / "9 files already formatted"; `uv run mypy pipeline/src/jadhr_pipeline/lexica --ignore-missing-imports` → "Success: no issues found in 8 source files". The tests load the real pinned files and assert the counts above, the Maqayis core meanings of علم, كتب, رحم (verbatim prefix of the body), the al-Mufradat رحم article as printed (p. 347–348), the Lisan splits (عين not inside عون; ولي, دين, حفظ likewise), Lane كتب (Arabic script, no Buckwalter left), al-Sihah [رحم] at 5/1929, the 9:41 gloss aligned to 9:41:1–3, no gloss containing a later numbered item (the coordinator's detector, checked first on a merged sample), separate glosses for 1:2 (العالمون), 1:4 (يوم الدين) and 1:6 (الصراط) aligned inside their own ayahs and absent from 1:1, al-Qamar's refrain item giving rows for 54:16, 18, 21 and 30, that no body contains a stripped marker pattern, span markup or a carriage return, that every root_key is one of the 1,642, that every loose/manual mapping is on the review list, and that the registry refuses a file whose sha256 differs or is missing. The marker and merge checks were run against known positives first (a marked string; the old merged عون record) and do fail on them.
 
+### 10.7 The four dictionaries we lacked (PLAN P3.2, 2026-10-03)
+
+Tāj al-ʿArūs, al-Qāmūs al-Muḥīṭ, Kitāb al-ʿAyn and Tahdhīb al-Lugha are now imported from the Shamela 4 typings (Hugging Face `AuthenticIlm/Shamela4_Full_DB` at revision `07554bee`; folders 2502, 2558, 1459, 2503 = shamela.ws books 7030, 7283, 1682, 7031, read from each `book_metadata.json`), split per root, root-matched and display-only (D22). The raw files sit in `data/raw/lexica/hf-authenticilm-shamela4/<folder>/` with `SOURCE.txt`, and their sha256 pins are in `SHA256SUMS.txt` and `data/lexica.yaml`. The OpenITI copies of the same editions (JK000930, JK007040, Shamela0007283, JK007140 and the three Shamela-derived versions, at the commits of the research manifest, blob SHA-1 verified) are in `data/raw/lexica/openiti-oracles/` as test oracles only: CC BY-NC-SA and unvowelled, nothing of them reaches a build.
+
+#### How each is read
+
+- All four: Shamela pages are read in the order of their page number. The dataset's `sequence_num` misplaces three pages (Tāj 2/313, Tahdhīb 1/56 and 1/219), which had moved them into other volumes; for the other seven Shamela books the two orders are identical.
+- Tāj (`taj.py`, rules `taj-article-split`, `heading-separator-dropped`, `taj-headword-markers-removed`): the TOC root headings in order; a heading span must open its line (or be the «و» of a combined heading). 17 untagged headings, 327 plain heading lines and 309 anchors inside running text are handled and counted. The typing turned the sign before each headword into ﴿ ﴾ or ! (116,779 removed); a ﴿…﴾ span stays when it reads as a Quran quotation — 3,281 by Quran text (word-pair share against the corpus), 177 by a citation formula, 86 by a sūra:āya reference. Typing defects are counted, not edited: 672 empty brackets, 223 Quran passages lost to a font code, 33 «(سقط: …)» notes.
+- al-Qāmūs (`qamus.py`, rules `qamus-bullet-split`, `qamus-root-alignment`): one article per bullet (10,371) plus 18 lines whose bullet the typist left out, recovered through Tāj. The root is never printed, so each article is aligned to Tāj's root headings of the same باب and فصل by an order-preserving alignment (letters of the root in the headword, opening words in Tāj's article, which quotes al-Qāmūs): 10,293 of 10,357 articles aligned (99.38%), 32 particles not aligned, 64 unaligned mapped from their own headword.
+- al-ʿAyn and Tahdhīb (`taqalib.py`, rule `taqalib-article-split`): every root sits in a group of letters that treats all its permutations. A group starts at its title (TOC, or an untagged line of spaced letters, a list line, «(باب …)»); a line-initial header is accepted when it is in the group's «مستعمل» list or its letters fit the group; «قال:», «الليث:», glosses and words of a root that already has its article stay in the text. The lists are the checklist. Every special case (pages typed without line breaks, untitled لفيف sections, quinqueliteral headers after their narrator, colophons) is in the module docstring and the rule's registry description, and counted.
+
+#### Counts and coverage (computed by the pipeline; pinned in `test_lexica_dictionaries.py`)
+
+| Work | Entries | Strict | Loose | Manual | Roots strict | Roots any | Strict, by occurrence | Any, by occurrence |
+|---|---|---|---|---|---|---|---|---|
+| Tāj al-ʿArūs | 11,891 | 1,620 | 14 | 1 | 1,617 = 98.48% | 1,628 = 99.15% | 99.15% | 99.94% |
+| al-Qāmūs | 10,389 | 1,616 | 23 | 1 | 1,613 = 98.23% | 1,629 = 99.21% | 99.31% | 99.94% |
+| al-ʿAyn | 5,813 | 1,422 | 208 | 0 | 1,420 = 86.48% | 1,597 = 97.26% | 89.20% | 98.76% |
+| Tahdhīb | 7,223 | 1,336 | 352 | 0 | 1,314 = 80.02% | 1,584 = 96.47% | 84.05% | 98.20% |
+
+- Command: `JADHR_RAW_DIR=<main>/data/raw uv run pytest pipeline/tests/test_lexica_dictionaries.py -q -s` prints these lines. The percentages are of the 1,642 Quranic roots; "by occurrence" weighs each root by its occurrences in the Quran.
+- Tahdhīb's strict share is lower because al-Azharī heads weak roots as words («سما», «فغا», «رأى»), which the matcher maps by its documented spelling rule (alif-for-weak, 96 at high confidence) and lists for review. The headers reach the matcher as printed; folded to hamza they had matched only at low confidence.
+- Checklist: al-ʿAyn has 1,773 groups, 1,541 with a list (the research counted 1,500), and 117 of 4,841 listed permutations are never found as a header (2.42%). Tahdhīb has 3,180 groups (1,372 titled), 974 with a list, and 179 of 2,365 listed permutations not found (7.57%). The research gave group counts, not article counts, for these two.
+- Not imported, counted: al-ʿAyn 54,557 characters of front matter and 6,455 of al-Khalīl's remarks on groups and colophons; Tahdhīb 87,284 of front matter and 93,279 inside the dictionary, of which 43,952 are al-Azharī's closing chapters on the letters (باب الألفات، الياآت، الواوات، الهمز — grammar, not root articles) and the rest group remarks («أهملت وجوهها»), colophons and lines no header claims.
+- Roots without an entry: al-ʿAyn 45 (among them ثبت، ثمن، سدس، ولج، يأس — the typing has no header for them), Tahdhīb 58 (among them سأل، وفي — no header in the typing — and وحد, which is only named in the list «حدا، حدأ، حاد، دحا، داح، وحد، ودح، أحد.»). Tahdhīb's only entry for صلو is the loose «صل» (the root صلل), wrong and hidden as low confidence; al-Azharī's article on prayer, «صلى», is filed under صلي.
+
+#### Boundary precision against the OpenITI copy
+
+The oracle (`oracle.py`) reads each OpenITI file into one stream of words with the positions of its headings and checks a seeded sample (50 entries, seed 3002) on three counts: the entry starts right after a heading with its key, it ends at a heading or section break (within 2–3 words), and no heading of another key lies inside it. A line that only looks like a heading («# قال :», «# الفغواء : …») is text; a colophon is a section break. A false heading in the oracle can only make an entry fail, so the number is a lower bound and every miss was read by hand. The oracle can fail: the same sample with each entry run on into the next, or cut short by a third, scores 0.00–0.06 on all four works, asserted ≤ 0.2 in the test. The first version passed merged articles (0.83 Tahdhīb, 0.92 al-ʿAyn) and was rebuilt.
+
+| Work | Oracle | Sample of 50 | Misses, read by hand | 300 entries (seed 9) |
+|---|---|---|---|---|
+| Tāj | JK007140 (an independent typing) | 50/50 | — | — |
+| al-Qāmūs | Shamela0007283 (the same typing: boundaries only) | 50/50 | the roots of 50 alignments checked by hand: 50/50 | — |
+| al-ʿAyn | JK000930 | 48/50 | both the oracle's: JK runs the next heading into the line («…الجبل نفذ نفذ الشيء», «…تنانير نتر النتر») | 0.903 |
+| Tahdhīb | JK007040 | 47/50 | all three the oracle's: no JK heading خبج; after كدش JK runs the group line «ك ش ت ك ش ظ ك ش ذ أهملت وجوهه» into the text; the two typings differ at the end of فرسن | 0.907 |
+
+The research estimated ≥97% (al-ʿAyn) and ≥95% (Tahdhīb). Read by hand, both samples are 50/50; the 300-entry runs were not read entry by entry, so 0.90 is their lower bound. Earlier samples, read the same way, found errors of ours that are now fixed: speech words, narrators and glosses taken for headers, articles run together across a missed group title, a misplaced page, quinqueliterals left outside every article.
+
+#### Hand-checked articles
+
+Each verified against the raw Shamela page (the header at its line start, or inside a page typed without line breaks) and asserted in the test: Tāj رحم علم كتب قول أمن سمو حمد ربب صرخ كوكب عضو فصل; al-Qāmūs رحم علم كتب قول أمن سمو حمد ربب شور شجر حير كوكب; al-ʿAyn رحم علم كتب قول أمن سمو حمد خير نور and ربب (loose «رب»); Tahdhīb رحم علم كتب قول أمن حمد خير نور حصن صلح and ربب, سمو (loose «رب», «سما»).
+
+#### Cleaning decisions
+
+- al-ʿAyn's square brackets are the editors' supplements (their method, §7 of the introduction): 2,312 spans in the typing, 2,272 inside the imported articles. Their notes explain 641: 428 restored from al-Tahdhīb's quotations of al-ʿAyn («زيادة من التهذيب مما نسب إلى الليث»), 41 from Lisān, 9 from a manuscript, 76 «اقتضاها السياق», 87 from other books (Mukhtaṣar al-ʿAyn…); the rest have no note. They are kept as printed, brackets and all (`editor_supplements: keep`): stripping only the brackets would present the editors' words as al-Khalīl's, and dropping them would lose al-ʿAyn's own words recovered from al-Azharī's quotations. `unwrap` and `drop` are implemented and tested for when the owner decides (research 06, open question). Text the editors took from one manuscript, marked «( )», is kept as printed. The attribution says so.
+- al-ʿAyn's «n» markers are removed (9,892) and its notes field dropped (3,083 pages); where the typist broke the line between a marker and its full stop, the stop returns to the end of the line it closes (253, only where that line has none).
+- Tahdhīb has no notes field; a numbered parenthesis is removed as a marker (12) unless it numbers a verse — after a sūra name or a closing ﴾ (5 kept), or before one (3).
+- Tahdhīb's 65 pages typed without line breaks (vol. 4, pp. 17–53 and 134–161) are cut back into lines before headers, group titles and spaced letters after a sentence end, and before a short header followed by its narrator («… ألحا صلح: الليث: …»): 861 cuts, 73 headers found inside; a piece that is not a header rejoins its line with a space.
+- An al-ʿAyn or Tahdhīb article headed by two roots («خور _ خير») is filed under the root without an article of its own in the work, else the one more frequent in the Quran; other works keep their first heading's root.
+
+#### Left open
+
+- The schema has one root per entry: the other root of a two-root header («خور _ خير» → خير) gets no entry of its own in that work.
+- Tahdhīb «صل» (صلل) is loose-mapped to صلو (two-letter-defective, low, hidden) — the review queue should move it.
+- Two al-ʿAyn articles with spaced-letter headers («عزو، ع ز ي:», «ك ود:») and Tahdhīb «زوزى» are not split from the article before them.
+- The lexicon works table needs two columns for the display, emitted in `lexicon_works.jsonl`: `kind` and `shamela_id`.
