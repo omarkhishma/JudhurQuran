@@ -336,7 +336,7 @@
     "trailTitle": "Trail: {steps}",
     "trailMeta": "{count, plural, one {one step} other {{n} steps}} • {date}",
     "delete": "Delete",
-    "deleteConfirm": "This note will be deleted from this browser for good. Delete it?",
+    "deleteConfirm": "This note will be deleted from your notebook. Delete it?",
     "cancel": "Cancel",
     "export": "Export (Markdown)",
     "exportAll": "Export all notes",
@@ -359,7 +359,7 @@
     "dueRoots": "{count, plural, =0 {no families due} one {one root family} other {{n} root families}}",
     "review": "Review",
     "noStreak": "Everything here is derived from your reading; nothing asks you to keep a streak.",
-    "private": "Your notebook stays in this browser and is never sent to a server.",
+    "private": "Your notebook lives in this browser; the server keeps none of it unless you sign in to sync it across your devices.",
     "back": "← All notes"
   },
   "surah": {

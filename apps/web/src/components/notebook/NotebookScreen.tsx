@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDueCount } from "@/components/reader5/ReviewDeck";
 import { useStepViews } from "@/components/reader5/trailSteps";
 import { Segmented } from "@/components/ui/Segmented";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { normalize } from "@/lib/arabic/normalize";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
@@ -42,7 +42,6 @@ const download = (name: string, text: string, type: string) => {
 export function NotebookScreen({ initialTab, initialNote }: { initialTab: "notes" | "journal"; initialNote: string | null }) {
   const t = useTranslations("notebook");
   const locale = useLocale();
-  const router = useRouter();
   const client = useIsClient();
   const items = useItems();
   const [tab, setTab] = useState(initialTab);
@@ -58,7 +57,9 @@ export function NotebookScreen({ initialTab, initialNote }: { initialTab: "notes
     const qs = new URLSearchParams();
     if (tb === "journal") qs.set("tab", "journal");
     if (nt && tb === "notes") qs.set("note", nt);
-    router.replace(`/notebook${qs.size ? `?${qs}` : ""}`, { scroll: false });
+    // the address follows (Back and a shared link work) without asking the server: which note is open, and so
+    // which verse the reader wrote on, stays in the browser (P5.6)
+    window.history.replaceState(null, "", `${window.location.pathname}${qs.size ? `?${qs}` : ""}`);
   }
 
   return (
@@ -348,8 +349,13 @@ function useResolved(body: string): Resolved[] {
   const lexica = useQuery({ queryKey: ["lexicon-works"], queryFn: () => getJSON<{ data: { id: string; title_ar: string; title_en: string }[] }>("/lexicon/works"), staleTime: Infinity, enabled: mentions.some((m) => m.kind === "word") });
   const searches = useQueries({
     queries: mentions.map((m) => ({
-      queryKey: ["search", m.kind === "verse" ? "" : m.query, 5],
-      queryFn: () => getJSON<{ detected: { kind: string }; results: { roots: { key: string; spaced: string }[]; lemmas: { slug?: string; ar: string; root: string | null }[] } }>(`/search?q=${encodeURIComponent(m.kind === "verse" ? "" : m.query)}&limit=5`),
+      queryKey: ["note-mention", m.kind === "verse" ? "" : m.query],
+      // a private note's words go in a body, never a URL, a log line or a cache (NTB-28)
+      queryFn: async () => {
+        const r = await fetch("/api/v1/search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: m.kind === "verse" ? "" : m.query, limit: 5 }) });
+        if (!r.ok) throw new Error(String(r.status));
+        return (await r.json()) as { detected: { kind: string }; results: { roots: { key: string; spaced: string }[]; lemmas: { slug?: string; ar: string; root: string | null }[] } };
+      },
       enabled: m.kind !== "verse",
       staleTime: Infinity,
     })),
