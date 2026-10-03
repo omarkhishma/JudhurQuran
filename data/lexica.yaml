@@ -102,7 +102,7 @@ works:
     footnote_marker: negation-parens
     article_rule: after-first-kitab   # articles are root-like titles from the first "كتاب" heading to the end matter
     end_title: تفسير الإشارات إلى بعض المراجع
-    core_meaning: first-sentence
+    core_meaning: statement   # Ibn Fāris's statement of the aṣl or uṣūl (lexica/maqayis_core.py)
     files:
       - path: lexica/hf-authenticilm-shamela4/5826/pages.jsonl
         sha256: c71f76ebfef583aa757dd3abf59af9b8e07e91ea126582e859c13bbc7dacd91e

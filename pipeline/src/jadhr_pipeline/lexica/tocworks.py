@@ -23,6 +23,7 @@ from typing import Any
 
 from jadhr_arabic import strip_marks
 
+from .maqayis_core import core_statement
 from .registry import WorkSpec
 from .shamela import Counters, Line, TocEntry, assemble, match_key, root_like_title
 
@@ -176,7 +177,10 @@ def segment_toc_work(
         if current is None:
             return
         body, ref = assemble(current.lines, counters, current.first_text)
-        core = _core_meaning(body) if spec.cfg.get("core_meaning") == "first-sentence" else None
+        core = None
+        if spec.cfg.get("core_meaning") == "statement":
+            core, how = core_statement(body)
+            counters.add(f"core-statement:{how}")
         out.append(RawArticle(current.headword, body, ref, current.source_ref, core))
         current = None
 
@@ -236,15 +240,3 @@ def segment_toc_work(
         "toc_headings_not_found": not_found,
         "headings_not_in_toc": not_in_toc,
     }
-
-
-_SENTENCE_END = re.compile(r"\.")
-
-
-def _core_meaning(body: str) -> str | None:
-    """Maqayis: the article's opening sentence, verbatim (up to and including the first full stop)."""
-    first = body.split("\n\n", 1)[0]
-    m = _SENTENCE_END.search(first)
-    if m is None:
-        return first or None
-    return first[: m.end()]

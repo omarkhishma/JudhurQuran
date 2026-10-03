@@ -578,6 +578,21 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 else (r or {}).get("confidence", "low")
             )
             e["displayable"] = e["root_key"] is not None and e["confidence"] in ("exact", "manual", "high")
+        # P3.4: a root's Arabic core idea is Ibn Fāris's statement of its aṣl in Maqāyīs — the article's
+        # own words (lexica/maqayis_core.py), cited by its entry; an exact mapping wins over a loose one
+        gist: dict[str, dict[str, Any]] = {}
+        for e in lex_entries:
+            if e["work_id"] == "maqayis" and e["displayable"] and e.get("core_meaning"):
+                cur = gist.get(e["root_key"])
+                if cur is None or (cur["match"] != "strict" and e["match"] == "strict"):
+                    gist[e["root_key"]] = e
+        for r in roots_out:
+            g = gist.get(r["key"])
+            r["gist_ar"] = g["core_meaning"] if g else None
+            r["gist_source"] = (
+                {"work_id": "maqayis", "entry_id": g["id"], "page_ref": g.get("page_ref")} if g else None
+            )
+        report["lexica_root_gists"] = {"roots": len(roots_out), "with_gist": len(gist)}
     reciters_out, timings_out, rec_report = ([], [], {})
     if raw.recitations_registry:
         from .recitations import build_recitations
@@ -593,6 +608,13 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         "displayable": sum(1 for e in lex_entries if e.get("displayable")),
         "review_by_confidence": lex_report.get("review_by_confidence"),
         "coverage": lex_report.get("coverage"),
+        # how each Maqāyīs statement of the aṣl was found (P3.4, lexica/maqayis_core.py); "partial"
+        # announces more uṣūl than were found where Ibn Fāris turns to them — for editors
+        "core_statements": {
+            k.split(":", 1)[1]: v
+            for k, v in (lex_report.get("works", {}).get("maqayis", {}).get("stats") or {}).items()
+            if k.startswith("core-statement:")
+        },
     }
 
     for name, rows in (

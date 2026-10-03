@@ -47,4 +47,9 @@ def test_release_labels_every_layer_by_its_real_source() -> None:
         (REPO / "data/release/2026.10.0/lemmas.jsonl").read_text(encoding="utf-8").splitlines()[0]
     )
     assert "gloss_en" not in lemma_cols
+    # a root's gist is Maqāyīs's own words (display-only, D22): never in the bulk release
+    root_cols = json.loads(
+        (REPO / "data/release/2026.10.0/roots.jsonl").read_text(encoding="utf-8").splitlines()[0]
+    )
+    assert not {"gist_ar", "gist_source", "gloss_en"} & set(root_cols)
     assert m["publication_hold"] and all(h["decision"] for h in m["publication_hold"])

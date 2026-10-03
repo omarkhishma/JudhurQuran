@@ -125,3 +125,11 @@ def test_quran_is_a_text_with_114_chapters() -> None:
 def test_dictionaries_carry_licences() -> None:
     for d in get("/api/v1/dictionaries")["data"]:
         assert d["license"] and d["attribution_ar"] and d["attribution_en"]
+
+
+def test_root_gist_is_ibn_faris_statement_cited_by_its_entry() -> None:
+    """P3.4: the root record's Arabic core idea is Maqāyīs's statement, the same text the entry shows."""
+    w = get("/api/v1/words/karim?limit=0")
+    assert w["root"]["gist_ar"] == w["core_meaning"]["text"]
+    assert w["root"]["gist_source"] == {"work_id": "maqayis", "entry_id": w["core_meaning"]["entry_id"], "page_ref": w["core_meaning"]["page_ref"]}
+    assert " … والأصل الآخر" in w["root"]["gist_ar"]  # both uṣūl of ك ر م, the second where Ibn Fāris turns to it

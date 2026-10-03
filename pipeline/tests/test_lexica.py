@@ -178,7 +178,7 @@ def test_gharib_ayah_lists_give_one_row_per_ayah(built: tuple) -> None:
 # --- (b) known-good spot checks -------------------------------------------------------------
 
 
-def test_maqayis_core_meaning_is_the_verbatim_opening_sentence(built: tuple) -> None:
+def test_maqayis_core_meaning_is_the_verbatim_opening_statement(built: tuple) -> None:
     for root, expected in (
         ("علم", "العين واللام والميم أصل صحيح واحد، يدل على أثر بالشئ يتميز به عن غيره."),
         ("كتب", "الكاف والتاء والباء أصل صحيح واحد يدل على جمع شيء إلى شيء."),
@@ -189,6 +189,31 @@ def test_maqayis_core_meaning_is_the_verbatim_opening_sentence(built: tuple) -> 
         assert _plain(e["core_meaning"]) == expected
         assert e["body"].startswith(e["core_meaning"])
     assert all(e["core_meaning"] is None for e in built[1] if e["work_id"] != "maqayis")
+
+
+def _flat(text: str) -> str:
+    return " ".join(_plain(text).split())
+
+
+def test_maqayis_statement_keeps_every_asl_and_only_the_articles_words(built: tuple) -> None:
+    """P3.4: an article announcing several uṣūl keeps each where Ibn Fāris turns to it, joined by « … »;
+    letters alone are followed by the statement; an article with no statement has none."""
+    for root, expected in (
+        ("كرم", "الكاف والراء والميم أصل صحيح له بابان: أحدهما شرف في الشيء في نفسه أو شرف في خلق من الأخلاق. … والأصل الآخر الكرم، وهي القلادة."),
+        ("وسل", "الواو والسين واللام: كلمتان متباينتان جدا. الأولى الرغبة والطلب. … والأخرى السرقة."),
+        ("بهل", "الباء والهاء واللام. أصول ثلاثة: أحدهما التخلية، والثانى جنس من الدعاء، والثالث قلة فى الماء."),
+    ):
+        (e,) = _entries(built, "maqayis", root)
+        assert _flat(e["core_meaning"]) == expected
+    (bahr,) = _entries(built, "maqayis", "بحر")
+    assert bahr["core_meaning"] is None  # «الباء والحاء والراء. قال الخليل…»: no statement of an aṣl
+    for e in built[1]:
+        if e["work_id"] != "maqayis" or not e["core_meaning"]:
+            continue
+        pieces = e["core_meaning"].split(" … ")
+        assert e["body"].startswith(pieces[0])
+        for p in pieces:
+            assert (p[:-2] if p.endswith(" …") else p) in e["body"]
 
 
 def test_mufradat_rahma_article_starts_as_printed(built: tuple) -> None:
