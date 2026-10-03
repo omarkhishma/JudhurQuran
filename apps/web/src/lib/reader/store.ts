@@ -303,6 +303,7 @@ type PersonalState = {
   truncateTrail: (index: number) => void;
   clearTrail: () => void;
   saveTrail: () => void;
+  deleteTrail: (id: string) => void;
   setProgress: (text: string, p: Omit<ProgressEntry, "at">) => void;
   markVisited: () => void;
   setOnboarded: () => void;
@@ -385,6 +386,7 @@ export const usePersonal = create<PersonalState>()(
       clearTrail: () => set({ trail: [] }),
       // Kept on this device for the Notebook (P4.4); synced once accounts exist (P6).
       saveTrail: () => set((st) => (st.trail.length ? { savedTrails: [...st.savedTrails, { id: `t${Date.now()}`, steps: st.trail, ts: Date.now() }] } : {})),
+      deleteTrail: (id) => set((st) => ({ savedTrails: st.savedTrails.filter((x) => x.id !== id) })),
       setProgress: (text, p) => set((st) => ({ progress: { ...st.progress, [text]: { ...p, at: Date.now() } } })),
       markVisited: () => set({ visited: true }),
       setOnboarded: () => set({ onboarded: true }),

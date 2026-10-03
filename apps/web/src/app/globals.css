@@ -4036,3 +4036,182 @@ a.wotd-pill:hover {
   color: var(--bad);
   border-color: var(--bad);
 }
+
+/* ─── Notebook (P5.4, inventory NTB) ─────────────────────────────────────────── */
+.notebook-screen {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.notebook-notes {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.notebook-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+.notebook-section {
+  margin: 8px 4px 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--t2);
+}
+.notebook-section.ar-classical {
+  font-size: 17px;
+  letter-spacing: 0.06em;
+}
+.notebook-row {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  border-inline-start: 3px solid transparent;
+  text-align: start;
+}
+.notebook-row:hover {
+  background: var(--card);
+}
+.notebook-row.is-on {
+  background: var(--card);
+  border-inline-start-color: var(--c-root);
+}
+.notebook-editor {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+.notebook-back {
+  display: none;
+  margin-bottom: 10px;
+}
+.notebook-title {
+  width: 100%;
+  font-size: 18px;
+  font-weight: 600;
+  background: transparent;
+  outline: none;
+  color: var(--t1);
+}
+.notebook-body {
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding-inline: 10px 4px;
+  border-radius: 99px;
+  background: var(--card-2);
+  color: var(--t2);
+}
+.tag-pill button {
+  width: 22px;
+  height: 22px;
+  border-radius: 99px;
+  color: var(--t3);
+}
+.tag-pill button:hover {
+  background: var(--card-3);
+  color: var(--t1);
+}
+.tag-input {
+  width: 80px;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px dashed var(--line-2);
+  border-radius: 99px;
+  background: transparent;
+  color: var(--t1);
+  font-size: 12px;
+}
+.notebook-anchor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-inline-start: 2px solid var(--c-root);
+  background: var(--card-2);
+  border-radius: 8px;
+}
+.notebook-journal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
+}
+.week-chart {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  align-items: end;
+  max-width: 420px;
+  height: 72px;
+}
+.week-chart > li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  height: 100%;
+}
+.week-bar {
+  width: 70%;
+  border-radius: 4px 4px 0 0;
+  background: var(--c-root);
+}
+.week-bar.is-empty {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--card-3);
+}
+.session-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.session-note {
+  padding-inline-start: 10px;
+  border-inline-start: 2px solid var(--c-root);
+  font-size: 12.5px;
+  color: var(--t2);
+}
+@media (max-width: 820px) {
+  .notebook-notes,
+  .notebook-journal {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* phones: the list, or the note — never both squeezed */
+  .notebook-notes.has-current .notebook-list {
+    display: none;
+  }
+  .notebook-notes:not(.has-current) .notebook-editor {
+    display: none;
+  }
+  .notebook-back {
+    display: inline-flex;
+  }
+}

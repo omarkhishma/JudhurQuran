@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ScreenSkeleton } from "@/components/shell/ScreenSkeleton";
+import { NotebookScreen } from "@/components/notebook/NotebookScreen";
+
+// the tab and the note come from the URL; everything shown comes from this browser
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/notebook">): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "screens" });
-  return { title: t("notebook.title"), robots: { index: false } };
+  const t = await getTranslations({ locale, namespace: "notebook" });
+  return { title: t("title"), robots: { index: false } };
 }
 
-export default async function Page({ params }: PageProps<"/[locale]/notebook">) {
+export default async function Page({ params, searchParams }: PageProps<"/[locale]/notebook">) {
   setRequestLocale((await params).locale);
-  return <ScreenSkeleton screen="notebook" phase="P5" />;
+  const sp = await searchParams;
+  const note = typeof sp.note === "string" && /^[\w:.-]{1,60}$/.test(sp.note) ? sp.note : null;
+  return <NotebookScreen initialTab={sp.tab === "journal" ? "journal" : "notes"} initialNote={note} />;
 }
