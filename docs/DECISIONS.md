@@ -62,6 +62,8 @@
 
 ## Lessons
 
+- [2026-10-03] Check the fonts against the text, not the text against the fonts: «عزّ وجلّ» (U+FDFF, Unicode 14) is in 1,809 dictionary articles and in neither Plex nor Amiri, so it drew as a box. A 10 KB subset of Noto Naskh Arabic (OFL) is now the last fallback, loaded only when such a character is on the page.
+
 - [2026-10-03] A page under `[locale]` that reads `searchParams` must say `export const dynamic = "force-dynamic"`: the locale layout prerenders it, the build passes, and every request fails with DYNAMIC_SERVER_USAGE (a 500). The graph seed page did exactly that.
 
 - [2026-10-03] A column flex container must not wrap: with `flex-wrap: wrap` each column line takes its content's width, so the concordance's chip rows grew to 1,140 px inside a 380 px bar and the phone's layout viewport widened to 1,167 px — every tap in the e2e run missed. The no-horizontal-scroll check caught it; keep it in every screen's phone test.

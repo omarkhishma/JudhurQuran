@@ -54,3 +54,13 @@ test("a word al-Rāghib does not treat shows no al-Mufradāt block", async ({ pa
   await expect(meanings(page).locator(".sense-row").first()).toBeVisible();
   await expect(meanings(page).getByRole("region", { name: "عند الراغب في المفردات" })).toHaveCount(0);
 });
+
+test("the honorific ligatures in the old glosses render with a real glyph, not a box", async ({ page }) => {
+  await page.goto("/quran/2?w=amana&at=2:3:2#v3");
+  const line = meanings(page).locator(".sense-row", { hasText: "\uFDFF" }).first();
+  await expect(line).toBeVisible();
+  // the fallback face is fetched only because a character on the page needs it — never forced here
+  await expect
+    .poll(() => page.evaluate(() => [...document.fonts].some((f) => f.family.replace(/"/g, "") === "Jadhr Symbols" && f.status === "loaded")))
+    .toBe(true);
+});

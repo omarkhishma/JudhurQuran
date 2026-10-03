@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+/* The honorific ligatures (U+FDFA–FDFF): «عزّ وجلّ» and «سبحانه وتعالى» are in 1,809 dictionary articles but in
+   neither Plex nor Amiri. A subset of Noto Naskh Arabic (SIL OFL 1.1, public/fonts/OFL-NotoNaskhArabic.txt)
+   is the last fallback, fetched only when such a character is on the page. */
+@font-face {
+  font-family: "Jadhr Symbols";
+  src: url("/fonts/jadhr-symbols.woff2") format("woff2");
+  unicode-range: U+FDFA-FDFF;
+  font-display: swap;
+}
+
 /* ─── Design tokens (handoff 02-design-tokens, verbatim values) ───────────── */
 :root {
   --canvas: #eeeef1;
@@ -90,10 +100,10 @@
   --color-word-wash: var(--word-wash);
   --color-form-wash: var(--form-wash);
   --color-sentence-wash: var(--sentence-wash);
-  --font-ui: var(--font-plex-arabic), var(--font-plex-sans), system-ui, sans-serif;
+  --font-ui: var(--font-plex-arabic), var(--font-plex-sans), "Jadhr Symbols", system-ui, sans-serif;
   --font-latin: var(--font-plex-sans), system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;
-  --font-classical: var(--font-amiri), "Amiri", serif;
+  --font-classical: var(--font-amiri), "Amiri", "Jadhr Symbols", serif;
   --font-quran: var(--font-quran-hafs), "KFGQPC HAFS Uthmanic Script", serif;
   --shadow-rest: var(--sh);
   --shadow-open: var(--sh-open);
