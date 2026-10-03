@@ -1,0 +1,159 @@
+"use client";
+
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
+import { useState } from "react";
+import { ApiError } from "@/lib/account/store";
+import { decideMany, getAwaiting, getTargets, saveVerdicts, STATES, type Layer, type State, type VerdictItem } from "@/lib/editorial";
+import { cnt, formatNumber } from "@/lib/format";
+import type { Place } from "./Workbench";
+
+type Mark = { verdict: VerdictItem["verdict"]; note: string; correction: string };
+
+/**
+ * The rows a book gave (P3.0): each with what the book says, the board's verdict — reviewed, corrected with the
+ * correction, or rejected with why — sent for review in a batch; and the batch another editor wrote, approved or
+ * sent back in one decision (each row still refused to its own author by the server).
+ */
+export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: State; q: string; onPlace: (p: Partial<Place>) => void }) {
+  const t = useTranslations("workbench");
+  const locale = useLocale();
+  const qc = useQueryClient();
+  const [marks, setMarks] = useState<Record<string, Mark>>({});
+  const [said, setSaid] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const list = useInfiniteQuery({
+    queryKey: ["editorial-targets", "verdict", layer, state, q],
+    queryFn: ({ pageParam }) => getTargets("verdict", { layer, state, q, offset: pageParam, limit: 50 }),
+    initialPageParam: 0,
+    getNextPageParam: (last, all) => {
+      const n = all.reduce((m, p) => m + p.data.length, 0);
+      return n < last.total ? n : undefined;
+    },
+  });
+  const waiting = useQuery({ queryKey: ["editorial-awaiting"], queryFn: getAwaiting });
+  const mineToDecide = (waiting.data?.data ?? []).filter((e) => e.kind === "verdict" && e.target.startsWith(`${layer}:`));
+  const rows = list.data?.pages.flatMap((p) => p.data) ?? [];
+  const total = list.data?.pages[0]?.total ?? 0;
+  const marked = Object.entries(marks).filter(([, m]) => m.verdict === "reviewed" || (m.note.trim() && (m.verdict !== "corrected" || m.correction.trim())));
+
+  async function run(fn: () => Promise<unknown>, done: string) {
+    setBusy(true);
+    try {
+      await fn();
+      setMarks({});
+      setNote("");
+      setSaid(done);
+      await Promise.all(["editorial-targets", "editorial-awaiting", "editorial-worklists"].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+    } catch (e) {
+      setSaid(e instanceof ApiError ? e.message : t("failed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="layer-h">
+      <h2 id="layer-h" className="text-[16px] font-semibold">{t(`layer_${layer}`)}</h2>
+      <p className="text-[12.5px] leading-relaxed text-t3">{t("layerLead")}</p>
+
+      {mineToDecide.length > 0 && (
+        <div className="workbench-box" role="group" aria-label={t("batchReview")}>
+          <p className="text-[13px] text-t1">{t("batchWaiting", cnt(mineToDecide.length, locale))}</p>
+          <label className="flex flex-col gap-1 text-[12px] text-t3">
+            {t("note")}
+            <input className="field-input" value={note} onChange={(e) => setNote(e.target.value)} dir="auto" />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void run(() => decideMany(mineToDecide.map((e) => e.id), "approve", note), t("saidBatchApproved", cnt(mineToDecide.length, locale)))}>
+              {t("approveAll")}
+            </button>
+            <button type="button" className="btn" disabled={busy || !note.trim()} onClick={() => void run(() => decideMany(mineToDecide.map((e) => e.id), "changes", note), t("saidBatchChanges", cnt(mineToDecide.length, locale)))}>
+              {t("askChangesAll")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="seg-group" role="group" aria-label={t("state")}>
+          {STATES.map((s) => (
+            <button key={s} type="button" className={"seg" + (state === s ? " is-on" : "")} aria-pressed={state === s} onClick={() => onPlace({ state: s })}>
+              {t(`state_${s}`)}
+            </button>
+          ))}
+        </div>
+        <span className="text-[12px] text-t3" role="status">{list.isPending ? "" : t("found", cnt(total, locale))}</span>
+      </div>
+
+      <ul className="flex flex-col gap-2">
+        {rows.map((r) => {
+          const id = r.key.split(":").slice(1).join(":");
+          const m = marks[id];
+          const free = r.state === "todo";
+          return (
+            <li key={r.key} className="workbench-box">
+              <div className="flex flex-wrap items-baseline gap-2">
+                <button type="button" className="ar-classical text-[17px] text-t1 hover:underline" lang="ar" onClick={() => onPlace({ target: r.key })}>
+                  {r.label || id}
+                </button>
+                <span className="mono text-[11px] text-t3" dir="ltr">{id}</span>
+                <span className="flex-1" />
+                <span className={`state-chip is-${r.state}`}>{t(`state_${r.state}`)}</span>
+              </div>
+              {r.sub && <p className="ar-classical line-clamp-4 text-[14px] leading-[1.9] text-t2" lang="ar" dir="rtl">{r.sub}</p>}
+              {free && (
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("verdict")}>
+                    {(["reviewed", "corrected", "rejected"] as const).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        role="radio"
+                        aria-checked={m?.verdict === v}
+                        className={"chip" + (m?.verdict === v ? " is-on" : "")}
+                        onClick={() => setMarks((x) => (x[id]?.verdict === v ? Object.fromEntries(Object.entries(x).filter(([k]) => k !== id)) : { ...x, [id]: { verdict: v, note: x[id]?.note ?? "", correction: x[id]?.correction ?? "" } }))}
+                      >
+                        {t(`verdict_${v}`)}
+                      </button>
+                    ))}
+                  </div>
+                  {m && m.verdict !== "reviewed" && (
+                    <input className="field-input" value={m.note} onChange={(e) => setMarks((x) => ({ ...x, [id]: { ...m, note: e.target.value } }))} placeholder={t("why")} aria-label={t("why")} dir="auto" />
+                  )}
+                  {m?.verdict === "corrected" && (
+                    <textarea className="field-input min-h-[52px]" value={m.correction} onChange={(e) => setMarks((x) => ({ ...x, [id]: { ...m, correction: e.target.value } }))} placeholder={t("correction")} aria-label={t("correction")} dir="auto" />
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {list.hasNextPage && (
+        <button type="button" className="btn self-start" onClick={() => void list.fetchNextPage()} disabled={list.isFetchingNextPage}>
+          {t("more")}
+        </button>
+      )}
+      <div className="workbench-bar">
+        <span className="text-[12.5px] text-t2">{t("marked", cnt(marked.length, locale))}</span>
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={busy || !marked.length}
+          onClick={() =>
+            void run(
+              () => saveVerdicts(layer, marked.map(([row, m]) => ({ row, verdict: m.verdict, ...(m.note.trim() ? { note: m.note.trim() } : {}), ...(m.verdict === "corrected" ? { correction: m.correction.trim() } : {}) })), true),
+              t("saidBatchSent", cnt(marked.length, locale)),
+            )
+          }
+        >
+          {t("sendForReview")}
+        </button>
+        <span className="text-[12.5px] text-t2" role="status" aria-live="polite">{said}</span>
+        <span className="sr-only">{formatNumber(rows.length, locale)}</span>
+      </div>
+    </section>
+  );
+}

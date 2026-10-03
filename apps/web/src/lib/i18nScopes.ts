@@ -10,7 +10,7 @@ export const SCOPES = {
   root: ["common"],
   app: ["account", "common", "graph", "nav", "search"],
   reader: ["account", "audio", "common", "contrib", "notebook", "panel", "rd", "review", "wordContrib"],
-  site: ["account", "analyse", "audio", "changelog", "common", "concordance", "contrib", "explore", "graph", "hub", "lexicon", "library", "me", "nav", "notebook", "panel", "rd", "review", "roots", "saved", "search", "surah", "wordContrib"],
+  site: ["account", "analyse", "audio", "changelog", "common", "concordance", "contrib", "explore", "graph", "hub", "lexicon", "library", "me", "nav", "notebook", "panel", "rd", "review", "roots", "saved", "search", "surah", "wordContrib", "workbench"],
 } as const;
 
 export function pick(messages: AbstractIntlMessages, names: readonly string[]): AbstractIntlMessages {
