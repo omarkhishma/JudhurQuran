@@ -205,7 +205,8 @@ function SetView({ id, initial }: { id: string; initial: SetDetail | null }) {
           <figure className="set-quote">
             <figcaption className="label-caps">{t("ruleQuote")}</figcaption>
             <blockquote className="ar-classical text-[17px] leading-[1.9]" lang="ar" dir="rtl">«{s.quote.text_ar}»</blockquote>
-            <cite className="text-[11.5px] not-italic text-t3">{ar ? s.quote.attribution_ar : s.quote.attribution_en}</cite>
+            {/* the attribution's dates and edition in the reader's digits (P5.6) — the quoted text itself is verbatim */}
+            <cite className="text-[11.5px] not-italic text-t3">{ar ? toArabicDigits(s.quote.attribution_ar ?? "") : s.quote.attribution_en}</cite>
           </figure>
         )}
         {s.source && <p className="text-[12px] text-t3">{t("sourceLine", { work: ar ? s.source.work_ar : s.source.work_en })}</p>}

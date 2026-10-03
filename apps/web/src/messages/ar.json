@@ -82,9 +82,9 @@
     "clearLabel": "امسح موضعك الأخير من هنا (تبقى قراءتك محفوظة)",
     "doors": "ثلاثة أبواب",
     "doorRead": "اقرأ",
-    "doorReadSub": "المصحف كاملًا: {surahs} سورة و{verses} آية، وكل كلمة مفتوحة على جذرها — ونصوصك أنت أيضًا.",
+    "doorReadSub": "المصحف كاملًا: {sc, plural, one {سورة واحدة} two {سورتان} few {{surahs} سور} many {{surahs} سورة} other {{surahs} سورة}} و{vc, plural, one {آية واحدة} two {آيتان} few {{verses} آيات} many {{verses} آية} other {{verses} آية}}، وكل كلمة مفتوحة على جذرها.",
     "doorLookup": "ابحث في المعجم",
-    "doorLookupSub": "{roots} جذرًا و{lemmas} كلمة، وأوزانها، وما قاله فيها {lexica, plural, one {معجم واحد} two {معجمان} few {{lx} معاجم} many {{lx} معجمًا} other {{lx} معجم}}.",
+    "doorLookupSub": "{rc, plural, one {جذر واحد} two {جذران} few {{roots} جذور} many {{roots} جذرًا} other {{roots} جذر}} و{lc, plural, one {كلمة واحدة} two {كلمتان} few {{lemmas} كلمات} many {{lemmas} كلمة} other {{lemmas} كلمة}}، وأوزانها، وما قاله فيها {lexica, plural, one {معجم واحد} two {معجمان} few {{lx} معاجم} many {{lx} معجمًا} other {{lx} معجم}}.",
     "doorMap": "ارسم الخريطة",
     "doorMapSub": "عائلة الجذر على لوحة مفتوحة: الجذر، فالصيغ، فالآيات — ثم صدّرها.",
     "everything": "كل ما في المنصة",
@@ -328,7 +328,7 @@
     "tagPlaceholder": "+ وسم",
     "removeTag": "أزل الوسم {tag}",
     "bodyLabel": "نص الملاحظة",
-    "bodyPlaceholder": "اكتب. اكتب @ لتربط: جذرًا (@ع ل م أو @k-t-b)، أو كلمة (@علم)، أو آية (@2:255)، أو معجمًا (@لسان).",
+    "bodyPlaceholder": "اكتب. اكتب @ لتربط: جذرًا (@ع ل م أو @k-t-b)، أو كلمة (@علم)، أو آية (@٢:٢٥٥)، أو معجمًا (@لسان).",
     "linked": "مرتبطة بـ",
     "linkedEmpty": "لا روابط بعد — الآية التي كتبت عليها والإشارات بـ @ تظهر هنا.",
     "unresolved": "لم نجد «{raw}»",
@@ -776,7 +776,6 @@
   },
   "screens": {
     "building": "هذه الشاشة قيد البناء ضمن الخطة، ولم تكتمل بعد.",
-    "plan": "المرحلة في الخطة",
     "read": {
       "title": "القارئ",
       "lead": "اقرأ القرآن الكريم وكل كلمة فيه مفتوحة على جذرها ومعناها."
@@ -1163,7 +1162,7 @@
     "youStoppedHere": "توقفت هنا • {date}",
     "trailBackTo": "عُد إلى {w}",
     "trailMapHint": "المتقطّع حيث أنت • انقر بطاقة لتعود إليها",
-    "trailSaved": "حُفظ المسار",
+    "trailSaved": "حُفظ المسار في دفترك",
     "saveTrail": "احفظ المسار",
     "openTrailInEditor": "افتحه في المحرر",
     "newTrail": "ابدأ مسارًا جديدًا",

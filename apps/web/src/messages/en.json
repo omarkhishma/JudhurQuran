@@ -82,9 +82,9 @@
     "clearLabel": "Clear your last place from here (your reading stays saved)",
     "doors": "Three ways in",
     "doorRead": "Read",
-    "doorReadSub": "The whole mushaf: {surahs} sūras and {verses} verses, every word open to its root — and your own texts too.",
+    "doorReadSub": "The whole mushaf: {sc, plural, one {one sūra} other {{surahs} sūras}} and {vc, plural, one {one verse} other {{verses} verses}}, every word open to its root.",
     "doorLookup": "Look up",
-    "doorLookupSub": "{roots} roots and {lemmas} words, their patterns, and what {lexica, plural, one {one lexicon says} other {{lx} lexicons say}} about them.",
+    "doorLookupSub": "{rc, plural, one {one root} other {{roots} roots}} and {lc, plural, one {one word} other {{lemmas} words}}, their patterns, and what {lexica, plural, one {one lexicon says} other {{lx} lexicons say}} about them.",
     "doorMap": "Map",
     "doorMapSub": "A root's family on an open canvas: the root, its forms, the verses — then export it.",
     "everything": "Everything on the platform",
@@ -776,7 +776,6 @@
   },
   "screens": {
     "building": "This screen is being built as part of the plan and is not finished yet.",
-    "plan": "Plan phase",
     "read": {
       "title": "Reader",
       "lead": "Read the Quran with every word open to its root and meaning."
@@ -1163,7 +1162,7 @@
     "youStoppedHere": "You stopped here • {date}",
     "trailBackTo": "Back to {w}",
     "trailMapHint": "dashed = where you are • tap a card to go back",
-    "trailSaved": "Trail saved",
+    "trailSaved": "Trail saved to your notebook",
     "saveTrail": "Save trail",
     "openTrailInEditor": "Open in the editor",
     "newTrail": "Start a new trail",

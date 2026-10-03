@@ -14,10 +14,8 @@ export async function ScreenSkeleton({ screen, phase }: { screen: Screen; phase:
       <p className="mt-2 max-w-[640px] text-[15px] leading-relaxed text-t2">{t(`${screen}.lead`)}</p>
       <div className="card mt-8 flex items-center gap-3 p-4 text-[13.5px] text-t2" role="status">
         <span className="dot" style={{ background: "var(--amber)" }} aria-hidden="true" />
-        <span>{t("building")}</span>
-        <span className="ms-auto text-t3">
-          {t("plan")} <span className="mono" dir="ltr">{phase}</span>
-        </span>
+        {/* the plan's codes are ours, not the reader's (DECISIONS, the hub): the phase stays in the markup only */}
+        <span data-phase={phase}>{t("building")}</span>
       </div>
     </div>
   );

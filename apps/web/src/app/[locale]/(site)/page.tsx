@@ -65,12 +65,12 @@ export default async function HubPage({ params }: PageProps<"/[locale]">) {
           <Link href="/read" className="hub-door">
             <span className="dot" style={{ background: "var(--c-sentence)" }} aria-hidden="true" />
             <span className="hub-door-title">{t("doorRead")}</span>
-            <span className="hub-door-sub">{t("doorReadSub", { surahs: n(c.surahs), verses: n(c.verses) })}</span>
+            <span className="hub-door-sub">{t("doorReadSub", { surahs: n(c.surahs), sc: c.surahs, verses: n(c.verses), vc: c.verses })}</span>
           </Link>
           <Link href="/read?mode=lookup" className="hub-door">
             <span className="dot" style={{ background: "var(--c-root)" }} aria-hidden="true" />
             <span className="hub-door-title">{t("doorLookup")}</span>
-            <span className="hub-door-sub">{t("doorLookupSub", { roots: n(c.roots), lemmas: n(c.lemmas), lexica: lexica.data.length, lx: n(lexica.data.length) })}</span>
+            <span className="hub-door-sub">{t("doorLookupSub", { roots: n(c.roots), rc: c.roots, lemmas: n(c.lemmas), lc: c.lemmas, lexica: lexica.data.length, lx: n(lexica.data.length) })}</span>
           </Link>
           <Link href="/graph" className="hub-door">
             <span className="dot" style={{ background: "var(--c-form)" }} aria-hidden="true" />

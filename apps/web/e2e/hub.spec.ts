@@ -80,8 +80,13 @@ test("the doors count from the data, and every surface is listed with its purpos
   const c = meta.dataset.counts;
   await page.goto("/");
   const doors = page.getByRole("navigation", { name: "ثلاثة أبواب" });
-  await expect(doors.getByRole("link", { name: /^اقرأ/ })).toContainText(`${ar(c.surahs)} سورة و${ar(c.verses)} آية`);
-  await expect(doors.getByRole("link", { name: /ابحث في المعجم/ })).toContainText(`${ar(c.roots)} جذرًا و${ar(c.lemmas)} كلمة`);
+  // each count agrees with its number, whatever the dataset holds (P2.4)
+  const surahs = arCount(c.surahs, { one: "سورة واحدة", two: "سورتان", few: "# سور", many: "# سورة", other: "# سورة" });
+  const verses = arCount(c.verses, { one: "آية واحدة", two: "آيتان", few: "# آيات", many: "# آية", other: "# آية" });
+  const roots = arCount(c.roots, { one: "جذر واحد", two: "جذران", few: "# جذور", many: "# جذرًا", other: "# جذر" });
+  const lemmas = arCount(c.lemmas, { one: "كلمة واحدة", two: "كلمتان", few: "# كلمات", many: "# كلمة", other: "# كلمة" });
+  await expect(doors.getByRole("link", { name: /^اقرأ/ })).toContainText(`${surahs} و${verses}`);
+  await expect(doors.getByRole("link", { name: /ابحث في المعجم/ })).toContainText(`${roots} و${lemmas}`);
   await expect(doors.getByRole("link", { name: /ابحث في المعجم/ })).toContainText(arCount(lexica, { one: "معجم واحد", two: "معجمان", few: "# معاجم", many: "# معجمًا", other: "# معجم" }));
   const tiles = page.locator(".hub-tile");
   await expect(tiles).toHaveCount(20);
