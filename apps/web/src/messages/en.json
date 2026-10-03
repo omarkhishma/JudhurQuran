@@ -1867,7 +1867,13 @@
     "entryToMap": "Add to graph",
     "entryToMapTitle": "Add this entry to a graph as a description card that quotes it and describes its root",
     "handoffSub_quote": "The entry becomes a note that quotes it verbatim with its credit, linked to its root. Its text is not kept in the map: it is read from the source whenever it is shown.",
-    "handoffSub_note": "Your note becomes a description card, linked to the roots, words and verses it mentions, each word with its root."
+    "handoffSub_note": "Your note becomes a description card, linked to the roots, words and verses it mentions, each word with its root.",
+    "graphKind_root": "Root",
+    "graphKind_pattern": "Pattern",
+    "graphKind_lemma": "Word",
+    "graphKind_verse": "Verse",
+    "graphKind_note": "Note",
+    "graphKind_frame": "Group"
   },
   "concordance": {
     "title": "Concordance",

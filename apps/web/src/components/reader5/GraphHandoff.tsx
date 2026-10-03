@@ -9,7 +9,6 @@ import { formatNumber } from "@/lib/format";
 import { buildSeedGraph, seedRows } from "@/lib/graph/seed";
 import { encodeSeed, type Seed } from "@/lib/graph/seedCodec";
 import { useMyGraphs } from "@/lib/graph/useMyGraphs";
-import { META } from "@/lib/graph/relations";
 import { KIND_COLOR } from "@/lib/graph/types";
 import { useReader } from "@/lib/reader/store";
 
@@ -36,7 +35,6 @@ export function GraphHandoff() {
 /** The dialog itself, for a page with its own messages (the Notebook, NTB-22): `onToast` says what was done there. */
 export function HandoffDialog({ seed, onClose, onToast }: { seed: Seed; onClose: () => void; onToast?: (text: string) => void }) {
   const t = useTranslations("rd");
-  const tg = useTranslations("graph");
   const locale = useLocale();
   const readerToast = useReader((s) => s.showToast);
   const showToast = onToast ?? readerToast;
@@ -73,7 +71,7 @@ export function HandoffDialog({ seed, onClose, onToast }: { seed: Seed; onClose:
             {rows.map((r) => (
               <li key={r.kind}>
                 <span className="dot" style={{ background: KIND_COLOR[r.kind] }} />
-                <span className="text-[12.5px] font-medium">{tg(META[r.kind].label)}</span>
+                <span className="text-[12.5px] font-medium">{t(`graphKind_${r.kind}`)}</span>
                 <span className="ar-classical min-w-0 flex-1 truncate text-[15px] text-t2" lang="ar" dir="rtl">{r.detail}</span>
                 <span className="mono text-[11.5px] text-t3">{formatNumber(r.n, locale)}</span>
               </li>

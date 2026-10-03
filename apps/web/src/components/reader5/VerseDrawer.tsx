@@ -130,27 +130,26 @@ export function NoteDrawer({ verseKey }: { verseKey: string }) {
 
 function GraphDrawer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
-  const tg = useTranslations("graph");
   const setHandoff = useReader((s) => s.setHandoff);
   const locale = useLocale();
   const built = useQuery({ queryKey: ["seed-graph", JSON.stringify({ seed: "verse", key: verseKey })], queryFn: () => buildSeedGraph({ seed: "verse", key: verseKey }), staleTime: 5 * 60_000 });
-  const cols = (kind: "root" | "lemma" | "word") => (built.data?.nodes ?? []).filter((n) => n.data.kind === kind);
-  const [roots, lemmas, words] = [cols("root"), cols("lemma"), cols("word")];
+  // a verse's map: its words' roots and its words (P8.1a: a word as written is marked on the verse, not a card)
+  const cols = (kind: "root" | "lemma") => (built.data?.nodes ?? []).filter((n) => n.data.kind === kind);
+  const [roots, lemmas] = [cols("root"), cols("lemma")];
   if (built.isError) return <p className="text-[12.5px] text-bad" role="alert">{t("loadFailed")}</p>;
   if (!built.data) return <div className="h-20 animate-pulse rounded-lg bg-card-2" />;
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[12px] text-t2">{t("graphPreview", { ...cnt(roots.length, locale), ...cnt2(words.length, locale) })}</p>
+      <p className="text-[12px] text-t2">{t("graphPreview", { ...cnt(roots.length, locale), ...cnt2(lemmas.length, locale) })}</p>
       <div className="graph-cols">
         {(
           [
-            ["kindRoot", roots, "text-root"],
-            ["kindLemma", lemmas, "text-form"],
-            ["kindWord", words, "text-word"],
+            ["graphKind_root", roots, "text-root"],
+            ["graphKind_lemma", lemmas, "text-word"],
           ] as const
         ).map(([label, list, color]) => (
           <div key={label} className="flex min-w-0 flex-col gap-1">
-            <p className="label-caps">{tg(label)} • {formatNumber(list.length, locale)}</p>
+            <p className="label-caps">{t(label)} • {formatNumber(list.length, locale)}</p>
             <div className="flex flex-wrap gap-1">
               {list.map((n) => (
                 <span key={n.id} className={`ar-classical text-[16px] ${color}`} lang="ar">{n.data.ar}</span>
