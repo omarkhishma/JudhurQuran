@@ -16,7 +16,7 @@
 #   clauses         {topic, quote, url}; topic is display | attribution | modification | redistribution |
 #                   commercial | retention | other. Quotes are verbatim in their original language; only
 #                   whitespace is normalised (line breaks and runs of spaces become one space), and the '#'
-#                   comment marker at the start of a file-header line is not part of a quote. Quotes from
+#                   or '*' comment marker at the start of a file-header line is not part of a quote. Quotes from
 #                   inside binary files come from the font's name table (TTF) or the MP3's ID3 frames.
 #   our_use         what the product does with the source today (registry entry, research, code)
 #   status          ok        — terms read, unchanged in substance, and met by today's use

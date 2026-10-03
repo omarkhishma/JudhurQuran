@@ -33,7 +33,8 @@ REGISTER = REPO / "data/licences.yaml"
 USER_AGENT = "jadhr-research/1.0"
 _SPACE = re.compile(r"\s+")
 _TAG = re.compile(r"<[^>]+>")
-_COMMENT = re.compile(r"(?m)^[ \t]*#+[ \t]?")
+# a licence header in a data file: '#' lines (the corpus) or a '*' comment block (QurSim)
+_COMMENT = re.compile(r"(?m)^[ \t]*[#*]+[ \t]?")
 
 
 def _norm(s: str) -> str:
