@@ -259,6 +259,8 @@ def delete_account(u: dict[str, Any], token: str) -> bool:
         )
         if ok is None:
             return False
+        # sign-in links are kept by address, not by account: they go too
+        conn.execute(text("delete from accounts.login_tokens where email = :e"), {"e": u["email"]})
         conn.execute(text("delete from accounts.users where id = :u"), {"u": u["id"]})
     return True
 

@@ -251,6 +251,69 @@ def test_deleting_the_account_takes_two_steps_and_removes_everything(email: str)
     assert left is not None and left["n"] == 0
 
 
+def test_deleting_the_account_leaves_nothing_of_it_in_any_table(email: str) -> None:
+    """P6.3, PRF-Q03: every table of the account schema is enumerated, so a table added later is never left out."""
+    h = sign_in(email)
+    me = client.get("/api/v1/me", headers=h).json()
+    client.patch("/api/v1/me", headers=h, json={"settings": {"sync_journal": True, "share_lookups": True}})
+    t = int(time.time() * 1000)
+    for i, store in enumerate(("saved", "journal", "notebook")):
+        client.post(
+            "/api/v1/me/sync",
+            headers=h,
+            json={"records": [{"store": store, "key": "k", "value": {"v": i}, "updated_at": t + i}]},
+        )
+        client.post(  # a newer version, so the first is kept in the history
+            "/api/v1/me/sync",
+            headers=h,
+            json={
+                "records": [{"store": store, "key": "k", "value": {"v": i + 10}, "updated_at": t + 100 + i}]
+            },
+        )
+    client.post("/api/v1/me/lookups", headers=h, json={"events": [{"lemma": "ilm", "root": "علم"}]})
+    with accounts.tx() as conn:
+        tables = [
+            r["table_name"]
+            for r in accounts.q(
+                conn,
+                "select table_name from information_schema.tables where table_schema = 'accounts' and table_type = 'BASE TABLE'",
+            )
+        ]
+        cols = {
+            r["table_name"]: r["cols"]
+            for r in accounts.q(
+                conn,
+                """select table_name, array_agg(column_name::text) as cols from information_schema.columns
+                   where table_schema = 'accounts' group by table_name""",
+            )
+        }
+
+    # every table names its account by user_id, or by address before there is one (sign-in links); a table with
+    # neither could hold something of the account that deleting it would miss, so it fails here
+    by = {
+        tb: "user_id" if "user_id" in cols[tb] else "email" if "email" in cols[tb] else None for tb in tables
+    }
+    assert all(by.values()), by
+
+    def held() -> dict[str, int]:
+        with accounts.tx() as conn:
+            return {
+                tb: accounts.q1(
+                    conn,
+                    f"select count(*) as n from accounts.{tb} where {c} = :v",
+                    {"v": me["id"] if c == "user_id" else email},
+                )["n"]  # type: ignore[index]
+                for tb, c in by.items()
+            }
+
+    before = held()
+    assert before["records"] >= 3 and before["record_history"] >= 3 and before["lookup_events"] == 1
+    assert before["sessions"] == 1 and before["login_tokens"] >= 1
+    token = client.post("/api/v1/me/delete", headers=h).json()["confirm"]
+    assert client.post("/api/v1/me/delete/confirm", headers=h, json={"confirm": token}).status_code == 200
+    assert held() == {tb: 0 for tb in before}
+
+
 def test_the_dev_outbox_never_answers_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(get_settings(), "environment", "production")
     assert client.get("/api/v1/auth/dev/outbox", params={"email": "a@b.co"}).status_code == 404
