@@ -34,6 +34,7 @@ from . import (
     hear,
     knowledge,
     lexicon,
+    path,
     review,
     routes_me,
 )
@@ -614,6 +615,21 @@ def root_review(request: Request, root: str, pick: int = Query(0, ge=0, le=1000)
         out = review.root_review(conn, root[:20], pick)
         if out is None:
             raise not_found("root")
+        return cached(request, out)
+
+
+@router.get("/path", summary="The roots in lessons of ten, by how much of the Quran each family makes up")
+def path_lessons(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, path.lessons(conn))
+
+
+@router.get("/path/{n}", summary="One lesson of the path: its roots and each one's most frequent words")
+def path_lesson(request: Request, n: int) -> Response:
+    with connect() as conn:
+        out = path.lesson(conn, n)
+        if out is None:
+            raise not_found("lesson")
         return cached(request, out)
 
 

@@ -4532,3 +4532,42 @@ a.wotd-pill:hover {
 .hear-notes .audio-note {
   margin: 0;
 }
+
+/* ─── The path through the Quran's words (B5) ─────────────────────────────────── */
+.path-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.path-row {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.path-row:hover {
+  border-color: var(--ring);
+}
+.path-n {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--root-wash);
+  color: var(--c-root);
+  font-size: 12px;
+}
+.path-pct {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}

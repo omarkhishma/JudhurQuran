@@ -64,35 +64,33 @@ def collection(conn: Connection, set_id: str) -> dict[str, Any] | None:
             where ci.collection_id = :id order by ci.ordinal""",
         {"id": set_id},
     )
-    out = []
-    for x in items:
-        lem = lexicon._lemma_out(x)
-        # the corpus's word-by-word gloss at the first place, where the lemma has none of its own
-        lem["gloss_en"] = lem["gloss_en"] or x["first_gloss"]
-        out.append(
-            {
-                "ordinal": x["ordinal"],
-                **lem,
-                "derivation": x["derivation"],
-                "root": {"key": x["root_key"], "spaced": x["root_spaced"], "translit": x["root_translit"]}
-                if x["root_key"]
-                else None,
-                "pattern": {
-                    "slug": x["pattern_slug"],
-                    "ar": lexicon.ar(x["pattern_ar"], x["pattern_translit"]),
-                }
-                if x["pattern_slug"]
-                else None,
-                "first": {"location": x["first_location"], "verse_key": x["first_verse"]}
-                if x["first_location"]
-                else None,
-            }
-        )
+    out = [item_out(x) for x in items]
     roots: dict[str, dict[str, Any]] = {}
     for it in out:
         if it["root"] and it["root"]["key"] not in roots:
             roots[it["root"]["key"]] = it["root"]
     return {**s, "items": out, "roots": list(roots.values())}
+
+
+def item_out(x: dict[str, Any]) -> dict[str, Any]:
+    """One word of a set as the screens show it: the lemma, its root and pattern, its first place."""
+    lem = lexicon._lemma_out(x)
+    # the corpus's word-by-word gloss at the first place, where the lemma has none of its own
+    lem["gloss_en"] = lem["gloss_en"] or x["first_gloss"]
+    return {
+        "ordinal": x["ordinal"],
+        **lem,
+        "derivation": x["derivation"],
+        "root": {"key": x["root_key"], "spaced": x["root_spaced"], "translit": x["root_translit"]}
+        if x["root_key"]
+        else None,
+        "pattern": {"slug": x["pattern_slug"], "ar": lexicon.ar(x["pattern_ar"], x["pattern_translit"])}
+        if x["pattern_slug"]
+        else None,
+        "first": {"location": x["first_location"], "verse_key": x["first_verse"]}
+        if x["first_location"]
+        else None,
+    }
 
 
 def coverage(conn: Connection, slugs: list[str]) -> dict[str, Any]:

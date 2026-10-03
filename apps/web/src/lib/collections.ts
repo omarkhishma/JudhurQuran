@@ -24,6 +24,9 @@ export type SetDetail = Omit<SetCard, "slugs" | "sample"> & {
   items: SetItem[];
   roots: { key: string; spaced: string; translit: string }[];
 };
+/** The path through the Quran's words by frequency (B5): lessons of ten roots, by how much of the text each makes up. */
+export type PathIndex = { lesson_size: number; total_words: number; rooted_words: number; lessons: { n: number; roots: { key: string; spaced: string; translit: string; occurrences: number }[]; occurrences: number; coverage: number; cumulative: number }[] };
+export type PathLesson = { n: number; of: number; items: SetItem[]; roots: { key: string; spaced: string; translit: string }[]; occurrences: number; coverage: number; cumulative: number };
 export type Coverage = { lemmas: number; roots: number; occurrences: number; total_words: number; coverage: number };
 
 /** A type colour as a CSS value (02 §2.1): the set's colour says what kind of object it gathers. */

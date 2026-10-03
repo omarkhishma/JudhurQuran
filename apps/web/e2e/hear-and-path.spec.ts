@@ -33,3 +33,27 @@ test("hear the root: every occurrence in the mushaf's order, each its own slice,
   await player.getByRole("button", { name: "أوقف الاستماع" }).click();
   await expect(player).toHaveCount(0);
 });
+
+test("a path through the Quran's words: lessons by how much of the text they cover, each studied like a set (B5)", async ({ page, isMobile }) => {
+  const path = await api<Path>(page, "/path");
+  const one = await api<Lesson>(page, "/path/1");
+  await page.goto("/explore");
+  const section = page.getByRole("region", { name: "طريق إلى كلمات القرآن" });
+  const first = section.locator(".path-row").first();
+  await expect(first).toContainText("الدرس ١");
+  await expect(first).toContainText(`+${pct(path.lessons[0].coverage)}`);
+  await expect(section.locator(".path-row")).toHaveCount(8);
+  await section.getByRole("button", { name: "أظهر دروسًا أخرى" }).click();
+  await expect(section.locator(".path-row")).toHaveCount(20);
+  await first.click();
+  await expect(page).toHaveURL(/\/explore\?path=1$/);
+  await expect(page.getByRole("heading", { name: `الدرس ١ من ${ar(one.of)}` })).toBeVisible();
+  await expect(page.locator(".set-item")).toHaveCount(one.items.length);
+  // a word kept from a lesson is starred, so it reaches the review
+  await page.locator(".set-item").first().getByRole("button", { name: "احتفظ بها" }).click();
+  const starred = await page.evaluate((s) => (JSON.parse(localStorage.getItem("jadhr-saved") ?? "{}").state?.bookmarks ?? []).some((b: { key: string }) => b.key === s), one.items[0].slug);
+  expect(starred).toBe(true);
+  await page.getByRole("link", { name: "إلى الدرس ٢" }).click();
+  await expect(page).toHaveURL(/\/explore\?path=2$/);
+  if (isMobile) await expectNoHorizontalScroll(page);
+});

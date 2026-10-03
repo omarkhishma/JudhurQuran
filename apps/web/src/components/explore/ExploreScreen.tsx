@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
-import { colourVar, fetchCoverage, type SetCard, type SetDetail, type SetItem } from "@/lib/collections";
+import { colourVar, fetchCoverage, type PathIndex, type PathLesson, type SetCard, type SetDetail, type SetItem } from "@/lib/collections";
 import type { WordOfTheDay } from "@/lib/daily";
 import { cnt, formatNumber, toArabicDigits, verseRef } from "@/lib/format";
 import { encodeSeed } from "@/lib/graph/seedCodec";
@@ -24,7 +24,25 @@ const met = (s: WordState | undefined) => s === "learning" || s === "known";
  * Quran they cover — no streak, no loss (COL-13); the curated sets, each opening as a guided walk with Open
  * and Keep per word, the roots it touches, the set as a map, and a study deck.
  */
-export function ExploreScreen({ sets, word, wotdLabel, setId, initialSet }: { sets: SetCard[]; word: WordOfTheDay | null; wotdLabel: string; setId: string | null; initialSet: SetDetail | null }) {
+export function ExploreScreen({
+  sets,
+  word,
+  wotdLabel,
+  setId,
+  initialSet,
+  path,
+  lessonN,
+  initialLesson,
+}: {
+  sets: SetCard[];
+  word: WordOfTheDay | null;
+  wotdLabel: string;
+  setId: string | null;
+  initialSet: SetDetail | null;
+  path: PathIndex | null;
+  lessonN: number | null;
+  initialLesson: PathLesson | null;
+}) {
   const t = useTranslations("explore");
   return (
     <div className="explore-screen">
@@ -33,7 +51,9 @@ export function ExploreScreen({ sets, word, wotdLabel, setId, initialSet }: { se
         <span className="flex-1" />
         <Link href="/read?mode=ask" className="btn">{t("askAction")}</Link>
       </div>
-      {setId ? (
+      {lessonN ? (
+        <LessonView n={lessonN} initial={initialLesson} />
+      ) : setId ? (
         <SetView id={setId} initial={initialSet} />
       ) : (
         <>
@@ -54,6 +74,7 @@ export function ExploreScreen({ sets, word, wotdLabel, setId, initialSet }: { se
               ))}
             </ul>
           </section>
+          {path && <PathSection path={path} />}
         </>
       )}
     </div>
@@ -174,13 +195,89 @@ function SetCardView({ s }: { s: SetCard }) {
   );
 }
 
-function SetView({ id, initial }: { id: string; initial: SetDetail | null }) {
+/** The path (B5): the roots in lessons of ten, in order of how much of the Quran each family makes up, with how much
+ * more of the text each lesson lets the reader recognise and how many of its words they have met. */
+function PathSection({ path }: { path: PathIndex }) {
+  const t = useTranslations("explore");
+  const locale = useLocale();
+  const client = useIsClient();
+  // how many of a lesson's roots the reader has looked up already (kept since the first lookup, NTB-45)
+  const rootsMet = usePersonal((x) => x.rootsMet);
+  const [shown, setShown] = useState(8);
+  const last = path.lessons[path.lessons.length - 1];
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="explore-path">
+      <div>
+        <h2 id="explore-path" className="text-[15px] font-semibold">{t("path")}</h2>
+        <p className="max-w-[720px] text-[12.5px] leading-relaxed text-t3">
+          {t("pathSub", { first: pct(path.lessons[0].cumulative, locale), all: pct(last.cumulative, locale), ...cnt(path.lessons.length, locale) })}
+        </p>
+      </div>
+      <ol className="path-list">
+        {path.lessons.slice(0, shown).map((l) => {
+          const met = client ? l.roots.filter((r) => rootsMet?.[r.key]).length : 0;
+          return (
+            <li key={l.n}>
+              <Link href={`/explore?path=${l.n}`} className="path-row">
+                <span className="path-n mono" aria-hidden="true">{formatNumber(l.n, locale)}</span>
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="text-[13.5px] font-medium">{t("pathLesson", { n: formatNumber(l.n, locale) })}</span>
+                  <span className="ar-classical truncate text-[16px] text-root" lang="ar" dir="rtl">{l.roots.map((r) => r.spaced).join(" • ")}</span>
+                  {met > 0 && <span className={"text-[11.5px] " + (met === l.roots.length ? "text-good" : "text-amber")}>{t("pathMet", { k: formatNumber(met, locale), ...cnt(l.roots.length, locale) })}</span>}
+                </span>
+                <span className="path-pct">
+                  <span className="text-[13px] font-semibold">+{pct(l.coverage, locale)}</span>
+                  <span className="text-[11px] text-t3">{t("pathCumulative", { pct: pct(l.cumulative, locale) })}</span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+      {shown < path.lessons.length && (
+        <button type="button" className="btn self-start" onClick={() => setShown((n) => n + 12)}>{t("pathMore")}</button>
+      )}
+      <p className="text-[11.5px] text-t3">{t("pathNote")}</p>
+    </section>
+  );
+}
+
+/** One lesson of the path, shown as a set: its words, the deck, the map, and the way on to the next lesson. */
+function LessonView({ n, initial }: { n: number; initial: PathLesson | null }) {
+  const t = useTranslations("explore");
+  const locale = useLocale();
+  const q = useQuery({ queryKey: ["path-lesson", n], queryFn: () => getJSON<PathLesson>(`/path/${n}`), initialData: initial ?? undefined, staleTime: Infinity, retry: false });
+  const l = q.data;
+  const set: SetDetail | null = l
+    ? (() => {
+        const title = t("pathLessonTitle", { n: formatNumber(l.n, locale), of: formatNumber(l.of, locale) });
+        const intro = l.n === 1 ? t("pathLessonIntroFirst", { coverage: pct(l.coverage, locale) }) : t("pathLessonIntro", { coverage: pct(l.coverage, locale), cumulative: pct(l.cumulative, locale) });
+        const why = t("pathWhy");
+        return { id: `path-${l.n}`, ordinal: l.n, colour: "root", title_ar: title, title_en: title, intro_ar: intro, intro_en: intro, why_ar: why, why_en: why, item_count: l.items.length, root_count: l.roots.length, occurrences: l.occurrences, coverage: l.coverage, quote: null, source: null, items: l.items, roots: l.roots };
+      })()
+    : null;
+  return (
+    <div className="flex flex-col gap-4">
+      <SetView id={`path-${n}`} initial={set} loading={q.isLoading} />
+      {l && (
+        <nav className="flex flex-wrap gap-2" aria-label={t("pathNav")}>
+          {l.n > 1 && <Link href={`/explore?path=${l.n - 1}`} className="btn">{t("pathPrev", { n: formatNumber(l.n - 1, locale) })}</Link>}
+          {l.n < l.of && <Link href={`/explore?path=${l.n + 1}`} className="btn btn-primary">{t("pathNext", { n: formatNumber(l.n + 1, locale) })}</Link>}
+        </nav>
+      )}
+    </div>
+  );
+}
+
+function SetView({ id, initial, loading = false }: { id: string; initial: SetDetail | null; loading?: boolean }) {
   const t = useTranslations("explore");
   const locale = useLocale();
   const router = useRouter();
   const [deck, setDeck] = useState(false);
-  const q = useQuery({ queryKey: ["collection", id], queryFn: () => getJSON<SetDetail>(`/collections/${encodeURIComponent(id)}`), initialData: initial ?? undefined, staleTime: Infinity, retry: false });
-  const s = q.data;
+  const lesson = id.startsWith("path-");
+  const q = useQuery({ queryKey: ["collection", id], queryFn: () => getJSON<SetDetail>(`/collections/${encodeURIComponent(id)}`), initialData: initial ?? undefined, staleTime: Infinity, retry: false, enabled: !lesson });
+  const s = lesson ? initial : q.data;
+  if (lesson ? loading : q.isLoading) return <div className="h-60 animate-pulse rounded-xl bg-card-2" role="status" aria-label={t("loading")} />;
   if (q.isLoading) return <div className="h-60 animate-pulse rounded-xl bg-card-2" role="status" aria-label={t("loading")} />;
   if (!s)
     return (
@@ -196,7 +293,7 @@ function SetView({ id, initial }: { id: string; initial: SetDetail | null }) {
     <div className="set-view">
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" className="btn" onClick={() => router.push("/explore")}>{t("back")}</button>
+          <button type="button" className="btn" onClick={() => router.push(lesson ? "/explore#explore-path" : "/explore")}>{lesson ? t("pathBack") : t("back")}</button>
           <h2 className="text-[20px] font-semibold" style={{ color: colourVar(s.colour) }}>{ar ? s.title_ar : s.title_en}</h2>
           <span className="text-[12px] text-t3">{t("words", cnt(s.item_count, locale))}</span>
         </div>
@@ -218,8 +315,8 @@ function SetView({ id, initial }: { id: string; initial: SetDetail | null }) {
           ))}
         </ol>
       </div>
-      <aside className="set-side" aria-label={t("why")}>
-        <p className="label-caps">{t("why")}</p>
+      <aside className="set-side" aria-label={lesson ? t("pathWhyTitle") : t("why")}>
+        <p className="label-caps">{lesson ? t("pathWhyTitle") : t("why")}</p>
         <p className="text-[13.5px] leading-relaxed text-t2">{ar ? s.why_ar : s.why_en}</p>
         {s.roots.length > 0 && (
           <>

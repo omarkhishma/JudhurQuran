@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ExploreScreen } from "@/components/explore/ExploreScreen";
 import { api } from "@/lib/api";
-import type { SetCard, SetDetail } from "@/lib/collections";
+import type { PathIndex, PathLesson, SetCard, SetDetail } from "@/lib/collections";
 import { meccaToday, type WordOfTheDay } from "@/lib/daily";
 import { localized } from "@/lib/seo";
 
@@ -32,11 +32,14 @@ export default async function ExplorePage({ params, searchParams }: PageProps<"/
   const t = await getTranslations("explore");
   const sp = await searchParams;
   const setId = typeof sp.set === "string" && /^[a-z0-9-]{1,40}$/.test(sp.set) ? sp.set : null;
-  const [sets, word, set] = await Promise.all([
+  const lessonN = typeof sp.path === "string" && /^[1-9]\d{0,3}$/.test(sp.path) ? Number(sp.path) : null;
+  const [sets, word, set, path, lesson] = await Promise.all([
     api<{ data: SetCard[] }>("/collections"),
     api<WordOfTheDay>(`/word-of-the-day?date=${meccaToday()}`).catch(() => null),
     setId ? api<SetDetail>(`/collections/${setId}`).catch(() => null) : Promise.resolve(null),
+    api<PathIndex>("/path").catch(() => null),
+    lessonN ? api<PathLesson>(`/path/${lessonN}`).catch(() => null) : Promise.resolve(null),
   ]);
   const label = word ? t("wotdDate", dayLabel(word.date, locale)) : "";
-  return <ExploreScreen sets={sets.data} word={word} wotdLabel={label} setId={setId} initialSet={set} />;
+  return <ExploreScreen sets={sets.data} word={word} wotdLabel={label} setId={setId} initialSet={set} path={path} lessonN={lessonN} initialLesson={lesson} />;
 }
