@@ -2723,3 +2723,52 @@ button.type-chip:hover {
 }
 }
 
+@layer components {
+/* ─── Particles in the Meanings section (P3.8) ────────────────────────────── */
+.particles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.particle-item + .particle-item {
+  border-top: 1px solid var(--line);
+}
+.particle-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 2px;
+  text-align: start;
+}
+.particle-head:hover {
+  background: var(--card-2);
+}
+.particle-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px 10px;
+}
+.particle-sense {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.particle-sense.is-intro p {
+  color: var(--t2);
+}
+.particle-sense p.is-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+}
+

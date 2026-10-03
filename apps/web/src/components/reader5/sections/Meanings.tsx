@@ -1,11 +1,13 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { Term } from "@/components/terms/Term";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { useReader } from "@/lib/reader/store";
-import type { Features, Label, Mufradat, WordPayload } from "@/lib/reader/types";
+import { getJSON } from "@/lib/reader/api";
+import type { Features, Label, Mufradat, ParticleEntry, ParticleLink, WordPayload } from "@/lib/reader/types";
 import { FORM_TERM, TAG_TERM } from "@/lib/terms";
 import { WujuhBlock } from "./Wujuh";
 
@@ -110,6 +112,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
           )}
         </>
       )}
+      {w.particles.length > 0 && <ParticlesBlock items={w.particles} />}
       {w.mufradat && <MufradatBlock m={w.mufradat} />}
       <WujuhBlock w={w} />
       {w.senses.length === 0 && (
@@ -227,6 +230,80 @@ function MufradatBlock({ m }: { m: Mufradat }) {
       ))}
       <p className="text-[11px] text-t3">{t("mufradatStatus")}</p>
     </section>
+  );
+}
+
+/**
+ * What the grammarians say about this particle (P3.8): Ibn Hishām's Mughnī and al-Murādī's al-Janā al-Dānī,
+ * reached by the word itself or by one of its affixes (the و of «وَإِذْ»). Each entry opens to its senses in
+ * the author's order and numbering, verbatim; particles never get a root (L2).
+ */
+function ParticlesBlock({ items }: { items: ParticleLink[] }) {
+  const t = useTranslations("rd");
+  return (
+    <section className="particles" aria-label={t("particlesTitle")}>
+      <p className="label-caps">{t("particlesTitle")}</p>
+      <ul className="flex flex-col">
+        {items.map((p) => (
+          <ParticleItem key={p.id} p={p} />
+        ))}
+      </ul>
+      <p className="text-[11px] text-t3">{t("particlesStatus")}</p>
+    </section>
+  );
+}
+
+function ParticleItem({ p }: { p: ParticleLink }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const [open, setOpen] = useState(false);
+  const q = useQuery({ queryKey: ["particle", p.id], queryFn: () => getJSON<ParticleEntry>(`/particles/${p.id}`), enabled: open, staleTime: Infinity });
+  const author = (locale === "ar" ? p.author_ar : p.author_en).split(/[،,]/)[0];
+  return (
+    <li className="particle-item">
+      <button type="button" className="particle-head" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span className="ar-classical text-[19px] text-t1" lang="ar">{p.headword_ar}</span>
+        {p.via.kind === "affix" && (
+          <span className="text-[11.5px] text-t3">{t("particleViaAffix", { text: p.via.text, label: locale === "ar" ? p.via.label.ar : p.via.label.en })}</span>
+        )}
+        <span className="flex-1" />
+        <span className="text-[11.5px] text-t3">{`${author} · ${locale === "ar" ? p.title_ar : p.title_en}`}</span>
+        <span className="mono text-[11px] text-t3">{t("particleSenses", cnt(p.sense_count, locale))}</span>
+      </button>
+      {open && (q.isLoading ? <div className="h-16 animate-pulse rounded-lg bg-card-2" /> : q.data ? <ParticleSenses e={q.data} /> : null)}
+    </li>
+  );
+}
+
+function ParticleSenses({ e }: { e: ParticleEntry }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const [wide, setWide] = useState<Record<string, boolean>>({});
+  const page = (vol: number | null, pg: number | null) => (pg == null ? "" : vol && vol > 1 ? `${formatNumber(vol, locale)}/${formatNumber(pg, locale)}` : formatNumber(pg, locale));
+  return (
+    <div className="particle-body">
+      {e.senses.map((s) => (
+        <div
+          key={s.id}
+          className={"particle-sense is-" + s.kind}
+          style={s.list_depth && s.list_depth > 1 ? { marginInlineStart: (s.list_depth - 1) * 14 } : undefined}
+          lang="ar"
+          dir="rtl"
+        >
+          {s.kind === "sense" && <span className="mono shrink-0 text-[11px] text-t3">{s.marker_ar ?? formatNumber(s.sense_index ?? 0, locale)}</span>}
+          <div className="min-w-0 flex-1">
+            <p className={"text-[14.5px] leading-[1.9]" + (s.kind === "note" ? " text-t3" : " text-t1") + (wide[s.id] ? "" : " is-clamped")}>{s.text_ar}</p>
+            {s.text_ar.length > 260 && (
+              <button type="button" className="text-[11.5px] text-t2 underline-offset-2 hover:underline" aria-expanded={!!wide[s.id]} onClick={() => setWide((w) => ({ ...w, [s.id]: !w[s.id] }))}>
+                {wide[s.id] ? t("showLess") : t("readWholePassage")}
+              </button>
+            )}
+          </div>
+          {s.page != null && <span className="mono shrink-0 text-[10.5px] text-t3">{page(s.page_vol, s.page)}</span>}
+        </div>
+      ))}
+      <p className="text-[10.5px] text-t3">{locale === "ar" ? e.source.attribution_ar : e.source.attribution_en}</p>
+    </div>
   );
 }
 

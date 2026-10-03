@@ -978,7 +978,11 @@
     "readWholePassage": "Read the whole passage",
     "sensesAsNumbered": "the senses as he numbers them",
     "matchedMedium": "matched to this word by its letters and vowels",
-    "mufradatStatus": "Passages quoted as they stand in the article, cut and matched to words mechanically; not yet reviewed by an editor."
+    "mufradatStatus": "Passages quoted as they stand in the article, cut and matched to words mechanically; not yet reviewed by an editor.",
+    "particlesTitle": "In the books on particles",
+    "particleViaAffix": "“{text}” in this word: {label}",
+    "particleSenses": "{count, plural, =0 {no numbered senses} one {# sense} other {{n} senses}}",
+    "particlesStatus": "Entries quoted as they stand in Ibn Hishām's Mughnī al-Labīb and al-Murādī's al-Janā al-Dānī, linked to words mechanically; not yet reviewed by an editor."
   },
   "concordance": {
     "title": "Concordance",

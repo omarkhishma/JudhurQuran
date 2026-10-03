@@ -113,6 +113,38 @@ export type Mufradat = {
   }[];
 };
 
+/** A particle entry treating this word (P3.8), by its lemma or by an affix of this occurrence. */
+export type ParticleLink = {
+  id: string;
+  source_id: string;
+  headword_ar: string;
+  descriptor_ar: string | null;
+  section_ar: string;
+  sense_count: number;
+  stated_count: number | null;
+  match_method: string | null;
+  match_confidence: string | null;
+  page_vol: number | null;
+  page: number | null;
+  title_ar: string;
+  title_en: string;
+  author_ar: string;
+  author_en: string;
+  via: { kind: "lemma" } | { kind: "affix"; text: string; label: { ar: string; en: string; tag: string } };
+};
+export type ParticleEntry = {
+  id: string;
+  headword_ar: string;
+  descriptor_ar: string | null;
+  sense_count: number;
+  stated_count: number | null;
+  page_vol: number | null;
+  page: number | null;
+  status: string;
+  senses: { id: string; kind: "intro" | "sense" | "note"; list_no: number | null; list_depth: number | null; parent_id: string | null; sense_index: number | null; marker_ar: string | null; label_ar: string | null; text_ar: string; page_vol: number | null; page: number | null }[];
+  source: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; edition_ar: string | null; licence: string; attribution_ar: string; attribution_en: string };
+};
+
 export type Occurrence = {
   location: string;
   uri: string;
@@ -189,6 +221,7 @@ export type WordPayload = {
   slug: string;
   lemma_id: number;
   mufradat: Mufradat | null;
+  particles: ParticleLink[];
   uri: string;
   ar: Ar;
   pos: PosLabel;
