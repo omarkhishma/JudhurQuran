@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import analyse, collections, concordance, content, daily, knowledge, lexicon
+from . import analyse, collections, concordance, content, daily, knowledge, lexicon, review
 from .db import connect
 from .search import search as run_search
 from .settings import get_settings
@@ -582,6 +582,24 @@ def lemmas_coverage(body: _Slugs) -> Response:
     # the reader's word list is personal: it comes in a body, and nothing about it is kept or cached
     with connect() as conn:
         return ORJSONResponse(collections.coverage(conn, body.slugs), headers={"Cache-Control": "no-store"})
+
+
+@router.post("/lemmas/roots", summary="The root of each of a reader's words (not stored, not cached)")
+def lemmas_roots(body: _Slugs) -> Response:
+    # the reader's starred and known words: in a body, kept nowhere
+    with connect() as conn:
+        return ORJSONResponse(
+            {"data": review.lemma_roots(conn, body.slugs)}, headers={"Cache-Control": "no-store"}
+        )
+
+
+@router.get("/roots/{root}/review", summary="A root for the review deck: its family and a verse that uses it")
+def root_review(request: Request, root: str, pick: int = Query(0, ge=0, le=1000)) -> Response:
+    with connect() as conn:
+        out = review.root_review(conn, root[:20], pick)
+        if out is None:
+            raise not_found("root")
+        return cached(request, out)
 
 
 class _Tokens(BaseModel):
