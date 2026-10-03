@@ -565,3 +565,23 @@ terms:
   en:
     label: 'Meccan and Medinan'
     body: 'In the majority view, Meccan is what was revealed before the Hijra and Medinan what came after; some verses are disputed, and the views are given with those who hold them.'
+- key: sense
+  category: meaning
+  href: null
+  sort_order: 53
+  ar:
+    label: المعنى (الوجه)
+    body: 'واحد من المعاني التي تحملها الكلمة. تعدّها المعاجم وتُرقّمها، والسياق هو الذي يحدّد أيّها المراد في الآية، وقد يختلف فيه أهل العلم فيُذكر الخلاف بأصحابه.'
+  en:
+    label: Sense
+    body: 'One of the meanings a word carries. Dictionaries list and number them; the context decides which one a verse uses, and where scholars differ, each view is given with those who hold it.'
+- key: corpus
+  category: sources
+  href: /sources
+  sort_order: 54
+  ar:
+    label: المدونة القرآنية
+    body: 'قاعدة بيانات تحلّل كل كلمة في القرآن تحليلًا صرفيًا: جذرها وأصلها المعجمي ونوعها وسوابقها ولواحقها، ومنها تأتي الترجمة الحرفية للكلمة. نُسبت إلى مصدرها في كل موضع.'
+  en:
+    label: Corpus
+    body: 'A database that analyses every word of the Quran morphologically — its root, lemma, part of speech, prefixes and suffixes — and gives a word-by-word translation. It is credited wherever it is used.'

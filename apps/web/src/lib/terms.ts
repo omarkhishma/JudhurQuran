@@ -11,6 +11,7 @@ export type TermId =
   | "concordance" | "occurrences" | "lexicon" | "gharib" | "variant" | "gloss" | "transliteration"
   | "form2" | "form3" | "form4" | "form5" | "form6" | "form7" | "form8" | "form9" | "form10"
   | "pronoun" | "particle" | "muqattaat" | "nounOfPlace" | "intensive" | "adjective" | "definite"
+  | "sense" | "corpus"
   | "wujuh" | "furuq" | "addad" | "asbab" | "makkiMadani"; // prettier-ignore
 
 /** Corpus verb form number → its card. */
