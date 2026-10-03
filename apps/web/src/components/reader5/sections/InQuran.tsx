@@ -7,7 +7,9 @@ import { Segmented } from "@/components/ui/Segmented";
 import { Link } from "@/i18n/navigation";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
+import { useReader } from "@/lib/reader/store";
 import type { Attestation, WordPayload } from "@/lib/reader/types";
+import { tags } from "../GrammarBand";
 import type { ChapterInfo } from "../ReaderShell";
 
 type Dist = { surah: number; name_ar: string; name_translit: string; revelation_place: string; occurrences: number }[];
@@ -21,6 +23,7 @@ type Page = { data: (Attestation & { lemma_slug: string | null })[]; total: numb
  */
 export function InQuranSection({ w, chapter }: { w: WordPayload; chapter: ChapterInfo }) {
   const t = useTranslations("rd");
+  const setHandoff = useReader((s) => s.setHandoff);
   const locale = useLocale();
   const [form, setForm] = useState<string | null>(null);
   const [scope, setScope] = useState<"lemma" | "root">("lemma");
@@ -118,6 +121,13 @@ export function InQuranSection({ w, chapter }: { w: WordPayload; chapter: Chapte
               <span className="kwic-side kwic-before">{r.left}</span>
               <mark className="kwic-key">{r.keyword}</mark>
               <span className="kwic-side kwic-after">{r.right}</span>
+            </span>
+            {/* this occurrence's inflection, and a graph seeded from it (RDR-269) */}
+            <span className="kwic-meta">
+              {r.features && <span className="text-[11px] text-t3">{tags(r.features, locale).join(" · ")}</span>}
+              <button type="button" className="text-[11px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setHandoff({ seed: "word", slug: r.lemma_slug ?? w.slug, at: r.location })}>
+                {t("tool_graph")}
+              </button>
             </span>
           </li>
         ))}

@@ -45,6 +45,9 @@ type ReaderState = {
   focusRoot: string | null;
   toast: { text: string; id: number } | null;
   scrollTo: SectionId | null;
+  // the Shapes section: which view, and the last pattern chosen (RDR-226, 232) — a door or the omnibox may set them
+  shapesView: "root" | "pattern";
+  shapesPattern: string | null;
   onbBeat: number; // onboarding beat; session state so it survives the jump to the demo sūra
 
   openWord: (sel: Selection, opts?: { fromHistory?: boolean }) => void;
@@ -64,6 +67,8 @@ type ReaderState = {
   setFocusRoot: (k: string | null) => void;
   showToast: (text: string) => void;
   jumpTo: (s: SectionId | null) => void;
+  setShapes: (p: { view?: "root" | "pattern"; pattern?: string | null }) => void;
+  openShapes: (pattern: string) => void;
   closeEntry: () => void;
   setOnbBeat: (n: number) => void;
 };
@@ -88,6 +93,8 @@ export const useReader = create<ReaderState>((set, get) => ({
   focusRoot: null,
   toast: null,
   scrollTo: null,
+  shapesView: "root",
+  shapesPattern: null,
   onbBeat: 0,
 
   openWord: (sel, opts) => {
@@ -142,6 +149,12 @@ export const useReader = create<ReaderState>((set, get) => ({
       else p.openLayer(scrollTo);
     }
     set({ scrollTo });
+  },
+  setShapes: (p) => set((s) => ({ shapesView: p.view ?? s.shapesView, shapesPattern: p.pattern === undefined ? s.shapesPattern : p.pattern })),
+  // the shape door and the omnibox's pattern rows open Shapes on that pattern (RDR-332, 377)
+  openShapes: (pattern) => {
+    set({ shapesView: "pattern", shapesPattern: pattern });
+    get().jumpTo("patterns");
   },
   closeEntry: () => set({ selection: null, verse: null, mode: "empty" }),
   setOnbBeat: (onbBeat) => set({ onbBeat }),

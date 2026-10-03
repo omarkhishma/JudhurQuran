@@ -252,7 +252,7 @@ function Sections({ w, chapter }: { w: WordPayload; chapter: ChapterInfo }) {
   const bodies: Record<SectionId, React.ReactNode> = {
     senses: <MeaningsSection w={w} />,
     family: <FamilySection w={w} />,
-    patterns: <ShapesSection w={w} />,
+    patterns: <ShapesSection w={w} chapter={chapter.number} />,
     lexica: <DictionariesSection w={w} />,
     timeline: <CenturiesSection w={w} />,
     usage: <InQuranSection w={w} chapter={chapter} />,

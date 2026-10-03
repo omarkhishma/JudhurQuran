@@ -128,7 +128,11 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
           {t("reportError")}
         </button>
       </div>
-      {w.occurrence && <GrammarHere features={w.occurrence.features} surface={w.occurrence.surface.full} verseKey={w.occurrence.verse_key} />}
+      {w.occurrence ? (
+        <GrammarHere features={w.occurrence.features} surface={w.occurrence.surface.full} verseKey={w.occurrence.verse_key} />
+      ) : (
+        <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] text-t3">{t("grammarNoPlace")}</p>
+      )}
     </div>
   );
 }

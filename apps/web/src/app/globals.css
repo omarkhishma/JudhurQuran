@@ -2898,3 +2898,30 @@ button.type-chip:hover {
 }
 }
 
+@layer components {
+/* ─── Shapes, occurrences and the graph preview (RDR-154, 158, 227…231, 269) ─── */
+.shapes-table tr.is-unattested td {
+  opacity: 0.6;
+}
+.is-current-row {
+  background: color-mix(in srgb, var(--ring) 10%, transparent);
+  border-radius: 8px;
+}
+.kwic-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  grid-column: 1 / -1;
+}
+.graph-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 899px) {
+  .graph-cols {
+    grid-template-columns: 1fr;
+  }
+}
+}
+

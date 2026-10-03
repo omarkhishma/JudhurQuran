@@ -11,7 +11,7 @@ export function WhereNext({ w }: { w: WordPayload }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const openWord = useReader((s) => s.openWord);
-  const jumpTo = useReader((s) => s.jumpTo);
+  const openShapes = useReader((s) => s.openShapes);
   const trail = usePersonal((s) => s.trail);
   const distinct = new Set(trail.map((s) => `${s.kind}:${s.id}`));
   // The cousin door prefers a family member not yet on the trail, to avoid loops (RDR-588).
@@ -28,12 +28,19 @@ export function WhereNext({ w }: { w: WordPayload }) {
       <div className="doors">
         {w.next_steps.map((s) => {
           if (s.kind === "cousin") {
-            const c = visited.has(s.slug) && fresh ? { slug: fresh.slug, ar: fresh.ar } : s;
+            const swap = visited.has(s.slug) && fresh;
+            const c = swap ? { slug: fresh.slug, ar: fresh.ar, gloss_en: fresh.gloss_en } : s;
+            // its own shape: the same as this word's, or named (RDR-329)
+            const cp = swap ? (w.family.find((g) => g.members.some((m) => m.slug === fresh.slug))?.pattern ?? null) : s.pattern;
+            const why = cp && w.pattern && cp.slug === w.pattern.slug ? t("doorCousinSame") : cp ? t("doorCousinShaped", { pattern: cp.ar.full }) : t("doorCousinWhy");
             return (
               <button key="cousin" type="button" className="door" style={{ ["--door" as string]: "var(--c-word)" }} onClick={() => openWord({ slug: c.slug, at: null })}>
                 <span className="door-cap">{t("doorCousin")}</span>
                 <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{c.ar.full}</span>
-                <span className="text-[11.5px] text-t2">{t("doorCousinWhy")}</span>
+                <span className="text-[11.5px] text-t2">
+                  {c.gloss_en && locale !== "ar" ? `${c.gloss_en} — ` : ""}
+                  {why}
+                </span>
               </button>
             );
           }
@@ -46,10 +53,15 @@ export function WhereNext({ w }: { w: WordPayload }) {
               </a>
             );
           return (
-            <button key="pattern" type="button" className="door" style={{ ["--door" as string]: "var(--c-form)" }} onClick={() => jumpTo("patterns")}>
+            // Shapes opened on this pattern, with a few other words on it (RDR-332)
+            <button key="pattern" type="button" className="door" style={{ ["--door" as string]: "var(--c-form)" }} onClick={() => openShapes(s.slug)}>
               <span className="door-cap">{t("doorShape")}</span>
               <span className="ar-classical text-[19px]" lang="ar">{s.ar.full}</span>
-              <span className="text-[11.5px] text-t2">{t("doorShapeWhy")}</span>
+              <span className="text-[11.5px] text-t2">
+                {w.shapes.same_pattern_other_roots.length
+                  ? t("doorShapeMore", { ...cnt(w.shapes.same_pattern_other_roots.length, locale), words: w.shapes.same_pattern_other_roots.slice(0, 3).map((m) => m.ar.full).join("، ") })
+                  : t("doorShapeWhy")}
+              </span>
             </button>
           );
         })}

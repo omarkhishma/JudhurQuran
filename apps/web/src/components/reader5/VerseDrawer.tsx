@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { cnt, cnt2, toArabicDigits } from "@/lib/format";
+import { cnt, cnt2, formatNumber, toArabicDigits } from "@/lib/format";
+import { buildSeedGraph } from "@/lib/graph/seed";
 import { getJSON } from "@/lib/reader/api";
 import { usePersonal, useReader, verseRef } from "@/lib/reader/store";
 import { useSaved } from "@/lib/store/saved";
@@ -47,6 +48,15 @@ export function RootsDrawer({ verseKey }: { verseKey: string }) {
   const counts = new Map<string, number>();
   for (const w of v.data?.words ?? []) if (w.root) counts.set(w.root, (counts.get(w.root) ?? 0) + 1);
   const roots = [...counts.entries()];
+  // each root's transliteration and its count in the whole Quran (RDR-154)
+  const keys = roots.map(([k]) => k);
+  const info = useQuery({
+    queryKey: ["roots-by-key", keys.join(",")],
+    queryFn: () => getJSON<{ data: { key: string; translit: string; occurrences: number }[] }>(`/roots?keys=${encodeURIComponent(keys.join(","))}&limit=${keys.length}`),
+    enabled: keys.length > 0,
+    staleTime: Infinity,
+  });
+  const byKey = new Map((info.data?.data ?? []).map((r) => [r.key, r]));
   if (v.data && roots.length === 0) return <p className="text-[12.5px] text-t3">{t("noRootsInVerse")}</p>;
   return (
     <ul className="flex flex-col gap-1">
@@ -54,8 +64,12 @@ export function RootsDrawer({ verseKey }: { verseKey: string }) {
         <li key={k}>
           <button type="button" className={"rail-root" + (focusRoot === k ? " is-on" : "")} aria-pressed={focusRoot === k} onClick={() => setFocusRoot(focusRoot === k ? null : k)} title={t("highlightRootTitle", { root: k })}>
             <span className="ar-classical min-w-[72px] text-[19px] tracking-[.06em] text-root" lang="ar">{k.split("").join(" ")}</span>
+            {byKey.get(k) && <span className="mono text-[10.5px] text-t3" dir="ltr" lang="en">{byKey.get(k)!.translit}</span>}
             <span className="flex-1" />
-            <span className="mono text-[11px] text-t3">{t("timesHere", cnt(n, locale))}</span>
+            <span className="mono text-[11px] text-t3">
+              {t("timesHere", cnt(n, locale))}
+              {byKey.get(k) && ` · ${t("inQuranN", { n: formatNumber(byKey.get(k)!.occurrences, locale) })}`}
+            </span>
           </button>
         </li>
       ))}
@@ -112,19 +126,38 @@ export function NoteDrawer({ verseKey }: { verseKey: string }) {
 
 function GraphDrawer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
+  const tg = useTranslations("graph");
   const setHandoff = useReader((s) => s.setHandoff);
   const locale = useLocale();
-  const v = useVerse(verseKey);
-  const words = (v.data?.words ?? []).filter((w) => w.root);
-  const roots = [...new Set(words.map((w) => w.root!))];
+  const built = useQuery({ queryKey: ["seed-graph", JSON.stringify({ seed: "verse", key: verseKey })], queryFn: () => buildSeedGraph({ seed: "verse", key: verseKey }), staleTime: 5 * 60_000 });
+  const cols = (kind: "root" | "lemma" | "word") => (built.data?.nodes ?? []).filter((n) => n.data.kind === kind);
+  const [roots, lemmas, words] = [cols("root"), cols("lemma"), cols("word")];
+  if (!built.data) return <div className="h-20 animate-pulse rounded-lg bg-card-2" />;
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[12px] text-t2">{t("graphPreview", { ...cnt(roots.length, locale), ...cnt2(words.length, locale) })}</p>
-      <div className="flex flex-wrap gap-1.5">
-        {roots.map((r) => (
-          <span key={r} className="chip"><span className="ar-classical text-[16px] text-root" lang="ar">{r.split("").join(" ")}</span></span>
+      <div className="graph-cols">
+        {(
+          [
+            ["kindRoot", roots, "text-root"],
+            ["kindLemma", lemmas, "text-form"],
+            ["kindWord", words, "text-word"],
+          ] as const
+        ).map(([label, list, color]) => (
+          <div key={label} className="flex min-w-0 flex-col gap-1">
+            <p className="label-caps">{tg(label)} · {formatNumber(list.length, locale)}</p>
+            <div className="flex flex-wrap gap-1">
+              {list.map((n) => (
+                <span key={n.id} className={`ar-classical text-[16px] ${color}`} lang="ar">{n.data.ar}</span>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
+      <p className="flex items-center gap-1.5 text-[11px] text-t3">
+        <span className="dot" style={{ background: "var(--c-sentence)" }} />
+        {t("graphFootnote")}
+      </p>
       <button type="button" className="btn self-start" onClick={() => setHandoff({ seed: "verse", key: verseKey })}>{t("openInEditor")}</button>
     </div>
   );

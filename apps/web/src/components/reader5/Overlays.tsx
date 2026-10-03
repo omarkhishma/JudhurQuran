@@ -83,6 +83,7 @@ function Omnibox({ onClose }: { onClose: () => void }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const router = useRouter();
+  const openShapes = useReader((s) => s.openShapes);
   const openWord = useReader((s) => s.openWord);
   const [q, setQ] = useState("");
   const [active, setActive] = useState(0);
@@ -116,9 +117,18 @@ function Omnibox({ onClose }: { onClose: () => void }) {
     for (const x of r.roots.slice(0, 3))
       out.push({ group: t("omniRoots"), key: `r${x.key}`, dot: "var(--c-root)", ar: x.spaced, sub: x.translit, meta: t("rootCounts", { ...cnt(x.occurrences, locale), ...cnt2(x.lemma_count, locale) }), go: () => { onClose(); router.push(`/roots/${encodeURIComponent(x.key)}`); } });
     for (const p of (r.patterns ?? []).slice(0, 2))
-      out.push({ group: t("omniPatterns"), key: `p${p.slug}`, dot: "var(--c-form)", ar: p.ar.full, sub: p.ar.translit, meta: t("wordsN", cnt(p.lemma_count, locale)), go: () => { onClose(); router.push(`/search?q=${encodeURIComponent(p.ar.full)}`); } });
+      out.push({ group: t("omniPatterns"), key: `p${p.slug}`, dot: "var(--c-form)", ar: p.ar.full, sub: p.ar.translit, meta: t("wordsN", cnt(p.lemma_count, locale)), go: () => {
+          onClose();
+          // Shapes on that pattern (RDR-377): over the open word, else over the pattern's most used word
+          if (useReader.getState().selection?.slug) return openShapes(p.slug);
+          void getJSON<{ members: { slug: string }[] }>(`/patterns/${p.slug}?limit=1`).then((d) => {
+            if (!d.members[0]) return;
+            openWord({ slug: d.members[0].slug, at: null });
+            openShapes(p.slug);
+          });
+        } });
     return out;
-  }, [res.data, t, locale, onClose, router, openWord]);
+  }, [res.data, t, locale, onClose, router, openWord, openShapes]);
 
   const label = res.data ? (locale === "ar" ? res.data.detected.label_ar : res.data.detected.label_en) : t("typeToSearch");
   return (

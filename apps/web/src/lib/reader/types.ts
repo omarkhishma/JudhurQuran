@@ -215,6 +215,7 @@ export type Attestation = {
   left: string;
   keyword: string;
   right: string;
+  features?: Features;
 };
 
 export type WordPayload = {
@@ -258,7 +259,7 @@ export type WordPayload = {
     more: boolean;
   };
   next_steps: (
-    | { kind: "cousin"; slug: string; ar: Ar; gloss_en: string | null }
+    | { kind: "cousin"; slug: string; ar: Ar; gloss_en: string | null; pattern: { slug: string; ar: Ar } | null }
     | { kind: "verse"; location: string; verse_key: string }
     | { kind: "pattern"; slug: string; ar: Ar }
   )[];
