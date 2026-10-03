@@ -47,6 +47,23 @@ test("every Arabic page answers without redirects and in Arabic", async ({ page 
   await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
 });
 
+test("the sources page lists every layer the reader sees, each with its licence, and fits a phone", async ({ page }) => {
+  type S = { attribution_ar: string };
+  const d = await api<{ layers: { relations: S[]; patterns: S[]; particles: S[]; gharib: S[]; knowledge: S[] } }>(page, "/sources");
+  await page.goto("/sources");
+  for (const [title, list] of [
+    ["الوجوه والنظائر والفروق والأضداد", d.layers.relations],
+    ["كتب الصرف: ما يدل عليه الوزن", d.layers.patterns],
+    ["كتب حروف المعاني", d.layers.particles],
+    ["غريب القرآن في موضعه", d.layers.gharib],
+    ["طبقات المعرفة القرآنية", d.layers.knowledge],
+  ] as const) {
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
+    for (const s of list) await expect(page.getByText(s.attribution_ar, { exact: false }).first()).toBeAttached();
+  }
+  await expectNoHorizontalScroll(page);
+});
+
 test("unknown paths are real 404s", async ({ page }) => {
   for (const path of ["/no-such-page", "/en/no-such-page", "/quran/999", "/word/1:1:99"]) {
     const r = await page.goto(path);

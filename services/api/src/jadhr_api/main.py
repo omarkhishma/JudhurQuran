@@ -99,7 +99,7 @@ def catalog(request: Request) -> Response:
 @router.get("/sources", summary="Every data source with its license and required attribution")
 def sources(request: Request) -> Response:
     with connect() as conn:
-        return cached(request, {"data": content.sources(conn)})
+        return cached(request, {"data": content.sources(conn), "layers": content.source_layers(conn)})
 
 
 @router.get("/surahs", summary="The 114 surahs")

@@ -53,6 +53,37 @@ def sources(conn: Connection) -> list[dict[str, Any]]:
     )
 
 
+def source_layers(conn: Connection) -> dict[str, Any]:
+    """Every other source the product shows, layer by layer, with its licence and the credit it asks for —
+    so the sources page lists all of them, not only the text and morphology (licence register, P1.8)."""
+    credit = "licence, licence_url, redistributable, attribution_ar, attribution_en"
+    people = (
+        "title_ar, title_en, author_ar, author_en, death_hijri, death_ce, edition_ar, edition_en, source_url"
+    )
+    return {
+        "knowledge": rows(
+            conn,
+            """select id, kind, use, title_ar, title_en, version, url, license, license_ar, license_url,
+                      attribution_ar, attribution_en from content.knowledge_sources order by id""",
+        ),
+        "relations": rows(
+            conn, f"select id, kind, {people}, {credit} from content.relation_sources order by sort_order"
+        ),
+        "patterns": rows(
+            conn, f"select id, role, {people}, {credit} from content.pattern_sources order by sort_order"
+        ),
+        "particles": rows(
+            conn, f"select id, {people}, {credit} from content.particle_sources order by sort_order"
+        ),
+        "gharib": rows(
+            conn,
+            f"""select id, title_ar, title_en, publisher_ar, publisher_en, version, source_url, display_only, {credit}
+                from content.gharib_works order by sort_order""",
+        ),
+        "recitations": {"reciters": reciters(conn), "credit": AUDIO_CREDIT},
+    }
+
+
 # ─── surahs & verses ────────────────────────────────────────────────────────
 
 

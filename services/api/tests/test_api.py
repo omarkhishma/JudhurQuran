@@ -384,3 +384,29 @@ def test_internal_token_exempts_server_renders_from_the_rate_limit(monkeypatch) 
     ).status_code
     assert wrong == 429
     m._hits.clear()
+
+
+def test_the_sources_list_names_every_layer_with_its_licence() -> None:
+    d = get("/api/v1/sources")
+    layers = d["layers"]
+    expected = {
+        "knowledge": "knowledge_sources",
+        "relations": "relation_sources",
+        "patterns": "pattern_sources",
+        "particles": "particle_sources",
+        "gharib": "gharib_works",
+    }
+    import json
+    from pathlib import Path
+
+    build = Path(__file__).resolve().parents[3] / "data/build/2026.10.0"
+    for layer, table in expected.items():
+        path = build / f"{table}.jsonl"
+        if not path.exists():
+            continue
+        ids = {json.loads(line)["id"] for line in path.open(encoding="utf-8") if line.strip()}
+        assert {x["id"] for x in layers[layer]} == ids, layer
+        for x in layers[layer]:
+            assert x["attribution_ar"] and x["attribution_en"], (layer, x["id"])
+            assert x.get("licence") or x.get("license"), (layer, x["id"])
+    assert layers["recitations"]["reciters"] and len(layers["recitations"]["credit"]["sources"]) == 2
