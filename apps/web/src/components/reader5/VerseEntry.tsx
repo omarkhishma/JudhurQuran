@@ -10,6 +10,7 @@ import { getJSON } from "@/lib/reader/api";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import { useAudio } from "@/lib/store/audio";
 import { TafsirSection } from "./TafsirSection";
+import { Backlinks } from "@/components/notebook/Backlinks";
 import { NoteDrawer, RootsDrawer } from "./VerseDrawer";
 import { VerseKnowledgeSections, VerseLayer } from "./VerseKnowledge";
 import { VerseSigns } from "./MushafSigns";
@@ -72,6 +73,7 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
       </VerseLayer>
       <VerseLayer title={t("drawer_note")} defaultOpen={false}>
         <NoteDrawer verseKey={verseKey} />
+        <Backlinks verse={verseKey} className="mt-3" />
       </VerseLayer>
     </article>
   );

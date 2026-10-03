@@ -19,9 +19,9 @@ import { useDebounced } from "@/lib/useDebounced";
 
 type Group = "all" | "root" | "surah" | "tag";
 /** One row of the notebook: a free note, a note on a verse, or a saved trail (NTB-35…38 reconciled). */
-type Item = { kind: "note" | "verse" | "trail"; id: string; title: string; body: string; tags: string[]; created: number; updated: number; roots: string[]; verses: string[]; verse?: string; trail?: SavedTrail };
+type Item = { kind: "note" | "verse" | "trail"; id: string; title: string; body: string; tags: string[]; created: number; updated: number; roots: string[]; verses: string[]; words?: string[]; verse?: string; trail?: SavedTrail };
 type SurahRow = { number: number; name_ar: string; name_translit: string; verse_count: number };
-type Resolved = { mention: Mention; href: string | null; label: string; kind: "verse" | "root" | "word" | "lexicon" | "none"; root?: string; verse?: string };
+type Resolved = { mention: Mention; href: string | null; label: string; kind: "verse" | "root" | "word" | "lexicon" | "none"; root?: string; verse?: string; slug?: string };
 
 const surahOf = (key: string) => Number(key.split(":")[0]);
 const download = (name: string, text: string, type: string) => {
@@ -87,7 +87,7 @@ function useItems(): Item[] {
   const trails = usePersonal((s) => s.savedTrails);
   return useMemo(() => {
     const out: Item[] = [
-      ...notes.map((n) => ({ kind: "note" as const, id: n.id, title: n.title, body: n.body, tags: n.tags, created: n.created, updated: n.updated, roots: n.links.roots, verses: n.links.verses })),
+      ...notes.map((n) => ({ kind: "note" as const, id: n.id, title: n.title, body: n.body, tags: n.tags, created: n.created, updated: n.updated, roots: n.links.roots, verses: n.links.verses, words: n.links.words ?? [] })),
       ...Object.values(verseNotes).map((n) => ({ kind: "verse" as const, id: `v:${n.verse}`, title: "", body: n.text, tags: [], created: n.at, updated: n.at, roots: [], verses: [n.verse], verse: n.verse })),
       ...trails.map((tr) => ({
         kind: "trail" as const,
@@ -209,10 +209,17 @@ function NoteEditor({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
   const [confirm, setConfirm] = useState(false);
   const resolved = useResolved(x.body);
   // the links the mentions resolve to are kept on the note, so grouping by root and sūra needs no lookup
-  const links: NoteLinks = useMemo(() => ({ roots: [...new Set(resolved.flatMap((r) => (r.root ? [r.root] : [])))], verses: [...new Set(resolved.flatMap((r) => (r.verse ? [r.verse] : [])))] }), [resolved]);
+  const links: NoteLinks = useMemo(
+    () => ({
+      roots: [...new Set(resolved.flatMap((r) => (r.root ? [r.root] : [])))],
+      verses: [...new Set(resolved.flatMap((r) => (r.verse ? [r.verse] : [])))],
+      words: [...new Set(resolved.flatMap((r) => (r.slug ? [r.slug] : [])))],
+    }),
+    [resolved],
+  );
   useEffect(() => {
-    if (JSON.stringify(links) !== JSON.stringify({ roots: x.roots, verses: x.verses })) update(x.id, { links });
-  }, [links, x.id, x.roots, x.verses, update]);
+    if (JSON.stringify(links) !== JSON.stringify({ roots: x.roots, verses: x.verses, words: x.words ?? [] })) update(x.id, { links });
+  }, [links, x.id, x.roots, x.verses, x.words, update]);
   const fmt = (n: number) => new Date(n).toLocaleString(locale === "ar" ? "ar-EG" : "en-GB", { dateStyle: "medium", timeStyle: "short" });
   return (
     <article className="flex flex-col gap-3">
@@ -399,7 +406,7 @@ function useResolved(body: string): Resolved[] {
       return r ? { mention: m, href: `/concordance?root=${encodeURIComponent(r.key)}`, label: r.spaced, kind: "root", root: r.key } : { mention: m, href: null, label: m.raw, kind: "none" };
     }
     const w = d?.results.lemmas[0];
-    if (w?.slug) return { mention: m, href: `/read?w=${encodeURIComponent(w.slug)}`, label: w.ar, kind: "word", root: w.root ?? undefined };
+    if (w?.slug) return { mention: m, href: `/read?w=${encodeURIComponent(w.slug)}`, label: w.ar, kind: "word", root: w.root ?? undefined, slug: w.slug };
     return { mention: m, href: null, label: m.raw, kind: d ? "none" : "word" };
   });
 }

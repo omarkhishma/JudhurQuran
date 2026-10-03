@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Backlinks } from "@/components/notebook/Backlinks";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
@@ -110,6 +111,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
           </div>
         ))}
       </dl>
+      <Backlinks root={r.key} className="mt-6" />
       <details className="mt-3 text-[13px] text-t2" id="counting">
         <summary className="cursor-pointer text-word">{t("howWeCount")}</summary>
         <p className="mt-2 max-w-[80ch] leading-relaxed">{t("howWeCountBody")}</p>

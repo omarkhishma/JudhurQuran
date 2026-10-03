@@ -9,7 +9,8 @@ import { safeJSONStorage } from "./safeStorage";
  * @-mentions resolve to, kept in this browser (L6, NTB-Q01/Q02) and so in the export and the delete. Notes on a
  * verse stay where the reader writes them (the saved store, keyed by verse); the Notebook shows and edits both.
  */
-export type NoteLinks = { roots: string[]; verses: string[] };
+/** What a note's @-mentions resolve to: roots, verses and words (lemma slugs, for backlinks, NTB-31). */
+export type NoteLinks = { roots: string[]; verses: string[]; words?: string[] };
 export type FreeNote = { id: string; title: string; body: string; tags: string[]; created: number; updated: number; links: NoteLinks };
 
 type NotebookState = {

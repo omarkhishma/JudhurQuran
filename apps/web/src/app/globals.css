@@ -4407,3 +4407,27 @@ a.wotd-pill:hover {
     animation: none;
   }
 }
+
+/* backlinks: the reader's notes that mention this entry (NTB-31) */
+.backlinks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.backlink {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--t1);
+  font-size: 13.5px;
+}
+.backlink:hover {
+  background: var(--card-2);
+}

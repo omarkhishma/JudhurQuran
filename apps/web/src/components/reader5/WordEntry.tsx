@@ -20,6 +20,7 @@ import { ShapesSection } from "./sections/Shapes";
 import { DictionariesSection } from "./sections/Dictionaries";
 import { CenturiesSection } from "./sections/Centuries";
 import { InQuranSection } from "./sections/InQuran";
+import { Backlinks } from "@/components/notebook/Backlinks";
 import { WhereNext } from "./sections/WhereNext";
 import { ListenOccurrence, WordAudioNote } from "./Listen";
 import { WordSigns } from "./MushafSigns";
@@ -286,6 +287,7 @@ function Sections({ w, chapter }: { w: WordPayload; chapter: ChapterInfo }) {
           {layerOpen[id] && <div className="layer-body">{bodies[id]}</div>}
         </section>
       ))}
+      <Backlinks slug={w.slug} root={w.root?.key} />
       <WhereNext w={w} />
     </div>
   );
@@ -346,6 +348,7 @@ function Tabs({
         <p className="mb-2 text-[11.5px] text-t3">{meta[active]}</p>
         {bodies[active]}
       </div>
+      <Backlinks slug={w.slug} root={w.root?.key} />
       <WhereNext w={w} />
     </div>
   );
