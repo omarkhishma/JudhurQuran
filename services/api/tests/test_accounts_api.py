@@ -601,8 +601,12 @@ def test_restoring_a_backup_then_reapplying_deletions_removes_the_accounts_delet
     h = sign_in(email)
     uid = client.get("/api/v1/me", headers=h).json()["id"]
     with accounts.tx() as conn:  # as if the account had been deleted, then a backup from before was restored
-        accounts.q(conn, "insert into accounts.deleted_accounts (user_id) values (:u) returning user_id", {"u": uid})
+        accounts.q(
+            conn, "insert into accounts.deleted_accounts (user_id) values (:u) returning user_id", {"u": uid}
+        )
     assert reapply_deletions() >= 1
     assert client.get("/api/v1/me", headers=h).status_code == 401
     with accounts.tx() as conn:
-        accounts.q(conn, "delete from accounts.deleted_accounts where user_id = :u returning user_id", {"u": uid})
+        accounts.q(
+            conn, "delete from accounts.deleted_accounts where user_id = :u returning user_id", {"u": uid}
+        )

@@ -15,6 +15,10 @@ HERE = Path(__file__).resolve().parent
 # Every test speaks from one address, so the per-address limit would count the whole suite as one visitor; the
 # limiter's own test sets its limit (test_api.py, test_internal_token_exempts_server_renders_from_the_rate_limit).
 get_settings().rate_limit_per_minute = 1_000_000
+# likewise the per-account limit and the sign-in mail cap per sender (F16): every sign-in here comes from one client;
+# the limits' own test sets them (test_accounts_api.py, test_requests_are_bounded_per_body_per_account_and_…)
+get_settings().account_rate_per_minute = 1_000_000
+get_settings().mail_per_ip_per_hour = 1_000_000
 
 
 def _database_ready() -> bool:
