@@ -29,7 +29,7 @@ describe("meaning maps (P8.4)", () => {
   });
 
   it("adds each related root once, links each pair once, and leaves a pair already linked as it is", () => {
-    const rel: RootRelations = { root: "سمو", data: [edge("r:1", "سمو", "حدد"), edge("r:2", "عرف", "سمو"), edge("r:3", "سمو", "حدد"), edge("r:4", "سمو", null)], waiting: 0, extracted: [], extracted_total: 0 };
+    const rel: RootRelations = { root: "سمو", data: [edge("r:1", "سمو", "حدد"), edge("r:2", "عرف", "سمو"), edge("r:3", "سمو", "حدد"), edge("r:4", "سمو", null)], waiting: 0, extracted: [], extracted_total: 0, fields_extracted: [], fields_extracted_total: 0 };
     const on: GraphEdge[] = [{ id: "e:root:عرف->root:سمو", source: "root:عرف", target: "root:سمو", data: { rel: "near-in-meaning" } }];
     const out = fromRelations("سمو", rel, new Map([["حدد", { key: "حدد", spaced: "ح د د", translit: "ḥ-d-d", occurrences: 25 }]]), [root("سمو"), root("عرف")], on, "ar");
     expect(out.nodes.map((n) => [n.id, n.data.ar, n.data.count])).toEqual([["root:حدد", "ح د د", 25]]);

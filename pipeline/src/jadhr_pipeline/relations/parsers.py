@@ -31,6 +31,7 @@ class Part:
     index: int | None = None  # sense number as printed (its ordinal)
     marker: str | None = None  # the ordinal as printed («والثاني»)
     list_no: int = 1  # a second numbered list in the same entry («وأما المكسورة فهي على …»)
+    term: str | None = None  # a field's member, as the work writes it (P8.4c)
 
 
 @dataclass
@@ -425,4 +426,182 @@ def parse_addad(c: Clean) -> list[Entry]:
     return entries
 
 
-PARSERS = {"nuzha": parse_nuzha, "damghani": parse_damghani, "furuq": parse_furuq, "addad": parse_addad}
+# ─── semantic fields (P8.4c, research 15) ────────────────────────────────────────────────────────────────
+
+# «كل ما علاك فأظلك فهو سماء»: al-Thaʿālibī names the word after «فهو / فهي / فهما / فهم / فهن»
+_FIQH_DEF = re.compile(r"(?<![\u0621-\u064A])ف(?:هو|هي|هما|هم|هن) ((?:ال)?[\u0621-\u064A]{2,})")
+# what follows «فهو» and is not a word of the field
+_NOT_A_MEMBER = frozenset(
+    [
+        "ما",
+        "من",
+        "في",
+        "على",
+        "الذي",
+        "التي",
+        "الذين",
+        "أن",
+        "إن",
+        "لا",
+        "كذلك",
+        "مثل",
+        "أيضا",
+        "أيضاً",
+        "حين",
+        "إذا",
+        "عند",
+        "غير",
+        "بمنزلة",
+        "بين",
+        "كل",
+        "ذو",
+        "ذات",
+        "أول",
+        "آخر",
+    ]
+)
+_QUOTED = re.compile(r'"([^"]+)"')
+
+
+def _sentence_start(t: str, floor: int, at: int) -> int:
+    """Where the sentence holding ``at`` begins: after the last full stop before it (a paragraph break is often a
+    page's, inside a sentence), its leading space skipped."""
+    s = max(t.rfind(".", floor, at), floor - 1) + 1
+    while s < at and t[s] in " \n":
+        s += 1
+    return s
+
+
+def _fiqh_subject(heading: str) -> str:
+    """A faṣl's subject: its first quoted phrase that is not its source («عن الأصمعي …») or a pointer («يناسبه»)."""
+    for q in _QUOTED.findall(heading):
+        q = q.strip()
+        if not q.startswith("عن ") and q not in ("يناسبه", "في مثله", "فيما يقاربه"):
+            return q
+    return heading
+
+
+def parse_fiqh_lugha(c: Clean) -> list[Entry]:
+    """al-Thaʿālibī, Fiqh al-Lugha: each faṣl (and a bāb's text before its first faṣl) is a field; its members are the
+    words it defines with «… فهو X», each with the sentence that defines it. The introduction before the first bāb and
+    the book's second part, Sirr al-ʿArabiyya (from the thirty-first bāb), on the ways of Arabic speech, are not
+    fields: they are not read."""
+    t = c.text
+    heads = sorted(c.headings)
+    out: list[Entry] = []
+    bab: str | None = None
+    for i, (s, e) in enumerate(heads):
+        h = t[s:e].strip()
+        end = heads[i + 1][0] if i + 1 < len(heads) else len(t)
+        if h.startswith("الباب"):
+            if "سر العربية" in h:
+                break
+            bab = h
+        if bab is None:
+            continue  # the author's introduction comes before the first bāb: it is not a field
+        parts: list[Part] = []
+        for m in _FIQH_DEF.finditer(t, e, end):
+            word = m.group(1)
+            if word in _NOT_A_MEMBER:
+                continue
+            parts.append(Part(_sentence_start(t, e, m.start()), m.end(1), index=len(parts) + 1, term=word))
+        if not parts:
+            continue
+        out.append(
+            Entry(
+                seq=len(out) + 1,
+                start=s,
+                end=end,
+                heading=(s, e),
+                headword=_fiqh_subject(h) if not h.startswith("الباب") else h,
+                section=bab if bab and bab != h else None,
+                parts=parts,
+            )
+        )
+    return out
+
+
+# «3 (الرأس) 3»: a heading and its level — the book, the chapter, the section
+_MUKH_HEAD = re.compile(r"^(\d) \((.+)\) \1$")
+# the authorities Ibn Sīda quotes before the word they explain: «أبو عبيد، الشخيص، العظيم الشخص»
+_MUKH_AUTH = (
+    "أبو عبيد",
+    "أبو عبيدة",
+    "صاحب العين",
+    "ابن دريد",
+    "ابن السكيت",
+    "أبو زيد",
+    "أبو حاتم",
+    "ابن الأعرابي",
+    "أبو علي",
+    "أبو حنيفة",
+    "ابن جني",
+    "ابن جنى",
+    "أبو عمرو",
+    "الأصمعي",
+    "ثعلب",
+    "ثابت",
+    "الفراء",
+    "اللحياني",
+    "كراع",
+)
+# what an authority's quotation opens with that is not a headword: the plural, a subject, the word for "one"
+_MUKH_NOT = frozenset(
+    ["الجمع", "الإنسان", "الرجل", "المرأة", "الشيء", "الواحد", "الاسم", "المصدر", "الفعل", "الأنثى", "الذكر"]
+)
+_MUKH_ENTRY = re.compile(
+    r"(?:^|(?<=[.،\n]) ?)(?:" + "|".join(_MUKH_AUTH) + r")، ((?:ال)?[\u0621-\u064A]{2,})"
+)
+
+
+def parse_mukhassas(c: Clean) -> list[Entry]:
+    """Ibn Sīda, al-Mukhaṣṣaṣ: each heading is a field, its place in the book (book › chapter) kept; its members
+    are the words an authority is quoted on («أبو عبيد، الشخيص، …»), each with that entry up to its full stop. The
+    reading is loose — the builder keeps only members whose word is a Quranic noun exactly (registry ``member_rule``)."""
+    t = c.text
+    heads = sorted(c.headings)
+    out: list[Entry] = []
+    path: dict[int, str] = {}
+    for i, (s, e) in enumerate(heads):
+        m = _MUKH_HEAD.match(t[s:e].strip())
+        if not m:
+            continue
+        level, title = int(m.group(1)), m.group(2).strip()
+        path = {k: v for k, v in path.items() if k < level}
+        path[level] = title
+        end = heads[i + 1][0] if i + 1 < len(heads) else len(t)
+        parts: list[Part] = []
+        for x in _MUKH_ENTRY.finditer(t, e, end):
+            if x.group(1) in _MUKH_NOT:
+                continue
+            stop = t.find(".", x.end(1), end)
+            stop = min(stop if stop != -1 else end, x.end(1) + 400)
+            parts.append(
+                Part(
+                    x.start() + (1 if t[x.start()] == " " else 0), stop, index=len(parts) + 1, term=x.group(1)
+                )
+            )
+        if not parts:
+            continue
+        out.append(
+            Entry(
+                seq=len(out) + 1,
+                start=s,
+                end=end,
+                heading=(s, e),
+                headword=title,
+                section=" › ".join(path[k] for k in sorted(path) if k < level) or None,
+                parts=parts,
+            )
+        )
+    return out
+
+
+PARSERS = {
+    "nuzha": parse_nuzha,
+    "damghani": parse_damghani,
+    "furuq": parse_furuq,
+    "addad": parse_addad,
+    "fiqh_lugha": parse_fiqh_lugha,
+    "mukhassas": parse_mukhassas,
+}

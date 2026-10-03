@@ -59,6 +59,8 @@ cleaning_rules:
     description: The modern editor's manuscript folio marks «( 52 / أ )» are removed (decision D22).
   - id: whitespace
     description: "Runs of spaces collapse to one; paragraphs are trimmed and empty ones dropped; no space before ، ؛ : . ؟ ! ) ] or after ( [. Whitespace only."
+  - id: footnote-refs
+    description: "Opt-in per source (footnote_refs: true): the edition's footnote numbers left glued to the word they annotate («دب1 على», «طروقة4 فحلها») are removed — the footnotes themselves were removed by OpenITI's Clean operation, so the numbers point at nothing. Only one to three ASCII digits right after an Arabic letter or mark and before a space, punctuation or the end."
 
 sources:
   - id: nuzha
@@ -167,3 +169,63 @@ sources:
     redistributable: non-commercial, share-alike, with attribution
     attribution_ar: "المصدر: أبو بكر بن الأنباري (ت 328هـ)، الأضداد، تحقيق محمد أبو الفضل إبراهيم (بيروت: المكتبة العصرية، 1407هـ/1987م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1، برخصة CC BY-NC-SA 4.0. أرقام المواد من المحقق."
     attribution_en: "Source: Ibn al-Anbārī (d. 328 AH), al-Aḍdād, ed. Muḥammad Abū al-Faḍl Ibrāhīm (Beirut: al-Maktaba al-ʿAṣriyya, 1407/1987). Digital text: OpenITI release 2025.1.9, file 0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1, CC BY-NC-SA 4.0. Entry numbers are the editor's."
+
+  # ─── semantic fields (PLAN P8.4c, research 15): a field is a chapter; its members are the words the chapter names ───
+
+  - id: fiqh-lugha
+    kind: fields
+    parser: fiqh_lugha
+    sort_order: 5
+    title_ar: فقه اللغة وسر العربية
+    title_en: Fiqh al-Lugha wa-Sirr al-ʿArabiyya
+    author_ar: أبو منصور عبد الملك بن محمد الثعالبي
+    author_en: Abū Manṣūr ʿAbd al-Malik b. Muḥammad al-Thaʿālibī
+    death_hijri: 429
+    death_ce: 1038
+    edition_ar: تحقيق عبد الرزاق المهدي، دار إحياء التراث العربي، الطبعة الأولى 1422هـ / 2002م
+    edition_en: "ed. ʿAbd al-Razzāq al-Mahdī (Dār Iḥyāʾ al-Turāth al-ʿArabī, 1st ed., 1422/2002)"
+    openiti_uri: 0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1
+    # OpenITI flags this version primary; its annotator notes the text is the edition's body, with the bāb and faṣl
+    # headings tagged and paratext (introduction, footnotes, indices) removed by OpenITI's Clean operation (2023) — the
+    # footnote numbers left in the words are dropped by the footnote-refs rule. A member is a word the chapter defines
+    # with «… فهو X» (and «فهي / فهما / فهم / فهن»); the sentence that defines it is the row's text.
+    openiti_status: "OpenITI primary version (CLEANED_VERSION); bāb and faṣl headings tagged by the annotator"
+    file: openiti-relations/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.mARkdown
+    sha256: 40f0a8afe34318b8fcbd1035c73fa8b8deedde349fc60afbec7124318612b590
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.mARkdown
+    footnote_refs: true
+    quote_styles: [triggers]
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: أبو منصور الثعالبي (ت 429هـ)، فقه اللغة وسر العربية، تحقيق عبد الرزاق المهدي (دار إحياء التراث العربي، 1422هـ/2002م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1، برخصة CC BY-NC-SA 4.0. حُذفت أرقام الحواشي."
+    attribution_en: "Source: al-Thaʿālibī (d. 429 AH), Fiqh al-Lugha wa-Sirr al-ʿArabiyya, ed. ʿAbd al-Razzāq al-Mahdī (Dār Iḥyāʾ al-Turāth al-ʿArabī, 1422/2002). Digital text: OpenITI release 2025.1.9, file 0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1, CC BY-NC-SA 4.0. Footnote numbers removed."
+
+  - id: mukhassas
+    kind: fields
+    parser: mukhassas
+    sort_order: 6
+    title_ar: المخصص
+    title_en: al-Mukhaṣṣaṣ
+    author_ar: أبو الحسن علي بن إسماعيل بن سيده المرسي
+    author_en: Abū al-Ḥasan ʿAlī b. Ismāʿīl Ibn Sīda al-Mursī
+    death_hijri: 458
+    death_ce: 1066
+    edition_ar: تحقيق خليل إبراهيم جفال، دار إحياء التراث العربي، بيروت، 1417هـ / 1996م
+    edition_en: "ed. Khalīl Ibrāhīm Jaffāl (Beirut: Dār Iḥyāʾ al-Turāth al-ʿArabī, 1417/1996)"
+    openiti_uri: 0458IbnSidaMursi.Mukhassas.JK000849-ara1
+    # OpenITI flags JK000849 primary (Shamela0003590 is the same edition). Each heading «N (title) N» is a field at its
+    # level — book, chapter, section — and its place in the book is kept. Its text is a run of entries «authority، word،
+    # gloss», unvowelled; read for its headwords it is loose (a first probe kept «فإن» → فني and «الزر» → زور), so only
+    # a word that is a Quranic noun's spelling exactly, three letters or more without the article, is kept as a member
+    # (member_rule) — for the board to review; the reader sees none of them until it does.
+    openiti_status: "OpenITI primary version (CLEANED_VERSION)"
+    file: openiti-relations/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1
+    sha256: 8d8134c2bce16b70b07bddf974fa5e9c0f7cd80129d8452baf55cd87006b80ac
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1
+    member_rule: exact-noun
+    shown_extracted: false
+    quote_styles: [triggers]
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: ابن سيده المرسي (ت 458هـ)، المخصص، تحقيق خليل إبراهيم جفال (بيروت: دار إحياء التراث العربي، 1417هـ/1996م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0458IbnSidaMursi.Mukhassas.JK000849-ara1، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Source: Ibn Sīda al-Mursī (d. 458 AH), al-Mukhaṣṣaṣ, ed. Khalīl Ibrāhīm Jaffāl (Beirut: Dār Iḥyāʾ al-Turāth al-ʿArabī, 1417/1996). Digital text: OpenITI release 2025.1.9, file 0458IbnSidaMursi.Mukhassas.JK000849-ara1, CC BY-NC-SA 4.0."

@@ -26,7 +26,7 @@ import { Icon } from "@/components/Icon";
 import { link, verseId, type RootGraphPayload } from "@/lib/graph/build";
 import { fromPattern, fromRoot, fromVerses, linkVerse, versePlan, versesOf, type Added, type ExtractOptions, type RootRow, type VersePage, type VerseWord } from "@/lib/graph/extract";
 import { bundleFiles } from "@/lib/graph/files";
-import { endsOf, fromRelations, fromShared, relationLink, rootCardOf, type RelationEdge, type RootRelations } from "@/lib/graph/meaning";
+import { endsOf, fieldMember, fromRelations, fromShared, relationLink, rootCardOf, type RelationEdge, type RootRelations } from "@/lib/graph/meaning";
 import { useEntryTitles } from "@/lib/graph/quote";
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
@@ -124,6 +124,8 @@ export type CanvasTools = {
   addRelation: (e: RelationEdge, beside: string, reviewed: boolean) => void;
   /** the verses two linked roots share, ten at a time, as verse cards (P8.4) */
   addShared: (edgeId: string) => void;
+  /** a root put in a field: the field's one card on the map, and the root's link to it (P8.4c) */
+  addFieldMember: (e: RelationEdge, beside: string, reviewed: boolean) => void;
   /** a card or link whose dataset is being read */
   expanding: string | null;
 };
@@ -1145,6 +1147,10 @@ function CanvasInner({
     meaningLinks: allowedRels(kind, "root", "root").includes("near-in-meaning"),
     addRelation: (e, beside, reviewed) => void addRelation(e, beside, reviewed),
     addShared: (id) => void addShared(id),
+    addFieldMember: (e, beside, reviewed) => {
+      const fm = fieldMember(e, beside, reviewed, locale);
+      if (fm) addLinked(fm.card, fm.edge, beside, t(reviewed ? "doAddFieldMember" : "doAddOwnFieldMember", { word: e.a.word, field: e.sense ?? e.field?.title ?? "" }));
+    },
     expanding,
   };
 

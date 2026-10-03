@@ -2964,3 +2964,117 @@ licences:
   - The header calls the data GPL yet forbids changes and grants use in any website or application with the source named — the same self-contradiction as the corpus terms (qac); our use depends on none of the contested points.
   - 'Met: we keep a verbatim copy (data/raw, neither committed nor published), knowledge.yaml names the source, and nothing derived from the pairs is shown or shared; the agreement figures measure our own data.'
   - Showing QurSim pairs or serving them would need the data unchanged, the notice reproduced and the source named — and D25 keeps it to evaluation; the message to its author is already on the D19 list.
+- id: fiqh-lugha
+  registry: data/relations.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.mARkdown
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.yml
+  fetched: '2026-10-04'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.mARkdown
+    : 40f0a8afe34318b8fcbd1035c73fa8b8deedde349fc60afbec7124318612b590
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.yml
+    : 047a7eae3b24d2f5cd954373c9a741f0e85cb42f66df39db10e300af4ce1aed5
+  clauses:
+  - &id001
+    topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - &id002
+    topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - &id003
+    topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - &id004
+    topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - &id005
+    topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - &id006
+    topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - &id007
+    topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - &id008
+    topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: عبد الرزاق المهدي'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.mARkdown
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: إحياء التراث العربي'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.mARkdown
+  - topic: other
+    quote: '#META# 041.EdNUMBER :: الطبعة الأولى 1422هـ - 2002م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.mARkdown
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.yml
+  our_use: 'Shown to readers: al-Thaʿālibī (d. 429 AH)''s Fiqh al-Lugha read faṣl by faṣl from the first bāb to the start of Sirr al-ʿArabiyya into 140 fields and 479 field_member rows (369 roots), each a verbatim slice of the cleaned OpenITI text — the sentence that defines the word («… فهو X») — with printed page and milestone, the edition''s leftover footnote numbers removed (cleaning rule footnote-refs), mapped to Quranic roots mechanically, status extracted (pipeline/src/jadhr_pipeline/relations; tables relation_entries, relation_candidates). Served by GET /api/v1/words/{slug}/relations and /api/v1/roots/{root}/relations with the source''s attribution, licence and licence URL; shown in a word''s Meanings (semantic fields) and a map''s Meaning panel, credited by author, death date, title, volume and page. Not in the bulk release.'
+  status: attention
+  notes:
+  - 'Terms read 2026-10-04 and unchanged from the other OpenITI relation sources: the documentation page (41c356b2…), the Zenodo record for release 2025.1.9 (cc-by-nc-sa-4.0, 035026a6…) and the CC BY-NC-SA 4.0 legal code (527c4e0e…); the file is pinned at commit cfc4157a (40f0a8af…).'
+  - The author died 429 AH / 1038 CE (public domain). The edition is ʿAbd al-Razzāq al-Mahdī's (Dār Iḥyāʾ al-Turāth al-ʿArabī, 1st ed., 1422/2002); OpenITI flags this version primary and removed the editor's paratext in its Clean operation, leaving footnote numbers in the words, which our cleaning drops.
+  - Display is what D18 approved for the other OpenITI sources (non-commercial, with attribution); anything shared from these rows stays CC BY-NC-SA 4.0 (ShareAlike) and out of a commercial launch (D2).
+  - 'Not met, as for the other relation sources: the screen credit gives author, death date, title and page; the full attribution with the licence and its link is in the API and the registry, not on the page.'
+- id: mukhassas
+  registry: data/relations.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1.yml
+  fetched: '2026-10-04'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1
+    : 8d8134c2bce16b70b07bddf974fa5e9c0f7cd80129d8452baf55cd87006b80ac
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1.yml
+    : 25625e3bde6fbeb02f607f400d9f3b01de2a23714324a419a582547e2332fc1a
+  clauses:
+  - *id001
+  - *id002
+  - *id003
+  - *id004
+  - *id005
+  - *id006
+  - *id007
+  - *id008
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: خليل إبراهم جفال'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: دار إحياء التراث العربي'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1
+  - topic: other
+    quote: '#META# 045.EdYEAR :: 1417هـ 1996م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0458IbnSidaMursi/0458IbnSidaMursi.Mukhassas/0458IbnSidaMursi.Mukhassas.JK000849-ara1.yml
+  our_use: 'Editor-side until reviewed: Ibn Sīda (d. 458 AH)''s al-Mukhaṣṣaṣ read heading by heading into 404 fields with their place in the book and 513 field_member rows (299 roots) — a word an authority is quoted on, kept only as a Quranic noun''s exact spelling — each a verbatim slice of the cleaned OpenITI text with printed page and milestone, status extracted. The source is shown_extracted: false — no reader sees a row until the editorial board reviews it in the workbench; reviewed rows are then served as the others are, with the attribution, licence and licence URL. Not in the bulk release.'
+  status: attention
+  notes:
+  - Terms read 2026-10-04, the same OpenITI documentation, Zenodo record and CC BY-NC-SA 4.0 legal code as the other relation sources; the file is pinned at commit cfc4157a (8d8134c2…).
+  - The author died 458 AH / 1066 CE (public domain). The edition is Khalīl Ibrāhīm Jaffāl's (Dār Iḥyāʾ al-Turāth al-ʿArabī, Beirut, 1417/1996); OpenITI flags JK000849 primary and removed the paratext in its Clean operation.
+  - The reading is loose (a hand count of 25 found about 20 right before metalanguage was excluded), which is why the rows wait for the board before readers see them.
+  - Display, once reviewed, is what D18 approved (non-commercial, with attribution); anything shared stays CC BY-NC-SA 4.0 and out of a commercial launch (D2).

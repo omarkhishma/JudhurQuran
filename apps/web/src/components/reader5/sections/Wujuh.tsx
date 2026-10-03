@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
-import type { Contrast, RelationSource, WordPayload, WordRelations, WujuhEntry } from "@/lib/reader/types";
+import type { Contrast, FieldRow, RelationSource, WordPayload, WordRelations, WujuhEntry } from "@/lib/reader/types";
 import { Fold } from "../VerseKnowledge";
 import { showHemistichs } from "@/lib/openiti";
 import { ReviewMark, ReviewStatus } from "../BoardMark";
@@ -116,6 +116,40 @@ function ContrastList({ items, sources, title, lead }: { items: Contrast[]; sour
   );
 }
 
+/** The fields whose chapters name a word of this root (P8.4c): the field as the book titles it, where it sits in the
+ * book, and the sentence that names the word — al-Thaʿālibī's «… فهو X» — verbatim. */
+function FieldList({ items, sources }: { items: FieldRow[]; sources: Record<string, RelationSource> }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const [all, setAll] = useState(false);
+  if (!items.length) return null;
+  const shown = all ? items : items.slice(0, 4);
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="label-caps">{t("secFields")}</p>
+      <p className="text-[11.5px] text-t3">{t("fieldsLead")}</p>
+      {shown.map((f) => (
+        <div key={f.id} className="wujuh-sense">
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            <strong className="ar-classical text-[15px] font-bold text-t1" lang="ar">{f.sense_label_ar}</strong>
+            <span className="ar-classical text-[14px] text-t2" lang="ar">«{f.headword_ar}»</span>
+          </p>
+          {f.section_ar && <p className="text-[11px] text-t3" lang="ar">{f.section_ar}</p>}
+          {/* a page break inside the sentence is the print's, not the author's */}
+          <Fold text={f.text_ar.replace(/\s*\n\s*/g, " ")} lines={3} className="ar-classical text-[14.5px] leading-[1.95] text-t2" />
+          <SourceLine s={sources[f.source_id]} vol={f.page_vol} page={f.page} />
+          <ReviewMark review={f.review} />
+        </div>
+      ))}
+      {items.length > 4 && (
+        <button type="button" className="self-start text-[11.5px] text-t3 hover:text-t1" onClick={() => setAll(!all)}>
+          {all ? t("showLess") : t("allN", { n: formatNumber(items.length, locale) })}
+        </button>
+      )}
+    </div>
+  );
+}
+
 /**
  * The classical wujūh literature (P3.1): how many senses a Quranic word carries and which verses
  * illustrate each — Ibn al-Jawzī's Nuzhat al-aʿyun and al-Dāmaghānī's Qāmūs, verbatim, with page
@@ -131,7 +165,8 @@ export function WujuhBlock({ w }: { w: WordPayload }) {
   const r = q.data;
   const main = r.wujuh.filter((e) => e.scope !== "other-lemma");
   const other = r.wujuh.filter((e) => e.scope === "other-lemma");
-  if (!r.wujuh.length && !r.furuq.length && !r.addad.length) return null;
+  const fields = r.fields ?? [];
+  if (!r.wujuh.length && !r.furuq.length && !r.addad.length && !fields.length) return null;
   return (
     <div className="flex flex-col gap-3">
       {r.wujuh.length > 0 && (
@@ -153,9 +188,10 @@ export function WujuhBlock({ w }: { w: WordPayload }) {
       )}
       <ContrastList items={r.furuq} sources={r.sources} title={t("secFuruq")} lead={t("furuqLead")} />
       <ContrastList items={r.addad} sources={r.sources} title={t("secAddad")} lead={t("addadLead")} />
-      <ReviewStatus items={[...r.wujuh.flatMap((e) => e.senses), ...r.furuq, ...r.addad]} none={t("extractedNote")} />
+      <FieldList items={fields} sources={r.sources} />
+      <ReviewStatus items={[...r.wujuh.flatMap((e) => e.senses), ...r.furuq, ...r.addad, ...fields]} none={t("extractedNote")} />
       <ul className="flex flex-col gap-0.5">
-        {[...new Set([...r.wujuh, ...r.furuq, ...r.addad].map((x) => x.source_id))].map((id) => r.sources[id] && <CreditLine key={id} s={r.sources[id]} />)}
+        {[...new Set([...r.wujuh, ...r.furuq, ...r.addad, ...fields].map((x) => x.source_id))].map((id) => r.sources[id] && <CreditLine key={id} s={r.sources[id]} />)}
       </ul>
     </div>
   );

@@ -25,8 +25,8 @@ export type RelationSourceRow = {
 };
 export type RelationEdge = {
   id: string;
-  type: "furuq_contrast" | "near_synonym_candidate" | "wujuh_sense" | "didd";
-  rel: "near-in-meaning" | "wujuh-sense" | "didd";
+  type: "furuq_contrast" | "near_synonym_candidate" | "wujuh_sense" | "didd" | "field_member";
+  rel: "near-in-meaning" | "wujuh-sense" | "didd" | "field-member";
   a: { root: string | null; word: string };
   b: { root: string | null; word: string | null } | null;
   sense: string | null;
@@ -35,8 +35,10 @@ export type RelationEdge = {
   source: RelationSourceRow;
   review: { verdict: "reviewed" | "corrected"; note: string | null; correction: string | null; approved_at: string | null } | null;
   status?: "in_force" | "extracted";
+  /** a field's member (P8.4c): the chapter that names the word */
+  field?: { id: string; title: string; section: string | null };
 };
-export type RootRelations = { root: string; data: RelationEdge[]; waiting: number; extracted: RelationEdge[]; extracted_total: number };
+export type RootRelations = { root: string; data: RelationEdge[]; waiting: number; extracted: RelationEdge[]; extracted_total: number; fields_extracted: RelationEdge[]; fields_extracted_total: number };
 export type Among = { data: RelationEdge[]; shared: Record<string, { count: number; verses: string[] }> };
 
 /** A pair of roots as the API keys their shared verses: the two keys in order, joined. */
@@ -114,4 +116,15 @@ export function fromShared(a: string, b: string, verses: { key: string; words: V
     }
   }
   return out;
+}
+
+/** A field as a map card: one note per chapter, shared by every member put on the map, so the field gathers them. */
+export const fieldCardId = (e: RelationEdge) => (e.field ? `field:${e.field.id}` : null);
+
+/** The field's card and the member's link to it (P8.4c): the field named as its chapter names it, with its book. */
+export function fieldMember(e: RelationEdge, from: string, reviewed: boolean, locale: string): { card: GraphNode; edge: GraphEdge } | null {
+  const id = fieldCardId(e);
+  if (!id || !e.field) return null;
+  const card: GraphNode = { id, type: "card", position: { x: 0, y: 0 }, data: { kind: "note", text: `${e.sense ?? e.field.title}\n${bookOf(e, locale)}` } };
+  return { card, edge: link(from, id, "field-member", { source: bookOf(e, locale), relation: e.id, reviewed }) };
 }

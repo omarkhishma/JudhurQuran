@@ -36,7 +36,7 @@ export type Worklists = { kinds: (Counts & { kind: Kind })[]; layers: (Counts & 
 /** A relation row's details (P8.4): its two ends as the book words them, the roots they were mapped to and how surely,
  * the sense it names, its verses. */
 export type RelationRow = {
-  type: "furuq_contrast" | "near_synonym_candidate" | "wujuh_sense" | "didd";
+  type: "furuq_contrast" | "near_synonym_candidate" | "wujuh_sense" | "didd" | "field_member";
   source_id: string;
   headword_ar: string;
   target_ar: string | null;

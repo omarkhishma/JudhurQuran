@@ -447,6 +447,23 @@ export type Contrast = {
   page: number | null;
   review?: BoardReview;
 };
+/** A word of this root named in a field's chapter (P8.4c): the field, its place in the book, the sentence. */
+export type FieldRow = {
+  id: string;
+  source_id: string;
+  entry_id: string;
+  headword_ar: string;
+  root_key: string;
+  sense_label_ar: string;
+  heading_ar: string;
+  section_ar: string | null;
+  text_ar: string;
+  verses: string[];
+  locator: string;
+  page_vol: number | null;
+  page: number | null;
+  review?: BoardReview;
+};
 export type WordRelations = {
   slug: string;
   root: string | null;
@@ -454,6 +471,7 @@ export type WordRelations = {
   wujuh: WujuhEntry[];
   furuq: Contrast[];
   addad: Contrast[];
+  fields: FieldRow[];
   sources: Record<string, RelationSource>;
 };
 export type SurahCard = {

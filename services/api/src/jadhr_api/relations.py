@@ -21,10 +21,11 @@ REL = {
     "near_synonym_candidate": "near-in-meaning",
     "wujuh_sense": "wujuh-sense",
     "didd": "didd",
+    "field_member": "field-member",
 }
 _COLS = """c.id, c.type, c.source_id, c.entry_id, c.headword_ar, c.target_ar, c.root_key, c.target_root_key,
            c.sense_label_ar, c.text_ar, c.verses, c.locator, c.page_vol, c.page, c.derived_from, c.derivation,
-           coalesce(c.root_key, e.root_key) as entry_root"""
+           coalesce(c.root_key, e.root_key) as entry_root, e.heading_ar as entry_heading, e.section_ar as entry_section"""
 _SRC = """s.id, s.title_ar, s.title_en, s.author_ar, s.author_en, s.death_hijri, s.death_ce, s.attribution_ar,
           s.attribution_en, s.redistributable"""
 
@@ -77,6 +78,12 @@ def _edge(r: dict[str, Any], sources: dict[str, dict[str, Any]]) -> dict[str, An
             "page": r["page"],
         },
         "review": r["review"],
+        # a field's member (P8.4c): the field is the chapter, by its id, its heading and its place in the book
+        **(
+            {"field": {"id": r["entry_id"], "title": r["entry_heading"], "section": r["entry_section"]}}
+            if r["type"] == "field_member"
+            else {}
+        ),
     }
 
 
@@ -106,26 +113,38 @@ def of_root(conn: Connection, root: str) -> dict[str, Any]:
              and not (c.id = any(cast(:done as text[])))""",
         {"r": root, "done": list(decided)},
     )[0]["n"]
-    order = {"near-in-meaning": 0, "didd": 1, "wujuh-sense": 2}
+    order = {"near-in-meaning": 0, "field-member": 1, "didd": 2, "wujuh-sense": 3}
     edges.sort(key=lambda r: (order[REL[r["type"]]], r["source_id"], r["id"]))
     # the pairs a book draws with this root that the board has not decided: shown as extracted, never as in force
-    pairs_where = """c.type in ('furuq_contrast', 'near_synonym_candidate') and c.root_key is not null
+    # what a reader may see of a source before the board has read it: not a loose reading's rows (P8.4c)
+    shown = "c.source_id in (select id from content.relation_sources where shown_extracted)"
+    pairs_where = f"""c.type in ('furuq_contrast', 'near_synonym_candidate') and c.root_key is not null
               and c.target_root_key is not null and c.root_key <> c.target_root_key
-              and (c.root_key = :r or c.target_root_key = :r) and not (c.id = any(cast(:done as text[])))"""
+              and (c.root_key = :r or c.target_root_key = :r) and not (c.id = any(cast(:done as text[]))) and {shown}"""
+    fields_where = f"""c.type = 'field_member' and c.root_key = :r
+              and not (c.id = any(cast(:done as text[]))) and {shown}"""
+    args = {"r": root, "done": list(decided)}
     extracted = rows(
         conn,
         f"""select {_COLS} from content.relation_candidates c left join content.relation_entries e on e.id = c.entry_id
             where {pairs_where} order by c.type, c.source_id, c.id limit 60""",
-        {"r": root, "done": list(decided)},
+        args,
     )
     extracted_total = rows(
-        conn,
-        f"select count(*)::int as n from content.relation_candidates c where {pairs_where}",
-        {"r": root, "done": list(decided)},
+        conn, f"select count(*)::int as n from content.relation_candidates c where {pairs_where}", args
     )[0]["n"]
-    for r in extracted:
+    fields = rows(
+        conn,
+        f"""select {_COLS} from content.relation_candidates c left join content.relation_entries e on e.id = c.entry_id
+            where {fields_where} order by c.source_id, c.entry_id, c.id limit 40""",
+        args,
+    )
+    fields_total = rows(
+        conn, f"select count(*)::int as n from content.relation_candidates c where {fields_where}", args
+    )[0]["n"]
+    for r in extracted + fields:
         r["review"] = None
-    sources |= _sources(conn, {r["source_id"] for r in extracted} - set(sources))
+    sources |= _sources(conn, {r["source_id"] for r in extracted + fields} - set(sources))
     return {
         "root": root,
         "data": [_edge(r, sources) for r in edges],
@@ -133,6 +152,9 @@ def of_root(conn: Connection, root: str) -> dict[str, Any]:
         "extracted": [_edge(r, sources) for r in extracted],
         # the pairs with another root not yet decided, of which the first sixty are given
         "extracted_total": extracted_total,
+        # the fields whose chapters name a word of this root, not yet decided (the first forty)
+        "fields_extracted": [_edge(r, sources) for r in fields],
+        "fields_extracted_total": fields_total,
     }
 
 
@@ -147,7 +169,7 @@ def one_relation(conn: Connection, rid: str) -> dict[str, Any] | None:
     found = rows(
         conn,
         f"""select {_COLS} from content.relation_candidates c left join content.relation_entries e on e.id = c.entry_id
-            where c.id = :id""",
+            where c.id = :id and c.source_id in (select id from content.relation_sources where shown_extracted)""",
         {"id": rid},
     )
     if not found:

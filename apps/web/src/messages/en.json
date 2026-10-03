@@ -1308,7 +1308,18 @@
     "relGone": "This relation is no longer in the data: the editorial board rejected it, or it was removed.",
     "sharedCount": "{count, plural, one {The two roots share one verse} other {The two roots share {n} verses}}",
     "addShared": "Add {k} of them",
-    "relationsFirstN": "The first {n} are shown."
+    "relationsFirstN": "The first {n} are shown.",
+    "relFieldsTitle": "Its fields in the books",
+    "relFieldsNone": "The editorial board has not reviewed a field on this root yet.",
+    "relFieldsExtracted": "{count, plural, one {One extracted chapter names a word of it, not reviewed} other {{n} extracted chapters name a word of it, not reviewed}}",
+    "addFieldMember": "Add the field to the map",
+    "addOwnFieldMember": "Add the field as my link",
+    "doAddFieldMember": "Put «{word}» in the field «{field}»",
+    "doAddOwnFieldMember": "Put «{word}» in the field «{field}» as my link",
+    "fieldMemberOnMap": "In the field on the map",
+    "fieldCard": "A field from the books of fields: a chapter that gathers words close in meaning, titled as the book titles it",
+    "fieldMembers": "{count, plural, =0 {No word of it on the map} one {One word of it on the map} other {{n} words of it on the map}}",
+    "fieldUnreviewed": "Some of these links are extracted from the books and not reviewed by the editorial board; they are drawn dashed."
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",
@@ -2050,7 +2061,9 @@
     "graphKind_lemma": "Word",
     "graphKind_verse": "Verse",
     "graphKind_note": "Note",
-    "graphKind_frame": "Group"
+    "graphKind_frame": "Group",
+    "secFields": "Semantic fields",
+    "fieldsLead": "The chapters of the books of fields that name a word of this root, in their words; a chapter gathers words close in meaning."
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
@@ -2882,6 +2895,7 @@
     "noRootMapped": "no root",
     "unsure": "unsure",
     "remappedFirst": "First word's root: {root}",
-    "remappedSecond": "Second word's root: {root}"
+    "remappedSecond": "Second word's root: {root}",
+    "relType_field_member": "Field"
   }
 }

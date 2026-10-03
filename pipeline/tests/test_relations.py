@@ -250,7 +250,11 @@ def test_rows_are_verbatim_and_sourced(built) -> None:
     reg = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
     sources = {s["id"]: s for s in reg["sources"]}
     cleaned = {
-        sid: clean((RAW / s["file"]).read_text(encoding="utf-8"), s["openiti_uri"]).text
+        sid: clean(
+            (RAW / s["file"]).read_text(encoding="utf-8"),
+            s["openiti_uri"],
+            footnote_refs=bool(s.get("footnote_refs")),
+        ).text
         for sid, s in sources.items()
     }
     assert {r["id"] for r in tables["relation_sources"]} == set(sources)
@@ -296,7 +300,60 @@ def test_registry_pins_and_licence() -> None:
     assert len(rule_ids) == len(set(rule_ids))
     for s in reg["sources"]:
         assert re.fullmatch(r"[0-9a-f]{64}", s["sha256"])
-        assert s["file"].startswith("openiti-relations/data/") and s["file"].endswith(s["openiti_uri"])
+        # OpenITI names a few files with their format's extension (….mARkdown)
+        assert s["file"].startswith("openiti-relations/data/") and s["file"].removesuffix(
+            ".mARkdown"
+        ).endswith(s["openiti_uri"])
         assert reg["openiti"]["commit"] in s["source_url"]
         for k in ("attribution_ar", "attribution_en", "title_ar", "title_en", "edition_ar", "edition_en"):
             assert s[k] and unicodedata.is_normalized("NFC", s[k]), (s["id"], k)
+
+
+def test_fields_are_chapters_and_their_members_the_words_they_name(built) -> None:
+    """P8.4c: al-Thaʿālibī's faṣls and Ibn Sīda's headings as fields; a member is a word the chapter names, mapped to its
+    Quranic root, with the sentence that names it. Counts measured on the build; the examples read in the books."""
+    tables, report = built
+    cands, ents = tables["relation_candidates"], _by(tables["relation_entries"])
+    for sid, (n_fields, n_members, n_roots) in {
+        "fiqh-lugha": (140, 479, 369),
+        "mukhassas": (404, 513, 299),
+    }.items():
+        rows = [r for r in cands if r["source_id"] == sid]
+        assert {r["type"] for r in rows} == {"field_member"}
+        got = (
+            sum(1 for e in ents.values() if e["source_id"] == sid),
+            len(rows),
+            len({r["root_key"] for r in rows}),
+        )
+        assert got == (n_fields, n_members, n_roots), sid
+        f = report["sources"][sid]["fields"]
+        assert (f["fields"], f["members_kept"], f["distinct_roots"]) == got
+        # the row is the work's own words, cut at its full stop, and names the member
+        for r in rows:
+            assert r["headword_ar"] in r["text_ar"] and r["root_key"] and r["status"] == "extracted"
+    # «كل ما علاك فأظلك فهو سماء», the first faṣl, on the words the Quran uses
+    first = next(r for r in cands if r["source_id"] == "fiqh-lugha" and r["headword_ar"] == "سماء")
+    assert first["text_ar"] == "كل ما علاك فأظلك فهو سماء" and first["root_key"] == "سمو"
+    assert first["sense_label_ar"] == "فيما نطق به القرآن من ذلك وجاء تفسيره عن ثقات الأئمة"
+    assert ents[first["entry_id"]]["section_ar"].startswith("الباب الأول في الكليات")
+    beast = next(r for r in cands if r["source_id"] == "fiqh-lugha" and r["headword_ar"] == "سبع")
+    assert beast["sense_label_ar"] == "في ذكر ضروب من الحيوان" and beast["text_ar"].endswith("فهو سبع")
+    # the edition's footnote numbers are gone from the words (footnote-refs); Sirr al-ʿArabiyya is not read
+    assert report["sources"]["fiqh-lugha"]["cleaning"]["footnote-refs"] > 0
+    assert not any(
+        re.search("[\u0621-\u064a]\\d", r["text_ar"]) for r in cands if r["source_id"] == "fiqh-lugha"
+    )
+    assert not any(
+        "سر العربية" in (e["section_ar"] or "") for e in ents.values() if e["source_id"] == "fiqh-lugha"
+    )
+    # al-Mukhaṣṣaṣ: only a word that is a Quranic noun's spelling exactly, never its metalanguage; its place in the book
+    m = [r for r in cands if r["source_id"] == "mukhassas"]
+    assert {r["match_confidence"] for r in m} == {"exact"} and not any(
+        r["headword_ar"] in ("الجمع", "الإنسان") for r in m
+    )
+    secret = next(r for r in m if r["headword_ar"] == "النجوى")
+    assert secret["sense_label_ar"] == "باب السر" and secret["text_ar"].startswith("أبو زيد، النجوى")
+    sources = _by(tables["relation_sources"])
+    assert (
+        sources["mukhassas"]["shown_extracted"] is False and sources["fiqh-lugha"]["shown_extracted"] is True
+    )

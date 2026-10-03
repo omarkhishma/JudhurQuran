@@ -412,3 +412,38 @@ def test_relations_come_into_force_with_their_ends_as_the_board_maps_them(
         if s["id"] == "nuzha:0001:s01"
     ]
     assert marked and marked[0]["review"]["verdict"] == "reviewed"
+
+
+def test_fields_from_the_books_and_a_loose_reading_kept_from_readers_until_reviewed(
+    board: dict[str, dict[str, str]],
+) -> None:
+    """P8.4c: al-Thaʿālibī's chapters name words of a root — shown as extracted, with the field and its place in the
+    book; al-Mukhaṣṣaṣ's loose reading is not shown to readers until the board reviews a row, then it is in force."""
+    beast = client.get("/api/v1/roots/سبع/relations").json()
+    f = next(e for e in beast["fields_extracted"] if e["id"] == "fiqh-lugha:0002:m005")
+    assert f["rel"] == "field-member" and f["b"] is None and f["sense"] == "في ذكر ضروب من الحيوان"
+    assert f["field"]["id"] == "fiqh-lugha:0002" and f["field"]["section"].startswith(
+        "الباب الأول في الكليات"
+    )
+    assert f["quote"].endswith("فهو سبع") and beast["fields_extracted_total"] >= 1
+    assert client.get("/api/v1/relations/fiqh-lugha:0002:m005").json()["status"] == "extracted"
+    # al-Mukhaṣṣaṣ: not on the root, not by its id, not in the word panel — until the board has read it
+    secret = "mukhassas:0146:m001"
+    assert all(
+        e["id"] != secret for e in client.get("/api/v1/roots/نجو/relations").json()["fields_extracted"]
+    )
+    assert client.get(f"/api/v1/relations/{secret}").status_code == 404
+    slug = accounts.q1(
+        accounts.write_engine().connect(),
+        "select l.slug from content.lemmas l join content.roots r on r.id = l.root_id where r.key = 'نجو' limit 1",
+    )
+    assert slug is not None
+    assert all(
+        x["id"] != secret for x in client.get(f"/api/v1/words/{slug['slug']}/relations").json()["fields"]
+    )
+    _approve(board, "verdict", f"relation_candidates:{secret}", {"verdict": "reviewed"})
+    on = next(e for e in client.get("/api/v1/roots/نجو/relations").json()["data"] if e["id"] == secret)
+    assert on["rel"] == "field-member" and on["sense"] == "باب السر" and on["review"]["verdict"] == "reviewed"
+    assert client.get(f"/api/v1/relations/{secret}").json()["status"] == "in_force"
+    panel = client.get(f"/api/v1/words/{slug['slug']}/relations").json()["fields"]
+    assert [x["review"]["verdict"] for x in panel if x["id"] == secret] == ["reviewed"]

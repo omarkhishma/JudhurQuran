@@ -224,7 +224,35 @@ def word_relations(conn: Connection, slug: str, at: str | None = None) -> dict[s
             for c in board.marked(conn, "relation_candidates", contrasts)
             if lem["root"] in (c["root_key"], c["target_root_key"])
         ]
-    source_ids = {w["source_id"] for w in wujuh.values()} | {c["source_id"] for c in contrasts}
+    # the fields whose chapters name a word of this root (P8.4c): a loose reading's only once the board has read them
+    fields: list[dict[str, Any]] = []
+    if lem["root"]:
+        moved = [
+            i
+            for i, v in board.layer(conn, "relation_candidates").items()
+            if lem["root"] in (v["value"].get("ends") or {}).values()
+        ]
+        fields = rows(
+            conn,
+            """select c.id, c.type, c.source_id, c.entry_id, c.headword_ar, c.root_key, c.lemma_key, c.match_confidence,
+                      c.sense_label_ar, c.text_ar, c.verses, c.locator, c.page_vol, c.page, c.status,
+                      e.heading_ar, e.section_ar, s.shown_extracted
+               from content.relation_candidates c join content.relation_entries e on e.id = c.entry_id
+               join content.relation_sources s on s.id = c.source_id
+               where c.type = 'field_member' and (c.root_key = :r or c.id = any(cast(:moved as text[])))
+               order by s.sort_order, c.entry_id, c.id""",
+            {"r": lem["root"], "moved": moved},
+        )
+        fields = [
+            f
+            for f in board.marked(conn, "relation_candidates", fields)
+            if f["root_key"] == lem["root"] and (f.pop("shown_extracted") or f.get("review"))
+        ]
+    source_ids = (
+        {w["source_id"] for w in wujuh.values()}
+        | {c["source_id"] for c in contrasts}
+        | {f["source_id"] for f in fields}
+    )
     sources = (
         {
             r["id"]: r
@@ -248,5 +276,6 @@ def word_relations(conn: Connection, slug: str, at: str | None = None) -> dict[s
         ),
         "furuq": [c for c in contrasts if c["type"] == "furuq_contrast"],
         "addad": [c for c in contrasts if c["type"] == "didd"],
+        "fields": fields,
         "sources": sources,
     }

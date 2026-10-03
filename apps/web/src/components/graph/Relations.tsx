@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { cnt, formatNumber } from "@/lib/format";
 import { rootId } from "@/lib/graph/build";
-import { bookOf, endsOf, type RelationEdge, type RootRelations } from "@/lib/graph/meaning";
+import { bookOf, endsOf, fieldCardId, type RelationEdge, type RootRelations } from "@/lib/graph/meaning";
 import type { GraphEdge, GraphNode } from "@/lib/graph/types";
 import { getJSON } from "@/lib/reader/api";
 import type { CanvasTools } from "./GraphCanvas";
@@ -25,6 +25,7 @@ export function RootRelationsList({ tools, card, rootKey }: { tools: CanvasTools
   const pairs = q.data.data.filter((e) => endsOf(e));
   const extracted = q.data.extracted;
   return (
+    <>
     <section className="flex flex-col gap-2" aria-label={t("relationsTitle")}>
       <p className="label-caps">{t("relationsTitle")}</p>
       {!tools.meaningLinks && <p className="text-[11.5px] text-t3">{t("relationsMapType")}</p>}
@@ -52,6 +53,70 @@ export function RootRelationsList({ tools, card, rootKey }: { tools: CanvasTools
         </>
       )}
     </section>
+    <FieldsList tools={tools} card={card} rel={q.data} />
+    </>
+  );
+}
+
+/** The fields whose chapters name a word of this root (P8.4c): reviewed ones the map's own, the extracted ones said to
+ * be; put on the map, a field is one card its members link to. */
+function FieldsList({ tools, card, rel }: { tools: CanvasTools; card: GraphNode; rel: RootRelations }) {
+  const t = useTranslations("graph");
+  const locale = useLocale();
+  const [more, setMore] = useState(false);
+  const reviewed = rel.data.filter((e) => e.rel === "field-member");
+  const extracted = rel.fields_extracted ?? [];
+  if (!reviewed.length && !extracted.length) return null;
+  return (
+    <section className="flex flex-col gap-2" aria-label={t("relFieldsTitle")}>
+      <p className="label-caps">{t("relFieldsTitle")}</p>
+      {reviewed.length === 0 ? <p className="text-[12.5px] text-t3">{t("relFieldsNone")}</p> : reviewed.map((e) => <FieldItem key={e.id} e={e} tools={tools} card={card} reviewed />)}
+      {extracted.length > 0 && (
+        <>
+          <button type="button" className="self-start text-[12px] text-t2 underline-offset-2 hover:underline" aria-expanded={more} onClick={() => setMore(!more)}>
+            {t("relFieldsExtracted", cnt(rel.fields_extracted_total, locale))}
+          </button>
+          {more && (
+            <>
+              {rel.fields_extracted_total > extracted.length && <p className="text-[11.5px] text-t3">{t("relationsFirstN", { n: formatNumber(extracted.length, locale) })}</p>}
+              {extracted.map((e) => <FieldItem key={e.id} e={e} tools={tools} card={card} reviewed={false} />)}
+            </>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function FieldItem({ e, tools, card, reviewed }: { e: RelationEdge; tools: CanvasTools; card: GraphNode; reviewed: boolean }) {
+  const t = useTranslations("graph");
+  const locale = useLocale();
+  const [open, setOpen] = useState(false);
+  const id = fieldCardId(e);
+  const on = !!id && tools.edges.some((x) => x.source === card.id && x.target === id);
+  return (
+    <figure className={"meaning-quote" + (reviewed ? "" : " is-extracted")}>
+      <figcaption className="flex flex-wrap items-baseline gap-x-2 text-[12.5px]">
+        <span className="ar-classical text-[16px] font-bold text-t1" lang="ar">{e.sense ?? e.field?.title}</span>
+        <span className="text-t2" lang="ar">«{e.a.word}»</span>
+      </figcaption>
+      {e.field?.section && <p className="text-[11px] text-t3" lang="ar">{e.field.section}</p>}
+      <blockquote className={"ar-classical text-[14.5px] leading-[1.9] text-t1" + (open ? "" : " line-clamp-3")} lang="ar" dir="rtl">{e.quote}</blockquote>
+      <div className="flex flex-wrap items-center gap-2 text-[11.5px] text-t3">
+        <button type="button" className="hover:text-t1" onClick={() => setOpen(!open)} aria-expanded={open}>{open ? t("showLess") : t("showMore")}</button>
+        <span className="flex-1" />
+        <span>{bookOf(e, locale)}</span>
+      </div>
+      {tools.meaningLinks && tools.editable && (
+        on ? (
+          <span className="text-[11.5px] text-t3">{t("fieldMemberOnMap")}</span>
+        ) : (
+          <button type="button" className="btn self-start text-[12px]" onClick={() => tools.addFieldMember(e, card.id, reviewed)}>
+            {t(reviewed ? "addFieldMember" : "addOwnFieldMember")}
+          </button>
+        )
+      )}
+    </figure>
   );
 }
 

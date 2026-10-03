@@ -36,7 +36,7 @@ export function Meaning({ tools, card }: { tools: CanvasTools; card: GraphNode }
   if (d.kind === "pattern" && d.slug) return <PatternMeaning card={card} slug={d.slug} />;
   if (d.kind === "verse" && d.verse) return <VerseMeaning tools={tools} card={card} verseKey={d.verse.key} />;
   if (d.kind === "note" && d.entry) return <QuoteMeaning entry={d.entry} />;
-  return <NoteMeaning card={card} />;
+  return <NoteMeaning card={card} tools={tools} />;
 }
 
 /** The headline as the design draws it (EDT-171, EDT-172): the Arabic large, its transliteration, a grammar line. */
@@ -582,9 +582,36 @@ export function QuoteMeaning({ entry }: { entry: number }) {
 }
 
 /** The reader's own note, or a phrase they analysed: their words, said to be theirs (EDT-172's "editorial note"). */
-function NoteMeaning({ card }: { card: GraphNode }) {
+/** A field's card (P8.4c): the chapter as the book titles it, and the members put in it on this map — each link
+ * carrying the book's sentence for its word. */
+function FieldMeaning({ card, tools }: { card: GraphNode; tools: CanvasTools }) {
+  const t = useTranslations("graph");
+  const locale = useLocale();
+  const members = tools.edges.filter((e) => e.target === card.id && e.data?.rel === "field-member");
+  const unreviewed = members.some((e) => e.data?.relation && !e.data.reviewed);
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-t1" dir="auto">{card.data.text}</p>
+      <p className="text-[12px] text-t3">{t("fieldCard")}</p>
+      <p className="text-[12.5px] text-t2">{t("fieldMembers", cnt(members.length, locale))}</p>
+      <ul className="flex flex-wrap gap-1.5">
+        {members.map((e) => (
+          <li key={e.id}>
+            <button type="button" className="chip" onClick={() => { tools.select(e.source); tools.center(e.source); }}>
+              <span lang="ar">{tools.cardName(e.source)}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {unreviewed && <p className="text-[11.5px] leading-relaxed text-amber">{t("fieldUnreviewed")}</p>}
+    </div>
+  );
+}
+
+function NoteMeaning({ card, tools }: { card: GraphNode; tools?: CanvasTools }) {
   const t = useTranslations("graph");
   const d = card.data;
+  if (card.id.startsWith("field:") && tools) return <FieldMeaning card={card} tools={tools} />;
   return (
     <div className="flex flex-col gap-2">
       <p className={"whitespace-pre-wrap text-t1 " + (d.phrase ? "ar-classical text-[22px] leading-[1.6]" : "text-[15px] leading-relaxed")} dir="auto">{d.text || t("noteEmpty")}</p>

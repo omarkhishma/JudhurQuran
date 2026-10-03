@@ -51,6 +51,8 @@ _TOKEN = re.compile(
     r"|(?P<folio>\(\s*\d+\s*/\s*[أبا]\s*\))"
     r"|(?P<line>\|)|(?P<quote>\^)|(?P<stray>[$@])"
 )
+# the edition's footnote numbers left glued to the word they annotate («دب1 على»), the footnotes themselves gone
+_FOOTNOTE_REF = re.compile(r"(?<=[\u0621-\u064A\u064B-\u0652\u0670])\d{1,3}(?=[\s،؛:.؟!)\]»\"]|$)")
 _PROCLITIC_END = re.compile(r"(?:^|[\s،؛:.(\[])[وفبلك]$")
 
 # Whitespace-only normalisation, in order. Each is a (pattern, replacement) applied with offset tracking.
@@ -244,9 +246,9 @@ def _split_inline_headings(paras: list[_Para], stats: Counter[str]) -> list[_Par
     return out
 
 
-def clean(raw: str, uri: str, *, inline_headings: bool = False) -> Clean:
+def clean(raw: str, uri: str, *, inline_headings: bool = False, footnote_refs: bool = False) -> Clean:
     """Apply the documented cleaning rules to one OpenITI file (``inline_headings``: the opt-in
-    ``inline-heading-marks`` rule)."""
+    ``inline-heading-marks`` rule; ``footnote_refs``: the opt-in ``footnote-refs`` rule)."""
     stats: Counter[str] = Counter()
     if HEADER_END not in raw:
         raise ValueError(f"{uri}: no {HEADER_END} line — not an OpenITI mARkdown file")
@@ -301,6 +303,9 @@ def clean(raw: str, uri: str, *, inline_headings: bool = False) -> Clean:
     for s, e in autos:
         points += [s, e]
     text, points = _sub_tracked(_TOKEN, "", text, points)
+    if footnote_refs:
+        stats["footnote-refs"] = len(_FOOTNOTE_REF.findall(text))
+        text, points = _sub_tracked(_FOOTNOTE_REF, "", text, points)
     before = len(text)
     for rx, repl in _SPACING:
         text, points = _sub_tracked(rx, repl, text, points)

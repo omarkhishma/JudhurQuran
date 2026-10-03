@@ -165,3 +165,39 @@ test("a relation the board reviewed: Related roots adds the other root with the 
     await drop(b);
   }
 });
+
+test("a field from al-Thaʿālibī: put on the map from a root's Meaning, one card for the chapter that a second root's member joins; the field in the reader's word panel (P8.4c)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the details are the desktop's (P8.6a)");
+  test.setTimeout(90_000);
+  const id = await meaningMapWith(page, "سبع");
+  const details = page.getByRole("complementary", { name: "التفاصيل" });
+  await page.locator('.react-flow__node[data-id="root:سبع"]').click();
+  await expect(details).toContainText("حقوله في الكتب");
+  await details.getByRole("button", { name: /باب مستخرج يذكر كلمة منه|أبواب مستخرجة|بابًا مستخرجًا|بابان مستخرجان/ }).click();
+  const item = details.locator(".meaning-quote.is-extracted").filter({ hasText: "في ذكر ضروب من الحيوان" });
+  await expect(item).toContainText("فهو سبع");
+  await item.getByRole("button", { name: "أضف الحقل رابطًا لي" }).click();
+  await expect(page.locator('.react-flow__node[data-id="field:fiqh-lugha:0002"]')).toHaveCount(1);
+  await expect
+    .poll(async () => (await storedGraph(page, id))?.edges.map((e) => [e.source, e.target, e.data?.rel, e.data?.relation, e.data?.reviewed]))
+    .toEqual([["root:سبع", "field:fiqh-lugha:0002", "field-member", "fiqh-lugha:0002:m005", false]]);
+  // a second root whose word the same chapter names joins the same card: the field gathers its members
+  const library = page.getByRole("complementary", { name: "المكتبة" });
+  await library.getByRole("textbox", { name: /ابحث عن جذر أو كلمة/ }).fill("حمم");
+  await library.locator("section").filter({ hasText: "أضف من المصحف والمعجم" }).locator("li").filter({ hasText: "ح م م" }).first().getByRole("button").click();
+  await page.locator('.react-flow__node[data-id="root:حمم"]').click();
+  await details.getByRole("button", { name: /مستخرج/ }).last().click();
+  await details.locator(".meaning-quote.is-extracted").filter({ hasText: "في ذكر ضروب من الحيوان" }).getByRole("button", { name: "أضف الحقل رابطًا لي" }).click();
+  await expect(page.locator('.react-flow__node[data-id^="field:"]')).toHaveCount(1);
+  await expect
+    .poll(async () => (await storedGraph(page, id))?.edges.filter((e) => e.target === "field:fiqh-lugha:0002").map((e) => e.source).sort())
+    .toEqual(["root:حمم", "root:سبع"]);
+  // the reader: the field under the word, with its chapter and the sentence
+  const fam = (await (await page.request.get(`/api/v1/roots/${encodeURIComponent("سبع")}/family`)).json()) as { family: { members: { slug: string; ar: { bare: string } }[] }[] };
+  const slug = fam.family.flatMap((g) => g.members).find((m) => m.ar.bare === "سبع")?.slug ?? fam.family[0].members[0].slug;
+  const at = ((await (await page.request.get(`/api/v1/words/${slug}/verses?limit=1`)).json()) as { data: { locations: string[] }[] }).data[0].locations[0];
+  await page.goto(`/word/${at}`);
+  const field = page.locator(".wujuh-sense").filter({ hasText: "في ذكر ضروب من الحيوان" });
+  await expect(field).toContainText("فهو سبع");
+  await expect(page.getByText("الحقول الدلالية")).toBeVisible();
+});

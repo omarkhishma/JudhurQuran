@@ -36,7 +36,7 @@ from .openiti import Clean, clean
 from .parsers import PARSERS, Entry, Part
 from .quran import Citation, QuranIndex
 
-TYPES = ("wujuh_sense", "furuq_contrast", "didd", "near_synonym_candidate")
+TYPES = ("wujuh_sense", "furuq_contrast", "didd", "near_synonym_candidate", "field_member")
 STATUS = "extracted"
 
 
@@ -133,6 +133,9 @@ class _Builder:
         return self.qi.find(c.text[part_start:part_end], styles, markup)
 
     def map_headword(self, src: dict[str, Any], ent: Entry) -> Mapping:
+        if src["kind"] == "fields":
+            # a field is named by its chapter, not a word: its members are mapped one by one
+            return Mapping(reason="field")
         if ent.letters:
             return self.mapper.map_spaced(ent.letters)
         word = ent.terms[0] if ent.terms else ent.headword
@@ -152,6 +155,7 @@ class _Builder:
         parts_total = 0
         pairs: set[tuple[str, str]] = set()
         mismatches = []
+        members: Counter[str] = Counter()
         for ent in entries:
             eid = f"{sid}:{ent.seq:04d}"
             hm = self.map_headword(src, ent)
@@ -198,6 +202,9 @@ class _Builder:
                 )
             for p in ent.parts:
                 parts_total += 1
+                if src["kind"] == "fields":
+                    self._field_member(src, c, ent, eid, p, styles, cite_stats, members)
+                    continue
                 cand = self._candidate(src, c, ent, eid, hm, p, styles, cite_stats)
                 if cand["verses"]:
                     senses_with_verse += 1
@@ -233,6 +240,17 @@ class _Builder:
                 "stated_equals_found": sum(1 for e in stated if e.stated_count == len(e.parts)),
                 "entries_without_senses": sum(1 for e in entries if not e.parts),
                 "mismatches": mismatches,
+            }
+        if src["kind"] == "fields":
+            kept = [r for r in self.candidates if r["source_id"] == sid]
+            report["fields"] = {
+                "fields": n_entries,
+                "fields_with_members": len({r["entry_id"] for r in kept}),
+                "words_read": parts_total,
+                "members_kept": len(kept),
+                "dropped": dict(members.most_common()),
+                "by_confidence": dict(Counter(r["match_confidence"] for r in kept).most_common()),
+                "distinct_roots": len({r["root_key"] for r in kept}),
             }
         if src["kind"] == "furuq":
             with_text = [e for e in entries if e.parts]
@@ -317,6 +335,66 @@ class _Builder:
         if kind == "wujuh" and label and hm.root_key:
             self._wujuh_synonym(src, c, ent, row, text, label, hm)
         return row
+
+    def _field_member(
+        self,
+        src: dict[str, Any],
+        c: Clean,
+        ent: Entry,
+        eid: str,
+        p: Part,
+        styles: frozenset[str],
+        cite_stats: Counter[str],
+        dropped: Counter[str],
+    ) -> None:
+        """A word a field's chapter names, mapped to its Quranic root; one that maps to none is not a candidate. A loose
+        reading (``member_rule: exact-noun``) keeps only a word that is a Quranic noun's spelling exactly."""
+        m = self.mapper.map_word(p.term or "")
+        if not m.root_key:
+            dropped[f"unmapped:{m.reason or 'unknown'}"] += 1
+            return
+        if src.get("member_rule") == "exact-noun":
+            if (
+                m.confidence != "exact"
+                or not m.lemma_key
+                or self.mapper.lemma_pos.get(m.lemma_key) not in ("N", "ADJ")
+            ):
+                dropped["not-an-exact-noun"] += 1
+                return
+            if len(skeleton(normalize(p.term or "")).removeprefix("ال")) < 3:
+                dropped["too-short"] += 1
+                return
+        t = c.text
+        text = t[p.start : p.end]
+        cid = f"{eid}:m{p.index:03d}"
+        cites = self.citations_for(c, p.start, p.end, styles)
+        for x in cites:
+            cite_stats[f"{x.kind}:{x.status}"] += 1
+        self.candidates.append(
+            {
+                "id": cid,
+                "type": "field_member",
+                "source_id": src["id"],
+                "entry_id": eid,
+                **c.locator(p.start),
+                "headword_ar": p.term,
+                "target_ar": None,
+                "terms_ar": None,
+                **m.as_dict(),
+                **Mapping().as_dict("target_"),
+                "sense_index": None,
+                "sense_marker_ar": None,
+                "sense_list": None,
+                # the field, as the chapter names it
+                "sense_label_ar": ent.headword,
+                "text_ar": text,
+                "verses": _verse_list(cites),
+                "derived_from": None,
+                "derivation": None,
+                "status": STATUS,
+            }
+        )
+        self.citations += _cite_rows(cid, text, cites)
 
     def _wujuh_synonym(
         self,
@@ -425,7 +503,9 @@ def build_relations(
             raise RelationsError(f"{src['id']}: {src['file']} sha256 {sha} ≠ pinned {src['sha256']}")
         if src["parser"] not in PARSERS:
             raise RelationsError(f"{src['id']}: unknown parser {src['parser']!r}")
-        c = clean(path.read_text(encoding="utf-8"), src["openiti_uri"])
+        c = clean(
+            path.read_text(encoding="utf-8"), src["openiti_uri"], footnote_refs=bool(src.get("footnote_refs"))
+        )
         entries = PARSERS[src["parser"]](c)
         report["sources"][src["id"]] = {"file_sha256": sha} | b.add_source(src, c, entries)
         sources_out.append(
@@ -452,6 +532,8 @@ def build_relations(
                 "redistributable": src["redistributable"],
                 "attribution_ar": src["attribution_ar"],
                 "attribution_en": src["attribution_en"],
+                # a loose reading is the board's to review before a reader sees it (P8.4c)
+                "shown_extracted": src.get("shown_extracted", True),
             }
         )
     tables = {
