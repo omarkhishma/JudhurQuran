@@ -4,9 +4,9 @@
 # front of the owner. The summary and the owner's decisions are in docs/research/07-licence-register.md.
 #
 # One entry per id in data/sources.yaml, data/lexica.yaml, data/gharib.yaml, data/works.yaml,
-# data/recitations.yaml (its reciter ids), data/patterns.yaml, data/particles.yaml, data/relations.yaml and
-# data/knowledge.yaml (its evaluation-only sources included), plus `everyayah` and `quran-align`, the two
-# upstreams recitations.yaml names in audio_url and timings_zip.
+# data/recitations.yaml (its reciter ids), data/patterns.yaml, data/particles.yaml, data/loanwords.yaml,
+# data/relations.yaml and data/knowledge.yaml (its evaluation-only sources included), plus `everyayah` and
+# `quran-align`, the two upstreams recitations.yaml names in audio_url and timings_zip.
 #
 # Fields
 #   urls_checked    every page, file or API answer read for this entry (pinned commits where a repo has one)
@@ -2192,6 +2192,83 @@ licences:
   - 'Met by today''s use under D18: non-commercial, attributed (the attribution names the release, both files and the licence), editor-side; when rows reach readers or a bulk file, anything shared from them stays CC BY-NC-SA 4.0 (ShareAlike) and stays out of a commercial launch (D2).'
   - 'The author is public domain (d. 749 AH / 1348 CE). The text file (JK010091) carries no edition card; the edition is named by the Shamela0026099 card (Fakhr al-Dīn Qabāwa and Muḥammad Nadīm Fāḍil, Dār al-Kutub al-ʿIlmiyya, 1413/1992), which is the same typing: their letters agree but for two. OpenITI''s cleaned version drops the edition''s paratext.'
   - 'shamela.ws pages were read only to check that the page markers follow the printed edition (its book 26099, page 1 = printed 19, page 226 = printed 244); no shamela.ws text is used.'
+- id: muhadhdhab
+  registry: data/loanwords.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.ShamAY0034093-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.Shamela0026097-ara1
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1
+    : fac2ad09d82c12055c132ca944d5f44417dbe62ece57c22a71cbda0100824208
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1.yml
+    : cbbc95643c94a49c945273ea58c5e4e82025f30793418f723fcd2abcba268067
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.ShamAY0034093-ara1
+    : ef52684c63abcd7610358f6c42446e60b309e99fc4a76527b0cfdff4c0c65ff0
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.Shamela0026097-ara1
+    : 9e9dfa34a662c52e2d120b7db0238b7dd7afde25175205107a7fa696ce48167c
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: other
+    quote: '"access_right": "open"'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1.yml
+  - topic: other
+    quote: 'PRIMARY_VERSION, CLEANED_VERSION'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1.yml
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: سمير حسين حلبي'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: دار الكتب العلمية'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1
+  - topic: other
+    quote: '#META# 045.EdYEAR :: 1408هـ-1988م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1
+  - topic: other
+    quote: '[ترقيم الشاملة موافق للمطبوع]'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.ShamAY0034093-ara1
+  - topic: other
+    quote: '#META# DownloadSource: Abū Yaʿqūb''s Shamela database'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.ShamAY0034093-ara1
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: التهامي الراجي الهاشمي'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.Shamela0026097-ara1
+  our_use: 'Editor-side loanword rows (PLAN P3.7a, registry data/loanwords.yaml, module pipeline/src/jadhr_pipeline/loanwords/): al-Suyūṭī (d. 911 AH)''s al-Muhadhdhab parsed from OpenITI''s primary version JK009264 into its introduction (29 passages: the dispute over non-Arabic words in the Quran, each view with the names the text gives), its 125 entries verbatim with printed page and milestone and the languages each names, and 122 mechanical links from headwords to Quran lemmas (or to the sūra-opening letters); the two cross-check versions (ShamAY0034093, Shamela0026097) are read only to compare letters, pages and blocks; status extracted. Not yet built into the dataset, the API or the UI (integration pending); when shown, with the attribution data/loanwords.yaml attribution_ar/en (work, edition, OpenITI release and file, CC BY-NC-SA 4.0) and the introduction''s disagreement beside any loanword claim; not in the bulk release.'
+  status: ok
+  notes:
+  - 'Terms as read 2026-10-03 for the particle entries (mughni, jana-dani): the OpenITI documentation page (41c356b2…) and the CC BY-NC-SA 4.0 legal code (527c4e0e…) were not re-fetched for this entry (the session had no network); the next licence_check run re-reads their quotes. The Zenodo record was re-read from the pinned copy data/raw/openiti-2025.1.9/zenodo-record-17767721.json (same sha256, 035026a6…), and the four files from data/raw/openiti-loanwords (fetched 2026-10-03 at tag v2025.1.9 = commit cfc4157a, sha256 as SHA256SUMS.txt there).'
+  - 'Met by today''s use under D18: non-commercial, attributed (the attribution names the release, the file and the licence), editor-side; when rows reach readers or a bulk file, anything shared from them stays CC BY-NC-SA 4.0 (ShareAlike) and stays out of a commercial launch (D2).'
+  - 'The author is public domain (d. 911 AH / 1505 CE). The edition is Samīr Ḥusayn Ḥalabī''s (Dār al-Kutub al-ʿIlmiyya, Beirut, 1st ed., 1408/1988), named by the primary file''s card and by ShamAY0034093''s; OpenITI''s cleaned version drops the edition''s paratext. Two editorial headings and the editor''s lead-in to the Baghdad manuscript''s colophon remain in the text and are marked as such on their rows.'
+  - 'Printed pages rest on Shamela''s statement «[ترقيم الشاملة موافق للمطبوع]» on ShamAY0034093 (JK009264''s page markers are its markers, letter for letter); they were not checked against shamela.ws book 34093 here (no network) — to do when the licence pages are next re-read.'
+  - 'Shamela0026097 names another edition (al-Tihāmī al-Rājī al-Hāshimī, Maṭbaʿat Faḍāla); it is pinned as evidence only, no text from it is used.'
 - id: nuzha
   registry: data/relations.yaml
   urls_checked:
