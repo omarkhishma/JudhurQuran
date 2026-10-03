@@ -410,3 +410,16 @@ def test_the_sources_list_names_every_layer_with_its_licence() -> None:
             assert x["attribution_ar"] and x["attribution_en"], (layer, x["id"])
             assert x.get("licence") or x.get("license"), (layer, x["id"])
     assert layers["recitations"]["reciters"] and len(layers["recitations"]["credit"]["sources"]) == 2
+
+
+def test_occurrence_rows_carry_their_inflection_and_the_cousin_its_pattern() -> None:
+    rows_ = get("/api/v1/words/ilm/attestations", limit=5)["data"]
+    for r in rows_:
+        full = get(f"/api/v1/verses/{r['verse_key']}")
+        word = next(w for w in full["words"] if w["location"] == r["location"])
+        assert r["features"] == word["features"]
+    w = get("/api/v1/words/ilm", limit=0)
+    cousin = next(s for s in w["next_steps"] if s["kind"] == "cousin")
+    groups = {m["slug"]: g["pattern"] for g in w["family"] for m in g["members"]}
+    expected = groups[cousin["slug"]]
+    assert (cousin["pattern"] or {}).get("slug") == (expected or {}).get("slug")

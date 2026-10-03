@@ -340,9 +340,9 @@ def patterns(request: Request) -> Response:
 
 
 @router.get("/patterns/{slug}", summary="One pattern with every lemma on it")
-def pattern(request: Request, slug: str) -> Response:
+def pattern(request: Request, slug: str, limit: int = Query(200, ge=1, le=5000)) -> Response:
     with connect() as conn:
-        p = lexicon.pattern_payload(conn, slug)
+        p = lexicon.pattern_payload(conn, slug, limit)
         if p is None:
             raise not_found("pattern")
         return cached(request, p)

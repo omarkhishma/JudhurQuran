@@ -260,10 +260,19 @@ def _next_steps(
     """Three deterministic doors (seeded by slug, so everyone gets the same): a cousin, a verse, the shape."""
     seed = lemma["slug"]
     steps: list[dict[str, Any]] = []
-    cousins = [m for g in family for m in g["members"] if m["slug"] != lemma["slug"]]
+    cousins = [(m, g["pattern"]) for g in family for m in g["members"] if m["slug"] != lemma["slug"]]
     if cousins:
-        c = cousins[_pick(seed + "#cousin", min(len(cousins), 5))]
-        steps.append({"kind": "cousin", "slug": c["slug"], "ar": c["ar"], "gloss_en": c["gloss_en"]})
+        c, pat = cousins[_pick(seed + "#cousin", min(len(cousins), 5))]
+        # its pattern, so the door can say "same shape" or name the other one (RDR-329)
+        steps.append(
+            {
+                "kind": "cousin",
+                "slug": c["slug"],
+                "ar": c["ar"],
+                "gloss_en": c["gloss_en"],
+                "pattern": {"slug": pat["slug"], "ar": pat["ar"]} if pat else None,
+            }
+        )
     verses = rows(
         conn,
         "select location, surah, ayah from content.words where lemma_id = :l order by id",
@@ -382,7 +391,7 @@ def word_attestations(
     occ = rows(
         conn,
         f"""select w.id, w.location, w.surah, w.ayah, w.verse_id, w.token_from, w.token_to, s.name_ar,
-                   s.revelation_place, l.slug as lemma_slug
+                   s.revelation_place, l.slug as lemma_slug, w.features
             from content.words w join content.surahs s on s.number = w.surah
             left join content.lemmas l on l.id = w.lemma_id
             where {cond} and w.id > :after order by w.id limit :n""",
@@ -409,6 +418,8 @@ def word_attestations(
                 "surah_name_ar": o["name_ar"],
                 "revelation_place": o["revelation_place"],
                 "lemma_slug": o["lemma_slug"],
+                # this occurrence's inflection, from the corpus (RDR-269)
+                "features": o["features"],
                 "left": " ".join(vt[:a]),
                 "keyword": " ".join(vt[a:b]),
                 "right": " ".join(vt[b:]),
