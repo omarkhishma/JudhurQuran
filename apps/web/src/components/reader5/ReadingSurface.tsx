@@ -64,6 +64,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const setPrefs = usePrefs((s) => s.set);
   const wordStates = usePersonal((s) => s.wordStates);
   const setProgress = usePersonal((s) => s.setProgress);
+  const markRead = usePersonal((s) => s.markRead);
   const playVerse = useAudio((s) => s.playVerse);
   const stopAudio = useAudio((s) => s.stop);
   const playingKey = useAudio((s) => (s.playing && s.mode !== "word" && s.surah && s.queue[s.index] ? `${s.surah}:${s.queue[s.index].ayah}` : null));
@@ -295,13 +296,14 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
         if (ayah && ayah !== last) {
           last = ayah;
           setProgress("quran", { chapter: chapter.number, passage: ayah });
+          markRead(chapter.number, ayah);
         }
       },
       { rootMargin: "-20% 0px -70% 0px" },
     );
     root.querySelectorAll(".passage").forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, [chapter.number, setProgress]);
+  }, [chapter.number, setProgress, markRead]);
 
   // Arrow keys move between words in reading order; Esc closes the entry.
   useEffect(() => {
@@ -489,7 +491,9 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const moreEl = mounted && activeVerse ? document.querySelector(`[data-more="${CSS.escape(activeVerse)}"]`) : null;
 
   const translitOn = translitPref ?? locale !== "ar";
-  const resumeEl = mounted && resume ? document.querySelector(`#v${resume.passage} .passage-label`) : null;
+  // not on the verse already in hand (RDR-138, 592)
+  const inHand = mode === "verse" ? verse : mode === "word" && selection?.at ? selection.at.split(":").slice(0, 2).join(":") : null;
+  const resumeEl = mounted && resume && inHand !== `${chapter.number}:${resume.passage}` ? document.querySelector(`#v${resume.passage} .passage-label`) : null;
   const drawerEl = mounted && drawer ? document.querySelector(`[data-drawer="${CSS.escape(drawer.key)}"]`) : null;
 
   return (
@@ -528,7 +532,18 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
         createPortal(
           <span className="resume-mark">
             <span className="dot" style={{ background: "var(--c-root)" }} />
-            {t("youStoppedHere", { date: new Date(resume!.at).toLocaleDateString(locale === "ar" ? "ar" : "en-GB", { day: "numeric", month: "long" }) })}
+            {t("youStoppedHere", { date: new Date(resume!.at).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long" }) })}
+            <span className="resume-rule" aria-hidden="true" />
+            <button
+              type="button"
+              className="resume-go"
+              onClick={(e) => {
+                e.stopPropagation();
+                document.getElementById(`v${resume!.passage}`)?.scrollIntoView({ block: "start", behavior: "smooth" });
+              }}
+            >
+              {t("resumeHere")}
+            </button>
           </span>,
           resumeEl,
         )}

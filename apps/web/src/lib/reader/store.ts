@@ -227,6 +227,14 @@ export type WordState = "new" | "learning" | "known";
 export type TrailStep = { kind: "word" | "verse" | "root"; id: string; ts: number };
 export type ProgressEntry = { chapter: number; passage: number; at: number };
 export type SavedTrail = { id: string; steps: TrailStep[]; ts: number };
+/** What the reader last looked up (RDR-441): read by the hub, the concordance and the shell. */
+export type ReadingContext = { word: string | null; wordAr: string | null; root: string | null; verse: string | null; ts: number };
+/** One day's reading in one text (RDR-437): what was looked up, for the Notebook, Classroom and Profile.
+ * A count of lookups, not a time — nothing here pretends to measure minutes. */
+export type Session = { day: string; text: string; words: string[]; roots: string[]; verses: string[]; lookups: number };
+const SESSION_CAP = 60;
+/** The reader's local calendar day, YYYY-MM-DD. */
+export const today = () => new Date().toLocaleDateString("en-CA");
 /** A topic of the reader's own (RDR-157, 555); curated themes come with P8.3. */
 export type Topic = { id: string; label: string; ts: number };
 /** Verse keys in personal data carry their text, so links never collide across texts (RDR-432 BUG). */
@@ -256,7 +264,12 @@ type PersonalState = {
   links: Record<string, string[]>;
   topics: Topic[];
   verseTopics: Record<string, string[]>;
+  context: ReadingContext | null;
+  sessions: Session[];
+  read: Record<string, number>;
   setWordState: (slug: string, s: WordState) => void;
+  recordLookup: (c: Partial<Omit<ReadingContext, "ts">>) => void;
+  markRead: (surah: number, ayah: number) => void;
   toggleLink: (from: string, to: string) => void;
   addTopic: (label: string) => string;
   toggleVerseTopic: (verse: string, topicId: string) => void;
@@ -285,7 +298,28 @@ export const usePersonal = create<PersonalState>()(
       links: {},
       topics: [],
       verseTopics: {},
+      context: null,
+      sessions: [],
+      read: {},
       setWordState: (slug, s) => set((st) => ({ wordStates: { ...st.wordStates, [slug]: s } })),
+      // every lookup updates the reading context and today's session (RDR-113, 437, 441)
+      recordLookup: (c) =>
+        set((st) => {
+          const context: ReadingContext = { word: null, wordAr: null, root: null, verse: null, ...(c.word ? {} : st.context ?? {}), ...c, ts: Date.now() };
+          const day = today();
+          const add = (xs: string[], x: string | null | undefined) => (x && !xs.includes(x) ? [...xs, x] : xs);
+          const i = st.sessions.findIndex((x) => x.day === day && x.text === "quran");
+          const cur = i >= 0 ? st.sessions[i] : { day, text: "quran", words: [], roots: [], verses: [], lookups: 0 };
+          const next = { ...cur, words: add(cur.words, c.word), roots: add(cur.roots, c.root), verses: add(cur.verses, c.verse), lookups: cur.lookups + 1 };
+          const sessions = i >= 0 ? st.sessions.map((x, k) => (k === i ? next : x)) : [...st.sessions, next].slice(-SESSION_CAP);
+          return { context, sessions };
+        }),
+      // the furthest verse read in each sūra (RDR-071): reading on only moves it forward
+      markRead: (surah, ayah) =>
+        set((st) => {
+          const key = `quran:${surah}`;
+          return (st.read[key] ?? 0) >= ayah ? {} : { read: { ...st.read, [key]: ayah } };
+        }),
       // a link is the reader's own, from one verse to another (RDR-156); the other side shows it as incoming
       toggleLink: (from, to) =>
         set((st) => {
@@ -331,8 +365,9 @@ export const usePersonal = create<PersonalState>()(
       name: "jadhr-personal",
       storage: safeJSONStorage,
       version: 2,
-      // version 2 adds the reader's verse links and topics
-      migrate: (old) => ({ links: {}, topics: [], verseTopics: {}, ...((old as Partial<PersonalState>) ?? {}) }) as PersonalState,
+      // version 2 adds the reader's verse links and topics, the reading context, sessions and furthest verses read
+      migrate: (old) =>
+        ({ links: {}, topics: [], verseTopics: {}, context: null, sessions: [], read: {}, ...((old as Partial<PersonalState>) ?? {}) }) as PersonalState,
     },
   ),
 );

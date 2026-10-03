@@ -1018,7 +1018,10 @@
     "noArticlesOfKind": "No articles of this kind of dictionary for this root.",
     "relatedNone": "No other verse stands on its roots.",
     "storageFailed": "This browser would not save; what you do lasts until you close the page.",
-    "stopRecite": "Stop the recitation"
+    "stopRecite": "Stop the recitation",
+    "resumeHere": "resume here",
+    "stoppedAt": "You stopped at verse {n}",
+    "readPct": "{pct} read"
   },
   "concordance": {
     "title": "Concordance",

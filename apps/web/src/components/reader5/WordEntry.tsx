@@ -44,6 +44,13 @@ export function WordEntry({
   // Sections above the target may still be loading (the wujūh, the dictionaries) and push it down, so
   // for a moment the target is held in place as the body grows — until the reader scrolls themselves.
   const hold = useRef<() => void>(() => {});
+
+  // each word looked up is the new reading context and goes into today's session (RDR-113, 437, 441)
+  const looked = query.data;
+  useEffect(() => {
+    if (!looked) return;
+    usePersonal.getState().recordLookup({ word: looked.slug, wordAr: looked.ar.full, root: looked.root?.key ?? null, verse: looked.occurrence?.verse_key ?? null });
+  }, [looked?.slug, looked?.occurrence?.location]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!scrollTo) return;
     const body = bodyRef.current;

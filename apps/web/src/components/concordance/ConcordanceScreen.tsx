@@ -35,6 +35,9 @@ function useContextRoot(enabled: boolean) {
     enabled,
     staleTime: Infinity,
     queryFn: async () => {
+      // the reading context first (RDR-441), then the trail
+      const ctx = usePersonal.getState().context;
+      if (ctx?.root) return ctx.root;
       const trail = usePersonal.getState().trail;
       for (let i = trail.length - 1; i >= 0; i--) {
         const s = trail[i];

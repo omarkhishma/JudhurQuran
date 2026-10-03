@@ -2862,3 +2862,39 @@ button.type-chip:hover {
 }
 }
 
+@layer components {
+/* ─── Resume and reading progress (RDR-071, 138, 497, 592) ──────────────────── */
+.rail-resume {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: color-mix(in srgb, var(--c-root) 80%, var(--t1));
+}
+.read-bar {
+  display: block;
+  height: 2px;
+  margin-top: 3px;
+  border-radius: 99px;
+  background: var(--line);
+  overflow: hidden;
+}
+.read-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--c-root);
+}
+.resume-rule {
+  width: 32px;
+  flex: none;
+  height: 1px;
+  background: color-mix(in srgb, var(--c-root) 40%, transparent);
+}
+.resume-go {
+  font-size: 11px;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+}
+

@@ -1,10 +1,11 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useEffect } from "react";
 import { Icon } from "@/components/Icon";
 import { Term } from "@/components/terms/Term";
 import { useWordAt } from "@/lib/reader/api";
-import { useReader } from "@/lib/reader/store";
+import { usePersonal, useReader } from "@/lib/reader/store";
 import type { Features } from "@/lib/reader/types";
 import { ListenOccurrence } from "./Listen";
 import { GrammarHere } from "./sections/Meanings";
@@ -20,6 +21,10 @@ export function LocationEntry({ at }: { at: string }) {
   const locale = useLocale();
   const openVerse = useReader((s) => s.openVerse);
   const q = useWordAt(at);
+  const form = q.data?.text_uthmani ?? null;
+  useEffect(() => {
+    if (form) usePersonal.getState().recordLookup({ word: null, wordAr: form, root: null, verse: at.split(":").slice(0, 2).join(":") });
+  }, [form, at]);
   if (q.isError) return <p className="p-4 text-[13px] text-bad">{t("loadFailed")}</p>;
   const w = q.data;
   if (!w) return <div className="m-4 h-32 animate-pulse rounded-xl bg-card-2" role="status" aria-label={t("loading")} />;

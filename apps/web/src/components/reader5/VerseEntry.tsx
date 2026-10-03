@@ -2,11 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
+import { useEffect } from "react";
 import { Icon } from "@/components/Icon";
 import { Link } from "@/i18n/navigation";
 import { cnt } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
-import { useReader } from "@/lib/reader/store";
+import { usePersonal, useReader } from "@/lib/reader/store";
 import { useAudio } from "@/lib/store/audio";
 import { TafsirSection } from "./TafsirSection";
 import { NoteDrawer, RootsDrawer } from "./VerseDrawer";
@@ -26,6 +27,8 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
   const playVerse = useAudio((s) => s.playVerse);
   const setCite = useReader((s) => s.setCite);
   const related = useQuery({ queryKey: ["related", verseKey], queryFn: () => getJSON<Related>(`/verses/${verseKey}/related?limit=6`) });
+  // a verse opened is part of the reading context and of today's session (RDR-441, 437)
+  useEffect(() => usePersonal.getState().recordLookup({ verse: verseKey }), [verseKey]);
   return (
     <article className="flex flex-col gap-2 p-3.5" aria-label={t("verseTitle", { ref: verseKey })}>
       <header className="flex flex-wrap items-center gap-2 pb-1">

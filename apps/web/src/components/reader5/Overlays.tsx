@@ -209,7 +209,7 @@ function CiteDialog({ chapter }: { chapter: ChapterInfo }) {
           ? `/roots/${encodeURIComponent(cite.key)}`
           : `/quran/${cite.key.replace(":", "/")}`;
   const url = `${origin}${prefix}${path}`;
-  const today = new Date().toLocaleDateString(locale === "ar" ? "ar" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
   const name = locale === "ar" ? `${SITE.name.ar} — جذور ألفاظ القرآن الكريم` : `${SITE.name.en} — the Quran by its roots`;
   const ar = locale === "ar";
   const n = (x: string | number) => formatNumber(Number(x), locale);

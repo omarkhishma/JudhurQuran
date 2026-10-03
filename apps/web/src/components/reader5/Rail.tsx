@@ -32,6 +32,9 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
   const focusRoot = useReader((s) => s.focusRoot);
   const study = usePrefs((s) => s.wordStates);
   const states = usePersonal((s) => s.wordStates);
+  // where the reader stopped, and how far each sūra has been read (RDR-071, 497)
+  const read = usePersonal((s) => s.read);
+  const last = usePersonal((s) => s.progress.quran);
   // Vocabulary coverage per sūra in study mode (RDR-571): the share of its words marked known.
   const sets = useQuery({ queryKey: ["lemma-sets"], queryFn: () => getJSON<{ data: Record<string, string[]> }>("/surahs/lemma-sets"), enabled: study, staleTime: Infinity });
   const pct = (n: number) => {
@@ -99,6 +102,17 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
                   <span className="truncate text-[10.5px] text-t3">
                     {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " · " + t("verses", cnt(s.verse_count, locale))}
                   </span>
+                  {last?.chapter === s.number && (
+                    <span className="rail-resume">
+                      <span className="dot" style={{ background: "var(--c-root)" }} />
+                      {t("stoppedAt", { n: formatNumber(last.passage, locale) })}
+                    </span>
+                  )}
+                  {!!read[`quran:${s.number}`] && (
+                    <span className="read-bar" title={t("readPct", { pct: percent.format(read[`quran:${s.number}`] / s.verse_count) })}>
+                      <span style={{ width: `${(read[`quran:${s.number}`] / s.verse_count) * 100}%` }} />
+                    </span>
+                  )}
                   {study && pct(s.number) && (
                     <span className="flex items-center gap-1.5" title={t("coverage", { pct: percent.format(pct(s.number)!.known) })}>
                       <span className="coverage-bar" aria-hidden="true" style={{ ["--known" as string]: `${pct(s.number)!.known * 100}%`, ["--learning" as string]: `${(pct(s.number)!.known + pct(s.number)!.learning) * 100}%` }} />

@@ -180,7 +180,7 @@ test("cite: a dialog with a versioned permalink and the real access date; Esc re
   await expect(dlg).toContainText(version);
   await expect(dlg).toContainText("/word/20:114:17"); // the permalink matches the word cited at its place
   await expect(dlg).toContainText("«عِلْمًا» [طه: ١١٤، الكلمة ١٧]");
-  const today = new Date().toLocaleDateString("ar", { day: "numeric", month: "long", year: "numeric" });
+  const today = new Date().toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" });
   await expect(dlg).toContainText(today);
   await page.keyboard.press("Escape");
   await expect(dlg).toBeHidden();
@@ -193,6 +193,25 @@ test("/read resumes on the last verse read with the resume marker (RDR-572/592)"
   await expect(page).toHaveURL(/\/quran\/2#v40$/);
   await expect(page.locator("#v40 .resume-mark")).toBeVisible();
   await expect(page.locator("#v40")).toBeInViewport();
+  // the rail says where the reader stopped (RDR-071, 497)
+  if (!(await page.evaluate(() => document.querySelector(".reader-v5")?.getAttribute("data-bp") === "phone"))) {
+    await expect(page.locator('.reader-rail [aria-current="page"] .rail-resume')).toContainText("توقفت عند الآية ٤٠");
+  }
+  // the marker steps aside on the verse in hand (RDR-138, 592)
+  await page.locator('.w[data-w="2:40:1"]').click();
+  await expect(page.locator("#v40 .resume-mark")).toHaveCount(0);
+});
+
+test("a lookup becomes the reading context and goes into today's session (RDR-113, 437, 441)", async ({ page }) => {
+  await returning(page);
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  await expect(panel(page).getByRole("heading").first()).toBeVisible();
+  const st = await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state);
+  expect(st.context).toMatchObject({ word: "ilm", root: "علم", verse: "20:114" });
+  const day = await page.evaluate(() => new Date().toLocaleDateString("en-CA"));
+  const today = st.sessions.find((x: { day: string }) => x.day === day);
+  expect(today).toMatchObject({ text: "quran", words: ["ilm"], roots: ["علم"], verses: ["20:114"] });
+  expect(today.lookups).toBeGreaterThanOrEqual(1);
 });
 
 test("verse tools: Roots drawer underlines the root in the sūra; Esc closes it", async ({ page }) => {
