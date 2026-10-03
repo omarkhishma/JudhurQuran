@@ -64,3 +64,9 @@ def test_each_blank_takes_the_everyday_spelling_and_carries_its_hint_and_what_is
     assert b["lemma"]["pos"]["ar"] and b["lemma"]["occurrences"] > 0 and b["translit"]
     assert all(x["pattern"] is None or x["pattern"]["ar"]["full"] for x in d["context"]["blanks"])
 
+
+def test_the_card_can_be_asked_in_a_body_and_is_kept_nowhere() -> None:
+    r = client.post("/api/v1/review/root", json={"root": "علم", "pick": 1})
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
+    assert r.json()["context"]["verse_key"] == get("/api/v1/roots/علم/review", pick=1)["context"]["verse_key"]
+    assert client.post("/api/v1/review/root", json={"root": "zzz"}).status_code == 404

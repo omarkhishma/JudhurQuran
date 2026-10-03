@@ -616,6 +616,23 @@ def root_review(request: Request, root: str, pick: int = Query(0, ge=0, le=1000)
         return cached(request, out)
 
 
+class _ReviewAsk(BaseModel):
+    root: str = Field(max_length=20)
+    pick: int = Field(0, ge=0, le=1000)
+
+
+@router.post(
+    "/review/root", summary="A root for the reader's review, asked in a body (not stored, not cached)"
+)
+def review_root(body: _ReviewAsk) -> Response:
+    # which roots a reader is due and how often each was reviewed is theirs: in a body, kept nowhere (P5.6)
+    with connect() as conn:
+        out = review.root_review(conn, body.root, body.pick)
+        if out is None:
+            raise not_found("root")
+        return ORJSONResponse(out, headers={"Cache-Control": "no-store"})
+
+
 class _Tokens(BaseModel):
     tokens: list[str] = Field(max_length=20000)
 
@@ -736,6 +753,20 @@ def search(
 ) -> Response:
     with connect() as conn:
         return cached(request, run_search(conn, q, limit, offset, only))
+
+
+class _SearchAsk(BaseModel):
+    q: str = Field(min_length=1, max_length=200)
+    limit: int = Field(20, ge=1, le=100)
+
+
+@router.post("/search", summary="The same search, asked in a body: for words from a reader's private notes")
+def search_private(body: _SearchAsk) -> Response:
+    # a note's @-mentions are the reader's: never in a URL, a log line or a cache (P5.6, NTB-28)
+    with connect() as conn:
+        return ORJSONResponse(
+            run_search(conn, body.q, body.limit, 0, None), headers={"Cache-Control": "no-store"}
+        )
 
 
 # ─── rate limiting (per client IP, sliding minute) ─────────────────────────

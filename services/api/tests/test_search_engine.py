@@ -221,3 +221,12 @@ def test_the_postgres_engine_answers_the_same_questions() -> None:
         pat = search_pg(conn, "maf3uul", 200)
         assert {x["pattern"] for x in pat["results"]["lemmas"]} == {"maf3uul"}
         assert len(pat["results"]["lemmas"]) == pat["totals"]["lemmas"]
+
+
+def test_the_same_search_can_be_asked_in_a_body_and_is_kept_nowhere() -> None:
+    c = client
+    got = c.get("/api/v1/search", params={"q": "علم", "limit": 5}).json()
+    r = c.post("/api/v1/search", json={"q": "علم", "limit": 5})
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
+    assert r.json()["detected"] == got["detected"] and r.json()["results"]["roots"] == got["results"]["roots"]
+    assert c.post("/api/v1/search", json={"q": ""}).status_code == 422
