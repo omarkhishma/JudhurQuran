@@ -24,6 +24,20 @@ _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890
 _REF_RE = re.compile(r"^\s*(\d{1,3})\s*[:：.\-/ ]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?\s*$")
 _SURAH_NUM_RE = re.compile(r"^\s*(?:surah|sura|سورة)?\s*(\d{1,3})\s*$", re.I)
 _LATIN_SIMPLIFY = re.compile(r"[^a-z0-9]")
+# "الجزء 3", "حزب ١٠", "صفحة 50", "juz 3", "hizb 10", "page 50" (RDR-565)
+_DIVISION_RE = re.compile(
+    r"^\s*(?:ال)?(جزء|حزب|صفحة)\s*(\d{1,3})\s*$|^\s*(juz['ʾ’]?|hizb|ḥizb|page|p\.)\s*(\d{1,3})\s*$", re.I
+)
+_DIVISION_KIND = {
+    "جزء": "juz",
+    "حزب": "hizb",
+    "صفحة": "page",
+    "hizb": "hizb",
+    "ḥizb": "hizb",
+    "page": "page",
+    "p.": "page",
+}
+_DIVISION_MAX = {"juz": 30, "hizb": 60, "page": 604}
 
 LABELS = {
     "empty": ("فارغ", "empty"),
@@ -33,6 +47,9 @@ LABELS = {
     "arabic_word": ("كلمة عربية", "Arabic word"),
     "arabic_phrase": ("عبارة عربية", "Arabic phrase"),
     "latin": ("نص لاتيني", "Latin text"),
+    "juz": ("جزء", "juzʾ"),
+    "hizb": ("حزب", "ḥizb"),
+    "page": ("صفحة", "page"),
 }
 
 
@@ -70,6 +87,13 @@ def detect(conn: Connection, q: str) -> tuple[str, dict[str, Any]]:
             "ayah": int(m.group(2)),
             "to": int(m.group(3) or 0) or None,
         }
+    m = _DIVISION_RE.match(ascii_q)
+    if m:
+        word = (m.group(1) or m.group(3)).lower()
+        kind = "juz" if word.startswith("juz") else _DIVISION_KIND[word]
+        n = int(m.group(2) or m.group(4))
+        if 1 <= n <= _DIVISION_MAX[kind]:
+            return kind, {"number": n}
     m = _SURAH_NUM_RE.match(ascii_q)
     if m and 1 <= int(m.group(1)) <= 114:
         return "surah", {"surah": int(m.group(1))}
@@ -149,7 +173,17 @@ def search_pg(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
     # Text pasted from a mushaf is matched on the Uthmani shadow; everyday spelling on the imlāʾī one.
     wcol, vcol = ("norm_uthmani", "norm_uthmani") if is_uthmani(q) else ("norm", "norm")
 
-    if kind == "verse_ref":
+    if kind in ("juz", "hizb", "page"):
+        # the division's first verse, which the reader opens at
+        where = {"juz": "juz = :n", "hizb": "(hizb_quarter - 1) / 4 + 1 = :n", "page": "page = :n"}[kind]
+        v = one(
+            conn,
+            f"select key, surah, ayah, text_qpc, text_imlaei from content.verses where {where} order by id limit 1",
+            {"n": info["number"]},
+        )
+        if v:
+            results["verses"].append(v)
+    elif kind == "verse_ref":
         v = one(
             conn,
             "select key, surah, ayah, text_qpc, text_imlaei from content.verses where surah = :s and ayah = :a",

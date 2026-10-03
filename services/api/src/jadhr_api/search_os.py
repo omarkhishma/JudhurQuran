@@ -137,7 +137,7 @@ def search(conn: Connection, es: OpenSearch, q: str, limit: int = 20) -> dict[st
     results: dict[str, list[dict[str, Any]]] = base["results"]
     results.setdefault("patterns", [])
     results.setdefault("passages", [])
-    if kind in ("empty", "verse_ref"):
+    if kind in ("empty", "verse_ref", "juz", "hizb", "page"):
         base["engine"] = "opensearch"
         return base
 

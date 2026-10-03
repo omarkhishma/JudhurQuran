@@ -99,3 +99,24 @@ def test_surah_lemma_sets_are_the_distinct_words_of_each_surah() -> None:
     for n in (1, 112):
         words = [w for v in get(f"/api/v1/surahs/{n}")["verses"] for w in v["words"]]
         assert sets[str(n)] == sorted({w["lemma_slug"] for w in words if w["lemma_slug"]})
+
+
+def test_search_understands_juz_hizb_and_page_numbers() -> None:
+    div = get("/api/v1/divisions")
+    cases = [
+        ("الجزء 3", "juz", div["juz"][2]["key"]),
+        ("جزء ٣٠", "juz", div["juz"][29]["key"]),
+        ("حزب ١٠", "hizb", div["hizb"][9]["key"]),
+        ("juz 4", "juz", div["juz"][3]["key"]),
+        ("hizb 2", "hizb", div["hizb"][1]["key"]),
+    ]
+    for q, kind, key in cases:
+        d = get("/api/v1/search", q=q, limit=2)
+        assert d["detected"]["kind"] == kind and [v["key"] for v in d["results"]["verses"]] == [key], q
+    page = get("/api/v1/pages/50")["verses"][0]["key"]
+    for q in ("صفحة 50", "الصفحة ٥٠", "page 50"):
+        d = get("/api/v1/search", q=q, limit=2)
+        assert d["detected"]["kind"] == "page" and d["results"]["verses"][0]["key"] == page, q
+    # out of range is not a division; «ص 50» stays sūrat Ṣād, verse 50
+    assert get("/api/v1/search", q="juz 31", limit=2)["detected"]["kind"] != "juz"
+    assert get("/api/v1/search", q="ص 50", limit=2)["results"]["verses"][0]["key"] == "38:50"
