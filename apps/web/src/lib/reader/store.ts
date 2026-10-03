@@ -249,7 +249,18 @@ export type SavedTrail = { id: string; steps: TrailStep[]; ts: number };
 export type ReadingContext = { word: string | null; wordAr: string | null; root: string | null; verse: string | null; ts: number };
 /** One day's reading in one text (RDR-437): what was looked up, for the Notebook, Classroom and Profile.
  * A count of lookups, not a time — nothing here pretends to measure minutes. */
-export type Session = { day: string; text: string; words: string[]; roots: string[]; verses: string[]; lookups: number };
+export type Session = { day: string; text: string; words: string[]; roots: string[]; verses: string[]; lookups: number; /** another device's, when the journal syncs (P6) */ device?: string };
+/** One day's reading in one text across the reader's devices: their lookups added, their words joined. */
+export function mergeSessions(sessions: Session[]): Session[] {
+  const by = new Map<string, Session>();
+  const join = (a: string[], b: string[]) => [...a, ...b.filter((x) => !a.includes(x))];
+  for (const x of sessions) {
+    const k = `${x.day}\u0000${x.text}`;
+    const cur = by.get(k);
+    by.set(k, cur ? { day: x.day, text: x.text, words: join(cur.words, x.words), roots: join(cur.roots, x.roots), verses: join(cur.verses, x.verses), lookups: cur.lookups + x.lookups } : { ...x, device: undefined });
+  }
+  return [...by.values()];
+}
 const SESSION_CAP = 60;
 /** The reader's local calendar day, YYYY-MM-DD. */
 export const today = () => new Date().toLocaleDateString("en-CA");
@@ -339,7 +350,7 @@ export const usePersonal = create<PersonalState>()(
           const context: ReadingContext = { word: null, wordAr: null, root: null, verse: null, ...(c.word ? {} : st.context ?? {}), ...c, ts: Date.now() };
           const day = today();
           const add = (xs: string[], x: string | null | undefined) => (x && !xs.includes(x) ? [...xs, x] : xs);
-          const i = st.sessions.findIndex((x) => x.day === day && x.text === "quran");
+          const i = st.sessions.findIndex((x) => x.day === day && x.text === "quran" && !x.device);
           const cur = i >= 0 ? st.sessions[i] : { day, text: "quran", words: [], roots: [], verses: [], lookups: 0 };
           const next = { ...cur, words: add(cur.words, c.word), roots: add(cur.roots, c.root), verses: add(cur.verses, c.verse), lookups: cur.lookups + 1 };
           const sessions = i >= 0 ? st.sessions.map((x, k) => (k === i ? next : x)) : [...st.sessions, next].slice(-SESSION_CAP);

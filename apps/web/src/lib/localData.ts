@@ -1,6 +1,7 @@
 "use client";
 
 import { del, get, keys } from "idb-keyval";
+import { useAccount } from "@/lib/account/store";
 
 /**
  * Everything this site keeps in the browser lives under keys that start with "jadhr-": stores in
@@ -28,9 +29,13 @@ async function documentKeys(): Promise<string[]> {
   }
 }
 
+// not the reader's data, so never in an export (removed on delete like the rest): the session token is a secret,
+// and sync's memory of what it last agreed with the account and this browser's device id are machinery
+const SECRET = new Set(["jadhr-auth", "jadhr-sync", "jadhr-device"]);
+
 export async function collectLocalData(): Promise<LocalExport> {
   const local: Record<string, unknown> = {};
-  for (const k of localKeys().sort()) {
+  for (const k of localKeys().filter((x) => !SECRET.has(x)).sort()) {
     const raw = localStorage.getItem(k);
     try {
       local[k] = JSON.parse(raw ?? "null");
@@ -54,8 +59,14 @@ export async function exportLocalData(): Promise<void> {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Remove every key under the prefix. The caller reloads, so stores in memory cannot write it back. */
+/** Remove every key under the prefix. The caller reloads, so stores in memory cannot write it back. Signed in,
+ * this device leaves the account first: clearing this browser must never delete what the account holds. */
 export async function deleteLocalData(): Promise<void> {
+  const { session, signOut } = useAccount.getState();
+  if (session) {
+    signOut();
+    await fetch("/api/v1/auth/signout", { method: "POST", headers: { Authorization: `Bearer ${session}` } }).catch(() => null);
+  }
   for (const k of localKeys()) {
     try {
       localStorage.removeItem(k);

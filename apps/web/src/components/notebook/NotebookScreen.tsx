@@ -12,7 +12,7 @@ import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { foldLatin, type Mention, parseMentions } from "@/lib/notebook/mentions";
 import { getJSON } from "@/lib/reader/api";
-import { type SavedTrail, usePersonal } from "@/lib/reader/store";
+import { mergeSessions, type SavedTrail, usePersonal } from "@/lib/reader/store";
 import { type NoteLinks, useNotebook } from "@/lib/store/notebook";
 import { useSaved } from "@/lib/store/saved";
 import { useDebounced } from "@/lib/useDebounced";
@@ -441,7 +441,9 @@ function JournalTab({ items }: { items: Item[] }) {
   const t = useTranslations("notebook");
   const locale = useLocale();
   const client = useIsClient();
-  const sessions = usePersonal((s) => s.sessions);
+  const all = usePersonal((s) => s.sessions);
+  // a day read on two devices is one day in the journal (P6: the journal syncs when the reader turns that on)
+  const sessions = useMemo(() => mergeSessions(all), [all]);
   const states = usePersonal((s) => s.wordStates);
   const starred = useSaved((s) => s.bookmarks.length);
   const due = useDueCount();

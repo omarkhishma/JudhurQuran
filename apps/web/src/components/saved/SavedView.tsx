@@ -29,8 +29,8 @@ export function SavedView() {
   // the reload drops the stores held in memory, so none of them writes its data back
   async function deleteAll() {
     if (!confirm) return setConfirm(true);
+    await deleteLocalData(); // signs this device out first, so nothing below reaches the account
     clearAll();
-    await deleteLocalData();
     window.location.replace(`${window.location.pathname}?deleted=1`);
   }
   const done = client && new URLSearchParams(window.location.search).has("deleted");

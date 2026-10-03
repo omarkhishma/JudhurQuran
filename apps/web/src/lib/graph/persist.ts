@@ -4,9 +4,14 @@ import { del, get, set } from "idb-keyval";
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 import type { GraphDoc, GraphMeta } from "./types";
 
-/** Local-first storage: graphs live in this browser's IndexedDB until accounts exist. */
+/** Local-first storage: graphs live in this browser's IndexedDB, and sync to the account when signed in (P6). */
 const INDEX = "jadhr-graphs-index";
 const KEY = (id: string) => `jadhr-graph:${id}`;
+/** fired on every change made here, so sync can send it (documents are not in a store it can watch) */
+export const DOCS_EVENT = "jadhr:docs";
+const changed = () => {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(DOCS_EVENT));
+};
 
 export async function listGraphs(): Promise<GraphMeta[]> {
   return ((await get<GraphMeta[]>(INDEX)) ?? []).sort((a, b) => b.updatedAt - a.updatedAt);
@@ -17,21 +22,27 @@ export async function loadGraph(id: string): Promise<GraphDoc | undefined> {
 }
 
 export async function saveGraph(doc: GraphDoc): Promise<void> {
-  const clean: GraphDoc = {
+  await putGraph({
     ...doc,
     updatedAt: Date.now(),
     nodes: doc.nodes.map(({ id, type, position, data }) => ({ id, type, position, data })),
     edges: doc.edges.map(({ id, source, target, data, label }) => ({ id, source, target, data, label })),
-  };
-  await set(KEY(doc.id), clean);
+  });
+  changed();
+}
+
+/** Store a graph as it is, its time included (a graph synced from another device keeps the time it was made). */
+export async function putGraph(doc: GraphDoc): Promise<void> {
+  await set(KEY(doc.id), doc);
   const index = (await listGraphs()).filter((g) => g.id !== doc.id);
-  index.push({ id: doc.id, title: doc.title, kind: doc.kind, createdAt: doc.createdAt, updatedAt: clean.updatedAt, nodeCount: doc.nodes.length });
+  index.push({ id: doc.id, title: doc.title, kind: doc.kind, createdAt: doc.createdAt, updatedAt: doc.updatedAt, nodeCount: doc.nodes.length });
   await set(INDEX, index);
 }
 
-export async function deleteGraph(id: string): Promise<void> {
+export async function deleteGraph(id: string, quiet = false): Promise<void> {
   await del(KEY(id));
   await set(INDEX, (await listGraphs()).filter((g) => g.id !== id));
+  if (!quiet) changed();
 }
 
 export function newId(): string {
