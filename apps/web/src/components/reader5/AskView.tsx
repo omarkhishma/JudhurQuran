@@ -13,6 +13,7 @@ import { useAudio } from "@/lib/store/audio";
 import { useStar } from "@/lib/store/saved";
 import type { WordPayload } from "@/lib/reader/types";
 import { useDebounced } from "@/lib/useDebounced";
+import { Term } from "@/components/terms/Term";
 import { ListenOccurrence } from "./Listen";
 import { PatternFunction } from "./sections/Family";
 
@@ -168,7 +169,7 @@ function DesktopCard({ w, onCousin }: { w: WordPayload; onCousin: (slug: string)
             )}
             <p className="text-[13px] text-t3">
               <span className="mono" dir="ltr">{w.ar.translit}</span> · {locale === "ar" ? w.pos.ar : w.pos.en}
-              {meaning && <> · {meaning.source === "corpus" ? t("corpusGlossCredit") : meaning.source}</>}
+              {meaning && <> · {meaning.source === "corpus" ? t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }) : meaning.source}</>}
             </p>
           </div>
           {w.occurrence && <ListenOccurrence location={w.occurrence.location} tokenFrom={w.occurrence.token_from} tokenTo={w.occurrence.token_to} />}

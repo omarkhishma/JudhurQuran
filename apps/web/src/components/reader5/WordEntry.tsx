@@ -161,7 +161,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
           </div>
           {occ.gloss_en && (
             <p className="mt-1 text-[12.5px] italic text-t2" lang="en" dir="ltr">
-              {occ.gloss_en} <span className="not-italic text-t3">— {t("corpusGlossCredit")}</span>
+              {occ.gloss_en} <span className="not-italic text-t3">— {t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> })}</span>
             </p>
           )}
         </div>

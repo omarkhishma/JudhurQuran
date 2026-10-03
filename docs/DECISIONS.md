@@ -69,6 +69,7 @@
 
 ## Lessons
 
+- [2026-10-03] Turning a message into rich text («<term>…</term>») breaks every caller still using plain `t()`: it prints the tag on screen. Batch 3 left three such callers of the corpus credit, found only in a screenshot. `src/lib/messages.test.ts` now fails on any tagged message passed to `t()`.
 - [2026-10-03] Match words in the Shamela typings with final yāʾ and alif-hamza folded: they write «والثانى»، «فى»، «الاول», so a marker list in standard spelling silently found the first aṣl and never the second. Build matchers from words through one helper that allows ي/ى, أ/ا and harakāt between letters.
 
 - [2026-10-03] Never chain a commit after a test run piped through `grep`: the pipe's status is grep's, so two failing e2e tests let the commit through. Run the tests, read the result, then commit.

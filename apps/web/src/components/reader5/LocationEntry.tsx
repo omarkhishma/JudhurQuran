@@ -46,7 +46,7 @@ export function LocationEntry({ at }: { at: string }) {
         <p className="text-[12px] text-t3">{t("thisOccurrence", { ref: w.verse.key, surah: w.verse.surah_name_ar })}</p>
         {w.gloss_en && (
           <p className="text-[13px] italic text-t2" lang="en" dir="ltr">
-            {w.gloss_en} <span className="not-italic text-t3">— {t("corpusGlossCredit")}</span>
+            {w.gloss_en} <span className="not-italic text-t3">— {t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> })}</span>
           </p>
         )}
         <p className="text-[13px] leading-relaxed text-t2">
