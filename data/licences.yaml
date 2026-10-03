@@ -3,9 +3,9 @@
 # URL in urls_checked, compare page_sha256, re-read the clauses, update `fetched`, and put any change in
 # front of the owner. The summary and the owner's decisions are in docs/research/07-licence-register.md.
 #
-# One entry per id in data/sources.yaml, data/lexica.yaml, data/works.yaml and data/recitations.yaml
-# (its reciter ids), plus `everyayah` and `quran-align`, the two upstreams recitations.yaml names in
-# audio_url and timings_zip.
+# One entry per id in data/sources.yaml, data/lexica.yaml, data/works.yaml, data/recitations.yaml
+# (its reciter ids) and data/patterns.yaml, plus `everyayah` and `quran-align`, the two upstreams
+# recitations.yaml names in audio_url and timings_zip.
 #
 # Fields
 #   urls_checked    every page, file or API answer read for this entry (pinned commits where a repo has one)
@@ -1566,3 +1566,196 @@ licences:
   notes:
   - The ID3 tag names MP3Quran.net as the origin; MP3Quran.net opens all rights to any visitor or developer, which is consistent with EveryAyah's grant.
   - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: shafiya
+  registry: data/patterns.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/README.md
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/
+  fetched: '2026-10-03'
+  page_sha256:
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1
+    : 1709d24a23a2c1a435fb4ce4cb9289abccce14ba908aae6eaab4ede37cb3f1bc
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1.yml
+    : c4c5bdc159600923126cd715b63e91846168096cc786a36141df44de5b16950d
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/README.md: b5946684d7529e7cc8af5e9c5dc5f6efc21df0e61bf9e5b673d976aff6ea2194
+    https://creativecommons.org/licenses/by-nc-sa/4.0/: ca0597fd98c6fb2417993e867b5cbc91ebdc55e24839c38e4674e8c78d817f17
+  clauses:
+  - topic: redistribution
+    quote: You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: OpenITI is published under the CC BY-NC-SA 4.0 license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: attribution
+    quote: Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: commercial
+    quote: NonCommercial — You may not use the material for commercial purposes.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: redistribution
+    quote: ShareAlike — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: other
+    quote: You do not have to comply with the license for elements of the material in the public domain or where your use is permitted by an applicable exception or limitation.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1.yml
+  - topic: other
+    quote: '040.EdEDITOR :: حسن أحمد العثمان'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1
+  - topic: other
+    quote: '045.EdYEAR :: 1415هـ 1995م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1
+  our_use: 'Built, not displayed: al-Shāfiya''s chapters on the verb forms and the derived nouns become 71 rows of pattern_functions (verbatim slices of the cleaned file with OpenITI URI, printed page and milestone, status extracted) from pipeline/src/jadhr_pipeline/patterns_catalog; no migration, API or screen reads them yet; not in the bulk release.'
+  status: attention
+  notes:
+  - The author died 646 AH (public domain); the digital text is OpenITI's cleaned version of al-ʿUthmān's 1995 edition, with its paratext removed by OpenITI.
+  - The chapter titles (# | الماضي …) are the editor's; they are kept as the rows' heading and locator, not shown as the author's words.
+  - 'The edition card does not say the page markers follow the print: pattern_sources.page_numbering is ''unverified'', so a citation can fall back to chapter and paragraph (PLAN P11 citation model).'
+  - 'CC BY-NC-SA 4.0: non-commercial display with attribution is approved (D18); rows served through the API or a release stay CC BY-NC-SA 4.0 (ShareAlike); a commercial path needs a re-keyed public-domain printing (D2).'
+- id: kafiya
+  registry: data/patterns.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/README.md
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/
+  fetched: '2026-10-03'
+  page_sha256:
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1
+    : 3b290232951f98f0fdffcfb0ba718c89e86df6a6411e6182352142b6e4d251d1
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1.yml
+    : 3e9c9f23a5854e37ff18377006422625f08ac3b1f8f270edc54cc7450757197d
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/README.md: b5946684d7529e7cc8af5e9c5dc5f6efc21df0e61bf9e5b673d976aff6ea2194
+    https://creativecommons.org/licenses/by-nc-sa/4.0/: ca0597fd98c6fb2417993e867b5cbc91ebdc55e24839c38e4674e8c78d817f17
+  clauses:
+  - topic: redistribution
+    quote: You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: OpenITI is published under the CC BY-NC-SA 4.0 license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: attribution
+    quote: Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: commercial
+    quote: NonCommercial — You may not use the material for commercial purposes.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: redistribution
+    quote: ShareAlike — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: other
+    quote: You do not have to comply with the license for elements of the material in the public domain or where your use is permitted by an applicable exception or limitation.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1.yml
+  - topic: other
+    quote: 'المحقق: الدكتور صالح عبد العظيم الشاعر'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1
+  - topic: other
+    quote: 'الطبعة: الأولى، 2010 م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1
+  - topic: other
+    quote: 'digitization_comments: [ترقيم الكتاب موافق للمطبوع]'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1
+  our_use: 'Built, not displayed: al-Kāfiya''s chapters on the maṣdar, the participles, the ṣifa mushabbaha, the elative, the dual and the plurals (the chapters al-Shāfiya defers to) become 16 rows of pattern_functions, verbatim with locators, from pipeline/src/jadhr_pipeline/patterns_catalog; not loaded, not in the bulk release.'
+  status: attention
+  notes:
+  - 'The author died 646 AH (public domain); the 2010 edition (al-Shāʿir) is modern: OpenITI''s cleaned version drops its footnotes, and our extra cleaning drops the 77 footnote numbers left in the text.'
+  - The bracketed chapter titles ([اسم الفاعل] …) are the editor's and are kept as headings only.
+  - 'The file says its page numbering follows the print, so printed pages can be cited (page_numbering: matches-print).'
+  - CC BY-NC-SA 4.0 as for al-Shāfiya (D18, D2).
+- id: radi-shafiya
+  registry: data/patterns.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/README.md
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/
+  fetched: '2026-10-03'
+  page_sha256:
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1
+    : 7e5f9560f3818dba78dc8af8604c827837dcfb69f6e382425cd4f6047ba33d2c
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1.yml
+    : 08d3190b693d98beee07c34fc9ac5d22324a2a945fe75b3f149da5877552d713
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/README.md: b5946684d7529e7cc8af5e9c5dc5f6efc21df0e61bf9e5b673d976aff6ea2194
+    https://creativecommons.org/licenses/by-nc-sa/4.0/: ca0597fd98c6fb2417993e867b5cbc91ebdc55e24839c38e4674e8c78d817f17
+  clauses:
+  - topic: redistribution
+    quote: You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: OpenITI is published under the CC BY-NC-SA 4.0 license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: attribution
+    quote: Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: commercial
+    quote: NonCommercial — You may not use the material for commercial purposes.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: redistribution
+    quote: ShareAlike — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: other
+    quote: You do not have to comply with the license for elements of the material in the public domain or where your use is permitted by an applicable exception or limitation.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1.yml
+  - topic: other
+    quote: '040.EdEDITOR :: تحقيق وضبط وشرح : محمد نور الحسن ، محمد الزفزاف ، محمد محيي الدين عبد الحميد'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1
+  - topic: other
+    quote: '045.EdYEAR :: 1395 - 1975 م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1
+  our_use: 'Built, not displayed: al-Raḍī''s commentary on the al-Shāfiya passages above becomes 85 rows of pattern_functions (kind commentary, cut at his «قوله» cues, each linked to the al-Shāfiya rows it explains), verbatim with locators, from pipeline/src/jadhr_pipeline/patterns_catalog; not loaded, not in the bulk release.'
+  status: attention
+  notes:
+  - The author died 686 AH (public domain); the 1975 edition's editors wrote footnotes that OpenITI removed; the 2,464 footnote numbers and 414 verse numbers left in the text are removed by our extra cleaning.
+  - Volume 4 of this edition is al-Baghdādī's commentary on the verses (not al-Raḍī); no row is taken from it.
+  - The card names the editors and the year only; the publisher (Dār al-Kutub al-ʿIlmiyya, Beirut) comes from OpenITI's other version of the same edition (Shamela0021567), which is not pinned.
+  - 'Page numbers follow the shiaonlinelibrary.com volumes and are not verified against the print (page_numbering: unverified).'
+  - CC BY-NC-SA 4.0 as for al-Shāfiya (D18, D2).
