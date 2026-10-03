@@ -17,7 +17,7 @@ test("the masthead: the root of the day for Mecca's date with its word, the name
   await expect(glyph).toHaveText(w.root.ar_spaced);
   await expect(glyph).toHaveAttribute("href", `/roots/${encodeURIComponent(w.root.key)}`);
   await expect(page.locator(".hub-rotd-cap")).toContainText(w.lemma.ar.full);
-  await expect(page.locator(".hub-rotd-word")).toHaveAttribute("href", `/read?w=${w.lemma.slug}`);
+  await expect(page.locator(".hub-rotd-word")).toHaveAttribute("href", "/explore");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("اقرأ القرآن الكريم من جذور كلماته");
   const name = page.locator(".hub-name");
   await expect(name).toContainText("الجيم والذال والراء أصلٌ واحدٌ، وهو الأصل من كلِّ شئ");

@@ -511,7 +511,7 @@ button:disabled {
 
 @layer components {
 /* ─── Reader v5 (design 03, prototype "Lexicon Reader v5") ──────────────────
-   A full-viewport shell: header, then rail • reading surface • panel; a bottom sheet below 900 px.
+   A full-viewport shell: header, then rail · reading surface · panel; a bottom sheet below 900 px.
    Values follow the prototype's inline styles; Arabic never gets letter-spacing (it breaks joining). */
 .reader-v5 {
   display: flex;
@@ -3682,5 +3682,246 @@ a.hub-tile:hover {
   .hub-glyph,
   .hub-glyph-slot {
     font-size: 38px;
+  }
+}
+
+/* ─── Explore (P5.2, inventory COL, design 06 §6.2) ─────────────────────────── */
+.explore-screen {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.explore-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  gap: 16px;
+}
+.wotd-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 16px;
+  color: #fffdf8;
+  background: linear-gradient(135deg, var(--wotd-a), var(--wotd-b));
+  --wotd-a: #945c27;
+  --wotd-b: #5f3812;
+}
+:root[data-theme="dark"] .wotd-card {
+  --wotd-a: #6e4520;
+  --wotd-b: #3a230d;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .wotd-card {
+    --wotd-a: #6e4520;
+    --wotd-b: #3a230d;
+  }
+}
+.wotd-card.is-missing {
+  color: var(--t2);
+  background: var(--card-2);
+}
+.wotd-label {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+.wotd-word {
+  font-family: var(--font-classical);
+  font-size: 46px;
+  line-height: 1.3;
+  color: inherit;
+}
+.wotd-word:hover {
+  text-decoration: underline;
+  text-underline-offset: 8px;
+}
+.wotd-sub {
+  font-size: 15px;
+  opacity: 0.9;
+  padding-bottom: 8px;
+}
+.wotd-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+  font-size: 12.5px;
+}
+a.wotd-pill:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+.wotd-gist {
+  font-family: var(--font-classical);
+  font-size: 17px;
+  line-height: 1.8;
+}
+.wotd-gist cite {
+  font-family: var(--font-ui, inherit);
+  font-size: 12px;
+  opacity: 0.8;
+}
+.wotd-verse {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.16);
+}
+.wotd-verse a {
+  color: inherit;
+}
+.wotd-mark {
+  background: rgba(255, 255, 255, 0.24);
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 2px;
+}
+.progress-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+.set-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+.set-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--t1);
+  transition: border-color 0.12s;
+}
+.set-card:hover {
+  border-inline-color: var(--ring);
+  border-bottom-color: var(--ring);
+}
+.set-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
+}
+.set-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  position: sticky;
+  top: 68px;
+}
+.set-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 640px;
+  padding: 10px 14px;
+  border-inline-start: 3px solid var(--c-form);
+  background: var(--card-2);
+  border-radius: 8px;
+}
+.set-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.set-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.root-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--card);
+  color: var(--c-root);
+  font-family: var(--font-classical);
+  font-size: 16px;
+  letter-spacing: 0.06em;
+}
+.root-chip:hover {
+  border-color: var(--c-root);
+}
+.keep-btn {
+  min-width: 84px;
+}
+.keep-btn:not(.is-learning):not(.is-known) {
+  background: var(--t1);
+  border-color: var(--t1);
+  color: var(--card);
+}
+.keep-btn.is-learning {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+.keep-btn.is-known {
+  border-color: var(--good);
+  color: var(--good);
+}
+.deck-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--sh);
+  touch-action: pan-y;
+  user-select: none;
+  transition: transform 0.12s ease-out;
+}
+.deck-card.is-back {
+  background: var(--card-2);
+}
+.deck-card.is-end {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 0;
+}
+@media (max-width: 760px) {
+  .explore-top,
+  .set-view {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .set-side {
+    position: static;
+  }
+  .wotd-word {
+    font-size: 40px;
   }
 }

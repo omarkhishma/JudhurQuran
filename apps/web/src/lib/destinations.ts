@@ -10,7 +10,7 @@ export type Destination = { key: string; href: string | null; phase?: string };
 export const DESTINATIONS: Destination[] = [
   { key: "read", href: "/read" },
   { key: "ask", href: "/read?mode=ask" },
-  { key: "explore", href: "/explore", phase: "P5" },
+  { key: "explore", href: "/explore" },
   { key: "library", href: "/library" },
   { key: "lookup", href: "/read?mode=lookup" },
   { key: "roots", href: "/roots" },
