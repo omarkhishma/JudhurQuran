@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "next-intl";
-import { useWord } from "@/lib/reader/api";
+import { useWord, useWordAt } from "@/lib/reader/api";
 import type { Features, Label } from "@/lib/reader/types";
 
 /**
@@ -11,7 +11,19 @@ import type { Features, Label } from "@/lib/reader/types";
  */
 export function GrammarBand({ slug, at }: { slug: string; at: string }) {
   const locale = useLocale();
-  const q = useWord(slug, at);
+  const q = useWord(slug || null, at);
+  // a word with no lemma (a free pronoun, the Quranic initials) is read by its place (RDR-136)
+  const byPlace = useWordAt(slug ? null : at);
+  if (!slug) {
+    const w = byPlace.data;
+    if (!w) return <span className="gram-wait" aria-hidden="true" />;
+    return (
+      <>
+        <span className="quran text-[21px] leading-[1.6] text-t1" lang="ar" dir="rtl">{w.text_uthmani}</span>
+        <span className="gram-tags" lang={locale === "ar" ? "ar" : "en"}>{tags(w.features as unknown as Features, locale).join(" · ")}</span>
+      </>
+    );
+  }
   const occ = q.data?.occurrence;
   if (!occ || occ.location !== at) return <span className="gram-wait" aria-hidden="true" />;
   return (

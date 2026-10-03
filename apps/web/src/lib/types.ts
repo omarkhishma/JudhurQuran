@@ -182,6 +182,7 @@ export type WordDetail = {
     mufradat: (Pick<LexiconWork, "id" | "title_ar" | "title_en" | "author_ar" | "death_hijri" | "attribution_ar" | "attribution_en"> & { entry: LexiconEntrySummary }) | null;
   } | null;
   glosses: Gloss[];
+  meanings_here: { id: string; phrase_ar: string; meaning_ar: string; title_ar: string; title_en: string }[];
 };
 
 export type RootDetail = RootSummary & {

@@ -384,6 +384,26 @@ test("every word opens an entry: the Quranic initials and free pronouns by locat
   await expect(panel(page)).toContainText("ضمير");
 });
 
+test("a word with no lemma gets the grammar band and, on a phone, its gloss under the verse (RDR-136, 137)", async ({ page, isMobile }) => {
+  await returning(page);
+  await page.addInitScript(() => localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { grammarBand: true }, version: 2 })));
+  const w = await api<{ text_uthmani: string; features: { pos: { ar: string } } }>(page, "/words/2:255:5");
+  await page.goto("/quran/2#v255");
+  await page.locator('.w[data-w="2:255:5"]').click();
+  if (!isMobile) {
+    const band = page.locator('[data-band="2:255"]');
+    await expect(band).toContainText(w.text_uthmani);
+    await expect(band).toContainText(w.features.pos.ar);
+    return;
+  }
+  const sheet = page.locator(".reader-sheet");
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole("button", { name: "إخفاء اللوحة" }).click();
+  const gloss = page.locator('[data-gloss="2:255"] .inline-gloss');
+  await expect(gloss).toContainText(w.text_uthmani);
+  await expect(gloss).toContainText("بلا جذر");
+});
+
 test("study mode: words are marked only by the reader, and the rail shows each sūra's coverage (D20, RDR-552/571)", async ({ page, isMobile }) => {
   test.skip(isMobile, "the rail is an overlay on phones");
   await returning(page);

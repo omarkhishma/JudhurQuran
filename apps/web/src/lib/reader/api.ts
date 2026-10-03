@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { WordDetail } from "@/lib/types";
 import type { GlossaryTerm, SurahRoot, WordPayload } from "./types";
 
 export async function getJSON<T>(path: string): Promise<T> {
@@ -16,6 +17,11 @@ export function useWord(slug: string | null, at: string | null) {
     enabled: !!slug,
     placeholderData: (prev) => (prev && prev.slug === slug ? prev : undefined),
   });
+}
+
+/** A word read by its place in the text — the way in for words with no lemma (pronouns, the Quranic initials). */
+export function useWordAt(at: string | null) {
+  return useQuery({ queryKey: ["location", at], queryFn: () => getJSON<WordDetail>(`/words/${at}`), enabled: !!at, staleTime: Infinity });
 }
 
 export function useGlossary() {

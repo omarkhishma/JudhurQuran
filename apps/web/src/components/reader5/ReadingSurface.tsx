@@ -376,7 +376,8 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     if (pv !== hoverVerse) setHoverVerse(pv);
     if (!grammarBand) return;
     const w = (e.target as HTMLElement).closest<HTMLElement>(".w");
-    const next = w?.dataset.l && w.dataset.w ? { slug: w.dataset.l, at: w.dataset.w } : null;
+    // words with no lemma get the band too, read by their place (RDR-136)
+    const next = w?.dataset.w ? { slug: w.dataset.l ?? "", at: w.dataset.w } : null;
     if (next?.at !== hover?.at) setHover(next);
   }
   const bandWord = grammarBand ? (hoverIntent ?? (mode === "word" && selection?.at ? { slug: selection.slug, at: selection.at } : null)) : null;
