@@ -60,7 +60,7 @@ EXPECTED = {
     "taj": (11891, 1620, 14, 1, 1617, 1628),
     "qamus": (10389, 1616, 23, 1, 1613, 1629),
     "ayn": (5813, 1422, 208, 0, 1420, 1597),
-    "tahdhib": (7182, 1334, 352, 0, 1312, 1582),
+    "tahdhib": (7216, 1334, 352, 0, 1312, 1582),
 }
 # The research's expected size of each work (docs/research/06 Part 6, 02 §3). For al-ʿAyn and Tahdhīb
 # the research counts groups, not articles (al-ʿAyn: 1,500 of its 1,802 TOC rows are group titles with
@@ -344,10 +344,11 @@ ORACLE = {
     "qamus": ("0817MajdDinFiruzabadi.QamusMuhit.Shamela0007283-ara1", "bullet", False, 0.98),
     # Every miss of these samples was read by hand (docs/research/02 §10.7); all are the oracle's.
     # al-ʿAyn: JK runs the next heading into the line ("…الجبل نفذ نفذ الشيء", "…تنانير نتر النتر"),
-    # so نفد and نتر have no JK heading; after فنطليس JK's colophon is text, not a break. Tahdhīb: after
-    # درخبيل JK's next heading (دختنوس, six letters, no narrator after it) does not read as one.
+    # so نفد and نتر have no JK heading; after فنطليس JK's colophon is text, not a break. Tahdhīb: JK's
+    # "# قد :" and "# فلسط : فلسطين…" (a speech word; a four-letter ف word with no narrator after it)
+    # do not read as headings.
     "ayn": ("0170KhalilFarahidi.Cayn.JK000930-ara1", "alone", True, 0.94),
-    "tahdhib": ("0370AbuMansurAzhari.TahdhibLugha.JK007040-ara1", "colon", True, 0.98),
+    "tahdhib": ("0370AbuMansurAzhari.TahdhibLugha.JK007040-ara1", "colon", True, 0.96),
 }
 
 

@@ -26,6 +26,8 @@ Splitting (rule ``taqalib-article-split``, every case counted under it):
   — stays in the text. Tahdhīb also files quadriliterals and weak roots where its typing gives no title
   ("ثرمل" after the لفيف of ث, "ليل: الليث:" and "وقي:" after ل م and ق م): there the section's first
   letter suffices.
+* Tahdhīb's quinqueliterals put the header in parentheses after its narrator ("أبو عبيد عن أبي عمرو:
+  (الهبنقع) : …"); a word of five radicals or more there opens its article.
 * A list line directly followed by text ("غش، شغ: مستعملان:" / "روي عن النبي ﷺ…") heads the article
   of its first permutation.
 * 65 pages of Tahdhīb vol. 4 were typed without line breaks: they are cut back into lines before
@@ -379,6 +381,10 @@ def _unflatten(lines: list[Line], counters: Counters) -> tuple[list[Line], set[i
 _GROUP_LINE = re.compile(
     r"^[.\u060c]?\s*\(?\s*(?:باب|أبواب|ابواب|كتاب)\s+(?:ال|رباعي|خماسي|ثلاثي|ثنائي|مضاعف|لفيف|معتل)"
 )
+_NARRATED_HEADER = re.compile(
+    r"^\s*(?:و?قال|أبو|ابو|ابن|ثعلب|شمر|عمرو|الليث|سلمة|اللحياني|الأصمعي|الفراء|أخبرني|و?روى)[^:()]{0,50}:"
+    r"\s*\(\s*([\u0621-\u064a]{5,12})\s*\)\s*:"
+)
 _COLOPHON = re.compile(r"^(?:تم|آخر|انتهى)\s+(?:\S+\s+){0,3}?(?:حرف|كتاب|الخماسي|الرباعي)")
 _ORPHAN_STOP = re.compile(r"^\s*([.\u060c])\s+(?=\S)")
 
@@ -549,6 +555,15 @@ def split_taqalib(
         """("list", (group, is_unused, tokens)) for a list line, ("article", (group, tokens, verdicts,
         raw tokens)) for an accepted header, None for text."""
         hm = _HEADER.match(text)
+        if group is not None:
+            # Tahdhīb's quinqueliterals: the header in parentheses after its narrator
+            # ("أبو عبيد عن أبي عمرو: (الهبنقع) : الذي يجلس…")
+            nm = _NARRATED_HEADER.match(strip_marks(text))
+            if nm:
+                raw = _printed_root(_letters(nm.group(1)))
+                tok = _bare(_fold(nm.group(1)))
+                if sum(1 for ch in raw if ch not in "اويىة") >= 5 and tok not in group.found:
+                    return ("article", (group, [tok], ["narrated"], [nm.group(1).strip()], [raw]))
         if not hm or group is None:
             return None
         after = strip_marks(text[hm.end() :]).strip().lstrip("( ")

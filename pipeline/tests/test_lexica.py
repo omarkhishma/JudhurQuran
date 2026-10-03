@@ -330,7 +330,7 @@ def test_entry_ids_do_not_move_when_the_display_order_changes(built: tuple) -> N
         ("sihah", "رحم", 4004486),
         ("lane", "رحم", 5001538),
         ("ayn", "رحم", 7001316),
-        ("tahdhib", "رحم", 8001663),
+        ("tahdhib", "رحم", 8001678),
     ):
         (e,) = _entries(built, work, root)
         assert e["id"] == eid, (work, e["id"])
