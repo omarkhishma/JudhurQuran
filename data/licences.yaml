@@ -3,9 +3,9 @@
 # URL in urls_checked, compare page_sha256, re-read the clauses, update `fetched`, and put any change in
 # front of the owner. The summary and the owner's decisions are in docs/research/07-licence-register.md.
 #
-# One entry per id in data/sources.yaml, data/lexica.yaml, data/works.yaml and data/recitations.yaml
-# (its reciter ids), plus `everyayah` and `quran-align`, the two upstreams recitations.yaml names in
-# audio_url and timings_zip.
+# One entry per id in data/sources.yaml, data/lexica.yaml, data/works.yaml, data/recitations.yaml (its
+# reciter ids) and data/particles.yaml, plus `everyayah` and `quran-align`, the two upstreams
+# recitations.yaml names in audio_url and timings_zip.
 #
 # Fields
 #   urls_checked    every page, file or API answer read for this entry (pinned commits where a repo has one)
@@ -1566,3 +1566,134 @@ licences:
   notes:
   - The ID3 tag names MP3Quran.net as the origin; MP3Quran.net opens all rights to any visitor or developer, which is consistent with EveryAyah's grant.
   - Covered only by EveryAyah's archived CC BY-NC 2.5 Canada statement; the licence link and a link to EveryAyah are missing from the player today (see everyayah), and quran-align's credit is missing likewise (see quran-align).
+- id: mughni
+  registry: data/particles.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.Shamela0006972-ara1
+  - https://shamela.ws/book/6972/1
+  - https://shamela.ws/book/6972/126
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1: 57f5142f72a1d4a01a16c5ecdfda5ecb07b2a7a03ab2fc13b3e7202a6e7a686b
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1.yml: d379b581015a81a1e690b4c02a0c62b6b7f89e072793060474fa75734365620b
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.Shamela0006972-ara1: f37ac2bb4b273f59169053dd0ac2abf50a52846a7e87ddf689ee5c0b87f77e7d
+    https://shamela.ws/book/6972/1: 8029c6c9030f77a5517e5a7058ade6ad3ddf85fd28a1c7ba13f9ef5315ba6d9c
+    https://shamela.ws/book/6972/126: d29cc6cb03db9f6f5dad55adb0878cfc93116ef1c8ecdd55971c4b6f999f55d4
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: 'All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1.yml
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: د . مازن المبارك / محمد علي حمد الله'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: دار الفكر'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+  - topic: other
+    quote: '#META# 045.EdYEAR :: 1985'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: د. مازن المبارك / محمد علي حمد الله'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.Shamela0006972-ara1
+  - topic: other
+    quote: ص137 - كتاب مغني اللبيب عن كتب الأعاريب - في خروج إذا عن الشرطية - المكتبة الشاملة
+    url: https://shamela.ws/book/6972/126
+  - topic: other
+    quote: ص12 - كتاب مغني اللبيب عن كتب الأعاريب - في تفسير المفردات وذكر آحكامها - المكتبة الشاملة
+    url: https://shamela.ws/book/6972/1
+  our_use: 'Editor-side particle entries (PLAN P3.8, registry data/particles.yaml): Ibn Hishām (d. 761 AH)''s chapter one parsed into 100 entries and their numbered senses, each row a verbatim slice of the cleaned OpenITI text with printed page and milestone, the Quran quotations resolved to verses, and mechanical links to corpus lemmas; status extracted, not shown to readers until reviewed, not in the bulk release. Attribution: data/particles.yaml attribution_ar/en (work, edition, OpenITI release and file, CC BY-NC-SA 4.0).'
+  status: ok
+  notes:
+  - 'Terms read 2026-10-03 and unchanged since the relation seeds read them: the OpenITI documentation page (same sha256, 41c356b2…) and the Zenodo record (license id cc-by-nc-sa-4.0) for release 2025.1.9, commit cfc4157a.'
+  - 'Met by today''s use under D18: non-commercial, attributed (the attribution names the release, the file and the licence), editor-side; when rows reach readers or a bulk file, anything shared from them stays CC BY-NC-SA 4.0 (ShareAlike) and stays out of a commercial launch (D2).'
+  - 'The author is public domain (d. 761 AH / 1360 CE). The edition is Māzin al-Mubārak and Muḥammad ʿAlī Ḥamd Allāh (Dār al-Fikr, 1985); OpenITI''s cleaned version drops the edition''s paratext (introductions, footnotes, indices), and only the author''s chapter one is parsed.'
+  - 'shamela.ws pages were read only to check that the page markers follow the printed edition (its book 6972, page 1 = printed 12, page 126 = printed 137); no shamela.ws text is used.'
+  - 'The cross-check file Shamela0006972 is the same typing (99.96% of its 30-letter runs agree) with the same edition card; it is pinned, not parsed.'
+- id: jana-dani
+  registry: data/particles.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.JK010091-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.JK010091-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1
+  - https://shamela.ws/book/26099/1
+  - https://shamela.ws/book/26099/226
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.JK010091-ara1: d0469b2ba91df5544337d2403b2a30a651f736e35759aabbc835663d40ed2bd0
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.JK010091-ara1.yml: a1e69045248317a201bfc8e44948963684ec1d60e218c5126b116857389b368e
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1: 756890608761e098054af5b7c912ae5078ff3e008820e638d47acf2a759ba64d
+    https://shamela.ws/book/26099/1: fc1bd37d96b5c39f1e043d6c3944f089fdeab2a736a52bb1d60ec84ddeccd04e
+    https://shamela.ws/book/26099/226: b97d4cc89a03bdf626d4ae529f7e485643353f9f13f57293e34c23243dcb2ec8
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: 'All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.JK010091-ara1.yml
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: NODATA'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.JK010091-ara1
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: د فخر الدين قباوة -الأستاذ محمد نديم فاضل'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1
+  - topic: other
+    quote: '#META# 041.EdNUMBER :: الأولى، 1413 هـ - 1992 م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: دار الكتب العلمية، بيروت - لبنان'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1
+  - topic: other
+    quote: ص19 - كتاب الجنى الداني في حروف المعاني - مقدمة - المكتبة الشاملة
+    url: https://shamela.ws/book/26099/1
+  - topic: other
+    quote: ص244 - كتاب الجنى الداني في حروف المعاني - في - المكتبة الشاملة
+    url: https://shamela.ws/book/26099/226
+  our_use: 'Editor-side particle entries (PLAN P3.8, registry data/particles.yaml): al-Murādī (d. 749 AH)''s five chapters parsed into 98 entries covering the 105 particles he lists, with their numbered senses, each row a verbatim slice of the cleaned OpenITI text (JK010091) with the printed page carried over from Shamela0026099 by letter position and the milestone, the Quran quotations resolved to verses, and mechanical links to corpus lemmas; status extracted, not shown to readers until reviewed, not in the bulk release. Attribution: data/particles.yaml attribution_ar/en (work, edition, OpenITI release and both files, CC BY-NC-SA 4.0).'
+  status: ok
+  notes:
+  - 'Terms read 2026-10-03 and unchanged since the relation seeds read them: the OpenITI documentation page (same sha256, 41c356b2…) and the Zenodo record (license id cc-by-nc-sa-4.0) for release 2025.1.9, commit cfc4157a.'
+  - 'Met by today''s use under D18: non-commercial, attributed (the attribution names the release, both files and the licence), editor-side; when rows reach readers or a bulk file, anything shared from them stays CC BY-NC-SA 4.0 (ShareAlike) and stays out of a commercial launch (D2).'
+  - 'The author is public domain (d. 749 AH / 1348 CE). The text file (JK010091) carries no edition card; the edition is named by the Shamela0026099 card (Fakhr al-Dīn Qabāwa and Muḥammad Nadīm Fāḍil, Dār al-Kutub al-ʿIlmiyya, 1413/1992), which is the same typing: their letters agree but for two. OpenITI''s cleaned version drops the edition''s paratext.'
+  - 'shamela.ws pages were read only to check that the page markers follow the printed edition (its book 26099, page 1 = printed 19, page 226 = printed 244); no shamela.ws text is used.'
