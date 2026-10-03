@@ -34,7 +34,7 @@ export function GrammarBand({ slug, at }: { slug: string; at: string }) {
   );
 }
 
-function tags(f: Features, locale: string): string[] {
+export function tags(f: Features, locale: string): string[] {
   const l = (x?: Label) => (x ? (locale === "ar" ? x.ar : x.en) : null);
   const out = [l(f.pos), f.verb_form ? `${f.verb_form.pattern} (${f.verb_form.roman})` : null, l(f.aspect), l(f.voice), l(f.derivation)];
   out.push([l(f.person), l(f.gender), l(f.number)].filter(Boolean).join(" ") || null);

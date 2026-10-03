@@ -193,7 +193,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
 }
 
 /** In study mode only (D20): the reader marks a word new, learning or known — never by a tap (RDR-552). */
-function WordStateControl({ slug }: { slug: string }) {
+export function WordStateControl({ slug }: { slug: string }) {
   const t = useTranslations("rd");
   const on = usePrefs((s) => s.wordStates);
   const state = usePersonal((s) => s.wordStates[slug] ?? "new");

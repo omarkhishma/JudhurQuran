@@ -985,7 +985,9 @@
     "particlesStatus": "Entries quoted as they stand in Ibn Hishām's Mughnī al-Labīb and al-Murādī's al-Janā al-Dānī, linked to words mechanically; not yet reviewed by an editor.",
     "allRoots": "All the sūra's roots ({n})",
     "fewerRoots": "Fewer",
-    "prefTranslationWork": "Translation"
+    "prefTranslationWork": "Translation",
+    "fullEntry": "Full entry",
+    "hoverCardLabel": "Word card"
   },
   "concordance": {
     "title": "Concordance",

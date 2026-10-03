@@ -985,7 +985,9 @@
     "particlesStatus": "مداخل منقولة كما هي من مغني اللبيب لابن هشام والجنى الداني للمرادي، ربطت بالكلمات آليًا ولم يراجعها محرر بعد.",
     "allRoots": "كل جذور السورة ({n})",
     "fewerRoots": "أقل",
-    "prefTranslationWork": "الترجمة"
+    "prefTranslationWork": "الترجمة",
+    "fullEntry": "المدخل كاملًا",
+    "hoverCardLabel": "بطاقة الكلمة"
   },
   "concordance": {
     "title": "الفهرس السياقي",

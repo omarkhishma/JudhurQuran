@@ -2799,3 +2799,22 @@ button.type-chip:hover {
 }
 }
 
+@layer components {
+/* ─── Hover card (RDR-117…122) ────────────────────────────────────────────── */
+.hover-card {
+  position: fixed;
+  z-index: 70;
+  width: 284px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 11px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--sh-open);
+  /* opacity only: a transform animation would fight the inline translate that places the card */
+  animation: dc-fade 0.12s ease-out;
+}
+}
+

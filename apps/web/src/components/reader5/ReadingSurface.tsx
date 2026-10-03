@@ -11,6 +11,7 @@ import { useAudio } from "@/lib/store/audio";
 import type { ChapterInfo } from "./ReaderShell";
 import { useDebounced } from "@/lib/useDebounced";
 import { GrammarBand } from "./GrammarBand";
+import { HoverCard, type HoverWord } from "./HoverCard";
 import { InlineGloss } from "./InlineGloss";
 import { useSaved } from "@/lib/store/saved";
 import { InlineLines } from "./InlineLines";
@@ -60,6 +61,48 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const arrival = useRef(false);
   const [hover, setHover] = useState<{ slug: string; at: string } | null>(null);
   const hoverIntent = useDebounced(hover, 140);
+  // The hover card (RDR-117…122): shown after the pointer rests on a word, hidden 160 ms after it leaves
+  // the word unless it has moved into the card, 120 ms after it leaves the card (RDR-584); Esc, a click
+  // or a scroll put it away. Timers live in the event handlers.
+  const [card, setCard] = useState<HoverWord | null>(null);
+  const cardTimers = useRef<{ show?: ReturnType<typeof setTimeout>; hide?: ReturnType<typeof setTimeout>; inCard: boolean; at: string | null }>({ inCard: false, at: null });
+  const hideCard = (ms: number) => {
+    const c = cardTimers.current;
+    clearTimeout(c.hide);
+    c.hide = setTimeout(() => {
+      if (c.inCard) return;
+      c.at = null;
+      setCard(null);
+    }, ms);
+  };
+  const closeCard = () => {
+    const c = cardTimers.current;
+    clearTimeout(c.show);
+    clearTimeout(c.hide);
+    c.inCard = false;
+    c.at = null;
+    setCard(null);
+  };
+  useEffect(() => {
+    if (!card) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeCard();
+    // only a scroll that moves the word itself (the page, the reading column) — not a tool row scrolling
+    const onScroll = (e: Event) => {
+      const t = e.target;
+      const word = document.querySelector(`.w[data-w="${CSS.escape(card.at)}"]`);
+      if (t === document || (t instanceof Node && word && t.contains(word))) closeCard();
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [card]);
+  useEffect(() => () => {
+    clearTimeout(cardTimers.current.show);
+    clearTimeout(cardTimers.current.hide);
+  }, []);
   const mounted = useAfterMount();
   // Where the last visit stopped in this sūra, captured once: reading on moves progress, not the marker.
   const [resume] = useState(() => {
@@ -294,6 +337,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   }
 
   function onClick(e: React.MouseEvent) {
+    closeCard();
     const el = e.target as HTMLElement;
     const tool = el.closest<HTMLElement>("[data-tool]");
     if (tool) {
@@ -375,8 +419,24 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     if (e.pointerType !== "mouse") return;
     const pv = (e.target as HTMLElement).closest<HTMLElement>(".passage")?.dataset.verse ?? null;
     if (pv !== hoverVerse) setHoverVerse(pv);
-    if (!grammarBand) return;
     const w = (e.target as HTMLElement).closest<HTMLElement>(".w");
+    const c = cardTimers.current;
+    if (w?.dataset.w) {
+      if (c.at === w.dataset.w) clearTimeout(c.hide);
+      else {
+        clearTimeout(c.show);
+        c.show = setTimeout(() => {
+          const r = w.getBoundingClientRect();
+          c.at = w.dataset.w!;
+          clearTimeout(c.hide);
+          setCard({ slug: w.dataset.l ?? "", at: w.dataset.w!, rect: { top: r.top, bottom: r.bottom, left: r.left, right: r.right } });
+        }, 350);
+      }
+    } else {
+      clearTimeout(c.show);
+      if (c.at) hideCard(160);
+    }
+    if (!grammarBand) return;
     // words with no lemma get the band too, read by their place (RDR-136)
     const next = w?.dataset.w ? { slug: w.dataset.l ?? "", at: w.dataset.w } : null;
     if (next?.at !== hover?.at) setHover(next);
@@ -413,6 +473,8 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       onMouseLeave={() => {
         setHover(null);
         setHoverVerse(null);
+        clearTimeout(cardTimers.current.show);
+        if (cardTimers.current.at) hideCard(160);
       }}
       onCopy={onCopy}
       onTouchStart={onTouchStart}
@@ -458,6 +520,22 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       {bandEl && bandWord && createPortal(<GrammarBand key={bandWord.at} slug={bandWord.slug} at={bandWord.at} />, bandEl)}
       {moreEl && activeVerse && createPortal(<MoreTools verseKey={activeVerse} drawer={drawer} />, moreEl, `more-${activeVerse}`)}
       {drawerEl && drawer && createPortal(<VerseDrawer verseKey={drawer.key} tool={drawer.tool} onClose={() => setDrawer(null)} />, drawerEl)}
+      {card && (
+        <HoverCard
+          key={card.at}
+          word={card}
+          onEnter={() => {
+            cardTimers.current.inCard = true;
+            clearTimeout(cardTimers.current.hide);
+            clearTimeout(cardTimers.current.show); // words crossed on the way into the card do not take it over
+          }}
+          onLeave={() => {
+            cardTimers.current.inCard = false;
+            hideCard(120);
+          }}
+          onClose={closeCard}
+        />
+      )}
     </div>
   );
 }
