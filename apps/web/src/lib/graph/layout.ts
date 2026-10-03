@@ -30,6 +30,7 @@ export async function layout(nodes: GraphNode[], edges: GraphEdge[]): Promise<Gr
       .map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
   };
   const out = await elk.layout(graph);
-  const pos = new Map((out.children ?? []).map((c) => [c.id, { x: c.x ?? 0, y: c.y ?? 0 }]));
+  // on the 8 px grid, as every move is (HWF-12)
+  const pos = new Map((out.children ?? []).map((c) => [c.id, { x: Math.round((c.x ?? 0) / 8) * 8, y: Math.round((c.y ?? 0) / 8) * 8 }]));
   return nodes.map((n) => ({ ...n, position: pos.get(n.id) ?? n.position }));
 }

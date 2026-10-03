@@ -417,6 +417,7 @@ function MapRoots({ tools, translit }: { tools: CanvasTools; translit: boolean }
                 </span>
                 <span className="block text-[11.5px] text-t3">
                   {t("rootCounts", { patterns: t("patternsCount", cnt(r.pattern_count ?? 0, locale)), words: t("wordsCount", cnt(r.lemma_count, locale)) })}
+                  {present && <span className="ms-1">· {t("rootOnCanvas")}</span>}
                 </span>
               </button>
             </li>

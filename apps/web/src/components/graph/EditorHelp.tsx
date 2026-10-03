@@ -5,13 +5,14 @@ import { Dialog } from "@/components/ui/Dialog";
 
 /**
  * Keyboard and pointer (EDT-249…254): every key and gesture the editor answers to, in four groups — and only
- * those it answers to now; the design's keys still to come (arrow steps, nudges, extract, duplicate, groups, the
- * context menu) join the list when they are built (P8.1-B, P8.1-C).
+ * those it answers to now; the design's keys still to come (duplicate and groups) join the list when they are
+ * built (P8.1-C).
  */
 const GROUPS = [
-  { title: "helpCanvas", rows: [["helpKeyDragEmpty", "helpPan"], ["helpKeySpaceDrag", "helpPanMouse"], ["helpKeyWheel", "helpZoom"], ["helpKeyShiftDrag", "helpMarquee"], ["helpKeyFit", "helpFitZoom"]] },
-  { title: "helpCards", rows: [["helpKeyDouble", "helpFold"], ["helpKeyEnter", "helpFoldSel"], ["helpKeyDelete", "helpDelete"], ["helpKeySelectAll", "helpSelectAll"], ["helpKeyEscape", "helpEscape"]] },
-  { title: "helpLinks", rows: [["helpKeyDragDot", "helpLink"], ["helpKeyClickWire", "helpWire"], ["helpKeyFindEnter", "helpFindNext"], ["helpKeyFindShift", "helpFindPrev"]] },
+  { title: "helpCanvas", rows: [["helpKeyWheel", "helpPan"], ["helpKeyCmdWheel", "helpZoom"], ["helpKeyShiftWheel", "helpPanSide"], ["helpKeySpaceDrag", "helpPanMouse"], ["helpKeyShiftDrag", "helpMarquee"], ["helpKeyFit", "helpFitZoom"]] },
+  { title: "helpCards", rows: [["helpKeyDouble", "helpFold"], ["helpKeyEnter", "helpFoldSel"], ["helpKeyExtract", "helpExtract"], ["helpKeyDelete", "helpDelete"], ["helpKeySelectAll", "helpSelectAll"], ["helpKeyEscape", "helpEscape"]] },
+  { title: "helpMove", rows: [["helpKeyLeftRight", "helpChildParent"], ["helpKeyUpDown", "helpSiblings"], ["helpKeyAltArrows", "helpNudge"], ["helpKeyArrows", "helpPanKeys"], ["helpKeyRightClick", "helpMenu"]] },
+  { title: "helpLinks", rows: [["helpKeyDragDot", "helpLink"], ["helpKeyLinkTwo", "helpLinkTwo"], ["helpKeyClickWire", "helpWire"], ["helpKeyFindEnter", "helpFindNext"], ["helpKeyFindShift", "helpFindPrev"]] },
   { title: "helpMap", rows: [["helpKeyTidy", "helpTidy"], ["helpKeyUndo", "helpUndo"], ["helpKeyHelp", "helpOpen"], ["helpKeyDrop", "helpDropCard"]] },
 ] as const;
 

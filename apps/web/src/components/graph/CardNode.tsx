@@ -13,6 +13,8 @@ export type GraphActions = {
   editable: boolean;
   /** transliteration shown on the cards (QAN-22) */
   translit: boolean;
+  /** zoomed out below the map threshold: each card shows only its headline, large (EDT-058, QAN-20) */
+  mapView: boolean;
   /** the card whose places are being read */
   expanding: string | null;
   toggleFold: (id: string) => void;
@@ -23,6 +25,7 @@ export type GraphActions = {
 export const GraphActionsContext = createContext<GraphActions>({
   editable: false,
   translit: false,
+  mapView: false,
   expanding: null,
   toggleFold: () => {},
   expand: () => {},
@@ -54,7 +57,9 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
       }
       style={{ borderColor: data.reading ? "var(--amber)" : `color-mix(in srgb, ${color} 35%, var(--line))` }}
       dir="rtl"
+      data-map={actions.mapView || undefined}
     >
+      {actions.mapView && <MapFace data={data} />}
       <Handle type="target" position={Position.Right} className="!h-2.5 !w-2.5 !border-2 !border-card" style={{ background: color }} />
       <div className="flex items-center justify-between gap-3 px-3 pt-2.5">
         <span className="flex items-center gap-1.5" title={t(meta.hint)}>
@@ -172,6 +177,41 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
 }
 
 export const CardNode = memo(CardNodeImpl);
+
+/**
+ * A card in the map view (EDT-058, QAN-20): its headline in large Arabic over the card, which keeps its size
+ * underneath (hidden, not removed, so its measure does not change, HWF-02, HWF-03) — a root's letters, a pattern,
+ * a word, a verse's reference (its words are too long to read from afar), a note's first line — and, with
+ * transliteration on, its Latin line; in the Arabic interface, Arabic only.
+ */
+function MapFace({ data }: { data: GraphNode["data"] }) {
+  const t = useTranslations("graph");
+  const locale = useLocale();
+  const actions = useContext(GraphActionsContext);
+  const v = useVerseText(data.kind === "verse" ? data.verse?.key : undefined);
+  const head =
+    data.kind === "verse"
+      ? v.data
+        ? citeVerse(v.data.surah_name_ar, v.data.surah, v.data.ayah, "ar")
+        : (data.verse?.key ?? "")
+      : data.kind === "note"
+        ? (data.text ?? "").split("\n")[0] || t(data.phrase ? "kindPhrase" : "kindNote")
+        : data.kind === "frame"
+          ? data.title || t("kindFrame")
+          : (data.ar ?? "");
+  const latin = actions.translit && (data.kind === "root" || data.kind === "pattern") ? data.sub : undefined;
+  return (
+    <div className="map-face" aria-hidden="true">
+      <span className={"map-face-head" + (data.kind === "root" ? " is-root" : data.kind === "verse" ? " is-verse" : "")} lang="ar">{head}</span>
+      {latin && locale !== "ar" && (
+        <span className="map-face-latin">
+          <span className="dot" style={{ background: KIND_COLOR[data.kind] }} />
+          <span className="mono" dir="ltr">{latin.slice(0, 26)}</span>
+        </span>
+      )}
+    </div>
+  );
+}
 
 /** A frame: a group of cards with a title and nothing else (QAN-01 «مجموعة»); its tools come with P8.1-C. */
 function FrameNodeImpl({ data, selected }: NodeProps<GraphNode>) {

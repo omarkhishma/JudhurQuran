@@ -108,6 +108,8 @@ async function editorId(page: Page): Promise<string> {
 const seedParam = (seed: object) => Buffer.from(JSON.stringify(seed), "utf8").toString("base64url");
 
 async function addNote(page: Page, text: string) {
+  // at 100 %, so the note's field is not hidden by the map view
+  await page.locator(".zoom-pill-pct").click();
   const boxes = page.getByRole("textbox", { name: "ملاحظة" });
   const n = await boxes.count();
   await page.locator(".type-tile").filter({ hasText: "ملاحظة" }).click();
@@ -274,7 +276,7 @@ test("a link takes a relation its map allows: chosen, changed and named, and the
   // in a semantic field two words are near in meaning until the reader says otherwise, and the relation is named
   await drag(page, lemmas.nth(0).locator(".react-flow__handle-left"), lemmas.nth(1).locator(".react-flow__handle-right"));
   await expect.poll(async () => (await storedGraph(page, id))?.edges.map((e) => [e.source, e.target, e.data?.rel])).toEqual([[a, b, "near-in-meaning"]]);
-  await expect(page.locator(".react-flow__edge")).toContainText("قريب المعنى");
+  await expect(page.locator(".wire-label")).toContainText("قريب المعنى");
   // the same pair the other way is the same link
   await drag(page, lemmas.nth(1).locator(".react-flow__handle-left"), lemmas.nth(0).locator(".react-flow__handle-right"));
   await expect(page.locator(".graph-toast").filter({ hasText: "هاتان البطاقتان مربوطتان من قبل." })).toBeVisible();
@@ -752,4 +754,172 @@ test("the canvas's keys: 1 is 100 %, Enter and a double-click fold, ⌘A selects
   await expect(page.locator(".react-flow__node.selected")).toHaveCount((await storedGraph(page, id))!.nodes.length);
   await page.keyboard.press("Escape");
   await expect(page.locator(".react-flow__node.selected")).toHaveCount(0);
+});
+
+/** The canvas's viewport as its transform says: where it is and how far it is zoomed. */
+async function viewport(page: Page) {
+  const m = await page.locator(".react-flow__viewport").evaluate((el) => getComputedStyle(el).transform);
+  const [a, , , , e, f] = m.replace(/^matrix\(|\)$/g, "").split(",").map(Number);
+  return { x: e, y: f, zoom: a };
+}
+
+test("the canvas: a wheel pans and ⌘ with it zooms, the zoom pill, fit within its bounds, and the map view below 35 % (P8.1-B, EDT-051, 056, 058, 059, 060, HWF-36, QAN-20)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "a wheel and keys are the desktop's");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  const pill = page.locator(".zoom-pill-pct");
+  const pct = (x: number) => new Intl.NumberFormat("ar-EG", { style: "percent" }).format(x);
+  await pill.click();
+  await expect(pill).toHaveText(pct(1));
+  const box = (await page.locator(".graph-canvas").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const before = await viewport(page);
+  await page.mouse.wheel(0, 200);
+  await expect.poll(async () => (await viewport(page)).y).not.toBe(before.y);
+  expect((await viewport(page)).zoom, "a wheel alone does not zoom").toBe(1);
+  await page.keyboard.down("Control");
+  await page.mouse.wheel(0, -300);
+  await page.keyboard.up("Control");
+  await expect.poll(async () => (await viewport(page)).zoom).toBeGreaterThan(1);
+  // the pill steps by a quarter and resets
+  await pill.click();
+  await page.getByRole("button", { name: "تكبير", exact: true }).click();
+  await expect(pill).toHaveText(pct(1.25));
+  await page.getByRole("button", { name: "تصغير", exact: true }).click();
+  await expect(pill).toHaveText(pct(1));
+  // fit never goes above 100 % nor below 34 %
+  await page.locator(".react-flow__pane").click();
+  await page.keyboard.press("f");
+  await expect.poll(async () => (await viewport(page)).zoom).toBeLessThanOrEqual(1);
+  expect((await viewport(page)).zoom).toBeGreaterThanOrEqual(0.34);
+  // below 35 % the map view: each card's headline, large, and a badge that says so
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press("-");
+    await page.waitForTimeout(200);
+  }
+  await expect.poll(async () => (await viewport(page)).zoom).toBeLessThan(0.35);
+  await expect(page.locator(".map-badge")).toHaveText("عرض الخريطة — قرّب لترى تفاصيل البطاقات");
+  await expect(page.locator('.react-flow__node[data-id="root:علم"] .map-face')).toHaveText("ع ل م");
+  await expect(page.locator('.react-flow__node[data-id="verse:1:2"] .map-face')).toHaveText("الفاتحة: ٢");
+  await expect(page.locator('.react-flow__node[data-id="lemma:alamin"] .graph-card > div:not(.map-face)').first()).toHaveCSS("visibility", "hidden");
+  await page.keyboard.press("1");
+  await expect(page.locator(".map-badge")).toHaveCount(0);
+});
+
+test("menus on the canvas and on a card, a wire's pill, and the keyboard: steps between cards, nudges on the 8 px grid, panning, linking two cards (P8.1-B, EDT-062, 065–069, 132, 134, 158–163, 233, HWF-12, 37)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "menus and keys are the desktop's");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  await page.locator(".zoom-pill-pct").click();
+  const undo = page.locator(".editor-header").getByRole("button", { name: "تراجع", exact: true });
+  const lemma = page.locator('.react-flow__node[data-id="lemma:alamin"]');
+
+  // the word brought to the middle of the canvas, by the library's find
+  const find = page.getByRole("searchbox", { name: "ابحث عن بطاقة في الخريطة" });
+  await find.fill("العالمين");
+  await find.press("Enter");
+  await expect(page.locator('.react-flow__node[data-id="lemma:alamin"].selected')).toHaveCount(1);
+  await find.press("Escape");
+  await page.waitForTimeout(300);
+  // a card's menu acts on the card clicked: attach a note to it
+  await lemma.click({ button: "right", position: { x: 40, y: 14 } });
+  const menu = page.getByRole("menu", { name: "قائمة البطاقة" });
+  await expect(menu.getByRole("menuitem")).toHaveText(["طيّ البطاقة↵", "استخراج المواضعE", "إرفاق ملاحظة", "حذف بطاقة⌫"]);
+  await expect(page.locator('.react-flow__node[data-id="lemma:alamin"].selected')).toHaveCount(1);
+  await menu.getByRole("menuitem", { name: "إرفاق ملاحظة" }).click();
+  await expect(menu).toHaveCount(0);
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.find((e) => e.source === "lemma:alamin" && e.target.startsWith("note:"))?.data, { timeout: 10_000 }).toEqual({ rel: "describes" });
+  // the canvas's menu: a note where it was opened; Escape and any other key close it
+  const pane = page.locator(".react-flow__pane");
+  const pb = (await pane.boundingBox())!;
+  await page.mouse.click(pb.x + 120, pb.y + pb.height - 160, { button: "right" });
+  const canvasMenu = page.getByRole("menu", { name: "قائمة اللوحة" });
+  await expect(canvasMenu.getByRole("menuitem").first()).toHaveText("ملاحظة جديدة هنا");
+  await page.keyboard.press("Escape");
+  await expect(canvasMenu).toHaveCount(0);
+  await page.mouse.click(pb.x + 120, pb.y + pb.height - 160, { button: "right" });
+  await page.keyboard.press("x");
+  await expect(canvasMenu).toHaveCount(0);
+
+  // the keyboard: from the word to its verse (the next card, to the left) and back to its root (EDT-159)
+  await lemma.click({ position: { x: 40, y: 14 } });
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator(".react-flow__node.selected")).toHaveAttribute("data-id", "verse:1:2");
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator(".react-flow__node.selected")).toHaveAttribute("data-id", "lemma:alamin");
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator(".react-flow__node.selected")).toHaveAttribute("data-id", "root:علم");
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator(".react-flow__node.selected")).toHaveCount(1);
+  // ⌥ + an arrow nudges 8 px on the grid, one named step a press (EDT-161, EDT-233, HWF-12)
+  const sel = await page.locator(".react-flow__node.selected").getAttribute("data-id");
+  const at = (await storedGraph(page, id))!.nodes.find((n) => n.id === sel)!.position;
+  await page.keyboard.press("Alt+ArrowUp");
+  await expect(undo).toHaveAttribute("title", "تراجع: تحريك المحدد");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === sel)!.position, { timeout: 10_000 }).toEqual({ x: at.x, y: at.y - 8 });
+  for (const n of (await storedGraph(page, id))!.nodes) expect([n.position.x % 8, n.position.y % 8], n.id).toEqual([0, 0]);
+  // nothing selected: the arrows pan
+  await page.keyboard.press("Escape");
+  const v0 = await viewport(page);
+  await page.keyboard.press("ArrowDown");
+  await expect.poll(async () => (await viewport(page)).y).toBe(v0.y - 56);
+
+  // two cards linked by keyboard: the first picked to the second (F14)
+  // a card picked by its kind label, at its top right, away from the fold button and the note's field
+  const pickCard = async (sel: string) => {
+    const card = page.locator(sel);
+    const bb = (await card.boundingBox())!;
+    await card.click({ position: { x: bb.width - 30, y: 12 } });
+  };
+  await pickCard('.react-flow__node[data-id^="note:"]');
+  await expect(page.locator('.react-flow__node[data-id^="note:"].selected')).toHaveCount(1);
+  // ⇧-click adds a card to the selection (EDT-254)
+  const verseCard = page.locator('.react-flow__node[data-id="verse:1:2"]');
+  const vb = (await verseCard.boundingBox())!;
+  await verseCard.click({ position: { x: vb.width - 30, y: 12 }, modifiers: ["Shift"] });
+  await expect(page.locator(".react-flow__node.selected")).toHaveCount(2);
+  await page.keyboard.press("l");
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.some((e) => e.source.startsWith("note:") && e.target === "verse:1:2"), { timeout: 10_000 }).toBe(true);
+
+  // a picked wire carries its pill: its relation and Unlink, undone from the message (EDT-134)
+  await page.keyboard.press("Escape");
+  const wire = page.locator('.react-flow__edge[aria-label^="ترد في"]').first();
+  await wire.focus();
+  await page.keyboard.press("Enter");
+  const pillLabel = page.locator(".wire-label.is-picked");
+  await expect(pillLabel).toContainText("ترد في");
+  const edges = (await storedGraph(page, id))!.edges.length;
+  await pillLabel.getByRole("button", { name: /إزالة الصلة/ }).click();
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.length, { timeout: 10_000 }).toBe(edges - 1);
+  await page.locator(".graph-toast").getByRole("button", { name: "تراجع" }).click();
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.length, { timeout: 10_000 }).toBe(edges);
+});
+
+test("every card and wire is named for a screen reader, in the interface's language, and the dark canvas is the design's (F14, F15, EDT-307, EDT-308)", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 }));
+    localStorage.setItem("jadhr-theme", "dark");
+  });
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  const doc = (await storedGraph(page, id))!;
+  const ar_ = doc.nodes.find((n) => n.id === "lemma:alamin")!.data.ar as string;
+  await expect(page.locator('.react-flow__node[data-id="lemma:alamin"]')).toHaveAttribute("aria-label", `كلمة: ${ar_}، ٧٣`);
+  await expect(page.locator('.react-flow__node[data-id="verse:1:2"]')).toHaveAttribute("aria-label", "آية: ١:٢");
+  await expect(page.locator(".react-flow__edge").first()).toHaveAttribute("aria-label", /^(يُشتقّ منه|ترد في): /);
+  // xyflow's own English instructions are not left in the Arabic page
+  const hidden = await page.locator('[id^="react-flow__node-desc"], [id^="react-flow__edge-desc"]').allTextContents();
+  expect(hidden.join(" ")).not.toMatch(/Press enter/);
+  expect(hidden.join(" ")).toContain("اضغط Enter");
+  await expect(page.getByRole("region", { name: "لوحة الخريطة" })).toBeVisible();
+  // the dark canvas is the design's --canvas, not xyflow's own #141414
+  const bg = await page.locator(".react-flow").evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(bg).toBe("rgb(15, 15, 18)");
 });

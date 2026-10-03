@@ -138,3 +138,40 @@ for (const theme of ["light", "dark"] as const)
       expect(serious.map((v) => `${v.id} (${v.impact}): ${v.nodes.length} × ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
     });
   }
+
+// The graph pages (F14, P8.1-B): My maps, a root's map, the editor on a word's map with a card and a link
+// selected, the readings to review, a shared map — each in both themes.
+const seedOf = (s: object) => Buffer.from(JSON.stringify(s), "utf8").toString("base64url");
+for (const theme of ["light", "dark"] as const)
+  for (const [name, go] of [
+    ["My maps", async (page: Page) => void (await page.goto("/graph"))],
+    ["a root's map", async (page: Page) => void (await page.goto(`/graph/root/${encodeURIComponent("رحم")}`))],
+    [
+      "the editor, a card and a link selected",
+      async (page: Page) => {
+        await page.goto(`/graph/seed?s=${seedOf({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+        await expect(page).toHaveURL(/\/graph\/edit\//, { timeout: 30_000 });
+        await page.locator('.react-flow__node[data-id="verse:1:2"]').click({ position: { x: 60, y: 14 } });
+        await page.locator(".react-flow__edge").first().focus();
+      },
+    ],
+    [
+      "the readings to review",
+      async (page: Page) => {
+        await page.goto(`/graph/seed?s=${seedOf({ seed: "trail", phrase: "فالعلم نور", steps: [{ kind: "word", id: "ilm", conf: 0.52, s: "فالعلم" }, { kind: "word", id: "nur", conf: 1, s: "نور" }] })}`);
+        await page.locator(".seed-review li").first().waitFor();
+      },
+    ],
+  ] as const)
+    test(`axe ${theme}: graph — ${name}`, async ({ page }) => {
+      await page.addInitScript((th) => {
+        localStorage.setItem("jadhr-theme", th);
+        localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 }));
+      }, theme);
+      await go(page);
+      await page.waitForLoadState("networkidle");
+      await page.waitForTimeout(400);
+      const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+      const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
+      expect(serious.map((v) => `${v.id} (${v.impact}): ${v.nodes.length} × ${v.nodes[0]?.target.join(" ")}`)).toEqual([]);
+    });

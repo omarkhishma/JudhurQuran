@@ -13,6 +13,7 @@ import {
   ReactFlowProvider,
   useNodesInitialized,
   useReactFlow,
+  useStore,
   type Connection,
   type EdgeChange,
   type NodeChange,
@@ -25,15 +26,24 @@ import { Icon } from "@/components/Icon";
 import { link, verseId } from "@/lib/graph/build";
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
-import { allowedRels, checkLink, META, NAMED_ON_CANVAS, type Refusal } from "@/lib/graph/relations";
+import { allowedRels, checkLink, META, type Refusal } from "@/lib/graph/relations";
 import { KIND_COLOR, KIND_SIZE, type GraphEdge, type GraphKind, type GraphNode, type Rel } from "@/lib/graph/types";
 import { useTheme } from "@/lib/client";
-import { cnt, verseRef } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
+import { useGraphUi } from "@/lib/graph/uiPrefs";
+import { CanvasMenu, type MenuItem } from "./CanvasMenu";
 import { CardNode, FrameNode, GraphActionsContext, type GraphActions } from "./CardNode";
+import { RelEdge, WireContextValue, type WireContext } from "./RelEdge";
 
 type Snapshot = { label: string; nodes: GraphNode[]; edges: GraphEdge[] };
 
 const nodeTypes = { card: CardNode, frame: FrameNode };
+const edgeTypes = { rel: RelEdge };
+
+/** Below this zoom the canvas is a map (EDT-058, QAN-20): each card shows only its headline, large. */
+export const MAP_ZOOM = 0.35;
+const GRID = 8;
+const snap = (v: number) => Math.round(v / GRID) * GRID;
 
 /** A message on the canvas (EDT-071): with Undo when what it reports can be undone, then gone. */
 type Toast = { id: number; text: string; undo: boolean };
@@ -122,6 +132,18 @@ function firstView(nodes: GraphNode[]): GraphNode[] {
 }
 
 const sizeOf = (n: GraphNode) => ({ w: n.measured?.width ?? KIND_SIZE[n.data.kind].width, h: n.measured?.height ?? KIND_SIZE[n.data.kind].height });
+
+type Rect = { x: number; y: number; w: number; h: number };
+/** The free place nearest a point for a card of this size, on the 8 px grid, never on top of another card. */
+function freeSpot(taken: Rect[], center: { x: number; y: number }, w: number, h: number, top = false): { x: number; y: number } {
+  const free = (x: number, y: number) => !taken.some((r) => x < r.x + r.w + 24 && x + w + 24 > r.x && y < r.y + r.h + 24 && y + h + 24 > r.y);
+  const steps = [0, 1, -1, 2, -2, 3, -3, 4, -4];
+  const spots = steps
+    .flatMap((i) => steps.map((j) => ({ x: center.x - w / 2 + i * (w + 40), y: center.y - (top ? 20 : h / 2) + j * (h + 40) })))
+    .sort((a, b) => Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y));
+  const found = spots.find((p) => free(p.x, p.y)) ?? spots[0];
+  return { x: snap(found.x), y: snap(found.y) };
+}
 const inField = (el: EventTarget | null) => {
   const h = el as HTMLElement | null;
   return !!h && (h.tagName === "INPUT" || h.tagName === "TEXTAREA" || h.tagName === "SELECT" || h.isContentEditable);
@@ -200,7 +222,8 @@ function CanvasInner({
     setEdges(nextEdges);
   }, []);
 
-  const fit = useCallback(() => rf.fitView({ padding: 0.12, duration: 250, maxZoom: 1 }), [rf]);
+  // the whole map, never above 100 % and never below 0.34, just under the map view's threshold (EDT-060, HWF-36)
+  const fit = useCallback(() => rf.fitView({ padding: 0.1, duration: 250, maxZoom: 1, minZoom: 0.34 }), [rf]);
 
   const tidy = useCallback(
     async (label = t("tidy"), base?: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
@@ -258,16 +281,13 @@ function CanvasInner({
       const box = wrapper.current?.getBoundingClientRect();
       const center = rf.screenToFlowPosition(at ?? { x: (box?.left ?? 0) + (box?.width ?? 800) / 2, y: (box?.top ?? 0) + (box?.height ?? 600) / 2 });
       // each new card in the free place nearest that point, never on top of another card
-      const taken = nodes.map((n) => ({ x: n.position.x, y: n.position.y, ...sizeOf(n) }));
-      const free = (x: number, y: number, w: number, h: number) => !taken.some((r) => x < r.x + r.w + 24 && x + w + 24 > r.x && y < r.y + r.h + 24 && y + h + 24 > r.y);
-      const steps = [0, 1, -1, 2, -2, 3, -3];
+      const taken: Rect[] = nodes.map((n) => ({ x: n.position.x, y: n.position.y, ...sizeOf(n) }));
       const fresh = newNodes
         .filter((n) => !ids.has(n.id))
         .map((n) => {
           if (n.position.x || n.position.y) return n;
           const { w, h } = sizeOf(n);
-          const spots = steps.flatMap((i) => steps.map((j) => ({ x: center.x - w / 2 + i * (w + 40), y: center.y - (at ? 20 : h / 2) + j * (h + 40) }))).sort((a, b) => Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y));
-          const spot = spots.find((p) => free(p.x, p.y, w, h)) ?? spots[0];
+          const spot = freeSpot(taken, center, w, h, !!at);
           taken.push({ ...spot, w, h });
           return { ...n, position: spot };
         });
@@ -326,15 +346,25 @@ function CanvasInner({
   );
 
   // folding is a view of the card, not an edit: saved, never an undo step (EDT-099, EDT-210)
+  // one card toggles; several all take the opposite of the first's state (EDT-163); frames have no fold
   const fold = useCallback((ids: string[]) => {
     const set = new Set(ids);
-    setNodes((ns) => ns.map((n) => (set.has(n.id) && n.data.kind !== "frame" ? { ...n, data: { ...n.data, folded: !n.data.folded } } : n)));
+    setNodes((ns) => {
+      const first = ns.find((n) => set.has(n.id) && n.data.kind !== "frame");
+      if (!first) return ns;
+      const to = !first.data.folded;
+      return ns.map((n) => (set.has(n.id) && n.data.kind !== "frame" ? { ...n, data: { ...n.data, folded: to } } : n));
+    });
   }, []);
 
+  // the zoom, for the pill and the map view (EDT-056, EDT-058)
+  const zoom = useStore((s) => s.transform[2]);
+  const mapView = zoom < MAP_ZOOM;
   const actions: GraphActions = useMemo(
     () => ({
       editable,
       translit,
+      mapView,
       toggleFold: (id) => fold([id]),
       setText: (id, text) =>
         commit(
@@ -345,7 +375,7 @@ function CanvasInner({
       expand: (id) => void expand(id),
       expanding,
     }),
-    [editable, translit, fold, nodes, edges, commit, t, expand, expanding],
+    [editable, translit, mapView, fold, nodes, edges, commit, t, expand, expanding],
   );
 
   // A deletion is one step: xyflow removes the wires and then the cards in two changes, which would each commit
@@ -418,7 +448,7 @@ function CanvasInner({
       const n = live.current.nodes.find((x) => x.id === id);
       if (!n) return;
       const { w, h } = sizeOf(n);
-      void rf.setCenter(n.position.x + w / 2, n.position.y + h / 2, { zoom: Math.max(rf.getZoom(), 0.6), duration: 250 });
+      void rf.setCenter(n.position.x + w / 2, n.position.y + h / 2, { zoom: rf.getZoom(), duration: 250 });
     },
     [rf],
   );
@@ -426,39 +456,154 @@ function CanvasInner({
   // Drag end is one undoable step.
   const dragStart = useRef<GraphNode[] | null>(null);
 
-  // the canvas's keys (EDT-253, EDT-254): undo and redo, fit, 100 %, zoom steps, tidy, fold the selection, select all,
-  // clear, and the list of them
+  // the cards selected, in the order they were picked: a keyboard link runs from the first to the second
+  const picked = useRef<string[]>([]);
+  const [menu, setMenu] = useState<{ x: number; y: number; client: { x: number; y: number }; on: string | null; bounds: { width: number; height: number } } | null>(null);
+  const menuOpen = useRef(false);
+  useEffect(() => {
+    menuOpen.current = !!menu;
+  }, [menu]);
+
+  // a zoom step from where the last step was going, not from the middle of its animation
+  const aim = useRef<{ zoom: number; at: number } | null>(null);
+  const zoomTo = useCallback(
+    (z: number, duration = 150) => {
+      const zoom = Math.min(2, Math.max(0.15, z));
+      aim.current = { zoom, at: Date.now() + duration };
+      void rf.zoomTo(zoom, { duration });
+    },
+    [rf],
+  );
+  const zoomBy = useCallback((f: number) => zoomTo((aim.current && aim.current.at > Date.now() ? aim.current.zoom : rf.getZoom()) * f), [rf, zoomTo]);
+  /** Pan the least needed to keep a card at least 44 px inside the pane (EDT-062). */
+  const ensureVisible = useCallback(
+    (id: string) => {
+      const n = live.current.nodes.find((x) => x.id === id);
+      const box = wrapper.current?.getBoundingClientRect();
+      if (!n || !box) return;
+      const { x, y, zoom } = rf.getViewport();
+      const { w, h } = sizeOf(n);
+      const left = n.position.x * zoom + x;
+      const top = n.position.y * zoom + y;
+      const m = 44;
+      let dx = 0;
+      let dy = 0;
+      if (left + w * zoom < m) dx = m - left;
+      else if (left > box.width - m) dx = box.width - m - left - Math.min(w * zoom, box.width - 2 * m) + m;
+      if (top + h * zoom < m) dy = m - top;
+      else if (top > box.height - m) dy = box.height - m - top - Math.min(h * zoom, box.height - 2 * m) + m;
+      if (dx || dy) void rf.setViewport({ x: x + dx, y: y + dy, zoom }, { duration: 150 });
+    },
+    [rf],
+  );
+  /** Link two cards by keyboard (F14): the first picked to the second, checked as a dragged link is. */
+  const linkPicked = useCallback(() => {
+    const sel = live.current.nodes.filter((n) => n.selected).map((n) => n.id);
+    if (sel.length !== 2) return toast(t("linkTwo"));
+    const order = picked.current.filter((id) => sel.includes(id));
+    const [a, b] = order.length === 2 ? order : sel;
+    onConnect({ source: a, target: b, sourceHandle: null, targetHandle: null });
+  }, [toast, t, onConnect]);
+  /** A note beside a card, describing it (EDT-067's "Attach description"). */
+  const attachNote = useCallback(
+    (id: string) => {
+      const n = live.current.nodes.find((x) => x.id === id);
+      if (!n || n.data.kind === "note" || n.data.kind === "frame") return;
+      // beside the card, to the left where the map grows, in the nearest free place
+      const size = KIND_SIZE.note;
+      const taken: Rect[] = live.current.nodes.map((x) => ({ x: x.position.x, y: x.position.y, ...sizeOf(x) }));
+      const spot = freeSpot(taken, { x: n.position.x - size.width / 2 - 64, y: n.position.y + size.height / 2 }, size.width, size.height);
+      const note: GraphNode = { id: `note:${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`, type: "card", position: spot, data: { kind: "note", text: "" } };
+      commit(t("doAttachNote"), [...live.current.nodes, note], [...live.current.edges, link(id, note.id, "describes")]);
+    },
+    [commit, t],
+  );
+
+  // the canvas's keys (EDT-158…163, EDT-253, EDT-254, EDT-256): undo and redo; select all; fit, 100 %, zoom steps;
+  // tidy; fold; extract; link the two picked; step to a card's child, parent or sibling, pan, or nudge with the
+  // arrows; clear; and the list of them. Arrow keys are taken before xyflow's own, which moved cards.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (inField(e.target)) return;
+      if (inField(e.target) || menuOpen.current) return;
+      const at = e.target as HTMLElement;
+      const onCanvas = at === document.body || !!at.closest?.(".react-flow");
       const mod = e.metaKey || e.ctrlKey;
       const k = e.key.toLowerCase();
+      const sel = live.current.nodes.filter((n) => n.selected);
       if (mod && k === "z") {
         e.preventDefault();
         if (e.shiftKey) redo();
         else undo();
-      } else if (mod && k === "a") {
+      } else if (mod && k === "a" && onCanvas) {
         e.preventDefault();
         setNodes((ns) => ns.map((n) => ({ ...n, selected: true })));
+        useGraphUi.getState().set({ detailsOpen: true });
       } else if (mod) return;
-      else if (k === "f") fit();
-      else if (k === "1") void rf.zoomTo(1, { duration: 200 });
-      else if (k === "+" || k === "=") void rf.zoomIn({ duration: 150 });
-      else if (k === "-") void rf.zoomOut({ duration: 150 });
-      else if (k === "t" && editable) void tidy();
-      else if (k === "?" || (e.shiftKey && k === "/")) onHelp?.();
-      else if (k === "enter") {
-        const ids = live.current.nodes.filter((n) => n.selected).map((n) => n.id);
-        const at = e.target as HTMLElement;
-        if (ids.length && (at === document.body || at.closest(".react-flow"))) {
-          e.preventDefault();
-          fold(ids);
+      else if (k.startsWith("arrow") && onCanvas) {
+        e.preventDefault();
+        e.stopPropagation();
+        const dir = k.slice(5) as "left" | "right" | "up" | "down";
+        if (e.altKey && sel.length && editable) {
+          // nudge the selection 8 px, 32 with ⇧ — one undo step a press (EDT-161, EDT-233)
+          const step = e.shiftKey ? 32 : GRID;
+          const [dx, dy] = dir === "left" ? [-step, 0] : dir === "right" ? [step, 0] : dir === "up" ? [0, -step] : [0, step];
+          const ids = new Set(sel.map((n) => n.id));
+          commit(t("doNudge"), live.current.nodes.map((n) => (ids.has(n.id) ? { ...n, position: { x: snap(n.position.x + dx), y: snap(n.position.y + dy) } } : n)), live.current.edges);
+        } else if (sel.length) {
+          // a card's child (to the left, where the map grows), its parent, its siblings (EDT-159)
+          const from = sel[sel.length - 1];
+          const { nodes: ns, edges: es } = live.current;
+          const byId = new Map(ns.map((n) => [n.id, n]));
+          const byY = (a: GraphNode, b: GraphNode) => a.position.y - b.position.y;
+          const children = es.filter((x) => x.source === from.id).map((x) => byId.get(x.target)!).filter(Boolean).sort(byY);
+          const parents = es.filter((x) => x.target === from.id).map((x) => byId.get(x.source)!).filter(Boolean);
+          let next: GraphNode | undefined;
+          if (dir === "left") next = children.find((c) => c.data.kind !== "note") ?? children[0];
+          else if (dir === "right") next = parents[0];
+          else {
+            const ring = parents[0]
+              ? es.filter((x) => x.source === parents[0].id).map((x) => byId.get(x.target)!).filter(Boolean).sort(byY)
+              : ns.filter((n) => n.data.kind === from.data.kind).sort(byY);
+            const i = ring.findIndex((n) => n.id === from.id);
+            if (ring.length > 1) next = ring[(i + (dir === "down" ? 1 : -1) + ring.length) % ring.length];
+          }
+          if (next) {
+            select(next.id);
+            useGraphUi.getState().set({ detailsOpen: true });
+            ensureVisible(next.id);
+          }
+        } else {
+          // nothing selected: the arrows pan, 56 px or 160 with ⇧ (EDT-160)
+          const step = e.shiftKey ? 160 : 56;
+          const vp = rf.getViewport();
+          const [dx, dy] = dir === "left" ? [step, 0] : dir === "right" ? [-step, 0] : dir === "up" ? [0, step] : [0, -step];
+          void rf.setViewport({ x: vp.x + dx, y: vp.y + dy, zoom: vp.zoom }, { duration: 120 });
         }
-      } else if (k === "escape") select(null);
+      } else if (k === "f") fit();
+      else if (k === "1") zoomTo(1, 200);
+      else if (k === "+" || k === "=") zoomBy(1.25);
+      else if (k === "-" || k === "_") zoomBy(1 / 1.25);
+      else if (k === "t" && editable) void tidy();
+      else if (k === "e" && editable && sel.length === 1) void expand(sel[0].id);
+      else if (k === "l" && editable && onCanvas) linkPicked();
+      else if (k === "?" || (e.shiftKey && k === "/")) onHelp?.();
+      else if (k === "enter" && sel.length && onCanvas) {
+        // a focused card not yet selected is selected by Enter, as xyflow does; a selection folds (EDT-163)
+        const focused = at.closest?.(".react-flow__node")?.getAttribute("data-id");
+        if (focused && !sel.some((n) => n.id === focused)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        fold(sel.map((n) => n.id));
+      } else if (k === "escape") {
+        // clears everything; xyflow's own Escape on a focused card would select it again
+        if (onCanvas) e.stopPropagation();
+        select(null);
+        setMenu(null);
+      }
     }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo, tidy, fit, rf, onHelp, fold, select, editable]);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [undo, redo, tidy, fit, rf, onHelp, fold, select, editable, commit, t, ensureVisible, zoomBy, zoomTo, expand, linkPicked]);
 
   const exportPng = useCallback(async () => {
     const viewport = wrapper.current?.querySelector<HTMLElement>(".react-flow__viewport");
@@ -532,23 +677,75 @@ function CanvasInner({
   const selectedEdge = editable ? edges.find((e) => e.selected) : undefined;
   const kindOf = (id: string) => nodes.find((n) => n.id === id)?.data.kind;
   // a relation the kinds do not say is named on its link; one resting on an uncertain reading is dashed amber (F4)
+  // every wire named for a screen reader by what it says and what it joins (F14); drawn by RelEdge
   const drawn = useMemo(
     () =>
-      edges.map((e) => {
-        const rel = e.data?.rel;
-        const named = !e.data?.label && rel && NAMED_ON_CANVAS.includes(rel) ? t(`rel_${rel}`) : undefined;
-        return { ...e, ...(named ? { label: named } : {}), ...(e.data?.reading ? { className: "edge-reading" } : {}) };
-      }),
-    [edges, t],
+      edges.map((e) => ({
+        ...e,
+        type: "rel",
+        ariaLabel: t("wireLabel", { rel: t(`rel_${e.data?.rel ?? "next"}`), from: cardName(e.source), to: cardName(e.target) }),
+        ...(e.data?.reading ? { className: "edge-reading" } : {}),
+      })),
+    [edges, t, cardName],
   );
-  // a search dims what does not match and rings what does (EDT-039); frames are left as they are
+  // every card named by its kind, its headline and its count (F14); a search dims what does not match and rings
+  // what does (EDT-039); frames are left as they are
   const shown = useMemo(
-    () => (matchSet ? nodes.map((n) => (n.data.kind === "frame" ? n : { ...n, className: matchSet.has(n.id) ? "is-match" : "is-dim" })) : nodes),
-    [nodes, matchSet],
+    () =>
+      nodes.map((n) => {
+        const kindName = t(n.data.phrase ? "kindPhrase" : META[n.data.kind].label);
+        const ariaLabel = n.data.count != null ? t("cardLabelCount", { kind: kindName, name: cardName(n.id), n: formatNumber(n.data.count, locale) }) : t("cardLabel", { kind: kindName, name: cardName(n.id) });
+        const className = matchSet && n.data.kind !== "frame" ? (matchSet.has(n.id) ? "is-match" : "is-dim") : undefined;
+        return { ...n, ariaLabel, ...(className ? { className } : {}) };
+      }),
+    [nodes, matchSet, t, cardName, locale],
   );
+  const wire: WireContext = useMemo(
+    () => ({
+      selected: new Set(selected.map((n) => n.id)),
+      kindOf: (id: string) => nodes.find((n) => n.id === id)?.data.kind,
+      editable,
+      unlink: (id: string) => {
+        commit(t("doUnlink", cnt(1, locale)), live.current.nodes, live.current.edges.filter((e) => e.id !== id));
+        toast(t("doUnlink", cnt(1, locale)), true);
+      },
+    }),
+    [selected, nodes, editable, commit, t, locale, toast],
+  );
+  const menuItems = (): MenuItem[] => {
+    if (!menu) return [];
+    const at = menu.client;
+    if (!menu.on)
+      return [
+        { label: t("menuNewNote"), run: () => addCards([{ id: `note:${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`, type: "card", position: { x: 0, y: 0 }, data: { kind: "note", text: "" } }], [], t("doAddNote"), at) },
+        ...(["root", "pattern", "lemma", "verse"] as const).map((k) => ({
+          label: t("menuNewKind", { kind: t(META[k].label) }),
+          run: () => window.dispatchEvent(new CustomEvent("jadhr:library-drop", { detail: { payload: { pick: k }, at } })),
+        })),
+        { label: t("tidy"), keys: "T", run: () => void tidy() },
+        { label: t("fit"), keys: "F", run: fit },
+      ];
+    const card = nodes.find((n) => n.id === menu.on);
+    if (!card) return [];
+    const sel = nodes.filter((n) => n.selected);
+    const many = sel.length > 1 ? sel : [card];
+    return [
+      { label: t(card.data.folded ? "unfold" : "fold"), keys: "↵", run: () => fold(many.map((n) => n.id)) },
+      ...(card.data.kind === "lemma" && card.data.slug && (!card.data.expanded || card.data.more?.remaining) ? [{ label: t("menuExtract"), keys: "E", run: () => void expand(card.id) }] : []),
+      ...(card.data.kind !== "note" && card.data.kind !== "frame" ? [{ label: t("menuAttachNote"), run: () => attachNote(card.id) }] : []),
+      ...(sel.length === 2 ? [{ label: t("menuLinkTwo"), keys: "L", run: linkPicked }] : []),
+      {
+        label: t("doDelete", cnt(many.length, locale)),
+        keys: "⌫",
+        danger: true,
+        run: () => onDelete({ nodes: many, edges: edges.filter((e) => many.some((n) => n.id === e.source || n.id === e.target)) }),
+      },
+    ];
+  };
 
   return (
     <ToolsContext.Provider value={tools}>
+    <WireContextValue.Provider value={wire}>
     <GraphActionsContext.Provider value={actions}>
       <div className="flex h-full min-h-0 flex-col">
         {header ?? (
@@ -634,6 +831,43 @@ function CanvasInner({
               nodes={shown}
               edges={drawn}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
+              ariaLabelConfig={{
+                "node.a11yDescription.default": t("a11yNode"),
+                "node.a11yDescription.keyboardDisabled": t("a11yNode"),
+                "node.a11yDescription.ariaLiveMessage": () => "",
+                "edge.a11yDescription.default": t("a11yWire"),
+                "minimap.ariaLabel": t("a11yMinimap"),
+                "handle.ariaLabel": t("a11yHandle"),
+              }}
+              // a wheel or two fingers pan, ⌘ or Ctrl with them zooms (EDT-051); the 8 px grid (HWF-12)
+              panOnScroll
+              panOnScrollSpeed={1}
+              zoomOnScroll={false}
+              zoomActivationKeyCode={["Meta", "Control"]}
+              snapToGrid
+              snapGrid={[GRID, GRID]}
+              // ⇧-click adds to the selection as the design has it, beside ⌘ and Ctrl (EDT-254)
+              multiSelectionKeyCode={["Shift", "Meta", "Control"]}
+              onSelectionChange={({ nodes: now }) => {
+                const ids = now.map((n) => n.id);
+                picked.current = [...picked.current.filter((id) => ids.includes(id)), ...ids.filter((id) => !picked.current.includes(id))];
+              }}
+              onPaneContextMenu={(e) => {
+                e.preventDefault();
+                if (!editable) return;
+                const box = wrapper.current!.getBoundingClientRect();
+                setMenu({ x: e.clientX - box.left, y: e.clientY - box.top, client: { x: e.clientX, y: e.clientY }, on: null, bounds: { width: box.width, height: box.height } });
+              }}
+              onNodeContextMenu={(e, n) => {
+                e.preventDefault();
+                if (!editable) return;
+                // what is clicked is what the menu acts on (HWF-37)
+                if (!n.selected) select(n.id);
+                const box = wrapper.current!.getBoundingClientRect();
+                setMenu({ x: e.clientX - box.left, y: e.clientY - box.top, client: { x: e.clientX, y: e.clientY }, on: n.id, bounds: { width: box.width, height: box.height } });
+              }}
+              onPaneClick={() => setMenu(null)}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
@@ -666,11 +900,28 @@ function CanvasInner({
               fitViewOptions={focusIds.length ? { nodes: focusIds, padding: 0.25, minZoom: 0.6, maxZoom: 1 } : { maxZoom: 1 }}
               proOptions={{ hideAttribution: false }}
               colorMode={theme === "dark" ? "dark" : "light"}
-              defaultEdgeOptions={{ type: "default", style: { stroke: "var(--edge)", strokeWidth: 1.5 }, markerEnd: { type: MarkerType.ArrowClosed, color: "var(--edge)", width: 14, height: 14 } }}
+              defaultEdgeOptions={{ type: "rel", markerEnd: { type: MarkerType.ArrowClosed, color: "var(--edge)", width: 14, height: 14 } }}
             >
               <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="var(--dot)" />
-              <MiniMap pannable zoomable nodeColor={(n) => KIND_COLOR[(n as GraphNode).data.kind]} className="!hidden md:!block" />
+              <MiniMap position="top-right" pannable zoomable nodeColor={(n) => KIND_COLOR[(n as GraphNode).data.kind]} className="!hidden md:!block" />
             </ReactFlow>
+            {menu && (
+              <CanvasMenu
+                x={menu.x}
+                y={menu.y}
+                bounds={menu.bounds}
+                items={menuItems()}
+                label={t(menu.on ? "menuCard" : "menuCanvas")}
+                onClose={() => setMenu(null)}
+              />
+            )}
+            {mapView && (
+              // the map view says so, and how to leave it (EDT-059)
+              <p className="map-badge" dir={locale === "ar" ? "rtl" : "ltr"}>
+                <span className="dot" style={{ background: "var(--ring)" }} />
+                {t("mapViewBadge")}
+              </p>
+            )}
             {nodes.length === 0 && (
               // an empty map says how to begin (EDT-063)
               <div className="graph-empty" dir={locale === "ar" ? "rtl" : "ltr"}>
@@ -695,11 +946,14 @@ function CanvasInner({
                 )}
               </div>
             )}
-            <div className="pointer-events-none absolute bottom-3 start-3 flex gap-1 rounded-lg bg-card/90 p-1 shadow-rest" dir="ltr">
-              <button type="button" className="pointer-events-auto btn icon-btn" aria-label={t("zoomOut")} title={t("zoomOut")} onClick={() => rf.zoomOut({ duration: 150 })}>
+            <div className="zoom-pill" dir="ltr">
+              <button type="button" className="zoom-pill-btn" aria-label={t("zoomOut")} title={t("zoomOutTitle")} onClick={() => zoomBy(1 / 1.25)}>
                 <Icon name="minus" />
               </button>
-              <button type="button" className="pointer-events-auto btn icon-btn" aria-label={t("zoomIn")} title={t("zoomIn")} onClick={() => rf.zoomIn({ duration: 150 })}>
+              <button type="button" className="zoom-pill-pct" aria-label={t("zoomReset")} title={t("zoomResetTitle")} onClick={() => zoomTo(1, 200)}>
+                {new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { style: "percent" }).format(Math.round(zoom * 100) / 100)}
+              </button>
+              <button type="button" className="zoom-pill-btn" aria-label={t("zoomIn")} title={t("zoomInTitle")} onClick={() => zoomBy(1.25)}>
                 <Icon name="plus" />
               </button>
             </div>
@@ -708,6 +962,7 @@ function CanvasInner({
         </div>
       </div>
     </GraphActionsContext.Provider>
+    </WireContextValue.Provider>
     </ToolsContext.Provider>
   );
 }
