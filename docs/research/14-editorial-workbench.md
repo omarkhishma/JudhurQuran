@@ -52,3 +52,22 @@ The content API reads what is in force and serves it beside the source: a root's
 ## 7. Not in this step
 
 The editorial program itself — the board's appointment, the advisors (D15), the work of writing 1,642 glosses and 4,832 sense lists — is the owner's to staff. The workbench is built and tested so that it can start the day the board is appointed.
+
+## 8. Status (2026-10-04)
+
+The tool is built, end to end; the editorial program itself waits on the board (§7, D15).
+
+- **P3.0a — the store and its rules** (commit d0f228f): migration 0023, `jadhr_api.editorial`, `/api/v1/editorial/*` as §6 says, with candidates per kind read verbatim from the sources (Maqāyīs and Lane on a root, the corpus's word glosses, the sarf books' rows on a pattern, al-Mufradāt, al-Muyassar and the wujūh books on a word).
+- **P3.0b — the workbench** (commit dae1cd7): `/workbench` for the board, as §6 says, in both themes and on the phone (a picker in place of the side list).
+- **P3.0c — the read path** (commit 3aedb59): `jadhr_api.board` reads what is in force beside the content on every payload that shows it — the word, the root, its family, a pattern and the patterns' list, the glossary — and the reader shows it where §5 says:
+
+| Board's work | Where the reader sees it | How it is said |
+|---|---|---|
+| Root English gloss | the root page's header; Word family; the map editor's Meaning | "English gloss by the editorial board, from {works}" |
+| Root core idea | the root page; Word family; the map editor's Meaning | the board's cut in place of the extracted one when corrected, and a line saying it reviewed or corrected the cut |
+| Pattern function, plain explanation | Shapes' pattern view; the map editor's Meaning | "From the sarf books, approved by the editorial board, from {works}"; "In the editorial board's words" |
+| Sense list | Meanings (in place of "not yet assembled"); the map editor's Meaning | numbered, each sense with its works; "The editorial board's sense list, each sense with its sources" |
+| Verdicts on extracted rows | al-Mufradāt's passages, al-Muyassar's meaning here, the particle works, loanwords, the sarf books' rows (Shapes and the map editor) | "Reviewed by the editorial board", or "Corrected by the editorial board: {correction}" with the note — the book's words stay; a rejected row is left out; each section says how many of its rows the board has reviewed |
+| Glossary bodies | the glossary and every term's popover | the reviewed body, with its date in the payload |
+
+Settled while building it (DECISIONS 2026-10-04): the public payloads name the board, never its members; an approval clears the API's short cache of the small kinds, asks the web to expire its pages and changes every content ETag; a source names its work by the content tables' id, the API gives the reader the title, and the workbench offers the known ids and flags an unknown one.
