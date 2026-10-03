@@ -175,7 +175,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
         </p>
       )}
       <WordStateControl slug={w.slug} />
-      <div className="flex flex-wrap gap-2">
+      <div className="entry-actions flex flex-wrap gap-2">
         <button type="button" className="btn flex-1" onClick={() => setHandoff({ seed: "word", slug: w.slug, at: occ?.location ?? null })} title={t("openInGraphTitle")}>
           <Icon name="graph" size={13} />
           {t("openInGraph")}

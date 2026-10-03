@@ -57,7 +57,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
               <div className="flex min-w-0 flex-col gap-1">
                 {s.text_ar && <p className="text-[15px] leading-[1.8] text-t1" lang="ar" dir="rtl">{s.text_ar}</p>}
                 {s.text_en && <p className="text-[13.5px] italic text-t2" lang="en" dir="ltr">{s.text_en}</p>}
-                <button type="button" className="self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest({ kind: "edit", slug: w.slug, label: w.ar.full, ordinal: s.ordinal, current: s.text_ar ?? s.text_en ?? "" })}>
+                <button type="button" className="suggest-link self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest({ kind: "edit", slug: w.slug, label: w.ar.full, ordinal: s.ordinal, current: s.text_ar ?? s.text_en ?? "" })}>
                   {t("suggestEdit")}
                 </button>
               </div>

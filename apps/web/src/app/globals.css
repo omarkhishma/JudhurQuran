@@ -2632,6 +2632,18 @@ button.type-chip:hover {
 }
 
 @layer components {
+/* ─── Phone targets in the entry (RDR-198, 415): star, Cite and the graph 44 px; Suggest an edit 40 px ── */
+.reader-sheet .entry-actions .btn {
+  min-height: 44px;
+}
+.reader-sheet .entry-actions .icon-btn {
+  width: 44px;
+  height: 44px;
+}
+.reader-sheet .suggest-link {
+  min-height: 40px;
+}
+
 /* ─── Graph hand-off (RDR-362…368) ────────────────────────────────────────── */
 .handoff-rows {
   display: flex;

@@ -492,6 +492,7 @@ test("phone: touch targets meet the design's sizes (RDR-586)", async ({ page, is
     [".reader-sheet .panel-top .hdr-btn", 44],
     [".reader-sheet .layer-head", 48],
     ['.passage[data-hot] .ptool', 40],
+    [".reader-sheet .entry-actions .btn", 44],
   ] as const) {
     const hs = await sizes(sel);
     expect(hs.length, sel).toBeGreaterThan(0);
