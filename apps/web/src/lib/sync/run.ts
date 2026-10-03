@@ -46,6 +46,14 @@ export function deviceId(): string {
   }
 }
 
+/** Lookups waiting to be shared, when the reader has turned that on (P6.1): sent with the next sync, in a batch. */
+type Lookup = { lemma: string | null; root: string | null; verse: string | null };
+let lookups: Lookup[] = [];
+export function queueLookup(e: Lookup): void {
+  if (!useAccount.getState().user?.settings?.share_lookups) return;
+  lookups = [...lookups, e].slice(-500);
+}
+
 let applying = 0;
 /** true while sync writes into the stores, so the change it makes does not set off another sync */
 export const isApplying = () => applying > 0;
@@ -116,6 +124,14 @@ async function once(touched: Set<StoreName>): Promise<void> {
   await write(all, changes, touched);
   state.cursor = cursor;
   saveState(state);
+  // shared lookups go only while sharing is on; turned off, what was waiting is dropped, never sent
+  if (lookups.length && settings.share_lookups) {
+    const batch = lookups;
+    lookups = [];
+    await authFetch("/me/lookups", { method: "POST", body: JSON.stringify({ events: batch }) }).catch(() => {
+      lookups = [...batch, ...lookups].slice(-500);
+    });
+  } else if (!settings.share_lookups) lookups = [];
   useSyncStatus.setState({ state: "idle", last: Date.now(), tooLarge, error: null });
 }
 

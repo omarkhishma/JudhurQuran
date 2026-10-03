@@ -12,7 +12,7 @@ import { useNotebook } from "@/lib/store/notebook";
 import { useReview } from "@/lib/store/review";
 import { useSaved } from "@/lib/store/saved";
 import { WATCHED } from "@/lib/sync/adapters";
-import { isApplying, runSync } from "@/lib/sync/run";
+import { isApplying, queueLookup, runSync } from "@/lib/sync/run";
 
 /** Each persisted store by its key, so a write in another tab is read here too (no tab overwrites another's). */
 const PERSISTED: Record<string, { persist: { rehydrate: () => unknown } }> = {
@@ -82,6 +82,11 @@ export function SyncRunner() {
         if (a.some((x, i) => x !== b[i])) soon();
       }),
     );
+    // a lookup made here (not a reading place synced from elsewhere) is shared when the reader turned that on
+    const unLookups = usePersonal.subscribe((s, prev) => {
+      if (isApplying() || !s.context || s.context.ts === prev.context?.ts) return;
+      queueLookup({ lemma: s.context.word, root: s.context.root, verse: s.context.verse });
+    });
     const onDocs = () => soon();
     const onBack = () => {
       if (document.visibilityState === "visible") soon(300);
@@ -101,6 +106,7 @@ export function SyncRunner() {
       window.clearTimeout(timer);
       window.clearInterval(every);
       unsubs.forEach((u) => u());
+      unLookups();
       window.removeEventListener(DOCS_EVENT, onDocs);
       window.removeEventListener("online", onBack);
       document.removeEventListener("visibilitychange", onBack);
