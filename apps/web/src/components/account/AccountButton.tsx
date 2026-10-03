@@ -15,23 +15,26 @@ export const initial = (name: string | null | undefined, email: string) => Array
 
 /**
  * The header's account control (SHL-21, HUB-41): signed out, "Sign in" opens the sheet; signed in, the avatar opens
- * the Profile. A dot on the avatar says when sync is waiting for the network or failed.
+ * the Profile. A dot on the avatar says when sync is waiting for the network or the reader's answer, or failed.
  */
 export function AccountButton({ className = "btn" }: { className?: string }) {
   const t = useTranslations("account");
   const client = useIsClient();
   const user = useAccount((s) => s.user);
   const sync = useSyncStatus((s) => s.state);
+  // sync waits for the reader's word: deletions held, or another account's records on this device (F8, F11)
+  const waits = useSyncStatus((s) => !!s.owner || Object.keys(s.held).length > 0);
   const pathname = usePathname();
   // where the reader was when they asked, so the link brings them back there
   const [returnTo, setReturnTo] = useState<string | null>(null);
   if (!client) return <span className="account-slot" aria-hidden="true" />;
   if (user) {
     const name = user.display_name || user.email;
+    const label = waits ? `${t("accountOf", { name })} — ${t("syncWaits")}` : t("accountOf", { name });
     return (
-      <Link href="/me" className="account-avatar" title={t("accountOf", { name })} aria-label={t("accountOf", { name })}>
+      <Link href="/me" className="account-avatar" title={label} aria-label={label}>
         <span aria-hidden="true">{initial(user.display_name, user.email)}</span>
-        {(sync === "offline" || sync === "error") && <span className={"account-dot is-" + sync} aria-hidden="true" />}
+        {(waits || sync === "offline" || sync === "error") && <span className={"account-dot is-" + (waits ? "waits" : sync)} aria-hidden="true" />}
       </Link>
     );
   }

@@ -1,12 +1,14 @@
 "use client";
 
-import { del, get, set } from "idb-keyval";
+import { del, get, set, update } from "idb-keyval";
+import { storageFrozen } from "@/lib/store/safeStorage";
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 import type { GraphDoc, GraphMeta } from "./types";
 
 /** Local-first storage: graphs live in this browser's IndexedDB, and sync to the account when signed in (P6). */
 const INDEX = "jadhr-graphs-index";
-const KEY = (id: string) => `jadhr-graph:${id}`;
+export const GRAPH_PREFIX = "jadhr-graph:";
+const KEY = (id: string) => `${GRAPH_PREFIX}${id}`;
 /** fired on every change made here, so sync can send it (documents are not in a store it can watch) */
 export const DOCS_EVENT = "jadhr:docs";
 const changed = () => {
@@ -31,17 +33,18 @@ export async function saveGraph(doc: GraphDoc): Promise<void> {
   changed();
 }
 
-/** Store a graph as it is, its time included (a graph synced from another device keeps the time it was made). */
+/** Store a graph as it is, its time included (a graph synced from another device keeps the time it was made). The
+ * index changes in one step, so two writes at once never drop each other's entry (audit 11 F12). */
 export async function putGraph(doc: GraphDoc): Promise<void> {
+  if (storageFrozen()) return;
   await set(KEY(doc.id), doc);
-  const index = (await listGraphs()).filter((g) => g.id !== doc.id);
-  index.push({ id: doc.id, title: doc.title, kind: doc.kind, createdAt: doc.createdAt, updatedAt: doc.updatedAt, nodeCount: doc.nodes.length });
-  await set(INDEX, index);
+  const meta: GraphMeta = { id: doc.id, title: doc.title, kind: doc.kind, createdAt: doc.createdAt, updatedAt: doc.updatedAt, nodeCount: doc.nodes.length };
+  await update<GraphMeta[]>(INDEX, (index = []) => [...index.filter((g) => g.id !== doc.id), meta]);
 }
 
 export async function deleteGraph(id: string, quiet = false): Promise<void> {
   await del(KEY(id));
-  await set(INDEX, (await listGraphs()).filter((g) => g.id !== id));
+  await update<GraphMeta[]>(INDEX, (index = []) => index.filter((g) => g.id !== id));
   if (!quiet) changed();
 }
 

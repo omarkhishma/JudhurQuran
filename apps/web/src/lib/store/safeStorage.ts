@@ -18,6 +18,14 @@ export function reportStorageFailure(): void {
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("jadhr:storage-error"));
 }
 
+let frozen = false;
+
+/** Stop every store writing in this tab: this browser's data is being deleted, and the page reloads next (F15). */
+export function freezeStorage(): void {
+  frozen = true;
+}
+export const storageFrozen = () => frozen;
+
 const storage: StateStorage = {
   getItem: (name) => {
     try {
@@ -27,6 +35,7 @@ const storage: StateStorage = {
     }
   },
   setItem: (name, value) => {
+    if (frozen) return;
     try {
       localStorage.setItem(name, value);
     } catch {

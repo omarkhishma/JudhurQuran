@@ -68,12 +68,19 @@ export type PlanOptions = {
   appendOnly?: ReadonlySet<StoreName>;
   /** the largest value the server keeps for one record; larger ones stay on this device */
   maxBytes?: number;
+  /** stores whose many deletions the reader has confirmed, so they go up this time (F11) */
+  allowDeletions?: ReadonlySet<StoreName>;
 };
 
+/** More deletions than this in one store and one run are held for the reader's word: a store read as empty by
+ * mistake must never empty the account (audit 11 F11). */
+export const DELETION_GUARD = (synced: number) => Math.max(10, Math.ceil(synced * 0.25));
+
 /** What this device sends: every record that changed since the shadow, with when the change was first seen. */
-export function plan(locals: Partial<Record<StoreName, Local>>, state: SyncState, now: number, opts: PlanOptions = {}): { push: Outgoing[]; tooLarge: string[] } {
+export function plan(locals: Partial<Record<StoreName, Local>>, state: SyncState, now: number, opts: PlanOptions = {}): { push: Outgoing[]; tooLarge: string[]; held: Partial<Record<StoreName, number>> } {
   const push: Outgoing[] = [];
   const tooLarge: string[] = [];
+  const held: Partial<Record<StoreName, number>> = {};
   const maxBytes = opts.maxBytes ?? 900_000;
   for (const store of STORES) {
     const local = locals[store];
@@ -101,23 +108,54 @@ export function plan(locals: Partial<Record<StoreName, Local>>, state: SyncState
       push.push({ store, key, value, deleted: false, updated_at: stamp(key, h, at) });
     }
     if (fresh) continue;
-    for (const key of Object.keys(shadow)) {
-      if (local.has(key)) continue;
-      if (opts.appendOnly?.has(store)) {
-        delete shadow[key]; // dropped here (a cap), still kept for the account
-        continue;
-      }
-      push.push({ store, key, value: null, deleted: true, updated_at: stamp(key, GONE) });
+    const gone = Object.keys(shadow).filter((key) => !local.has(key));
+    if (opts.appendOnly?.has(store)) {
+      for (const key of gone) delete shadow[key]; // dropped here (a cap), still kept for the account
+      continue;
     }
+    if (gone.length > DELETION_GUARD(Object.keys(shadow).length) && !opts.allowDeletions?.has(store)) {
+      held[store] = gone.length; // nothing sent, nothing forgotten: the next run asks again
+      continue;
+    }
+    for (const key of gone) push.push({ store, key, value: null, deleted: true, updated_at: stamp(key, GONE) });
   }
-  return { push, tooLarge };
+  return { push, tooLarge, held };
 }
 
-/** After a push: the records the server took are agreed; for the ones it refused, the server's version is. */
-export function commit(state: SyncState, stores: Iterable<StoreName>, sent: Outgoing[], rejected: { store: string; key: string; server: Incoming }[]): void {
+/** A push split so no request is refused for its size: at most `count` records, and about `bytes` of values each
+ * (one record larger than that goes alone; the server's limit is 8 MB a request, F16). */
+export function chunks(push: Outgoing[], count = 500, bytes = 4_000_000): Outgoing[][] {
+  const out: Outgoing[][] = [];
+  let cur: Outgoing[] = [];
+  let size = 0;
+  for (const r of push) {
+    const n = byteSize(r.value) + r.key.length + 64;
+    if (cur.length && (cur.length >= count || size + n > bytes)) {
+      out.push(cur);
+      cur = [];
+      size = 0;
+    }
+    cur.push(r);
+    size += n;
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+
+/** After a push: the records the server took are agreed; for the ones it rejected, the server's version is; the
+ * ones it refused (too large, or a full account) stay changed here and are tried again. */
+export function commit(
+  state: SyncState,
+  stores: Iterable<StoreName>,
+  sent: Outgoing[],
+  rejected: { store: string; key: string; server: Incoming }[],
+  refused: { store: string; key: string }[] = [],
+): void {
   for (const s of stores) state.shadow[s] ??= {};
   const lost = new Set(rejected.map((r) => `${r.store}\u0000${r.key}`));
+  const kept = new Set(refused.map((r) => `${r.store}\u0000${r.key}`));
   for (const r of sent) {
+    if (kept.has(`${r.store}\u0000${r.key}`)) continue;
     const shadow = (state.shadow[r.store] ??= {});
     delete state.dirty[r.store]?.[r.key];
     if (lost.has(`${r.store}\u0000${r.key}`)) continue;
@@ -131,6 +169,18 @@ function agree(state: SyncState, r: Incoming): void {
   const shadow = (state.shadow[r.store as StoreName] ??= {});
   if (r.deleted) delete shadow[r.key];
   else shadow[r.key] = hash(r.value);
+}
+
+/**
+ * A full resync (the server purged deletions this device had not seen, F6): what this device had agreed with the
+ * account and no longer finds there was deleted elsewhere, and reads as a deletion from the server.
+ */
+export function vanished(incoming: Incoming[], state: SyncState): Incoming[] {
+  const there = new Set(incoming.map((r) => `${r.store}\u0000${r.key}`));
+  const out: Incoming[] = [];
+  for (const store of STORES)
+    for (const key of Object.keys(state.shadow[store] ?? {})) if (!there.has(`${store}\u0000${key}`)) out.push({ store, key, value: null, deleted: true, updated_at: 0 });
+  return out;
 }
 
 /**

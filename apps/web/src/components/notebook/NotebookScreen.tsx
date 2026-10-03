@@ -15,7 +15,7 @@ import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { foldLatin, type Mention, parseMentions } from "@/lib/notebook/mentions";
 import { getJSON } from "@/lib/reader/api";
 import { mergeSessions, type SavedTrail, usePersonal } from "@/lib/reader/store";
-import { type NoteLinks, useNotebook, useNotebookReady } from "@/lib/store/notebook";
+import { type NoteLinks, useNotebook, useNotebookReady, useNotebookUnreadable } from "@/lib/store/notebook";
 import { useSaved } from "@/lib/store/saved";
 import { useDebounced } from "@/lib/useDebounced";
 
@@ -48,6 +48,7 @@ export function NotebookScreen({ initialTab, initialNote }: { initialTab: "notes
   const isClient = useIsClient();
   const ready = useNotebookReady();
   const client = isClient && ready;
+  const unreadable = useNotebookUnreadable();
   const items = useItems();
   const [tab, setTab] = useState(initialTab);
   const [selected, setSelected] = useState<string | null>(initialNote);
@@ -72,12 +73,17 @@ export function NotebookScreen({ initialTab, initialNote }: { initialTab: "notes
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-[22px] font-semibold">{t("title")}</h1>
         <span className="flex-1" />
-        <Segmented label={t("tabs")} value={tab} onChange={(v) => go({ tab: v })} options={[{ value: "notes", label: t("tabNotes", { n: formatNumber(client ? items.length : 0, locale) }) }, { value: "journal", label: t("tabJournal") }]} />
-        <button type="button" className="btn btn-primary" onClick={() => go({ tab: "notes", note: create() })}>{t("newNote")}</button>
+        <Segmented label={t("tabs")} value={tab} onChange={(v) => go({ tab: v })} options={[{ value: "notes", label: t("tabNotes", { n: client ? formatNumber(items.length, locale) : "–" }) }, { value: "journal", label: t("tabJournal") }]} />
+        <button type="button" className="btn btn-primary" onClick={() => go({ tab: "notes", note: create() })} disabled={unreadable}>{t("newNote")}</button>
       </div>
       <p className="text-[12px] text-t3">{t("private")}</p>
+      {unreadable && (
+        <p className="attention-note" role="alert">
+          {t("unreadable")}
+        </p>
+      )}
       {tab === "notes" ? (
-        <NotesTab items={client ? items : []} current={current} onSelect={(id) => go({ note: id })} />
+        <NotesTab items={client ? items : []} loaded={client} current={current} onSelect={(id) => go({ note: id })} />
       ) : (
         <JournalTab items={client ? items : []} />
       )}
@@ -115,7 +121,7 @@ function useSurahs() {
   return useQuery({ queryKey: ["surahs"], queryFn: () => getJSON<{ data: SurahRow[] }>("/surahs"), staleTime: Infinity });
 }
 
-function NotesTab({ items, current, onSelect }: { items: Item[]; current: Item | null; onSelect: (id: string | null) => void }) {
+function NotesTab({ items, loaded, current, onSelect }: { items: Item[]; loaded: boolean; current: Item | null; onSelect: (id: string | null) => void }) {
   const t = useTranslations("notebook");
   const locale = useLocale();
   const [q, setQ] = useState("");
@@ -147,10 +153,13 @@ function NotesTab({ items, current, onSelect }: { items: Item[]; current: Item |
       <div className="notebook-list">
         <input value={q} onChange={(e) => setQ(e.target.value)} className="field" placeholder={t("search")} aria-label={t("searchLabel")} dir="auto" />
         <Segmented label={t("group")} value={group} onChange={setGroup} options={[{ value: "all", label: t("groupAll") }, { value: "root", label: t("groupRoot") }, { value: "surah", label: t("groupSurah") }, { value: "tag", label: t("groupTag") }]} />
+        {/* "no notes yet" only once the notes are read: never while loading, never when they could not be read */}
         {items.length === 0 ? (
-          <p className="text-[13px] leading-relaxed text-t3">
-            {t("empty")} <Link href="/read" className="underline">{t("emptyReader")}</Link>
-          </p>
+          loaded && (
+            <p className="text-[13px] leading-relaxed text-t3">
+              {t("empty")} <Link href="/read" className="underline">{t("emptyReader")}</Link>
+            </p>
+          )
         ) : shown.length === 0 ? (
           <p className="text-[13px] text-t3" role="status">{t("noMatches", { q })}</p>
         ) : (

@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { pick, SCOPES } from "@/lib/i18nScopes";
+import { SyncPrompt } from "@/components/account/SyncPrompt";
 import { SiteHeader } from "@/components/shell/SiteHeader";
 import { SiteFooter } from "@/components/shell/SiteFooter";
 
@@ -17,6 +18,8 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[lo
         <div className="flex-1">{children}</div>
       </main>
       <SiteFooter />
+      {/* what sync will not decide alone, asked wherever the reader is (F8, F11) */}
+      <SyncPrompt />
     </NextIntlClientProvider>
   );
 }

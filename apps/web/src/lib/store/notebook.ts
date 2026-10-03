@@ -22,6 +22,14 @@ type NotebookState = {
   remove: (id: string) => void;
 };
 
+/** The last read of the notes failed (F11): nothing is shown as empty, written over or synced until one works. */
+let unreadable = false;
+const listeners = new Set<() => void>();
+const subscribeUnreadable = (cb: () => void) => {
+  listeners.add(cb);
+  return () => void listeners.delete(cb);
+};
+
 export const useNotebook = create<NotebookState>()(
   persist(
     (set) => ({
@@ -36,7 +44,16 @@ export const useNotebook = create<NotebookState>()(
       remove: (id) => set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
     }),
     // only the notes are kept (IndexedDB stores values, not functions); read asynchronously, so screens wait for it
-    { name: "jadhr-notebook", storage: idbStorage<Pick<NotebookState, "notes">>(), version: 1, partialize: (s) => ({ notes: s.notes }) },
+    {
+      name: "jadhr-notebook",
+      storage: idbStorage<Pick<NotebookState, "notes">>(),
+      version: 1,
+      partialize: (s) => ({ notes: s.notes }),
+      onRehydrateStorage: () => (_state, error) => {
+        unreadable = !!error;
+        for (const cb of listeners) cb();
+      },
+    },
   ),
 );
 
@@ -45,4 +62,24 @@ const subscribeHydration = (cb: () => void) => useNotebook.persist.onFinishHydra
 /** Whether the notes have been read from this browser yet (they arrive a moment after the page). */
 export function useNotebookReady(): boolean {
   return useSyncExternalStore(subscribeHydration, () => useNotebook.persist.hasHydrated(), () => false);
+}
+
+/** Whether this browser could not read the notes (a reload usually can). */
+export function useNotebookUnreadable(): boolean {
+  return useSyncExternalStore(subscribeUnreadable, () => unreadable, () => false);
+}
+
+/** Resolves once the notes are read — true — or once reading them failed — false. */
+export function notebookLoaded(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const check = () => {
+      if (!useNotebook.persist.hasHydrated() && !unreadable) return;
+      offFinish();
+      listeners.delete(check);
+      resolve(useNotebook.persist.hasHydrated());
+    };
+    const offFinish = useNotebook.persist.onFinishHydration(check);
+    listeners.add(check);
+    check();
+  });
 }

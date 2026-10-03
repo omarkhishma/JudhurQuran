@@ -1,7 +1,8 @@
 "use client";
 
-import { del, get, set } from "idb-keyval";
+import { del, get, set, update } from "idb-keyval";
 import { DOCS_EVENT } from "@/lib/graph/persist";
+import { storageFrozen } from "@/lib/store/safeStorage";
 
 /**
  * The reader's own texts (P4.4, LIB-34, D9a): private, kept in this browser's IndexedDB, sent to be read word by
@@ -26,7 +27,8 @@ export type UserText = {
 export type UserTextMeta = Omit<UserText, "text" | "passages">;
 
 const INDEX = "jadhr-texts-index";
-const KEY = (id: string) => `jadhr-text:${id}`;
+export const TEXT_PREFIX = "jadhr-text:";
+const KEY = (id: string) => `${TEXT_PREFIX}${id}`;
 
 export async function listTexts(): Promise<UserTextMeta[]> {
   return ((await get<UserTextMeta[]>(INDEX)) ?? []).sort((a, b) => a.createdAt - b.createdAt);
@@ -43,18 +45,18 @@ export async function saveText(t: UserText): Promise<void> {
   changed();
 }
 
-/** Store a text as it is, its time included (a text synced from another device keeps the time it was saved). */
+/** Store a text as it is, its time included (a text synced from another device keeps the time it was saved). The
+ * index changes in one step, so two writes at once never drop each other's entry (audit 11 F12). */
 export async function putText(doc: UserText): Promise<void> {
+  if (storageFrozen()) return;
   await set(KEY(doc.id), doc);
   const meta: UserTextMeta = { id: doc.id, title: doc.title, words: doc.words, lemmas: doc.lemmas, passageCount: doc.passages.length, review: doc.review, unknown: doc.unknown, createdAt: doc.createdAt, updatedAt: doc.updatedAt };
-  const index = (await listTexts()).filter((x) => x.id !== doc.id);
-  index.push(meta);
-  await set(INDEX, index);
+  await update<UserTextMeta[]>(INDEX, (index = []) => [...index.filter((x) => x.id !== doc.id), meta]);
 }
 
 export async function deleteText(id: string, quiet = false): Promise<void> {
   await del(KEY(id));
-  await set(INDEX, (await listTexts()).filter((x) => x.id !== id));
+  await update<UserTextMeta[]>(INDEX, (index = []) => index.filter((x) => x.id !== id));
   if (!quiet) changed();
 }
 

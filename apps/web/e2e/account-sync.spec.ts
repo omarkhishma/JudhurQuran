@@ -1,5 +1,5 @@
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { stored } from "./helpers";
+import { ar, stored } from "./helpers";
 
 /**
  * Accounts and sync (PLAN P6.1, P6.2, P6.4; PRF-33, PRF-Q02, NTB-Q02): sign-in by a link that works once; what a
@@ -216,4 +216,127 @@ test("clearing this device signs it out first and never clears the account; a li
   await expect.poll(async () => (await local(other, "jadhr-saved"))?.bookmarks?.length).toBe(1);
   await dropAccount(other);
   await other.context().close();
+});
+
+test("many deletions at once are held for the reader's word: brought back, or sent everywhere (F11)", async ({ browser, page }) => {
+  const email = address();
+  const marks = Array.from({ length: 12 }, (_, i) => ({ kind: "root", key: `ر${i}`, label: `ر${i}`, at: 1759000000000 + i }));
+  const a = await device(browser, page, { saved: { state: { bookmarks: marks, notes: {}, history: [] }, version: 2 } });
+  await a.goto("/");
+  await signIn(a, email);
+  await expect.poll(async () => (await records(a)).filter((r) => r.store === "saved").length).toBe(12);
+  const emptied = () => a.evaluate(() => {
+    const s = JSON.parse(localStorage.getItem("jadhr-saved") ?? "{}");
+    s.state.bookmarks = [];
+    localStorage.setItem("jadhr-saved", JSON.stringify(s));
+  });
+  // every star gone on this device at once, as a store read empty by mistake would look: nothing is sent
+  await emptied();
+  await a.reload();
+  const prompt = a.locator(".storage-warning").filter({ hasText: "من «المحفوظات»" });
+  await expect(prompt).toContainText(`حُذف على هذا الجهاز ${ar(12)} عنصرًا من «المحفوظات»`);
+  await expect(a.getByRole("link", { name: /^حسابي: .* — المزامنة تنتظر جوابك$/ })).toBeVisible();
+  expect((await records(a)).filter((r) => r.store === "saved").length).toBe(12);
+  // brought back from the account
+  await prompt.getByRole("button", { name: "أعدها" }).click();
+  await expect.poll(async () => (await local(a, "jadhr-saved"))?.bookmarks?.length).toBe(12);
+  await expect(prompt).toHaveCount(0);
+  // gone again, and this time the reader says so: the account and the other devices follow
+  await emptied();
+  await a.reload();
+  await prompt.getByRole("button", { name: "احذفها من كل مكان" }).click();
+  await expect.poll(async () => (await records(a)).filter((r) => r.store === "saved").length).toBe(0);
+  await expect(prompt).toHaveCount(0);
+  expect((await local(a, "jadhr-saved"))?.bookmarks).toEqual([]);
+  await dropAccount(a);
+});
+
+test("another account's data on a device is taken into a new account only on the reader's word (F8)", async ({ browser, page }) => {
+  const [first, second, third] = [address(), address(), address()];
+  const a = await device(browser, page, { saved: { state: { bookmarks: [{ kind: "lemma", key: "Eilom", label: "عِلْم", at: 1759000000000 }], notes: {}, history: [] }, version: 2 } });
+  await a.goto("/");
+  await signIn(a, first);
+  await expect.poll(async () => (await records(a)).map((r) => r.key)).toContain("b:lemma:Eilom");
+  const h1 = await bearer(a);
+  // signed out as a sign-out leaves it (the session kept on the server here, to check and clean up after)
+  const leave = () => a.evaluate(() => ["jadhr-auth", "jadhr-sync"].forEach((k) => localStorage.removeItem(k)));
+  await leave();
+  await a.reload();
+  await signIn(a, second);
+  const ask = a.getByRole("dialog", { name: "على هذا الجهاز بيانات حساب آخر" });
+  await expect(ask).toBeVisible();
+  expect(await records(a), "nothing goes up before the reader answers").toEqual([]);
+  await ask.getByRole("button", { name: "أضفه إلى هذا الحساب" }).click();
+  await expect.poll(async () => (await records(a)).map((r) => r.key)).toContain("b:lemma:Eilom");
+  const h2 = await bearer(a);
+
+  // and a third account, this time starting the device with its own data alone
+  await leave();
+  await a.reload();
+  await signIn(a, third);
+  await expect(ask).toBeVisible();
+  await ask.getByRole("button", { name: "ابدأ ببيانات هذا الحساب" }).click();
+  await expect.poll(async () => (await local(a, "jadhr-saved"))?.bookmarks?.length ?? 0).toBe(0);
+  await expect(a.getByRole("link", { name: /^حسابي:/ })).toBeVisible();
+  await a.reload();
+  await expect(ask).toHaveCount(0);
+  expect(await records(a)).toEqual([]);
+  expect((await records(a, h1)).map((r) => r.key), "the first account keeps its own").toContain("b:lemma:Eilom");
+  await dropAccount(a);
+  for (const h of [h1, h2]) {
+    const { confirm } = (await (await a.request.post("/api/v1/me/delete", { headers: h })).json()) as { confirm: string };
+    await a.request.post("/api/v1/me/delete/confirm", { headers: h, data: { confirm } });
+  }
+});
+
+test("notes this browser cannot read are never shown as empty, written over or synced away (F11)", async ({ browser, page }) => {
+  const email = address();
+  const a = await device(browser, page);
+  await docs(a, { "jadhr-notebook": { state: { notes: [NOTE] }, version: 1 } });
+  await a.goto("/");
+  await a.reload(); // the notes seeded into IndexedDB are written by now
+  await signIn(a, email);
+  await expect.poll(async () => (await records(a)).map((r) => r.key)).toContain("n:n1");
+  // from here this browser fails to read them
+  await a.addInitScript(() => {
+    const get = IDBObjectStore.prototype.get;
+    IDBObjectStore.prototype.get = function (this: IDBObjectStore, key: IDBValidKey | IDBKeyRange) {
+      if (key === "jadhr-notebook") throw new DOMException("unreadable", "UnknownError");
+      return get.call(this, key);
+    };
+  });
+  await a.goto("/notebook");
+  await expect(a.getByRole("alert").filter({ hasText: "تعذّرت قراءة ملاحظاتك في هذا المتصفح الآن" })).toBeVisible();
+  await expect(a.getByRole("button", { name: "+ ملاحظة جديدة" })).toBeDisabled();
+  await a.goto("/me?tab=account");
+  await a.getByRole("button", { name: "زامن الآن" }).click();
+  await expect(a.locator(".profile-status")).toContainText("لم يُزامَن هذه المرة لأن هذا المتصفح تعذّرت عليه قراءته: الدفتر.");
+  expect((await records(a)).map((r) => r.key), "the note stays in the account").toContain("n:n1");
+  await dropAccount(a);
+});
+
+test("deleting this browser's data in one tab starts the other tabs afresh, so none writes it back (F15)", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript(() => {
+    // once per tab, and never into a browser already holding data (the second tab opens on the first one's)
+    const seeded = sessionStorage.getItem("e2e-seeded");
+    sessionStorage.setItem("e2e-seeded", "1");
+    if (seeded || localStorage.getItem("jadhr-personal")) return;
+    localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 }));
+    localStorage.setItem("jadhr-saved", JSON.stringify({ state: { bookmarks: [{ kind: "lemma", key: "Eilom", label: "عِلْم", at: 1759000000000 }], notes: {}, history: [] }, version: 2 }));
+  });
+  const one = await ctx.newPage();
+  await one.goto("/saved");
+  const two = await ctx.newPage();
+  await two.goto("/saved");
+  await expect(two.getByText("عِلْم").first()).toBeVisible();
+  await two.evaluate(() => ((window as unknown as { before: number }).before = 1));
+  await one.getByRole("button", { name: "حذف كل بياناتي من هذا المتصفح" }).click();
+  await one.getByRole("button", { name: "انقر مرة أخرى لتأكيد الحذف النهائي" }).click();
+  await expect(one.getByRole("status")).toHaveText("حُذفت بياناتك المحلية.");
+  // the other tab reloaded, holding nothing of what was deleted
+  await expect.poll(() => two.evaluate(() => (window as unknown as { before?: number }).before ?? 0)).toBe(0);
+  await expect(two.getByText("عِلْم")).toHaveCount(0);
+  expect(await two.evaluate(() => JSON.parse(localStorage.getItem("jadhr-saved") ?? "null")?.state?.bookmarks ?? [])).toEqual([]);
+  await ctx.close();
 });

@@ -168,11 +168,17 @@ function Counts() {
   );
 }
 
-/** PRF-04: green when synced (with the true number of devices, PRF-05), amber when only on this device. */
+/**
+ * PRF-04: green when synced (with the true number of devices, PRF-05), amber when only on this device. Nothing here is
+ * re-announced on each run (F24): a screen reader hears when sync stops working, and the result of a sync the
+ * reader asked for — not the five-minute rhythm.
+ */
 function SyncLine({ signedIn, devices }: { signedIn: boolean; devices: number | null }) {
   const t = useTranslations("me");
+  const ta = useTranslations("account");
   const locale = useLocale();
   const s = useSyncStatus();
+  const [said, setSaid] = useState("");
   const when = (ms: number) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { hour: "numeric", minute: "2-digit" }).format(new Date(ms));
   if (!signedIn)
     return (
@@ -181,25 +187,28 @@ function SyncLine({ signedIn, devices }: { signedIn: boolean; devices: number | 
         {t("statusLocal")}
       </span>
     );
-  const text =
-    s.state === "syncing"
-      ? t("statusSyncing")
-      : s.state === "offline"
-        ? t("statusOffline")
-        : s.state === "error"
-          ? t("statusError", { error: s.error ?? "" })
-          : devices !== null
-            ? t("statusSynced", cnt(devices, locale))
-            : t("statusSyncing");
+  // the line says only what it knows: synced, and on how many devices once the account has said (F23)
+  const text = s.state === "syncing" ? t("statusSyncing") : s.state === "offline" ? t("statusOffline") : s.state === "error" ? t("statusError") : devices !== null ? t("statusSynced", cnt(devices, locale)) : t("statusSyncedPlain");
+  async function now() {
+    setSaid("");
+    await runSync();
+    const after = useSyncStatus.getState();
+    setSaid(after.state === "idle" ? t("syncDone", { when: when(after.last ?? Date.now()) }) : after.state === "offline" ? t("statusOffline") : t("statusError"));
+  }
   return (
-    <span className="profile-status" role="status">
+    <span className="profile-status">
       <span className="dot" style={{ background: s.state === "idle" ? "var(--good)" : s.state === "syncing" ? "var(--c-word)" : "var(--amber)" }} aria-hidden="true" />
       <span>{text}</span>
       {s.last && s.state === "idle" && <span className="text-t3">{t("lastSync", { when: when(s.last) })}</span>}
       {s.tooLarge.length > 0 && <span className="text-amber">{t("tooLarge", cnt(s.tooLarge.length, locale))}</span>}
-      <button type="button" className="btn min-h-[36px]" onClick={() => void runSync()} disabled={s.state === "syncing"}>
+      {s.full > 0 && <span className="text-amber">{t("full", cnt(s.full, locale))}</span>}
+      {s.unreadable.length > 0 && <span className="text-amber">{t("unreadable", { stores: s.unreadable.map((x) => ta(`store.${x}`)).join(locale === "ar" ? "، " : ", ") })}</span>}
+      <button type="button" className="btn" onClick={() => void now()} disabled={s.state === "syncing"}>
         {t("syncNow")}
       </button>
+      <span className="sr-only" role="status">
+        {s.state === "offline" || s.state === "error" ? text : said}
+      </span>
     </span>
   );
 }

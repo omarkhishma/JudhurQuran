@@ -1,8 +1,9 @@
 "use client";
 
-import { deleteGraph, listGraphs, loadGraph, putGraph } from "@/lib/graph/persist";
+import { getMany, keys as idbKeys } from "idb-keyval";
+import { deleteGraph, GRAPH_PREFIX, putGraph } from "@/lib/graph/persist";
 import type { GraphDoc } from "@/lib/graph/types";
-import { deleteText, listTexts, loadText, putText, type UserText } from "@/lib/library/texts";
+import { deleteText, putText, TEXT_PREFIX, type UserText } from "@/lib/library/texts";
 import { DEFAULT_PREFS, type Prefs, type Session, usePersonal, usePrefs } from "@/lib/reader/store";
 import { useAnalyseChoices } from "@/lib/store/analyseChoices";
 import { useAudio } from "@/lib/store/audio";
@@ -223,15 +224,16 @@ const analyse: Adapter = {
 
 // ─── documents in IndexedDB: graphs and the reader's own texts ────────────────
 
+/** Documents found by their own keys, not by an index a moment's race could drop one from: a document missing from
+ * the list would be sent as deleted (audit 11 F12). */
+async function documents<T extends { id: string; updatedAt: number }>(prefix: string, tag: string): Promise<Local> {
+  const found = (await idbKeys()).filter((k): k is string => typeof k === "string" && k.startsWith(prefix));
+  const docs = await getMany<T>(found);
+  return entries(docs.filter((d): d is T => !!d?.id).map((d): [string, unknown, number] => [`${tag}:${d.id}`, d, d.updatedAt]));
+}
+
 const graphs: Adapter = {
-  read: async () => {
-    const out: [string, unknown, number][] = [];
-    for (const g of await listGraphs()) {
-      const doc = await loadGraph(g.id);
-      if (doc) out.push([`g:${doc.id}`, doc, doc.updatedAt]);
-    }
-    return entries(out);
-  },
+  read: () => documents<GraphDoc>(GRAPH_PREFIX, "g"),
   apply: async (changes) => {
     for (const c of changes) {
       const id = split(c.key)[1];
@@ -242,14 +244,7 @@ const graphs: Adapter = {
 };
 
 const texts: Adapter = {
-  read: async () => {
-    const out: [string, unknown, number][] = [];
-    for (const t of await listTexts()) {
-      const doc = await loadText(t.id);
-      if (doc) out.push([`x:${doc.id}`, doc, doc.updatedAt]);
-    }
-    return entries(out);
-  },
+  read: () => documents<UserText>(TEXT_PREFIX, "x"),
   apply: async (changes) => {
     for (const c of changes) {
       const id = split(c.key)[1];

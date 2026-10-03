@@ -13,7 +13,9 @@ import { useReview } from "@/lib/store/review";
 import { useSaved } from "@/lib/store/saved";
 import { WATCHED } from "@/lib/sync/adapters";
 import { sendDrafts } from "@/lib/contrib";
-import { isApplying, queueLookup, runSync } from "@/lib/sync/run";
+import { WIPE_KEY } from "@/lib/localData";
+import { freezeStorage } from "@/lib/store/safeStorage";
+import { isApplying, queueLookup, runSync, stopSync } from "@/lib/sync/run";
 
 /** Each persisted store by its key, so a write in another tab is read here too (no tab overwrites another's). */
 const PERSISTED: Record<string, { persist: { rehydrate: () => unknown } }> = {
@@ -42,7 +44,11 @@ export function SyncRunner() {
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (!e.key) return;
-      if (e.key === AUTH_KEY && e.newValue === null) useAccount.setState({ session: null, user: null });
+      // this browser's data was deleted in another tab: nothing held here may write it back (F15)
+      if (e.key === WIPE_KEY && e.newValue) {
+        freezeStorage();
+        void stopSync().then(() => window.location.reload());
+      } else if (e.key === AUTH_KEY && e.newValue === null) useAccount.setState({ session: null, user: null });
       else void PERSISTED[e.key]?.persist.rehydrate();
     };
     window.addEventListener("storage", onStorage);

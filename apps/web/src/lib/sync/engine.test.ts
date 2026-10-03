@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canonical, commit, emptyState, hash, type Local, plan, reconcile, type SyncState } from "./engine";
+import { canonical, chunks, commit, DELETION_GUARD, emptyState, hash, type Local, plan, reconcile, type SyncState, vanished } from "./engine";
 
 const T = Date.UTC(2026, 9, 3);
 const local = (entries: [string, unknown, number?][]): Local => new Map(entries.map(([k, value, at]) => [k, { value, at }]));
@@ -104,5 +104,40 @@ describe("the sync engine (P6.2, PRF-33)", () => {
     );
     expect(out).toEqual({ saved: [{ key: "b:x", value: 2, deleted: false }] });
     expect(s.shadow.saved).toEqual({ "b:a": hash(1), "b:x": hash(2) });
+  });
+
+  it("holds many deletions in one store for the reader's word, and sends them once confirmed (F11)", () => {
+    const keys = Array.from({ length: 40 }, (_, i) => [`n:${i}`, i] as [string, unknown]);
+    const s = synced("saved", keys);
+    // the store reads as empty, as a failed read would: nothing goes up, nothing is forgotten
+    const held = plan({ saved: local([]) }, s, T);
+    expect([held.push, held.held]).toEqual([[], { saved: 40 }]);
+    expect(Object.keys(s.shadow.saved!)).toHaveLength(40);
+    // a few deletions pass as ever
+    expect(plan({ saved: local(keys.slice(0, 35)) }, s, T).push).toHaveLength(5);
+    expect(DELETION_GUARD(40)).toBe(10);
+    // confirmed: they go up
+    expect(plan({ saved: local([]) }, s, T, { allowDeletions: new Set(["saved"]) }).push).toHaveLength(40);
+  });
+
+  it("keeps a refused record changed here, to try again (a full account, F14)", () => {
+    const s = emptyState("u1");
+    const { push } = plan({ saved: local([["b:a", 1], ["b:b", 2]]) }, s, T);
+    commit(s, ["saved"], push, [], [{ store: "saved", key: "b:b" }]);
+    expect(s.shadow.saved).toEqual({ "b:a": hash(1) });
+    expect(plan({ saved: local([["b:a", 1], ["b:b", 2]]) }, s, T).push.map((r) => r.key)).toEqual(["b:b"]);
+  });
+
+  it("on a full resync reads what it agreed and no longer finds as deleted elsewhere (F6)", () => {
+    const s = synced("saved", [["b:a", 1], ["b:gone", 2]]);
+    const there = [{ store: "saved", key: "b:a", value: 1, deleted: false, updated_at: T }];
+    expect(vanished(there, s)).toEqual([{ store: "saved", key: "b:gone", value: null, deleted: true, updated_at: 0 }]);
+  });
+
+  it("splits a push by count and by size, a record larger than a request's share going alone (F16)", () => {
+    const rec = (key: string, n: number) => ({ store: "texts" as const, key, value: "x".repeat(n), deleted: false, updated_at: T });
+    const push = [rec("a", 10), rec("b", 10), rec("c", 900), rec("d", 10), rec("e", 10), rec("f", 10)];
+    expect(chunks(push, 3, 1000).map((c) => c.map((r) => r.key))).toEqual([["a", "b"], ["c"], ["d", "e", "f"]]);
+    expect(chunks([], 3, 1000)).toEqual([]);
   });
 });

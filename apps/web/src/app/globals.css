@@ -241,6 +241,13 @@ button:disabled {
   color: var(--card);
   opacity: 0.92;
 }
+/* a button that cannot be pressed now looks it (it read as live: the Notebook's "new note" while the notes could not
+   be read, "Sync now" while syncing) */
+.btn:disabled,
+.btn:disabled:hover {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .icon-btn {
   width: 32px;
   height: 30px;
@@ -4484,6 +4491,21 @@ a.wotd-pill:hover {
   background: var(--card);
   box-shadow: var(--sh-open);
   color: var(--t1);
+}
+
+/* something the reader is asked, or told, in the flow of a page: notes that could not be read, deletions held (F11) */
+.attention-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--line));
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--t1);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 /* ─── Hear the root (B4): every occurrence, slice after slice ─────────────────── */

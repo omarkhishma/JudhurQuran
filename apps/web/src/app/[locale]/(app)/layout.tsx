@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { pick, SCOPES } from "@/lib/i18nScopes";
+import { SyncPrompt } from "@/components/account/SyncPrompt";
 import { SiteHeader } from "@/components/shell/SiteHeader";
 
 /** Full-bleed working surfaces (the graph editor): the canvas fills the viewport under the header.
@@ -14,6 +15,8 @@ export default async function AppLayout({ children, params }: LayoutProps<"/[loc
       <main id="main" className="flex h-[calc(100dvh-52px)] min-h-0 min-w-0 flex-col">
         {children}
       </main>
+      {/* what sync will not decide alone, asked wherever the reader is (F8, F11) */}
+      <SyncPrompt />
     </NextIntlClientProvider>
   );
 }
