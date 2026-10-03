@@ -152,6 +152,8 @@ def test_records_sync_newest_wins_nothing_is_destroyed_and_values_are_encrypted(
     )
     hist = client.get("/api/v1/me/history", headers=h).json()["data"]
     assert hist[0]["value"]["label"] == "عِلْم"
+    # the older version that lost is kept too: nothing a device sent is destroyed
+    assert "old" in [x["value"]["label"] for x in hist if x["value"]]
     # a deletion travels as a tombstone
     client.post(
         "/api/v1/me/sync",

@@ -107,8 +107,23 @@ def push(u: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
                 {"u": u["id"], "st": store, "k": key},
             )
             if cur is not None and cur["updated_at"] >= when:
-                # the server's version is as new or newer: it stays, and the client learns it
+                # the server's version is as new or newer: it stays, and the client learns it; the version that
+                # lost is kept with the replaced ones, so a merge never destroys anything (P6.2)
                 if cur["updated_at"] > when:
+                    conn.execute(
+                        text(
+                            """insert into accounts.record_history (user_id, store, key, value, deleted, updated_at)
+                               values (:u, :st, :k, :v, :d, :t)"""
+                        ),
+                        {
+                            "u": u["id"],
+                            "st": store,
+                            "k": key,
+                            "v": None if body is None else seal(body, _aad(u["id"], store, key)),
+                            "d": deleted,
+                            "t": when,
+                        },
+                    )
                     rejected.append({"store": store, "key": key, "server": _out(u["id"], cur)})
                 continue
             if cur is None and total and total["n"] >= MAX_RECORDS:
