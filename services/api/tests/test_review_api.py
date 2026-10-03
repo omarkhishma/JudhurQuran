@@ -53,3 +53,14 @@ def test_a_readers_words_are_mapped_to_their_roots_and_kept_nowhere() -> None:
         and by["min"] is None
         and "no-such" not in by
     )
+
+
+def test_each_blank_takes_the_everyday_spelling_and_carries_its_hint_and_what_is_revealed() -> None:
+    # الصلاة is written ٱلصَّلَوٰةَ in the mushaf: a reader may type either (RDR-355)
+    d = get("/api/v1/roots/صلو/review")
+    b = next(x for x in d["context"]["blanks"] if x["imlaei"] == "الصلاة")
+    assert normalize(b["surface"]) != normalize(b["imlaei"])
+    # the hint before checking and the reveal after (RDR-354, 356)
+    assert b["lemma"]["pos"]["ar"] and b["lemma"]["occurrences"] > 0 and b["translit"]
+    assert all(x["pattern"] is None or x["pattern"]["ar"]["full"] for x in d["context"]["blanks"])
+

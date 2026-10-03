@@ -84,13 +84,38 @@ def root_review(conn: Connection, raw: str, pick: int = 0) -> dict[str, Any] | N
     tokens = rows(
         conn, "select position, text from content.tokens where verse_id = :v order by position", {"v": v_id}
     )
-    blanks = rows(
+    found = rows(
         conn,
-        """select w.location, w.token_from, w.token_to, w.text_uthmani as surface, l.slug
-           from content.words w left join content.lemmas l on l.id = w.lemma_id
-           where w.verse_id = :v and w.root_id = :r order by w.position""",
+        f"""select w.location, w.token_from, w.token_to, w.text_uthmani as surface, w.text_imlaei as imlaei,
+                   w.translit as word_translit, w.gloss_en as word_gloss, {lexicon._LEMMA_COLS},
+                   p.slug as pattern_slug, p.ar as pattern_ar, p.translit as pattern_translit
+            from content.words w join content.lemmas l on l.id = w.lemma_id
+            left join content.patterns p on p.id = l.pattern_id
+            where w.verse_id = :v and w.root_id = :r order by w.position""",
         {"v": v_id, "r": root["id"]},
     )
+    # each blank: the mushaf's word and its everyday spelling (either is a right answer, RDR-355), the hint shown
+    # before checking — pattern and part of speech, as the root card gives (RDR-354) — and what is revealed after:
+    # the word's transliteration and gloss, its dictionary form and how often the Quran uses it (RDR-356)
+    blanks = [
+        {
+            "location": x["location"],
+            "token_from": x["token_from"],
+            "token_to": x["token_to"],
+            "surface": x["surface"],
+            "imlaei": x["imlaei"],
+            "translit": x["word_translit"],
+            "gloss_en": x["word_gloss"],
+            "slug": x["slug"],
+            "lemma": lexicon._lemma_out(x),
+            "pattern": (
+                {"slug": x["pattern_slug"], "ar": lexicon.ar(x["pattern_ar"], x["pattern_translit"])}
+                if x["pattern_slug"]
+                else None
+            ),
+        }
+        for x in found
+    ]
     verse: dict[str, Any] = {"id": v_id}
     work = content.attach_translation(conn, [verse], TRANSLATION)
     gist = root["gist_source"]
