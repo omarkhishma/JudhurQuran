@@ -1,9 +1,22 @@
-"""Lexicon registry (data/lexica.yaml): load, validate, verify sha256 pins."""
+"""Lexicon registry (data/lexica.yaml): load, validate, verify sha256 pins.
+
+Ordering and identity are two different things:
+
+* ``sort_order`` is the display order — the design lists the dictionaries by the author's death
+  date (al-ʿAyn first, Lane last), and the registry refuses an order that contradicts ``death_ce``.
+* ``id_block`` fixes entry ids (``id_block × 1,000,000 + position``). It never changes when a work
+  is added or the display order moves, so ids already loaded or cited stay valid.
+
+``kind`` is the design's dictionary kind (filter chips, article direction): ``earliest``
+(al-ʿAyn), ``general``, ``root`` (Maqāyīs), ``interpretive`` (al-Mufradāt), ``english`` (Lane), and
+``gharib`` for the verse-keyed Quran gharib works the design has no row for.
+"""
 
 from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +24,7 @@ import yaml
 
 WORK_FIELDS = (
     "id",
+    "kind",
     "title_ar",
     "title_en",
     "author_ar",
@@ -26,7 +40,19 @@ WORK_FIELDS = (
     "redistributable",
     "sort_order",
 )
-FORMATS = {"shamela-toc", "shamela-lisan", "shamela-gharib", "perseus-lane"}
+# Emitted in every work row; null when the registry does not set them (Lane has no Shamela id).
+OPTIONAL_WORK_FIELDS = ("shamela_id",)
+KINDS = {"earliest", "general", "root", "interpretive", "english", "gharib"}
+FORMATS = {
+    "shamela-toc",
+    "shamela-lisan",
+    "shamela-gharib",
+    "perseus-lane",
+    "shamela-taj",
+    "shamela-qamus",
+    "shamela-taqalib",
+}
+EDITOR_SUPPLEMENTS = {"keep", "unwrap", "drop"}
 
 
 class LexiconRegistryError(ValueError):
@@ -48,7 +74,11 @@ class WorkSpec:
 
     @property
     def kind(self) -> str:
-        return str(self.cfg.get("kind", "lexicon"))
+        return str(self.cfg["kind"])
+
+    @property
+    def id_block(self) -> int:
+        return int(self.cfg["id_block"])
 
     def path(self, rel: str) -> Path:
         return self.root / rel
@@ -64,7 +94,9 @@ class WorkSpec:
         return out
 
     def work_row(self) -> dict[str, Any]:
-        return {f: self.cfg[f] for f in WORK_FIELDS}
+        row = {f: self.cfg[f] for f in WORK_FIELDS}
+        row.update({f: self.cfg.get(f) for f in OPTIONAL_WORK_FIELDS})
+        return row
 
 
 @dataclass(frozen=True)
@@ -92,8 +124,10 @@ def load_registry(raw: Path, registry: Path, *, verify: bool = True) -> Registry
     rules = {r["id"]: r["description"] for r in data["cleaning_rules"]}
     works: list[WorkSpec] = []
     seen: set[str] = set()
+    blocks: set[int] = set()
+    orders: set[int] = set()
     for cfg in data["works"]:
-        missing = [f for f in (*WORK_FIELDS, "format", "files") if f not in cfg]
+        missing = [f for f in (*WORK_FIELDS, "format", "files", "id_block") if f not in cfg]
         if missing:
             raise LexiconRegistryError(f"{cfg.get('id')}: missing fields {missing}")
         if cfg["format"] not in FORMATS:
@@ -103,6 +137,23 @@ def load_registry(raw: Path, registry: Path, *, verify: bool = True) -> Registry
         seen.add(cfg["id"])
         if cfg["lang"] not in ("ar", "en"):
             raise LexiconRegistryError(f"{cfg['id']}: lang must be ar|en")
+        if cfg["kind"] not in KINDS:
+            raise LexiconRegistryError(f"{cfg['id']}: kind must be one of {sorted(KINDS)}")
+        if cfg["format"].startswith("shamela-") and not isinstance(cfg.get("shamela_id"), int):
+            raise LexiconRegistryError(
+                f"{cfg['id']}: a Shamela work needs its shamela_id (book_metadata.json)"
+            )
+        if cfg.get("editor_supplements", "keep") not in EDITOR_SUPPLEMENTS:
+            raise LexiconRegistryError(
+                f"{cfg['id']}: editor_supplements must be one of {sorted(EDITOR_SUPPLEMENTS)}"
+            )
+        for name, value, used in (
+            ("id_block", cfg["id_block"], blocks),
+            ("sort_order", cfg["sort_order"], orders),
+        ):
+            if not isinstance(value, int) or value < 1 or value in used:
+                raise LexiconRegistryError(f"{cfg['id']}: {name} must be a unique positive integer")
+            used.add(value)
         if verify:
             for f in cfg["files"]:
                 p = raw / f["path"]
@@ -115,4 +166,10 @@ def load_registry(raw: Path, registry: Path, *, verify: bool = True) -> Registry
                     )
         works.append(WorkSpec(cfg=cfg, root=raw))
     works.sort(key=lambda w: int(w.cfg["sort_order"]))
+    deaths = [(w.id, w.cfg["death_ce"]) for w in works]
+    for (a, da), (b, db) in pairwise(deaths):
+        if da is not None and db is not None and db < da:
+            raise LexiconRegistryError(
+                f"sort_order puts {b} (d. {db}) after {a} (d. {da}); order is by death date"
+            )
     return Registry(rules=rules, works=works)

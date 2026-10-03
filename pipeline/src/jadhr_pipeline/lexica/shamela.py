@@ -32,7 +32,12 @@ MARKER_PATTERNS: dict[str, re.Pattern[str]] = {
     "guillemets": re.compile(r" ?\u00ab([\u0660-\u06690-9]{1,3})\u00bb"),
     "negation-parens": re.compile(r" ?\(\u00ac([\u0660-\u06690-9]{1,3})\)"),
     "parens": re.compile(r" ?\(([\u0660-\u06690-9]{1,3})\)"),
+    # Tahdhīb: a numbered parenthesis is a note marker unless it numbers a verse — at the end of a
+    # quotation ("…الْبَيِّنَة (٤) ﴾", "…الدُّنْيَا﴾ (١٠٨)") or after a sūra's name ("فِي سُورَة الْملك (٢٧)").
+    "parens-unless-verse": re.compile(r" ?\(([\u0660-\u06690-9]{1,3})\)(?!\s*\ufd3e)"),
+    "none": re.compile(r"(?!)"),  # an edition with no reference markers in the body (Tāj)
 }
+_SURA_BEFORE = re.compile(r"(?:سور[ةه]\s+\S+(?:\s+\S+)?|\ufd3e)\s*$")
 _NOTE_NUMBER = re.compile(r"(?:^|[\r\n])\s*\(\u00ac?([\u0660-\u06690-9]{1,3})\)")
 _TOC_ID = re.compile(r"toc-(\d+)")
 _HSPACE = re.compile(r"[ \t\u00a0\u2000-\u200a\u202f\u205f\u3000]+")
@@ -79,7 +84,10 @@ class TocEntry:
 
 def load_pages(book_dir: Path) -> list[Page]:
     rows = [json.loads(line) for line in (book_dir / "pages.jsonl").open(encoding="utf-8")]
-    rows.sort(key=lambda r: (r["sequence_num"], r["page_id"]))
+    # Reading order is the Shamela page number. The dataset's sequence_num is wrong for three pages
+    # (Tāj 2/313 has 9, Tahdhīb 1/56 has 205 and 1/219 has 1764), which moved them into other volumes;
+    # page_id and shamela_page_id agree with each other and with sequence_num everywhere else.
+    rows.sort(key=lambda r: (int(r["shamela_page_id"]), r["page_id"]))
     return [
         Page(
             shamela_page_id=int(r["shamela_page_id"]),
@@ -126,6 +134,11 @@ def strip_markers(page: Page, style: str, counters: Counters) -> str:
 
     def repl(m: re.Match[str]) -> str:
         n = m.group(1).translate(ARABIC_DIGITS)
+        if style == "parens-unless-verse" and _SURA_BEFORE.search(
+            strip_marks(page.body[max(0, m.start() - 40) : m.start()])
+        ):
+            counters.add("footnote-markers-removed:verse-number-kept")
+            return m.group(0)
         counters.add("footnote-markers-removed")
         counters.add(
             "footnote-markers-removed:with-note-on-page"
@@ -195,12 +208,24 @@ def _strip_spans(raw: str, counters: Counters) -> tuple[str, list[Span]]:
     return "".join(out), spans
 
 
-def read_lines(pages: list[Page], marker_style: str, counters: Counters) -> list[Line]:
+_BROKEN_SPAN = re.compile(
+    r"((?:^|[\r\n])<span[^>]*>[^<\r\n]*)[\r\n]+([^<]*</span>)"
+)  # spans that open a line
+
+
+def read_lines(
+    pages: list[Page], marker_style: str, counters: Counters, *, join_broken_spans: bool = False
+) -> list[Line]:
+    """``join_broken_spans``: a heading span the typist broke over two lines ("<span>ع ض⏎و: </span>")
+    is put back on one line (the break becomes a space) so that it is still seen as a heading."""
     out: list[Line] = []
     for page in pages:
         if page.footnotes:
             counters.add("footnotes-dropped")
         body = strip_markers(page, marker_style, counters)
+        if join_broken_spans:
+            body, n = _BROKEN_SPAN.subn(r"\1 \2", body)
+            counters.add("title-markup-removed:line-break-inside-heading", n)
         for n, raw in enumerate(re.split(r"\r\n|\r|\n", body)):
             text, spans = _strip_spans(raw, counters)
             out.append(Line(text, page, n == 0, spans))

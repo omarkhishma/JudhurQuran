@@ -7,23 +7,37 @@
 
 cleaning_rules:
   - id: front-matter-skipped
-    description: Editor introductions, studies, indexes and section-only text (كتاب/باب/فصل headings and the prose under them) are not imported; only dictionary articles / gloss items are.
+    description: "Editor introductions, studies, indexes and section-only text (كتاب/باب/فصل headings and the prose under them) are not imported; only dictionary articles / gloss items are. In al-ʿAyn and Tahdhīb this includes the remarks between a group title and its first article and al-Azharī's closing chapters on the letters (باب الألفات، الياآت، الواوات، الهمز), which are grammar, not root articles (`front-matter-skipped:chars` counts every character left out)."
   - id: footnotes-dropped
     description: The Shamela page `footnotes` field (the modern editor's apparatus — takhrij, variant notes, commentary) is never imported.
   - id: footnote-markers-removed
-    description: Editor footnote reference markers in the body are removed — «١» (al-Mufradat, Lisan), (¬١) (Maqayis), (١) (al-Sihah, Ibn Qutaybah). The report counts how many had a matching note on the same page.
+    description: "Editor footnote reference markers in the body are removed — «١» (al-Mufradat, Lisan, al-ʿAyn), (¬١) (Maqayis), (١) (al-Sihah, Ibn Qutaybah, Tahdhīb — where (١) follows a sūra name it is the verse number and stays, `:verse-number-kept`). The report counts how many had a matching note on the same page. In al-ʿAyn the typist sometimes broke the line between a marker and the full stop after it («… وتَعَظْعَظْ «٢»» / «. أي اتَّعْظْ…»); with the marker gone, that stop goes back to the end of the line it closes when that line has none of its own (`:stop-after-marker-rejoined`); no character is dropped."
   - id: title-markup-removed
-    description: Shamela heading markup <span data-type="title" …>…</span> is removed from the body; the heading text becomes the entry headword (or the surah for gharib items).
+    description: "Shamela heading markup <span data-type=\"title\" …>…</span> is removed from the body; the heading text becomes the entry headword (or the surah for gharib items). Where the typist broke a heading span over two lines (Tāj, two headings), the break inside the span becomes a space so the heading is still recognised (`title-markup-removed:line-break-inside-heading`)."
   - id: page-join
     description: Consecutive printed pages are joined. A page that ends a line starts a new paragraph; a page that breaks mid-paragraph is joined with a single space. Whitespace only.
   - id: whitespace-normalised
-    description: Line breaks become paragraph breaks (\n\n); runs of spaces/tabs collapse to one space; paragraphs are trimmed; empty paragraphs dropped.
+    description: "Line breaks become paragraph breaks (\\n\\n); runs of spaces/tabs collapse to one space; paragraphs are trimmed; empty paragraphs dropped. In Tāj, an empty bracket pair left by a lost honorific glyph and split over two lines («[⏎]») is put back on one line (`whitespace-normalised:line-break-in-empty-brackets`)."
   - id: separator-lines-dropped
     description: Decorative separator lines ("* * *") between gloss groups are dropped (Ibn Qutaybah).
   - id: gharib-item-number
     description: Ibn Qutaybah items open with the ayah number(s) and a dash — «٤١-», «٣٠ و٣١-», «١٦، ١٨، ٢١، ٣٠-», «١٧-١٨-». The number prefix is moved to `ayah` and is not part of the gloss; the gloss is the item's printed text after it, verbatim, including any connective and the quoted phrase («و ﴿يَوْمِ الدِّينِ﴾ يوم القيامة…»). `phrase` repeats the first quoted words (﴿…﴾, (…) or "…") for alignment. An item naming several ayahs gives one gloss row per listed ayah in which its phrase occurs (same text); a phrase quoted across ayahs ("… * …") is aligned part by part. A line with no number that opens with ﴿…﴾ is a further item of the same ayah, unless its phrase is absent from that ayah (±3) but present elsewhere in the Quran — then it is a cited verse and stays, verbatim, in the previous gloss.
   - id: lisan-article-split
     description: Lisan al-Arab is split into articles at line-initial headwords "X:" whose first letter matches the current فصل and whose last letter matches the section's باب (majority of headwords in that فصل; weak/hamza bab accepts و ي ا ى ء). Splitting only inserts boundaries; no text is moved or changed.
+  - id: taj-article-split
+    description: "Tāj al-ʿArūs is split at printed root headings taken in the order of its TOC: a heading span that opens its line (only marks, digits or punctuation such as «٣ -» before it — dropped with the heading), or a plain line that is only the heading (where the typist misplaced the anchor). A TOC anchor inside running text or glued into a word is ignored and its text kept. Two headings over one text («ظوأ» then «وظيأ») make one article with both headings. A root article the TOC does not list, typed «صرخَ: (الصَّرْخَة…» at a line start, is split when the word shares the article's first and last radical and sorts between the neighbouring headings (17 such). Section headings (باب، فصل، الجزء، المقصد، رموز…) close the article. Splitting only inserts boundaries; no text is moved or changed."
+  - id: heading-separator-dropped
+    description: "What the typing printed around a root heading goes with the heading, which becomes `headword`: the colon or full stop after it («أبأ» then «: ( الأَبَاءَةُ…», «ع ز ر» then «. العَزْرُ…»), the brackets of a bracketed heading («(⏎قبعر⏎)», «[دغمس⏎]») and stray numbering or punctuation on the heading's own line before it («٣ - (ف ط ر)»)."
+  - id: taj-headword-markers-removed
+    description: "The Shamela typing of Tāj turned the sign printed before each headword into ﴿, ﴾ or ! (alternating, 3–22 per 1,000 letters). These marker characters are removed with the space the conversion put beside them. Quran quotations use the same brackets, so a ﴿…﴾ span is kept when it reads as a quotation: a sūra:āya reference follows it; or a citation introduces it (تعالى، عز وجل، جل ثناؤه، التنزيل، قرئ… ending in a colon or after a verb of citing, with no full stop between — not the eulogy «إلى الله تعالى.»), and a cited span cut through al-Qāmūs's parentheses must still read as Quran; or its words alone follow the Quran (60% or more of its consecutive word pairs occur in one verse) with no parenthesis, square bracket or lexicographer's colon inside. Spans are chosen together without overlaps, so a marker inside a quotation is still removed. Counted per reason (`taj-quotation-brackets-kept:*`)."
+  - id: qamus-bullet-split
+    description: "al-Qāmūs (Risāla edition) opens every root with a bullet «•» and never prints the root. Every bullet starts an article that runs to the next bullet or section heading; the bullet is the edition's article mark and is not kept. Where the typist left out a bullet (18 lines such as «الشَّجَرُ والشِّجَرُ…» or «حارَ يحَارُ حَيْرَةً…» inside the previous article), the article starts at the line whose first word carries the letters of a Tāj root left unpaired in that section and whose opening words open that Tāj article, which quotes al-Qāmūs. The headword is the article's first word as printed (after «و:» or «ي:», the weak-letter mark of باب الواو والياء, which stays in the body). Splitting only inserts boundaries; no text is moved or changed."
+  - id: qamus-root-alignment
+    description: "Each al-Qāmūs article is aligned to the Tāj al-ʿArūs root headings of the same باب (last radical) and فصل (first radical) — Tāj is a commentary that follows al-Qāmūs article by article — by an order-preserving alignment scoring (a) the Tāj root's letters appearing in order in the headword (a weak radical may be written و، ي or ا) and (b) the article's opening words appearing at the opening of Tāj's article, which quotes al-Qāmūs. A section whose فصل heading the typing lost is aligned against the Tāj roots up to the next فصل present; a leftover article takes an unused root of its section when letters and text both agree (Tāj sometimes orders two roots the other way round). The aligned Tāj heading is used only to map the root; nothing is displayed from Tāj. Unaligned articles are listed in the report and mapped from their own headword; the closing section on particles is not aligned."
+  - id: taqalib-article-split
+    description: "Kitāb al-ʿAyn and Tahdhīb al-Lugha file every root under a group of letters and treat all its permutations there. A group starts at its title — a TOC heading, or a line the typist did not tag: spaced letters «ق ص د» or «ح ص ن حصن، حنص…: مستعملة.», «(باب الزاي والراء)», «كتاب الحروف الجوف» — which gives the group's letters and its «مستعمل/مهمل» lists; Tahdhīb repeats the list on a line of its own («عقش، عشق…: مستعملة.», «نزر. رزن… (مستعملة)», «استعمل من وجوهه: (طسوج)»); «أهمله الليث» (al-Layth left it out) is not «مهمل». al-ʿAyn's section titles (الثنائي، الثلاثي، المعتل، اللفيف، الرباعي، الخماسي) give the number of radicals; Tahdhīb rarely names them, so each group's own letters decide. A TOC title that is neither (a poem line, «﷽») stays in the text. An article starts at a line opening with its permutation header («هقع:», «عق، قع:», «(سخن) :», «خول _ خيل:», «الحرقوص:») when the header is in the group's list or its letters fit the group (a written hamza is a radical, a long vowel is not); other line-initial «word:» — «قال:», «الليث:», glosses («والخؤولة:», «الخلابيس:»), a word of a root that already has its article («الدعموص:» after «دعمص:») — stay in the text. Tahdhīb also files quadriliterals and weak roots where its typing gives no title («ثرمل» after the لفيف of ث, «ليل: الليث:» and «وقي:» after ل م and ق م); there the section's first letter suffices. A colophon closing a letter («تم حرف السين…», «آخر كتاب الراء») ends the article and is not imported (`:colophon`). Tahdhīb's quinqueliterals put the header in parentheses after its narrator («أبو عبيد عن أبي عمرو: (الهبنقع) : …», five radicals or more: `:header-narrated`). A list line directly followed by text heads the article of its first permutation (`:list-line-opens-article`). 65 pages of Tahdhīb vol. 4 were typed without line breaks; they are cut back into lines before headers, group titles and spaced letters that follow a sentence end (`:flat-page-cut`, `:header-inside-a-flat-page`); a piece that is not a header rejoins its line with a space. The article runs to the next header or group; the body keeps its printed header, as Lisān's do. The report lists the listed permutations never found as a header (the «مستعمل» lists are the checklist). Splitting only inserts boundaries; no text is moved or changed."
+  - id: editor-supplements
+    description: "An edition that marks its editors' supplements with square brackets (al-ʿAyn: «[…]», words «required by the context» or restored from another manuscript or book) states per work how they are shown (`editor_supplements`): keep — as printed, brackets and all, so the reader sees they are the editors'; unwrap — the words without the brackets; drop — removed. al-ʿAyn keeps them (DECISIONS 2026-10-03), so this rule is counted only for a work set to unwrap or drop."
   - id: lane-markup-removed
     description: Lane (Perseus TEI) markup is removed; element text is kept in document order; each <entryFree> becomes one paragraph; <pb n> page breaks become page_ref only.
   - id: lane-transliteration
@@ -31,8 +45,9 @@ cleaning_rules:
 
 works:
   - id: mufradat
-    sort_order: 1
-    kind: lexicon
+    sort_order: 6        # display order = author's death date
+    id_block: 1           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: interpretive
     lang: ar
     title_ar: المفردات في غريب القرآن
     title_en: al-Mufradat fi Gharib al-Qur'an
@@ -65,8 +80,9 @@ works:
       خنزير: {root: خنزر, note: "article الخنزير; QAC root ḫ-n-z-r"}
 
   - id: maqayis
-    sort_order: 2
-    kind: lexicon
+    sort_order: 5        # display order = author's death date
+    id_block: 2           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: root
     lang: ar
     title_ar: معجم مقاييس اللغة
     title_en: Maqayis al-Lugha
@@ -97,8 +113,9 @@ works:
     manual_roots: {}
 
   - id: lisan
-    sort_order: 3
-    kind: lexicon
+    sort_order: 7        # display order = author's death date
+    id_block: 3           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: general
     lang: ar
     title_ar: لسان العرب
     title_en: Lisan al-ʿArab
@@ -126,8 +143,9 @@ works:
     manual_roots: {}
 
   - id: sihah
-    sort_order: 4
-    kind: lexicon
+    sort_order: 4        # display order = author's death date
+    id_block: 4           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: general
     lang: ar
     title_ar: الصحاح تاج اللغة وصحاح العربية
     title_en: al-Sihah
@@ -156,8 +174,9 @@ works:
     manual_roots: {}
 
   - id: lane
-    sort_order: 5
-    kind: lexicon
+    sort_order: 10        # display order = author's death date
+    id_block: 5           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: english
     lang: en
     title_ar: معجم لين العربي الإنجليزي
     title_en: An Arabic-English Lexicon
@@ -179,7 +198,8 @@ works:
     manual_roots: {}
 
   - id: ibn-qutaybah-gharib
-    sort_order: 6
+    sort_order: 2        # display order = author's death date
+    id_block: 6           # entry ids = id_block × 1,000,000 + position (stable)
     kind: gharib
     lang: ar
     title_ar: غريب القرآن
@@ -213,3 +233,131 @@ works:
       الدهر: 76
       الانشراح: 94
       اللهب: 111
+
+  - id: taj
+    sort_order: 9        # display order = author's death date
+    id_block: 10          # entry ids = id_block × 1,000,000 + position (stable)
+    kind: general
+    lang: ar
+    title_ar: تاج العروس من جواهر القاموس
+    title_en: Taj al-ʿArus min Jawahir al-Qamus
+    author_ar: محمد مرتضى الحسيني الزبيدي
+    author_en: Murtada al-Zabidi
+    death_hijri: 1205
+    death_ce: 1791
+    edition_note: تحقيق جماعة من المختصين، من إصدارات وزارة الإرشاد والأنباء في الكويت – المجلس الوطني للثقافة والفنون والآداب، 40 جزءا، 1385–1422هـ / 1965–2001م (وصوّرت أجزاء منه دار الهداية ودار إحياء التراث)، ترقيم الكتاب موافق للمطبوع. النص الرقمي من المكتبة الشاملة (الكتاب 7030).
+    source_url: https://shamela.ws/book/7030
+    license: Public-domain author text (d. 1205 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (revision 07554bee; the card's licence section says "Research and personal use"; Shamela grants no reuse licence; rights in the Kuwait edition remain with its owners). The typing carries none of the editors' footnotes. Display-only (PLAN D22).
+    redistributable: false
+    attribution_ar: "المصدر: تاج العروس من جواهر القاموس، مرتضى الزبيدي (ت 1205هـ)، تحقيق جماعة من المختصين، المجلس الوطني للثقافة والفنون والآداب، الكويت، 1385–1422هـ. النص الرقمي: المكتبة الشاملة، الكتاب 7030."
+    attribution_en: "Source: Murtada al-Zabidi (d. 1205 AH), Taj al-ʿArus min Jawahir al-Qamus, ed. a committee of specialists (Kuwait: National Council for Culture, Arts and Letters, 1385–1422 AH / 1965–2001). Digital text: al-Maktaba al-Shamila, book 7030."
+    format: shamela-taj
+    shamela_id: 7030
+    dir: lexica/hf-authenticilm-shamela4/2502
+    footnote_marker: none             # the typing carries no reference markers
+    join_broken_spans: true           # two headings are typed across a line break ("ع ض⏎و:")
+    files:
+      - path: lexica/hf-authenticilm-shamela4/2502/pages.jsonl
+        sha256: 7480c314c5d40d3e83a85084f4ef452e5a0206f5d0faf4782aeb01f03c82a5c3
+      - path: lexica/hf-authenticilm-shamela4/2502/toc.jsonl
+        sha256: d2be2f8c7a5dfe1093283aa837c2b7d7960591da23d5b00d1b441a12b9693496
+      - path: lexica/hf-authenticilm-shamela4/2502/book_metadata.json
+        sha256: 6af830f8a966b57cc98669b4d635b8686061c4f4d3f04ddde22fa438887b1dc8
+    manual_roots:
+      ككب: {root: كوكب, note: "al-Zabidi, after al-Jawhari, files الكوكب under ككب, the و counted as an augment (vol. 4 p. 157); QAC root k-w-k-b"}
+
+  - id: qamus
+    sort_order: 8        # display order = author's death date
+    id_block: 9           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: general
+    lang: ar
+    title_ar: القاموس المحيط
+    title_en: al-Qamus al-Muhit
+    author_ar: مجد الدين محمد بن يعقوب الفيروزآبادي
+    author_en: al-Firuzabadi
+    death_hijri: 817
+    death_ce: 1414
+    edition_note: تحقيق مكتب تحقيق التراث في مؤسسة الرسالة، بإشراف محمد نعيم العرقسوسي، مؤسسة الرسالة، بيروت، الطبعة الثامنة 1426هـ / 2005م، 1357 صفحة، ترقيم الكتاب موافق للمطبوع. النص الرقمي من المكتبة الشاملة (الكتاب 7283).
+    source_url: https://shamela.ws/book/7283
+    license: Public-domain author text (d. 817 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (revision 07554bee; the card's licence section says "Research and personal use"; Shamela grants no reuse licence; rights in the Risala edition, including its vocalisation, remain with its owners). The two notes of the Shamela preparer (preface only) are excluded. Display-only (PLAN D22).
+    redistributable: false
+    attribution_ar: "المصدر: القاموس المحيط، الفيروزآبادي (ت 817هـ)، تحقيق مكتب تحقيق التراث في مؤسسة الرسالة بإشراف محمد نعيم العرقسوسي، مؤسسة الرسالة، بيروت، الطبعة الثامنة 1426هـ. النص الرقمي: المكتبة الشاملة، الكتاب 7283."
+    attribution_en: "Source: al-Firuzabadi (d. 817 AH), al-Qamus al-Muhit, ed. Maktab Tahqiq al-Turath at Mu'assasat al-Risala under Muhammad Nuʿaym al-ʿArqsusi (Beirut: Mu'assasat al-Risala, 8th ed., 1426 AH / 2005). Digital text: al-Maktaba al-Shamila, book 7283."
+    format: shamela-qamus
+    shamela_id: 7283
+    dir: lexica/hf-authenticilm-shamela4/2558
+    footnote_marker: none             # the only notes are the Shamela preparer's, in the preface
+    align_with: taj                   # root list of the commentary that follows al-Qāmūs entry by entry
+    files:
+      - path: lexica/hf-authenticilm-shamela4/2558/pages.jsonl
+        sha256: 8cd2b897e4231acd3ffa723e717e5ba1544f9b5027cba2eadfa7062d5f344462
+      - path: lexica/hf-authenticilm-shamela4/2558/toc.jsonl
+        sha256: 8bf995a4b3a11db61e2e2ae6489c4740600d43268b0f64f83ffc92f44490d17d
+      - path: lexica/hf-authenticilm-shamela4/2558/book_metadata.json
+        sha256: 7c71a487eda56567a6e0e9b19ae7d8c033c9c4a906ff439cc30a3e33182eeb3f
+    manual_roots:
+      ككب: {root: كوكب, note: "the bullet «الكَوْكَبُ» sits in باب الباء فصل الكاف and aligns to Tāj's heading ككب (the و counted as an augment); QAC root k-w-k-b"}
+
+  - id: ayn
+    sort_order: 1        # display order = author's death date
+    id_block: 7           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: earliest
+    lang: ar
+    title_ar: كتاب العين
+    title_en: Kitab al-ʿAyn
+    author_ar: الخليل بن أحمد الفراهيدي
+    author_en: al-Khalil ibn Ahmad al-Farahidi
+    death_hijri: 170
+    death_ce: 786
+    edition_note: تحقيق مهدي المخزومي وإبراهيم السامرائي، دار ومكتبة الهلال، 8 أجزاء، ترقيم الكتاب موافق للمطبوع. ما بين المعقوفين [ ] زيادة المحققين «ما اقتضى السياق زيادته» (منهج التحقيق، الفقرة 7)، وهو مُثبت كما طُبع بين معقوفين. النص الرقمي من المكتبة الشاملة (الكتاب 1682).
+    source_url: https://shamela.ws/book/1682
+    license: Public-domain author text (d. 170 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (revision 07554bee; the card's licence section says "Research and personal use"; Shamela grants no reuse licence; rights in the Makhzumi–Samarra'i edition remain with its owners). The editors' footnotes and note markers are excluded; their bracketed supplements are shown as printed, in brackets. Display-only (PLAN D22).
+    redistributable: false
+    attribution_ar: "المصدر: كتاب العين، الخليل بن أحمد الفراهيدي (ت 170هـ)، تحقيق مهدي المخزومي وإبراهيم السامرائي، دار ومكتبة الهلال. النص الرقمي: المكتبة الشاملة، الكتاب 1682. حُذفت حواشي المحققين، وما بين المعقوفين من زيادتهما."
+    attribution_en: "Source: al-Khalil ibn Ahmad al-Farahidi (d. 170 AH), Kitab al-ʿAyn, ed. Mahdi al-Makhzumi and Ibrahim al-Samarra'i (Dar wa-Maktabat al-Hilal). Digital text: al-Maktaba al-Shamila, book 1682. Editors' notes omitted; words in square brackets are the editors' supplements."
+    format: shamela-taqalib
+    shamela_id: 1682
+    dir: lexica/hf-authenticilm-shamela4/1459
+    footnote_marker: guillemets
+    start_title: حرف العين
+    editor_supplements: keep          # [..] are the editors' additions, shown as printed (DECISIONS 2026-10-03)
+    files:
+      - path: lexica/hf-authenticilm-shamela4/1459/pages.jsonl
+        sha256: 33af5f4fa77feb7f84972b20588e3f27f96cce68c9bca067980cb6f55686e3ac
+      - path: lexica/hf-authenticilm-shamela4/1459/toc.jsonl
+        sha256: 6f2a915ef18a1f668ba8cef6f892dda5fef25a1f1762cb95417c4f8460253f3a
+      - path: lexica/hf-authenticilm-shamela4/1459/book_metadata.json
+        sha256: f2dc87c73b389cf4a39595f36443a5c59f7a789d9b8b8a253a139a13ebbac63c
+    manual_roots: {}
+
+  - id: tahdhib
+    sort_order: 3        # display order = author's death date
+    id_block: 8           # entry ids = id_block × 1,000,000 + position (stable)
+    kind: general
+    lang: ar
+    title_ar: تهذيب اللغة
+    title_en: Tahdhib al-Lugha
+    author_ar: أبو منصور محمد بن أحمد الأزهري
+    author_en: Abu Mansur al-Azhari
+    death_hijri: 370
+    death_ce: 980
+    edition_note: تحقيق محمد عوض مرعب، دار إحياء التراث العربي، بيروت، الطبعة الأولى 2001م (بطاقة الكتاب تقول 8 أجزاء، والنص الرقمي في 15 جزءا)، ترقيم الكتاب موافق للمطبوع. النص الرقمي من المكتبة الشاملة (الكتاب 7031).
+    source_url: https://shamela.ws/book/7031
+    license: Public-domain author text (d. 370 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (revision 07554bee; the card's licence section says "Research and personal use"; Shamela grants no reuse licence; rights in the Mur'ib edition remain with its owners). The typing carries no footnotes; its few note markers are removed. Display-only (PLAN D22).
+    redistributable: false
+    attribution_ar: "المصدر: تهذيب اللغة، الأزهري (ت 370هـ)، تحقيق محمد عوض مرعب، دار إحياء التراث العربي، بيروت، الطبعة الأولى 2001م. النص الرقمي: المكتبة الشاملة، الكتاب 7031."
+    attribution_en: "Source: Abu Mansur al-Azhari (d. 370 AH), Tahdhib al-Lugha, ed. Muhammad ʿAwad Murʿib (Beirut: Dar Ihya' al-Turath al-ʿArabi, 1st ed., 2001). Digital text: al-Maktaba al-Shamila, book 7031."
+    format: shamela-taqalib
+    shamela_id: 7031
+    dir: lexica/hf-authenticilm-shamela4/2503
+    footnote_marker: parens-unless-verse
+    start_title: ونبدأ الآن بأبواب المضاعف من حرف العين
+    section_kinds: false             # its TOC rarely names الثنائي/الثلاثي/الرباعي: the group letters decide
+    files:
+      - path: lexica/hf-authenticilm-shamela4/2503/pages.jsonl
+        sha256: 7079a61b41ed34da5f6850ed4ed0779fef279be36ca4c27fb0ba40ff8dd0d1e9
+      - path: lexica/hf-authenticilm-shamela4/2503/toc.jsonl
+        sha256: 477b7b4b2a3a1d04a5f56adbf8b3ed5c73f9aacbb977e502e3dc36d6a7a6c912
+      - path: lexica/hf-authenticilm-shamela4/2503/book_metadata.json
+        sha256: 30dc0bd91129952a391e434d5cae35657c3a4ea7133ab55aeb9d0a86e70cf9f4
+    manual_roots: {}

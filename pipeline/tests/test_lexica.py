@@ -9,6 +9,7 @@ methodology is in docs/research/02-arabic-lexica.md ("Implementation").
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 from pathlib import Path
@@ -23,7 +24,7 @@ from jadhr_pipeline.lexica.registry import LexiconRegistryError, load_registry
 from jadhr_pipeline.lexica.rootmap import RootMatcher
 
 REPO = Path(__file__).resolve().parents[2]
-RAW = REPO / "data" / "raw"
+RAW = Path(os.environ.get("JADHR_RAW_DIR", REPO / "data" / "raw"))  # same switch as conftest.py
 REGISTRY = REPO / "data" / "lexica.yaml"
 BUILD = REPO / "data" / "build" / "2026.10.0"
 
@@ -77,6 +78,20 @@ def test_counts_and_root_coverage(built: tuple, work: str) -> None:
     assert rep["coverage_any_pct"] == round(100 * roots_any / 1642, 2)
 
 
+# Loose and manual mappings per work (each listed for review with its confidence).
+REVIEW_BY_WORK = {
+    "mufradat": 224,
+    "maqayis": 216,
+    "lisan": 180,
+    "sihah": 169,
+    "lane": 271,
+    "taj": 15,
+    "qamus": 24,
+    "ayn": 208,
+    "tahdhib": 352,
+}
+
+
 def test_cross_work_coverage_and_review_list(built: tuple) -> None:
     rep = built[3]
     assert rep["coverage"]["roots_total"] == 1642
@@ -89,7 +104,9 @@ def test_cross_work_coverage_and_review_list(built: tuple) -> None:
     loose_ids = {e["id"] for e in built[1] if e["match"] in ("loose", "manual")}
     review_ids = {r["entry_id"] for r in rep["review"]}
     assert loose_ids == review_ids
-    assert rep["review_count"] == 1060
+    by_work = {w: sum(1 for r in rep["review"] if r["work_id"] == w) for w in REVIEW_BY_WORK}
+    assert by_work == REVIEW_BY_WORK
+    assert rep["review_count"] == sum(REVIEW_BY_WORK.values())
     assert {r["confidence"] for r in rep["review"]} <= {"high", "medium", "low", "manual"}
     for r in rep["review"]:
         assert r["rule"]
@@ -217,6 +234,7 @@ MARKERS = {
     "lisan": re.compile("\u00ab[\u0660-\u06690-9]{1,3}\u00bb"),
     "maqayis": re.compile("\\(\u00ac[\u0660-\u06690-9]{1,3}\\)"),
     "sihah": re.compile("\\([\u0660-\u06690-9]{1,3}\\)"),
+    "ayn": re.compile("\u00ab[\u0660-\u06690-9]{1,3}\u00bb"),
 }
 
 
@@ -269,21 +287,54 @@ def test_root_keys_are_canonical_and_rows_follow_the_contract(built: tuple, root
         }
     ids = [e["id"] for e in entries] + [g["id"] for g in glosses]
     assert len(ids) == len(set(ids))
-    order = {w["id"]: w["sort_order"] for w in works}
+    blocks = {w.id: w.id_block for w in load_registry(RAW, REGISTRY, verify=False).works}
     for e in entries:
-        assert e["id"] // 1_000_000 == order[e["work_id"]]
-    assert [w["id"] for w in works] == [
-        "mufradat",
-        "maqayis",
-        "lisan",
-        "sihah",
-        "lane",
-        "ibn-qutaybah-gharib",
-    ]
-    assert [w["redistributable"] for w in works] == [False, False, False, False, True, False]
+        assert e["id"] // 1_000_000 == blocks[e["work_id"]]
+    for g in glosses:
+        assert g["id"] // 1_000_000 == blocks[g["work_id"]]
+    # Display order = the author's death date (design: al-ʿAyn first, Lane last).
+    assert [w["id"] for w in works] == WORK_ORDER
+    deaths = [w["death_ce"] for w in works]
+    assert deaths == sorted(deaths)
+    assert [w["sort_order"] for w in works] == sorted(w["sort_order"] for w in works)
+    assert [w["id"] for w in works if w["redistributable"]] == ["lane"]
     for w in works:
         assert w["license"] and w["attribution_ar"] and w["attribution_en"] and w["source_url"]
         assert w["lang"] in ("ar", "en")
+        assert w["kind"] in ("earliest", "general", "root", "interpretive", "english", "gharib")
+        assert "shamela_id" in w
+        assert (w["shamela_id"] is None) == (w["id"] == "lane")
+
+
+# Display order by death date (CE): the nine dictionaries of the design plus Ibn Qutaybah's gharib.
+WORK_ORDER = [
+    "ayn",
+    "ibn-qutaybah-gharib",
+    "tahdhib",
+    "sihah",
+    "maqayis",
+    "mufradat",
+    "lisan",
+    "qamus",
+    "taj",
+    "lane",
+]
+
+
+def test_entry_ids_do_not_move_when_the_display_order_changes(built: tuple) -> None:
+    """Ids come from id_block, not sort_order: the reorder by death date (2026-10-03) kept every id."""
+    for work, root, eid in (
+        ("mufradat", "رحم", 1000531),
+        ("maqayis", "رحم", 2001729),
+        ("lisan", "رحم", 3007615),
+        ("sihah", "رحم", 4004486),
+        ("lane", "رحم", 5001538),
+        ("ayn", "رحم", 7001316),
+        ("tahdhib", "رحم", 8001685),
+    ):
+        (e,) = _entries(built, work, root)
+        assert e["id"] == eid, (work, e["id"])
+    assert built[2][0]["id"] == 6000001
 
 
 # --- units: registry pins, matcher rules, transliteration -------------------------------------
@@ -296,6 +347,39 @@ def test_registry_refuses_a_file_whose_sha256_differs(tmp_path: Path) -> None:
     bad.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
     with pytest.raises(LexiconRegistryError, match="sha256 mismatch"):
         load_registry(RAW, bad)
+
+
+def _registry_variant(tmp_path: Path, edit: Any) -> Path:
+    data = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    edit(data["works"])
+    out = tmp_path / "lexica.yaml"
+    out.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+    return out
+
+
+def _work(works: list[dict], wid: str) -> dict:
+    return next(w for w in works if w["id"] == wid)
+
+
+@pytest.mark.parametrize(
+    ("edit", "message"),
+    [
+        (lambda ws: _work(ws, "lisan").update(kind="lexicon"), "kind must be one of"),
+        (lambda ws: _work(ws, "lisan").update(id_block=_work(ws, "sihah")["id_block"]), "id_block must be"),
+        (
+            lambda ws: _work(ws, "lisan").update(sort_order=_work(ws, "sihah")["sort_order"]),
+            "sort_order must be",
+        ),
+        (lambda ws: _work(ws, "lisan").pop("id_block"), "missing fields"),
+        (lambda ws: _work(ws, "lisan").pop("shamela_id"), "needs its shamela_id"),
+        (lambda ws: _work(ws, "lisan").update(sort_order=1000), "order is by death date"),  # after Lane
+        (lambda ws: _work(ws, "lisan").update(editor_supplements="hide"), "editor_supplements must be"),
+    ],
+)
+def test_registry_schema_is_enforced(tmp_path: Path, edit: Any, message: str) -> None:
+    load_registry(RAW, REGISTRY, verify=False)  # the real registry passes
+    with pytest.raises(LexiconRegistryError, match=message):
+        load_registry(RAW, _registry_variant(tmp_path, edit), verify=False)
 
 
 def test_registry_refuses_a_missing_file(tmp_path: Path) -> None:
