@@ -22,7 +22,9 @@ import { toPng } from "html-to-image";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { useQueryClient } from "@tanstack/react-query";
 import { expandForms, type RootGraphPayload, verseId, edgeId } from "@/lib/graph/build";
+import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
 import type { GraphEdge, GraphKind, GraphNode } from "@/lib/graph/types";
 import { useTheme } from "@/lib/client";
@@ -114,16 +116,19 @@ function CanvasInner({
     onChangeRef.current?.(nodes, edges);
   }, [nodes, edges]);
 
+  // the map as it is now, for steps that end after the render that began them (an expansion, a layout)
+  const live = useRef({ nodes: initialNodes, edges: initialEdges });
+  useEffect(() => {
+    live.current = { nodes, edges };
+  });
+
   /** Every mutation goes through commit(label, …) so undo carries a human-readable label (handoff §4.3). */
-  const commit = useCallback(
-    (label: string, nextNodes: GraphNode[], nextEdges: GraphEdge[]) => {
-      setPast((p) => [...p.slice(-80), { label, nodes, edges }]);
-      setFuture([]);
-      setNodes(nextNodes);
-      setEdges(nextEdges);
-    },
-    [nodes, edges],
-  );
+  const commit = useCallback((label: string, nextNodes: GraphNode[], nextEdges: GraphEdge[]) => {
+    setPast((p) => [...p.slice(-80), { label, nodes: live.current.nodes, edges: live.current.edges }]);
+    setFuture([]);
+    setNodes(nextNodes);
+    setEdges(nextEdges);
+  }, []);
 
   const tidy = useCallback(
     async (label = t("tidy"), base?: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
@@ -191,6 +196,62 @@ function CanvasInner({
     registerAdd?.(addCards);
   }, [registerAdd, addCards]);
 
+  // A card's further forms or places, read when asked (F6: the editor has no root payload of its own, so it reads
+  // the root's; F18: a failed read is said, never silent). The cards are added to the map as it is when they arrive.
+  const qc = useQueryClient();
+  const [expanding, setExpanding] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const id = setTimeout(() => setNotice(null), 6000);
+    return () => clearTimeout(id);
+  }, [notice]);
+  const expand = useCallback(
+    async (id: string) => {
+      const node = live.current.nodes.find((n) => n.id === id);
+      if (!node || expanding) return;
+      const { kind, lemmaId: lemma, rootKey, form, cursor } = node.data;
+      setExpanding(id);
+      try {
+        if (kind === "lemma" && lemma != null && (payload || rootKey)) {
+          const g: RootGraphPayload =
+            payload ?? (await qc.fetchQuery({ queryKey: ["root-graph", rootKey], queryFn: () => getJSON<RootGraphPayload>(`/roots/${encodeURIComponent(rootKey!)}/graph`), staleTime: 10 * 60_000 }));
+          const { nodes: now, edges: wires } = live.current;
+          const add = expandForms(g, lemma, new Set(now.map((n) => n.id)));
+          const updated = now.map((n) => (n.id === id ? { ...n, data: { ...n.data, more: undefined } } : n));
+          await tidy(t("doExtractWords", cnt(add.nodes.length, locale)), { nodes: [...updated, ...add.nodes], edges: [...wires, ...add.edges] });
+        } else if (kind === "word" && rootKey && form) {
+          const qs = new URLSearchParams({ form, limit: "8" });
+          if (lemma != null) qs.set("lemma", String(lemma));
+          if (cursor) qs.set("cursor", cursor);
+          const page = await getJSON<{ total: number; next_cursor: string | null; data: { location: string; verse_key: string }[] }>(`/roots/${encodeURIComponent(rootKey)}/occurrences?${qs}`);
+          const { nodes: now, edges: wires } = live.current;
+          const present = new Set(now.map((n) => n.id));
+          const newNodes: GraphNode[] = [];
+          const newEdges: GraphEdge[] = [];
+          for (const o of page.data) {
+            const vid = verseId(o.location);
+            if (present.has(vid)) continue;
+            newNodes.push({ id: vid, type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", verse: { key: o.verse_key, location: o.location } } });
+            newEdges.push({ id: edgeId(id, vid), source: id, target: vid });
+          }
+          const shown = now.filter((n) => wires.some((e) => e.source === id && e.target === n.id)).length + newNodes.length;
+          const updated = now.map((n) =>
+            n.id === id
+              ? { ...n, data: { ...n.data, expanded: true, cursor: page.next_cursor, more: page.next_cursor ? { kind: "verses" as const, remaining: Math.max(0, page.total - shown) } : undefined } }
+              : n,
+          );
+          await tidy(t("doExtractVerses", cnt(newNodes.length, locale)), { nodes: [...updated, ...newNodes], edges: [...wires, ...newEdges] });
+        }
+      } catch {
+        setNotice(t(kind === "lemma" ? "formsFailed" : "versesFailed"));
+      } finally {
+        setExpanding(null);
+      }
+    },
+    [expanding, payload, qc, tidy, t, locale],
+  );
+
   const actions: GraphActions = useMemo(
     () => ({
       editable,
@@ -202,57 +263,10 @@ function CanvasInner({
           nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, text } } : n)),
           edges,
         ),
-      expand: (id) => {
-        const node = nodes.find((n) => n.id === id);
-        if (!node) return;
-        if (node.data.kind === "lemma" && payload && node.data.lemmaId != null) {
-          const present = new Set(nodes.map((n) => n.id));
-          const add = expandForms(payload, node.data.lemmaId, present);
-          const updated = nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, more: undefined } } : n));
-          void tidy(t("doExtractWords", cnt(add.nodes.length, locale)), { nodes: [...updated, ...add.nodes], edges: [...edges, ...add.edges] });
-          return;
-        }
-        if (node.data.kind === "word" && node.data.rootKey && node.data.form) {
-          const qs = new URLSearchParams({ form: node.data.form, limit: "8" });
-          if (node.data.lemmaId != null) qs.set("lemma", String(node.data.lemmaId));
-          if (node.data.cursor) qs.set("cursor", node.data.cursor);
-          void fetch(`/api/v1/roots/${encodeURIComponent(node.data.rootKey)}/occurrences?${qs}`)
-            .then((r) => r.json())
-            .then((page: { total: number; next_cursor: string | null; data: { location: string; verse_key: string }[] }) => {
-              const present = new Set(nodes.map((n) => n.id));
-              const newNodes: GraphNode[] = [];
-              const newEdges: GraphEdge[] = [];
-              for (const o of page.data) {
-                const vid = verseId(o.location);
-                if (present.has(vid)) continue;
-                newNodes.push({
-                  id: vid,
-                  type: "card",
-                  position: { x: 0, y: 0 },
-                  data: { kind: "verse", verse: { key: o.verse_key, location: o.location } },
-                });
-                newEdges.push({ id: edgeId(id, vid), source: id, target: vid });
-              }
-              const shown = nodes.filter((n) => edges.some((e) => e.source === id && e.target === n.id)).length + newNodes.length;
-              const updated = nodes.map((n) =>
-                n.id === id
-                  ? {
-                      ...n,
-                      data: {
-                        ...n.data,
-                        expanded: true,
-                        cursor: page.next_cursor,
-                        more: page.next_cursor ? { kind: "verses" as const, remaining: Math.max(0, page.total - shown) } : undefined,
-                      },
-                    }
-                  : n,
-              );
-              void tidy(t("doExtractVerses", cnt(newNodes.length, locale)), { nodes: [...updated, ...newNodes], edges: [...edges, ...newEdges] });
-            });
-        }
-      },
+      expand: (id) => void expand(id),
+      expanding,
     }),
-    [editable, nodes, edges, payload, commit, tidy, t, locale],
+    [editable, nodes, edges, commit, t, expand, expanding],
   );
 
   // A deletion is one step: xyflow removes the wires and then the cards in two changes, which would each commit
@@ -424,6 +438,11 @@ function CanvasInner({
             <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="var(--dot)" />
             <MiniMap pannable zoomable nodeColor={(n) => `var(--c-${n.data.kind === "lemma" ? "form" : n.data.kind === "verse" ? "sentence" : n.data.kind === "note" ? "desc" : n.data.kind})`} className="!hidden md:!block" />
           </ReactFlow>
+          {notice && (
+            <p className="graph-notice" role="alert" dir="auto">
+              {notice}
+            </p>
+          )}
           <div className="pointer-events-none absolute bottom-3 start-3 flex gap-1 rounded-lg bg-card/90 p-1 shadow-rest" dir="ltr">
             <button type="button" className="pointer-events-auto btn icon-btn" aria-label="−" onClick={() => rf.zoomOut({ duration: 150 })}>
               <Icon name="minus" />

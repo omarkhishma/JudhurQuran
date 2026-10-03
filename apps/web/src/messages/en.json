@@ -755,7 +755,9 @@
     "importNotJson": "This file is not valid JSON.",
     "importNoNodes": "No \"nodes\" array in this file.",
     "importTooLarge": "The file is too large to import (the limit is 5 MB).",
-    "openImported": "Open it"
+    "openImported": "Open it",
+    "formsFailed": "This word's forms could not be loaded just now; try again.",
+    "versesFailed": "The occurrences could not be loaded just now; try again."
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

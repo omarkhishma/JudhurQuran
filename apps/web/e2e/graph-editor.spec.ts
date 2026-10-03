@@ -369,3 +369,32 @@ test("a map exported keeps its type and is named from its title; a file is impor
   await expect.poll(async () => (await status.getByRole("link", { name: "افتحها" }).getAttribute("href"))!.split("/graph/edit/")[1]).not.toBe(firstId);
   await expect(page.getByRole("main").locator('a[href^="/graph/edit/"]').filter({ hasText: title })).toHaveCount(3);
 });
+
+test("in the editor a lemma's further forms open from the root's data, and a failed read says so (F6, F18)", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  const g = await api<{ lemmas: { id: number; forms: { form: string }[] }[] }>(page, `/roots/${encodeURIComponent("علم")}/graph`);
+  const before = (await storedGraph(page, id))!;
+  const lemma = g.lemmas.find((l) => l.forms.length > 3 && before.nodes.some((n) => n.id === `lemma:${l.id}` && (n.data.more as { remaining: number } | undefined)?.remaining))!;
+  const words = (d: Doc) => d.nodes.filter((n) => n.data.kind === "word" && n.data.lemmaId === lemma.id).length;
+  const card = page.locator(`.react-flow__node[data-id="lemma:${lemma.id}"]`);
+  // the card may lie beyond the canvas's view, which panning is not what this test is about: the button is pressed
+  await card.getByRole("button", { name: /صيغة أخرى|صيغ أخرى|صيغتان/ }).dispatchEvent("click");
+  await expect.poll(async () => words((await storedGraph(page, id))!), { timeout: 10_000 }).toBe(lemma.forms.length);
+  const added = lemma.forms.length - words(before);
+  await expect(page.getByRole("button", { name: "تراجع", exact: true })).toHaveAttribute("title", `تراجع: ${arCount(added, { one: "استخراج كلمة", two: "استخراج كلمتين", few: "استخراج # كلمات", many: "استخراج # كلمة", other: "استخراج # كلمة" })}`);
+
+  // a word's places, when the read fails: said, and the button works again once it can
+  await page.route("**/api/v1/roots/*/occurrences*", (r) => r.fulfill({ status: 500, body: "{}" }));
+  const word = page.locator('.react-flow__node[data-id^="word:"]').filter({ has: page.getByRole("button", { name: /^المواضع/ }) }).first();
+  await word.getByRole("button", { name: /^المواضع/ }).dispatchEvent("click");
+  await expect(page.getByRole("alert").filter({ hasText: "تعذّر تحميل المواضع الآن" })).toBeVisible();
+  await page.unroute("**/api/v1/roots/*/occurrences*");
+  const verses = (await storedGraph(page, id))!.nodes.filter((n) => n.data.kind === "verse").length;
+  await expect(word.getByRole("button", { name: /^المواضع/ })).toBeEnabled();
+  await word.getByRole("button", { name: /^المواضع/ }).dispatchEvent("click");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.filter((n) => n.data.kind === "verse").length, { timeout: 10_000 }).toBeGreaterThan(verses);
+});

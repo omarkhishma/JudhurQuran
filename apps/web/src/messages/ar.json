@@ -755,7 +755,9 @@
     "importNotJson": "هذا الملف ليس JSON صالحًا.",
     "importNoNodes": "لا يحوي هذا الملف مصفوفة البطاقات (nodes).",
     "importTooLarge": "الملف أكبر من أن يُستورد (الحد ٥ ميغابايت).",
-    "openImported": "افتحها"
+    "openImported": "افتحها",
+    "formsFailed": "تعذّر تحميل صيغ هذه الكلمة الآن؛ حاول مرة أخرى.",
+    "versesFailed": "تعذّر تحميل المواضع الآن؛ حاول مرة أخرى."
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",

@@ -10,6 +10,8 @@ import { excerptOf, useVerseText, wordAt } from "@/lib/graph/verseText";
 
 export type GraphActions = {
   editable: boolean;
+  /** the card whose forms or places are being read */
+  expanding: string | null;
   toggleFold: (id: string) => void;
   expand: (id: string) => void;
   setText: (id: string, text: string) => void;
@@ -17,6 +19,7 @@ export type GraphActions = {
 
 export const GraphActionsContext = createContext<GraphActions>({
   editable: false,
+  expanding: null,
   toggleFold: () => {},
   expand: () => {},
   setText: () => {},
@@ -110,14 +113,14 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
 
             <div className="mt-2 flex flex-wrap gap-1.5">
               {data.more && data.more.remaining > 0 && (
-                <button type="button" className="nodrag btn min-h-[26px] px-2 text-[11.5px]" onClick={() => actions.expand(id)}>
+                <button type="button" className="nodrag btn min-h-[26px] px-2 text-[11.5px]" onClick={() => actions.expand(id)} disabled={!!actions.expanding} aria-busy={actions.expanding === id}>
                   {data.more.kind === "forms"
                     ? t("moreForms", cnt(data.more.remaining, locale))
                     : t("moreVerses", cnt(data.more.remaining, locale))}
                 </button>
               )}
               {data.kind === "word" && !data.expanded && data.count != null && data.count > 0 && (
-                <button type="button" className="nodrag btn min-h-[26px] px-2 text-[11.5px]" onClick={() => actions.expand(id)}>
+                <button type="button" className="nodrag btn min-h-[26px] px-2 text-[11.5px]" onClick={() => actions.expand(id)} disabled={!!actions.expanding} aria-busy={actions.expanding === id}>
                   {t("showVerses", { n: formatNumber(data.count, locale) })}
                 </button>
               )}

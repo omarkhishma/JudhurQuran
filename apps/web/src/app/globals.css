@@ -4975,3 +4975,20 @@ a.wotd-pill:hover {
   color: var(--t3);
   white-space: nowrap;
 }
+
+/* the canvas says when something it was asked for could not be loaded (P8.0 F18) */
+.graph-notice {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  max-width: min(440px, calc(100% - 32px));
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--amber) 35%, var(--line));
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--shadow-rest, 0 1px 3px rgb(0 0 0 / 0.12));
+  font-size: 13px;
+  color: var(--t1);
+}
