@@ -1,8 +1,8 @@
-# Relation seed registry — classical works parsed into editor-side relation candidates (PLAN P8.4) and
-# wujūh senses (P3.1). Research and licensing: docs/research/06-knowledge-sources.md Part 1 and Part 8.
+# Relation seed registry — classical works parsed into relation candidates (PLAN P8.4) and wujūh senses
+# (P3.1), shown to readers in the Meanings section as extracted and not yet reviewed, with full credit. Research and licensing: docs/research/06-knowledge-sources.md Part 1 and Part 8.
 #
 # Every row the pipeline emits is status `extracted`: a mechanical reading of the named work, never a
-# reviewed relation. Editors review in the workbench (L2: no generated religious or linguistic content —
+# reviewed relation; the reader is told so. Editors review in the workbench (L2: no generated religious or linguistic content —
 # every relation comes from a named classical work, with its locator and the author's words).
 #
 # Files are OpenITI release 2025.1.9 (tag v2025.1.9, commit below), fetched raw at that commit into

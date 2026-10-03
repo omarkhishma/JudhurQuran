@@ -101,8 +101,12 @@ EXCLUDED = [
         "reason": "the Complex offers the file for display in applications; redistribution is not addressed (research 07, D19)",
     },
     {
-        "data": "pattern catalog and relation seeds (al-Shafiya, al-Kafiya, al-Radi, the wujuh and furuq works)",
+        "data": "pattern catalog, particle entries and relation seeds (al-Shafiya, al-Kafiya, al-Radi, Mughni al-Labib, al-Jana al-Dani, the wujuh, furuq and addad works)",
         "reason": "OpenITI texts under CC BY-NC-SA 4.0, whose share-alike would bind the whole release; shown on the site with credit",
+    },
+    {
+        "data": "Quran knowledge layers (sura cards, Makki/Madani notes, occasions of revelation, cross-references, entity candidates)",
+        "reason": "each source keeps its own terms (Tafsir Center CC BY 4.0, OpenITI CC BY-NC-SA, Tanzil, Wikidata CC0); shown on the site with credit, see data/licences.yaml",
     },
     {
         "data": "tafsir and translations",

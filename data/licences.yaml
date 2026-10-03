@@ -1887,7 +1887,7 @@ licences:
   - topic: other
     quote: '045.EdYEAR :: 1415هـ 1995م'
     url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1
-  our_use: 'Built, not displayed: al-Shāfiya''s chapters on the verb forms and the derived nouns become 71 rows of pattern_functions (verbatim slices of the cleaned file with OpenITI URI, printed page and milestone, status extracted) from pipeline/src/jadhr_pipeline/patterns_catalog; no migration, API or screen reads them yet; not in the bulk release.'
+  our_use: 'Shown to readers: al-Shāfiya''s chapters on the verb forms and the derived nouns are 71 rows of pattern_functions (verbatim slices of the cleaned file with OpenITI URI, printed page and milestone, status extracted), quoted in the reader''s pattern view (/patterns/{slug} classical) with book, page, the match method, "not yet reviewed" said on screen, and the attribution with a link to CC BY-NC-SA 4.0; not in the bulk release.'
   status: attention
   notes:
   - The author died 646 AH (public domain); the digital text is OpenITI's cleaned version of al-ʿUthmān's 1995 edition, with its paratext removed by OpenITI.
@@ -1953,7 +1953,7 @@ licences:
   - topic: other
     quote: 'digitization_comments: [ترقيم الكتاب موافق للمطبوع]'
     url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1
-  our_use: 'Built, not displayed: al-Kāfiya''s chapters on the maṣdar, the participles, the ṣifa mushabbaha, the elative, the dual and the plurals (the chapters al-Shāfiya defers to) become 16 rows of pattern_functions, verbatim with locators, from pipeline/src/jadhr_pipeline/patterns_catalog; not loaded, not in the bulk release.'
+  our_use: 'Shown to readers: al-Kāfiya''s chapters on the maṣdar, the participles, the ṣifa mushabbaha, the elative, the dual and the plurals are 16 rows of pattern_functions, verbatim with locators, quoted in the reader''s pattern view as al-Shāfiya is, with the attribution and a licence link; not in the bulk release.'
   status: attention
   notes:
   - 'The author died 646 AH (public domain); the 2010 edition (al-Shāʿir) is modern: OpenITI''s cleaned version drops its footnotes, and our extra cleaning drops the 77 footnote numbers left in the text.'
@@ -2016,7 +2016,7 @@ licences:
   - topic: other
     quote: '045.EdYEAR :: 1395 - 1975 م'
     url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1
-  our_use: 'Built, not displayed: al-Raḍī''s commentary on the al-Shāfiya passages above becomes 85 rows of pattern_functions (kind commentary, cut at his «قوله» cues, each linked to the al-Shāfiya rows it explains), verbatim with locators, from pipeline/src/jadhr_pipeline/patterns_catalog; not loaded, not in the bulk release.'
+  our_use: 'Shown to readers: al-Raḍī''s commentary on the al-Shāfiya passages is 85 rows of pattern_functions (kind commentary, cut at his «قوله» cues, each linked to the al-Shāfiya rows it explains), shown under those rows in the reader''s pattern view on request, with the attribution and a licence link; not in the bulk release.'
   status: attention
   notes:
   - The author died 686 AH (public domain); the 1975 edition's editors wrote footnotes that OpenITI removed; the 2,464 footnote numbers and 414 verse numbers left in the text are removed by our extra cleaning.
@@ -2082,7 +2082,7 @@ licences:
   - topic: other
     quote: ص12 - كتاب مغني اللبيب عن كتب الأعاريب - في تفسير المفردات وذكر آحكامها - المكتبة الشاملة
     url: https://shamela.ws/book/6972/1
-  our_use: 'Editor-side particle entries (PLAN P3.8, registry data/particles.yaml): Ibn Hishām (d. 761 AH)''s chapter one parsed into 100 entries and their numbered senses, each row a verbatim slice of the cleaned OpenITI text with printed page and milestone, the Quran quotations resolved to verses, and mechanical links to corpus lemmas; status extracted, not shown to readers until reviewed, not in the bulk release. Attribution: data/particles.yaml attribution_ar/en (work, edition, OpenITI release and file, CC BY-NC-SA 4.0).'
+  our_use: 'Editor-side particle entries (PLAN P3.8, registry data/particles.yaml): Ibn Hishām (d. 761 AH)''s chapter one parsed into 100 entries and their numbered senses, each row a verbatim slice of the cleaned OpenITI text with printed page and milestone, the Quran quotations resolved to verses, and mechanical links to corpus lemmas; status extracted; shown to readers in the Meanings section («عند النحاة») with "not yet reviewed" said on screen, the attribution and a link to CC BY-NC-SA 4.0; not in the bulk release. Attribution: data/particles.yaml attribution_ar/en (work, edition, OpenITI release and file, CC BY-NC-SA 4.0).'
   status: ok
   notes:
   - 'Terms read 2026-10-03 and unchanged since the relation seeds read them: the OpenITI documentation page (same sha256, 41c356b2…) and the Zenodo record (license id cc-by-nc-sa-4.0) for release 2025.1.9, commit cfc4157a.'
@@ -2148,7 +2148,7 @@ licences:
   - topic: other
     quote: ص244 - كتاب الجنى الداني في حروف المعاني - في - المكتبة الشاملة
     url: https://shamela.ws/book/26099/226
-  our_use: 'Editor-side particle entries (PLAN P3.8, registry data/particles.yaml): al-Murādī (d. 749 AH)''s five chapters parsed into 98 entries covering the 105 particles he lists, with their numbered senses, each row a verbatim slice of the cleaned OpenITI text (JK010091) with the printed page carried over from Shamela0026099 by letter position and the milestone, the Quran quotations resolved to verses, and mechanical links to corpus lemmas; status extracted, not shown to readers until reviewed, not in the bulk release. Attribution: data/particles.yaml attribution_ar/en (work, edition, OpenITI release and both files, CC BY-NC-SA 4.0).'
+  our_use: 'Editor-side particle entries (PLAN P3.8, registry data/particles.yaml): al-Murādī (d. 749 AH)''s five chapters parsed into 98 entries covering the 105 particles he lists, with their numbered senses, each row a verbatim slice of the cleaned OpenITI text (JK010091) with the printed page carried over from Shamela0026099 by letter position and the milestone, the Quran quotations resolved to verses, and mechanical links to corpus lemmas; status extracted; shown to readers in the Meanings section («عند النحاة») with "not yet reviewed" said on screen, the attribution and a link to CC BY-NC-SA 4.0; not in the bulk release. Attribution: data/particles.yaml attribution_ar/en (work, edition, OpenITI release and both files, CC BY-NC-SA 4.0).'
   status: ok
   notes:
   - 'Terms read 2026-10-03 and unchanged since the relation seeds read them: the OpenITI documentation page (same sha256, 41c356b2…) and the Zenodo record (license id cc-by-nc-sa-4.0) for release 2025.1.9, commit cfc4157a.'
