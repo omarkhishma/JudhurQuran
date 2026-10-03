@@ -24,6 +24,12 @@ pinned file and check that each row is a substring of it. The rules (also listed
 * ``folio-marks`` — the modern editor's manuscript folio marks ``( 52 / أ )`` removed (decision D22).
 * ``whitespace`` — runs of spaces collapse to one; paragraphs are trimmed and empty ones dropped; no space
   before ``، ؛ : . ؟ ! ) ]`` or after ``( [``. Whitespace only: no letter is added, removed or changed.
+
+One rule is opt-in (``clean(..., inline_headings=True)``), for files converted from al-Jāmiʿ al-Kabīr that
+mark headings inside the running text (the particle works, ``data/particles.yaml``):
+
+* ``inline-heading-marks`` — ``& X &``: the two ampersands are removed and ``X`` becomes a heading paragraph
+  of its own, splitting the paragraph it stood in («… شرحها & حرف الألف &» → «… شرحها» / «حرف الألف»).
 """
 
 from __future__ import annotations
@@ -210,14 +216,45 @@ def _paragraphs(body: str, stats: Counter[str]) -> list[_Para]:
     return paras
 
 
-def clean(raw: str, uri: str) -> Clean:
-    """Apply the documented cleaning rules to one OpenITI file."""
+_INLINE_HEADING = re.compile(r"&\s*([^&]*?)\s*&")
+
+
+def _split_inline_headings(paras: list[_Para], stats: Counter[str]) -> list[_Para]:
+    """``& X &`` inside a paragraph → the text before, a heading paragraph ``X``, the text after."""
+    out: list[_Para] = []
+    for p in paras:
+        if p.kind != "text" or "&" not in p.text:
+            out.append(p)
+            continue
+        if p.autos:
+            raise ValueError("inline heading marks and AUTO words in one paragraph are not supported")
+        pos = 0
+        for m in _INLINE_HEADING.finditer(p.text):
+            before = p.text[pos : m.start()]
+            if before.strip():
+                out.append(_Para("text", before))
+            out.append(_Para("heading", m.group(1)))
+            stats["inline-heading-marks"] += 1
+            pos = m.end()
+        rest = p.text[pos:]
+        if "&" in rest:
+            stats["inline-heading-marks-unpaired"] += 1
+        if rest.strip():
+            out.append(_Para("text", rest))
+    return out
+
+
+def clean(raw: str, uri: str, *, inline_headings: bool = False) -> Clean:
+    """Apply the documented cleaning rules to one OpenITI file (``inline_headings``: the opt-in
+    ``inline-heading-marks`` rule)."""
     stats: Counter[str] = Counter()
     if HEADER_END not in raw:
         raise ValueError(f"{uri}: no {HEADER_END} line — not an OpenITI mARkdown file")
     body = raw.split(HEADER_END, 1)[1]
     stats["header-dropped"] = 1
     paras = _paragraphs(body, stats)
+    if inline_headings:
+        paras = _split_inline_headings(paras, stats)
     stats["paragraphs"] = len(paras)
 
     # Join, remembering where each paragraph and AUTO word sits, then strip tokens and spacing while
