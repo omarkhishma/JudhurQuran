@@ -323,3 +323,12 @@ test("My maps and the hand-off's choices hold a map as soon as it is made or ren
   await page.locator(".reader-panel").getByRole("button", { name: "افتح في الخريطة" }).click();
   await expect(page.getByRole("dialog", { name: "سلّمه إلى محرر الخرائط" }).getByRole("option", { name: "خريطتي الجديدة" })).toHaveCount(1);
 });
+
+test("a map not in this browser says why, and offers My maps and signing in (F11)", async ({ page }) => {
+  await page.goto("/graph/edit/notamapid00");
+  await expect(page.getByRole("heading", { name: "هذه الخريطة ليست في هذا المتصفح" })).toBeVisible();
+  await expect(page.getByRole("main")).toContainText("ربما حُذفت، أو حُفظت في متصفح أو جهاز آخر");
+  await expect(page.getByRole("main")).not.toContainText("لا خرائط بعد");
+  await expect(page.getByRole("main").getByRole("link", { name: "خرائطي" })).toHaveAttribute("href", "/graph");
+  await expect(page.getByRole("main").getByRole("link", { name: "ادخل إلى حسابك" })).toHaveAttribute("href", `/signin?next=${encodeURIComponent("/graph/edit/notamapid00")}`);
+});

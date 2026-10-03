@@ -24,7 +24,7 @@ export function GraphEditor({ id }: { id: string }) {
   const q = useQuery({ queryKey: ["graph", id], queryFn: async () => (await loadGraph(id)) ?? null, gcTime: 0, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false });
   const [notice, setNotice] = useState<string | null>(null);
   if (q.isPending) return <p className="p-6 text-t3">…</p>;
-  if (!q.data) return <p className="p-6 text-t2">{t("noGraphs")} <Link href="/graph" className="text-word underline">{t("editorTitle")}</Link></p>;
+  if (!q.data) return <MissingMap id={id} refetch={() => void q.refetch()} />;
   return (
     <EditorInner
       key={q.dataUpdatedAt}
@@ -35,6 +35,29 @@ export function GraphEditor({ id }: { id: string }) {
         setNotice(quiet ? t("reloadedNewer") : null);
       }}
     />
+  );
+}
+
+/** A map that is not in this browser (F11): why that may be, and what the reader can do — sign in if it is with an
+ * account, or wait for sync to bring it, which opens it here when it arrives. */
+function MissingMap({ id, refetch }: { id: string; refetch: () => void }) {
+  const t = useTranslations("graph");
+  const where = useWhereSaved();
+  useEffect(() => {
+    window.addEventListener(GRAPHS_SYNCED_EVENT, refetch);
+    return () => window.removeEventListener(GRAPHS_SYNCED_EVENT, refetch);
+  }, [refetch]);
+  return (
+    <div className="mx-auto flex max-w-[560px] flex-1 flex-col items-start justify-center gap-3 px-4 py-16">
+      <h1 className="text-[20px] font-semibold">{t("mapMissing")}</h1>
+      {where && <p className="text-[14px] leading-relaxed text-t2">{t(where === "account" ? "mapMissingAccount" : "mapMissingBrowser")}</p>}
+      <div className="flex flex-wrap gap-2">
+        <Link href="/graph" className="btn btn-primary min-h-[40px]">{t("editorTitle")}</Link>
+        {where === "browser" && (
+          <Link href={`/signin?next=${encodeURIComponent(`/graph/edit/${id}`)}`} className="btn min-h-[40px]">{t("signInForMaps")}</Link>
+        )}
+      </div>
+    </div>
   );
 }
 

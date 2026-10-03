@@ -746,7 +746,11 @@
     "doExtractVerses": "{count, plural, one {Extract 1 verse} other {Extract {n} verses}}",
     "leadBrowser": "Maps are saved in this browser only; sign in to have them on your other devices.",
     "leadAccount": "Maps are saved in this browser and synced to your account.",
-    "savedAccount": "Saved in this browser and with your account"
+    "savedAccount": "Saved in this browser and with your account",
+    "mapMissing": "This map is not in this browser",
+    "mapMissingBrowser": "It may have been deleted, or saved in another browser or on another device. If it is saved with your account, sign in to have it here.",
+    "mapMissingAccount": "It may have been deleted here or on another device, or not have arrived from your account yet; if it arrives, it opens here.",
+    "signInForMaps": "Sign in to your account"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",
