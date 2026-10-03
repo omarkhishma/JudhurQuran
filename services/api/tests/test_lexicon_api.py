@@ -152,3 +152,18 @@ def test_word_audio_is_a_slice_of_the_teaching_recitation_with_its_flags() -> No
     assert get("/api/v1/words/alim", at="2:181:13", limit=0)["occurrence"]["audio"] is None
     reciters = get("/api/v1/recitations")["data"]
     assert [r["id"] for r in reciters if r.get("word_audio")] == ["husary-muallim"]
+
+
+def test_verse_and_surah_lexical_profiles_are_consistent() -> None:
+    """P3.6: a verse's band counts add up to its words and its level follows the rare share; a sūra sums its verses."""
+    v = get("/api/v1/verses/2:255")
+    p = v["lexical_profile"]
+    assert p["words"] == sum(p[b] for b in ("c100", "c20", "c5", "c2", "c1")) > 0
+    rare = (p["words"] - p["c100"] - p["c20"]) / p["words"]
+    assert (
+        v["lexical_level"]
+        == p["level"]
+        == (1 if rare == 0 else 2 if rare <= 0.15 else 3 if rare <= 0.30 else 4 if rare <= 0.50 else 5)
+    )
+    mulk = next(s for s in get("/api/v1/surahs")["data"] if s["number"] == 67)
+    assert sum(mulk["lexical_profile"]["verse_levels"].values()) == mulk["verse_count"]

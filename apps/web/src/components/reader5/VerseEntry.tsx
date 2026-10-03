@@ -12,6 +12,7 @@ import { useAudio } from "@/lib/store/audio";
 import { TafsirSection } from "./TafsirSection";
 import { NoteDrawer, RootsDrawer } from "./VerseDrawer";
 import { VerseKnowledgeSections, VerseLayer } from "./VerseKnowledge";
+import { VerseVocabulary } from "./Vocabulary";
 
 type Related = { data: { verse_id: number; score: number; shared: number; roots: string[]; verse: { key: string; surah: number; ayah: number; text_qpc: string; name_ar: string } }[] };
 
@@ -43,6 +44,7 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
           {t("cite")}
         </button>
       </header>
+      <VerseVocabulary verseKey={verseKey} />
       <section className="layer">
         <div className="layer-head"><span className="text-[13.5px] font-medium">{t("tafsir")}</span></div>
         <TafsirSection verseKey={verseKey} />

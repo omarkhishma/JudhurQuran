@@ -467,6 +467,15 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
     for v in verses_out:
         del v["tanzil_page"], v["tanzil_juz"], v["kfgqpc_juz"]
 
+    # P3.6: how common each verse's words are in the Quran (lexical_profile.py)
+    from .lexical_profile import surah_profile, verse_profiles
+
+    profiles = verse_profiles(words_out)
+    for v in verses_out:
+        p = profiles.get(v["id"]) or {"words": 0, "level": None}
+        v["lexical_level"] = p["level"]
+        v["lexical_profile"] = p
+
     surahs_out = []
     for n in range(1, 115):
         sm = surah_meta[n]
@@ -486,6 +495,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 "juz_start": vs[0]["juz"],
                 "word_count": sum(v["word_count"] for v in vs),
                 "has_basmala": n != 9,
+                "lexical_profile": surah_profile([v["lexical_profile"] for v in vs]),
             }
         )
 

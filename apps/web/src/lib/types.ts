@@ -2,8 +2,13 @@
 
 export type Label = { tag: string; ar: string; en: string };
 
+/** How common a verse's (or sūra's) words are in the Quran (P3.6): words per band of lemma occurrences
+ * (≥100, 20–99, 5–19, 2–4, once) and the lexical level 1–5 those give. Descriptive only (L4). */
+export type LexicalProfile = { words: number; c100: number; c20: number; c5: number; c2: number; c1: number; level: number | null; verse_levels?: Record<string, number> };
+
 export type Surah = {
   number: number;
+  lexical_profile?: LexicalProfile | null;
   name_ar: string;
   name_translit: string;
   name_en: string;
@@ -64,6 +69,8 @@ export type Segment = {
 
 export type Verse = {
   id: number;
+  lexical_level?: number | null;
+  lexical_profile?: LexicalProfile | null;
   surah: number;
   ayah: number;
   key: string;

@@ -97,7 +97,8 @@ def surah(conn: Connection, number: int) -> dict[str, Any] | None:
 
 _VERSE_COLS = """v.id, v.surah, v.ayah, v.key, v.page, v.juz, v.line_start, v.line_end, v.hizb_mark,
                  v.hizb_quarter, v.manzil, v.ruku, v.sajda,
-                 v.text_qpc, v.number_text, v.text_imlaei, v.word_count, v.token_count"""
+                 v.text_qpc, v.number_text, v.text_imlaei, v.word_count, v.token_count,
+                 v.lexical_level, v.lexical_profile"""
 
 
 def _attach_tokens_and_words(conn: Connection, verses: list[dict[str, Any]], full_words: bool) -> None:

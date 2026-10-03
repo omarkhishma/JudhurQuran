@@ -7,6 +7,7 @@ import { getJSON } from "@/lib/reader/api";
 import type { EditorNote, SurahCard } from "@/lib/reader/types";
 import type { ChapterInfo } from "./ReaderShell";
 import { EditorNotes, Fold, SourceCredit, VerseLayer } from "./VerseKnowledge";
+import { SurahVocabulary } from "./Vocabulary";
 
 const FIELDS = [
   ["names", "cardNames"],
@@ -47,6 +48,7 @@ export function SurahAbout({ chapter }: { chapter: ChapterInfo }) {
           <p className="text-[12px] text-t3">{t("cardStudyPrefers", { period: t(`period_${c.tc_study_preferred_period}`) })}</p>
         )}
       </header>
+      <SurahVocabulary surah={chapter.number} />
       {FIELDS.map(([field, label]) => {
         const text = c[field];
         if (!text) return null;

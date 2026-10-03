@@ -585,3 +585,13 @@ terms:
   en:
     label: Corpus
     body: 'A database that analyses every word of the Quran morphologically — its root, lemma, part of speech, prefixes and suffixes — and gives a word-by-word translation. It is credited wherever it is used.'
+- key: lexicalLevel
+  category: sources
+  href: null
+  sort_order: 55
+  ar:
+    label: المستوى المعجمي
+    body: 'رقم من ١ إلى ٥ يصف شيوع كلمات الآية في القرآن، لا صعوبة معناها: ١ إذا كانت كل كلماتها مما يرد في القرآن ٢٠ مرة فأكثر، ويرتفع مع نسبة ما يقل وروده منها: حتى ١٥٪ ← ٢، حتى ٣٠٪ ← ٣، حتى ٥٠٪ ← ٤، وما زاد ← ٥. تُعدّ الكلمة بأصلها المعجمي، ولا تُحسب الحروف المقطعة.'
+  en:
+    label: Lexical level
+    body: 'A number from 1 to 5 describing how common a verse''s words are in the Quran, not how hard its meaning is: 1 when every word occurs 20 times or more in the Quran, rising with the share of rarer words — up to 15% → 2, up to 30% → 3, up to 50% → 4, more → 5. A word is counted by its lemma; the disjointed letters are not counted.'

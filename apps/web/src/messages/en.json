@@ -1078,7 +1078,20 @@
     "audioFlag_joined": "it runs into the word beside it, so its edge is not clean.",
     "audioFlag_shared": "it was timed together with another word, which may be heard with it.",
     "audioFlag_uncertain": "the word timings in this verse are less certain.",
-    "audioFlag_short": "the cut is very short."
+    "audioFlag_short": "the cut is very short.",
+    "vocabLevel": "<term>Lexical level</term> {n} of {max}",
+    "vocabCommon": "{pct} of its words occur 20 times or more in the Quran",
+    "vocabOnce": "{count, plural, one {one word occurs nowhere else in the Quran} other {{n} words occur nowhere else in the Quran}}",
+    "vocabOnceSurah": "{count, plural, one {one word occurs nowhere else in the Quran} other {{n} words occur nowhere else in the Quran}}",
+    "vocabSurahTitle": "The sūra's words",
+    "vocabSurahLevels": "Its verses by <term>lexical level</term>:",
+    "vocabLevelItem": "level {ord}: {n}",
+    "lvlOrd_1": "1",
+    "lvlOrd_2": "2",
+    "lvlOrd_3": "3",
+    "lvlOrd_4": "4",
+    "lvlOrd_5": "5",
+    "listSep": ", "
   },
   "concordance": {
     "title": "Concordance",
