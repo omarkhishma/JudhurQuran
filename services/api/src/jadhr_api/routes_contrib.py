@@ -107,11 +107,13 @@ def revert(u: User, mid: str, body: _Revert) -> ORJSONResponse:
     return ok(contrib.revert(u, mid, body.note))
 
 
-@router.get("/changelog", summary="Merged and reverted contributions, newest first")
+@router.get("/changelog", summary="Merged and reverted contributions, newest first, paged by entry")
 def changelog(
-    since: str | None = Query(None, max_length=40), limit: int = Query(100, ge=1, le=500)
+    since: str | None = Query(None, max_length=40),
+    before: int | None = Query(None, ge=1, description="entries before this one (the next page)"),
+    limit: int = Query(100, ge=1, le=500),
 ) -> ORJSONResponse:
-    return ok(contrib.changelog(since, limit), BRIEF)
+    return ok(contrib.changelog(since, limit, before), BRIEF)
 
 
 @router.get("/lemmas/{slug}/contributions", summary="A word's merged contributions, shown beside its sources")
@@ -133,3 +135,33 @@ class _Grant(BaseModel):
 @router.post("/admin/roles", summary="Appoint a reviewer or an editor (administrators)")
 def grant(u: User, body: _Grant) -> ORJSONResponse:
     return ok(contrib.grant(u, body.email, body.role, body.reason))
+
+
+@router.get("/reports", summary="Unresolved reports, with the proposal each concerns (the editorial board)")
+def reports(u: User) -> ORJSONResponse:
+    return ok(contrib.open_reports(u))
+
+
+class _Resolve(BaseModel):
+    outcome: str = Field(max_length=10)
+    note: str | None = Field(None, max_length=2000)
+
+
+@router.post(
+    "/reports/{rid}/resolve", summary="Dismiss a report, or say it was acted on (the editorial board)"
+)
+def resolve(u: User, rid: int, body: _Resolve) -> ORJSONResponse:
+    return ok(contrib.resolve_report(u, rid, body.outcome, body.note))
+
+
+class _Block(BaseModel):
+    target: str = Field(
+        min_length=1, max_length=320, description="an account's address, or a proposal of theirs"
+    )
+    blocked: bool = True
+    reason: str | None = Field(None, max_length=300)
+
+
+@router.post("/admin/block", summary="Stop an account proposing, reviewing and reporting, or let it again")
+def block(u: User, body: _Block) -> ORJSONResponse:
+    return ok(contrib.block(u, body.target, body.blocked, body.reason))

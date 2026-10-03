@@ -898,7 +898,8 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(_: Request, exc: StarletteHTTPException) -> ORJSONResponse:
-        code = {
+        # a refusal names its reason (refusal.py); the others are named by their status
+        code = getattr(exc, "code", None) or {
             400: "bad_request",
             401: "unauthorized",
             403: "forbidden",

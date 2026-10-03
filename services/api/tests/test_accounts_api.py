@@ -480,18 +480,29 @@ def test_the_export_holds_everything_and_every_table_is_accounted_for(email: str
         "lookup_events": "lookups",
         "identities": "identities",
         "sessions": "account.devices",
+        # the contributions schema (audit 12 F15)
+        "contributions.proposals": "contributions.proposals",
+        "contributions.decisions": "contributions.decisions",
+        "contributions.reports": "contributions.reports",
+        "contributions.role_grants": "contributions.role_grants",
+        "contributions.merges": "contributions.merges_credited",
     }
     not_data = {
         "login_tokens": "a secret, by address",
         "delete_requests": "a secret for ten minutes",
         "deleted_accounts": "an id after the account is gone",
+        "contributions.changelog": "the public record of merges, naming no one (a merge's credit is exported)",
+    }
+    assert set(out["contributions"]) == {
+        v.split(".")[1] for k, v in exported.items() if k.startswith("contributions.")
     }
     with accounts.tx() as conn:
         tables = {
-            r["t"]
+            (r["t"] if r["s"] == "accounts" else f"{r['s']}.{r['t']}")
             for r in accounts.q(
                 conn,
-                "select table_name as t from information_schema.tables where table_schema = 'accounts' and table_type = 'BASE TABLE'",
+                """select table_schema as s, table_name as t from information_schema.tables
+                   where table_schema in ('accounts', 'contributions') and table_type = 'BASE TABLE'""",
             )
         }
     assert tables == set(exported) | set(not_data)

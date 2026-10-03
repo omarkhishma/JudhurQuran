@@ -11,14 +11,16 @@ from __future__ import annotations
 
 import json
 import re
+import uuid
+from datetime import datetime
 from typing import Any
 
-from fastapi import HTTPException
 from sqlalchemy import Connection, text
 
 from . import content
 from .accounts import q, q1, tx
 from .db import connect, one, rows
+from .refusal import Refusal
 
 KINDS = ("edit", "sense", "gloss", "morphology", "error", "attest", "entry")
 # a wording of meaning needs a structured source before it can be approved (RVQ-Q05)
@@ -44,6 +46,18 @@ PER_DAY = 30  # proposals a reader may send in a day (abuse control)
 MAX_OPEN = 100
 FILTERS = ("open", "mine", "approved", "changes", "merged", "declined")
 _VERSE = re.compile(r"^\d{1,3}:\d{1,3}(?:[-–]\d{1,3})?$")
+_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
+# the settled ends of a proposal: a revert takes a merge back without making it a decline (audit 12 F5)
+SETTLED_NOT_IN_FORCE = ("declined", "withdrawn", "reverted")
+
+
+def _uuid(raw: str, what: str = "proposal") -> str:
+    """An id from the address, checked before it reaches the database: a malformed one is not found, not a 500
+    (audit 12 F26)."""
+    try:
+        return str(uuid.UUID(raw))
+    except (ValueError, AttributeError, TypeError):
+        raise Refusal(404, "not_found", f"No such {what}.") from None
 
 
 def _dataset_version() -> str:
@@ -65,43 +79,87 @@ def clean_sources(raw: list[Any]) -> list[dict[str, Any]]:
         if isinstance(s, str):
             s = {"work": s, "ref": ""}
         if not isinstance(s, dict):
-            raise HTTPException(
-                status_code=422, detail="Each source names a work and, where it can, a place in it."
-            )
+            raise Refusal(422, "source_shape", "Each source names a work and, where it can, a place in it.")
         work = str(s.get("work") or "").strip()[:40]
         ref = str(s.get("ref") or "").strip()[:200]
         if work not in works and work not in ("quran", "grammar", "other"):
-            raise HTTPException(status_code=422, detail=f"Unknown source {work!r}.")
-        if work == "quran" and not _VERSE.match(ref):
-            raise HTTPException(status_code=422, detail="A Quranic source names its verse, as 2:255.")
+            raise Refusal(422, "unknown_source", f"Unknown source {work!r}.")
+        if work == "quran":
+            # a verse typed on an Arabic keyboard is the same verse (DECISIONS: every reference parser takes both)
+            ref = ref.translate(_DIGITS).replace(" ", "")
+            if not _VERSE.match(ref):
+                raise Refusal(422, "quran_ref", "A Quranic source names its verse, as 2:255.")
         out.append({"work": work, "ref": ref})
     return out
 
 
 def structured(sources: list[dict[str, Any]]) -> bool:
-    """A source a reviewer can check: a lexicon, a verse, or a named grammar with its reference — not free text."""
-    return any(
-        s["work"] not in ("other", "grammar") or (s["work"] == "grammar" and s["ref"]) for s in sources
+    """A source a reviewer can check: a lexicon with its entry or page, a verse, or a named grammar with its
+    reference — never a title alone, never free text (RVQ-Q05, audit 12 F9)."""
+    return any((s["work"] == "quran") or (s["work"] != "other" and bool(s["ref"])) for s in sources)
+
+
+def _morph_value(conn: Connection, word: dict[str, Any], field: str) -> str:
+    """A morphology field's value at a word's place, as the dataset holds it, in its Arabic terms — the "before" a
+    correction is read against, never the label a reader's interface happened to show (audit 12 F7)."""
+    f = word["features"] or {}
+
+    def ar(key: str) -> str:
+        return str((f.get(key) or {}).get("ar") or "")
+
+    if field == "gRoot":
+        r = (
+            one(conn, "select spaced from content.roots where id = :r", {"r": word["root_id"]})
+            if word["root_id"]
+            else None
+        )
+        return r["spaced"] if r else "—"
+    if field == "gLemma":
+        lem = (
+            one(conn, "select ar from content.lemmas where id = :l", {"l": word["lemma_id"]})
+            if word["lemma_id"]
+            else None
+        )
+        return content.lemma_display(lem["ar"]) if lem else ""
+    if field == "gForm":
+        vf = f.get("verb_form") or {}
+        return f"{vf.get('pattern')} ({vf.get('roman')})" if vf else ""
+    if field == "gPgn":
+        return " • ".join(x for x in (ar("person"), ar("gender"), ar("number")) if x)
+    if field == "gGroup":
+        return ar("special")
+    return ar(
+        {
+            "gPos": "pos",
+            "gAspect": "aspect",
+            "gVoice": "voice",
+            "gDerivation": "derivation",
+            "gCase": "case",
+            "gMood": "mood",
+        }[field]
     )
 
 
 def _validate_target(
     kind: str, lemma: str, ordinal: int | None, location: str | None, field: str | None
 ) -> dict[str, Any]:
-    """The target exists in this dataset, and is never the Quranic text. Returns what the reader sees of it."""
+    """The target exists in this dataset, and is never the Quranic text. Returns what the reader sees of it now —
+    the "before" of every kind that has one is read here, never taken from the request (audit 12 F7)."""
+    if location is not None:
+        location = location.translate(_DIGITS)
     with connect() as conn:
         lem = one(conn, "select id, slug, ar, gloss_en from content.lemmas where slug = :s", {"s": lemma})
         if kind == "entry":
             # a word the lexicon lacks: named as the reader met it, at a place where there is one
             if location and not one(conn, "select 1 from content.words where location = :l", {"l": location}):
-                raise HTTPException(status_code=422, detail="No word at that place.")
-            return {"lemma_id": lem["id"] if lem else None, "current": ""}
+                raise Refusal(422, "no_place", "No word at that place.")
+            return {"lemma_id": lem["id"] if lem else None, "current": "", "location": location}
         if lem is None:
-            raise HTTPException(status_code=422, detail="No such word in the lexicon.")
+            raise Refusal(422, "no_word", "No such word in the lexicon.")
         current = ""
         if kind == "edit":
             if ordinal is None:
-                raise HTTPException(status_code=422, detail="An edit names the sense it edits.")
+                raise Refusal(422, "sense_needed", "An edit names the sense it edits.")
             sense = one(
                 conn,
                 "select text_ar, text_en from content.senses where lemma_id = :l and ordinal = :o",
@@ -116,43 +174,49 @@ def _validate_target(
                         {"s": lemma, "o": ordinal},
                     )
                 if merged is None:
-                    raise HTTPException(status_code=422, detail="No such sense.")
+                    raise Refusal(422, "no_sense", "No such sense.")
                 current = merged["text"]
             else:
                 current = sense["text_ar"] or sense["text_en"] or ""
-        if kind in ("gloss", "morphology") and location:
+        if kind == "morphology" and field not in MORPH_FIELDS:
+            raise Refusal(422, "no_field", "No such morphology field.")
+        if location and kind in ("gloss", "morphology", "attest", "error"):
             word = one(
                 conn,
-                "select gloss_en, lemma_id from content.words where location = :l",
+                "select gloss_en, lemma_id, root_id, features from content.words where location = :l",
                 {"l": location},
             )
             if word is None or word["lemma_id"] != lem["id"]:
-                raise HTTPException(status_code=422, detail="That place does not hold this word.")
+                raise Refusal(422, "place_mismatch", "That place does not hold this word.")
             if kind == "gloss":
                 current = word["gloss_en"] or ""
+            elif kind == "morphology":
+                current = _morph_value(conn, word, field or "")
         elif kind == "gloss":
             current = lem["gloss_en"] or ""
-        if kind == "morphology" and field not in MORPH_FIELDS:
-            raise HTTPException(status_code=422, detail="No such morphology field.")
-        return {"lemma_id": lem["id"], "current": current}
+        if kind == "error":
+            # the word the report concerns, as the lexicon writes it — one language in one field (SHR-H05, F13)
+            current = content.lemma_display(lem["ar"])
+        return {"lemma_id": lem["id"], "current": current, "location": location}
 
 
 def _check_active(conn: Connection, u: dict[str, Any]) -> None:
     if u.get("blocked_at"):
-        raise HTTPException(status_code=403, detail="This account can no longer propose or review.")
+        raise Refusal(403, "blocked", "This account can no longer propose, review or report.")
 
 
 def propose(u: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     kind = body["kind"]
     if kind not in KINDS:
-        raise HTTPException(status_code=422, detail="Unknown kind of proposal.")
+        raise Refusal(422, "unknown_kind", "Unknown kind of proposal.")
     lemma = body["lemma"].strip()
-    ordinal, location, field = body.get("sense_ordinal"), body.get("location"), body.get("field")
-    target = _validate_target(kind, lemma, ordinal, location, field)
-    current = target["current"] if kind in ("edit", "gloss") else (body.get("current_text") or "")[:4000]
+    ordinal, field = body.get("sense_ordinal"), body.get("field")
+    target = _validate_target(kind, lemma, ordinal, body.get("location"), field)
+    location = target["location"]
+    current = target["current"]
     proposed = body["text"].strip()
-    if kind in ("edit", "gloss") and proposed == current.strip():
-        raise HTTPException(status_code=422, detail="The wording is the same as the current one.")
+    if kind in ("edit", "gloss", "morphology") and proposed == current.strip():
+        raise Refusal(422, "same_wording", "The wording is the same as the current one.")
     sources = clean_sources(body.get("sources") or [])
     version = _dataset_version()
     with tx() as conn:
@@ -174,8 +238,10 @@ def propose(u: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
         )
         if same:
             return detail(str(same["id"]), u)
-        if recent and (recent["day"] >= PER_DAY or recent["open"] >= MAX_OPEN):
-            raise HTTPException(status_code=429, detail="That is as many proposals as can be sent for now.")
+        if recent and recent["day"] >= PER_DAY:
+            raise Refusal(429, "too_many_today", "That is as many proposals as can be sent today.")
+        if recent and recent["open"] >= MAX_OPEN:
+            raise Refusal(429, "too_many_open", "That is as many proposals as can wait for review at once.")
         row = q1(
             conn,
             """insert into contributions.proposals
@@ -213,7 +279,7 @@ def _where(f: str) -> str:
         "approved": "p.status = 'approved'",
         "changes": "p.status = 'changes'",
         "merged": "p.status = 'merged'",
-        "declined": "p.status in ('declined', 'withdrawn')",
+        "declined": "p.status in ('declined', 'withdrawn', 'reverted')",
         "mine": "p.proposer_id = :viewer",
     }[f]
 
@@ -255,7 +321,8 @@ def _out(
         "revision": p["revision"],
         "note": p["note"],
         "approvals": int(p["approvals"] or 0),
-        "proposer": {"name": p["proposer_name"], "mine": mine},
+        # an author who deleted their account is a former contributor, as on the word (audit 12 F24)
+        "proposer": {"name": p["proposer_name"], "mine": mine, "former": p["proposer_id"] is None},
         "created_at": p["created_at"].isoformat(),
         "updated_at": p["updated_at"].isoformat(),
         "decided_at": p["decided_at"].isoformat() if p["decided_at"] else None,
@@ -264,21 +331,24 @@ def _out(
 
 def queue(viewer: dict[str, Any] | None, f: str, before: str | None, limit: int) -> dict[str, Any]:
     if f not in FILTERS:
-        raise HTTPException(status_code=422, detail="Unknown filter.")
+        raise Refusal(422, "unknown_filter", "Unknown filter.")
     if f == "mine" and viewer is None:
-        raise HTTPException(status_code=401, detail="Sign in to see your proposals.")
+        raise Refusal(401, "sign_in", "Sign in to see your proposals.")
     params: dict[str, Any] = {"viewer": viewer["id"] if viewer else None, "n": limit + 1}
     cond = _where(f)
     if before:
-        cond += " and p.created_at < cast(:before as timestamptz)"
-        params["before"] = before
+        try:
+            params["before"] = datetime.fromisoformat(before)
+        except ValueError:
+            raise Refusal(422, "bad_cursor", "That is not a place in the queue.") from None
+        cond += " and p.created_at < :before"
     with tx() as conn:
         found = q(conn, f"{_BASE} where {cond} order by p.created_at desc limit :n", params)
         counts = q1(
             conn,
             """select count(*) filter (where status = 'open') as open, count(*) filter (where status = 'approved') as approved,
                       count(*) filter (where status = 'changes') as changes, count(*) filter (where status = 'merged') as merged,
-                      count(*) filter (where status in ('declined', 'withdrawn')) as declined,
+                      count(*) filter (where status in ('declined', 'withdrawn', 'reverted')) as declined,
                       count(*) filter (where proposer_id = :viewer) as mine
                from contributions.proposals""",
             {"viewer": params["viewer"]},
@@ -306,10 +376,28 @@ def _viewer(viewer: dict[str, Any] | None) -> dict[str, Any] | None:
 
 
 def detail(pid: str, viewer: dict[str, Any] | None) -> dict[str, Any]:
+    pid = _uuid(pid)
+    board = bool(viewer and viewer["role"] in BOARD)
     with tx() as conn:
         p = q1(conn, f"{_BASE} where p.id = cast(:id as uuid)", {"id": pid})
         if p is None:
-            raise HTTPException(status_code=404, detail="No such proposal.")
+            raise Refusal(404, "not_found", "No such proposal.")
+        # what readers reported about it, for the board to read and resolve (RVQ-74, audit 12 F4)
+        reports = (
+            q(
+                conn,
+                """select id, reason, created_at, resolved_at, outcome, resolution_note from contributions.reports
+                   where proposal_id = cast(:id as uuid) order by created_at""",
+                {"id": pid},
+            )
+            if board
+            else []
+        )
+        blocked = (
+            q1(conn, "select blocked_at from accounts.users where id = :u", {"u": p["proposer_id"]})
+            if board and p["proposer_id"]
+            else None
+        )
         decisions = q(
             conn,
             """select d.revision, d.decision, d.note, d.reviewer_role, d.created_at, u.display_name as name,
@@ -329,6 +417,8 @@ def detail(pid: str, viewer: dict[str, Any] | None) -> dict[str, Any]:
     )
     v = _viewer(viewer)
     live = p["status"] in ("open", "approved")
+    # two reviewers have approved and the board has not: a third reviewer's approval would change nothing (F22)
+    waiting_board = p["status"] == "approved" and not (v and v["board"])
     out["decisions"] = [
         {
             "revision": d["revision"],
@@ -353,15 +443,35 @@ def detail(pid: str, viewer: dict[str, Any] | None) -> dict[str, Any]:
     )
     can_review = bool(v and v["reviewer"]) and not out["proposer"]["mine"] and live
     out["can"] = {
-        "approve": can_review and not approved_by_me and (out["has_source"] or p["kind"] not in NEEDS_SOURCE),
+        "approve": can_review
+        and not approved_by_me
+        and not waiting_board
+        and (out["has_source"] or p["kind"] not in NEEDS_SOURCE),
         "decline": can_review,
         "changes": can_review,
         "revise": out["proposer"]["mine"] and p["status"] == "changes",
         "withdraw": out["proposer"]["mine"] and p["status"] in ("open", "changes", "approved"),
-        "report": viewer is not None and not out["proposer"]["mine"],
+        "report": viewer is not None and not out["proposer"]["mine"] and not viewer.get("blocked_at"),
         "revert": bool(v and v["board"]) and merge is not None and merge["reverted_at"] is None,
+        # an administrator can stop an account proposing, reviewing and reporting (RVQ-74)
+        "block": bool(viewer and viewer["role"] == "admin")
+        and p["proposer_id"] is not None
+        and str(p["proposer_id"]) != str(viewer["id"] if viewer else ""),
     }
     out["approved_by_me"] = approved_by_me
+    out["waiting_board"] = waiting_board
+    out["reports"] = [
+        {
+            "id": r["id"],
+            "reason": r["reason"],
+            "at": r["created_at"].isoformat(),
+            "resolved_at": r["resolved_at"].isoformat() if r["resolved_at"] else None,
+            "outcome": r["outcome"],
+            "note": r["resolution_note"],
+        }
+        for r in reports
+    ]
+    out["proposer_blocked"] = bool(blocked and blocked["blocked_at"])
     # who is asking, as the server knows them now (a role granted after sign-in counts at once)
     out["viewer"] = v
     return out
@@ -372,9 +482,10 @@ def detail(pid: str, viewer: dict[str, Any] | None) -> dict[str, Any]:
 
 def decide(u: dict[str, Any], pid: str, decision: str, note: str | None) -> dict[str, Any]:
     if decision not in ("approve", "decline", "changes"):
-        raise HTTPException(status_code=422, detail="Approve, decline or request changes.")
+        raise Refusal(422, "unknown_decision", "Approve, decline or request changes.")
     if u["role"] not in REVIEWERS:
-        raise HTTPException(status_code=403, detail="Only reviewers decide on proposals.")
+        raise Refusal(403, "not_reviewer", "Only reviewers decide on proposals.")
+    pid = _uuid(pid)
     note = (note or "").strip()[:2000] or None
     with tx() as conn:
         _check_active(conn, u)
@@ -382,14 +493,16 @@ def decide(u: dict[str, Any], pid: str, decision: str, note: str | None) -> dict
             conn, "select * from contributions.proposals where id = cast(:id as uuid) for update", {"id": pid}
         )
         if p is None:
-            raise HTTPException(status_code=404, detail="No such proposal.")
+            raise Refusal(404, "not_found", "No such proposal.")
         if p["proposer_id"] is not None and str(p["proposer_id"]) == str(u["id"]):
-            raise HTTPException(status_code=403, detail="You cannot decide on your own proposal.")
+            raise Refusal(403, "own_proposal", "You cannot decide on your own proposal.")
         if p["status"] not in ("open", "approved"):
-            raise HTTPException(status_code=409, detail="This proposal is already settled.")
+            raise Refusal(409, "settled", "This proposal is already settled.")
         if decision == "approve":
+            if p["status"] == "approved" and u["role"] not in BOARD:
+                raise Refusal(409, "waiting_board", "Two reviewers have approved; it waits for the board.")
             if p["kind"] in NEEDS_SOURCE and not structured(p["sources"] or []):
-                raise HTTPException(status_code=422, detail="A source is needed before this can be approved.")
+                raise Refusal(422, "needs_source", "A source is needed before this can be approved.")
             done = q1(
                 conn,
                 """select 1 as x from contributions.decisions where proposal_id = :id and revision = :r
@@ -397,7 +510,7 @@ def decide(u: dict[str, Any], pid: str, decision: str, note: str | None) -> dict
                 {"id": p["id"], "r": p["revision"], "u": u["id"]},
             )
             if done:
-                raise HTTPException(status_code=409, detail="You have already approved this proposal.")
+                raise Refusal(409, "already_approved", "You have already approved this proposal.")
         conn.execute(
             text(
                 """insert into contributions.decisions (proposal_id, revision, reviewer_id, reviewer_role, decision, note)
@@ -434,14 +547,14 @@ def decide(u: dict[str, Any], pid: str, decision: str, note: str | None) -> dict
 
 
 def _merge(conn: Connection, p: dict[str, Any], approvers: list[dict[str, Any]]) -> None:
-    """One transaction: the merge shown in the reader, credited, and its changelog entry (08 §8.5)."""
-    proposer = (
-        q1(conn, "select display_name from accounts.users where id = :u", {"u": p["proposer_id"]})
-        if p["proposer_id"]
-        else None
-    )
+    """One transaction: the merge shown in the reader, credited, and its changelog entry (08 §8.5). The credit
+    holds who — the account ids — never their names, which are read when shown (audit 12 F14)."""
     ordinal = p["sense_ordinal"]
     if p["kind"] == "sense":
+        # one new sense numbered at a time per word: two merges at once wait for each other (F12)
+        conn.execute(
+            text("select pg_advisory_xact_lock(hashtext('contrib-sense:' || :s))"), {"s": p["lemma"]}
+        )
         # a new sense is numbered after the sourced ones and the senses merged before it
         with connect() as c:
             n = one(
@@ -474,16 +587,9 @@ def _merge(conn: Connection, p: dict[str, Any], approvers: list[dict[str, Any]])
             "t": p["text"],
             "s": json.dumps(p["sources"] or [], ensure_ascii=False),
             "cid": p["proposer_id"],
-            "cname": proposer["display_name"] if proposer else None,
+            "cname": None,
             "rv": json.dumps(
-                [
-                    {
-                        "id": str(a["reviewer_id"]),
-                        "name": a["display_name"],
-                        "board": a["reviewer_role"] in BOARD,
-                    }
-                    for a in approvers
-                ],
+                [{"id": str(a["reviewer_id"]), "board": a["reviewer_role"] in BOARD} for a in approvers],
                 ensure_ascii=False,
             ),
         },
@@ -517,6 +623,7 @@ def _merge(conn: Connection, p: dict[str, Any], approvers: list[dict[str, Any]])
 
 def revise(u: dict[str, Any], pid: str, body: dict[str, Any]) -> dict[str, Any]:
     """Changes requested: the proposer answers with a new revision, which goes back to the queue (RVQ-42)."""
+    pid = _uuid(pid)
     sources = clean_sources(body.get("sources") or [])
     with tx() as conn:
         _check_active(conn, u)
@@ -524,11 +631,12 @@ def revise(u: dict[str, Any], pid: str, body: dict[str, Any]) -> dict[str, Any]:
             conn, "select * from contributions.proposals where id = cast(:id as uuid) for update", {"id": pid}
         )
         if p is None:
-            raise HTTPException(status_code=404, detail="No such proposal.")
+            raise Refusal(404, "not_found", "No such proposal.")
         if str(p["proposer_id"]) != str(u["id"]) or p["status"] != "changes":
-            raise HTTPException(
-                status_code=409,
-                detail="Only a proposal with changes requested can be revised, by its proposer.",
+            raise Refusal(
+                409,
+                "not_revisable",
+                "Only a proposal with changes requested can be revised, by its proposer.",
             )
         conn.execute(
             text(
@@ -546,6 +654,7 @@ def revise(u: dict[str, Any], pid: str, body: dict[str, Any]) -> dict[str, Any]:
 
 
 def withdraw(u: dict[str, Any], pid: str) -> dict[str, Any]:
+    pid = _uuid(pid)
     with tx() as conn:
         r = conn.execute(
             text(
@@ -555,19 +664,22 @@ def withdraw(u: dict[str, Any], pid: str) -> dict[str, Any]:
             {"id": pid, "u": u["id"]},
         )
         if r.rowcount == 0:
-            raise HTTPException(
-                status_code=409, detail="Only an unsettled proposal of yours can be withdrawn."
-            )
+            raise Refusal(409, "not_withdrawable", "Only an unsettled proposal of yours can be withdrawn.")
     return detail(pid, u)
 
 
 def report(u: dict[str, Any], pid: str, reason: str) -> dict[str, Any]:
+    """A reader reports a proposal to the board, who read it on the proposal and resolve it (RVQ-74, F4)."""
+    pid = _uuid(pid)
     with tx() as conn:
+        _check_active(conn, u)
         p = q1(
             conn, "select proposer_id from contributions.proposals where id = cast(:id as uuid)", {"id": pid}
         )
         if p is None:
-            raise HTTPException(status_code=404, detail="No such proposal.")
+            raise Refusal(404, "not_found", "No such proposal.")
+        if p["proposer_id"] is not None and str(p["proposer_id"]) == str(u["id"]):
+            raise Refusal(403, "own_proposal", "You cannot report your own proposal.")
         conn.execute(
             text(
                 """insert into contributions.reports (proposal_id, reporter_id, reason) values (cast(:id as uuid), :u, :r)
@@ -581,7 +693,8 @@ def report(u: dict[str, Any], pid: str, reason: str) -> dict[str, Any]:
 def revert(u: dict[str, Any], merge_id: str, note: str) -> dict[str, Any]:
     """The board takes a merge back; the proposal and its history stay, and the changelog says so (RVQ-Q07)."""
     if u["role"] not in BOARD:
-        raise HTTPException(status_code=403, detail="Only the editorial board reverts a merge.")
+        raise Refusal(403, "not_board", "Only the editorial board reverts a merge.")
+    merge_id = _uuid(merge_id, "merge")
     with tx() as conn:
         _check_active(conn, u)
         m = q1(
@@ -591,7 +704,12 @@ def revert(u: dict[str, Any], merge_id: str, note: str) -> dict[str, Any]:
             {"id": merge_id, "u": u["id"], "n": note.strip()[:2000] or None},
         )
         if m is None:
-            raise HTTPException(status_code=409, detail="No such merge, or it is already reverted.")
+            raise Refusal(409, "not_revertible", "No such merge, or it is already reverted.")
+        # taken back, it no longer counts as merged anywhere — the filter, the Profile, the role it earns (F5)
+        conn.execute(
+            text("update contributions.proposals set status = 'reverted', updated_at = now() where id = :p"),
+            {"p": m["proposal_id"]},
+        )
         conn.execute(
             text(
                 "insert into contributions.changelog (event, merge_id, dataset_version) values ('reverted', :m, :v)"
@@ -616,7 +734,24 @@ def _titled(sources: list[dict[str, Any]], works: dict[str, Any]) -> list[dict[s
     ]
 
 
-def _merge_out(m: dict[str, Any], names: dict[str, str], works: dict[str, Any]) -> dict[str, Any]:
+def _people(merges: list[dict[str, Any]]) -> dict[str, str | None]:
+    """The names the credited accounts carry now: a name changed or cleared reaches every credit (F14)."""
+    ids = {str(m["contributor_id"]) for m in merges if m["contributor_id"]}
+    ids |= {str(r["id"]) for m in merges for r in (m["reviewers"] or []) if r.get("id")}
+    if not ids:
+        return {}
+    with tx() as conn:
+        found = q(
+            conn,
+            "select id, display_name from accounts.users where id = any(cast(:ids as uuid[]))",
+            {"ids": list(ids)},
+        )
+    return {str(r["id"]): r["display_name"] for r in found}
+
+
+def _merge_out(
+    m: dict[str, Any], names: dict[str, str], works: dict[str, Any], people: dict[str, str | None]
+) -> dict[str, Any]:
     return {
         "id": str(m["id"]),
         "proposal_id": str(m["proposal_id"]),
@@ -630,26 +765,44 @@ def _merge_out(m: dict[str, Any], names: dict[str, str], works: dict[str, Any]) 
         "text": m["text"],
         "sources": _titled(m["sources"] or [], works),
         # a contributor who deleted their account, or never chose a name, is not named
-        "contributor": m["contributor_name"],
+        "contributor": people.get(str(m["contributor_id"])) if m["contributor_id"] else None,
         "former": m["contributor_id"] is None,
-        "reviewers": [{"name": r.get("name"), "board": r.get("board", False)} for r in m["reviewers"]],
+        "reviewers": [
+            {"name": people.get(str(r["id"])) if r.get("id") else None, "board": r.get("board", False)}
+            for r in m["reviewers"]
+        ],
         "merged_at": m["merged_at"].isoformat(),
         "reverted_at": m["reverted_at"].isoformat() if m["reverted_at"] else None,
     }
 
 
-def changelog(since: str | None, limit: int) -> dict[str, Any]:
+def changelog(since: str | None, limit: int, before: int | None = None) -> dict[str, Any]:
+    """Every merge and revert, newest first, paged by entry (F6)."""
+    params: dict[str, Any] = {"n": limit + 1}
+    cond = []
+    if since:
+        try:
+            params["since"] = datetime.fromisoformat(since)
+        except ValueError:
+            raise Refusal(422, "bad_cursor", "That is not a time.") from None
+        cond.append("c.at > :since")
+    if before:
+        params["before"] = before
+        cond.append("c.id < :before")
     with tx() as conn:
         found = q(
             conn,
             f"""select c.id as entry, c.at, c.event, c.dataset_version, m.*
                 from contributions.changelog c join contributions.merges m on m.id = c.merge_id
-                {"where c.at > cast(:since as timestamptz)" if since else ""}
-                order by c.at desc limit :n""",
-            {"since": since, "n": limit},
+                {"where " + " and ".join(cond) if cond else ""}
+                order by c.id desc limit :n""",
+            params,
         )
+    more = len(found) > limit
+    found = found[:limit]
     names = _lemma_ar([m["lemma"] for m in found])
     works = _works()
+    people = _people(found)
     return {
         "data": [
             {
@@ -657,10 +810,11 @@ def changelog(since: str | None, limit: int) -> dict[str, Any]:
                 "at": e["at"].isoformat(),
                 "event": e["event"],
                 "dataset_version": e["dataset_version"],
-                "merge": _merge_out(e, names, works),
+                "merge": _merge_out(e, names, works, people),
             }
             for e in found
-        ]
+        ],
+        "more": more,
     }
 
 
@@ -678,7 +832,11 @@ def for_lemma(slug: str) -> dict[str, Any]:
         )
     names = _lemma_ar([slug])
     works = _works()
-    return {"data": [_merge_out(m, names, works) for m in found], "pending": pending["n"] if pending else 0}
+    people = _people(found)
+    return {
+        "data": [_merge_out(m, names, works, people) for m in found],
+        "pending": pending["n"] if pending else 0,
+    }
 
 
 def mine(u: dict[str, Any]) -> dict[str, Any]:
@@ -694,9 +852,9 @@ def mine(u: dict[str, Any]) -> dict[str, Any]:
 def grant(admin: dict[str, Any] | None, email: str, role: str, reason: str | None) -> dict[str, Any]:
     """The editorial board is appointed (D4): an admin grants editor or reviewer, and every grant is recorded."""
     if role not in ("member", "reviewer", "editor", "instructor", "admin"):
-        raise HTTPException(status_code=422, detail="Unknown role.")
+        raise Refusal(422, "unknown_role", "Unknown role.")
     if admin is not None and admin["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Only an administrator grants roles.")
+        raise Refusal(403, "not_admin", "Only an administrator grants roles.")
     with tx() as conn:
         u = q1(
             conn,
@@ -704,7 +862,7 @@ def grant(admin: dict[str, Any] | None, email: str, role: str, reason: str | Non
             {"r": role, "e": email.strip().lower()},
         )
         if u is None:
-            raise HTTPException(status_code=404, detail="No account with that address.")
+            raise Refusal(404, "no_account", "No account with that address.")
         conn.execute(
             text(
                 "insert into contributions.role_grants (user_id, role, granted_by, reason) values (:u, :r, :by, :why)"
@@ -722,8 +880,11 @@ def grant(admin: dict[str, Any] | None, email: str, role: str, reason: str | Non
 def forget(conn: Connection, user_id: Any) -> None:
     """Deleting an account (P6): its unmerged proposals go; every name it left is cleared; merges stay, credited
     to a former contributor."""
+    # a merge and the proposal it came from stay together, merged or taken back
     conn.execute(
-        text("delete from contributions.proposals where proposer_id = :u and status <> 'merged'"),
+        text(
+            "delete from contributions.proposals where proposer_id = :u and status not in ('merged', 'reverted')"
+        ),
         {"u": user_id},
     )
     conn.execute(
@@ -739,3 +900,146 @@ def forget(conn: Connection, user_id: Any) -> None:
         ),
         {"u": user_id},
     )
+
+
+# ─── the board's tools: reports and blocks (RVQ-74, audit 12 F4) ────────────────
+
+
+def resolve_report(u: dict[str, Any], rid: int, outcome: str, note: str | None) -> dict[str, Any]:
+    """The board reads a report and says what came of it: dismissed, or acted on (a decline, a revert, a block)."""
+    if u["role"] not in BOARD:
+        raise Refusal(403, "not_board", "Only the editorial board resolves reports.")
+    if outcome not in ("dismissed", "acted"):
+        raise Refusal(422, "unknown_outcome", "Dismiss the report, or say it was acted on.")
+    with tx() as conn:
+        _check_active(conn, u)
+        r = q1(
+            conn,
+            """update contributions.reports set resolved_at = now(), resolved_by = :u, outcome = :o,
+                      resolution_note = :n
+               where id = :id and resolved_at is null returning proposal_id""",
+            {"u": u["id"], "o": outcome, "n": (note or "").strip()[:2000] or None, "id": rid},
+        )
+        if r is None:
+            raise Refusal(409, "not_open_report", "No such report, or it is already resolved.")
+    return detail(str(r["proposal_id"]), u)
+
+
+def open_reports(u: dict[str, Any]) -> dict[str, Any]:
+    """Unresolved reports, oldest first, each with the proposal it concerns — the board's to read."""
+    if u["role"] not in BOARD:
+        raise Refusal(403, "not_board", "Only the editorial board reads reports.")
+    with tx() as conn:
+        found = q(
+            conn,
+            """select r.id, r.reason, r.created_at, p.id as proposal_id, p.kind, p.lemma, p.text
+               from contributions.reports r join contributions.proposals p on p.id = r.proposal_id
+               where r.resolved_at is null order by r.created_at limit 200""",
+        )
+    names = _lemma_ar([r["lemma"] for r in found])
+    return {
+        "data": [
+            {
+                "id": r["id"],
+                "reason": r["reason"],
+                "at": r["created_at"].isoformat(),
+                "proposal": {
+                    "id": str(r["proposal_id"]),
+                    "kind": r["kind"],
+                    "lemma": r["lemma"],
+                    "lemma_ar": names.get(r["lemma"], r["lemma"]),
+                    "text": r["text"],
+                },
+            }
+            for r in found
+        ]
+    }
+
+
+def block(admin: dict[str, Any] | None, target: str, blocked: bool, reason: str | None) -> dict[str, Any]:
+    """An administrator stops an account proposing, reviewing and reporting — or lets it again. The target is an
+    account's address, or the id of a proposal of theirs (the screen blocks from a proposal); every change is
+    recorded beside the role grants, with its reason."""
+    if admin is not None and admin["role"] != "admin":
+        raise Refusal(403, "not_admin", "Only an administrator blocks an account.")
+    with tx() as conn:
+        if "@" in target:
+            u = q1(conn, "select id from accounts.users where email = :e", {"e": target.strip().lower()})
+        else:
+            u = q1(
+                conn,
+                "select proposer_id as id from contributions.proposals where id = cast(:p as uuid)",
+                {"p": _uuid(target)},
+            )
+        if u is None or u["id"] is None:
+            raise Refusal(404, "no_account", "No such account.")
+        if admin is not None and str(u["id"]) == str(admin["id"]):
+            raise Refusal(422, "own_account", "An administrator does not block their own account.")
+        conn.execute(
+            text(f"update accounts.users set blocked_at = {'now()' if blocked else 'null'} where id = :u"),
+            {"u": u["id"]},
+        )
+        conn.execute(
+            text(
+                "insert into contributions.role_grants (user_id, role, granted_by, reason) values (:u, :r, :by, :why)"
+            ),
+            {
+                "u": u["id"],
+                "r": "blocked" if blocked else "unblocked",
+                "by": admin["id"] if admin else None,
+                "why": reason or ("from the command line" if admin is None else None),
+            },
+        )
+    return {"blocked": blocked}
+
+
+def export_for(u: dict[str, Any]) -> dict[str, Any]:
+    """Everything the contributions schema holds about an account, for its export (audit 12 F15): its proposals
+    with their revisions' decisions, the decisions it took, the reports it sent, its role grants, and the merges
+    that credit it."""
+    with tx() as conn:
+        proposals = q(
+            conn,
+            """select id, kind, lemma, sense_ordinal, location, field, current_text, text, why, sources, status,
+                      revision, note, dataset_version, created_at, updated_at, decided_at
+               from contributions.proposals where proposer_id = :u order by created_at""",
+            {"u": u["id"]},
+        )
+        decisions = q(
+            conn,
+            """select proposal_id, revision, reviewer_role, decision, note, created_at
+               from contributions.decisions where reviewer_id = :u order by created_at""",
+            {"u": u["id"]},
+        )
+        reports = q(
+            conn,
+            "select proposal_id, reason, created_at, resolved_at, outcome from contributions.reports where reporter_id = :u",
+            {"u": u["id"]},
+        )
+        grants = q(
+            conn,
+            "select role, reason, at from contributions.role_grants where user_id = :u order by at",
+            {"u": u["id"]},
+        )
+        merges = q(
+            conn,
+            """select id, proposal_id, kind, lemma, text, merged_at, reverted_at from contributions.merges
+               where contributor_id = :u
+                  or reviewers @> jsonb_build_array(jsonb_build_object('id', cast(:u as text)))
+               order by merged_at""",
+            {"u": u["id"]},
+        )
+
+    def plain(r: dict[str, Any]) -> dict[str, Any]:
+        return {
+            k: (v.isoformat() if isinstance(v, datetime) else str(v) if isinstance(v, uuid.UUID) else v)
+            for k, v in r.items()
+        }
+
+    return {
+        "proposals": [plain(r) for r in proposals],
+        "decisions": [plain(r) for r in decisions],
+        "reports": [plain(r) for r in reports],
+        "role_grants": [plain(r) for r in grants],
+        "merges_credited": [plain(r) for r in merges],
+    }

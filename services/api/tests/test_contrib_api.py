@@ -333,3 +333,226 @@ def test_deleting_an_account_removes_its_unmerged_proposals_and_every_name_and_k
             "delete from contributions.proposals where id = cast(:p as uuid) returning id",
             {"p": merged["id"]},
         )
+
+
+def _approve(pid: str, people: dict[str, dict[str, str]], *who: str) -> dict:
+    out: dict = {}
+    for w in who:
+        out = client.post(
+            f"/api/v1/proposals/{pid}/decisions", headers=people[w], json={"decision": "approve"}
+        ).json()
+    return out
+
+
+def test_a_reverted_merge_counts_as_merged_nowhere(
+    people: dict[str, dict[str, str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Audit 12 F5: taken back, a merge leaves the Merged filter and its count, is counted with the settled ones,
+    and no longer counts towards the merges that earn the reviewer role."""
+    p = client.post("/api/v1/proposals", headers=people["proposer"], json=GLOSS).json()
+    merged = _approve(p["id"], people, "r1", "editor")
+    before = client.get("/api/v1/proposals", params={"filter": "merged"}).json()["counts"]["merged"]
+    back = client.post(
+        f"/api/v1/merges/{merged['merge']['id']}/revert", headers=people["editor"], json={"note": "x"}
+    ).json()
+    assert back["status"] == "reverted"
+    q = client.get("/api/v1/proposals", params={"filter": "merged"}).json()
+    assert q["counts"]["merged"] == before - 1 and all(x["id"] != p["id"] for x in q["data"])
+    assert any(
+        x["id"] == p["id"]
+        for x in client.get("/api/v1/proposals", params={"filter": "declined"}).json()["data"]
+    )
+    mine = client.get("/api/v1/me/proposals", headers=people["proposer"]).json()["data"]
+    assert next(x for x in mine if x["id"] == p["id"])["status"] == "reverted"
+    # another merge with the threshold at one: the reverted one does not count towards it
+    monkeypatch.setattr(contrib, "REVIEWER_AFTER", 2)
+    q2 = client.post(
+        "/api/v1/proposals", headers=people["proposer"], json={**GLOSS, "text": "knowing"}
+    ).json()
+    _approve(q2["id"], people, "r1", "editor")
+    assert client.get("/api/v1/me", headers=people["proposer"]).json()["role"] == "member"
+
+
+def test_the_before_of_every_kind_is_read_from_the_dataset_not_the_request(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """Audit 12 F7 and F13: a morphology correction's and an error report's "before" come from the dataset."""
+    h = people["proposer"]
+    m = client.post(
+        "/api/v1/proposals",
+        headers=h,
+        json={**GLOSS, "kind": "morphology", "field": "gCase", "current_text": "made up", "text": "مرفوع"},
+    ).json()
+    with connect() as conn:
+        case = one(
+            conn,
+            "select features->'case'->>'ar' as ar from content.words where location = :l",
+            {"l": GLOSS["location"]},
+        )
+    assert m["current_text"] == (case["ar"] if case else "") and m["current_text"] != "made up"
+    e = client.post(
+        "/api/v1/proposals",
+        headers=h,
+        json={
+            "kind": "error",
+            "lemma": "ilm",
+            "current_text": "عِلْم — knowledge",
+            "text": "x",
+            "why": "y",
+            "sources": [],
+        },
+    ).json()
+    assert e["current_text"] and "knowledge" not in e["current_text"]
+
+
+def test_malformed_ids_and_cursors_answer_the_error_envelope_with_a_code() -> None:
+    """Audit 12 F26 and F19: never a bare 500, and every refusal names its reason for the reader's language."""
+    for path in ("/api/v1/proposals/not-a-uuid", "/api/v1/proposals?filter=open&before=garbage"):
+        r = client.get(path)
+        assert r.status_code in (404, 422), path
+        assert r.json()["error"]["code"] in ("not_found", "bad_cursor"), path
+    assert (
+        client.get("/api/v1/changelog", params={"since": "garbage"}).json()["error"]["code"] == "bad_cursor"
+    )
+
+
+def test_a_lexicon_counts_as_a_source_only_with_its_entry_and_a_verse_may_be_typed_in_arabic_digits(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """Audit 12 F9, F18; RVQ-Q05."""
+    h = people["proposer"]
+    p = client.post(
+        "/api/v1/proposals",
+        headers=h,
+        json={**GLOSS, "text": "a title alone", "sources": [{"work": "lisan", "ref": ""}]},
+    ).json()
+    assert not p["has_source"]
+    r = client.post(
+        f"/api/v1/proposals/{p['id']}/decisions", headers=people["editor"], json={"decision": "approve"}
+    )
+    assert r.status_code == 422 and r.json()["error"]["code"] == "needs_source"
+    v = client.post(
+        "/api/v1/proposals",
+        headers=h,
+        json={**GLOSS, "text": "by a verse", "sources": [{"work": "quran", "ref": "٢:٣٢"}]},
+    ).json()
+    assert v["has_source"] and v["sources"][0]["ref"] == "2:32"
+
+
+def test_a_third_reviewer_is_not_offered_an_approval_that_changes_nothing(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """Audit 12 F22: approved by two reviewers, it waits for the board."""
+    p = client.post("/api/v1/proposals", headers=people["proposer"], json={**GLOSS, "text": "third"}).json()
+    _approve(p["id"], people, "r1", "r2")
+    tag = uuid.uuid4().hex[:6]
+    h3 = _sign_in(f"contrib-r3-{tag}@example.org")
+    contrib.grant(None, f"contrib-r3-{tag}@example.org", "reviewer", "test")
+    try:
+        d = client.get(f"/api/v1/proposals/{p['id']}", headers=h3).json()
+        assert d["status"] == "approved" and d["waiting_board"] and not d["can"]["approve"]
+        r = client.post(f"/api/v1/proposals/{p['id']}/decisions", headers=h3, json={"decision": "approve"})
+        assert r.status_code == 409 and r.json()["error"]["code"] == "waiting_board"
+    finally:
+        with accounts.tx() as conn:
+            accounts.q(
+                conn,
+                "delete from accounts.users where email = :e returning id",
+                {"e": f"contrib-r3-{tag}@example.org"},
+            )
+
+
+def test_reports_reach_the_board_and_an_administrator_blocks_from_a_proposal(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """Audit 12 F4; RVQ-74: the board reads and resolves reports; no one reports their own proposal; an
+    administrator blocks an account from a proposal of theirs, and a blocked account can do nothing, reporting
+    included."""
+    p = client.post(
+        "/api/v1/proposals", headers=people["proposer"], json={**GLOSS, "text": "reported"}
+    ).json()
+    own = client.post(f"/api/v1/proposals/{p['id']}/report", headers=people["proposer"], json={"reason": "x"})
+    assert own.status_code == 403 and own.json()["error"]["code"] == "own_proposal"
+    client.post(f"/api/v1/proposals/{p['id']}/report", headers=people["r2"], json={"reason": "spam"})
+    assert client.get(f"/api/v1/proposals/{p['id']}", headers=people["r1"]).json()["reports"] == []
+    board = client.get(f"/api/v1/proposals/{p['id']}", headers=people["editor"]).json()
+    rep = board["reports"][0]
+    assert rep["reason"] == "spam" and rep["resolved_at"] is None
+    assert any(
+        x["proposal"]["id"] == p["id"]
+        for x in client.get("/api/v1/reports", headers=people["editor"]).json()["data"]
+    )
+    assert client.get("/api/v1/reports", headers=people["r1"]).status_code == 403
+    done = client.post(
+        f"/api/v1/reports/{rep['id']}/resolve",
+        headers=people["editor"],
+        json={"outcome": "acted", "note": "declined"},
+    ).json()
+    assert done["reports"][0]["outcome"] == "acted"
+    # an administrator, from the proposal
+    tag = uuid.uuid4().hex[:6]
+    admin = f"contrib-admin-{tag}@example.org"
+    ha = _sign_in(admin)
+    contrib.grant(None, admin, "admin", "test")
+    try:
+        assert client.get(f"/api/v1/proposals/{p['id']}", headers=ha).json()["can"]["block"]
+        assert (
+            client.post("/api/v1/admin/block", headers=people["editor"], json={"target": p["id"]}).status_code
+            == 403
+        )
+        assert client.post(
+            "/api/v1/admin/block", headers=ha, json={"target": p["id"], "reason": "spam"}
+        ).json() == {"blocked": True}
+        for path, body in (
+            ("/api/v1/proposals", GLOSS),
+            (f"/api/v1/proposals/{p['id']}/report", {"reason": "x"}),
+        ):
+            r = client.post(path, headers=people["proposer"], json=body)
+            assert r.status_code == 403 and r.json()["error"]["code"] == "blocked", path
+        assert client.post(
+            "/api/v1/admin/block", headers=ha, json={"target": p["id"], "blocked": False}
+        ).json() == {"blocked": False}
+    finally:
+        with accounts.tx() as conn:
+            accounts.q(conn, "delete from accounts.users where email = :e returning id", {"e": admin})
+
+
+def test_credit_names_follow_the_account_and_names_cannot_pass_for_the_board(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """Audit 12 F14, F16: a name changed or cleared reaches every merged credit; the board's title and direction
+    controls are refused or removed."""
+    p = client.post(
+        "/api/v1/proposals", headers=people["proposer"], json={**GLOSS, "text": "credited"}
+    ).json()
+    _approve(p["id"], people, "r1", "editor")
+
+    def credit() -> dict:
+        return next(
+            x
+            for x in client.get("/api/v1/lemmas/ilm/contributions").json()["data"]
+            if x["proposal_id"] == p["id"]
+        )
+
+    client.patch("/api/v1/me", headers=people["proposer"], json={"display_name": "اسم جديد"})
+    assert credit()["contributor"] == "اسم جديد"
+    client.patch("/api/v1/me", headers=people["proposer"], json={"display_name": ""})
+    assert credit()["contributor"] is None and credit()["former"] is False
+    for name in ("هيئة التحرير", "Editorial Board", "admin"):
+        r = client.patch("/api/v1/me", headers=people["proposer"], json={"display_name": name})
+        assert r.status_code == 422 and r.json()["error"]["code"] == "name_reserved", name
+    rlo = client.patch("/api/v1/me", headers=people["proposer"], json={"display_name": "a‮b"}).json()
+    assert rlo["display_name"] == "ab"
+
+
+def test_the_account_export_holds_its_contributions(people: dict[str, dict[str, str]]) -> None:
+    """Audit 12 F15: proposals, decisions taken, reports sent, role grants and merges credited."""
+    p = client.post(
+        "/api/v1/proposals", headers=people["proposer"], json={**GLOSS, "text": "exported"}
+    ).json()
+    _approve(p["id"], people, "r1")
+    mine = client.get("/api/v1/me/export", headers=people["proposer"]).json()["contributions"]
+    assert any(x["id"] == p["id"] for x in mine["proposals"])
+    theirs = client.get("/api/v1/me/export", headers=people["r1"]).json()["contributions"]
+    assert any(x["proposal_id"] == p["id"] and x["decision"] == "approve" for x in theirs["decisions"])
+    assert any(g["role"] == "reviewer" for g in theirs["role_grants"])
