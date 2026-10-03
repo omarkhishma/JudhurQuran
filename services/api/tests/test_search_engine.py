@@ -110,3 +110,20 @@ def test_chat_alphabet_finds_the_word() -> None:
     for q, slug in (("Saabir", "sabir"), ("3ilm", "ilm"), ("ra7ma", "rahma"), ("7amd", "hamd")):
         d = client.get("/api/v1/search", params={"q": q, "limit": 3}).json()
         assert slug in [x["slug"] for x in d["results"]["lemmas"]], q
+
+
+def test_nouns_come_before_verbs_among_the_words_a_query_names() -> None:
+    from jadhr_api.search import rank_lemmas
+
+    lem = client.get("/api/v1/search", params={"q": "علم", "limit": 6}).json()["results"]["lemmas"]
+    assert lem[0]["slug"] == "ilm", [x["slug"] for x in lem]
+    exact = [x for x in lem if x["slug"] in ("ilm", "alima")]
+    assert [x["pos"] for x in exact] == ["N", "V"]
+    # the rule itself: exact letters first, then non-verbs, then frequency
+    rows = [
+        {"ar": "عَلِمَ", "pos": "V", "occurrences": 300},
+        {"ar": "عَالَمِين", "pos": "N", "occurrences": 70},
+        {"ar": "عِلْم", "pos": "N", "occurrences": 100},
+        {"ar": "عُلِّمَ", "pos": "V", "occurrences": 5},
+    ]
+    assert [r["ar"] for r in rank_lemmas(rows, "علم")] == ["عِلْم", "عَلِمَ", "عُلِّمَ", "عَالَمِين"]

@@ -10,6 +10,7 @@ always uses the stored, verified forms.
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Any
 
 from jadhr_arabic import has_arabic, is_uthmani, normalize, parse_root_input, root_input_candidates
@@ -156,6 +157,34 @@ def _lemma_candidates(norm_q: str) -> list[str]:
     return out
 
 
+_HARAKAT = re.compile("[\u064b-\u0652]")
+_NOT_VOWELLED = re.compile("[^\u0621-\u064a\u064b-\u0652]")
+
+
+def _vowelled(s: str) -> str:
+    """Letters and the short vowels, shadda and sukūn only — the Quranic annotation signs, tatweel and the
+    wasla seat dropped — so a typed vowelled word compares with a lemma's form."""
+    s = unicodedata.normalize("NFC", s).replace("\u0671", "\u0627")
+    return _NOT_VOWELLED.sub("", s)
+
+
+def rank_lemmas(lemmas: list[dict[str, Any]], q: str) -> list[dict[str, Any]]:
+    """The words a query names, in the design's order (RDR-169, 602): those whose letters are the query's
+    first, then the rest; inside each, nouns and particles before verbs, then the more frequent. So «علم»
+    offers عِلْم before عَلِمَ, as a reader looking a word up most often means the noun."""
+    qn = normalize(q)
+    qv = _vowelled(q) if _HARAKAT.search(q) else None
+
+    def key(i_l: tuple[int, dict[str, Any]]) -> tuple[int, int, int, int]:
+        i, lem = i_l
+        ar = str(lem.get("ar") or "")
+        # a query written with its vowels names that word first (عَلِمَ the verb, عِلْم the noun)
+        tier = 0 if qv and _vowelled(ar) == qv else 1 if normalize(ar) == qn else 2
+        return (tier, 1 if lem.get("pos") == "V" else 0, -int(lem.get("occurrences") or 0), i)
+
+    return [lem for _, lem in sorted(enumerate(lemmas), key=key)]
+
+
 def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
     """OpenSearch when it is reachable (scored, multi-field, highlighted); Postgres otherwise. The
     response says which engine answered. Detection, references and root letters are exact lookups in
@@ -163,13 +192,16 @@ def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
     from . import search_os
 
     es = searchindex.client()
+    out: dict[str, Any] | None = None
     if searchindex.available(es):
         try:
-            return search_os.search(conn, es, q, limit)
+            out = search_os.search(conn, es, q, limit)
         except Exception:  # an index problem must never take search down: fall back
-            pass
-    out = search_pg(conn, q, limit)
-    out["engine"] = "postgres"
+            out = None
+    if out is None:
+        out = search_pg(conn, q, limit)
+        out["engine"] = "postgres"
+    out["results"]["lemmas"] = rank_lemmas(out["results"].get("lemmas", []), q)
     return out
 
 
