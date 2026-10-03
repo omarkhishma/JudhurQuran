@@ -372,7 +372,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     const el = e.target as HTMLElement;
     const tool = el.closest<HTMLElement>("[data-tool]");
     if (tool) {
-      runTool(tool.dataset.tool as DrawerTool | "audio" | "tafsir" | "copy" | "cite", tool.dataset.verseKey!);
+      runTool(tool.dataset.tool as DrawerTool | "audio" | "tafsir" | "copy" | "cite" | "analyse", tool.dataset.verseKey!);
       return;
     }
     if (el.closest("[data-about]")) {
@@ -398,7 +398,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     }
   }
 
-  async function runTool(tool: DrawerTool | "audio" | "tafsir" | "copy" | "cite", key: string) {
+  async function runTool(tool: DrawerTool | "audio" | "tafsir" | "copy" | "cite" | "analyse", key: string) {
     if (tool === "audio") {
       // the verse being recited: its Recite tool stops it (RDR-144)
       if (playingKey === key) return stopAudio();
@@ -410,6 +410,8 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       return;
     }
     if (tool === "cite") return setCite({ kind: "verse", key, label: key });
+    // the verse word by word in the Analyser, from the corpus at its place (RDR-150)
+    if (tool === "analyse") return router.push(`/analyse?q=${encodeURIComponent(key)}`);
     if (tool === "copy") {
       const ayah = Number(key.split(":")[1]);
       const words = Array.from(ref.current?.querySelectorAll<HTMLElement>(`[data-verse="${CSS.escape(key)}"] .w`) ?? []).map(tokenText);
@@ -622,7 +624,7 @@ function roving(root: HTMLElement, el: HTMLElement | null) {
   (el ?? root.querySelector<HTMLElement>(".w"))?.setAttribute("tabindex", "0");
 }
 
-const MORE = ["tafsir", "related", "concordance", "links", "topic", "copy", "cite", "note", "graph"] as const;
+const MORE = ["tafsir", "related", "concordance", "analyse", "links", "topic", "copy", "cite", "note", "graph"] as const;
 const MORE_DRAWERS = new Set<string>(["related", "concordance", "links", "topic", "note", "graph"]);
 
 /** The six verse tools beyond Recite and Roots, drawn only into the verse being read (P2.10a). */

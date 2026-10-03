@@ -54,7 +54,8 @@
     "classroom": "Classroom",
     "data": "Data & API",
     "me": "My account",
-    "more": "More"
+    "more": "More",
+    "ask": "Ask"
   },
   "hub": {
     "rootOfDay": "Root of the day",
@@ -272,7 +273,8 @@
     "goToRange": "Go to {ref}",
     "dictBy": "{title} · {author}",
     "mineIn": "{title} · passage {n}",
-    "lettersNarrow": "The letters narrow roots and words: {letters}"
+    "lettersNarrow": "The letters narrow roots and words: {letters}",
+    "kindPattern": "Pattern"
   },
   "footer": {
     "label": "Site links",
@@ -1230,7 +1232,10 @@
     "loanStatus": "Extracted mechanically from the book's text as it stands; not yet reviewed by an editor.",
     "loanMark": "loanword?",
     "loanMarkTitle": "al-Suyūṭī reports it as non-Arabic: it may not share the root's meaning",
-    "loanPage": "p. {page}"
+    "loanPage": "p. {page}",
+    "tool_analyse": "Analyse",
+    "tool_analyse_hint": "Each word of the verse in the Analyser — its parts, root and pattern, from the Quranic corpus",
+    "askAnalyse": "Analyse it anyway →"
   },
   "concordance": {
     "title": "Concordance",

@@ -54,7 +54,8 @@
     "classroom": "الفصل",
     "data": "البيانات",
     "me": "حسابي",
-    "more": "المزيد"
+    "more": "المزيد",
+    "ask": "اسأل"
   },
   "hub": {
     "rootOfDay": "جذر اليوم",
@@ -272,7 +273,8 @@
     "goToRange": "اذهب إلى {ref}",
     "dictBy": "{title} · {author}",
     "mineIn": "{title} · المقطع {n}",
-    "lettersNarrow": "الحروف تحصر الجذور والكلمات: {letters}"
+    "lettersNarrow": "الحروف تحصر الجذور والكلمات: {letters}",
+    "kindPattern": "وزن"
   },
   "footer": {
     "label": "روابط الموقع",
@@ -1230,7 +1232,10 @@
     "loanStatus": "مستخرج آليًا من نص الكتاب كما هو، ولم يراجعه محرر بعد.",
     "loanMark": "معرّب؟",
     "loanMarkTitle": "يذكر السيوطي أنها معرّبة: قد لا تشترك في معنى الجذر",
-    "loanPage": "ص {page}"
+    "loanPage": "ص {page}",
+    "tool_analyse": "حلّلها",
+    "tool_analyse_hint": "كل كلمة من الآية في المحلّل: أجزاؤها وجذرها ووزنها، من المدونة القرآنية",
+    "askAnalyse": "حلّلها على أي حال ←"
   },
   "concordance": {
     "title": "الفهرس السياقي",

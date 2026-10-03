@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { Link } from "@/i18n/navigation";
 import { hasArabic, hasMarks } from "@/lib/arabic/normalize";
 import { cnt, formatNumber } from "@/lib/format";
 import { getJSON, useWord } from "@/lib/reader/api";
@@ -93,7 +94,15 @@ export function AskView() {
           ))}
         </div>
       )}
-      {dq && hits.isFetched && matches.length === 0 && <p className="text-[13.5px] text-t2">{t("askNoMatch", { q: dq })}</p>}
+      {dq && hits.isFetched && matches.length === 0 && (
+        <p className="text-[13.5px] text-t2">
+          {t("askNoMatch", { q: dq })}{" "}
+          {/* not a Quranic word: the Analyser reads it against the Quran's own words (RDR-172) */}
+          <Link href={`/analyse?q=${encodeURIComponent(dq)}`} className="text-word underline-offset-2 hover:underline">
+            {t("askAnalyse")}
+          </Link>
+        </p>
+      )}
       {matches.length > 1 && !pick && (
         <div className="flex flex-col items-center gap-2">
           <p className="text-[12.5px] text-t3">{t("askMatches", cnt(matches.length, locale))}</p>

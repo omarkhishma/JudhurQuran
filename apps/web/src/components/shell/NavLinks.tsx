@@ -7,6 +7,8 @@ import { Link, usePathname } from "@/i18n/navigation";
 /** The shared nav (design 01 §1.4), in its order. `match` decides the active item. */
 export const NAV_ITEMS = [
   { href: "/read", key: "read", match: ["/read", "/quran"] },
+  // the plain way in, one word at a time (SHL-32: the hub and the shared nav gain Ask)
+  { href: "/read?mode=ask", key: "ask", match: [] },
   { href: "/explore", key: "explore", match: ["/explore"] },
   { href: "/library", key: "library", match: ["/library"] },
   { href: "/read?mode=lookup", key: "lookup", match: [] },

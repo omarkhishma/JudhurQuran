@@ -71,6 +71,19 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
           </span>
         ),
       });
+    // patterns, as the reader's omnibox offers them (SHL-Q07): each opens the words built on it
+    for (const p of (data.results.patterns ?? []).slice(0, 2))
+      out.push({
+        id: `p${p.slug}`,
+        href: `/search?q=${encodeURIComponent(p.ar.full)}`,
+        kind: t("kindPattern"),
+        primary: <span className="ar-classical text-[19px] text-form" dir="rtl" lang="ar">{p.ar.full}</span>,
+        secondary: (
+          <span>
+            <span dir="ltr">{p.ar.translit}</span> · {t("wordsOnPattern", cnt(p.lemma_count, locale))}
+          </span>
+        ),
+      });
     for (const l of data.results.lemmas.slice(0, 4))
       if (l.root)
         out.push({
