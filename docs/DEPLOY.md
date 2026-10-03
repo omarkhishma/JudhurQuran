@@ -85,7 +85,18 @@ docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loa
 - **`HOSTNAME=0.0.0.0`** must stay in the web image. Docker sets `HOSTNAME` to the container id; with that, the locale proxy's internal rewrite is treated as an external host and every Arabic page redirect-loops.
 - **`JADHR_API_ORIGIN` is baked into the web build** (the `/api/v1` rewrite). Behind Caddy the rewrite is never used, but a deploy without Caddy must build with the right origin.
 - **The revalidation secret** must be identical on `web` and `loader`; without it the loader reports `failed` and pages keep the old release for up to a day.
-- **Backups**: the `content` schema is fully reproducible from `data/build/<version>`; keep those directories. There is no user data on the server (everything personal stays in the reader's browser).
+- **Backups**: the `content` schema is fully reproducible from `data/build/<version>`; keep those directories. The `accounts` schema holds the data of readers who signed in (P6): the `backup` service dumps it daily into the `account_backups` volume and deletes dumps older than fourteen days — the privacy page states that period, so change both together. Copy the volume off the server too. Restore: `gunzip -c accounts-….sql.gz | docker compose -f infra/compose.prod.yml --env-file .env.production exec -T db psql -U jadhr -d jadhr`.
+- **`DATA_KEY`** encrypts every synced record (AES-GCM, bound to its user, store and key). The API refuses to start syncing in production without it. Generate it once (`openssl rand -base64 32`), keep a copy off the server, and never rotate it without a re-encryption script: a lost key is every synced record lost; the dumps are encrypted with it too.
+
+## Accounts (P6)
+
+Optional for readers; everything works without them. Before enabling sign-in in production (owner):
+
+1. `DATA_KEY` set (above).
+2. E-mail links: an SMTP provider for `MAIL_FROM` with SPF and DKIM on the domain; `MAIL_BACKEND=smtp`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`. Until then the sign-in sheet says sign-in is not available here, and nothing else changes.
+3. Google (optional): an OAuth client of type "Web application" with the redirect URI `https://<domain>/auth/oidc/google`; `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
+4. Apple (optional): a Services ID with the return URL `https://<domain>/api/auth/apple` and a Sign in with Apple key; `APPLE_CLIENT_ID` (the Services ID), `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` (the .p8 contents, newlines as `\n`).
+5. The API purges what the privacy page promises daily (expired links and sessions, replaced versions after 30 days, shared lookups after a year).
 
 ## Before the site goes public (owner)
 

@@ -50,6 +50,23 @@ services:
       JADHR_CORS_ORIGINS: '["${PUBLIC_URL}"]'
       JADHR_INTERNAL_TOKEN: ${INTERNAL_TOKEN:?set INTERNAL_TOKEN}
       WEB_CONCURRENCY: ${API_WORKERS:-2}
+      # Accounts (P6, docs/DEPLOY.md). Synced records are encrypted with DATA_KEY: required, and losing it loses
+      # every synced record. Sign-in by e-mail stays off until MAIL_BACKEND=smtp with an SMTP host; Google and
+      # Apple only when their credentials are set.
+      JADHR_PUBLIC_WEB_URL: ${PUBLIC_URL}
+      JADHR_DATA_KEY: ${DATA_KEY:?set DATA_KEY (openssl rand -base64 32)}
+      JADHR_MAIL_BACKEND: ${MAIL_BACKEND:-none}
+      JADHR_MAIL_FROM: ${MAIL_FROM:-Jadhr <no-reply@localhost>}
+      JADHR_SMTP_HOST: ${SMTP_HOST:-}
+      JADHR_SMTP_PORT: ${SMTP_PORT:-587}
+      JADHR_SMTP_USER: ${SMTP_USER:-}
+      JADHR_SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      JADHR_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      JADHR_GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      JADHR_APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+      JADHR_APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      JADHR_APPLE_KEY_ID: ${APPLE_KEY_ID:-}
+      JADHR_APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
 
   web:
     build:
@@ -77,6 +94,27 @@ services:
       - caddy_data:/data
       - caddy_config:/config
 
+  # The account schema, dumped daily and kept fourteen days (what the privacy page states). The content schema
+  # needs no backup: it is rebuilt from data/build/<version>. Copy the volume off the server as well.
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - account_backups:/backups
+    entrypoint:
+      - sh
+      - -c
+      - >-
+        while true; do
+        f=/backups/accounts-$$(date -u +%Y%m%dT%H%M).sql.gz;
+        pg_dump -h db -U jadhr -d jadhr -n accounts --no-owner | gzip > $$f.tmp && mv $$f.tmp $$f;
+        find /backups -name 'accounts-*.sql.gz' -mtime +14 -delete;
+        sleep 86400;
+        done
+
   # One-off: apply migrations, load data/build/<version>, expire the web cache.
   loader:
     profiles: [tools]
@@ -95,5 +133,6 @@ services:
 volumes:
   pg:
   search:
+  account_backups:
   caddy_data:
   caddy_config:
