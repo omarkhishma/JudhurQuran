@@ -255,6 +255,7 @@ def test_counts_match_the_report(built: tuple[dict, dict]) -> None:
         "asbab": 1294,
         "verse_crossrefs": 21998,
         "entity_candidates": 107,
+        "mushaf_signs": 8,
     }
     assert report["surah_cards"]["verse_counts"] == {"agree": 99, "one-text": 9, "unparsed": 5, "disagree": 1}
     assert report["surah_cards"]["apparatus_separated"]["footnotes"] == 6308
@@ -380,3 +381,16 @@ def test_entity_candidates(built: tuple[dict, dict]) -> None:
     assert rows["الله"]["wikidata_id"] is None  # no item meets either rule: left to the editors
     assert rows["مصر"]["wikidata_id"] is None  # «الحضارة المصرية في العصر الإسلامي» is not the Quran's Miṣr
     assert all(r["wikidata_evidence"] for r in rows.values() if r["wikidata_id"])
+
+
+def test_mushaf_signs_are_tied_to_their_code_points_by_the_pages_own_examples(built: tuple) -> None:
+    """P3.9: eight signs from the Madinah Mushaf's note, each example verse carrying its code point; counts
+    from our text (Ḥafṣ's four sakt places, fifteen sajdas)."""
+    tables, report = built
+    signs = {s["id"]: s for s in tables["mushaf_signs"]}
+    assert list(signs) == ["lazim", "qila", "jaiz", "sila", "muanaqa", "sakt", "sajda", "hizb"]
+    assert signs["jaiz"]["text_ar"] == "علامة الوقف الجائز جوازا مستوي الطرفين"
+    assert signs["muanaqa"]["example_key"] == "2:2" and signs["sajda"]["example_key"] == "32:15"
+    assert report["mushaf_signs"]["occurrences"]["sakt"] == 4
+    assert report["mushaf_signs"]["occurrences"]["sajda"] == 15
+    assert all(s["source_id"] == "kfgqpc-mushaf-key" and s["occurrences"] > 0 for s in signs.values())

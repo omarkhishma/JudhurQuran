@@ -209,6 +209,86 @@ sources:
       - path: wikidata-quran-entities/licensing-page.wikitext
         sha256: f371157d3d900fd8fa0c1802e5e4eccb4a577ca1f6a7428609ff8fa2dc3ec185
 
+  - id: kfgqpc-mushaf-key
+    kind: knowledge
+    use: display
+    role: what each sign written in the mushaf means — the waqf signs, the sakt sign, the sajda sign and the ḥizb sign — in the mushaf's own words (P3.9)
+    title_ar: «التعريف بهذا المصحف» في مصحف المدينة النبوية (رواية حفص، طبعة ١٤٤١هـ)
+    title_en: The note on this mushaf in the Madinah Mushaf (Ḥafṣ, 1441 AH print)
+    version: "1441 AH print, green regular size; pages «ث» (علامات الوقف) and «س»"
+    url: https://archive.org/details/MushafMadinaHafsGreen1441
+    license: 'The Complex''s terms for its digital mushaf, verbatim (https://dm.qurancomplex.gov.sa/copyright/, Wayback 2024-05-18): "ويمكن استخدام النسخة المذكورة مجاناً في المجالات الشخصية والأعمال الفردية كافة، وأعمال الجهات الحكومية والجهات والمؤسسات الخاصة والأهلية، وأعمال الطباعة الورقية * ، والنشـر المكتبي والإعلامي، ومواقع الإنترنت والبرامج الحاسوبية وغيرها، وذلك داخل المملكة العربية السعودية وخارجها." The asterisk restricts printing mushafs for sale inside the Kingdom.'
+    license_ar: "يتيح المجمع نسخته الرقمية من مصحف المدينة للاستخدام المجاني في مواقع الإنترنت والبرامج الحاسوبية وغيرها"
+    license_url: https://dm.qurancomplex.gov.sa/copyright/
+    attribution_ar: "«التعريف بهذا المصحف»، مصحف المدينة النبوية، مجمع الملك فهد لطباعة المصحف الشريف"
+    attribution_en: "“About this mushaf”, the Madinah Mushaf, King Fahd Complex for the Printing of the Holy Quran"
+    files:
+      - path: kfgqpc-mushaf-key/page-tha-waqf-signs.jpg
+        sha256: d2ab9ae2f9c85994cf7666631cc3c1e55955b97e0fd4a70ce04ef4a7d035181c
+      - path: kfgqpc-mushaf-key/page-sin-hizb-sajda-sakt.jpg
+        sha256: dc07889e5348caedbda09e2c12c8372ae44bd2f1ca61c333972cda7b7b61cd4e
+    # Read by eye from the page images above: the words as printed, in the order printed; the print's
+    # vowel marks are left out and its undotted final yāʾ («فى») is written with its dots. The example
+    # verse each sign gives is not transcribed: it is the KFGQPC text of that verse (example: verse key
+    # and display tokens, checked at build to carry the sign). Code points are the KFGQPC text's own.
+    signs:
+      - id: lazim
+        codepoints: ["U+06D8"]
+        kind: waqf
+        label_ar: مـ
+        text_ar: "علامة الوقف اللازم"
+        example: {key: "6:36", token: 4}
+        page: ث
+      - id: qila
+        codepoints: ["U+06D7"]
+        kind: waqf
+        label_ar: قلى
+        text_ar: "علامة الوقف الجائز مع كون الوقف أولى"
+        example: {key: "13:28", token: 6}
+        page: ث
+      - id: jaiz
+        codepoints: ["U+06DA"]
+        kind: waqf
+        label_ar: ج
+        text_ar: "علامة الوقف الجائز جوازا مستوي الطرفين"
+        example: {key: "18:13", token: 5}
+        page: ث
+      - id: sila
+        codepoints: ["U+06D6"]
+        kind: waqf
+        label_ar: صلى
+        text_ar: "علامة الوقف الجائز مع كون الوصل أولى"
+        example: {key: "27:79", token: 3}
+        page: ث
+      - id: muanaqa
+        codepoints: ["U+06DB"]
+        kind: waqf
+        label_ar: "∴ ∴"
+        text_ar: "علامة تعانق الوقف بحيث إذا وقف على أحد الموضعين لا يصح الوقف على الآخر"
+        example: {key: "2:2", token: 4}
+        page: ث
+      - id: sakt
+        codepoints: ["U+06DC"]
+        kind: sakt
+        label_ar: س
+        text_ar: "ووضع حرف السين فوق الحرف الأخير في بعض الكلمات يدل على السكت في حال وصله بما بعده سكتة يسيرة من غير تنفس"
+        example: {key: "18:1", token: 11}
+        page: س
+      - id: sajda
+        codepoints: ["U+06E9"]
+        kind: sajda
+        label_ar: ۩
+        text_ar: "ووضع هذه العلامة (۩) بعد كلمة يدل على موضع السجدة"
+        example: {key: "32:15", token: 15}
+        page: س
+      - id: hizb
+        codepoints: ["U+06DE"]
+        kind: hizb
+        label_ar: ۞
+        text_ar: "وتدل هذه العلامة (۞) على بداية الأجزاء والأحزاب وأنصافها وأرباعها"
+        example: null
+        page: س
+
   - id: qursim
     kind: evaluation
     use: evaluation-only

@@ -158,6 +158,7 @@ export type WordAudio = { reciter_id: string; name_ar: string; name_en: string; 
 export type WordDetail = {
   id: number;
   audio: WordAudio | null;
+  signs: string[];
   location: string;
   surah: number;
   ayah: number;

@@ -8,6 +8,7 @@ import { useWordAt } from "@/lib/reader/api";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import type { Features } from "@/lib/reader/types";
 import { ListenOccurrence, WordAudioNote } from "./Listen";
+import { WordSigns } from "./MushafSigns";
 import { GrammarHere } from "./sections/Meanings";
 
 /**
@@ -50,6 +51,7 @@ export function LocationEntry({ at }: { at: string }) {
           </p>
         )}
         <WordAudioNote audio={w.audio} />
+        <WordSigns ids={w.signs ?? []} />
         <p className="text-[13px] leading-relaxed text-t2">
           <Term id="noRoot">{t("noRoot")}</Term> — {initials ? t("initialsExplain") : t("noRootExplain")}
         </p>

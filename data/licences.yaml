@@ -77,6 +77,43 @@ licences:
   - Our registry says the text 'may not be modified or sold'; no KFGQPC page says that about the text — it is the font EULA's wording. Keeping the text verbatim remains right, but the record should quote what the source actually states.
   - No KFGQPC statement addresses bulk redistribution, which the release files would be; research 01 §11 already asks the owner to confirm with KFGQPC before the release is published (D19).
   - 'Pins hold: hafsData_v2-0.json inside the archived package equals our pin (d2960b32…) and the package''s MD5 equals the MD5 the portal publishes (CF6841AE…).'
+- id: kfgqpc-mushaf-key
+  registry: data/knowledge.yaml
+  urls_checked:
+  - https://archive.org/details/MushafMadinaHafsGreen1441
+  - https://archive.org/download/MushafMadinaHafsGreen1441/page/n629_w1600.jpg
+  - https://archive.org/download/MushafMadinaHafsGreen1441/page/n621_w1600.jpg
+  - https://dm.qurancomplex.gov.sa/
+  - https://dm.qurancomplex.gov.sa/copyright/
+  - https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  fetched: '2026-10-03'
+  page_sha256:
+    https://archive.org/download/MushafMadinaHafsGreen1441/page/n629_w1600.jpg: d2ab9ae2f9c85994cf7666631cc3c1e55955b97e0fd4a70ce04ef4a7d035181c
+    https://archive.org/download/MushafMadinaHafsGreen1441/page/n621_w1600.jpg: dc07889e5348caedbda09e2c12c8372ae44bd2f1ca61c333972cda7b7b61cd4e
+    https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/: a4c73753393aa25069cc0dfaf944d8bbe26198b3bef07cd3833482e73fa8c4f0
+  fetch_failures:
+  - url: https://dm.qurancomplex.gov.sa/
+    result: connection timed out after 30 s (the KFGQPC hosts do not answer from here)
+    used_instead: https://archive.org/details/MushafMadinaHafsGreen1441
+  - url: https://dm.qurancomplex.gov.sa/copyright/
+    result: connection timed out
+    used_instead: https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  clauses:
+  - topic: display
+    quote: ويمكن استخدام النسخة المذكورة مجاناً في المجالات الشخصية والأعمال الفردية كافة، وأعمال الجهات الحكومية والجهات والمؤسسات الخاصة والأهلية، وأعمال الطباعة الورقية*، والنشـر المكتبي والإعلامي، ومواقع الإنترنت والبرامج الحاسوبية وغيرها، وذلك داخل المملكة العربية السعودية وخارجها.
+    url: https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  - topic: commercial
+    quote: والذي وجه بمنع طباعة المصاحف في الداخل في غير المجمع، وكذلك منع استيرادها من الخارج لغرض البيع التجاري.
+    url: https://web.archive.org/web/20240518045023id_/https://dm.qurancomplex.gov.sa/copyright/
+  - topic: attribution
+    quote: مجمع الملك فهد لطباعة المصحف الشريف
+    url: https://archive.org/details/MushafMadinaHafsGreen1441
+  our_use: Two pages of the mushaf's closing note «التعريف بهذا المصحف» (pages ث and س of the 1441 AH print), read by eye and transcribed in data/knowledge.yaml — the meaning of each waqf sign, the sakt, sajda and ḥizb signs, in the note's words — shown to the reader beside the sign on a word, credited to the Complex. The page images are kept in data/raw as evidence of the transcription and are not displayed or redistributed.
+  status: attention
+  notes:
+  - The page images come from an Internet Archive copy (uploaded 2020, rights field naming the Complex, description linking the Complex's terms), not from the Complex's own site, which does not answer from here.
+  - The terms page grants free use in websites and software but introduces itself as covering the vector (Illustrator) copy of the mushaf; the explanatory note is part of the same printed mushaf.
+  - 'The 1441 print lists five waqf signs (مـ، قلى، ج، صلى، ∴ ∴) and no «لا»; the KFGQPC text we display has no U+06D9 either, so the two agree.'
 - id: kfgqpc-hafs-font
   registry: data/sources.yaml
   urls_checked:

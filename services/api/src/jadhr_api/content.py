@@ -258,6 +258,7 @@ def word(conn: Connection, location: str) -> dict[str, Any] | None:
         root["lemmas"] = root_lemmas(conn, w["root_id"])
         w["root"] = root
     w["audio"] = word_audio(conn, v["key"], w["token_from"], w["token_to"])
+    w["signs"] = token_signs(conn, w["verse_id"], w["token_to"])
 
     w["variants"] = rows(
         conn,
@@ -1017,6 +1018,42 @@ def word_audio(conn: Connection, verse_key: str, token_from: int, token_to: int)
         "refined": bool(q.get("refined")),
         "flags": flags,
     }
+
+
+# The signs written in the mushaf (P3.9): their meaning in the Madinah Mushaf's own note, and which of them a
+# word carries — a waqf, sakt or sajda sign ends the word's last token in the KFGQPC text.
+
+
+def mushaf_signs(conn: Connection) -> dict[str, Any]:
+    signs = rows(
+        conn,
+        """select id, kind, codepoints, chars, label_ar, text_ar, example_key, example_token, page, occurrences
+           from content.mushaf_signs order by sort_order""",
+    )
+    source = one(
+        conn,
+        """select id, title_ar, title_en, url, license_ar, license_url, attribution_ar, attribution_en
+           from content.knowledge_sources where id = 'kfgqpc-mushaf-key'""",
+    )
+    return {"data": signs, "source": source}
+
+
+def token_signs(conn: Connection, verse_id: int, token_to: int) -> list[str]:
+    """The ids of the signs written on the last token of a word (its end)."""
+    text = scalar(
+        conn,
+        "select text from content.tokens where verse_id = :v and position = :p",
+        {"v": verse_id, "p": token_to},
+    )
+    if not text:
+        return []
+    return [
+        r["id"]
+        for r in rows(
+            conn, "select id, chars from content.mushaf_signs where kind <> 'hizb' order by sort_order"
+        )
+        if any(text.endswith(c) for c in r["chars"])
+    ]
 
 
 def recitation_surah(conn: Connection, reciter_id: str, surah_no: int) -> dict[str, Any] | None:

@@ -539,6 +539,14 @@ def root_graph(request: Request, root: str) -> Response:
         return cached(request, g)
 
 
+@router.get(
+    "/mushaf-signs", summary="What the signs written in the mushaf mean, in the Madinah Mushaf's own note"
+)
+def mushaf_signs(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, content.mushaf_signs(conn))
+
+
 @router.get("/recitations", summary="Reciters with word-level timings")
 def recitations(request: Request) -> Response:
     with connect() as conn:

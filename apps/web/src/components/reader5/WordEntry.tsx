@@ -22,6 +22,7 @@ import { CenturiesSection } from "./sections/Centuries";
 import { InQuranSection } from "./sections/InQuran";
 import { WhereNext } from "./sections/WhereNext";
 import { ListenOccurrence, WordAudioNote } from "./Listen";
+import { WordSigns } from "./MushafSigns";
 
 /** One spec order for both layouts (P2.0 resolution of RDR-207). */
 export const SECTION_ORDER: SectionId[] = SECTIONS;
@@ -165,6 +166,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
             </p>
           )}
           <WordAudioNote audio={occ.audio} />
+          <WordSigns ids={occ.signs ?? []} />
         </div>
       )}
       {w.root ? (

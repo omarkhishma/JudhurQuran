@@ -168,3 +168,12 @@ def test_verse_and_surah_lexical_profiles_are_consistent() -> None:
     )
     mulk = next(s for s in get("/api/v1/surahs")["data"] if s["number"] == 67)
     assert sum(mulk["lexical_profile"]["verse_levels"].values()) == mulk["verse_count"]
+
+
+def test_mushaf_signs_and_the_signs_on_a_word() -> None:
+    """P3.9: the eight signs with their source, and the sign written on a word (رَيۡبَۛ in 2:2: muʿānaqa)."""
+    d = get("/api/v1/mushaf-signs")
+    assert [s["id"] for s in d["data"]][:5] == ["lazim", "qila", "jaiz", "sila", "muanaqa"]
+    assert d["source"]["attribution_ar"].startswith("«التعريف بهذا المصحف»")
+    assert get("/api/v1/words/rayb", at="2:2:4", limit=0)["occurrence"]["signs"] == ["muanaqa"]
+    assert get("/api/v1/words/ilm", at="20:114:17", limit=0)["occurrence"]["signs"] == []

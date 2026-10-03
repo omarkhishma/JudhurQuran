@@ -2994,3 +2994,15 @@ button.type-chip:hover {
   contain-intrinsic-size: auto 38px;
 }
 }
+
+/* the signs written in the mushaf, named by their letter in the mushaf's note (P3.9) */
+.sign-label {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 0.35em;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c-root) 12%, transparent);
+  color: var(--c-root);
+  font-size: 16px;
+  text-align: center;
+}

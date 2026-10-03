@@ -93,7 +93,7 @@ def slug_at(conn: Connection, location: str) -> str | None:
 def _occurrence(conn: Connection, location: str, lemma_id: int) -> dict[str, Any] | None:
     w = one(
         conn,
-        """select w.id, w.location, w.surah, w.ayah, w.position, w.token_from, w.token_to, w.text_uthmani, w.text_imlaei, w.translit,
+        """select w.id, w.location, w.surah, w.ayah, w.position, w.verse_id, w.token_from, w.token_to, w.text_uthmani, w.text_imlaei, w.translit,
                   w.gloss_en, w.features, w.segments, w.definite, w.lemma_id, s.name_ar, s.name_translit
            from content.words w join content.surahs s on s.number = w.surah where w.location = :loc""",
         {"loc": location},
@@ -117,6 +117,7 @@ def _occurrence(conn: Connection, location: str, lemma_id: int) -> dict[str, Any
         "segments": w["segments"],
         "glosses": content.word_glosses(conn, w["location"]),
         "audio": content.word_audio(conn, f"{w['surah']}:{w['ayah']}", w["token_from"], w["token_to"]),
+        "signs": content.token_signs(conn, w["verse_id"], w["token_to"]),
         "meanings_here": content.word_meanings_here(conn, w["location"]),
         "variants": rows(
             conn,

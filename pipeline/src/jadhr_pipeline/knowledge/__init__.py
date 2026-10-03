@@ -25,9 +25,10 @@ from .entities import match_entities, pn_candidates
 from .places import build_verse_places
 from .quran import QuranIndex, read_jsonl
 from .registry import load_registry, verify_pins
+from .signs import build_mushaf_signs
 from .surahs import build_surah_cards
 
-TABLES = ("surah_cards", "verse_places", "asbab", "verse_crossrefs", "entity_candidates")
+TABLES = ("surah_cards", "verse_places", "asbab", "verse_crossrefs", "entity_candidates", "mushaf_signs")
 OPTIONAL_SOURCES = {"wikidata", "qursim"}
 
 
@@ -83,12 +84,15 @@ def build_knowledge(
         pn_candidates(build_dir), wd_dir if wd_dir.exists() else None
     )
 
+    signs, report["mushaf_signs"] = build_mushaf_signs(reg, build_dir)
+
     tables = {
         "surah_cards": cards,
         "verse_places": places,
         "asbab": asbab,
         "verse_crossrefs": crossrefs,
         "entity_candidates": entities,
+        "mushaf_signs": signs,
     }
     known = set(reg.sources)
     for name, rows in tables.items():

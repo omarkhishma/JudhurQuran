@@ -1093,7 +1093,12 @@
     "lvlOrd_5": "5",
     "listSep": ", ",
     "usulSeveral": "Ibn Fāris gives this root more than one aṣl: its words share the letters, not one meaning.",
-    "usulUnrelated": "Ibn Fāris holds this root's uṣūl to be unrelated: its words share the letters, not the meaning."
+    "usulUnrelated": "Ibn Fāris holds this root's uṣūl to be unrelated: its words share the letters, not the meaning.",
+    "signOnWord": "A sign written on this word",
+    "signsTitle": "Signs in this verse",
+    "signAfter": "after «{word}»:",
+    "signAtStart": "at the start of the verse:",
+    "signPage": "p. {page}"
   },
   "concordance": {
     "title": "Concordance",

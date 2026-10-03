@@ -165,6 +165,8 @@ export type Occurrence = {
   glosses: Gloss[];
   meanings_here: MeaningHere[];
   audio: WordAudio | null;
+  /** ids of the mushaf signs written on this word (P3.9) */
+  signs: string[];
   variants: { source: string; root_key: string | null; source_title_ar: string; source_title_en: string }[];
 };
 
