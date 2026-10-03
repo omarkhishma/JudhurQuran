@@ -753,8 +753,26 @@ def lexicon_works(conn: Connection) -> list[dict[str, Any]]:
 # ─── recitations ────────────────────────────────────────────────────────────
 
 AUDIO_CREDIT = {
-    "ar": "التلاوات من EveryAyah.com (رخصة المشاع الإبداعي، غير تجارية)، وتوقيت الكلمات من مشروع quran-align لكولن فير (CC BY 4.0).",
-    "en": "Recitations from EveryAyah.com (CC BY-NC 2.5); word timings from quran-align by Collin Fair (CC BY 4.0).",
+    "ar": "التلاوات من EveryAyah.com (CC BY-NC 2.5 CA)، وتوقيت الكلمات من مشروع quran-align لكولن فير (CC BY 4.0)، معدّلًا.",
+    "en": "Recitations from EveryAyah.com (CC BY-NC 2.5 CA); word timings from quran-align by Collin Fair (CC BY 4.0), modified.",
+    # each layer with its link and licence, as both licences ask (research 07)
+    "sources": [
+        {
+            "id": "everyayah",
+            "name": "EveryAyah.com",
+            "url": "https://everyayah.com/",
+            "license": "CC BY-NC 2.5 CA",
+            "license_url": "https://creativecommons.org/licenses/by-nc/2.5/ca/",
+        },
+        {
+            "id": "quran-align",
+            "name": "quran-align (Collin Fair)",
+            "url": "https://github.com/cpfair/quran-align",
+            "license": "CC BY 4.0",
+            "license_url": "https://creativecommons.org/licenses/by/4.0/",
+            "modified": True,
+        },
+    ],
 }
 
 
@@ -802,6 +820,7 @@ def recitation_verse(conn: Connection, reciter_id: str, key: str) -> dict[str, A
     if r is None or v is None:
         return None
     v["url"] = _audio_url(r["audio_url"], v["surah"], v["ayah"])
+    v["credit"] = AUDIO_CREDIT
     return v
 
 

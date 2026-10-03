@@ -421,7 +421,11 @@
     "mujawwad": "mujawwad",
     "muallim": "teaching",
     "speed": "Playback speed",
-    "repeat": "Repeat the verse"
+    "repeat": "Repeat the verse",
+    "creditRecitations": "Recitations:",
+    "creditTimings": "word timings:",
+    "modified": "modified",
+    "allSources": "all sources"
   },
   "screens": {
     "building": "This screen is being built as part of the plan and is not finished yet.",

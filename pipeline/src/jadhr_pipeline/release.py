@@ -21,19 +21,72 @@ import yaml
 
 REPO = Path(__file__).resolve().parents[3]
 
+# The corpus asks for its copyright block to be "reproduced appropriately in all works derived from or
+# containing substantial portion of this file" — so it is reproduced, verbatim, not paraphrased.
+QAC_COPYRIGHT = """Quranic Arabic Corpus (morphology, version 0.4)
+Copyright (C) 2011 Kais Dukes
+License: GNU General Public License
+
+The Quranic Arabic Corpus includes syntactic and morphological
+annotation of the Quran, and builds on the verified Arabic text
+distributed by the Tanzil project.
+
+TERMS OF USE:
+
+- Permission is granted to copy and distribute verbatim copies
+  of this file, but CHANGING IT IS NOT ALLOWED.
+
+- This annotation can be used in any website or application,
+  provided its source (the Quranic Arabic Corpus) is clearly
+  indicated, and a link is made to http://corpus.quran.com to enable
+  users to keep track of changes.
+
+- This copyright notice shall be included in all verbatim copies
+  of the text, and shall be reproduced appropriately in all works
+  derived from or containing substantial portion of this file.
+
+Please check updates at: http://corpus.quran.com/download"""
 QAC_NOTICE = (
-    "Morphology derived from the Quranic Arabic Corpus (corpus.quran.com), GNU General Public License; "
-    "the source must be indicated with a link to http://corpus.quran.com."
+    "Morphology derived from the Quranic Arabic Corpus (http://corpus.quran.com): converted from Buckwalter "
+    "to Arabic script and restructured — its copyright block is reproduced in MANIFEST.json."
+)
+# text_uthmani and the segment forms in words.* are the corpus's copy of Tanzil's text, not KFGQPC's.
+TANZIL_CORPUS_TEXT_NOTICE = (
+    "words.text_uthmani and segments[].text: the Quranic Arabic Corpus's copy of the Tanzil Quran Text "
+    "(Uthmani, version 1.0.2), Copyright (C) 2008-2009 Tanzil.info, License: Creative Commons BY-ND 3.0 "
+    "Unported (https://tanzil.net) — converted from Buckwalter to Arabic script."
 )
 TEXT_NOTICE = (
-    "Quranic text: King Fahd Glorious Quran Printing Complex (KFGQPC), Hafs data v2.0 — reproduced verbatim; "
-    "it may not be modified or sold."
+    "text_qpc and text_imlaei: King Fahd Glorious Quran Printing Complex (KFGQPC), Hafs data v2.0 "
+    "(2022-09-07), reproduced verbatim (https://qurancomplex.gov.sa/techquran/dev/); page numbers from the "
+    "same data."
 )
+TANZIL_META_NOTICE = (
+    "juz, hizb_quarter and sajda: Tanzil Quran metadata (quran-data.xml), (C) 2008-2009 Tanzil.info, "
+    "license cc-by — https://tanzil.net"
+)
+# Publication is the owner's call; these hold it until the named decisions are taken (research 07).
+PUBLICATION_HOLD = [
+    {
+        "data": "words, lemmas and roots files (data derived from the Quranic Arabic Corpus)",
+        "why": "the corpus permits verbatim copies only, its FAQ speaks of non-commercial use, and the text column is CC BY-ND",
+        "decision": "D19 (ask the corpus maintainers) and D2",
+    },
+    {
+        "data": "verses file (KFGQPC Unicode data)",
+        "why": "the Complex's published terms describe the mushaf files; redistribution of the Unicode data is to be confirmed",
+        "decision": "D19 (ask the Complex)",
+    },
+]
 
 EXCLUDED = [
     {
         "data": "root variants from the mustafa0x corrected fork",
         "reason": "the repository has no licence; it is shown on the site only as a cited cross-check",
+    },
+    {
+        "data": "lemma glosses and root variants from the corpus author's revision (qac-v2)",
+        "reason": "the data repository (kaisdukes/quranic-corpus-api) carries no licence; shown on the site as a credited cross-check until the author is asked (D19)",
     },
     {
         "data": "word-by-word English glosses and transliteration",
@@ -82,7 +135,6 @@ def build_release(version: str) -> dict[str, Any]:
     lemmas = {x["id"]: x for x in _jsonl(src / "lemmas.jsonl")}
     verses = _jsonl(src / "verses.jsonl")
     words = _jsonl(src / "words.jsonl")
-    variants = [v for v in _jsonl(src / "root_variants.jsonl") if v["source"] == "qac-v2"]
 
     verse_rows = [
         {
@@ -128,7 +180,6 @@ def build_release(version: str) -> dict[str, Any]:
             "derivation": x["derivation"],
             "pattern": x.get("pattern"),
             "pattern_method": x.get("pattern_method"),
-            "gloss_en": x.get("gloss_en"),
             "occurrences": x["occurrences"],
             "verse_count": x["verse_count"],
         }
@@ -141,14 +192,12 @@ def build_release(version: str) -> dict[str, Any]:
         }
         for r in roots.values()
     ]
-    variant_rows = [{"location": v["location"], "source": v["source"], "root": v["root"]} for v in variants]
 
     tables: list[tuple[str, list[dict[str, Any]], list[str], str]] = [
-        ("verses", verse_rows, list(verse_rows[0]), TEXT_NOTICE),
-        ("words", word_rows, list(word_rows[0]), f"{TEXT_NOTICE} {QAC_NOTICE}"),
-        ("lemmas", lemma_rows, list(lemma_rows[0]), f"{QAC_NOTICE} Lemma glosses: the corpus author's revision, GPL-3.0. Patterns (wazn): derived by this project, see docs/DECISIONS.md."),
+        ("verses", verse_rows, list(verse_rows[0]), f"{TEXT_NOTICE} {TANZIL_META_NOTICE}"),
+        ("words", word_rows, list(word_rows[0]), f"{TANZIL_CORPUS_TEXT_NOTICE} {QAC_NOTICE}"),
+        ("lemmas", lemma_rows, list(lemma_rows[0]), f"{QAC_NOTICE} Patterns (wazn): derived by this project, see docs/DECISIONS.md."),
         ("roots", root_rows, list(root_rows[0]), QAC_NOTICE),
-        ("root_variants_qac_v2", variant_rows, ["location", "source", "root"], "Quranic Arabic Corpus, author's revision (github.com/kaisdukes/quranic-corpus), GPL-3.0."),
     ]  # fmt: skip
     files = []
     for name, rows, cols, notice in tables:
@@ -176,8 +225,10 @@ def build_release(version: str) -> dict[str, Any]:
         "files": files,
         "sources": [
             {k: sources[s][k] for k in ("id", "title_en", "url", "license", "attribution_en")}
-            for s in ("qpc-hafs", "qac", "qac-v2")
+            for s in ("qpc-hafs", "qac", "tanzil-uthmani")
         ],
+        "copyright_notices": {"qac": QAC_COPYRIGHT},
+        "publication_hold": PUBLICATION_HOLD,
         "excluded": EXCLUDED,
     }
     (out / "MANIFEST.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")

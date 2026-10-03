@@ -42,6 +42,9 @@ works:
     format: tafsir-api
     file: tafsir_api/ar-tafsir-as-saadi.json
     version: tafsir_api v1.2.2 (QUL 308)
+    # The digital text does not name the printed edition it was typed from (register research 07):
+    # the edition behind it is to be identified and cited (P1.8, D22).
+    edition: unidentified
 
   - id: baghawi
     kind: tafsir
@@ -55,6 +58,9 @@ works:
     format: tafsir-api
     file: tafsir_api/ar-tafsir-al-baghawi.json
     version: tafsir_api v1.2.2 (QUL 27)
+    # The digital text does not name the printed edition it was typed from (register research 07):
+    # the edition behind it is to be identified and cited (P1.8, D22).
+    edition: unidentified
     # The digital edition prints its editor's footnotes inline ([[…]]) and manuscript folio marks;
     # they are the editor's work, not the author's, and are stripped at build (D22, PLAN P1.8).
     strip_apparatus: true
@@ -71,6 +77,9 @@ works:
     format: tafsir-api
     file: tafsir_api/ar-tafsir-ibn-kathir.json
     version: tafsir_api v1.2.2 (QUL 22)
+    # The digital text does not name the printed edition it was typed from (register research 07):
+    # the edition behind it is to be identified and cited (P1.8, D22).
+    edition: unidentified
     # The digital edition prints its editor's footnotes inline ([[…]]) and manuscript folio marks;
     # they are the editor's work, not the author's, and are stripped at build (D22, PLAN P1.8).
     strip_apparatus: true
@@ -87,6 +96,9 @@ works:
     format: tafsir-api
     file: tafsir_api/ar-tafseer-al-qurtubi.json
     version: tafsir_api v1.2.2 (QUL 23)
+    # The digital text does not name the printed edition it was typed from (register research 07):
+    # the edition behind it is to be identified and cited (P1.8, D22).
+    edition: unidentified
     # The digital edition prints its editor's footnotes inline ([[…]]) and manuscript folio marks;
     # they are the editor's work, not the author's, and are stripped at build (D22, PLAN P1.8).
     strip_apparatus: true
@@ -103,6 +115,9 @@ works:
     format: tafsir-api
     file: tafsir_api/ar-tafsir-al-tabari.json
     version: tafsir_api v1.2.2 (QUL 37)
+    # The digital text does not name the printed edition it was typed from (register research 07):
+    # the edition behind it is to be identified and cited (P1.8, D22).
+    edition: unidentified
     # The digital edition prints its editor's footnotes inline ([[…]]) and manuscript folio marks;
     # they are the editor's work, not the author's, and are stripped at build (D22, PLAN P1.8).
     strip_apparatus: true

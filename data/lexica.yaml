@@ -42,7 +42,7 @@ works:
     death_ce: 1108
     edition_note: تحقيق صفوان عدنان الداودي، دار القلم والدار الشامية، دمشق وبيروت، الطبعة الأولى 1412هـ. النص الرقمي من المكتبة الشاملة (الكتاب 23636).
     source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/04__علوم-القرآن-وأصول-التفسير/6119__المفردات-في-غريب-القرآن
-    license: Public-domain author text (d. 502 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Editor apparatus excluded. Display-only.
+    license: Public-domain author text (d. 502 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (the dataset card's YAML says MIT while its own text says "Research and personal use"; Shamela grants no reuse licence and rights in the edition remain with its owners — D22). Editor apparatus excluded. Display-only.
     redistributable: false
     attribution_ar: "المصدر: المفردات في غريب القرآن، الراغب الأصفهاني (ت 502هـ)، تحقيق صفوان عدنان الداودي، دار القلم والدار الشامية، دمشق وبيروت، الطبعة الأولى 1412هـ. النص الرقمي: المكتبة الشاملة، الكتاب 23636. حُذفت حواشي المحقق."
     attribution_en: "Source: al-Raghib al-Isfahani (d. 502 AH), al-Mufradat fi Gharib al-Qur'an, ed. Safwan Adnan al-Dawudi (Damascus/Beirut: Dar al-Qalam & al-Dar al-Shamiyya, 1st ed., 1412 AH). Digital text: al-Maktaba al-Shamila, book 23636. Editor's notes omitted."
@@ -76,7 +76,7 @@ works:
     death_ce: 1004
     edition_note: تحقيق عبد السلام محمد هارون، شركة مكتبة ومطبعة مصطفى البابي الحلبي، الطبعة الثانية 1389–1392هـ / 1969–1972م (مصورة دار الجيل ودار الفكر). النص الرقمي من المكتبة الشاملة (الكتاب 21710).
     source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/30__الغريب-والمعاجم/5826__معجم-مقاييس-اللغة
-    license: Public-domain author text (d. 395 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Editor apparatus excluded. Display-only.
+    license: Public-domain author text (d. 395 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (the dataset card's YAML says MIT while its own text says "Research and personal use"; Shamela grants no reuse licence and rights in the edition remain with its owners — D22). Editor apparatus excluded. Display-only.
     redistributable: false
     attribution_ar: "المصدر: معجم مقاييس اللغة، ابن فارس (ت 395هـ)، تحقيق عبد السلام محمد هارون، مصطفى البابي الحلبي، الطبعة الثانية 1389–1392هـ. النص الرقمي: المكتبة الشاملة، الكتاب 21710. حُذفت حواشي المحقق."
     attribution_en: "Source: Ahmad ibn Faris (d. 395 AH), Maqayis al-Lugha, ed. Abd al-Salam Muhammad Harun (Cairo: Mustafa al-Babi al-Halabi, 2nd ed., 1389–1392 AH). Digital text: al-Maktaba al-Shamila, book 21710. Editor's notes omitted."
@@ -108,7 +108,7 @@ works:
     death_ce: 1311
     edition_note: دار صادر، بيروت، الطبعة الثالثة 1414هـ، 15 جزءا (الحواشي لليازجي وجماعة من اللغويين — غير مستوردة). النص الرقمي من المكتبة الشاملة (الكتاب 1687).
     source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/30__الغريب-والمعاجم/1462__لسان-العرب
-    license: Public-domain author text (d. 711 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Footnotes excluded. Display-only.
+    license: Public-domain author text (d. 711 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (the dataset card's YAML says MIT while its own text says "Research and personal use"; Shamela grants no reuse licence and rights in the edition remain with its owners — D22). Footnotes excluded. Display-only.
     redistributable: false
     attribution_ar: "المصدر: لسان العرب، ابن منظور (ت 711هـ)، دار صادر، بيروت، الطبعة الثالثة 1414هـ. النص الرقمي: المكتبة الشاملة، الكتاب 1687."
     attribution_en: "Source: Ibn Manzur (d. 711 AH), Lisan al-ʿArab (Beirut: Dar Sadir, 3rd ed., 1414 AH). Digital text: al-Maktaba al-Shamila, book 1687. Footnotes omitted."
@@ -137,7 +137,7 @@ works:
     death_ce: 1003
     edition_note: تحقيق أحمد عبد الغفور عطار، دار العلم للملايين، بيروت، الطبعة الرابعة 1407هـ / 1987م. النص الرقمي من المكتبة الشاملة (الكتاب 23235).
     source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/30__الغريب-والمعاجم/6061__الصحاح-تاج-اللغة-وصحاح-العربية
-    license: Public-domain author text (d. 393 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Editor apparatus excluded. Display-only.
+    license: Public-domain author text (d. 393 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (the dataset card's YAML says MIT while its own text says "Research and personal use"; Shamela grants no reuse licence and rights in the edition remain with its owners — D22). Editor apparatus excluded. Display-only.
     redistributable: false
     attribution_ar: "المصدر: الصحاح تاج اللغة وصحاح العربية، الجوهري (ت 393هـ)، تحقيق أحمد عبد الغفور عطار، دار العلم للملايين، بيروت، الطبعة الرابعة 1407هـ. النص الرقمي: المكتبة الشاملة، الكتاب 23235. حُذفت حواشي المحقق."
     attribution_en: "Source: al-Jawhari (d. 393 AH), al-Sihah, ed. Ahmad Abd al-Ghafur Attar (Beirut: Dar al-Ilm lil-Malayin, 4th ed., 1407 AH / 1987). Digital text: al-Maktaba al-Shamila, book 23235. Editor's notes omitted."
@@ -170,7 +170,7 @@ works:
     license: Creative Commons Attribution-ShareAlike 3.0 United States (Perseus Digital Library, Tufts University); "offer Perseus any modifications you make". Underlying 1863–1893 work in the public domain.
     license_url: https://creativecommons.org/licenses/by-sa/3.0/us/
     redistributable: true
-    attribution_ar: "المصدر: إدوارد وليم لين، معجم عربي–إنجليزي (لندن 1863–1893). النص الرقمي من مكتبة بيرسيوس الرقمية (جامعة تافتس) بترخيص CC BY-SA 3.0 US، مع تصحيحات مشروع laneslexicon؛ حُوّلت الحروف العربية من الترميز اللاتيني."
+    attribution_ar: "المصدر: إدوارد وليم لين، معجم عربي–إنجليزي (لندن 1863–1893). Text provided by Perseus Digital Library, with funding from The U.S. Department of Education and The Max Planck Society. النص الرقمي بترخيص CC BY-SA 3.0 US (https://creativecommons.org/licenses/by-sa/3.0/us/)، مع تصحيحات مشروع laneslexicon؛ وعدّلناه: أزلنا ترميز TEI وحوّلنا الحروف العربية من الترميز اللاتيني."
     attribution_en: "Edward William Lane, An Arabic-English Lexicon (London: Williams and Norgate, 1863–1893). Text provided by Perseus Digital Library, with funding from The U.S. Department of Education and The Max Planck Society. Corrections: laneslexicon/lexicon_xml. Licensed CC BY-SA 3.0 US (https://creativecommons.org/licenses/by-sa/3.0/us/); modified (TEI markup removed, Arabic transliteration converted to Arabic script)."
     format: perseus-lane
     files:
@@ -190,7 +190,7 @@ works:
     death_ce: 889
     edition_note: تحقيق أحمد صقر، دار الكتب العلمية، 1398هـ / 1978م. النص الرقمي من المكتبة الشاملة (الكتاب 3259).
     source_url: https://huggingface.co/datasets/AuthenticIlm/Shamela4_Full_DB/tree/07554bee488a12955dd5231d08487ae7ce767d1e/04__علوم-القرآن-وأصول-التفسير/1684__غريب-القرآن-لابن-قتيبة-ت-أحمد-صقر
-    license: Public-domain author text (d. 276 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (packaging licence MIT; Shamela grants no reuse licence, rights in the edition remain with its owners). Editor apparatus excluded. Display-only.
+    license: Public-domain author text (d. 276 AH). Digital text from al-Maktaba al-Shamila via AuthenticIlm/Shamela4_Full_DB (the dataset card's YAML says MIT while its own text says "Research and personal use"; Shamela grants no reuse licence and rights in the edition remain with its owners — D22). Editor apparatus excluded. Display-only.
     redistributable: false
     attribution_ar: "المصدر: غريب القرآن، ابن قتيبة (ت 276هـ)، تحقيق أحمد صقر، دار الكتب العلمية، 1398هـ. النص الرقمي: المكتبة الشاملة، الكتاب 3259. حُذفت حواشي المحقق."
     attribution_en: "Source: Ibn Qutaybah (d. 276 AH), Gharib al-Qur'an, ed. Ahmad Saqr (Dar al-Kutub al-Ilmiyya, 1398 AH / 1978). Digital text: al-Maktaba al-Shamila, book 3259. Editor's notes omitted."

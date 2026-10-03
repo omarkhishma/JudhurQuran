@@ -6,15 +6,15 @@
 sources:
   - id: qpc-hafs
     role_ar: "النص المعروض (مصحف المدينة النبوية برواية حفص عن عاصم) مع أرقام الصفحات والأسطر والأجزاء، والنص الإملائي الرسمي للبحث"
-    license_ar: "شروط مجمع الملك فهد: الاستعمال مجاني في المواقع والبرامج، ولا يجوز تعديل النص أو بيعه"
+    license_ar: "صفحة حقوق الاستخدام في المجمع: «يمكن استخدام النسخة المذكورة مجاناً … ومواقع الإنترنت والبرامج الحاسوبية» — والنسخة التي تذكرها ملفات المصحف؛ ولا تصحب البيانات النصية شروط خاصة بها، فنعرضها كما هي دون تعديل، ونستوثق من المجمع في إعادة نشرها"
     kind: quran-text
     role: display text (Madinah mushaf, Hafs ʿan ʿĀṣim) with page, line and juz numbers, and the official imlāʾī search text
     title_ar: بيانات مصحف المدينة النبوية برواية حفص (الإصدار ٢٫٠) — مجمع الملك فهد لطباعة المصحف الشريف
     title_en: KFGQPC Hafs Uthmanic data v2.0 (King Fahd Glorious Quran Printing Complex)
     version: "2.0 (2022-09-07)"
     url: https://qurancomplex.gov.sa/techquran/dev/
-    license: KFGQPC terms — free to use in websites and software; the text may not be modified or sold
-    license_url: https://qurancomplex.gov.sa/techquran/dev/
+    license: "KFGQPC copyright page: the copy it describes (the mushaf files) may be used free of charge, including on websites and in software; the Unicode data ships with no terms of its own — shown verbatim and unchanged; redistribution of the data is being confirmed with the Complex (D19)"
+    license_url: https://dm.qurancomplex.gov.sa/copyright/
     attribution_ar: النص القرآني من مجمع الملك فهد لطباعة المصحف الشريف بالمدينة المنورة.
     attribution_en: Quran text by the King Fahd Glorious Quran Printing Complex, Madinah.
     files:
@@ -80,14 +80,14 @@ sources:
 
   - id: qac
     role_ar: "التحليل الصرفي الأساسي: أجزاء الكلمة ونوعها وصيغتها المعجمية وجذرها"
-    license_ar: "رخصة جنو العمومية مع شروط المدونة: يجوز الاستعمال في أي موقع مع ذكر المصدر والإحالة إلى corpus.quran.com، ولا يجوز تغيير الملف"
+    license_ar: "رخصة جنو العمومية مع شروط المدونة: يجوز الاستعمال في أي موقع مع ذكر المصدر والإحالة إلى corpus.quran.com، ولا يجوز تغيير الملف؛ وتصفها صفحة الأسئلة الشائعة بأنها متاحة للاستعمال غير التجاري"
     kind: morphology
     role: primary morphology — segments, part of speech, lemma, root
     title_ar: المدونة القرآنية اللغوية (التحليل الصرفي، الإصدار ٠٫٤)
     title_en: Quranic Arabic Corpus — morphology v0.4 (Kais Dukes)
     version: "0.4"
     url: https://corpus.quran.com/
-    license: GNU General Public License — verbatim copies permitted; the annotation may be used in any website or application with the source indicated and a link to corpus.quran.com
+    license: "GNU General Public License with the corpus terms of use — verbatim copies permitted; the annotation may be used in any website or application with the source indicated and a link to corpus.quran.com; the corpus FAQ describes the data as free for non-commercial use"
     license_url: https://corpus.quran.com/download/
     attribution_ar: التحليل الصرفي من المدونة القرآنية اللغوية — corpus.quran.com
     attribution_en: Morphology from the Quranic Arabic Corpus — corpus.quran.com
@@ -97,14 +97,14 @@ sources:
 
   - id: qac-v2
     role_ar: "مقارنة: مراجعة مؤلف المدونة اللاحقة"
-    license_ar: "رخصة جنو العمومية، الإصدار الثالث (GPL-3.0)"
+    license_ar: "لا ترخيص في مستودع البيانات (kaisdukes/quranic-corpus-api)؛ رخصة GPL-3.0 لمستودع الواجهة لا تشمل هذه الملفات. نعرض فروقها للمقارنة مع النسبة، ولا ندرجها في حزمة البيانات حتى يُستأذن صاحبها"
     kind: morphology
     role: cross-check — the corpus author's later revision
     title_ar: المدونة القرآنية اللغوية (المراجعة الثانية)
     title_en: Quranic Arabic Corpus — revised data (Kais Dukes, GitHub)
     url: https://github.com/kaisdukes/quranic-corpus
-    license: GNU General Public License v3.0 (repository license)
-    license_url: https://github.com/kaisdukes/quranic-corpus/blob/main/LICENSE
+    license: "No licence in the data repository (kaisdukes/quranic-corpus-api); the GPL-3.0 of the frontend repository does not cover these files. Shown as a credited cross-check; kept out of the bulk release until the author is asked (D19)"
+    license_url: https://github.com/kaisdukes/quranic-corpus-api
     attribution_ar: المدونة القرآنية اللغوية — مراجعة المؤلف
     attribution_en: Quranic Arabic Corpus — author's revision
     files:
@@ -123,7 +123,7 @@ sources:
     version: fetched 2026-10-02
     url: https://corpus.quran.com/wordbyword.jsp
     license: "Corpus terms: may be used in any website or application provided the source (the Quranic Arabic Corpus) is clearly indicated with a link to corpus.quran.com; changing it is not allowed. Shown verbatim; not included in the bulk release."
-    license_url: https://corpus.quran.com/license.jsp
+    license_url: https://corpus.quran.com/download/
     attribution_ar: الترجمة الحرفية والنقحرة — المدونة القرآنية اللغوية (corpus.quran.com)
     attribution_en: Word-by-word glosses and transliteration — Quranic Arabic Corpus (corpus.quran.com)
     files:
@@ -147,13 +147,13 @@ sources:
 
   - id: quranenc
     role_ar: "التفسير الميسر والمختصر، وترجمتا صحيح إنترناشيونال ورواد"
-    license_ar: "شروط موسوعة القرآن الكريم: يجوز التحميل وإعادة النشر دون تعديل أو إضافة أو حذف، مع ذكر الناشر والمصدر ورقم الإصدار"
+    license_ar: "شروط موسوعة القرآن الكريم: يجوز التحميل وإعادة النشر بشروط: عدم التعديل أو الإضافة أو الحذف، والإشارة للناشر وللمصدر، وذكر رقم الإصدار، وإبقاء معلومات النسخة، وإبلاغ المصدر بأي ملاحظة، وتحديث الترجمة إلى أحدث إصدار، وعدم إدراج إعلانات غير لائقة"
     kind: tafsir-translation
     role: al-Muyassar and al-Mukhtasar tafsir; Saheeh International and Rowwad English translations
     title_ar: موسوعة القرآن الكريم (QuranEnc.com)
     title_en: The Noble Qur'an Encyclopedia (QuranEnc.com)
     url: https://quranenc.com/
-    license: "QuranEnc terms: may be downloaded and re-published without modification, addition or deletion; credit the publisher and QuranEnc.com; state and keep the version; update to new versions"
+    license: "QuranEnc terms: may be downloaded and re-published provided (1) no modification, addition or deletion, (2) the publisher and QuranEnc.com are credited, (3) the version number is stated, (4) the transcript information is kept, (5) notes are reported to QuranEnc.com, (6) the latest version is used, (7) no inappropriate advertisements are shown"
     license_url: https://quranenc.com/en/home/api
     attribution_ar: المصدر — موسوعة القرآن الكريم QuranEnc.com (مع ذكر الناشر ورقم الإصدار لكل ترجمة وتفسير).
     attribution_en: Source — The Noble Qur'an Encyclopedia, QuranEnc.com (publisher and version stated per work).
@@ -191,3 +191,31 @@ sources:
         sha256: 8a37b2915506076cf060944751d2447f58b0771c2f780c4197a3d1f2f3dda11f
       - path: tafsir_api/ar-tafsir-al-tabari.json
         sha256: c101c85804cd91593b556ff00bf4cf453b37825dac4c0dc2cb59d43668360f89
+
+  - id: everyayah
+    role_ar: "التلاوات: ملف صوتي لكل آية يُبث من موقع EveryAyah"
+    license_ar: "رخصة المشاع الإبداعي: نسب المصنف، غير تجاري ٢٫٥ كندا (تُعرف من نسخة مؤرشفة سنة ٢٠١٢ لصفحة الترخيص)؛ ويطلب الموقع رابطًا إليه. وتذكر وسوم بعض الملفات أصولًا أخرى (مثل QuranicAudio.com للسديس، وشروطه للاستعمال الشخصي)"
+    kind: audio
+    role: recitation audio — one file per verse, streamed from EveryAyah (not copied)
+    title_ar: تلاوات EveryAyah (Verse By Verse Quran)
+    title_en: EveryAyah recitations (Verse By Verse Quran)
+    version: data/{reciter folder}, as served
+    url: https://everyayah.com/
+    license: "Creative Commons Attribution-NonCommercial 2.5 Canada (known from a 2012 archived copy of the licence page); the site asks for a link back. Some files' ID3 tags name other origins (e.g. QuranicAudio.com for As-Sudais, personal use only) — see research 07"
+    license_url: https://creativecommons.org/licenses/by-nc/2.5/ca/
+    attribution_ar: "التلاوات من EveryAyah.com، برخصة CC BY-NC 2.5 CA."
+    attribution_en: "Recitations from EveryAyah.com, licensed CC BY-NC 2.5 CA."
+
+  - id: quran-align
+    role_ar: "توقيت كل كلمة في التلاوات، لتتبّع الكلمات أثناء الاستماع"
+    license_ar: "رخصة المشاع الإبداعي: نسب المصنف ٤٫٠ — حقوق النشر ٢٠١٦ لكولن فير؛ وقد عدّلناها: نقلنا التوقيت من ترقيم كلماتها إلى كلمات مصحف المجمع"
+    kind: audio-timing
+    role: word-level timings for the recitations, used to follow the words
+    title_ar: توقيت الكلمات — مشروع quran-align
+    title_en: quran-align word timings (Collin Fair)
+    version: release 2016-11-24
+    url: https://github.com/cpfair/quran-align
+    license: "Creative Commons Attribution 4.0 International — Copyright (c) 2016 Collin Fair; modified (timings remapped from the data's word indexes onto the KFGQPC display tokens)"
+    license_url: https://creativecommons.org/licenses/by/4.0/
+    attribution_ar: "توقيت الكلمات من مشروع quran-align لكولن فير (CC BY 4.0)، معدّلًا."
+    attribution_en: "Word timings from quran-align by Collin Fair (CC BY 4.0), modified."

@@ -421,7 +421,11 @@
     "mujawwad": "مجوّد",
     "muallim": "المعلّم",
     "speed": "سرعة التلاوة",
-    "repeat": "كرّر الآية"
+    "repeat": "كرّر الآية",
+    "creditRecitations": "التلاوات:",
+    "creditTimings": "توقيت الكلمات:",
+    "modified": "معدّل",
+    "allSources": "كل المصادر"
   },
   "screens": {
     "building": "هذه الشاشة قيد البناء ضمن الخطة، ولم تكتمل بعد.",
