@@ -1041,3 +1041,7 @@ exit=1
 ```
 
 Both copies were deleted after the runs.
+
+## 7. After P8.0 (2026-10-03)
+
+The table in §5 is the baseline at `7caa827` and is left as it was. P8.0 closed its 23 items, each now `done`: EDT-015, EDT-099, EDT-137, EDT-197, EDT-210, EDT-214, EDT-218, EDT-224, EDT-225, EDT-229, EDT-230, EDT-235, EDT-236, EDT-258, EDT-260, EDT-261, EDT-262, HWF-22, HWF-27, HWF-28, HWF-49, QAN-14, QAN-19. The faults it took are fixed: F1, F2, F3 (QAN-02's remainder stays with P8.2), F4, F6 (EDT-112 itself stays with P8.2), F7, F8, F9, F10, F11 (the slug's 404 stays with P8.5), F12, F16, F18. Still open from §2: F5 and F13 (P8.1a), F14 and F15 (P8.1-B, phones in P8.6a), F17 (P8.5). Counts after P8.0: 431 items — 56 done, 72 adapted, 6 bug-fixed, 4 n/a, 292 open, 1 waiting. Commits `01dd40d`…`e53a833`; evidence in PLAN P8.0.
