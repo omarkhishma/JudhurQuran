@@ -4,8 +4,9 @@
 # front of the owner. The summary and the owner's decisions are in docs/research/07-licence-register.md.
 #
 # One entry per id in data/sources.yaml, data/lexica.yaml, data/gharib.yaml, data/works.yaml,
-# data/recitations.yaml (its reciter ids), data/patterns.yaml, data/particles.yaml and data/relations.yaml,
-# plus `everyayah` and `quran-align`, the two upstreams recitations.yaml names in audio_url and timings_zip.
+# data/recitations.yaml (its reciter ids), data/patterns.yaml, data/particles.yaml, data/relations.yaml and
+# data/knowledge.yaml (its evaluation-only sources included), plus `everyayah` and `quran-align`, the two
+# upstreams recitations.yaml names in audio_url and timings_zip.
 #
 # Fields
 #   urls_checked    every page, file or API answer read for this entry (pinned commits where a repo has one)
@@ -2428,3 +2429,424 @@ licences:
   - 'Not met: the screen credit (Wujuh.tsx SourceLine) gives only author, death date, title and page. CC BY-NC-SA 4.0 asks for the credit, the licence with its link and a note of our changes, and OpenITI asks that the file or corpus be cited; relations.yaml attribution_ar/en carries all of that and the API returns it with licence_url, but no page shows it.'
   - 'Our records describe these rows as editor-side (relations.yaml header: ''editor-side relation candidates … Editors review in the workbench''), yet every reader sees them, under the note ''Extracted automatically from the source''s own text; not yet reviewed by an editor.'''
   - Display is what D18 approved (non-commercial, with attribution); the API's answers carry the licence, so anything shared from these rows stays CC BY-NC-SA 4.0 (ShareAlike) and out of a commercial launch (D2).
+- id: tanzil-metadata
+  registry: data/knowledge.yaml
+  urls_checked:
+  - https://tanzil.net/res/text/metadata/quran-data.xml
+  - https://tanzil.net/docs/quran_metadata
+  - https://tanzil.net/docs/tanzil_license
+  fetched: '2026-10-03'
+  page_sha256:
+    https://tanzil.net/res/text/metadata/quran-data.xml: 8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a
+    https://tanzil.net/docs/quran_metadata: 003e22a3dc16b8ad3ea3a52933dd860dcd6feba8ac857e06a712ede3c15b6b46
+    https://tanzil.net/docs/tanzil_license: 331f7b806da6c97c0d3fcb1120989a0cfc500b99e39f1d13e998480279ef09b7
+  clauses:
+  - topic: attribution
+    quote: <quran type="metadata" version="1.0" copyright="(C) 2008-2009 Tanzil.info" license="cc-by">
+    url: https://tanzil.net/res/text/metadata/quran-data.xml
+  - topic: other
+    quote: Quran metadata contains various information about the structure of the quran text.
+    url: https://tanzil.net/docs/quran_metadata
+  - topic: other
+    quote: 'sura (chapter): including number of ayas, revelation order, start line, number of rukus, and sura name in Arabic, English and English Transliteration.'
+    url: https://tanzil.net/docs/quran_metadata
+  - topic: other
+    quote: © 2007–2026
+    url: https://tanzil.net/docs/quran_metadata
+  - topic: other
+    quote: This topic does not exist yet
+    url: https://tanzil.net/docs/tanzil_license
+  our_use: 'Sūra type (Meccan/Medinan) and traditional revelation order for the 114 sūra cards (pipeline/src/jadhr_pipeline/knowledge/surahs.py, table surah_cards), shown at the head of the panel''s sūra view (''order of revelation n (Tanzil)'') with the credit ''Sūra type and revelation order from the Tanzil Project metadata — tanzil.net'' linked to the file, and served by GET /api/v1/surahs/{n}/card with the source''s licence fields. The same file, pinned also under tanzil-uthmani, feeds the core sūra table: the type in the sūra header, the order in the concordance, and the juz/hizb/sajda columns of the release''s verses file (see tanzil-uthmani). Sūra type and order are not in the bulk release.'
+  status: attention
+  notes:
+  - 'Unchanged: the pinned file (8867c1d8…) equals today''s download and its root element still reads license="cc-by" with no version; the metadata page (release 1.0) states no other terms, and tanzil.net/docs/tanzil_license does not exist. Both wiki pages change bytes on every request (DokuWiki''s task-runner timestamp), so their sha256 never repeats.'
+  - 'CC BY in every version asks for credit and a reference to the licence. The sūra card credits Tanzil with a link but does not name the licence: SourceCredit shows the attribution only, and knowledge.yaml''s license and license_url reach the API, not the page.'
+  - The sūra header (type) and the concordance (order) show the same values from the core table with no credit beside them; the site-wide credit is Tanzil's /sources entry (tanzil-uthmani).
+  - The file is pinned under two ids with the same sha256 (sources.yaml tanzil-uthmani for juz/hizb/sajda, knowledge.yaml tanzil-metadata for type and order); both entries rest on the same licence attribute.
+- id: tanzil-revelation-order
+  registry: data/knowledge.yaml
+  urls_checked:
+  - https://tanzil.net/docs/revelation_order
+  - https://tanzil.net/docs/tanzil_license
+  fetched: '2026-10-03'
+  page_sha256:
+    https://tanzil.net/docs/revelation_order: 0d38c206c515ed17c7ef1f4c12f79e64d4d86110837e277a24f93918750e15f3
+    https://tanzil.net/docs/tanzil_license: 331f7b806da6c97c0d3fcb1120989a0cfc500b99e39f1d13e998480279ef09b7
+  clauses:
+  - topic: other
+    quote: The traditional order of revelation is provided in the table below. The detailed information is extracted from “The History of the Quran” by Allamah Abu Abd Allah al-Zanjani
+    url: https://tanzil.net/docs/revelation_order
+  - topic: other
+    quote: Chronological Order of Quranic Surahs, rendered by Kevin P. Edgecomb.
+    url: https://tanzil.net/docs/revelation_order
+  - topic: other
+    quote: Note that the order of a sura is specified based on the revelation of the first ayas of the sura, not the revelation of the whole sura.
+    url: https://tanzil.net/docs/revelation_order
+  - topic: other
+    quote: Except 17-33 and 48-50, from Medina
+    url: https://tanzil.net/docs/revelation_order
+  - topic: other
+    quote: © 2007–2026
+    url: https://tanzil.net/docs/revelation_order
+  - topic: other
+    quote: This topic does not exist yet
+    url: https://tanzil.net/docs/tanzil_license
+  our_use: 'Facts with the note quoted: the verse-level exceptions in the table''s Note column become verse_places rows (role source-note: verses, place, period; pipeline/src/jadhr_pipeline/knowledge/places.py), each quoting its note verbatim and checked against the Tafsir Center''s study; served in GET /api/v1/verses/{key}/knowledge (places) and shown in the verse view''s ''Where it was revealed'' layer (closed by default) as the place with the English note in quotation marks, credited to Tanzil''s page after al-Zanjani''s History of the Quran with a link. Not in the bulk release.'
+  status: attention
+  notes:
+  - 'Unchanged in content: today''s page differs from the pinned copy (3cabe970…) only in DokuWiki''s task-runner timestamp (taskrunner.php?id=revelation_order&…); every note reads as pinned.'
+  - 'Tanzil''s wiki pages carry that timestamp anew on every request, so the re-check (licence_check) always reports them changed: compare the text, not the sha256.'
+  - 'No licence: the page shows only ''© 2007–2026'', and the licence topic its wiki would hold does not exist (''This topic does not exist yet''); Tanzil''s text licence (tanzil-uthmani) covers the Quran text, not this documentation.'
+  - Our use rests on taking facts (which verses a note excepts and where it says they were revealed) and quoting each short note with credit and a link, not on a grant; the page itself says its detail is extracted from al-Zanjani's History of the Quran.
+  - 'Owner: accept on that basis, or add Tanzil to the D19 messages; no stated term asks anything further.'
+- id: tafsircenter-quran-db
+  registry: data/knowledge.yaml
+  urls_checked:
+  - https://huggingface.co/api/datasets/tafsircenter/tafsir-mcp-data
+  - https://huggingface.co/datasets/tafsircenter/tafsir-mcp-data/resolve/dbbfa77518a724a10e72d8d7fd48d2d36a50fa9e/README.md
+  - https://huggingface.co/datasets/tafsircenter/tafsir-mcp-data/raw/main/README.md
+  - https://api.github.com/repos/tafsircenter/tafsir-mcp
+  - https://api.github.com/repos/tafsircenter/tafsir-mcp/commits/main
+  - https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/LICENSE-DATA
+  - https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/main/LICENSE-DATA
+  - https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/DATA_SOURCES.md
+  - https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/main/DATA_SOURCES.md
+  - https://creativecommons.org/licenses/by/4.0/legalcode
+  fetched: '2026-10-03'
+  page_sha256:
+    https://huggingface.co/api/datasets/tafsircenter/tafsir-mcp-data: 6470179bb8855d437868ea98722e733aa622c5603fc299534b4e545ce01127f1
+    https://huggingface.co/datasets/tafsircenter/tafsir-mcp-data/resolve/dbbfa77518a724a10e72d8d7fd48d2d36a50fa9e/README.md: 30f4bbb3afc922f2d4fb3d4e0f11af4fce82174f5866a29b13de88f18fbe1868
+    https://huggingface.co/datasets/tafsircenter/tafsir-mcp-data/raw/main/README.md: 30f4bbb3afc922f2d4fb3d4e0f11af4fce82174f5866a29b13de88f18fbe1868
+    https://api.github.com/repos/tafsircenter/tafsir-mcp: aa71ea64c0c58dd5c672a1d786bebfe2201ff4f32c7d6fe2c8476bd2f8b22668
+    https://api.github.com/repos/tafsircenter/tafsir-mcp/commits/main: 4f0c26d8dfdcd31f333a39a0ae0a4e0ae758749b7ff774a2e4bbcf2cabbed9f3
+    https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/LICENSE-DATA: b286b84fe98f8dc422bbaabd0d10e8b03e4152bd63720b3f84728affc6efd9cb
+    https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/main/LICENSE-DATA: b286b84fe98f8dc422bbaabd0d10e8b03e4152bd63720b3f84728affc6efd9cb
+    https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/DATA_SOURCES.md: 9545c1bbe41e0374c91645a672847736e066b224b2ff64b43b6d7864f831072e
+    https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/main/DATA_SOURCES.md: 9545c1bbe41e0374c91645a672847736e066b224b2ff64b43b6d7864f831072e
+    https://creativecommons.org/licenses/by/4.0/legalcode: 58230517b7895aa219ff46a6ed63e67057a1582fb9ea054b16728a8c13525650
+  clauses:
+  - topic: redistribution
+    quote: The Quranic content database accompanying this software (quran.db) is the intellectual property of Tafsir Center for Quranic Studies (مركز تفسير للدراسات القرآنية), licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
+    url: https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/LICENSE-DATA
+  - topic: commercial
+    quote: '- Use commercially'
+    url: https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/LICENSE-DATA
+  - topic: attribution
+    quote: '- Attribution — You must give appropriate credit to: "Tafsir Center for Quranic Studies (https://tafsir.net)" Provide a link to the license, and indicate if changes were made.'
+    url: https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/LICENSE-DATA
+  - topic: commercial
+    quote: Personal, educational, and research use is acceptable. Commercial redistribution of tafsir texts requires permission from rights holders. Attribution to Tafsir Center is required when quoting.
+    url: https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/DATA_SOURCES.md
+  - topic: commercial
+    quote: '- إعادة توزيع نصوص التفاسير تجارياً يتطلب إذناً من أصحاب الحقوق.'
+    url: https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/DATA_SOURCES.md
+  - topic: other
+    quote: All data in this project is extracted from the **Tafsir Center for Quranic Studies** database, reviewed and certified by the Center's scholars.
+    url: https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/DATA_SOURCES.md
+  - topic: other
+    quote: 201 ayahs have documented asbab al-nuzool with full isnad, sourced from al-Wahidi's *Asbab al-Nuzool* and al-Suyuti's *Lubab al-Nuqul*.
+    url: https://raw.githubusercontent.com/tafsircenter/tafsir-mcp/f628e9578c77b6e9a0f729cde66b9419c6d00177/DATA_SOURCES.md
+  - topic: other
+    quote: 'license: cc-by-4.0'
+    url: https://huggingface.co/datasets/tafsircenter/tafsir-mcp-data/resolve/dbbfa77518a724a10e72d8d7fd48d2d36a50fa9e/README.md
+  - topic: attribution
+    quote: '- 📌 Attribution required: "Tafsir Center for Quranic Studies (https://tafsir.net)"'
+    url: https://huggingface.co/datasets/tafsircenter/tafsir-mcp-data/resolve/dbbfa77518a724a10e72d8d7fd48d2d36a50fa9e/README.md
+  - topic: other
+    quote: '"sha":"dbbfa77518a724a10e72d8d7fd48d2d36a50fa9e"'
+    url: https://huggingface.co/api/datasets/tafsircenter/tafsir-mcp-data
+  - topic: other
+    quote: '"spdx_id":"MIT"'
+    url: https://api.github.com/repos/tafsircenter/tafsir-mcp
+  - topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+    url: https://creativecommons.org/licenses/by/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by/4.0/legalcode
+  our_use: 'Shown to readers and served by the API (pipeline/src/jadhr_pipeline/knowledge surahs.py, places.py, asbab.py; GET /api/v1/surahs/{n}/card and /verses/{key}/knowledge): the Arabic sūra introductions (names, revelation study, virtues, the two verse-counting texts, aims) in the panel''s sūra view; the study''s place and order where they differ from Tanzil''s, and its reported and preferred places in the verse ''Where it was revealed'' layer; and 321 narration rows of the occasions of revelation with their takhrīj, first in the verse view''s ''Occasions of revelation'' layer. The editors'' footnotes and folio marks are separated from the text and offered in a collapsed ''Editor''s notes'' block (6,308 footnotes, 35 folio marks), never deleted; a narration printed twice is kept once. Credit on each: ''Source: Tafsir Center for Quranic Studies (https://tafsir.net) — Quranic database, CC BY 4.0; editors'' notes shown apart from the text'', linked to the dataset page. Not in the bulk release.'
+  status: attention
+  notes:
+  - 'Unchanged: the dataset''s HEAD is still the pinned revision dbbfa775 (2026-05-13) and the repository''s HEAD the pinned commit f628e957 (2026-06-04); LICENSE-DATA (b286b84f…), DATA_SOURCES.md (9545c1bb…) and the dataset card (30f4bbb3…) are byte-identical at the pin and at HEAD.'
+  - 'The Center''s own files disagree on commercial use: LICENSE-DATA grants CC BY 4.0 with ''Use commercially''; DATA_SOURCES.md calls personal, educational and research use acceptable and says commercial redistribution of tafsir texts needs the rights holders'' permission. Today''s use is non-commercial (D2), on which both agree; the commercial scope must be settled in writing before any commercial use (D19).'
+  - 'Credit met in part: the on-screen attribution names the Center with its URL, the licence and the change (editors'' notes shown apart), but links to the dataset page, not to the licence as LICENSE-DATA asks (''Provide a link to the license''); the API returns license_url. The narration dedupe (cleaning rule tc-narration-dedupe) is a second change the credit does not mention.'
+  - LICENSE-DATA claims the whole database as the Center's, yet the texts embed modern editors' footnotes, takhrīj and manuscript sigla; whether CC BY reaches that edited material is on the D19 list for the Center. The repository's own licence (MIT) covers its code.
+  - DATA_SOURCES.md counts 201 verses with narrations; the build holds 321 narration rows (several per verse) — PLAN's '201 vetted entries' counts verses.
+- id: wahidi-asbab-openiti
+  registry: data/knowledge.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0468IbnAhmadWahidiNaysaburi/0468IbnAhmadWahidiNaysaburi.AsbabNuzul/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0468IbnAhmadWahidiNaysaburi/0468IbnAhmadWahidiNaysaburi.AsbabNuzul/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1.yml
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0468IbnAhmadWahidiNaysaburi/0468IbnAhmadWahidiNaysaburi.AsbabNuzul/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1
+    : 20e8163fba25d2af8591974b8a8695e6d823af44da3acc11f82631183ce5d254
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0468IbnAhmadWahidiNaysaburi/0468IbnAhmadWahidiNaysaburi.AsbabNuzul/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1.yml
+    : 3a50bec18c9bc837a7bc19d864feb87b609be05cf63953ca9c5865940174c83e
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0468IbnAhmadWahidiNaysaburi/0468IbnAhmadWahidiNaysaburi.AsbabNuzul/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1.yml
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: عصام بن عبد المحسن الحميدان'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0468IbnAhmadWahidiNaysaburi/0468IbnAhmadWahidiNaysaburi.AsbabNuzul/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1
+  - topic: other
+    quote: '#META# 041.EdNUMBER :: الثانية، 1412 هـ - 1992 م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0468IbnAhmadWahidiNaysaburi/0468IbnAhmadWahidiNaysaburi.AsbabNuzul/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: دار الإصلاح - الدمام'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0468IbnAhmadWahidiNaysaburi/0468IbnAhmadWahidiNaysaburi.AsbabNuzul/0468IbnAhmadWahidiNaysaburi.AsbabNuzul.Shamela0011314-ara1
+  our_use: 'Shown to readers: al-Wāḥidī (d. 468 AH)''s Asbāb nuzūl al-Qurʾān in full, cut into 454 sections keyed to verse ranges (pipeline/src/jadhr_pipeline/knowledge/asbab.py, asbab rows of work wahidi), OpenITI markup rendered as text and the words untouched; served in GET /api/v1/verses/{key}/knowledge (asbab) and listed after the Tafsir Center''s narrations in the verse view''s ''Occasions of revelation'' layer, each item labelled with the work and credited ''al-Wāḥidī, Asbāb nuzūl al-Qurʾān, ed. ʿIṣām al-Ḥumaydān (Dār al-Iṣlāḥ, 1412 AH). Digital text: OpenITI corpus release 2025.1.9, CC BY-NC-SA 4.0''. Not in the bulk release.'
+  status: attention
+  notes:
+  - 'Terms read 2026-10-03 and unchanged: the OpenITI documentation page (41c356b2…), the Zenodo record for release 2025.1.9 (licence id cc-by-nc-sa-4.0, 035026a6…) and the CC BY-NC-SA 4.0 legal code (527c4e0e…) are byte-identical to what the pattern and particle entries recorded; the pinned text (20e8163f…) and version card (3a50bec1…) equal today''s downloads at commit cfc4157a, and the Zenodo answer equals the copy pinned in data/raw.'
+  - The author died 468 AH / 1076 CE (public domain). The edition is al-Ḥumaydān's (Dār al-Iṣlāḥ, Dammam, 2nd ed., 1412/1992); OpenITI's cleaned primary version drops its paratext. The verse numbers the editor inserted after many quoted verses («{1، 2}», «[107، 108]») stay in the shown text as OpenITI carries them, and key the sections.
+  - 'Credit met in part: each item names the work, the edition, the OpenITI release and ''CC BY-NC-SA 4.0'', linked to the OpenITI folder rather than to the licence, whose legal code asks for its URI or a link; the API returns license_url.'
+  - Non-commercial display with attribution is approved (D18); anything shared from the rows stays CC BY-NC-SA 4.0 (ShareAlike) and out of a commercial launch (D2). knowledge.yaml's use 'display-non-commercial' is a record, not a switch the code reads.
+- id: suyuti-lubab-openiti
+  registry: data/knowledge.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.LubabNuqul/0911Suyuti.LubabNuqul.JK000436-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.LubabNuqul/0911Suyuti.LubabNuqul.JK000436-ara1.yml
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.LubabNuqul/0911Suyuti.LubabNuqul.JK000436-ara1
+    : 8ae202385be97b7bbc257bb217c29df37e8b757398e1aa0aec9070076b3f587f
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.LubabNuqul/0911Suyuti.LubabNuqul.JK000436-ara1.yml
+    : 72c4b818da93c8658424cfc61167ff2ff700d0b988005870b0f2070b0ba65f75
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.LubabNuqul/0911Suyuti.LubabNuqul.JK000436-ara1.yml
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: دار إحياء العلوم'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.LubabNuqul/0911Suyuti.LubabNuqul.JK000436-ara1
+  - topic: other
+    quote: '#META# 044.EdPLACE :: بيروت'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.LubabNuqul/0911Suyuti.LubabNuqul.JK000436-ara1
+  our_use: 'Shown to readers: al-Suyūṭī (d. 911 AH)''s Lubāb al-nuqūl in full, cut into 348 sections keyed to verse ranges by their quoted verses (3 left unkeyed and never shown; pipeline/src/jadhr_pipeline/knowledge/asbab.py, asbab rows of work suyuti), OpenITI markup rendered as text and the words untouched; served in GET /api/v1/verses/{key}/knowledge (asbab) and listed in the verse view''s ''Occasions of revelation'' layer, each item labelled with the work and credited ''al-Suyūṭī, Lubāb al-nuqūl fī asbāb al-nuzūl (Dār Iḥyāʾ al-ʿUlūm, Beirut). Digital text: OpenITI corpus release 2025.1.9, CC BY-NC-SA 4.0''. Not in the bulk release.'
+  status: attention
+  notes:
+  - 'Terms read 2026-10-03 and unchanged: the OpenITI documentation page (41c356b2…), the Zenodo record for release 2025.1.9 (licence id cc-by-nc-sa-4.0, 035026a6…) and the CC BY-NC-SA 4.0 legal code (527c4e0e…) are byte-identical to what the pattern and particle entries recorded; the pinned text (8ae20238…) and version card (72c4b818…) equal today''s downloads at commit cfc4157a.'
+  - The author died 911 AH / 1505 CE (public domain). The card names the publisher (Dār Iḥyāʾ al-ʿUlūm, Beirut) but no editor or year; OpenITI's cleaned primary version drops the paratext.
+  - 'Credit met in part: each item names the work, the edition, the OpenITI release and ''CC BY-NC-SA 4.0'', linked to the OpenITI folder rather than to the licence, whose legal code asks for its URI or a link; the API returns license_url.'
+  - Non-commercial display with attribution is approved (D18); anything shared from the rows stays CC BY-NC-SA 4.0 (ShareAlike) and out of a commercial launch (D2). knowledge.yaml's use 'display-non-commercial' is a record, not a switch the code reads.
+- id: ibn-kathir-crossrefs
+  registry: data/knowledge.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/LICENSE
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/README.md
+  - https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - https://qul.tarteel.ai/resources/22/copyright
+  - https://qul.tarteel.ai/faq
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/LICENSE: 92f3c7ee3a04599ab2327052570bc94a82ebf1fdd3d0e8cf5c9e2c3a9282b279
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/README.md: 4b59c60857217d238672fa76ac5e2e0d5d9baad677611ba05d03f5c575d6f39b
+    https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json: f02c69bc447c7e1c6d388db27606ff83bc909cc269c22d565a109dfb9d747b06
+    https://qul.tarteel.ai/resources/22/copyright: 9f9e38fec2a24eb09f2d21dd92ae6f17da03ff9cd117b9404622b02b1db5791e
+    https://qul.tarteel.ai/faq: e7faa3d8a65381d70cccd2a94025394ad0a2f18214131bb32a407200fd77598d
+  clauses:
+  - topic: redistribution
+    quote: Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction,
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/LICENSE
+  - topic: other
+    quote: 'Most editions are generated from [QUL](https://qul.tarteel.ai/resources) SQLite exports:'
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/README.md
+  - topic: other
+    quote: '"slug": "ar-tafsir-ibn-kathir", "source": "https://qul.tarteel.ai/resources/tafsir/22"'
+    url: https://raw.githubusercontent.com/spa5k/tafsir_api/eb82bb6294efe30ad5c135c03b1864afaa70e855/tafsir/editions.json
+  - topic: other
+    quote: We don’t have copyright information for this resource.
+    url: https://qul.tarteel.ai/resources/22/copyright
+  - topic: attribution
+    quote: The resources available on QUL vary in their copyright status. Some are in the public domain, while others may be subject to specific licenses. We recommend reviewing the licensing information provided by each resource’s author before use.
+    url: https://qul.tarteel.ai/faq
+  - topic: commercial
+    quote: Yes, you can use QUL data in commercial projects. However, please review the licensing terms for each resource. Some data may have restrictions or require attribution, while others are freely available for commercial use.
+    url: https://qul.tarteel.ai/faq
+  our_use: 'Our own extraction, shown to readers: the verses Ibn Kathīr cites while explaining a verse — the edition''s bracketed references and unique ﴿…﴾ quotations of three words or more — read from the build''s Ibn Kathīr passages (QUL 22 via tafsir_api v1.2.2, footnotes already stripped; see ibn-kathir): 5,979 citations expanded to 21,998 verse_crossrefs rows, each with its method, confidence and the quoted words (pipeline/src/jadhr_pipeline/knowledge/crossrefs.py; 99 of a 100-row sample correct). Served in GET /api/v1/verses/{key}/knowledge (cites, cited_by) and shown in the verse view''s ''Verses its tafsir cites'' layer (closed by default) as the quotation and a link to each cited verse, credited ''Verses Ibn Kathīr cites in his Tafsīr — extracted by Jadhr from the digital text (Quranic Universal Library)''. Not in the bulk release.'
+  status: attention
+  notes:
+  - 'No source states terms for these rows: the pairs are facts we extract and the quoted words are Ibn Kathīr''s (d. 774 AH, public domain); tafsir_api''s MIT licence covers its software, QUL has no copyright information for resource 22, and QUL''s FAQ leaves each resource to its own terms.'
+  - 'The bracketed verse references the extraction reads are the modern edition''s apparatus, and that edition is still unidentified (ibn-kathir, D22): the API returns the reference string, the reader shows only the cited verse and the quotation.'
+  - 'Unchanged: tafsir_api''s LICENSE (92f3c7ee…), README (4b59c608…) and editions.json (f02c69bc…) at the pinned v1.2.2 commit are the bytes the tafsir-api-qul entry recorded; QUL''s pages carry the same sentences (their bytes change with each request).'
+  - 'Owner: the same D22 question as ibn-kathir (identify and cite the edition, or accept the risk); no stated term requires anything further.'
+- id: qac-proper-nouns
+  registry: data/knowledge.yaml
+  urls_checked:
+  - https://corpus.quran.com/download/
+  - https://corpus.quran.com/faq.jsp
+  - https://corpus.quran.com/license.jsp
+  - https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt
+  fetched: '2026-10-03'
+  page_sha256:
+    https://corpus.quran.com/download/: eadaffde4a46882c7e8773799f33fcd707fe1a3f1eda5b49faafc29c0838da43
+    https://corpus.quran.com/faq.jsp: dc072f3d84944e918b8708ef76e464f418a05100a91688b8ea30edf56408c014
+    https://corpus.quran.com/license.jsp: b265d6b394b10fe06c0e4e87e31fe605e3a1c2be4fa3910a2de63f1d1d63daa0
+    https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt: a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46
+  clauses:
+  - topic: modification
+    quote: Permission is granted to copy and distribute verbatim copies of this file, but CHANGING IT IS NOT ALLOWED.
+    url: https://corpus.quran.com/download/
+  - topic: display
+    quote: This annotation can be used in any website or application, provided its source (the Quranic Arabic Corpus) is clearly indicated, and a link is made to http://corpus.quran.com to enable users to keep track of changes.
+    url: https://corpus.quran.com/download/
+  - topic: redistribution
+    quote: This copyright notice shall be included in all verbatim copies of the text, and shall be reproduced appropriately in all works derived from or containing substantial portion of this file.
+    url: https://corpus.quran.com/download/
+  - topic: other
+    quote: The Quranic Arabic Corpus is available under the GNU public license with terms of use.
+    url: https://corpus.quran.com/download/
+  - topic: commercial
+    quote: The final aim of the project will be to produce a highly accurate annotated Quran available freely for non-commercial use under the GNU public license.
+    url: https://corpus.quran.com/faq.jsp
+  - topic: commercial
+    quote: 'We are happy to share the data for research purposes as long as: You do not use the data for commercial purposes. The data should be used purely for research and is made available under the GNU public license.'
+    url: https://corpus.quran.com/faq.jsp
+  - topic: modification
+    quote: If the Program as you received it, or any part of it, contains a notice stating that it is governed by this License along with a term that is a further restriction, you may remove that term.
+    url: https://corpus.quran.com/license.jsp
+  - topic: attribution
+    quote: Copyright (C) 2011 Kais Dukes
+    url: https://raw.githubusercontent.com/bnjasim/quranic-corpus/master/quranic-corpus-morphology-0.4.txt
+  our_use: 'Entity candidates: the corpus''s proper-noun (PN) lemmas with their verses become 107 entity_candidates rows, status candidate, 59 of them matched to a Wikidata id (pipeline/src/jadhr_pipeline/knowledge/entities.py). Served in GET /api/v1/verses/{key}/knowledge (entities) and shown in the verse view''s ''People and places'' layer — only entities with a Wikidata id — as the Arabic name and its occurrence count, marked as candidates no editor has reviewed, credited ''Proper-noun tags from the Quranic Arabic Corpus — corpus.quran.com'' with a link. Not in the bulk release.'
+  status: attention
+  notes:
+  - 'Terms unchanged since the qac entry: the same download-page terms and FAQ wording; the pinned file (a1d12923…) is still what the public mirror serves.'
+  - Display with the source named and a link to corpus.quran.com is met on the layer. We show names and counts derived from the corpus's tags, not a changed copy of the file, so the no-change term is not engaged.
+  - The FAQ's non-commercial wording ties this layer to D2, as for qac-wbw; the corpus's GPL-versus-no-change contradiction (qac) does not bear on it.
+- id: wikidata
+  registry: data/knowledge.yaml
+  urls_checked:
+  - https://www.wikidata.org/w/index.php?title=Wikidata:Licensing&action=raw
+  - https://www.wikidata.org/wiki/Wikidata:Licensing
+  fetched: '2026-10-03'
+  page_sha256:
+    https://www.wikidata.org/w/index.php?title=Wikidata:Licensing&action=raw: f371157d3d900fd8fa0c1802e5e4eccb4a577ca1f6a7428609ff8fa2dc3ec185
+    https://www.wikidata.org/wiki/Wikidata:Licensing: fa3f3bd6a2f5da23e5c20effd835618a5a43081088f48f0d26f57a89acb04297
+  clauses:
+  - topic: redistribution
+    quote: All structured data (i.e. the main, Property, Lexeme, and EntitySchema namespaces) is released into the public domain under Creative Commons Zero.
+    url: https://www.wikidata.org/wiki/Wikidata:Licensing
+  - topic: other
+    quote: Text in other namespaces is copyrighted and available under the Creative Commons Attribution-ShareAlike 4.0 License.
+    url: https://www.wikidata.org/wiki/Wikidata:Licensing
+  - topic: other
+    quote: All data in Wikidata has a CC0 license.
+    url: https://www.wikidata.org/w/index.php?title=Wikidata:Licensing&action=raw
+  our_use: 'Entity identifiers and labels: the pinned query responses (SPARQL P1441=Q428, wbsearchentities in Arabic, wbgetentities; never fetched during a build) give 59 of the 107 entity candidates a Wikidata id with Arabic and English labels and a description (pipeline/src/jadhr_pipeline/knowledge/entities.py). The API returns the id, labels and description; the verse view''s ''People and places'' layer shows the label in the reader''s language with a link to the item, credited ''Entity identifiers from Wikidata (CC0)''. Not in the bulk release.'
+  status: ok
+  notes:
+  - 'Unchanged: the licensing page''s source (f371157d…) is byte-identical to the copy pinned in data/raw; its sentence quoted in knowledge.yaml reads the same on the rendered page.'
+  - 'Ids, labels and descriptions are main-namespace structured data, released under CC0: no condition applies, and the credit we show is courtesy. Text in other namespaces is CC BY-SA 4.0; we take none.'
+- id: qursim
+  registry: data/knowledge.yaml
+  urls_checked:
+  - http://textminingthequran.com/data/ibn_kathir_similarity.csv
+  - http://textminingthequran.com/
+  - http://textminingthequran.com/sql/kathir.sql
+  - http://textminingthequran.com/wiki/Verse_relatedness_in_Ibn_Kathir
+  - https://web.archive.org/web/20160210105524id_/http://www.textminingthequran.com:80/wiki/Verse_relatedness_in_Ibn_Kathir
+  fetched: '2026-10-03'
+  page_sha256:
+    http://textminingthequran.com/data/ibn_kathir_similarity.csv: c898e39e59b024b4910287af0b22eb8746b91a29be80120f1df8b3b5572ba30c
+    http://textminingthequran.com/: 5954f65331ffc3d78e5f9db5f8978b08cb8309d7f69f2ad1d0c61331d00b8f83
+    http://textminingthequran.com/sql/kathir.sql: 11e332c6c5007ade9ccb2f0913d85a76b80e956ad72d64e774189f42769c18e8
+    https://web.archive.org/web/20160210105524id_/http://www.textminingthequran.com:80/wiki/Verse_relatedness_in_Ibn_Kathir: a07e2db27595e1c8e9c8f5a026b22697232846a1d3b423e2c22fb2a11ae39196
+  fetch_failures:
+  - url: http://textminingthequran.com/wiki/Verse_relatedness_in_Ibn_Kathir
+    result: HTTP 404 — the wiki page that carried the dataset's header is gone (404 in every capture since 2016-08-16)
+    used_instead: https://web.archive.org/web/20160210105524id_/http://www.textminingthequran.com:80/wiki/Verse_relatedness_in_Ibn_Kathir
+  clauses:
+  - topic: other
+    quote: Dataset on Quranic Verse Relatedness from Tafsir Ibn Kathir (version 0.1)
+    url: https://web.archive.org/web/20160210105524id_/http://www.textminingthequran.com:80/wiki/Verse_relatedness_in_Ibn_Kathir
+  - topic: attribution
+    quote: Copyright (C) 2011 Abdul-Baquee M. Sharaf
+    url: https://web.archive.org/web/20160210105524id_/http://www.textminingthequran.com:80/wiki/Verse_relatedness_in_Ibn_Kathir
+  - topic: other
+    quote: 'License: GNU Public License'
+    url: https://web.archive.org/web/20160210105524id_/http://www.textminingthequran.com:80/wiki/Verse_relatedness_in_Ibn_Kathir
+  - topic: modification
+    quote: Permission is granted to copy and distribute verbatim copies of this file, but CHANGING IT IS NOT ALLOWED.
+    url: https://web.archive.org/web/20160210105524id_/http://www.textminingthequran.com:80/wiki/Verse_relatedness_in_Ibn_Kathir
+  - topic: display
+    quote: This annotation can be used in any website or application, provided its source (TextMiningTheQuran.com) is clearly indicated.
+    url: https://web.archive.org/web/20160210105524id_/http://www.textminingthequran.com:80/wiki/Verse_relatedness_in_Ibn_Kathir
+  - topic: redistribution
+    quote: This copyright notice shall be included in all verbatim copies of the text, and shall be reproduced appropriately in all works derived from or containing substantial portion of this file.
+    url: https://web.archive.org/web/20160210105524id_/http://www.textminingthequran.com:80/wiki/Verse_relatedness_in_Ibn_Kathir
+  - topic: other
+    quote: ID,Source_Sura,Source_Verse,target_sura,Target_verse,common_roots,relevance_degree
+    url: http://textminingthequran.com/data/ibn_kathir_similarity.csv
+  - topic: other
+    quote: Related verses of the Quran from Ibn-Kathir
+    url: http://textminingthequran.com/
+  our_use: 'Evaluation only (D25), never output: the build reads the pinned CSV to measure how far our Ibn Kathīr cross-references agree with QurSim (pipeline/src/jadhr_pipeline/knowledge/crossrefs.py qursim_agreement) and writes aggregate figures only (pair counts and recall by relevance; 7,341 pairs in both) to the build report. layers.py leaves evaluation-only sources out of the source table and the tests assert that no row cites qursim, so no QurSim pair reaches a table, a page, the API or the bulk release; the report, kept whole in content.dataset.report, holds the figures alone and no endpoint serves it.'
+  status: ok
+  notes:
+  - The pinned CSV (c898e39e…) is byte-identical to today's download (served over HTTP). Neither it nor the SQL dump beside it carries a header, so the terms are known only from the dataset's original header, printed on the wiki page that is now 404 and read from its last good Wayback capture (2016-02-10).
+  - The header calls the data GPL yet forbids changes and grants use in any website or application with the source named — the same self-contradiction as the corpus terms (qac); our use depends on none of the contested points.
+  - 'Met: we keep a verbatim copy (data/raw, neither committed nor published), knowledge.yaml names the source, and nothing derived from the pairs is shown or shared; the agreement figures measure our own data.'
+  - Showing QurSim pairs or serving them would need the data unchanged, the notice reproduced and the source named — and D25 keeps it to evaluation; the message to its author is already on the D19 list.
