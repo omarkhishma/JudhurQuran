@@ -251,6 +251,17 @@ def current_user(authorization: str | None = Header(None)) -> dict[str, Any]:
     return u
 
 
+def optional_user(authorization: str | None = Header(None)) -> dict[str, Any] | None:
+    """The bearer session's account where there is one; public pages answer the same either way, and only say
+    what the reader may do (approve, revise) when they know who is asking."""
+    if not authorization:
+        return None
+    try:
+        return current_user(authorization)
+    except HTTPException:
+        return None
+
+
 def me(u: dict[str, Any]) -> dict[str, Any]:
     with tx() as conn:
         devices = q(

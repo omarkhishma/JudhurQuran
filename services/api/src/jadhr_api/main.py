@@ -36,6 +36,7 @@ from . import (
     lexicon,
     path,
     review,
+    routes_contrib,
     routes_me,
 )
 from .db import connect
@@ -884,7 +885,9 @@ def create_app() -> FastAPI:
             403: "forbidden",
             404: "not_found",
             405: "bad_request",
+            409: "conflict",
             413: "too_large",
+            422: "unprocessable",
             429: "rate_limited",
             503: "unavailable",
         }.get(exc.status_code, "server_error")
@@ -903,6 +906,7 @@ def create_app() -> FastAPI:
 
     app.include_router(router)
     app.include_router(routes_me.router)
+    app.include_router(routes_contrib.router)
     return app
 
 

@@ -312,6 +312,27 @@ def test_deleting_the_account_leaves_nothing_of_it_in_any_table(email: str) -> N
     token = client.post("/api/v1/me/delete", headers=h).json()["confirm"]
     assert client.post("/api/v1/me/delete/confirm", headers=h, json={"confirm": token}).status_code == 200
     assert held() == {tb: 0 for tb in before}
+    # and no row in any schema (the contributions too, P7) still points at the account
+    with accounts.tx() as conn:
+        refs = accounts.q(
+            conn,
+            """select kcu.table_schema as s, kcu.table_name as t, kcu.column_name as c
+               from information_schema.referential_constraints rc
+               join information_schema.key_column_usage kcu on kcu.constraint_name = rc.constraint_name
+                 and kcu.constraint_schema = rc.constraint_schema
+               join information_schema.constraint_column_usage ccu on ccu.constraint_name = rc.unique_constraint_name
+                 and ccu.constraint_schema = rc.unique_constraint_schema
+               where ccu.table_schema = 'accounts' and ccu.table_name = 'users'""",
+        )
+        assert {(r["s"], r["t"]) for r in refs} >= {
+            ("contributions", "proposals"),
+            ("contributions", "decisions"),
+        }
+        for r in refs:
+            n = accounts.q1(
+                conn, f"select count(*) as n from {r['s']}.{r['t']} where {r['c']} = :u", {"u": me["id"]}
+            )
+            assert n is not None and n["n"] == 0, r
 
 
 def test_the_dev_outbox_never_answers_in_production(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -97,6 +97,7 @@ Optional for readers; everything works without them. Before enabling sign-in in 
 3. Google (optional): an OAuth client of type "Web application" with the redirect URI `https://<domain>/auth/oidc/google`; `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`.
 4. Apple (optional): a Services ID with the return URL `https://<domain>/api/auth/apple` and a Sign in with Apple key; `APPLE_CLIENT_ID` (the Services ID), `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` (the .p8 contents, newlines as `\n`).
 5. The API purges what the privacy page promises daily (expired links and sessions, replaced versions after 30 days, shared lookups after a year).
+6. The editorial board (P7, D4) is appointed: once a person has signed in, give them the role from the command line — `docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader python -m jadhr_api.roles <email> editor` (or `admin`, who can then appoint others in the app). Every grant is recorded in `contributions.role_grants`. Reviewers also earn the role after ten merged contributions.
 
 ## Before the site goes public (owner)
 

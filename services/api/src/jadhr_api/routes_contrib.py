@@ -1,0 +1,135 @@
+"""Contribution and moderation endpoints (PLAN P7). Reading the queue and the changelog is public; proposing,
+deciding and the rest need an account. Nothing here is cached by a shared cache except the public changelog and
+a word's merged contributions, briefly."""
+
+from __future__ import annotations
+
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import ORJSONResponse
+from pydantic import BaseModel, Field
+
+from . import accounts, contrib
+
+router = APIRouter(prefix="/api/v1")
+NO_STORE = {"Cache-Control": "no-store"}
+BRIEF = {"Cache-Control": "public, max-age=30"}
+User = Annotated[dict[str, Any], Depends(accounts.current_user)]
+Viewer = Annotated[dict[str, Any] | None, Depends(accounts.optional_user)]
+
+
+def ok(payload: Any, headers: dict[str, str] | None = None, status: int = 200) -> ORJSONResponse:
+    return ORJSONResponse(payload, status_code=status, headers=headers or NO_STORE)
+
+
+class _Source(BaseModel):
+    work: str = Field(max_length=40)
+    ref: str = Field("", max_length=200)
+
+
+class _Proposal(BaseModel):
+    kind: str = Field(max_length=12)
+    lemma: str = Field(min_length=1, max_length=80)
+    sense_ordinal: int | None = Field(None, ge=1, le=500)
+    location: str | None = Field(None, max_length=12)
+    field: str | None = Field(None, max_length=20)
+    current_text: str | None = Field(None, max_length=4000)
+    text: str = Field(min_length=1, max_length=4000)
+    why: str = Field(min_length=1, max_length=4000)
+    sources: list[_Source | str] = Field(default_factory=list, max_length=10)
+
+
+@router.post(
+    "/proposals",
+    summary="Propose an edit, a sense, a gloss, a correction, an error, an attestation or an entry",
+)
+def propose(u: User, body: _Proposal) -> ORJSONResponse:
+    return ok(contrib.propose(u, body.model_dump()), status=201)
+
+
+@router.get("/proposals", summary="The review queue, by filter, newest first")
+def proposals(
+    viewer: Viewer,
+    filter: str = Query("open", max_length=10),
+    before: str | None = Query(None, max_length=40),
+    limit: int = Query(50, ge=1, le=100),
+) -> ORJSONResponse:
+    return ok(contrib.queue(viewer, filter, before, limit))
+
+
+@router.get("/proposals/{pid}", summary="A proposal with its decisions so far")
+def proposal(viewer: Viewer, pid: str) -> ORJSONResponse:
+    return ok(contrib.detail(pid, viewer))
+
+
+class _Decision(BaseModel):
+    decision: str = Field(max_length=10)
+    note: str | None = Field(None, max_length=2000)
+
+
+@router.post("/proposals/{pid}/decisions", summary="Approve, decline or request changes (reviewers)")
+def decide(u: User, pid: str, body: _Decision) -> ORJSONResponse:
+    return ok(contrib.decide(u, pid, body.decision, body.note))
+
+
+class _Revision(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    why: str = Field(min_length=1, max_length=4000)
+    sources: list[_Source | str] = Field(default_factory=list, max_length=10)
+
+
+@router.post("/proposals/{pid}/revise", summary="Answer a request for changes with a new revision")
+def revise(u: User, pid: str, body: _Revision) -> ORJSONResponse:
+    return ok(contrib.revise(u, pid, body.model_dump()))
+
+
+@router.post("/proposals/{pid}/withdraw", summary="Withdraw a proposal of yours")
+def withdraw(u: User, pid: str) -> ORJSONResponse:
+    return ok(contrib.withdraw(u, pid))
+
+
+class _Report(BaseModel):
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+@router.post("/proposals/{pid}/report", summary="Report a proposal to the editors")
+def report(u: User, pid: str, body: _Report) -> ORJSONResponse:
+    return ok(contrib.report(u, pid, body.reason))
+
+
+class _Revert(BaseModel):
+    note: str = Field("", max_length=2000)
+
+
+@router.post("/merges/{mid}/revert", summary="Take a merge back (the editorial board)")
+def revert(u: User, mid: str, body: _Revert) -> ORJSONResponse:
+    return ok(contrib.revert(u, mid, body.note))
+
+
+@router.get("/changelog", summary="Merged and reverted contributions, newest first")
+def changelog(
+    since: str | None = Query(None, max_length=40), limit: int = Query(100, ge=1, le=500)
+) -> ORJSONResponse:
+    return ok(contrib.changelog(since, limit), BRIEF)
+
+
+@router.get("/lemmas/{slug}/contributions", summary="A word's merged contributions, shown beside its sources")
+def lemma_contributions(slug: str) -> ORJSONResponse:
+    return ok(contrib.for_lemma(slug[:80]), BRIEF)
+
+
+@router.get("/me/proposals", summary="Your proposals, every status")
+def my_proposals(u: User) -> ORJSONResponse:
+    return ok(contrib.mine(u))
+
+
+class _Grant(BaseModel):
+    email: str = Field(max_length=320)
+    role: str = Field(max_length=12)
+    reason: str | None = Field(None, max_length=300)
+
+
+@router.post("/admin/roles", summary="Appoint a reviewer or an editor (administrators)")
+def grant(u: User, body: _Grant) -> ORJSONResponse:
+    return ok(contrib.grant(u, body.email, body.role, body.reason))

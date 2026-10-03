@@ -259,8 +259,11 @@ def delete_account(u: dict[str, Any], token: str) -> bool:
         )
         if ok is None:
             return False
-        # sign-in links are kept by address, not by account: they go too
+        # sign-in links are kept by address, not by account: they go too; so do unmerged proposals and every name
         conn.execute(text("delete from accounts.login_tokens where email = :e"), {"e": u["email"]})
+        from .contrib import forget
+
+        forget(conn, u["id"])
         conn.execute(text("delete from accounts.users where id = :u"), {"u": u["id"]})
     return True
 
