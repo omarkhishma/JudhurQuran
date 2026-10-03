@@ -24,15 +24,17 @@ Splitting (rule ``taqalib-article-split``, every case counted under it):
   vowel does not). Everything else that looks like "word:" at a line start — "قال:", "الليث:", a gloss
   ("والخؤولة:", "الخلابيس:"), a word of a root that already has its article ("الدعموص:" after "دعمص:")
   — stays in the text. Tahdhīb also files quadriliterals and weak roots where its typing gives no title
-  ("ثرمل" after the لفيف of ث, "ليل: الليث:" after ل م): there the section's first letter suffices.
+  ("ثرمل" after the لفيف of ث, "ليل: الليث:" and "وقي:" after ل م and ق م): there the section's first
+  letter suffices.
 * A list line directly followed by text ("غش، شغ: مستعملان:" / "روي عن النبي ﷺ…") heads the article
   of its first permutation.
 * 65 pages of Tahdhīb vol. 4 were typed without line breaks: they are cut back into lines before
   headers, group titles and spaced letters that follow a sentence end (counted).
 * The article runs to the next header or group title; text between a group title and its first
   header (al-Khalīl's or al-Azharī's remarks on the group) is not imported, nor al-Azharī's closing
-  chapters on the letters (باب الألفات، الياآت، الواوات، الهمز), which are grammar, not root articles. The
-  body keeps its printed header ("هقع: الهقعة…"), as Lisān's do.
+  chapters on the letters (باب الألفات، الياآت، الواوات، الهمز), which are grammar, not root articles, nor
+  the colophon that closes a letter ("تم حرف السين…", "آخر كتاب الراء"). The body keeps its printed
+  header ("هقع: الهقعة…"), as Lisān's do.
 
 The list of permutations in use is the checklist: the report lists the listed permutations never
 found as a header and counts the headers found outside their group's list.
@@ -119,6 +121,15 @@ _NOT_WORDS = (
     "ويروي",
     "يروي",
     "روي",
+    "معناه",
+    "ومعناه",
+    "أراد",
+    "وأراد",
+    "يريد",
+    "يقول",
+    "ويقول",
+    "تقول",
+    "وتقول",
 )
 
 
@@ -192,7 +203,7 @@ class Group:
         # not ("أراد" folds to ءرءد but has three)
         rad = sum(1 for ch in bare_raw if ch not in "اويىة")
         skeleton = "".join(f for f, r in zip(t, bare_raw, strict=False) if r not in "اويىة")
-        if skeleton != t and skeleton in self.found:
+        if skeleton != t and len(skeleton) >= 4 and skeleton in self.found:
             return None  # "دعمص:" then "الدعموص: الرجل الدخال…" — a word of the same root, not a new article
         # a quadriliteral or longer root: at most one long vowel ("حرقوص"), not a plural ("الخلابيس")
         # and not a word with the conjunction ("وخنزر") or a verb with its suffix ("فزعنا")
@@ -202,6 +213,7 @@ class Group:
             and size - rad <= 1
             and not t.startswith("و")
             and not bare_raw.endswith("ا")
+            and bare_raw[:1] not in "أإا"  # a verb with its prefix ("أعورت"), not a root
         )
         lead = next(iter(self.letters), None)
         if self.loose_quadri and lead is not None and strong[lead]:
@@ -212,6 +224,8 @@ class Group:
                 return "letters"
             if opens_article and size in (2, 3) and weak >= 1 and token not in _NOT_HEADERS:
                 return "letters"
+            if size in (2, 3) and weak >= 1 and set(strong) == {lead}:
+                return "letters"  # the letter's لفيف ("وقي: الوقاية…" after ق م)
         if (
             paren
             and 4 <= size <= 6
@@ -361,6 +375,11 @@ def _unflatten(lines: list[Line], counters: Counters) -> tuple[list[Line], set[i
     return out, glued, refs
 
 
+# An untagged group or section title: "(باب الزاي والراء)", "أبواب رباعي السين", "كتاب الحروف الجوف".
+_GROUP_LINE = re.compile(
+    r"^[.\u060c]?\s*\(?\s*(?:باب|أبواب|ابواب|كتاب)\s+(?:ال|رباعي|خماسي|ثلاثي|ثنائي|مضاعف|لفيف|معتل)"
+)
+_COLOPHON = re.compile(r"^(?:تم|آخر|انتهى)\s+(?:\S+\s+){0,3}?(?:حرف|كتاب|الخماسي|الرباعي)")
 _ORPHAN_STOP = re.compile(r"^\s*([.\u060c])\s+(?=\S)")
 
 
@@ -672,7 +691,13 @@ def split_taqalib(
             spaced_group(plain, sm.group(1), sm.group(2))
             counters.add("taqalib-article-split:untagged-group-line")
             continue
-        if re.match(r"^[.،]?\s*\(?\s*(?:باب|أبواب|ابواب|كتاب)\s+ال", plain) and len(plain) < 80:
+        if _COLOPHON.match(plain) and len(plain) < 120:
+            after_list = None
+            close()  # "تم الخماسي، وبه تم حرف السين…", "آخر كتاب الراء": the end of a letter, no article's
+            skipped += len(text)
+            counters.add("taqalib-article-split:colophon")
+            continue
+        if _GROUP_LINE.match(plain) and len(plain) < 80:
             close()
             new_group(plain)
             list_next = group is not None and not group.letters and not group.used
