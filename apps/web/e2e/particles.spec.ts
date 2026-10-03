@@ -36,6 +36,8 @@ test("فِي opens on Ibn Hishām and al-Murādī; an entry unfolds into its sen
   await expect(first.locator(".particle-sense")).toHaveCount(e.senses.length);
   await expect(first.locator(".particle-sense").first()).toContainText(e.senses[0].text_ar.slice(0, 40));
   await expect(first).toContainText(e.source.attribution_ar);
+  // the typing's hemistich mark is drawn as a gap, never shown as "%"
+  if (e.senses.some((x) => /(^|[\s(])%(?=[\s)]|$)/.test(x.text_ar))) await expect(first.locator(".particle-body")).not.toContainText("%");
 });
 
 test("the و of وَإِذْ reaches the entries on wāw through its corpus tag", async ({ page }) => {

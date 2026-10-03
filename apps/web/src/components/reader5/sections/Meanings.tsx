@@ -6,6 +6,7 @@ import { type ReactNode, useState } from "react";
 import { Term } from "@/components/terms/Term";
 import { cnt, formatNumber } from "@/lib/format";
 import { useReader } from "@/lib/reader/store";
+import { showHemistichs } from "@/lib/openiti";
 import { getJSON } from "@/lib/reader/api";
 import type { Features, Label, Mufradat, ParticleEntry, ParticleLink, WordPayload } from "@/lib/reader/types";
 import { FORM_TERM, TAG_TERM } from "@/lib/terms";
@@ -292,7 +293,7 @@ function ParticleSenses({ e }: { e: ParticleEntry }) {
         >
           {s.kind === "sense" && <span className="mono shrink-0 text-[11px] text-t3">{s.marker_ar ?? formatNumber(s.sense_index ?? 0, locale)}</span>}
           <div className="min-w-0 flex-1">
-            <p className={"text-[14.5px] leading-[1.9]" + (s.kind === "note" ? " text-t3" : " text-t1") + (wide[s.id] ? "" : " is-clamped")}>{s.text_ar}</p>
+            <p className={"text-[14.5px] leading-[1.9]" + (s.kind === "note" ? " text-t3" : " text-t1") + (wide[s.id] ? "" : " is-clamped")}>{showHemistichs(s.text_ar)}</p>
             {s.text_ar.length > 260 && (
               <button type="button" className="text-[11.5px] text-t2 underline-offset-2 hover:underline" aria-expanded={!!wide[s.id]} onClick={() => setWide((w) => ({ ...w, [s.id]: !w[s.id] }))}>
                 {wide[s.id] ? t("showLess") : t("readWholePassage")}

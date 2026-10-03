@@ -8,6 +8,7 @@ import { cnt, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import type { Contrast, RelationSource, WordPayload, WordRelations, WujuhEntry } from "@/lib/reader/types";
 import { Fold } from "../VerseKnowledge";
+import { showHemistichs } from "@/lib/openiti";
 
 export function useWordRelations(slug: string, at: string | null) {
   return useQuery({
@@ -72,7 +73,7 @@ function Entry({ e, src, here }: { e: WujuhEntry; src: RelationSource | undefine
                   {s.sense_label_ar && <strong className="ar-classical text-[16px] font-bold text-t1" lang="ar">{s.sense_label_ar}</strong>}
                   {s.cites_here && <span className="tag-pill is-here">{t("citesHere")}</span>}
                 </p>
-                <Fold text={s.text_ar} lines={3} className="ar-classical text-[14.5px] leading-[1.95] text-t2" />
+                <Fold text={showHemistichs(s.text_ar)} lines={3} className="ar-classical text-[14.5px] leading-[1.95] text-t2" />
                 {s.verses.length > 0 && <VerseChips verses={s.verses} here={here} />}
               </li>
             ))}
@@ -97,7 +98,7 @@ function ContrastList({ items, sources, title, lead }: { items: Contrast[]; sour
       {shown.map((c) => (
         <div key={c.id} className="wujuh-sense">
           <p className="ar-classical text-[15px] font-bold text-t1" lang="ar">{c.heading_ar ?? `${c.headword_ar}${c.target_ar ? ` / ${c.target_ar}` : ""}`}</p>
-          <Fold text={c.text_ar} lines={3} className="ar-classical text-[14.5px] leading-[1.95] text-t2" />
+          <Fold text={showHemistichs(c.text_ar)} lines={3} className="ar-classical text-[14.5px] leading-[1.95] text-t2" />
           <SourceLine s={sources[c.source_id]} vol={c.page_vol} page={c.page} />
         </div>
       ))}
