@@ -8,6 +8,8 @@ Audited 2026-10-03 against commit `40601be` (branch `build/vision`; read in the 
 
 **Paths.** Bare component names are in `apps/web/src/components/{search,concordance,analyse,library}/`; `shell/`, `ui/` and `reader5/` are in `apps/web/src/components/`; `lib/…` is `apps/web/src/lib/…`; route files (`search/page.tsx` …) are under `apps/web/src/app/[locale]/(site)/`; `globals.css` is `apps/web/src/app/globals.css`; `*.py` files are in `services/api/src/jadhr_api/` unless a path is given; `normalize.py` and `roots.py` are in `packages/arabic-py/src/jadhr_arabic/`. Quoted e2e titles come from `apps/web/e2e/*.spec.ts`.
 
+> **Since this audit (2026-10-03):** every group A item and every fault below has been built and tested (commits from `b17160c` to `8966f04` on `build/vision`; PLAN P4.5). Group B stands as listed. The tables below are the audit as it was found.
+
 ## Summary
 
 | Status | Items |
