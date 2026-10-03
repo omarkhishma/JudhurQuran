@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { createGraph, deleteGraph, listGraphs } from "@/lib/graph/persist";
+import { createGraph, deleteGraph } from "@/lib/graph/persist";
+import { useMyGraphs } from "@/lib/graph/useMyGraphs";
 import type { GraphDoc, GraphKind } from "@/lib/graph/types";
 import { cnt } from "@/lib/format";
 import { useWhereSaved } from "@/lib/graph/whereSaved";
@@ -13,8 +13,7 @@ export function GraphHome() {
   const t = useTranslations("graph");
   const locale = useLocale();
   const router = useRouter();
-  const qc = useQueryClient();
-  const { data: graphs } = useQuery({ queryKey: ["my-graphs"], queryFn: listGraphs });
+  const { data: graphs } = useMyGraphs();
   const [confirming, setConfirming] = useState<string | null>(null);
   const [root, setRoot] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -38,7 +37,6 @@ export function GraphHome() {
         edges: raw.edges,
       });
       setMessage(t("imported"));
-      void qc.invalidateQueries({ queryKey: ["my-graphs"] });
     } catch {
       setMessage(t("importError"));
     }
@@ -107,7 +105,6 @@ export function GraphHome() {
                   if (confirming !== g.id) return setConfirming(g.id);
                   await deleteGraph(g.id);
                   setConfirming(null);
-                  void qc.invalidateQueries({ queryKey: ["my-graphs"] });
                 }}
               >
                 {confirming === g.id ? t("deleteConfirm") : t("delete")}

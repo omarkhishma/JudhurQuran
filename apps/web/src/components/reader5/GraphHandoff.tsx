@@ -8,7 +8,7 @@ import { Link } from "@/i18n/navigation";
 import { formatNumber } from "@/lib/format";
 import { buildSeedGraph, seedRows } from "@/lib/graph/seed";
 import { encodeSeed, type Seed } from "@/lib/graph/seedCodec";
-import { listGraphs } from "@/lib/graph/persist";
+import { useMyGraphs } from "@/lib/graph/useMyGraphs";
 import { KIND_COLOR } from "@/lib/graph/types";
 import { useReader } from "@/lib/reader/store";
 
@@ -40,7 +40,7 @@ function HandoffDialog({ seed, onClose }: { seed: Seed; onClose: () => void }) {
   const showToast = useReader((s) => s.showToast);
   const [into, setInto] = useState<string>("");
   const built = useQuery({ queryKey: ["seed-graph", JSON.stringify(seed)], queryFn: () => buildSeedGraph(seed), staleTime: 5 * 60_000 });
-  const graphs = useQuery({ queryKey: ["my-graphs"], queryFn: listGraphs });
+  const graphs = useMyGraphs();
   const rows = built.data ? seedRows(built.data) : [];
 
   async function copySeed() {

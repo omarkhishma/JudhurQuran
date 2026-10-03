@@ -10,7 +10,7 @@ import { authFetch, useAccount } from "@/lib/account/store";
 import { myProposals, type ProposalOut } from "@/lib/contrib";
 import { useIsClient } from "@/lib/client";
 import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
-import { listGraphs } from "@/lib/graph/persist";
+import { useMyGraphs } from "@/lib/graph/useMyGraphs";
 import { listTexts, loadText } from "@/lib/library/texts";
 import { applyImport, type ImportPlan, MAX_IMPORT_BYTES, planCounts, planImport } from "@/lib/importData";
 import { deleteLocalData, exportLocalData } from "@/lib/localData";
@@ -155,7 +155,7 @@ function Counts() {
   const server = useQuery({ queryKey: ["my-proposals", session], queryFn: myProposals, enabled: client && !!session, staleTime: 30_000 });
   const merged = server.data?.data.filter((p) => p.status === "merged").length ?? 0;
   const inQueue = server.data?.data.filter((p) => p.status === "open" || p.status === "approved" || p.status === "changes").length ?? 0;
-  const graphs = useQuery({ queryKey: ["my-graphs"], queryFn: listGraphs, enabled: client });
+  const graphs = useMyGraphs(client);
   const texts = useQuery({ queryKey: ["user-texts"], queryFn: listTexts, enabled: client });
   const n = (x: number | undefined) => (client && x !== undefined ? formatNumber(x, locale) : "–");
   const rows: [string, string][] = [
@@ -395,7 +395,7 @@ function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
   const bookmarks = useSaved((s) => s.bookmarks);
   const verseNotes = useSaved((s) => s.notes);
   const notes = useNotebook((s) => s.notes);
-  const graphs = useQuery({ queryKey: ["my-graphs"], queryFn: listGraphs, enabled: tab === "graphs" });
+  const graphs = useMyGraphs(tab === "graphs");
   const texts = useQuery({ queryKey: ["user-texts"], queryFn: listTexts, enabled: tab === "library" });
   const date = (ms: number) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date(ms));
   const day = (d: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${d}T12:00:00`));

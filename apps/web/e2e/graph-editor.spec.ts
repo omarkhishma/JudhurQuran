@@ -300,3 +300,26 @@ test("the editor says where maps are kept — this browser, or with the account 
   const { confirm } = (await (await page.request.post("/api/v1/me/delete", { headers: h })).json()) as { confirm: string };
   expect((await page.request.post("/api/v1/me/delete/confirm", { headers: h, data: { confirm } })).ok()).toBeTruthy();
 });
+
+test("My maps and the hand-off's choices hold a map as soon as it is made or renamed (F8)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the header's links and search are the desktop's");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto("/graph");
+  await expect(page.getByText("لا خرائط بعد", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "خريطة حرة" }).click();
+  const id = await editorId(page);
+  await page.getByRole("textbox", { name: "إعادة التسمية" }).fill("خريطتي الجديدة");
+  await expect(page.locator(".save-pill")).toHaveText("حُفظت", { timeout: 10_000 });
+  // back by the app's own link: the list read when the page first opened would not have it
+  await page.getByRole("banner").getByRole("link", { name: "الخريطة", exact: true }).click();
+  await expect(page.getByRole("main").locator(`a[href="/graph/edit/${id}"]`)).toContainText("خريطتي الجديدة");
+  // and the reader's hand-off offers it
+  await page.getByRole("banner").getByRole("button", { name: /بحث/ }).click();
+  const box = page.getByRole("combobox", { name: /اكتب كلمة أو جذرًا/ });
+  await box.fill("2:255");
+  await expect(page.getByRole("option").first()).toContainText("آية");
+  await box.press("Enter");
+  await page.locator('.w[data-w="2:255:3"]').click();
+  await page.locator(".reader-panel").getByRole("button", { name: "افتح في الخريطة" }).click();
+  await expect(page.getByRole("dialog", { name: "سلّمه إلى محرر الخرائط" }).getByRole("option", { name: "خريطتي الجديدة" })).toHaveCount(1);
+});
