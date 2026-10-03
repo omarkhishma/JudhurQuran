@@ -19,13 +19,14 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { toPng } from "html-to-image";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { expandForms, type RootGraphPayload, verseId, edgeId } from "@/lib/graph/build";
 import { layout } from "@/lib/graph/layout";
 import type { GraphEdge, GraphNode } from "@/lib/graph/types";
 import { useTheme } from "@/lib/client";
+import { cnt, verseRef } from "@/lib/format";
 import { CardNode, GraphActionsContext, type GraphActions } from "./CardNode";
 
 type Snapshot = { label: string; nodes: GraphNode[]; edges: GraphEdge[] };
@@ -47,6 +48,16 @@ export type GraphCanvasProps = {
   /** Lets an editor add cards from outside the canvas (palette). */
   registerAdd?: (add: (nodes: GraphNode[], edges: GraphEdge[], label: string) => void) => void;
 };
+
+/** A card as an undo label names it: its letters, word or verse, else its kind (handoff §4.3, EDT-230). */
+function cardName(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase") => string, locale: string): string {
+  if (!n) return "";
+  const d = n.data;
+  if (d.kind === "note") return t("kindNote");
+  if (d.kind === "verse") return d.verse ? verseRef(d.verse.key, locale) : t("kindPhrase");
+  if (d.kind === "word") return d.form ?? d.ar ?? "";
+  return d.ar ?? "";
+}
 
 /** The cards a first view opens on: the word and verse the reader came from, else every focus card. */
 function firstView(nodes: GraphNode[]): GraphNode[] {
@@ -78,6 +89,7 @@ function CanvasInner({
   registerAdd,
 }: GraphCanvasProps) {
   const t = useTranslations("graph");
+  const locale = useLocale();
   const theme = useTheme();
   const rf = useReactFlow<GraphNode, GraphEdge>();
   const initialized = useNodesInitialized();
@@ -179,15 +191,11 @@ function CanvasInner({
   const actions: GraphActions = useMemo(
     () => ({
       editable,
-      toggleFold: (id) =>
-        commit(
-          t("fold"),
-          nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, folded: !n.data.folded } } : n)),
-          edges,
-        ),
+      // folding is a view of the card, not an edit: saved, never an undo step (EDT-099, EDT-210)
+      toggleFold: (id) => setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, data: { ...n.data, folded: !n.data.folded } } : n))),
       setText: (id, text) =>
         commit(
-          t("kindNote"),
+          t("doEditNote"),
           nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, text } } : n)),
           edges,
         ),
@@ -198,7 +206,7 @@ function CanvasInner({
           const present = new Set(nodes.map((n) => n.id));
           const add = expandForms(payload, node.data.lemmaId, present);
           const updated = nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, more: undefined } } : n));
-          void tidy(t("moreForms", { n: add.nodes.length }), { nodes: [...updated, ...add.nodes], edges: [...edges, ...add.edges] });
+          void tidy(t("doExtractWords", cnt(add.nodes.length, locale)), { nodes: [...updated, ...add.nodes], edges: [...edges, ...add.edges] });
           return;
         }
         if (node.data.kind === "word" && node.data.rootKey && node.data.form) {
@@ -236,39 +244,45 @@ function CanvasInner({
                     }
                   : n,
               );
-              void tidy(t("showVerses", { n: newNodes.length }), { nodes: [...updated, ...newNodes], edges: [...edges, ...newEdges] });
+              void tidy(t("doExtractVerses", cnt(newNodes.length, locale)), { nodes: [...updated, ...newNodes], edges: [...edges, ...newEdges] });
             });
         }
       },
     }),
-    [editable, nodes, edges, payload, commit, tidy, t],
+    [editable, nodes, edges, payload, commit, tidy, t, locale],
   );
 
-  const onNodesChange = useCallback(
-    (changes: NodeChange<GraphNode>[]) => {
-      if (changes.some((c) => c.type === "remove")) {
-        if (!editable) return;
-        commit(t("deleteSelection"), applyNodeChanges(changes, nodes), edges);
-        return;
-      }
-      setNodes((ns) => applyNodeChanges(changes, ns));
+  // A deletion is one step: xyflow removes the wires and then the cards in two changes, which would each commit
+  // from the same render and the last would bring the wires back (F2). Both are left to onDelete, which has them all.
+  const onNodesChange = useCallback((changes: NodeChange<GraphNode>[]) => {
+    const kept = changes.filter((c) => c.type !== "remove");
+    if (kept.length) setNodes((ns) => applyNodeChanges(kept, ns));
+  }, []);
+  const onEdgesChange = useCallback((changes: EdgeChange<GraphEdge>[]) => {
+    const kept = changes.filter((c) => c.type !== "remove");
+    if (kept.length) setEdges((es) => applyEdgeChanges(kept, es));
+  }, []);
+  const onDelete = useCallback(
+    ({ nodes: gone, edges: cut }: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
+      if (!editable) return;
+      const ids = new Set(gone.map((n) => n.id));
+      const eids = new Set(cut.map((e) => e.id));
+      const label = gone.length ? t("doDelete", cnt(gone.length, locale)) : t("doUnlink", cnt(cut.length, locale));
+      commit(
+        label,
+        nodes.filter((n) => !ids.has(n.id)),
+        edges.filter((e) => !eids.has(e.id) && !ids.has(e.source) && !ids.has(e.target)),
+      );
     },
-    [editable, commit, nodes, edges, t],
-  );
-  const onEdgesChange = useCallback(
-    (changes: EdgeChange<GraphEdge>[]) => {
-      if (changes.some((c) => c.type === "remove")) {
-        if (!editable) return;
-        commit(t("deleteSelection"), nodes, applyEdgeChanges(changes, edges));
-        return;
-      }
-      setEdges((es) => applyEdgeChanges(changes, es));
-    },
-    [editable, commit, nodes, edges, t],
+    [editable, commit, nodes, edges, t, locale],
   );
   const onConnect = useCallback(
-    (c: Connection) => editable && commit(t("connectHint"), nodes, addEdge({ ...c, id: edgeId(c.source, c.target) }, edges)),
-    [editable, commit, nodes, edges, t],
+    (c: Connection) => {
+      if (!editable || c.source === c.target) return;
+      const name = (id: string) => cardName(nodes.find((n) => n.id === id), t, locale);
+      commit(t("doLink", { a: name(c.source), b: name(c.target) }), nodes, addEdge({ ...c, id: edgeId(c.source, c.target) }, edges));
+    },
+    [editable, commit, nodes, edges, t, locale],
   );
 
   // Drag end is one undoable step.
@@ -358,13 +372,15 @@ function CanvasInner({
               className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-card px-2 text-[14px] outline-none focus:border-ring"
               defaultValue={selectedEdge.data?.label ?? ""}
               key={selectedEdge.id}
-              onBlur={(e) =>
+              onBlur={(e) => {
+                const label = e.target.value.trim();
+                if (label === (selectedEdge.data?.label ?? "")) return;
                 commit(
-                  t("edgeLabel"),
+                  t("doLabelLink"),
                   nodes,
-                  edges.map((x) => (x.id === selectedEdge.id ? { ...x, data: { label: e.target.value }, label: e.target.value || undefined } : x)),
-                )
-              }
+                  edges.map((x) => (x.id === selectedEdge.id ? { ...x, data: label ? { label } : undefined, label: label || undefined } : x)),
+                );
+              }}
             />
           </div>
         )}
@@ -376,14 +392,20 @@ function CanvasInner({
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
+            onDelete={onDelete}
             onNodeDragStart={() => (dragStart.current = nodes)}
-            onNodeDragStop={() => {
-              if (dragStart.current) {
-                const before = dragStart.current;
-                dragStart.current = null;
-                setPast((p) => [...p.slice(-80), { label: "↔", nodes: before, edges }]);
-                setFuture([]);
-              }
+            onNodeDragStop={(_, __, dragged) => {
+              const before = dragStart.current;
+              dragStart.current = null;
+              if (!before) return;
+              const was = new Map(before.map((n) => [n.id, n.position]));
+              const moved = dragged.filter((n) => {
+                const p = was.get(n.id);
+                return p && (Math.round(p.x) !== Math.round(n.position.x) || Math.round(p.y) !== Math.round(n.position.y));
+              });
+              if (!moved.length) return;
+              setPast((p) => [...p.slice(-80), { label: t("doMove", cnt(moved.length, locale)), nodes: before, edges }]);
+              setFuture([]);
             }}
             nodesConnectable={editable}
             elementsSelectable

@@ -8,7 +8,7 @@ import { createGraph, encodeShare, GRAPHS_SYNCED_EVENT, loadGraph, newId, saveGr
 import type { GraphDoc, GraphEdge, GraphNode } from "@/lib/graph/types";
 import type { SearchResult, WordDetail } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, verseRef } from "@/lib/format";
 import { GraphCanvas } from "./GraphCanvas";
 
 type AddFn = (nodes: GraphNode[], edges: GraphEdge[], label: string) => void;
@@ -239,7 +239,7 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
         },
       ],
       [],
-      t("addWord"),
+      t("doAddWord", { word: w.text_imlaei }),
     );
   }
 
@@ -247,7 +247,7 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
     onAdd(
       [{ id: `verse:${key}`, type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", ar: key, verse: { key } } }],
       [],
-      t("addVerse"),
+      t("doAddVerse", { ref: verseRef(key, locale) }),
     );
   }
 
@@ -266,7 +266,7 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
           type="button"
           className="btn mt-2 w-full"
           onClick={() =>
-            onAdd([{ id: `note:${newId()}`, type: "card", position: { x: 0, y: 0 }, data: { kind: "note", text: "" } }], [], t("addNote"))
+            onAdd([{ id: `note:${newId()}`, type: "card", position: { x: 0, y: 0 }, data: { kind: "note", text: "" } }], [], t("doAddNote"))
           }
         >
           <span className="dot" style={{ background: "var(--c-desc)" }} />
@@ -285,7 +285,7 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
                 onAdd(
                   [{ id: `root:${r.key}`, type: "card", position: { x: 0, y: 0 }, data: { kind: "root", ar: r.spaced, sub: r.translit, count: r.occurrences, rootKey: r.key } }],
                   [],
-                  t("addRoot"),
+                  t("doAddRoot", { root: locale === "ar" ? r.spaced : r.translit }),
                 )
               }
             >

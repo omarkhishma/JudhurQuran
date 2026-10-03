@@ -179,3 +179,56 @@ test("a map changed elsewhere is never written over: opened afresh when nothing 
   await expect(page.getByRole("alert").filter({ hasText: "حُذفت هذه الخريطة" })).toBeVisible({ timeout: 10_000 });
   expect(await storedGraph(page, copy)).toBeUndefined();
 });
+
+test("deleting a card takes its wires in one step that undo brings back whole, and every step is named (F2, F9)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the Delete key and the mouse are the desktop's");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  // the minimap sits over whichever card the layout puts beneath it; it is not what this test is about
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  const before = (await storedGraph(page, id))!;
+  const lemma = before.nodes.find((n) => n.data.kind === "lemma" && n.data.focus)!;
+  const wires = before.edges.filter((e) => e.source === lemma.id || e.target === lemma.id);
+  expect(wires.length, "the lemma card has wires").toBeGreaterThan(1);
+  const undo = page.getByRole("button", { name: "تراجع", exact: true });
+
+  await page.locator(`.react-flow__node[data-id="${lemma.id}"]`).click({ position: { x: 40, y: 14 } });
+  await page.keyboard.press("Delete");
+  await expect(page.locator(`.react-flow__node[data-id="${lemma.id}"]`)).toHaveCount(0);
+  await expect(undo).toHaveAttribute("title", "تراجع: حذف بطاقة");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.some((n) => n.id === lemma.id), { timeout: 10_000 }).toBe(false);
+  const deleted = (await storedGraph(page, id))!;
+  expect(deleted.edges.filter((e) => e.source === lemma.id || e.target === lemma.id), "no wire is left to a deleted card").toEqual([]);
+  expect(deleted.edges).toHaveLength(before.edges.length - wires.length);
+
+  // one undo brings the card and every wire back
+  await page.keyboard.press("Control+z");
+  await expect(page.locator(`.react-flow__node[data-id="${lemma.id}"]`)).toHaveCount(1);
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.length, { timeout: 10_000 }).toBe(before.edges.length);
+  await expect(undo).toBeDisabled();
+
+  // folding is saved and is not an undo step (the cards of the first view: the word read and its verse)
+  const verse = before.nodes.find((n) => n.id === "verse:1:2:4")!;
+  const word = before.nodes.find((n) => n.data.kind === "word" && n.data.focus)!;
+  await page.locator(`.react-flow__node[data-id="${verse.id}"]`).getByRole("button", { name: "طيّ البطاقة" }).click();
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === verse.id)?.data.folded, { timeout: 10_000 }).toBe(true);
+  await expect(undo).toBeDisabled();
+
+  // a link and a move are named by what they did
+  const card = page.locator(`.react-flow__node[data-id="${word.id}"]`);
+  // hover() waits until each handle is still and nothing covers it
+  await page.locator(`.react-flow__node[data-id="${verse.id}"] .react-flow__handle-left`).hover();
+  await page.mouse.down();
+  await card.locator(".react-flow__handle-right").hover();
+  await page.mouse.up();
+  await expect(undo).toHaveAttribute("title", `تراجع: ربط ١:٢ ← ${word.data.form}`);
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.some((e) => e.source === verse.id && e.target === word.id), { timeout: 10_000 }).toBe(true);
+  const box = (await card.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + 14);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 40, box.y + 60, { steps: 6 });
+  await page.mouse.up();
+  await expect(undo).toHaveAttribute("title", "تراجع: نقل بطاقة");
+});
