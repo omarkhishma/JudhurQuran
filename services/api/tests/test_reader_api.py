@@ -120,3 +120,13 @@ def test_search_understands_juz_hizb_and_page_numbers() -> None:
     # out of range is not a division; «ص 50» stays sūrat Ṣād, verse 50
     assert get("/api/v1/search", q="juz 31", limit=2)["detected"]["kind"] != "juz"
     assert get("/api/v1/search", q="ص 50", limit=2)["results"]["verses"][0]["key"] == "38:50"
+
+
+def test_surah_lines_match_the_surah_payload() -> None:
+    d = get("/api/v1/surahs/1")
+    imlaei = get("/api/v1/surahs/1/lines", kind="imlaei")["data"]
+    translit = get("/api/v1/surahs/1/lines", kind="translit")["data"]
+    for v in d["verses"]:
+        assert imlaei[str(v["ayah"])] == v["text_imlaei"]
+        assert translit[str(v["ayah"])] == " ".join(w["translit"] or "" for w in v["words"])
+    assert client.get("/api/v1/surahs/1/lines", params={"kind": "other"}).status_code == 422

@@ -882,3 +882,26 @@ def surah_lemma_sets(conn: Connection) -> dict[str, list[str]]:
     ):
         out[str(r["surah"])] = r["slugs"]
     return out
+
+
+def surah_lines(conn: Connection, number: int, kind: str) -> dict[str, str]:
+    """One optional reading line per verse, fetched only when the reader turns it on: the verse in
+    standard spelling (imlāʾī, D7) or its word-by-word transliteration (the corpus's, joined)."""
+    if kind == "imlaei":
+        return {
+            str(r["ayah"]): r["text_imlaei"]
+            for r in rows(
+                conn,
+                "select ayah, text_imlaei from content.verses where surah = :s order by ayah",
+                {"s": number},
+            )
+        }
+    return {
+        str(r["ayah"]): r["line"]
+        for r in rows(
+            conn,
+            """select ayah, string_agg(coalesce(translit, ''), ' ' order by position) as line
+               from content.words where surah = :s group by ayah order by ayah""",
+            {"s": number},
+        )
+    }

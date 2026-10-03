@@ -143,6 +143,21 @@ def surah(
         return cached(request, payload)
 
 
+@router.get(
+    "/surahs/{number}/lines",
+    summary="One optional reading line per verse: standard spelling or transliteration",
+)
+def surah_lines(
+    request: Request, number: int, kind: str = Query(..., pattern="^(imlaei|translit)$")
+) -> Response:
+    if not 1 <= number <= 114:
+        raise not_found("surah")
+    with connect() as conn:
+        return cached(
+            request, {"surah": number, "kind": kind, "data": content.surah_lines(conn, number, kind)}
+        )
+
+
 @router.get("/surahs/{number}/roots", summary="Every root used in a sūra with its count there")
 def surah_roots(request: Request, number: int) -> Response:
     if not 1 <= number <= 114:
