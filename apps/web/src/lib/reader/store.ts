@@ -26,7 +26,7 @@ export type CiteTarget =
       page: string | null;
     };
 /** What a reader may propose (RDR-567): a sense, a gloss or a morphology tag — never the Quranic text. */
-export type SuggestKind = "edit" | "sense" | "error" | "gloss" | "morphology";
+export type SuggestKind = "edit" | "sense" | "error" | "gloss" | "morphology" | "attest" | "entry";
 /** A morphology field open to correction: its label's message key and the value shown now. */
 export type MorphKey = "gRoot" | "gLemma" | "gPos" | "gForm" | "gAspect" | "gVoice" | "gDerivation" | "gPgn" | "gCase" | "gMood" | "gGroup";
 export type SuggestField = { key: MorphKey; value: string };
@@ -281,7 +281,8 @@ export type Proposal = {
   current: string;
   text: string;
   why: string;
-  sources: string[];
+  /** a lexicon's id, or a structured source: a lexicon with its entry or page, a verse, a grammar (RVQ-Q05) */
+  sources: (string | { work: string; ref: string })[];
   status: "pending";
   ts: number;
 };

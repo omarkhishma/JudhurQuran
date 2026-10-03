@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
+import { ProposalForm, useProposalHeading } from "@/components/contrib/ProposalForm";
 import { Dialog } from "@/components/ui/Dialog";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -11,7 +12,7 @@ import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { getJSON, useWord } from "@/lib/reader/api";
 import { tokenText } from "@/lib/reader/verseText";
 import { useIsClient } from "@/lib/client";
-import { type CiteTarget, type MorphKey, usePersonal, usePrefs, useReader, type SuggestTarget } from "@/lib/reader/store";
+import { type CiteTarget, usePersonal, usePrefs, useReader } from "@/lib/reader/store";
 import { ReviewDeck } from "./ReviewDeck";
 import { SITE } from "@/lib/site";
 import { useDebounced } from "@/lib/useDebounced";
@@ -339,91 +340,18 @@ function CiteBody({ opened, chapter }: { opened: CiteTarget; chapter: ChapterInf
 
 /**
  * Suggest an edit / propose a sense / a gloss / a morphology correction / report an error (design 03 §3.7,
- * RDR-311…325, 567): wording and a required rationale (P2.0); sources optional but offered. Saved locally
- * until accounts exist (P6), then submitted to the review queue (P7) — the dialog says so plainly. No form
- * reaches the Quranic text: it is the KFGQPC text as published (L1).
+ * RDR-311…325, 567; P7): the shared proposal form — to the review queue when signed in, kept here and sign-in
+ * asked for after the writing when not. No form reaches the Quranic text (L1).
  */
 function SuggestDialog() {
+  const heading = useProposalHeading();
   const target = useReader((s) => s.suggest);
+  const setSuggest = useReader((s) => s.setSuggest);
   if (!target) return null;
   // a fresh form per target: the wording starts from the current text, the rationale empty
-  return <SuggestForm key={`${target.kind}:${target.slug}:${target.ordinal ?? ""}:${target.at ?? ""}`} target={target} />;
-}
-
-const SUGGEST_TITLE = { sense: "proposeTitle", error: "errorTitle", gloss: "glossTitle", morphology: "morphTitle" } as const;
-
-function SuggestForm({ target }: { target: SuggestTarget }) {
-  const t = useTranslations("rd");
-  const locale = useLocale();
-  const setSuggest = useReader((s) => s.setSuggest);
-  const showToast = useReader((s) => s.showToast);
-  const addProposal = usePersonal((s) => s.addProposal);
-  const morph = target.kind === "morphology";
-  const fields = target.fields ?? [];
-  const [field, setField] = useState<MorphKey | "">(fields[0]?.key ?? "");
-  const startsFromCurrent = target.kind === "edit" || target.kind === "gloss";
-  const [text, setText] = useState(startsFromCurrent ? target.current : "");
-  const [why, setWhy] = useState("");
-  const [sources, setSources] = useState<string[]>([]);
-  const dicts = useQuery({ queryKey: ["dictionaries"], queryFn: () => getJSON<{ data: { key: string; name_ar: string; name_en: string }[] }>("/dictionaries"), staleTime: Infinity, enabled: !morph });
-  const current = morph ? (fields.find((f) => f.key === field)?.value ?? "") : target.current;
-  const valid = text.trim().length > 0 && why.trim().length > 0 && (!startsFromCurrent && !morph ? true : text.trim() !== current.trim()) && (!morph || !!field);
-  const heading = target.kind === "edit" ? t("suggestTitle", { n: String(target.ordinal ?? 0).padStart(2, "0") }) : t(SUGGEST_TITLE[target.kind]);
   return (
-    <Dialog open onClose={() => setSuggest(null)} label={heading} width={460}>
-      <form
-        className="flex flex-col gap-3 p-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!valid) return;
-          addProposal({ kind: target.kind, slug: target.slug, label: target.label, ordinal: target.ordinal ?? null, at: target.at ?? null, field: morph && field ? field : null, current, text: text.trim(), why: why.trim(), sources });
-          setSuggest(null);
-          showToast(t("proposalSaved"));
-        }}
-      >
-        <h2 className="text-[15px] font-semibold">{heading}</h2>
-        {target.at && <p className="text-[12px] text-t3">{t("suggestAt", { word: target.label, ref: target.at })}</p>}
-        {morph && (
-          <label className="conc-select">
-            <span>{t("morphField")}</span>
-            <select value={field} onChange={(e) => setField(e.target.value as MorphKey)} data-autofocus>
-              {fields.map((f) => (
-                <option key={f.key} value={f.key}>{t(f.key)}</option>
-              ))}
-            </select>
-          </label>
-        )}
-        {current && (
-          <div>
-            <p className="label-caps">{t("current")}</p>
-            <p className="mt-1 rounded-md bg-card-2 px-3 py-2 text-[13.5px]" dir="auto">{current}</p>
-          </div>
-        )}
-        <label className="flex flex-col gap-1">
-          <span className="label-caps">{morph ? t("morphProposed") : t("yourWording")}</span>
-          <textarea data-autofocus={morph ? undefined : true} value={text} onChange={(e) => setText(e.target.value)} rows={morph ? 2 : 3} className="field" dir="auto" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="label-caps">{t("whySource")} <span className="text-bad">*</span></span>
-          <input value={why} onChange={(e) => setWhy(e.target.value)} placeholder={morph ? t("morphWhyPlaceholder") : t("whyPlaceholder")} className="field" dir="auto" required />
-        </label>
-        {!morph && (
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("sources")}>
-            {(dicts.data?.data ?? []).map((d) => (
-              <button key={d.key} type="button" className={"chip" + (sources.includes(d.key) ? " is-on" : "")} aria-pressed={sources.includes(d.key)} onClick={() => setSources((s) => (s.includes(d.key) ? s.filter((x) => x !== d.key) : [...s, d.key]))}>
-                {locale === "ar" ? d.name_ar : d.name_en}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="flex gap-2">
-          <button type="button" className="btn flex-1" onClick={() => setSuggest(null)}>{t("cancel")}</button>
-          <button type="submit" className={"btn flex-[2] " + (valid ? "btn-primary" : "")} disabled={!valid}>{t("submitForReview")}</button>
-        </div>
-        <p className="text-[11.5px] leading-relaxed text-t3">
-          {[t("suggestFootnote"), morph ? t("morphFootnote") : null, t("quranTextClosed")].filter(Boolean).join(" ")}
-        </p>
-      </form>
+    <Dialog open onClose={() => setSuggest(null)} label={heading(target.kind, target.ordinal)} width={480}>
+      <ProposalForm key={`${target.kind}:${target.slug}:${target.ordinal ?? ""}:${target.at ?? ""}`} target={target} onClose={() => setSuggest(null)} />
     </Dialog>
   );
 }

@@ -12,6 +12,7 @@ import { useNotebook } from "@/lib/store/notebook";
 import { useReview } from "@/lib/store/review";
 import { useSaved } from "@/lib/store/saved";
 import { WATCHED } from "@/lib/sync/adapters";
+import { sendDrafts } from "@/lib/contrib";
 import { isApplying, queueLookup, runSync } from "@/lib/sync/run";
 
 /** Each persisted store by its key, so a write in another tab is read here too (no tab overwrites another's). */
@@ -73,7 +74,16 @@ export function SyncRunner() {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => void go(), ms);
     };
-    void go();
+    // proposals written while signed out go to the review queue (RVQ-Q02: the writing is never lost to sign-in) —
+    // after the first sync, so a draft another device already sent has arrived here as sent
+    void go()
+      .then(() => sendDrafts())
+      .then((r) => {
+        if (r.sent) {
+          void qc.invalidateQueries({ queryKey: ["my-proposals"] });
+          void qc.invalidateQueries({ queryKey: ["queue"] });
+        }
+      });
     const unsubs = WATCHED.map(({ store, pick }) =>
       store.subscribe((s, prev) => {
         if (isApplying()) return;
