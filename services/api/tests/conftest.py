@@ -12,6 +12,10 @@ from jadhr_api.settings import get_settings
 
 HERE = Path(__file__).resolve().parent
 
+# Every test speaks from one address, so the per-address limit would count the whole suite as one visitor; the
+# limiter's own test sets its limit (test_api.py, test_internal_token_exempts_server_renders_from_the_rate_limit).
+get_settings().rate_limit_per_minute = 1_000_000
+
 
 def _database_ready() -> bool:
     dsn = get_settings().database_url.replace("postgresql+psycopg://", "postgresql://")
