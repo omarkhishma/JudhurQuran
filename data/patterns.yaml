@@ -1,0 +1,292 @@
+# Pattern catalog registry (PLAN P3.3) — what each morphological pattern (wazn) does, from named classical
+# sarf works, verbatim, with locators. Module: pipeline/src/jadhr_pipeline/patterns_catalog/.
+#
+# Every row the pipeline emits is status `extracted`: a mechanical reading of the named work, never a
+# reviewed function text (L2: no generated religious or linguistic content). Mapping a mention to our
+# pattern slugs is mechanical and stores its method and confidence (patterns_catalog/mapping.py): the
+# written letters within the chapter's word class; a vowel rule or class rule the chapter states, quoted
+# below; the book's own example words read by two vowel oracles — the Quran (words.jsonl stems → their
+# lemmas' patterns) and Lane's Lexicon (lexicon_entries.jsonl, used only to read vowels, never shown).
+# What stays uncertain is left unmapped with its candidates. Editors review in the workbench (P3.0) and
+# expert review follows (D15).
+#
+# Files are OpenITI release 2025.1.9 (tag v2025.1.9, commit below), fetched raw at that commit into
+# data/raw/openiti-patterns/ (SHA256SUMS.txt and SOURCE.txt there). Paths are relative to data/raw/.
+# Each file is sha256-pinned; the pipeline refuses to build from a file that differs.
+#
+# Licence: OpenITI publishes the corpus under CC BY-NC-SA 4.0 (decision D18: non-commercial display with
+# attribution is approved for launch; anything redistributed from these rows stays CC BY-NC-SA 4.0). The
+# authors are public domain (Ibn al-Ḥājib d. 646 AH, al-Raḍī d. 686 AH); the three files are OpenITI
+# "cleaned" versions from which the editions' paratext (introductions, footnotes, indices) was removed; the
+# extra cleaning rules below drop the footnote numbers and verse numbers the editors left in the text.
+
+openiti:
+  release: "2025.1.9"
+  tag: v2025.1.9
+  commit: cfc4157a3cf2054c0888f133970a4eaa3e22e58c
+  repository: https://github.com/OpenITI/RELEASE
+  zenodo: https://zenodo.org/records/17767721
+  doi: 10.5281/zenodo.17767721
+  licence: CC BY-NC-SA 4.0
+  licence_url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  # Verbatim, OpenITI documentation (github.com/OpenITI/documentation, index.md, "How can I use OpenITI?
+  # What license is used?"), read 2026-10-03 (byte-identical to the copy read for data/relations.yaml);
+  # Zenodo record 17767721 carries license id cc-by-nc-sa-4.0.
+  licence_clause: >-
+    OpenITI is published under the CC BY-NC-SA 4.0 license. You can use the corpus and publish or share
+    your works based on it according to the license. Please, do cite the files or the corpus if you use
+    them.
+  corpus_citation: >-
+    Nigst, Lorenz; Romanov, Maxim; Savant, Sarah Bowen; Seydi, Masoumeh; Verkinderen, Peter (2025).
+    OpenITI: a Machine-Readable Corpus of Islamicate Texts. Version 2025.1.9. Zenodo.
+    https://doi.org/10.5281/zenodo.17767721
+  catalogue:
+    file: openiti-relations/metadata/OpenITI_metadata_2025-1-9.tsv
+    sha256: 10a025fc1bf96d218096f0dfe1d9416f9ff277f092c42622cb012cc4da2a61
+
+# Works looked for and not used. Nothing was substituted from an unlicensed source.
+searched:
+  - work_ar: شذا العرف في فن الصرف
+    work_en: Shadhā al-ʿArf fī Fann al-Ṣarf
+    author_ar: أحمد بن محمد الحملاوي
+    author_en: Aḥmad b. Muḥammad al-Ḥamlāwī
+    death_hijri: 1351
+    death_ce: 1932
+    result: not in OpenITI
+    looked_in:
+      - "OpenITI 2025.1.9 release metadata (openiti-relations/metadata/OpenITI_metadata_2025-1-9.tsv, 14,107 version rows): title, author and URI fields searched for شذا، حملاوي، الحملاوي، Hamlawi، Hamalawi، Shadha; every version dated 1350–1352 listed by hand — none is this work."
+      - "OpenITI working repository for 1351–1375 AH (https://api.github.com/repos/OpenITI/1375AH/contents/data, 144 author folders, saved as openiti-patterns/_evidence/github-api-OpenITI-1375AH-contents-data.json): no al-Ḥamlāwī folder among the 1351 authors (AhmadShawqi, HasanQasim, IbnHusaynGhazzi, MuhammadMudacis, SalatinBasha, YusufIlyanSarkis)."
+    decision: "Not substituted. The author died 1351 AH (public domain under life+70 and life+50); a licensed digital text or our own OCR of a public-domain printing would let it join this registry (owner's call, D9)."
+  - work_ar: الشافية في علم التصريف — شرح الرضي
+    work_en: Ibn al-Ḥājib, al-Shāfiya, with al-Raḍī al-Astarābādī's commentary
+    result: used (sources shafiya and radi-shafiya below)
+    looked_in:
+      - "Release metadata: three versions of al-Shāfiya (JK001223 primary and cleaned; Sham19Y0122235, ed. al-Shāʿir 2010; Shamela0022391, the same al-ʿUthmān edition bound with al-Nīsārī's versification) and two of al-Raḍī's sharḥ (Shia003932Vols primary and cleaned; Shamela0021567, same edition, not cleaned). The primary cleaned versions are used."
+      - "Also present and not used: Rukn al-Dīn al-Astarābādī's sharḥ (d. 715, a doctoral edition), Ibn ʿUṣfūr's al-Mumtiʿ, Ibn Jinnī's al-Munṣif, Ibn Mālik's Ījāz al-Taʿrīf — candidates for a later pass."
+
+# Rules applied to the raw files before parsing. The first eleven are relations/openiti.py's, unchanged (their
+# ids and wording in data/relations.yaml); the last four (patterns_catalog/text.py) run only on the sources
+# that list them in `extra_cleaning`. Every row's text is a slice of the cleaned file; the tests re-run the
+# cleaning and check it.
+cleaning_rules:
+  - id: header-dropped
+  - id: annotator-lines-dropped
+  - id: auto-heading-inline
+  - id: paragraphs
+  - id: page-marks
+  - id: milestones
+  - id: line-marks
+  - id: quote-markup
+  - id: stray-marks
+  - id: folio-marks
+  - id: whitespace
+  - id: auto-headings
+    description: "al-Kāfiya's typing marks the editor's section titles «### | AUTO [المصدر]», each followed by a line holding only «# :». They are headings, not inline words: the line becomes «### | [المصدر]» (the brackets, which mark the title as the editor's, are kept) and the lone colon line is dropped."
+  - id: footnote-refs
+    description: "The editors' footnote numbers left in the running text after OpenITI removed the footnotes: «(1)», «(¬1)»."
+  - id: shahid-numbers
+    description: "The editors' running numbers before quoted verses in al-Raḍī's edition («قال الفرزدق: - 13 - ما زلت …»)."
+  - id: hemistich-marks
+    description: "OpenITI's «%» hemistich separator in quoted verse."
+
+sources:
+  - id: shafiya
+    role: matn
+    parser: matn
+    sort_order: 1
+    title_ar: الشافية في علم التصريف
+    title_en: al-Shāfiya fī ʿIlm al-Taṣrīf
+    author_ar: ابن الحاجب، جمال الدين أبو عمرو عثمان بن عمر
+    author_en: Ibn al-Ḥājib, Jamāl al-Dīn Abū ʿAmr ʿUthmān b. ʿUmar
+    death_hijri: 646
+    death_ce: 1249
+    edition_ar: تحقيق حسن أحمد العثمان، المكتبة المكية، مكة المكرمة، الطبعة الأولى 1415هـ / 1995م
+    edition_en: "ed. Ḥasan Aḥmad al-ʿUthmān (Mecca: al-Maktaba al-Makkiyya, 1st ed., 1415/1995)"
+    openiti_uri: 0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1
+    openiti_status: OpenITI primary version (PRIMARY_VERSION, CLEANED_VERSION — "All paratextual elements (introductions, footnotes, indices, ...) removed")
+    page_numbering: unverified  # the edition card does not say the page markers follow the print
+    headings: "The chapter titles («# | الماضي» …) are not the matn's: OpenITI's other edition (al-Shāʿir 2010) prints the same titles in square brackets as editorial additions. They are kept as the rows' heading and section locator only."
+    file: openiti-patterns/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1
+    sha256: 1709d24a23a2c1a435fb4ce4cb9289abccce14ba908aae6eaab4ede37cb3f1bc
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif/0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1
+    extra_cleaning: [hemistich-marks]
+    sections:
+      - heading: الماضي
+        id: verb-forms
+        class: V
+        mode: verb-statements
+      - heading: بناء الفعل الرباعي
+        id: verb-forms-quadriliteral
+        class: V
+      - heading: الصفة المشبهة
+        id: sifa-mushabbaha
+        class: N
+      - heading: المصدر
+        id: masdar
+        class: N
+        class_rules:
+          - quote: و المزيد فيه و الرباعي قياس
+            tag: VN
+      - heading: المصدر الميمي
+        id: masdar-mimi
+        class: N
+        class_rules:
+          - quote: و من غيره جاء على زنة المفعول
+            tag: PASS_PCPL
+      - heading: اسم المرة
+        id: marra
+        class: N
+      - heading: أسماء الزمان و المكان
+        id: time-place
+        class: N
+        class_rules:
+          - quote: و ما عداه فعلى لفظ المفعول
+            tag: PASS_PCPL
+      - heading: اسم الالة
+        id: instrument
+        class: N
+      - heading: التصغير
+        id: diminutive
+        class: N
+        paragraphs: [1, 2]  # the definition and the patterns; the rest are the rules of forming it
+        vowel_rule:
+          quote: يضم أوله و يفتح ثانية و بعدهما ياء ساكنة
+          vowels: {0: damma, 1: fatha}
+      - heading: النسب
+        id: nisba
+        class: N
+        paragraphs: [1]  # the definition; the rest are the rules of forming it
+        suffix_class: nisba  # the endings -iyy, -iyya (patterns_catalog/mapping.py SUFFIX_CLASSES)
+    not_extracted:
+      - heading: المضارع
+        reason: the imperfect's vowel by paradigm — form, not function
+      - heading: الجمع
+        reason: "singular → plural formation by example (نحو فلس على أفلس و فلوس …), forty-odd statements; a plural catalog of its own (owner's call). The function of the plural patterns (قلة / كثرة) comes from al-Kāfiya."
+      - heading: أحوال الأبنية
+        reason: the list of the book's topics
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: ابن الحاجب (ت 646هـ)، الشافية في علم التصريف، تحقيق حسن أحمد العثمان (مكة المكرمة: المكتبة المكية، ط1، 1415هـ/1995م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1، برخصة CC BY-NC-SA 4.0. عناوين الأبواب من المحقق."
+    attribution_en: "Source: Ibn al-Ḥājib (d. 646 AH), al-Shāfiya fī ʿIlm al-Taṣrīf, ed. Ḥasan Aḥmad al-ʿUthmān (Mecca: al-Maktaba al-Makkiyya, 1415/1995). Digital text: OpenITI release 2025.1.9, file 0646IbnCumarIbnHajibKurdi.ShafiyaFiCilmTasrif.JK001223-ara1, CC BY-NC-SA 4.0. Chapter titles are the editor's."
+
+  - id: kafiya
+    role: matn
+    parser: matn
+    sort_order: 2
+    title_ar: الكافية في علم النحو
+    title_en: al-Kāfiya fī ʿIlm al-Naḥw
+    author_ar: ابن الحاجب، جمال الدين أبو عمرو عثمان بن عمر
+    author_en: Ibn al-Ḥājib, Jamāl al-Dīn Abū ʿAmr ʿUthmān b. ʿUmar
+    death_hijri: 646
+    death_ce: 1249
+    edition_ar: تحقيق الدكتور صالح عبد العظيم الشاعر، مكتبة الآداب، القاهرة، الطبعة الأولى 2010م
+    edition_en: "ed. Ṣāliḥ ʿAbd al-ʿAẓīm al-Shāʿir (Cairo: Maktabat al-Ādāb, 1st ed., 2010)"
+    openiti_uri: 0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1
+    openiti_status: OpenITI primary version (PRIMARY_VERSION, CLEANED_VERSION); page numbering follows the print («ترقيم الكتاب موافق للمطبوع»)
+    page_numbering: matches-print
+    headings: "The bracketed chapter titles («[اسم الفاعل]») are the editor's."
+    # Why this book: al-Shāfiya does not treat the participles and the elative — «و الأمر واسم الفاعل واسم
+    # المفعول وأفعل التفضيل تقدمت» — because its author had treated them in his «مقدمة في الإعراب», which he
+    # names in al-Shāfiya's preface («أن ألحق بمقدمتي في الإعراب مقدمة في التصريف»): al-Kāfiya.
+    why: al-Shāfiya defers the participles and the elative to its author's al-Kāfiya («تقدمت»); the maṣdar's definition, the dual and the kinds of plural are taken from the same book.
+    file: openiti-patterns/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1
+    sha256: 3b290232951f98f0fdffcfb0ba718c89e86df6a6411e6182352142b6e4d251d1
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0646IbnCumarIbnHajibKurdi/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw/0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1
+    extra_cleaning: [auto-headings, footnote-refs]
+    ignore_phrases: [اشتق من فعل]  # «ما اشتق من فعل» — «فعل» is "a verb" here, not the pattern
+    sections:
+      - heading: "[المصدر]"
+        id: masdar
+        class: N
+        paragraphs: [1]  # the definition; the rest is its syntax (عمله)
+        class_rules:
+          - quote: ومن غيره قياس
+            tag: VN
+        first_is_definition: true
+      - heading: "[اسم الفاعل]"
+        id: active-participle
+        class: N
+        tag: ACT_PCPL
+        class_rules:
+          - quote: ومن غير الثلاثي على صيغة المضارع بميم مضمومة وكسر ما قبل الآخر
+            tag: ACT_PCPL
+        paragraphs: [1, 2, 6]  # definition, form, the intensive forms; the rest is its syntax
+        first_is_definition: true
+        overrides:
+          - contains: للمبالغة
+            id: intensive
+            tag: null
+      - heading: "[اسم المفعول]"
+        id: passive-participle
+        class: N
+        tag: PASS_PCPL
+        class_rules:
+          - quote: ومن غيره على صيغة اسم الفاعل بميم مضمومة وبفتح ما قبل الآخر
+            tag: PASS_PCPL
+        paragraphs: [1, 2]
+        first_is_definition: true
+      - heading: "[الصفة المشبهة]"
+        id: sifa-mushabbaha
+        class: N
+        paragraphs: [1, 2]
+        first_is_definition: true
+      - heading: "[اسم التفضيل]"
+        id: elative
+        class: N
+        paragraphs: [1, 2, 3]  # definition, condition of forming it, its sense (للفاعل / للمفعول)
+        first_is_definition: true
+      - heading: "[المثنى]"
+        id: dual
+        class: N
+        paragraphs: [1]
+        first_is_definition: true
+        suffix_class: dual  # the endings -ān, -ayn
+      - heading: "[جمع المذكر السالم]"
+        id: sound-plural-m
+        class: N
+        paragraphs: [1]
+        first_is_definition: true
+        suffix_class: sound-plural-m  # the endings -ūn, -īn
+      - heading: "[جمع المؤنث السالم]"
+        id: sound-plural-f
+        class: N
+        paragraphs: [1]
+        first_is_definition: true
+        suffix_class: sound-plural-f  # the ending -āt
+      - heading: "[جمع التكسير]"
+        id: broken-plural
+        class: N
+        paragraphs: [1, 2]
+        first_is_definition: true
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: ابن الحاجب (ت 646هـ)، الكافية في علم النحو، تحقيق الدكتور صالح عبد العظيم الشاعر (القاهرة: مكتبة الآداب، ط1، 2010م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1، برخصة CC BY-NC-SA 4.0. عناوين الأبواب بين معقوفين من المحقق."
+    attribution_en: "Source: Ibn al-Ḥājib (d. 646 AH), al-Kāfiya fī ʿIlm al-Naḥw, ed. Ṣāliḥ ʿAbd al-ʿAẓīm al-Shāʿir (Cairo: Maktabat al-Ādāb, 2010). Digital text: OpenITI release 2025.1.9, file 0646IbnCumarIbnHajibKurdi.KafiyaFiCilmNahw.Sham19Y0122234-ara1, CC BY-NC-SA 4.0. Bracketed chapter titles are the editor's."
+
+  - id: radi-shafiya
+    role: commentary
+    parser: radi
+    comments_on: shafiya
+    sort_order: 3
+    title_ar: شرح شافية ابن الحاجب
+    title_en: Sharḥ Shāfiyat Ibn al-Ḥājib
+    author_ar: رضي الدين محمد بن الحسن الأستراباذي
+    author_en: Raḍī al-Dīn Muḥammad b. al-Ḥasan al-Astarābādī
+    death_hijri: 686
+    death_ce: 1287
+    edition_ar: تحقيق محمد نور الحسن ومحمد الزفزاف ومحمد محيي الدين عبد الحميد، بيروت، 1395هـ / 1975م
+    edition_en: "ed. Muḥammad Nūr al-Ḥasan, Muḥammad al-Zafzāf and Muḥammad Muḥyī al-Dīn ʿAbd al-Ḥamīd (Beirut, 1395/1975)"
+    # The file's card names the editors and the year only; OpenITI's other version of the same edition
+    # (Shamela0021567) gives the publisher as Dār al-Kutub al-ʿIlmiyya, Beirut (a reprint of the Cairo
+    # Ḥijāzī printing). Volume 4 of this edition is al-Baghdādī's commentary on the verses; no row comes from it.
+    openiti_uri: 0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1
+    openiti_status: OpenITI primary version (PRIMARY_VERSION, CLEANED_VERSION — "All paratextual elements (introductions, footnotes, indices, ...) removed"); the editors' footnote numbers and verse numbers remain in the text and are removed by the extra cleaning rules
+    page_numbering: unverified  # pages follow shiaonlinelibrary.com's volumes; the card does not say they follow the print
+    file: openiti-patterns/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1
+    sha256: 7e5f9560f3818dba78dc8af8604c827837dcfb69f6e382425cd4f6047ba33d2c
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0686RadiDinAstarabadhi/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib/0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1
+    extra_cleaning: [footnote-refs, shahid-numbers, hemistich-marks]
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: رضي الدين الأستراباذي (ت 686هـ)، شرح شافية ابن الحاجب، تحقيق محمد نور الحسن ومحمد الزفزاف ومحمد محيي الدين عبد الحميد (بيروت، 1395هـ/1975م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Source: Raḍī al-Dīn al-Astarābādī (d. 686 AH), Sharḥ Shāfiyat Ibn al-Ḥājib, ed. Muḥammad Nūr al-Ḥasan, Muḥammad al-Zafzāf and Muḥammad Muḥyī al-Dīn ʿAbd al-Ḥamīd (Beirut, 1395/1975). Digital text: OpenITI release 2025.1.9, file 0686RadiDinAstarabadhi.SharhShafiyaIbnHajib.Shia003932Vols-ara1, CC BY-NC-SA 4.0."
