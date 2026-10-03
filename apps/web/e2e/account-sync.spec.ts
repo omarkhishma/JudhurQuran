@@ -27,6 +27,20 @@ async function device(browser: Browser, page: Page | null, seed: Record<string, 
   return p;
 }
 
+/** Documents kept in IndexedDB (maps, the reader's texts), written as the site writes them. */
+async function docs(page: Page, entries: Record<string, unknown>): Promise<void> {
+  await page.addInitScript((e) => {
+    if (sessionStorage.getItem("e2e-docs")) return;
+    sessionStorage.setItem("e2e-docs", "1");
+    const open = indexedDB.open("keyval-store");
+    open.onupgradeneeded = () => open.result.createObjectStore("keyval");
+    open.onsuccess = () => {
+      const tx = open.result.transaction("keyval", "readwrite");
+      for (const [k, v] of Object.entries(e)) tx.objectStore("keyval").put(v, k);
+    };
+  }, entries);
+}
+
 async function outbox(page: Page, email: string): Promise<string[]> {
   const r = await page.request.get(`/api/v1/auth/dev/outbox?email=${encodeURIComponent(email)}`);
   expect(r.ok(), "the API must run with the development mail outbox").toBeTruthy();
@@ -74,16 +88,27 @@ async function dropAccount(page: Page): Promise<void> {
   expect((await page.request.post("/api/v1/me/delete/confirm", { headers: h, data: { confirm } })).ok()).toBeTruthy();
 }
 
-test("what a device holds joins the account on sign-in, and a second device gets all of it — the journal stays (P6.2, P6.4, NTB-Q02)", async ({ browser, page }) => {
+test("what a device holds joins the account on sign-in, and a second device gets all of it — the journal only once turned on (P6.2, P6.4, NTB-Q02)", async ({ browser, page }) => {
   const email = address();
+  const T = 1759000000000;
   const a = await device(browser, page, {
-    saved: { state: { bookmarks: [{ kind: "lemma", key: "Eilom", label: "عِلْم", at: 1759000000000 }], notes: { "quran:2:255": { verse: "2:255", text: "آية الكرسي", at: 1759000000000 } }, history: [] }, version: 2 },
+    saved: { state: { bookmarks: [{ kind: "lemma", key: "Eilom", label: "عِلْم", at: T }], notes: { "quran:2:255": { verse: "2:255", text: "آية الكرسي", at: T } }, history: [] }, version: 2 },
     notebook: { state: { notes: [NOTE] }, version: 1 },
-    review: { state: { cards: { علم: { root: "علم", ease: 2.6, interval: 3, due: 1759300000000, reps: 2, lapses: 0, last: 1759000000000, grade: "good" } } }, version: 1 },
+    review: { state: { cards: { علم: { root: "علم", ease: 2.6, interval: 3, due: 1759300000000, reps: 2, lapses: 0, last: T, grade: "good" } } }, version: 1 },
     prefs: { state: { size: 1.2 }, version: 2 },
+    audio: { state: { reciter: "husary", follow: false, speed: 0.75, repeat: true }, version: 0 },
+    "analyse-choices": { state: { choices: { "علم|0": 1 } }, version: 1 },
     personal: { wordStates: { Eilom: "known" }, sessions: [{ day: "2026-10-01", text: "quran", words: ["Eilom"], roots: ["علم"], verses: ["2:255"], lookups: 4 }] },
   });
+  await docs(a, {
+    "jadhr-notebook": { state: { notes: [NOTE] }, version: 1 },
+    "jadhr-graphs-index": [{ id: "g1", title: "خريطة العلم", kind: "root", createdAt: T, updatedAt: T, nodeCount: 0 }],
+    "jadhr-graph:g1": { version: 1, id: "g1", title: "خريطة العلم", kind: "root", createdAt: T, updatedAt: T, nodes: [], edges: [] },
+    "jadhr-texts-index": [{ id: "t1", title: "نصّي", words: 2, lemmas: ["ilm"], review: 0, unknown: 0, createdAt: T, updatedAt: T }],
+    "jadhr-text:t1": { id: "t1", title: "نصّي", text: "العلم نور", passages: ["العلم نور"], words: 2, lemmas: ["ilm"], review: 0, unknown: 0, createdAt: T, updatedAt: T },
+  });
   await a.goto("/");
+  await a.reload(); // the documents seeded into IndexedDB are written by now
   // the sheet says what this device holds (HUB-30), and the link brings the reader back where they were
   await a.getByRole("banner").getByRole("button", { name: "دخول" }).click();
   await expect(a.getByRole("dialog").locator("h2")).toHaveText("على هذا الجهاز: محفوظ واحد وملاحظتان");
@@ -91,7 +116,7 @@ test("what a device holds joins the account on sign-in, and a second device gets
   await signIn(a, email, "sheet");
   await expect(a).toHaveURL(/\/$/);
 
-  const want = ["saved/b:lemma:Eilom", "saved/n:quran:2:255", "notebook/n:n1", "review/c:علم", "prefs/size", "personal/w:Eilom"];
+  const want = ["saved/b:lemma:Eilom", "saved/n:quran:2:255", "notebook/n:n1", "review/c:علم", "prefs/size", "audio/speed", "audio/reciter", "analyse/علم|0", "personal/w:Eilom", "graphs/g:g1", "texts/x:t1"];
   await expect.poll(async () => (await records(a)).map((r) => `${r.store}/${r.key}`)).toEqual(expect.arrayContaining(want));
   expect((await records(a)).filter((r) => r.store === "journal"), "the journal syncs only when turned on").toEqual([]);
 
@@ -105,6 +130,17 @@ test("what a device holds joins the account on sign-in, and a second device gets
   expect((await local(b, "jadhr-prefs")).size).toBe(1.2);
   expect((await local(b, "jadhr-personal")).wordStates).toEqual({ Eilom: "known" });
   expect((await local(b, "jadhr-personal")).sessions ?? []).toEqual([]);
+  expect((await local(b, "jadhr-audio")).speed).toBe(0.75);
+  expect((await local(b, "jadhr-analyse-choices")).choices).toEqual({ "علم|0": 1 });
+  // the maps and the reader's own texts, documents in IndexedDB
+  await expect.poll(async () => (await stored<{ title: string }>(b, "jadhr-graph:g1"))?.title ?? null).toBe("خريطة العلم");
+  expect((await stored<{ text: string }>(b, "jadhr-text:t1"))?.text).toBe("العلم نور");
+  // the journal once the reader turns it on: A's day reaches B as A's
+  await a.request.patch("/api/v1/me", { headers: await bearer(a), data: { settings: { sync_journal: true } } });
+  await a.reload();
+  await expect.poll(async () => (await records(a)).filter((r) => r.store === "journal").length).toBe(1);
+  await b.reload();
+  await expect.poll(async () => ((await local(b, "jadhr-personal")).sessions ?? []).map((x: { day: string; lookups: number; device?: string }) => [x.day, x.lookups, !!x.device])).toEqual([["2026-10-01", 4, true]]);
   // and the second device shows it where the reader looks
   await b.goto("/notebook");
   await expect(b.locator(".notebook-row").first()).toContainText("عن العلم");

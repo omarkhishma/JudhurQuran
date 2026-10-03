@@ -35,7 +35,8 @@ export async function stored<T = Record<string, unknown>>(page: Page, key: strin
           const db = open.result;
           if (!db.objectStoreNames.contains("keyval")) return resolve(ls ? JSON.parse(ls).state : null);
           const get = db.transaction("keyval", "readonly").objectStore("keyval").get(k);
-          get.onsuccess = () => resolve(get.result?.state ?? (ls ? JSON.parse(ls).state : null));
+          // a persisted store is { state, version }; a document (a map, a text) is itself
+          get.onsuccess = () => resolve(get.result ? (get.result.state !== undefined && "version" in get.result ? get.result.state : get.result) : ls ? JSON.parse(ls).state : null);
           get.onerror = () => resolve(null);
         };
       }),
