@@ -3,8 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "@/i18n/navigation";
-import { encodeShare, loadGraph, newId, saveGraph } from "@/lib/graph/persist";
+import { Link, useRouter } from "@/i18n/navigation";
+import { createGraph, encodeShare, GRAPHS_SYNCED_EVENT, loadGraph, newId, saveGraphOver, storedAt } from "@/lib/graph/persist";
 import type { GraphDoc, GraphEdge, GraphNode } from "@/lib/graph/types";
 import type { SearchResult, WordDetail } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
@@ -13,39 +13,139 @@ import { GraphCanvas } from "./GraphCanvas";
 
 type AddFn = (nodes: GraphNode[], edges: GraphEdge[], label: string) => void;
 
+/** What autosave compares: the map as the reader made it — not the sizes xyflow measures, nor what is selected. */
+const contentOf = (title: string, nodes: GraphNode[], edges: GraphEdge[]) =>
+  JSON.stringify([title, nodes.map((n) => [n.id, Math.round(n.position.x), Math.round(n.position.y), n.data]), edges.map((e) => [e.id, e.source, e.target, e.data?.label ?? ""])]);
+
 export function GraphEditor({ id }: { id: string }) {
   const t = useTranslations("graph");
-  const { data: doc, isLoading } = useQuery({ queryKey: ["graph", id], queryFn: () => loadGraph(id), staleTime: Infinity });
-  if (isLoading) return <p className="p-6 text-t3">…</p>;
-  if (!doc) return <p className="p-6 text-t2">{t("noGraphs")} <Link href="/graph" className="text-word underline">{t("editorTitle")}</Link></p>;
-  return <EditorInner doc={doc} />;
+  // read afresh on every opening — a copy kept from an earlier visit would be written back over newer work (F1)
+  const q = useQuery({ queryKey: ["graph", id], queryFn: async () => (await loadGraph(id)) ?? null, gcTime: 0, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false });
+  const [notice, setNotice] = useState<string | null>(null);
+  if (q.isPending) return <p className="p-6 text-t3">…</p>;
+  if (!q.data) return <p className="p-6 text-t2">{t("noGraphs")} <Link href="/graph" className="text-word underline">{t("editorTitle")}</Link></p>;
+  return (
+    <EditorInner
+      key={q.dataUpdatedAt}
+      doc={q.data}
+      notice={notice}
+      reload={async (quiet) => {
+        await q.refetch();
+        setNotice(quiet ? t("reloadedNewer") : null);
+      }}
+    />
+  );
 }
 
-function EditorInner({ doc }: { doc: GraphDoc }) {
+type Status = "saved" | "saving" | "unsaved" | "newer" | "gone";
+
+function EditorInner({ doc, notice, reload }: { doc: GraphDoc; notice: string | null; reload: (quiet: boolean) => Promise<void> }) {
   const t = useTranslations("graph");
+  const router = useRouter();
   const [title, setTitle] = useState(doc.title);
-  const [status, setStatus] = useState<"saved" | "saving" | "unsaved">("saved");
+  // the title as typed, read by a save scheduled before the next render
+  const titleRef = useRef(doc.title);
+  const [status, setStatus] = useState<Status>("saved");
   const latest = useRef<{ nodes: GraphNode[]; edges: GraphEdge[] }>({ nodes: doc.nodes, edges: doc.edges });
   const addRef = useRef<AddFn | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // the stored copy this editor opened or last wrote, and what it holds; a map waiting for its first layout is
+  // written once laid out
+  const base = useRef(doc.updatedAt);
+  const savedContent = useRef(doc.pendingLayout ? "" : contentOf(doc.title, doc.nodes, doc.edges));
+  const statusRef = useRef<Status>("saved");
   const [copied, setCopied] = useState(false);
+  // "the latest copy was opened", said until the reader changes something
+  const [fresh, setFresh] = useState(notice);
 
+  const show = useCallback((s: Status) => {
+    statusRef.current = s;
+    setStatus(s);
+    if (s !== "saved") setFresh(null);
+  }, []);
+
+  // the latest save, for a timer or a cleanup that outlives the render that set it
+  const writeRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const write = useCallback(async () => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    if (statusRef.current === "newer" || statusRef.current === "gone") return;
+    const { nodes, edges } = latest.current;
+    const title = titleRef.current;
+    const content = contentOf(title, nodes, edges);
+    if (content === savedContent.current) return show("saved");
+    show("saving");
+    const out = await saveGraphOver({ ...doc, pendingLayout: false, title: title || t("untitled"), nodes, edges }, base.current);
+    if ("conflict" in out) return show(out.conflict);
+    base.current = out.saved;
+    savedContent.current = content;
+    if (contentOf(titleRef.current, latest.current.nodes, latest.current.edges) === content) show("saved");
+    else {
+      // changed while it was being written: that change is saved in turn
+      show("unsaved");
+      timer.current = setTimeout(() => void writeRef.current(), 800);
+    }
+  }, [doc, t, show]);
+
+  // autosave after 800 ms of quiet; a change that is not the reader's (a card measured, one selected) is no change
   const persist = useCallback(
-    (nextTitle: string) => {
-      setStatus("unsaved");
+    () => {
+      if (statusRef.current === "newer" || statusRef.current === "gone") return;
+      if (statusRef.current === "saving") return; // the save under way looks again when it ends
+      if (contentOf(titleRef.current, latest.current.nodes, latest.current.edges) === savedContent.current) {
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = null;
+        if (statusRef.current === "unsaved") show("saved");
+        return;
+      }
+      show("unsaved");
       if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(async () => {
-        setStatus("saving");
-        await saveGraph({ ...doc, pendingLayout: false, title: nextTitle || t("untitled"), nodes: latest.current.nodes, edges: latest.current.edges });
-        setStatus("saved");
-      }, 800);
+      timer.current = setTimeout(() => void write(), 800);
     },
-    [doc, t],
+    [write, show],
   );
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
+  // leaving the editor, or the page, writes what is pending at once
+  useEffect(() => {
+    writeRef.current = write;
+  });
+  useEffect(() => {
+    const away = () => {
+      if (document.visibilityState === "hidden" && timer.current) void writeRef.current();
+    };
+    document.addEventListener("visibilitychange", away);
+    return () => {
+      document.removeEventListener("visibilitychange", away);
+      if (timer.current) void writeRef.current();
+    };
   }, []);
+
+  // a newer copy written elsewhere (another tab, a hand-off into this map, sync): opened at once when nothing here
+  // is unsaved, else the reader is asked
+  useEffect(() => {
+    const busy = () => statusRef.current === "saving" || statusRef.current === "newer" || statusRef.current === "gone";
+    const check = async () => {
+      if (document.visibilityState !== "visible" || busy()) return;
+      const at = await storedAt(doc.id);
+      if (busy() || at === base.current) return;
+      if (at == null) return show("gone");
+      if (statusRef.current === "saved") void reload(true);
+      else show("newer");
+    };
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener(GRAPHS_SYNCED_EVENT, check);
+    return () => {
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+      window.removeEventListener(GRAPHS_SYNCED_EVENT, check);
+    };
+  }, [doc.id, reload, show]);
+
+  async function keepAsNew() {
+    const id = await createGraph({ title: t("myCopyTitle", { title: title || t("untitled") }), kind: doc.kind, nodes: latest.current.nodes, edges: latest.current.edges });
+    router.push(`/graph/edit/${id}`);
+  }
 
   async function share() {
     const code = encodeShare({ ...doc, title, nodes: latest.current.nodes, edges: latest.current.edges });
@@ -57,10 +157,22 @@ function EditorInner({ doc }: { doc: GraphDoc }) {
     } catch {}
   }
 
+  const conflict = status === "newer" || status === "gone";
   return (
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
       <Palette onAdd={(n, e, label) => addRef.current?.(n, e, label)} kind={doc.kind} />
       <div className="flex min-h-0 flex-1 flex-col">
+        {conflict && (
+          <div className="graph-conflict flex flex-wrap items-center gap-2 border-b border-line px-3 py-2" role="alert">
+            <p className="min-w-0 basis-full text-[13px] text-t1 sm:flex-1 sm:basis-auto">{t(status === "gone" ? "conflictGone" : "conflictNewer")}</p>
+            <button type="button" className="btn btn-primary" onClick={() => void keepAsNew()}>{t("keepAsNew")}</button>
+            {status === "newer" ? (
+              <button type="button" className="btn" onClick={() => void reload(false)}>{t("openNewer")}</button>
+            ) : (
+              <Link href="/graph" className="btn">{t("editorTitle")}</Link>
+            )}
+          </div>
+        )}
         <GraphCanvas
           initialNodes={doc.nodes}
           initialEdges={doc.edges}
@@ -68,20 +180,20 @@ function EditorInner({ doc }: { doc: GraphDoc }) {
           editable
           title={title}
           onTitleChange={(v) => {
+            titleRef.current = v;
             setTitle(v);
-            persist(v);
+            persist();
           }}
           onChange={(nodes, edges) => {
-            const changed = nodes !== latest.current.nodes || edges !== latest.current.edges;
             latest.current = { nodes, edges };
-            if (changed) persist(title);
+            persist();
           }}
           registerAdd={(fn) => (addRef.current = fn)}
           fileName={`map-${doc.id}`}
           status={
             <span className="flex items-center gap-1.5 text-[12px] text-t3" aria-live="polite">
               <span className="dot" style={{ background: status === "saved" ? "var(--good)" : "var(--amber)" }} />
-              {status === "saved" ? t("saved") : status === "saving" ? t("saving") : t("unsaved")}
+              {status === "saved" ? fresh ?? t("saved") : status === "saving" ? t("saving") : t("unsaved")}
               <span className="hidden sm:inline">• {t("localOnly")}</span>
             </span>
           }

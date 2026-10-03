@@ -31,6 +31,31 @@ export async function saveGraph(doc: GraphDoc): Promise<void> {
   changed();
 }
 
+export type SaveOutcome = { saved: number } | { conflict: "newer" | "gone" };
+
+/**
+ * The editor's save: written only if the stored copy is still the one the editor opened or last wrote (`base`).
+ * Another tab, a hand-off into the map or sync from another device may have written a newer one, or deleted it;
+ * the editor then asks the reader instead of writing over it (P8.0, research 13 F1).
+ */
+export async function saveGraphOver(doc: GraphDoc, base: number): Promise<SaveOutcome> {
+  const stored = await get<GraphDoc>(KEY(doc.id));
+  if (!stored) return { conflict: "gone" };
+  if (stored.updatedAt > base) return { conflict: "newer" };
+  const updatedAt = Math.max(Date.now(), base + 1);
+  await putGraph({ ...cleanDoc(doc), updatedAt });
+  changed();
+  return { saved: updatedAt };
+}
+
+/** The stored copy's time, or null when the map is no longer in this browser. */
+export async function storedAt(id: string): Promise<number | null> {
+  return (await get<GraphDoc>(KEY(id)))?.updatedAt ?? null;
+}
+
+/** fired when sync has written maps from the account, so an open editor can look for a newer copy */
+export const GRAPHS_SYNCED_EVENT = "jadhr:graphs-synced";
+
 /** Store a graph as it is, its time included (a graph synced from another device keeps the time it was made). The
  * index changes in one step, so two writes at once never drop each other's entry (audit 11 F12). */
 export async function putGraph(doc: GraphDoc): Promise<void> {

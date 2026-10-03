@@ -729,7 +729,13 @@
     "seedFailed": "The cards could not be built from this link.",
     "kindPhrase": "Phrase",
     "phraseTitle": "Phrase: {phrase}",
-    "verseUnavailable": "This verse could not be loaded just now."
+    "verseUnavailable": "This verse could not be loaded just now.",
+    "conflictNewer": "This map changed in another window or on another device after you opened it here, so your changes were not saved over it.",
+    "conflictGone": "This map was deleted in another window or on another device, so your changes were not saved.",
+    "keepAsNew": "Save my work as a new map",
+    "openNewer": "Open the newer copy",
+    "reloadedNewer": "The latest copy of this map was opened",
+    "myCopyTitle": "{title} (my copy)"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

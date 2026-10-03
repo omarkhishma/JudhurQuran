@@ -4956,3 +4956,8 @@ a.wotd-pill:hover {
   border-radius: 12px;
   background: var(--card);
 }
+
+/* the graph editor: a stored copy changed elsewhere, said before anything is written over it (P8.0 F1) */
+.graph-conflict {
+  background: color-mix(in srgb, var(--amber) 9%, var(--panel));
+}

@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { AUTH_KEY, useAccount } from "@/lib/account/store";
-import { DOCS_EVENT } from "@/lib/graph/persist";
+import { DOCS_EVENT, GRAPHS_SYNCED_EVENT } from "@/lib/graph/persist";
 import { STORES_CHANNEL, type StoreMessage, TAB_ID } from "@/lib/store/idbStorage";
 import { usePersonal, usePrefs } from "@/lib/reader/store";
 import { useAnalyseChoices } from "@/lib/store/analyseChoices";
@@ -70,7 +70,10 @@ export function SyncRunner() {
     const go = async () => {
       window.clearTimeout(timer);
       const touched = await runSync();
-      if (touched.has("graphs")) void qc.invalidateQueries({ queryKey: ["my-graphs"] });
+      if (touched.has("graphs")) {
+        void qc.invalidateQueries({ queryKey: ["my-graphs"] });
+        window.dispatchEvent(new Event(GRAPHS_SYNCED_EVENT));
+      }
       if (touched.has("texts")) {
         void qc.invalidateQueries({ queryKey: ["user-texts"] });
         void qc.invalidateQueries({ queryKey: ["user-text"] });
