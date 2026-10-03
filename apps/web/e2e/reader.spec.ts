@@ -418,6 +418,12 @@ test("rail: ajzāʾ and a mushaf page take the reader where they begin (P2.1)", 
   await rail.getByRole("textbox").fill("٣٠٠");
   await rail.getByRole("button", { name: "اذهب إلى الصفحة" }).click();
   await expect(page).toHaveURL(new RegExp(`/quran/${pg.verses[0].surah}#v${pg.verses[0].ayah}$`));
+  await expect(first).not.toHaveClass(/is-new/);
+  // set back to "new" explicitly, the word is marked new again (RDR-106, 535)
+  await panel(page).getByRole("button", { name: "جديدة" }).click();
+  expect((await states())[slug!]).toBe("new");
+  await expect(first).toHaveClass(/is-new/);
+  await panel(page).getByRole("button", { name: "معروفة" }).click();
 });
 
 test("In the Quran: the whole root and a sūra filter (RDR-558)", async ({ page }) => {

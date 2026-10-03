@@ -207,7 +207,8 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     root.querySelectorAll<HTMLElement>(".w").forEach((el) => {
       const st = el.dataset.l ? wordStates[el.dataset.l] : undefined;
       el.classList.toggle("is-learning", wordStatesOn && st === "learning");
-      el.classList.toggle("is-new", wordStatesOn && !st && !!el.dataset.l);
+      // unmarked words are new, and so is a word the reader set back to "new" (RDR-106, 535)
+      el.classList.toggle("is-new", wordStatesOn && !!el.dataset.l && (!st || st === "new"));
     });
   }, [wordStates, wordStatesOn]);
 
