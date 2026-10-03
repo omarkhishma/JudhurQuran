@@ -299,6 +299,9 @@ type PersonalState = {
   verseTopics: Record<string, string[]>;
   context: ReadingContext | null;
   sessions: Session[];
+  /** every root the reader has looked up, with when first: the journal's all-time count outlives the
+   * session log's cap (NTB-45) */
+  rootsMet: Record<string, number>;
   read: Record<string, number>;
   /** when the reader last cleared the hub's resume strip: older positions stay hidden (HUB, SHL-27) */
   contextClearedAt: number;
@@ -340,6 +343,7 @@ export const usePersonal = create<PersonalState>()(
       verseTopics: {},
       context: null,
       sessions: [],
+      rootsMet: {},
       read: {},
       contextClearedAt: 0,
       hubPromptHidden: false,
@@ -354,7 +358,8 @@ export const usePersonal = create<PersonalState>()(
           const cur = i >= 0 ? st.sessions[i] : { day, text: "quran", words: [], roots: [], verses: [], lookups: 0 };
           const next = { ...cur, words: add(cur.words, c.word), roots: add(cur.roots, c.root), verses: add(cur.verses, c.verse), lookups: cur.lookups + 1 };
           const sessions = i >= 0 ? st.sessions.map((x, k) => (k === i ? next : x)) : [...st.sessions, next].slice(-SESSION_CAP);
-          return { context, sessions };
+          const rootsMet = c.root && !st.rootsMet?.[c.root] ? { ...st.rootsMet, [c.root]: Date.now() } : st.rootsMet;
+          return { context, sessions, rootsMet };
         }),
       // the furthest verse read in each sūra (RDR-071): reading on only moves it forward
       markRead: (surah, ayah) =>

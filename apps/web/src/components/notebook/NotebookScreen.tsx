@@ -483,7 +483,9 @@ function JournalTab({ items }: { items: Item[] }) {
   const week = days.map((d) => ({ ...d, n: per(d.key) }));
   const max = Math.max(1, ...week.map((d) => d.n));
   const inWeek = sessions.filter((s) => days.some((d) => d.key === s.day));
-  const roots = new Set(sessions.flatMap((s) => s.roots));
+  const rootsMet = usePersonal((s) => s.rootsMet);
+  // all time: every root ever looked up, and those in sessions recorded before that was kept (NTB-45)
+  const roots = new Set([...Object.keys(rootsMet ?? {}), ...sessions.flatMap((s) => s.roots)]);
   const known = Object.values(states).filter((s) => s === "known").length;
   const learning = Object.values(states).filter((s) => s === "learning").length;
   const recent = [...sessions].sort((a, b) => b.day.localeCompare(a.day)).slice(0, 8);

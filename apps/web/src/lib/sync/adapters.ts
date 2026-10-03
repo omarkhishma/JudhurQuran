@@ -65,6 +65,7 @@ const personal: Adapter = {
       ...s.topics.map((t): [string, unknown, number] => [`tp:${t.id}`, t, t.ts]),
       ...Object.entries(s.verseTopics).map(([k, v]): [string, unknown] => [`vt:${k}`, v]),
       ...Object.entries(s.read).map(([k, v]): [string, unknown] => [`r:${k}`, v]),
+      ...Object.entries(s.rootsMet ?? {}).map(([k, v]): [string, unknown] => [`rm:${k}`, v]),
       ...FLAGS.filter((f) => s[f]).map((f): [string, unknown] => [`f:${f}`, true]),
     ];
     if (s.context) out.push(["ctx", s.context, s.context.ts]);
@@ -78,6 +79,7 @@ const personal: Adapter = {
       const links = { ...s.links };
       const verseTopics = { ...s.verseTopics };
       const read = { ...s.read };
+      const rootsMet = { ...s.rootsMet };
       const proposals = new Map(s.proposals.map((p) => [p.id, p]));
       const savedTrails = new Map(s.savedTrails.map((t) => [t.id, t]));
       const topics = new Map(s.topics.map((t) => [t.id, t]));
@@ -101,6 +103,8 @@ const personal: Adapter = {
           else if (kind === "vt") put(verseTopics, k, c);
           // the furthest verse read only moves forward, whichever device read further (RDR-071)
           else if (kind === "r") read[k] = c.deleted ? (read[k] ?? 0) : Math.max(read[k] ?? 0, c.value as number);
+          // a root met on any device was met: the earliest time stands
+          else if (kind === "rm" && !c.deleted) rootsMet[k] = Math.min(rootsMet[k] ?? Infinity, c.value as number);
           else if (kind === "pr") putList(proposals, k, c);
           else if (kind === "t") putList(savedTrails, k, c);
           else if (kind === "tp") putList(topics, k, c);
@@ -114,6 +118,7 @@ const personal: Adapter = {
         links,
         verseTopics,
         read,
+        rootsMet,
         proposals: [...proposals.values()].sort((a, b) => a.ts - b.ts),
         savedTrails: [...savedTrails.values()].sort((a, b) => a.ts - b.ts),
         topics: [...topics.values()].sort((a, b) => a.ts - b.ts),
@@ -265,7 +270,7 @@ const watch = <S>(store: { subscribe: (cb: (s: S, prev: S) => void) => () => voi
  * worth sending (documents announce their changes with an event). */
 export const WATCHED = [
   watch(useSaved, (s) => [s.bookmarks, s.notes]),
-  watch(usePersonal, (s) => [s.wordStates, s.progress, s.proposals, s.savedTrails, s.links, s.topics, s.verseTopics, s.read, s.context, s.contextClearedAt, s.sessions, s.onboarded, s.visited, s.hubPromptHidden]),
+  watch(usePersonal, (s) => [s.wordStates, s.progress, s.proposals, s.savedTrails, s.links, s.topics, s.verseTopics, s.read, s.rootsMet, s.context, s.contextClearedAt, s.sessions, s.onboarded, s.visited, s.hubPromptHidden]),
   watch(useNotebook, (s) => [s.notes]),
   watch(useReview, (s) => [s.cards]),
   watch(usePrefs, (s) => SYNCED_PREFS.map((f) => s[f])),
