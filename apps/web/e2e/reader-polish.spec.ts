@@ -36,7 +36,8 @@ test("Esc on the Reading popover hands focus back to its button; a dictionary sw
   await btn.click();
   const dlg = page.getByRole("dialog", { name: "تفضيلات القراءة" });
   await expect(dlg).toBeVisible();
-  const sw = dlg.getByRole("switch").last();
+  // a dictionary's own switch, by name: "the last switch" changed under the test while the list was loading
+  const sw = dlg.getByRole("switch", { name: /معجم لين العربي الإنجليزي/ });
   await sw.click();
   await expect(sw).toHaveAttribute("aria-checked", "false");
   await sw.click();

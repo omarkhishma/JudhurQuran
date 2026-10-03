@@ -72,8 +72,11 @@ test("a gloss and a morphology tag can be proposed for this place, and nothing r
   await expect(send).toBeDisabled(); // the wording still equals the current gloss
   await g.locator("textarea").fill("knowledge, here: what God teaches");
   await expect(send).toBeDisabled(); // a reason is required
-  await g.locator("input.field").fill("سبب للاختبار");
+  await g.getByRole("textbox", { name: /السبب والمصدر/ }).fill("سبب للاختبار");
   await send.click();
+  // signed out: kept here, and sign-in asked for after the writing, never before (P7, 10 §4.4)
+  await expect(g.getByRole("status")).toContainText("حُفظ اقتراحك على هذا الجهاز");
+  await g.getByRole("button", { name: "ليس الآن" }).click();
   await expect(g).toHaveCount(0);
 
   await p.getByRole("button", { name: "اقترح تصحيحًا" }).click();
@@ -85,13 +88,14 @@ test("a gloss and a morphology tag can be proposed for this place, and nothing r
   await field.selectOption({ label: "الحالة الإعرابية" });
   await expect(m).toContainText(w.occurrence.features.case!.ar);
   await m.locator("textarea").fill("حالة أخرى");
-  await m.locator("input.field").fill("سبب للاختبار");
+  await m.getByRole("textbox", { name: /السبب والمصدر/ }).fill("سبب للاختبار");
   await expect(m).toContainText("نُسب إليك");
   await m.getByRole("button", { name: "أرسل للمراجعة" }).click();
+  await m.getByRole("button", { name: "ليس الآن" }).click();
 
   const box = p.getByRole("region", { name: "ما اقترحته" });
-  await expect(box).toContainText("معنى حرفي اقترحته • 20:114:17");
-  await expect(box).toContainText("تصحيح اقترحته • الحالة الإعرابية • 20:114:17");
+  await expect(box).toContainText("معنى الكلمة • 20:114:17");
+  await expect(box).toContainText("تصحيح صرفي • الحالة الإعرابية • 20:114:17");
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state.proposals);
   expect(stored).toEqual([
     expect.objectContaining({ kind: "gloss", slug: "ilm", at: "20:114:17", current: w.occurrence.gloss_en, status: "pending" }),

@@ -41,7 +41,8 @@ test("the reader's own proposals show in the entry, pending (RDR-322)", async ({
   await page.goto("/quran/20?w=ilm&at=20:114:17");
   const box = panel(page).getByRole("region", { name: "ما اقترحته" });
   await expect(box).toContainText("معنى أقترحه");
-  await expect(box).toContainText("قيد المراجعة");
+  // a draft says where it is: kept here, sent for review on sign-in (P7, RVQ-Q02)
+  await expect(box).toContainText("محفوظ على هذا الجهاز • يُرسل إلى المراجعة حين تدخل");
 });
 
 test("dotted terms in the grammar band and the dictionaries; the corpus and sense terms exist (RDR-274, 306, 309, 505)", async ({ page, isMobile }) => {
