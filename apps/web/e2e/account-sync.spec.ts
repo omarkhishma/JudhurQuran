@@ -289,10 +289,12 @@ test("another account's data on a device is taken into a new account only on the
   await a.reload();
   await signIn(a, third);
   await expect(ask).toBeVisible();
+  // the page starts afresh by itself (a reload of our own would race it)
+  const reloaded = a.waitForEvent("load");
   await ask.getByRole("button", { name: "ابدأ ببيانات هذا الحساب" }).click();
+  await reloaded;
   await expect.poll(async () => (await local(a, "jadhr-saved"))?.bookmarks?.length ?? 0).toBe(0);
   await expect(a.getByRole("link", { name: /^حسابي:/ })).toBeVisible();
-  await a.reload();
   await expect(ask).toHaveCount(0);
   expect(await records(a)).toEqual([]);
   expect((await records(a, h1)).map((r) => r.key), "the first account keeps its own").toContain("b:lemma:Eilom");
