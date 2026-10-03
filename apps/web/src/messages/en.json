@@ -1884,7 +1884,21 @@
     "heldHistory": "{count, plural, =0 {No replaced versions} one {One replaced version} other {{n} replaced versions}}",
     "heldLookups": "{count, plural, =0 {No shared lookups} one {One shared lookup} other {{n} shared lookups}}",
     "heldFirstGoes": "the oldest goes by {date}",
-    "heldHow": "How long each is kept"
+    "heldHow": "How long each is kept",
+    "importAll": "Bring in a file exported from this site (JSON)",
+    "importTitle": "Bring in an exported file",
+    "importNew": "{count, plural, one {One item is new here and will be added.} other {{n} items are new here and will be added.}}",
+    "importDiffer": "{count, plural, one {One item differs from what this browser holds.} other {{n} items differ from what this browser holds.}}",
+    "importSame": "{count, plural, one {One is already here.} other {{n} are already here.}}",
+    "importNothing": "Everything in this file is already here.",
+    "importRefused": "Left out, saved by another version of the site: {stores}.",
+    "importKeep": "Add the new, keep mine",
+    "importTake": "Add the new, take the file's",
+    "importAdd": "Add them",
+    "importCancel": "Cancel",
+    "importBad": "This is not a file exported from this site.",
+    "importTooLarge": "This file is too large to bring in.",
+    "imported": "Brought in: {added} added, {replaced} replaced."
   },
   "contrib": {
     "title": "Review queue",

@@ -1,9 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { initial, SignInSheet } from "@/components/account/AccountButton";
+import { Dialog } from "@/components/ui/Dialog";
 import { Link, usePathname } from "@/i18n/navigation";
 import { authFetch, useAccount } from "@/lib/account/store";
 import { myProposals, type ProposalOut } from "@/lib/contrib";
@@ -11,6 +12,7 @@ import { useIsClient } from "@/lib/client";
 import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
 import { listGraphs } from "@/lib/graph/persist";
 import { listTexts, loadText } from "@/lib/library/texts";
+import { applyImport, type ImportPlan, MAX_IMPORT_BYTES, planCounts, planImport } from "@/lib/importData";
 import { deleteLocalData, exportLocalData } from "@/lib/localData";
 import { TABS, type Tab } from "@/lib/profile";
 import { mergeSessions, usePersonal } from "@/lib/reader/store";
@@ -227,6 +229,7 @@ function SyncLine({ signedIn, devices }: { signedIn: boolean; devices: number | 
 function DataControls({ signedIn }: { signedIn: boolean }) {
   const t = useTranslations("me");
   const [said, setSaid] = useState<string | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
   const [confirm, setConfirm] = useState(false);
   useEffect(() => {
     if (!confirm) return;
@@ -267,6 +270,12 @@ function DataControls({ signedIn }: { signedIn: boolean }) {
       <button type="button" className="btn min-h-[40px] justify-start" onClick={() => void exportTexts()}>
         {t("exportTexts")}
       </button>
+      <ImportControl
+        onDone={(text, ok) => {
+          setSaid(ok ? text : null);
+          setFailed(ok ? null : text);
+        }}
+      />
       <button type="button" className={"btn min-h-[40px] justify-start " + (confirm ? "border-bad text-bad" : "text-bad")} onClick={() => void deleteAll()}>
         {confirm ? t("deleteLocalConfirm") : t("deleteLocal")}
       </button>
@@ -276,7 +285,95 @@ function DataControls({ signedIn }: { signedIn: boolean }) {
           {said ?? t("deletedLocal")}
         </p>
       )}
+      {failed && (
+        <p className="text-[12.5px] text-bad" role="alert">
+          {failed}
+        </p>
+      )}
     </div>
+  );
+}
+
+/**
+ * Plan B32: a file this site exported, brought back into this browser — another device's, or this one's before it
+ * was cleared. What is new is added; what differs from what is here is replaced only if the reader chooses the
+ * file's; nothing is deleted. The file is read here and never sent.
+ */
+function ImportControl({ onDone }: { onDone: (text: string, ok: boolean) => void }) {
+  const t = useTranslations("me");
+  const ta = useTranslations("account");
+  const locale = useLocale();
+  const qc = useQueryClient();
+  const input = useRef<HTMLInputElement>(null);
+  const [plan, setPlan] = useState<ImportPlan | null>(null);
+  const [busy, setBusy] = useState(false);
+  async function read(file: File) {
+    if (file.size > MAX_IMPORT_BYTES) return onDone(t("importTooLarge"), false);
+    const p = await planImport(await file.text());
+    if (!p) return onDone(t("importBad"), false);
+    setPlan(p);
+  }
+  async function go(takeTheirs: boolean) {
+    if (!plan) return;
+    setBusy(true);
+    const r = await applyImport(plan, takeTheirs);
+    setBusy(false);
+    setPlan(null);
+    void qc.invalidateQueries();
+    onDone(t("imported", { added: formatNumber(r.added, locale), replaced: formatNumber(r.replaced, locale) }), true);
+  }
+  const c = plan ? planCounts(plan) : null;
+  return (
+    <>
+      <button type="button" className="btn min-h-[40px] justify-start" onClick={() => input.current?.click()}>
+        {t("importAll")}
+      </button>
+      <input
+        ref={input}
+        type="file"
+        accept="application/json,.json"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void read(f);
+        }}
+      />
+      <Dialog open={!!plan} onClose={() => setPlan(null)} label={t("importTitle")} width={480}>
+        {plan && c && (
+          <div className="flex flex-col gap-3 p-5 text-[13.5px] leading-relaxed">
+            <h2 className="text-[17px] font-semibold">{t("importTitle")}</h2>
+            {c.add + c.differ === 0 ? (
+              <p>{t("importNothing")}</p>
+            ) : (
+              <>
+                {c.add > 0 && <p>{t("importNew", cnt(c.add, locale))}</p>}
+                {c.differ > 0 && <p>{t("importDiffer", cnt(c.differ, locale))}</p>}
+                {c.same > 0 && <p className="text-t3">{t("importSame", cnt(c.same, locale))}</p>}
+              </>
+            )}
+            {plan.refused.length > 0 && <p className="text-t3">{t("importRefused", { stores: plan.refused.map((x) => ta(`store.${x}`)).join(locale === "ar" ? "، " : ", ") })}</p>}
+            <div className="flex flex-col gap-2">
+              {c.add + c.differ > 0 && (
+                <button type="button" className="btn btn-primary min-h-[40px] justify-center" disabled={busy} onClick={() => void go(false)}>
+                  {c.differ > 0 ? t("importKeep") : t("importAdd")}
+                </button>
+              )}
+              {c.differ > 0 && (
+                <button type="button" className="btn min-h-[40px] justify-center" disabled={busy} onClick={() => void go(true)}>
+                  {t("importTake")}
+                </button>
+              )}
+              <button type="button" className="btn min-h-[40px] justify-center" disabled={busy} onClick={() => setPlan(null)}>
+                {t("importCancel")}
+              </button>
+            </div>
+          </div>
+        )}
+      </Dialog>
+    </>
   );
 }
 

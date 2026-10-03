@@ -17,7 +17,12 @@ import { type Change, canonical, type Local, type StoreName } from "./engine";
  * only: the curiosity trail of this visit, the recent-words history, panel widths and folds (they fit one
  * screen, not another), the theme, and the account's own session.
  */
-export type Adapter = { read: () => Local | Promise<Local>; apply: (changes: Change[]) => unknown };
+export type Adapter = {
+  read: () => Local | Promise<Local>;
+  apply: (changes: Change[]) => unknown;
+  /** the same records from a store's saved state rather than the live one (an exported file read back, plan B32) */
+  of?: (state: unknown) => Local;
+};
 
 const entries = (xs: [string, unknown, number?][]): Local => new Map(xs.map(([k, value, at]) => [k, { value, at }]));
 const split = (key: string) => {
@@ -27,11 +32,14 @@ const split = (key: string) => {
 
 // ─── saved: stars and verse notes ─────────────────────────────────────────────
 
+const savedOf = (state: unknown) => {
+  const s = state as ReturnType<typeof useSaved.getState>;
+  return entries([...s.bookmarks.map((b): [string, unknown, number] => [`b:${b.kind}:${b.key}`, b, b.at]), ...Object.entries(s.notes).map(([ref, n]): [string, unknown, number] => [`n:${ref}`, n, n.at])]);
+};
+
 const saved: Adapter = {
-  read: () => {
-    const s = useSaved.getState();
-    return entries([...s.bookmarks.map((b): [string, unknown, number] => [`b:${b.kind}:${b.key}`, b, b.at]), ...Object.entries(s.notes).map(([ref, n]): [string, unknown, number] => [`n:${ref}`, n, n.at])]);
-  },
+  read: () => savedOf(useSaved.getState()),
+  of: savedOf,
   apply: (changes) =>
     useSaved.setState((s) => {
       const marks = new Map(s.bookmarks.map((b) => [`b:${b.kind}:${b.key}`, b]));
@@ -54,22 +62,25 @@ const saved: Adapter = {
 
 const FLAGS = ["onboarded", "visited", "hubPromptHidden"] as const;
 
+const personalOf = (state: unknown) => {
+  const s = state as ReturnType<typeof usePersonal.getState>;
+  const out: [string, unknown, number?][] = [
+    ...Object.entries(s.wordStates).map(([k, v]): [string, unknown] => [`w:${k}`, v]),
+    ...Object.entries(s.progress).map(([k, v]): [string, unknown, number] => [`p:${k}`, v, v.at]),
+    ...s.proposals.map((p): [string, unknown, number] => [`pr:${p.id}`, p, p.ts]),
+    ...s.savedTrails.map((t): [string, unknown, number] => [`t:${t.id}`, t, t.ts]),
+    ...Object.entries(s.links).map(([k, v]): [string, unknown] => [`l:${k}`, v]),
+    ...s.topics.map((t): [string, unknown, number] => [`tp:${t.id}`, t, t.ts]),
+    ...Object.entries(s.verseTopics).map(([k, v]): [string, unknown] => [`vt:${k}`, v]),
+    ...Object.entries(s.read).map(([k, v]): [string, unknown] => [`r:${k}`, v]),
+    ...FLAGS.filter((f) => s[f]).map((f): [string, unknown] => [`f:${f}`, true]),
+  ];
+  return entries(out);
+};
+
 const personal: Adapter = {
-  read: () => {
-    const s = usePersonal.getState();
-    const out: [string, unknown, number?][] = [
-      ...Object.entries(s.wordStates).map(([k, v]): [string, unknown] => [`w:${k}`, v]),
-      ...Object.entries(s.progress).map(([k, v]): [string, unknown, number] => [`p:${k}`, v, v.at]),
-      ...s.proposals.map((p): [string, unknown, number] => [`pr:${p.id}`, p, p.ts]),
-      ...s.savedTrails.map((t): [string, unknown, number] => [`t:${t.id}`, t, t.ts]),
-      ...Object.entries(s.links).map(([k, v]): [string, unknown] => [`l:${k}`, v]),
-      ...s.topics.map((t): [string, unknown, number] => [`tp:${t.id}`, t, t.ts]),
-      ...Object.entries(s.verseTopics).map(([k, v]): [string, unknown] => [`vt:${k}`, v]),
-      ...Object.entries(s.read).map(([k, v]): [string, unknown] => [`r:${k}`, v]),
-      ...FLAGS.filter((f) => s[f]).map((f): [string, unknown] => [`f:${f}`, true]),
-    ];
-    return entries(out);
-  },
+  read: () => personalOf(usePersonal.getState()),
+  of: personalOf,
   apply: (changes) =>
     usePersonal.setState((s) => {
       const wordStates = { ...s.wordStates };
@@ -119,20 +130,23 @@ const personal: Adapter = {
 // ─── journal: what the reader looked up — a record per day, text and device, every root met with when, and the
 // last place looked up — synced only when the reader turns that on (NTB-Q02, audit 11 F3) ───
 
+const journalOf = (device: string) => (state: unknown) => {
+  const s = state as ReturnType<typeof usePersonal.getState>;
+  const out: [string, unknown, number?][] = [
+    ...s.sessions.map((x): [string, unknown] => {
+      const { device: from, ...session } = x;
+      return [`s:${x.day}:${x.text}:${from ?? device}`, session];
+    }),
+    ...Object.entries(s.rootsMet ?? {}).map(([k, v]): [string, unknown] => [`rm:${k}`, v]),
+  ];
+  if (s.context) out.push(["ctx", s.context, s.context.ts]);
+  if (s.contextClearedAt) out.push(["cc", s.contextClearedAt, s.contextClearedAt]);
+  return entries(out);
+};
+
 const journal = (device: string): Adapter => ({
-  read: () => {
-    const s = usePersonal.getState();
-    const out: [string, unknown, number?][] = [
-      ...s.sessions.map((x): [string, unknown] => {
-        const { device: from, ...session } = x;
-        return [`s:${x.day}:${x.text}:${from ?? device}`, session];
-      }),
-      ...Object.entries(s.rootsMet ?? {}).map(([k, v]): [string, unknown] => [`rm:${k}`, v]),
-    ];
-    if (s.context) out.push(["ctx", s.context, s.context.ts]);
-    if (s.contextClearedAt) out.push(["cc", s.contextClearedAt, s.contextClearedAt]);
-    return entries(out);
-  },
+  read: () => journalOf(device)(usePersonal.getState()),
+  of: journalOf(device),
   apply: (changes) =>
     usePersonal.setState((s) => {
       const keyOf = (x: Session) => `s:${x.day}:${x.text}:${x.device ?? device}`;
@@ -158,8 +172,10 @@ const journal = (device: string): Adapter => ({
 
 // ─── notebook, review ─────────────────────────────────────────────────────────
 
+const notebookOf = (state: unknown) => entries((state as ReturnType<typeof useNotebook.getState>).notes.map((n): [string, unknown, number] => [`n:${n.id}`, n, n.updated]));
 const notebook: Adapter = {
-  read: () => entries(useNotebook.getState().notes.map((n): [string, unknown, number] => [`n:${n.id}`, n, n.updated])),
+  read: () => notebookOf(useNotebook.getState()),
+  of: notebookOf,
   apply: (changes) =>
     useNotebook.setState((s) => {
       const by = new Map(s.notes.map((n) => [n.id, n]));
@@ -172,8 +188,10 @@ const notebook: Adapter = {
     }),
 };
 
+const reviewOf = (state: unknown) => entries(Object.values((state as ReturnType<typeof useReview.getState>).cards).map((c): [string, unknown, number] => [`c:${c.root}`, c, c.last]));
 const review: Adapter = {
-  read: () => entries(Object.values(useReview.getState().cards).map((c): [string, unknown, number] => [`c:${c.root}`, c, c.last])),
+  read: () => reviewOf(useReview.getState()),
+  of: reviewOf,
   apply: (changes) =>
     useReview.setState((s) => {
       const cards = { ...s.cards };
@@ -192,11 +210,13 @@ const review: Adapter = {
 const SYNCED_PREFS = ["size", "translitLine", "translationLine", "muyassarLine", "imlaeiLine", "tintRoot", "grammarBand", "wordStates", "panelTabs", "explainTerms", "dictOff", "lexMode", "compare", "translation", "tafsirs", "reciter"] as const satisfies readonly (keyof Prefs)[];
 
 function choices<K extends string>(fields: readonly K[], defaults: Record<K, unknown>, get: () => Record<K, unknown>, set: (p: Partial<Record<K, unknown>>) => void): Adapter {
+  const of = (state: unknown) => {
+    const s = state as Record<K, unknown>;
+    return entries(fields.filter((f) => canonical(s[f]) !== canonical(defaults[f])).map((f): [string, unknown] => [f, s[f]]));
+  };
   return {
-    read: () => {
-      const s = get();
-      return entries(fields.filter((f) => canonical(s[f]) !== canonical(defaults[f])).map((f): [string, unknown] => [f, s[f]]));
-    },
+    read: () => of(get()),
+    of,
     apply: (changes) => {
       const patch: Partial<Record<K, unknown>> = {};
       for (const c of changes) if ((fields as readonly string[]).includes(c.key)) patch[c.key as K] = c.deleted ? defaults[c.key as K] : c.value;
@@ -211,8 +231,10 @@ const AUDIO = ["reciter", "follow", "speed", "repeat"] as const;
 const AUDIO_DEFAULTS = { reciter: "alafasy", follow: true, speed: 1, repeat: false };
 const audio = choices(AUDIO, AUDIO_DEFAULTS, () => useAudio.getState(), (p) => useAudio.setState(p as Parameters<typeof useAudio.setState>[0]));
 
+const analyseOf = (state: unknown) => entries(Object.entries((state as ReturnType<typeof useAnalyseChoices.getState>).choices).map(([k, v]): [string, unknown] => [k, v]));
 const analyse: Adapter = {
-  read: () => entries(Object.entries(useAnalyseChoices.getState().choices).map(([k, v]): [string, unknown] => [k, v])),
+  read: () => analyseOf(useAnalyseChoices.getState()),
+  of: analyseOf,
   apply: (changes) =>
     useAnalyseChoices.setState((s) => {
       const out = { ...s.choices };

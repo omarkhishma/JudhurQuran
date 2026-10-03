@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import { ar, expectNoHorizontalScroll, followSignInLink } from "./helpers";
+import { ar, expectNoHorizontalScroll, followSignInLink, stored } from "./helpers";
 
 /**
  * The Profile (P6.3, inventory PRF; PRF-Q03; P6.4): who the reader is, what they have, their records in tabs that
@@ -177,4 +177,50 @@ test("signed in: the name credited, the journal synced only when turned on, this
   expect((await page.request.get("/api/v1/me", { headers: h })).status()).toBe(401);
   await expect(page.getByRole("banner").getByRole("button", { name: "دخول" })).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-saved") ?? "{}").state?.bookmarks?.length)).toBe(1);
+});
+
+test("a file this site exported is brought back: the new added, what differs replaced only on the reader's word, nothing deleted (B32)", async ({ page }) => {
+  await seed(page);
+  await page.goto("/me");
+  await page.reload(); // the documents seeded into IndexedDB are written by now
+  const file = (body: unknown) => ({ name: "jadhr-my-data.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(body)) });
+  const exported = {
+    format: "jadhr-local-1",
+    exported_at: "2026-10-03T12:00:00.000Z",
+    local: {
+      "jadhr-saved": { state: { bookmarks: [{ kind: "lemma", key: "ilm", label: "عِلْم — من الملف", at: NOW }, { kind: "root", key: "صبر", label: "ص ب ر", at: NOW }], notes: {}, history: [] }, version: 2 },
+      "jadhr-prefs": { state: { size: 1.3 }, version: 2 },
+      "jadhr-review": { state: { cards: {} }, version: 99 },
+    },
+    documents: { "jadhr-graph:g9": { version: 1, id: "g9", title: "خريطة الصبر", kind: "root", createdAt: NOW, updatedAt: NOW, nodes: [], edges: [] } },
+  };
+  const input = page.locator('.profile-data input[type="file"]');
+  const dlg = page.getByRole("dialog", { name: "إدخال ملف مصدَّر" });
+  const said = page.locator(".profile-data [role=status]");
+  const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-saved") ?? "{}").state);
+  const size = () => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-prefs") ?? "{}").state?.size);
+
+  await input.setInputFiles(file(exported));
+  await expect(dlg).toContainText("عنصران جديدان هنا وسيُضافان."); // the root star and the map
+  await expect(dlg).toContainText("عنصران يختلفان عمّا في هذا المتصفح."); // the word star's label, the text size
+  await expect(dlg).toContainText("تُرك منه ما حفظته نسخة أخرى من الموقع: المراجعة.");
+  await dlg.getByRole("button", { name: "أضف الجديد وأبقِ ما عندي" }).click();
+  await expect(said).toHaveText("أُدخل الملف: أُضيف ٢، واستُبدل ٠.");
+  expect((await saved()).bookmarks.map((b: { label: string }) => b.label).sort()).toEqual(["ص ب ر", "عِلْم"]);
+  expect(Object.keys((await saved()).notes), "nothing missing from the file is deleted").toEqual(["quran:2:255"]);
+  expect(await size()).toBe(1.1);
+  await expect.poll(async () => (await stored<{ title: string }>(page, "jadhr-graph:g9"))?.title ?? null).toBe("خريطة الصبر");
+  await expect(page.locator(".profile-counts div").filter({ hasText: "خرائط" })).toContainText(ar(2));
+
+  // the same file again, this time taking the file's where they differ
+  await input.setInputFiles(file(exported));
+  await expect(dlg).toContainText("عنصران يختلفان عمّا في هذا المتصفح.");
+  await dlg.getByRole("button", { name: "أضف الجديد وخذ ما في الملف" }).click();
+  await expect(said).toHaveText("أُدخل الملف: أُضيف ٠، واستُبدل ٢.");
+  expect((await saved()).bookmarks.map((b: { label: string }) => b.label).sort()).toEqual(["ص ب ر", "عِلْم — من الملف"]);
+  expect(await size()).toBe(1.3);
+
+  // a file that is not an export is refused before anything is read into the stores
+  await input.setInputFiles(file({ hello: 1 }));
+  await expect(page.locator(".profile-data [role=alert]")).toHaveText("هذا ليس ملفًا صدّرته من هذا الموقع.");
 });
