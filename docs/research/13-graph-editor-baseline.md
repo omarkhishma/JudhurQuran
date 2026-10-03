@@ -1049,3 +1049,7 @@ The table in §5 is the baseline at `7caa827` and is left as it was. P8.0 closed
 ## 8. After P8.1a (2026-10-03)
 
 P8.1a closed its 13 items, each now `done`: EDT-072, EDT-073, EDT-078, EDT-127, EDT-128, EDT-135, EDT-243, HWF-15, HWF-16, HWF-17, QAN-01, QAN-05, QAN-11; F5 and F13 are fixed. Counts after P8.1a: 431 items — 69 done, 72 adapted, 6 bug-fixed, 4 n/a, 279 open, 1 waiting. Commits `e440ed0`, `ab40734`; evidence in PLAN P8.1a.
+
+## 9. After P8.1-A (2026-10-03)
+
+P8.1-A closed 36 of its 43 items: EDT-001, 002, 009, 011, 013, 020, 022, 024, 032–045, 047, 063 (the unknown slug's 404 is P8.5's), 071, 237, 242, 247, 249, 309, HWF-26, 34, 40, QAN-12, 15, 22. Part-built, the rest named where it lands: EDT-004 (map-view zoom, P8.1-B), EDT-070 (right-click "New…", P8.1-B; "+ Description", P8.1-C), EDT-250, 251, 252, 253, 254 (the help lists the keys that work; the rest join as P8.1-B and P8.1-C build them). Counts after P8.1-A: 431 items — 105 done, 72 adapted, 6 bug-fixed, 4 n/a, 243 open (7 of them part-built), 1 waiting. Commits `1b48009`, `44d9c51`.
