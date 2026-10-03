@@ -87,8 +87,8 @@ REVIEW_BY_WORK = {
     "lane": 271,
     "taj": 15,
     "qamus": 24,
-    "ayn": 196,
-    "tahdhib": 336,
+    "ayn": 209,
+    "tahdhib": 346,
 }
 
 

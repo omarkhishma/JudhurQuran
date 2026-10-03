@@ -59,8 +59,8 @@ def _plain(text: str) -> str:
 EXPECTED = {
     "taj": (11891, 1620, 14, 1, 1617, 1628),
     "qamus": (10389, 1616, 23, 1, 1613, 1629),
-    "ayn": (5813, 1431, 196, 0, 1427, 1597),
-    "tahdhib": (7168, 1344, 336, 0, 1312, 1576),
+    "ayn": (5813, 1421, 209, 0, 1419, 1597),
+    "tahdhib": (7168, 1328, 346, 0, 1306, 1576),
 }
 # The research's expected size of each work (docs/research/06 Part 6, 02 §3). For al-ʿAyn and Tahdhīb
 # the research counts groups, not articles (al-ʿAyn: 1,500 of its 1,802 TOC rows are group titles with

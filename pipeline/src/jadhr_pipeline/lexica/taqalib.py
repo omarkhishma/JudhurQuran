@@ -139,6 +139,11 @@ def _bare(token: str) -> str:
     return token[2:] if token.startswith("ءل") and len(token) > 3 else token
 
 
+def _printed_root(letters: str) -> str:
+    """A header's letters as printed, without the article ("الحرقوص" → "حرقوص"), for the root matcher."""
+    return letters[2:] if letters.startswith("ال") and len(letters) > 3 else letters
+
+
 def _letters(text: str) -> str:
     """The letters ``_fold`` keeps, before folding (the same length)."""
     return "".join(ch for ch in strip_marks(text) if "ء" <= ch.translate(_FOLD) <= "ي")
@@ -577,24 +582,28 @@ def split_taqalib(
                 if v is None and k > 0 and tok.startswith("و") and len(tok) >= 4:
                     v = cand.accepts(tok[1:], opens, raw[1:], paren)  # "خدنق، وخدرنق"
                     if v is not None:
-                        tokens[k] = tok[1:]
+                        tokens[k], raws[k] = tok[1:], raw[1:]
                 if v is None and k > 0 and (frozenset(_strong(_bare(tok))) == first_root or tok in quoted):
                     v = "variant"  # "أزب (أزيب)": a spelling of the same root; "عدا (عندأوة)": a quoted form
                 if v is None:
                     break
                 verdicts.append(v)
             if len(verdicts) == len(tokens):
-                return ("article", (cand, tokens, verdicts, raw_tokens))
+                return ("article", (cand, tokens, verdicts, raw_tokens, raws))
         return None
 
-    def start_article(found: tuple[Group, list[str], list[str], list[str]], ln: Line, ref: str) -> None:
+    def start_article(
+        found: tuple[Group, list[str], list[str], list[str], list[str]], ln: Line, ref: str
+    ) -> None:
         nonlocal cur
         close()
-        owner, tokens, verdicts, raw_tokens = found
+        owner, tokens, verdicts, raw_tokens, raws = found
         for tok, v in zip(tokens, verdicts, strict=True):
             owner.found.add(_bare(tok))
             counters.add(f"taqalib-article-split:header-{v}")
-        cur = ("، ".join(x.strip() for x in raw_tokens), [_bare(tok) for tok in tokens], ref, [ln])
+        # the root matcher gets the letters as printed ("سما", "أجل"), not folded, so that its spelling
+        # rules (alif for a weak radical or a hamza) apply
+        cur = ("، ".join(x.strip() for x in raw_tokens), [_printed_root(r) for r in raws], ref, [ln])
 
     after_list: tuple[Line, str] | None = None  # the last list line, while no header has followed it
 
@@ -611,7 +620,7 @@ def split_taqalib(
         if owner is None or re.search(r"[أا]همل|مستعمل|مهمل", strip_marks(ln.text)):
             return False  # "وقد أهمل الليث: حتل ولحت وهما مستعملان." is a remark on the list
         counters.add("taqalib-article-split:list-line-opens-article")
-        cur = (first, [head], ref, [list_ln, ln])
+        cur = (first, [_printed_root(_letters(first))], ref, [list_ln, ln])
         return True
 
     for i, ln in enumerate(lines):
