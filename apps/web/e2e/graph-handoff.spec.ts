@@ -8,7 +8,7 @@ import { api } from "./helpers";
  */
 
 type Card = { id: string; position: { x: number; y: number }; data: { kind: string; rootKey?: string; lemmaId?: number; form?: string } };
-type Doc = { id: string; title: string; nodes: Card[]; edges: { id: string; source: string; target: string; label?: string }[] };
+type Doc = { id: string; title: string; pendingLayout?: boolean; nodes: Card[]; edges: { id: string; source: string; target: string; label?: string }[] };
 type VerseWord = { location: string; root: string | null; lemma_id: number | null; text_imlaei: string };
 
 const RETURNING = { state: { visited: true, onboarded: true, wordStates: {}, stars: {}, trail: [], progress: {}, proposals: [], savedTrails: [] }, version: 1 };
@@ -83,6 +83,8 @@ test("graph hand-off: a verse becomes one card linked to each of its words with 
 test("graph hand-off: adding to an existing graph keeps every card where it was and duplicates nothing (RDR-367)", async ({ page }) => {
   await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
   const id = await editorId(page);
+  // a new graph is laid out once more with measured card sizes when the editor opens; read it after that
+  await expect.poll(async () => (await storedGraph(page, id)).pendingLayout ?? false, { timeout: 15_000 }).toBe(false);
   const before = await storedGraph(page, id);
   const add = await api<{ words: VerseWord[] }>(page, "/verses/1:2");
   await page.goto(`/graph/seed?s=${seedParam({ seed: "verse", key: "1:2" })}&into=${id}`);
