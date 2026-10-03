@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 import { useRouter } from "@/i18n/navigation";
-import { decodeShare, saveGraph } from "@/lib/graph/persist";
+import { decodeShare, fileBase, saveGraph } from "@/lib/graph/persist";
 import { GraphCanvas } from "./GraphCanvas";
 
 function subscribeHash(cb: () => void) {
@@ -23,6 +23,8 @@ export function SharedGraph() {
       initialNodes={doc.nodes}
       initialEdges={doc.edges}
       title={doc.title || t("untitled")}
+      fileName={fileBase(doc.title || t("untitled"))}
+      kind={doc.kind}
       status={<span className="text-[12px] text-t3">{t("viewShared")}</span>}
       toolbarExtra={
         <button

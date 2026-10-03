@@ -5,9 +5,12 @@ import { useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createGraph, deleteGraph } from "@/lib/graph/persist";
 import { useMyGraphs } from "@/lib/graph/useMyGraphs";
-import type { GraphDoc, GraphKind } from "@/lib/graph/types";
-import { cnt } from "@/lib/format";
+import type { GraphKind } from "@/lib/graph/types";
+import { cnt, formatNumber } from "@/lib/format";
+import { cleanGraph, cleanKind, cleanTitle } from "@/lib/graph/sanitize";
 import { useWhereSaved } from "@/lib/graph/whereSaved";
+
+const MAX_IMPORT = 5 * 1024 * 1024;
 
 export function GraphHome() {
   const t = useTranslations("graph");
@@ -16,7 +19,7 @@ export function GraphHome() {
   const { data: graphs } = useMyGraphs();
   const [confirming, setConfirming] = useState<string | null>(null);
   const [root, setRoot] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; id?: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const where = useWhereSaved();
 
@@ -26,20 +29,28 @@ export function GraphHome() {
     router.push(`/graph/edit/${id}`);
   }
 
+  /** A map from a file (EDT-260, HWF-27): only what a map of ours can hold is kept — the rest is counted and said —
+   * the type it was exported with comes back, and it is laid out afresh when first opened. */
   async function importFile(file: File) {
+    setMessage(null);
+    if (file.size > MAX_IMPORT) return setMessage({ text: t("importTooLarge") });
+    let raw: unknown;
     try {
-      const raw = JSON.parse(await file.text()) as Partial<GraphDoc>;
-      if (!Array.isArray(raw.nodes) || !Array.isArray(raw.edges)) throw new Error("shape");
-      await createGraph({
-        title: raw.title || t("untitled"),
-        kind: raw.kind ?? "free",
-        nodes: raw.nodes.map((n) => ({ ...n, type: "card" })),
-        edges: raw.edges,
-      });
-      setMessage(t("imported"));
+      raw = JSON.parse(await file.text());
     } catch {
-      setMessage(t("importError"));
+      return setMessage({ text: t("importNotJson") });
     }
+    const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+    if (!Array.isArray(o.nodes)) return setMessage({ text: t("importNoNodes") });
+    const got = cleanGraph(o.nodes, Array.isArray(o.edges) ? o.edges : []);
+    const id = await createGraph({ title: cleanTitle(o.title, t("untitled")), kind: cleanKind(o.kind), nodes: got.nodes, edges: got.edges, pendingLayout: true });
+    const skipped = got.skippedNodes + got.skippedEdges;
+    setMessage({
+      text:
+        t("importedReport", { cards: t("cards", cnt(got.nodes.length, locale)), links: t("links", cnt(got.edges.length, locale)) }) +
+        (skipped ? t("importSkipped", { n: formatNumber(skipped, locale) }) : ""),
+      id,
+    });
   }
 
   return (
@@ -78,11 +89,30 @@ export function GraphHome() {
           />
           <button type="submit" className="btn min-h-[40px]">{t("open")}</button>
           <span className="ms-auto">
-            <input ref={fileRef} type="file" accept="application/json" hidden onChange={(e) => e.target.files?.[0] && void importFile(e.target.files[0])} />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                // cleared, so the same file can be picked again (EDT-261, HWF-28)
+                e.target.value = "";
+                if (file) void importFile(file);
+              }}
+            />
             <button type="button" className="btn min-h-[40px]" onClick={() => fileRef.current?.click()}>{t("importJson")}</button>
           </span>
         </form>
-        {message && <p className="mt-2 text-[13px] text-t2" role="status">{message}</p>}
+        <p className="mt-2 text-[13px] text-t2" role="status">
+          {message?.text}
+          {message?.id && (
+            <>
+              {" "}
+              <Link href={`/graph/edit/${message.id}`} className="text-word underline">{t("openImported")}</Link>
+            </>
+          )}
+        </p>
 
         <h2 className="label-caps mt-10 mb-3">
           {t("editorTitle")}

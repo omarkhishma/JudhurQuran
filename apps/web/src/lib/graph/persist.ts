@@ -71,6 +71,15 @@ export async function deleteGraph(id: string, quiet = false): Promise<void> {
   if (!quiet) changed();
 }
 
+/** A file name from a map's title (EDT-262): spaces to "-", lower case, and nothing a file system refuses. */
+export const fileBase = (title: string) =>
+  title
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "")
+    .toLowerCase()
+    .slice(0, 120) || "map";
+
 export function newId(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
 }

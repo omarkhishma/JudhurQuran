@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { createGraph, encodeShare, GRAPHS_SYNCED_EVENT, loadGraph, newId, saveGraphOver, storedAt } from "@/lib/graph/persist";
+import { createGraph, encodeShare, fileBase, GRAPHS_SYNCED_EVENT, loadGraph, newId, saveGraphOver, storedAt } from "@/lib/graph/persist";
 import type { GraphDoc, GraphEdge, GraphNode } from "@/lib/graph/types";
 import type { SearchResult, WordDetail } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
@@ -214,7 +214,8 @@ function EditorInner({ doc, notice, reload }: { doc: GraphDoc; notice: string | 
             persist();
           }}
           registerAdd={(fn) => (addRef.current = fn)}
-          fileName={`map-${doc.id}`}
+          fileName={fileBase(title || t("untitled"))}
+          kind={doc.kind}
           status={
             <>
               {/* the save pill (EDT-015): announced politely, green once saved */}

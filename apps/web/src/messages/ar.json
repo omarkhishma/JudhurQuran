@@ -715,8 +715,6 @@
     "close": "إغلاق",
     "rootNotFound": "لم يُعثر على الجذر.",
     "loadingRoot": "جارٍ تحميل الجذر…",
-    "imported": "استُوردت الخريطة",
-    "importError": "تعذّر قراءة الملف",
     "wordTitle": "خريطة كلمة {word}",
     "verseTitle": "آية {name}: {ayah}",
     "trailTitle": "{count, plural, one {مسار قراءة (خطوة واحدة)} two {مسار قراءة (خطوتان)} few {مسار قراءة ({n} خطوات)} many {مسار قراءة ({n} خطوة)} other {مسار قراءة ({n} خطوة)}}",
@@ -750,7 +748,14 @@
     "mapMissing": "هذه الخريطة ليست في هذا المتصفح",
     "mapMissingBrowser": "ربما حُذفت، أو حُفظت في متصفح أو جهاز آخر. إن كانت محفوظة مع حسابك فادخل إليه لتصلك هنا.",
     "mapMissingAccount": "ربما حُذفت هنا أو على جهاز آخر، أو لم تصل بعد من حسابك؛ إن وصلت فُتحت هنا.",
-    "signInForMaps": "ادخل إلى حسابك"
+    "signInForMaps": "ادخل إلى حسابك",
+    "importedReport": "استُوردت الخريطة: {cards} و{links}",
+    "importSkipped": "، وتُرك ما لا يعرفه المحرر: {n}",
+    "links": "{count, plural, one {صلة واحدة} two {صلتان} few {{n} صلات} many {{n} صلة} other {{n} صلة}}",
+    "importNotJson": "هذا الملف ليس JSON صالحًا.",
+    "importNoNodes": "لا يحوي هذا الملف مصفوفة البطاقات (nodes).",
+    "importTooLarge": "الملف أكبر من أن يُستورد (الحد ٥ ميغابايت).",
+    "openImported": "افتحها"
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",

@@ -715,8 +715,6 @@
     "close": "Close",
     "rootNotFound": "Root not found.",
     "loadingRoot": "Loading the root…",
-    "imported": "Map imported",
-    "importError": "Could not read the file",
     "wordTitle": "Word map: {word}",
     "verseTitle": "Verse {key}",
     "trailTitle": "{count, plural, one {Reading trail (1 step)} other {Reading trail ({n} steps)}}",
@@ -750,7 +748,14 @@
     "mapMissing": "This map is not in this browser",
     "mapMissingBrowser": "It may have been deleted, or saved in another browser or on another device. If it is saved with your account, sign in to have it here.",
     "mapMissingAccount": "It may have been deleted here or on another device, or not have arrived from your account yet; if it arrives, it opens here.",
-    "signInForMaps": "Sign in to your account"
+    "signInForMaps": "Sign in to your account",
+    "importedReport": "Map imported: {cards} · {links}",
+    "importSkipped": " · {n} unknown skipped",
+    "links": "{count, plural, one {1 link} other {{n} links}}",
+    "importNotJson": "This file is not valid JSON.",
+    "importNoNodes": "No \"nodes\" array in this file.",
+    "importTooLarge": "The file is too large to import (the limit is 5 MB).",
+    "openImported": "Open it"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

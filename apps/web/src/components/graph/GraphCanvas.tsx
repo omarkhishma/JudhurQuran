@@ -24,7 +24,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { expandForms, type RootGraphPayload, verseId, edgeId } from "@/lib/graph/build";
 import { layout } from "@/lib/graph/layout";
-import type { GraphEdge, GraphNode } from "@/lib/graph/types";
+import type { GraphEdge, GraphKind, GraphNode } from "@/lib/graph/types";
 import { useTheme } from "@/lib/client";
 import { cnt, verseRef } from "@/lib/format";
 import { CardNode, GraphActionsContext, type GraphActions } from "./CardNode";
@@ -45,6 +45,8 @@ export type GraphCanvasProps = {
   toolbarExtra?: React.ReactNode;
   status?: React.ReactNode;
   fileName?: string;
+  /** the map's type, written into its JSON export so it comes back as it was (F16) */
+  kind?: GraphKind;
   /** Lets an editor add cards from outside the canvas (palette). */
   registerAdd?: (add: (nodes: GraphNode[], edges: GraphEdge[], label: string) => void) => void;
 };
@@ -86,6 +88,7 @@ function CanvasInner({
   toolbarExtra,
   status,
   fileName = "jadhr-map",
+  kind = "free",
   registerAdd,
 }: GraphCanvasProps) {
   const t = useTranslations("graph");
@@ -323,7 +326,7 @@ function CanvasInner({
   }
 
   function exportJson() {
-    const doc = { version: 1, title, nodes: nodes.map(({ id, position, data }) => ({ id, position, data })), edges: edges.map(({ id, source, target, data }) => ({ id, source, target, data })) };
+    const doc = { version: 1, title, kind, nodes: nodes.map(({ id, position, data }) => ({ id, position, data })), edges: edges.map(({ id, source, target, data }) => ({ id, source, target, data })) };
     download(URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" })), `${fileName}.json`);
   }
 

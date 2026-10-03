@@ -332,3 +332,40 @@ test("a map not in this browser says why, and offers My maps and signing in (F11
   await expect(page.getByRole("main").getByRole("link", { name: "خرائطي" })).toHaveAttribute("href", "/graph");
   await expect(page.getByRole("main").getByRole("link", { name: "ادخل إلى حسابك" })).toHaveAttribute("href", `/signin?next=${encodeURIComponent("/graph/edit/notamapid00")}`);
 });
+
+test("a map exported keeps its type and is named from its title; a file is imported only as a map, with a report (F16)", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "root", root: "رحم" })}`);
+  await editorId(page);
+  await expect(page.locator(".save-pill")).toHaveText("حُفظت", { timeout: 15_000 });
+  const title = await page.getByRole("textbox", { name: "إعادة التسمية" }).inputValue();
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "ملف JSON" }).click()]);
+  expect(download.suggestedFilename()).toBe(`${title.trim().replace(/\s+/g, "-").toLowerCase()}.json`);
+  const exported = JSON.parse(await (await download.createReadStream()).toArray().then((b) => Buffer.concat(b).toString("utf8"))) as { title: string; kind: string; nodes: Card[]; edges: Doc["edges"] };
+  expect(exported.kind).toBe("root");
+  expect(exported.title).toBe(title);
+
+  await page.goto("/graph");
+  const input = page.locator('input[type="file"]');
+  const status = page.getByRole("main").getByRole("status");
+  await input.setInputFiles({ name: "x.json", mimeType: "application/json", buffer: Buffer.from("{ not json") });
+  await expect(status).toHaveText("هذا الملف ليس JSON صالحًا.");
+  await input.setInputFiles({ name: "x.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ title: "x", edges: [] })) });
+  await expect(status).toHaveText("لا يحوي هذا الملف مصفوفة البطاقات (nodes).");
+  // the exported map with a card of no known kind and a wire to nowhere: both left out, and counted
+  const tampered = { ...exported, nodes: [...exported.nodes, { id: "x1", position: { x: 0, y: 0 }, data: { kind: "script", ar: "x" } }], edges: [...exported.edges, { id: "e-x", source: exported.nodes[0].id, target: "nowhere" }] };
+  const file = { name: "map.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(tampered)) };
+  await input.setInputFiles(file);
+  await expect(status).toContainText(`استُوردت الخريطة: ${arCount(exported.nodes.length, { one: "بطاقة واحدة", two: "بطاقتان", few: "# بطاقات", many: "# بطاقة", other: "# بطاقة" })}`);
+  await expect(status).toContainText("وتُرك ما لا يعرفه المحرر: ٢");
+  const firstId = (await status.getByRole("link", { name: "افتحها" }).getAttribute("href"))!.split("/graph/edit/")[1];
+  const imported = (await storedGraph(page, firstId))!;
+  expect(imported.kind).toBe("root");
+  expect(imported.nodes).toHaveLength(exported.nodes.length);
+  expect(imported.edges).toHaveLength(exported.edges.length);
+  // the picker is cleared after each pick, so the same file can be picked again (a browser fires no change otherwise)
+  await expect(input).toHaveValue("");
+  await input.setInputFiles(file);
+  await expect.poll(async () => (await status.getByRole("link", { name: "افتحها" }).getAttribute("href"))!.split("/graph/edit/")[1]).not.toBe(firstId);
+  await expect(page.getByRole("main").locator('a[href^="/graph/edit/"]').filter({ hasText: title })).toHaveCount(3);
+});

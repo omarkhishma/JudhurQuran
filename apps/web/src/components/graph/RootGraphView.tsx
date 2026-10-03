@@ -30,6 +30,7 @@ export function RootGraphView({ payload, focus }: { payload: RootGraphPayload; f
       autoLayout
       title={title}
       fileName={`root-${payload.root.translit}`}
+      kind="root"
       onChange={(nodes, edges) => (current.current = { nodes, edges })}
       toolbarExtra={
         <>
