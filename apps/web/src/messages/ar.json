@@ -970,7 +970,15 @@
     "classicalViaSuffix": "عن لاحقته",
     "classicalMatchedByExamples": "رُبط بهذا الوزن بأمثلة الكتاب",
     "classicalCommentary": "{count, plural, one {شرح واحد} two {شرحان} few {{n} شروح} many {{n} شرحًا} other {{n} شرح}} من {work}",
-    "classicalStatus": "نصوص منقولة كما هي من مصادرها وربطت بالأوزان آليًا، ولم يراجعها محرر بعد."
+    "classicalStatus": "نصوص منقولة كما هي من مصادرها وربطت بالأوزان آليًا، ولم يراجعها محرر بعد.",
+    "meaningHere": "المعنى في هذا الموضع",
+    "mushafPage": "صفحة المصحف {n}",
+    "placementInferred": "موضعه في الآية مرجّح",
+    "mufradatTitle": "عند الراغب في المفردات",
+    "readWholePassage": "اقرأ الموضع كاملًا",
+    "sensesAsNumbered": "الوجوه كما عدّها",
+    "matchedMedium": "رُبط بهذه الكلمة بالحروف والحركات",
+    "mufradatStatus": "مقاطع منقولة كما هي من المادة، قُطعت وربطت بالكلمات آليًا، ولم يراجعها محرر بعد."
   },
   "concordance": {
     "title": "الفهرس السياقي",

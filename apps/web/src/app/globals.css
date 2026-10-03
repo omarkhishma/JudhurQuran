@@ -2680,3 +2680,36 @@ button.type-chip:hover {
 }
 }
 
+@layer components {
+/* ─── al-Rāghib in the Meanings section (P3.1) ────────────────────────────── */
+.mufradat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.mufradat-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mufradat-sub + .mufradat-sub {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.mufradat-sublist {
+  margin-inline-start: 14px;
+  padding-inline-start: 10px;
+  border-inline-start: 2px solid var(--line);
+}
+.mufradat-text.is-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+}
+

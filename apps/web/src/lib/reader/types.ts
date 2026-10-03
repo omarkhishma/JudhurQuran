@@ -78,6 +78,41 @@ export type Gloss = {
   attribution_en: string;
 };
 
+/** al-Muyassar fī Gharīb's meaning of the phrase this word belongs to (P3.1), display-only. */
+export type MeaningHere = {
+  id: string;
+  phrase_ar: string;
+  meaning_ar: string;
+  match_confidence: string;
+  mushaf_page: number | null;
+  locator: string;
+  status: string;
+  title_ar: string;
+  title_en: string;
+  publisher_ar: string;
+  publisher_en: string;
+  attribution_ar: string;
+  attribution_en: string;
+  display_only: boolean;
+};
+
+/** al-Rāghib's treatment of a lemma in al-Mufradāt (P3.1): sub-entries verbatim with his numbered senses. */
+export type Mufradat = {
+  work: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; death_hijri: number | null; death_ce: number | null; attribution_ar: string; attribution_en: string };
+  subentries: {
+    id: string;
+    entry_id: number;
+    headword_ar: string;
+    text_ar: string;
+    page_ref: string | null;
+    match_method: string | null;
+    match_confidence: string | null;
+    status: string;
+    verses: string[];
+    senses: { list_no: number; sense_index: number; marker_ar: string | null; announcement_ar: string | null; stated_count: number | null; found_count: number; text_ar: string; verses: string[]; page_ref: string | null }[];
+  }[];
+};
+
 export type Occurrence = {
   location: string;
   uri: string;
@@ -93,6 +128,7 @@ export type Occurrence = {
   features: Features;
   segments: Segment[];
   glosses: Gloss[];
+  meanings_here: MeaningHere[];
   variants: { source: string; root_key: string | null; source_title_ar: string; source_title_en: string }[];
 };
 
@@ -152,6 +188,7 @@ export type Attestation = {
 export type WordPayload = {
   slug: string;
   lemma_id: number;
+  mufradat: Mufradat | null;
   uri: string;
   ar: Ar;
   pos: PosLabel;

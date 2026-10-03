@@ -1,11 +1,11 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Term } from "@/components/terms/Term";
 import { formatNumber } from "@/lib/format";
 import { useReader } from "@/lib/reader/store";
-import type { Features, Label, WordPayload } from "@/lib/reader/types";
+import type { Features, Label, Mufradat, WordPayload } from "@/lib/reader/types";
 import { FORM_TERM, TAG_TERM } from "@/lib/terms";
 import { WujuhBlock } from "./Wujuh";
 
@@ -19,6 +19,26 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
   const locale = useLocale();
   const setSuggest = useReader((s) => s.setSuggest);
   const lines: { key: string; text: ReactNode; source: ReactNode; lang: string }[] = [];
+  // the meaning of this very place first: al-Muyassar fī Gharīb, phrase by phrase (P3.1)
+  for (const m of w.occurrence?.meanings_here ?? []) {
+    lines.push({
+      key: `m${m.id}`,
+      text: (
+        <>
+          <span className="text-word">{m.phrase_ar}</span>: {m.meaning_ar}
+        </>
+      ),
+      source: (
+        <>
+          {t("meaningHere")} — {locale === "ar" ? m.title_ar : m.title_en}
+          {m.mushaf_page ? ` · ${t("mushafPage", { n: formatNumber(m.mushaf_page, locale) })}` : ""}
+          {m.match_confidence === "medium" ? ` · ${t("placementInferred")}` : ""}
+          {m.display_only ? ` · ${t("displayOnly")}` : ""}
+        </>
+      ),
+      lang: "ar",
+    });
+  }
   for (const g of w.occurrence?.glosses ?? []) {
     lines.push({
       key: `g${g.id}`,
@@ -90,6 +110,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
           )}
         </>
       )}
+      {w.mufradat && <MufradatBlock m={w.mufradat} />}
       <WujuhBlock w={w} />
       {w.senses.length === 0 && (
         <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] leading-relaxed text-t3">{t("sensesPending")}</p>
@@ -156,3 +177,56 @@ export function GrammarHere({ features: f, surface, verseKey }: { features: Feat
     </div>
   );
 }
+
+/**
+ * al-Rāghib on this word (P3.1): each passage of al-Mufradāt that treats it, verbatim with its page; where he
+ * numbers the senses, the numbered list as he gives it. Cut and matched mechanically — said so (L3).
+ */
+function MufradatBlock({ m }: { m: Mufradat }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const work = locale === "ar" ? `${m.work.author_ar}، ${m.work.title_ar}` : `${m.work.author_en}, ${m.work.title_en}`;
+  return (
+    <section className="mufradat" aria-label={t("mufradatTitle")}>
+      <p className="label-caps">{t("mufradatTitle")}</p>
+      {m.subentries.map((s) => (
+        <article key={s.id} className="mufradat-sub">
+          <p className="ar-classical text-[17px] text-root" lang="ar" dir="rtl">{s.headword_ar}</p>
+          {s.senses.length > 0 ? (
+            // al-Rāghib often divides a sense again («فالأول… والثاني…»): each numbered list is its own group
+            [...new Set(s.senses.map((x) => x.list_no))].map((no, i) => (
+              <ol key={no} className={"flex flex-col gap-1.5" + (i > 0 ? " mufradat-sublist" : "")}>
+                {s.senses
+                  .filter((x) => x.list_no === no)
+                  .map((x) => (
+                    <li key={`${x.list_no}-${x.sense_index}`} className="flex gap-2" lang="ar" dir="rtl">
+                      <span className="mono shrink-0 text-[11px] text-t3">{formatNumber(x.sense_index, locale)}</span>
+                      <p className="text-[14.5px] leading-[1.9] text-t1">{x.text_ar}</p>
+                    </li>
+                  ))}
+              </ol>
+            ))
+          ) : (
+            <>
+              <p className={"mufradat-text text-[14.5px] leading-[1.9] text-t1" + (open[s.id] ? "" : " is-clamped")} lang="ar" dir="rtl">{s.text_ar}</p>
+              {s.text_ar.length > 320 && (
+                <button type="button" className="self-start text-[12px] text-t2 underline-offset-2 hover:underline" aria-expanded={!!open[s.id]} onClick={() => setOpen((o) => ({ ...o, [s.id]: !o[s.id] }))}>
+                  {open[s.id] ? t("showLess") : t("readWholePassage")}
+                </button>
+              )}
+            </>
+          )}
+          <p className="text-[11px] text-t3">
+            {work}
+            {s.page_ref ? ` · ${s.page_ref}` : ""}
+            {s.senses.length > 0 ? ` · ${t("sensesAsNumbered")}` : ""}
+            {s.match_confidence === "medium" ? ` · ${t("matchedMedium")}` : ""}
+          </p>
+        </article>
+      ))}
+      <p className="text-[11px] text-t3">{t("mufradatStatus")}</p>
+    </section>
+  );
+}
+

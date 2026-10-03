@@ -970,7 +970,15 @@
     "classicalViaSuffix": "about its ending",
     "classicalMatchedByExamples": "matched to this pattern through the book's examples",
     "classicalCommentary": "{count, plural, one {# comment} other {{n} comments}} from {work}",
-    "classicalStatus": "Passages quoted as they stand in their sources and matched to patterns mechanically; not yet reviewed by an editor."
+    "classicalStatus": "Passages quoted as they stand in their sources and matched to patterns mechanically; not yet reviewed by an editor.",
+    "meaningHere": "Meaning in this place",
+    "mushafPage": "mushaf page {n}",
+    "placementInferred": "its place in the verse is inferred",
+    "mufradatTitle": "In al-Rāghib's Mufradāt",
+    "readWholePassage": "Read the whole passage",
+    "sensesAsNumbered": "the senses as he numbers them",
+    "matchedMedium": "matched to this word by its letters and vowels",
+    "mufradatStatus": "Passages quoted as they stand in the article, cut and matched to words mechanically; not yet reviewed by an editor."
   },
   "concordance": {
     "title": "Concordance",
