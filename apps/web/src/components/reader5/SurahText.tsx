@@ -56,7 +56,7 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
               ))}
               <span className="ptool-more" data-more={v.key} />
             </div>
-            <VerseLines v={v} />
+            <VerseLines v={v} sajdaLabel={t("sajdaMark")} />
             <div className="gram-band" data-band={v.key} />
             <div data-inline={v.key} />
             <div data-gloss={v.key} />

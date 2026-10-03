@@ -7,6 +7,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useAfterMount } from "@/lib/client";
 import { cnt, formatNumber } from "@/lib/format";
 import { usePersonal, usePrefs, useReader, verseRef } from "@/lib/reader/store";
+import { tokenText } from "@/lib/reader/verseText";
 import { useAudio } from "@/lib/store/audio";
 import type { ChapterInfo } from "./ReaderShell";
 import { useDebounced } from "@/lib/useDebounced";
@@ -411,7 +412,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     if (tool === "cite") return setCite({ kind: "verse", key, label: key });
     if (tool === "copy") {
       const ayah = Number(key.split(":")[1]);
-      const words = Array.from(ref.current?.querySelectorAll<HTMLElement>(`[data-verse="${CSS.escape(key)}"] .w`) ?? []).map((w) => w.textContent);
+      const words = Array.from(ref.current?.querySelectorAll<HTMLElement>(`[data-verse="${CSS.escape(key)}"] .w`) ?? []).map(tokenText);
       // the translation shown under the verse goes with it, credited (RDR-555)
       const tr = ref.current?.querySelector<HTMLElement>(`[data-inline="${CSS.escape(key)}"] .inline-translation`);
       const trText = tr?.querySelector(".inline-tr-text")?.textContent;
@@ -437,7 +438,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       if (!range.intersectsNode(v)) continue;
       const words = Array.from(v.querySelectorAll<HTMLElement>(".w")).filter((w) => range.intersectsNode(w));
       if (!words.length) continue;
-      parts.push(words.map((w) => w.textContent).join(" "));
+      parts.push(words.map(tokenText).join(" "));
       refs.push(Number((v.dataset.verse ?? "").split(":")[1]));
     }
     if (!parts.length) return;

@@ -1055,7 +1055,8 @@
     "tool_concordance": "الفهرس",
     "tool_concordance_hint": "كل مواضع جذور هذه الآية في الفهرس السياقي",
     "drawer_concordance": "جذور الآية في الفهرس السياقي",
-    "concAll": "في القرآن ({n})"
+    "concAll": "في القرآن ({n})",
+    "sajdaMark": "موضع سجدة التلاوة"
   },
   "concordance": {
     "title": "الفهرس السياقي",

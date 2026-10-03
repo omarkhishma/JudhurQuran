@@ -384,6 +384,11 @@ button:disabled {
   color: var(--c-root);
   user-select: none;
 }
+/* the sajda sign beside the word it follows, furniture and not a control (RDR-547) */
+.sajda-mark {
+  color: var(--c-root);
+  cursor: default;
+}
 .ayah-num {
   font-family: var(--font-quran);
   font-size: 1em;

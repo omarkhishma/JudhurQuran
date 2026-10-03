@@ -9,6 +9,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic } from "@/lib/arabic/normalize";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { getJSON, useWord } from "@/lib/reader/api";
+import { tokenText } from "@/lib/reader/verseText";
 import { useIsClient } from "@/lib/client";
 import { type CiteTarget, usePersonal, usePrefs, useReader, type SuggestTarget } from "@/lib/reader/store";
 import { SITE } from "@/lib/site";
@@ -250,7 +251,7 @@ function CiteBody({ opened, chapter }: { opened: CiteTarget; chapter: ChapterInf
     typeof document === "undefined"
       ? "…"
       : Array.from(document.querySelectorAll<HTMLElement>(`[data-verse="${CSS.escape(key)}"] .w`))
-          .map((w) => w.textContent)
+          .map(tokenText)
           .join(" ") || "…";
   let title = cite.label;
   if (cite.kind === "verse") {

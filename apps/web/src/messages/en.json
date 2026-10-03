@@ -1055,7 +1055,8 @@
     "tool_concordance": "Concordance",
     "tool_concordance_hint": "Every place the roots of this verse occur, in the concordance",
     "drawer_concordance": "This verse's roots in the concordance",
-    "concAll": "in the Quran ({n})"
+    "concAll": "in the Quran ({n})",
+    "sajdaMark": "Place of prostration in recitation"
   },
   "concordance": {
     "title": "Concordance",
