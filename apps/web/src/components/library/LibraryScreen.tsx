@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber } from "@/lib/format";
 import { listTexts, type UserTextMeta } from "@/lib/library/texts";
@@ -12,7 +12,8 @@ import { getJSON } from "@/lib/reader/api";
 import { usePersonal } from "@/lib/reader/store";
 import { AddTextSheet } from "./AddTextSheet";
 
-export type TextCard = { slug: string; kind: string; title_ar: string; title_en: string; meta_ar: string | null; meta_en: string | null; chapter_count: number; passage_count: number; token_count: number; lemma_count: number | null };
+export type TextCard = { slug: string; kind: string; title_ar: string; title_en: string; meta_ar: string | null; meta_en: string | null; chapter_count: number; passage_count: number; token_count: number; lemma_count: number | null; function_lemmas?: string[] };
+type Division = { number: number; key: string; surah: number; ayah: number; page: number; name_ar: string; name_translit: string };
 type SurahRow = { number: number; name_ar: string; name_translit: string; verse_count: number; revelation_place: string };
 type Filter = "all" | "quran" | "mine";
 
@@ -41,6 +42,11 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
   const known = useMemo(() => new Set(Object.entries(wordStates).filter(([, v]) => v === "known").map(([k]) => k)), [wordStates]);
   const seen = useMemo(() => new Set(sessions.flatMap((s) => s.words)), [sessions]);
   const quran = texts.find((x) => x.kind === "quran");
+  // known content words only, the measure the reader's own texts use (LIB-11): particles and pronouns out
+  const knownQuran = useMemo(() => {
+    const fn = new Set(quran?.function_lemmas ?? []);
+    return [...known].filter((s) => !fn.has(s)).length;
+  }, [known, quran]);
   const userTexts = mine.data ?? [];
   const pct = pctFmt(locale);
 
@@ -106,9 +112,14 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
                 <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{quran.title_ar}</span>
                 {locale !== "ar" && <span className="text-[12.5px] text-t2">{quran.title_en}</span>}
                 <span className="text-[12px] text-t3">{t("quranMeta", { surahs: formatNumber(quran.chapter_count, locale), verses: formatNumber(quran.passage_count, locale) })}</span>
-                <KnownLine known={quran.lemma_count ? [...known].length : 0} total={quran.lemma_count ?? 0} seen={seen.size} />
+                <KnownLine known={quran.lemma_count ? knownQuran : 0} total={quran.lemma_count ?? 0} seen={seen.size} />
                 <ProgressLine value={versesRead / quran.passage_count} label={versesRead ? pct.format(versesRead / quran.passage_count) : t("notStarted")} />
               </Link>
+            </li>
+          )}
+          {filter !== "quran" && client && mine.isLoading && (
+            <li aria-hidden="true">
+              <span className="book-card animate-pulse" />
             </li>
           )}
           {filter !== "quran" &&
@@ -127,16 +138,38 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
             </li>
           )}
         </ul>
-        {client && filter === "mine" && userTexts.length === 0 && <p className="text-[13px] text-t3">{t("mineEmpty")}</p>}
+        {client && filter === "mine" && userTexts.length === 0 && !mine.isError && <p className="text-[13px] text-t3">{t("mineEmpty")}</p>}
+        {mine.isError && (
+          <p className="text-[13px] text-bad" role="alert">
+            {t("mineFailed")}{" "}
+            <button type="button" className="underline" onClick={() => void mine.refetch()}>{t("retry")}</button>
+          </p>
+        )}
       </section>
 
+      {quran && filter !== "mine" && (surahs.isLoading || surahs.isError) && (
+        <section className="flex flex-col gap-2" aria-label={t("surahs")} aria-busy={surahs.isLoading}>
+          <p className="label-caps">{t("surahs")}</p>
+          {surahs.isError ? (
+            <p className="text-[13px] text-bad" role="alert">
+              {t("surahsFailed")}{" "}
+              <button type="button" className="underline" onClick={() => void surahs.refetch()}>{t("retry")}</button>
+            </p>
+          ) : (
+            <div className="surah-grid">
+              {Array.from({ length: 12 }, (_, i) => <span key={i} className="surah-cell animate-pulse" aria-hidden="true" />)}
+            </div>
+          )}
+        </section>
+      )}
       {quran && filter !== "mine" && surahs.data && (
         <section className="flex flex-col gap-2" aria-label={t("surahs")}>
-          <div className="flex items-baseline gap-2">
+          <div className="flex flex-wrap items-baseline gap-2">
             <p className="label-caps">{t("surahs")}</p>
             <span className="flex-1" />
             <span className="text-[12px] text-t3">{t("surahsNote")}</span>
           </div>
+          <QuranEntry />
           <ol className="surah-grid">
             {surahs.data.data.map((s) => {
               const r = client ? (read[`quran:${s.number}`] ?? 0) : 0;
@@ -196,12 +229,63 @@ function ProgressLine({ value, label }: { value: number; label: string }) {
   );
 }
 
+/**
+ * Into the mushaf by juzʾ, ḥizb or page (LIB-Q01): a juzʾ or ḥizb opens at the verse it begins with, a page
+ * at its first verse.
+ */
+function QuranEntry() {
+  const t = useTranslations("library");
+  const locale = useLocale();
+  const router = useRouter();
+  const [by, setBy] = useState<"juz" | "hizb" | "page">("juz");
+  const [n, setN] = useState("1");
+  const [failed, setFailed] = useState(false);
+  const div = useQuery({ queryKey: ["divisions"], queryFn: () => getJSON<{ juz: Division[]; hizb: Division[]; pages: number }>("/divisions"), staleTime: Infinity });
+  const list = by === "page" ? [] : (div.data?.[by] ?? []);
+  async function go() {
+    setFailed(false);
+    try {
+      const v = by === "page" ? (await getJSON<{ verses: { surah: number; ayah: number }[] }>(`/pages/${Number(n)}`)).verses[0] : list.find((d) => d.number === Number(n));
+      if (!v) throw new Error("none");
+      router.push(`/quran/${v.surah}${v.ayah > 1 ? `#v${v.ayah}` : ""}`);
+    } catch {
+      setFailed(true);
+    }
+  }
+  return (
+    <form
+      className="quran-entry"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void go();
+      }}
+    >
+      <span className="text-[12.5px] text-t2">{t("enterBy")}</span>
+      <Segmented label={t("enterBy")} value={by} onChange={(v) => { setBy(v); setN("1"); }} options={[{ value: "juz", label: t("byJuz") }, { value: "hizb", label: t("byHizb") }, { value: "page", label: t("byPage") }]} />
+      {by === "page" ? (
+        <input type="number" min={1} max={div.data?.pages ?? 604} value={n} onChange={(e) => setN(e.target.value)} className="field w-[90px]" aria-label={t("pageNumber")} inputMode="numeric" />
+      ) : (
+        <select value={n} onChange={(e) => setN(e.target.value)} className="field" aria-label={t(by === "juz" ? "byJuz" : "byHizb")}>
+          {list.map((d) => (
+            <option key={d.number} value={d.number}>{`${formatNumber(d.number, locale)} · ${locale === "ar" ? d.name_ar : d.name_translit} ${formatNumber(d.surah, locale)}:${formatNumber(d.ayah, locale)}`}</option>
+          ))}
+        </select>
+      )}
+      <button type="submit" className="btn" disabled={by === "page" ? !(Number(n) >= 1 && Number(n) <= 604) : !list.length}>{t("go")}</button>
+      {failed && <span className="text-[12px] text-bad" role="alert">{t("entryFailed")}</span>}
+    </form>
+  );
+}
+
 function UserTextCard({ x, known }: { x: UserTextMeta; known: Set<string> }) {
   const t = useTranslations("library");
   const locale = useLocale();
   const k = x.lemmas.filter((s) => known.has(s)).length;
+  // where the reader is in this text (LIB-13), and its bar
+  const at = usePersonal((s) => s.progress[`text:${x.id}`]);
+  const of = x.passageCount;
   return (
-    <Link href={`/library/text/${x.id}`} className="book-card">
+    <Link href={`/library/text/${x.id}${at && at.passage > 1 ? `#p${at.passage}` : ""}`} className="book-card">
       <span className="book-cover is-mine" aria-hidden="true">{t("yours")}</span>
       <span className="book-kind">{t("kindMine")}</span>
       <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{x.title}</span>
@@ -209,7 +293,7 @@ function UserTextCard({ x, known }: { x: UserTextMeta; known: Set<string> }) {
       <span className="text-[12px] text-t2">
         {x.lemmas.length ? (k ? t("knownOf", { known: formatNumber(k, locale), total: formatNumber(x.lemmas.length, locale) }) : t("noneKnown")) : t("noQuranWords")}
       </span>
-      <ProgressLine value={0} label={t("new")} />
+      <ProgressLine value={at && of ? at.passage / of : 0} label={!at ? t("new") : of ? t("passageOf", { n: formatNumber(at.passage, locale), of: formatNumber(of, locale) }) : t("passageAt", { n: formatNumber(at.passage, locale) })} />
     </Link>
   );
 }

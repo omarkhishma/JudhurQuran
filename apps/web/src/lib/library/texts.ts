@@ -15,6 +15,8 @@ export type UserText = {
   words: number;
   /** distinct lemma slugs the text holds, for "% known" by unique lemma (LIB-Q04) */
   lemmas: string[];
+  /** how many passages, for the shelf's reading bar (LIB-13); absent on texts saved before it was kept */
+  passageCount?: number;
   review: number;
   unknown: number;
   createdAt: number;
@@ -36,7 +38,7 @@ export async function loadText(id: string): Promise<UserText | undefined> {
 export async function saveText(t: UserText): Promise<void> {
   const doc = { ...t, updatedAt: Date.now() };
   await set(KEY(t.id), doc);
-  const meta: UserTextMeta = { id: doc.id, title: doc.title, words: doc.words, lemmas: doc.lemmas, review: doc.review, unknown: doc.unknown, createdAt: doc.createdAt, updatedAt: doc.updatedAt };
+  const meta: UserTextMeta = { id: doc.id, title: doc.title, words: doc.words, lemmas: doc.lemmas, passageCount: doc.passages.length, review: doc.review, unknown: doc.unknown, createdAt: doc.createdAt, updatedAt: doc.updatedAt };
   const index = (await listTexts()).filter((x) => x.id !== t.id);
   index.push(meta);
   await set(INDEX, index);

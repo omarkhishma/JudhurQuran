@@ -1413,6 +1413,19 @@
     "privateNote": "in this browser only",
     "legendHit": "a Quranic word: opens its entry",
     "legendReview": "to review: opens in the Analyser",
-    "legendNone": "not found"
+    "legendNone": "not found",
+    "resumeText": "Continue at passage {n} of {of}",
+    "passageOf": "Passage {n} of {of}",
+    "passageAt": "Passage {n}",
+    "surahsFailed": "The sūras could not be loaded right now.",
+    "mineFailed": "Your texts could not be read from this browser.",
+    "retry": "Try again",
+    "enterBy": "Enter the mushaf by",
+    "byJuz": "Juzʾ",
+    "byHizb": "Ḥizb",
+    "byPage": "Page",
+    "pageNumber": "Page number (1–604)",
+    "go": "Go",
+    "entryFailed": "That place could not be reached."
   }
 }

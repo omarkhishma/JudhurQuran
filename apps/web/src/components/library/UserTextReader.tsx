@@ -2,12 +2,13 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
 import { formatNumber } from "@/lib/format";
 import { deleteText, loadText, saveText } from "@/lib/library/texts";
 import { words } from "@/lib/library/segment";
+import { usePersonal } from "@/lib/reader/store";
 import { isReview, readWords } from "./AddTextSheet";
 
 /**
@@ -29,6 +30,43 @@ export function UserTextReader({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [confirm, setConfirm] = useState(false);
+  const position = usePersonal((s) => s.progress[`text:${id}`]);
+  const setProgress = usePersonal((s) => s.setProgress);
+  const ready = !!doc.data;
+
+  // the passage at the top of the screen is where the reader is (LIB-13): kept per text, for the shelf's bar
+  // and for coming back
+  useEffect(() => {
+    if (!ready) return;
+    const seen = new Map<number, boolean>();
+    // only once the reader moves (a scroll, or a jump to #p…): opening the text must not overwrite where they were
+    let moved = false;
+    const record = () => {
+      if (!moved) return;
+      // at the foot of the page the last passage is where the reader is, though it cannot reach the top
+      const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      const top = [...seen].filter(([, v]) => v).map(([k]) => k);
+      const passage = atEnd ? Math.max(...seen.keys()) : top.length ? Math.min(...top) : 0;
+      if (passage > 0) setProgress(`text:${id}`, { chapter: 1, passage });
+    };
+    const onScroll = () => {
+      moved = true;
+      record();
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) seen.set(Number((e.target as HTMLElement).id.slice(1)), e.isIntersecting);
+        record();
+      },
+      { rootMargin: "-80px 0px -60% 0px" },
+    );
+    document.querySelectorAll(".user-passage[id^='p']").forEach((el) => io.observe(el));
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [ready, id, setProgress]);
 
   if (!client || doc.isLoading) return <div className="m-6 h-40 animate-pulse rounded-xl bg-card-2" role="status" aria-label={t("loading")} />;
   if (!doc.data)
@@ -90,6 +128,11 @@ export function UserTextReader({ id }: { id: string }) {
       <p className="text-[12.5px] text-t3">
         {t("mineMeta", { words: formatNumber(d.words, locale), review: formatNumber(d.review, locale) })} · {t("privateNote")}
       </p>
+      {position && position.passage > 1 && (
+        <a href={`#p${position.passage}`} className="btn self-start">
+          {t("resumeText", { n: formatNumber(position.passage, locale), of: formatNumber(d.passages.length, locale) })}
+        </a>
+      )}
       <div className="flex flex-wrap gap-3 text-[11.5px] text-t3">
         <span className="pv-word is-hit">{t("legendHit")}</span>
         <span className="pv-word is-review">{t("legendReview")}</span>
@@ -99,12 +142,14 @@ export function UserTextReader({ id }: { id: string }) {
       {tokens.map((ws, pi) => (
         <p key={pi} id={`p${pi + 1}`} className="user-passage" dir="rtl" lang="ar">
           {ws.map((w) => {
-            const r = read.data?.[i++]?.r;
+            // one index per word, taken before anything reads it: pending words had all shared key 0
+            const k = i++;
+            const r = read.data?.[k]?.r;
             const word = `${w.surface} `;
-            if (!read.data) return <span key={i} className="pv-word is-pending">{word}</span>;
-            if (isReview(r)) return <Link key={i} href={`/analyse?q=${encodeURIComponent(w.word)}`} className="pv-word is-review" title={t("tipReview", { root: r?.root_spaced ?? "—", c: fmtC(r?.confidence ?? 0) })}>{word}</Link>;
-            if (r && r.kind !== "none" && r.lemma) return <Link key={i} href={`/read?w=${encodeURIComponent(r.lemma)}`} className="pv-word is-hit" title={r.kind === "particle" ? t("tipParticle") : `${r.root_spaced ?? ""}${r.gloss_en ? ` — ${r.gloss_en}` : ""}`}>{word}</Link>;
-            return <span key={i} className="pv-word is-none" title={t("tipNone")}>{word}</span>;
+            if (!read.data) return <span key={k} className="pv-word is-pending">{word}</span>;
+            if (isReview(r)) return <Link key={k} href={`/analyse?q=${encodeURIComponent(w.word)}`} className="pv-word is-review" title={t("tipReview", { root: r?.root_spaced ?? "—", c: fmtC(r?.confidence ?? 0) })}>{word}</Link>;
+            if (r && r.kind !== "none" && r.lemma) return <Link key={k} href={`/read?w=${encodeURIComponent(r.lemma)}`} className="pv-word is-hit" title={r.kind === "particle" ? t("tipParticle") : `${r.root_spaced ?? ""}${r.gloss_en ? ` — ${r.gloss_en}` : ""}`}>{word}</Link>;
+            return <span key={k} className="pv-word is-none" title={t("tipNone")}>{word}</span>;
           })}
         </p>
       ))}

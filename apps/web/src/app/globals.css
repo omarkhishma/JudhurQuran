@@ -3263,6 +3263,22 @@ button.type-chip:hover {
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 6px;
 }
+/* into the mushaf by juzʾ, ḥizb or page (LIB-Q01) */
+.quran-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.quran-entry .field {
+  width: auto;
+  min-height: 34px;
+  max-width: 100%;
+}
 .surah-cell {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
