@@ -4,9 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
-import { listGraphs } from "@/lib/graph/persist";
+import { deleteLocalData, exportLocalData } from "@/lib/localData";
 import { useSaved } from "@/lib/store/saved";
-import { del, get, keys } from "idb-keyval";
 
 type Tab = "bookmarks" | "notes" | "history";
 
@@ -17,7 +16,6 @@ export function SavedView() {
   const { bookmarks, notes, history, clearAll } = useSaved();
   const [tab, setTab] = useState<Tab>("bookmarks");
   const [confirm, setConfirm] = useState(false);
-  const [done, setDone] = useState(false);
   const date = (n: number) => new Date(n).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB");
 
   function hrefFor(kind: string, key: string): string {
@@ -27,35 +25,15 @@ export function SavedView() {
     return `/roots/${encodeURIComponent(key)}`;
   }
 
-  async function exportAll() {
-    const graphs = await Promise.all((await listGraphs()).map((g) => get(`jadhr-graph:${g.id}`)));
-    const local: Record<string, unknown> = {};
-    for (const k of ["jadhr-saved", "jadhr-prefs", "jadhr-progress", "jadhr-panel-layers", "jadhr-theme"]) {
-      try {
-        local[k] = JSON.parse(localStorage.getItem(k) ?? "null");
-      } catch {
-        local[k] = localStorage.getItem(k);
-      }
-    }
-    const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), local, graphs }, null, 2)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "jadhr-my-data.json";
-    a.click();
-  }
-
+  // every store and document this site keeps in the browser, not a list of keys to keep in step (lib/localData);
+  // the reload drops the stores held in memory, so none of them writes its data back
   async function deleteAll() {
     if (!confirm) return setConfirm(true);
     clearAll();
-    for (const k of ["jadhr-saved", "jadhr-prefs", "jadhr-progress", "jadhr-panel-layers"]) {
-      try {
-        localStorage.removeItem(k);
-      } catch {}
-    }
-    for (const k of await keys()) if (String(k).startsWith("jadhr-")) await del(k);
-    setConfirm(false);
-    setDone(true);
+    await deleteLocalData();
+    window.location.replace(`${window.location.pathname}?deleted=1`);
   }
+  const done = client && new URLSearchParams(window.location.search).has("deleted");
 
   const noteList = Object.values(notes).sort((a, b) => b.at - a.at);
   return (
@@ -133,7 +111,7 @@ export function SavedView() {
       <section className="card mt-10 p-5" aria-labelledby="data-controls">
         <h2 id="data-controls" className="mb-3 font-semibold">{t("dataControls")}</h2>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn min-h-[40px]" onClick={() => void exportAll()}>{t("export")}</button>
+          <button type="button" className="btn min-h-[40px]" onClick={() => void exportLocalData()}>{t("export")}</button>
           <button type="button" className={"btn min-h-[40px] " + (confirm ? "border-bad text-bad" : "")} onClick={() => void deleteAll()}>
             {confirm ? t("deleteConfirm") : t("delete")}
           </button>

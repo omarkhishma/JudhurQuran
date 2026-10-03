@@ -22,3 +22,37 @@ test("the root map draws the family", async ({ page }) => {
   await expect(page.locator(".react-flow__node").first()).toBeVisible();
   expect(await page.locator(".react-flow__node").count()).toBeGreaterThan(10);
 });
+
+test("delete in Saved removes every store and document this site keeps, the reader's own texts included", async ({ page }) => {
+  await page.addInitScript((v) => { if (!sessionStorage.getItem("seeded")) { sessionStorage.setItem("seeded", "1"); localStorage.setItem("jadhr-personal", JSON.stringify(v)); localStorage.setItem("jadhr-analyse-choices", JSON.stringify({ state: { choices: { x: 1 } }, version: 1 })); } }, { state: { visited: true, onboarded: true, wordStates: { ilm: "known" } }, version: 2 });
+  await page.goto("/saved");
+  // a text of the reader's own, where idb-keyval keeps it
+  await page.evaluate(async () => {
+    await new Promise<void>((done) => {
+      const req = indexedDB.open("keyval-store");
+      req.onupgradeneeded = () => req.result.createObjectStore("keyval");
+      req.onsuccess = () => {
+        const tx = req.result.transaction("keyval", "readwrite");
+        tx.objectStore("keyval").put({ id: "t1", title: "نصي" }, "jadhr-text:t1");
+        tx.oncomplete = () => done();
+      };
+    });
+  });
+  const del = page.getByRole("button", { name: "حذف كل بياناتي من هذا المتصفح" });
+  await del.click();
+  await page.getByRole("button", { name: "انقر مرة أخرى لتأكيد الحذف النهائي" }).click();
+  await expect(page).toHaveURL(/\/saved\?deleted=1$/);
+  await expect(page.getByRole("status")).toHaveText("حُذفت بياناتك المحلية.");
+  const left = await page.evaluate(async () => {
+    const personal = JSON.parse(localStorage.getItem("jadhr-personal") ?? "null");
+    const docs = await new Promise<string[]>((done) => {
+      const req = indexedDB.open("keyval-store");
+      req.onsuccess = () => {
+        const r = req.result.transaction("keyval").objectStore("keyval").getAllKeys();
+        r.onsuccess = () => done(r.result.map(String));
+      };
+    });
+    return { words: personal?.state?.wordStates ?? {}, choices: localStorage.getItem("jadhr-analyse-choices"), docs: docs.filter((k) => k.startsWith("jadhr-")) };
+  });
+  expect(left).toEqual({ words: {}, choices: null, docs: [] });
+});
