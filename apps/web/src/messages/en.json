@@ -1814,7 +1814,7 @@
     "save": "Save",
     "saved": "Saved.",
     "saveFailed": "Could not save: {error}",
-    "noPublic": "You have no public profile: your name shows only on merged contributions.",
+    "noPublic": "No public page about you: the name you choose shows on your proposals and decisions in the public review queue and on merged contributions; change or clear it and it changes everywhere.",
     "syncTitle": "Sync",
     "syncJournal": "Sync my reading journal",
     "syncJournalHelp": "What you look up — day by day, every root you meet and the last place you looked something up — is private, so it stays on this device unless you turn this on. Turned on, it is kept encrypted on the server; turned off, it is removed from there entirely.",

@@ -36,7 +36,7 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/priva
           <li><strong>مشفّر على الخادم:</strong> كل عنصر تزامنه — ما فيه واسمه معًا — يُحفظ مشفّرًا (AES-GCM) مربوطًا بحسابك، ويجده الخادم ببصمة مفتاحية لا تُقرأ منها الكلمة، ولا يُفكّ إلا ليُرسل إلى أجهزتك. أما غير المشفّر فبيانات حسابك المذكورة أعلاه، ونوع كل عنصر (ملاحظة أو إعداد مثلًا)، وحجمه، ووقت تغيّره.</li>
           <li><strong>سجلّ القراءة لا يُزامن إلا إن فعّلت ذلك</strong> في «حسابي»: ما بحثت عنه يومًا بيوم، وكل جذر مررت به ومتى، وآخر موضع بحثت فيه. وإن أوقفته حُذف ذلك كله من الخادم.</li>
           <li><strong>مشاركة ما تبحث عنه لا تكون إلا إن فعّلتها:</strong> تُحفظ الكلمات والجذور والآيات التي تبحث عنها مشفّرةً سنةً ثم تُحذف، وإن أوقفتها حُذف ما شاركته فورًا.</li>
-          <li><strong>بلا ملف عامّ:</strong> لا يظهر اسمك إلا على المساهمات التي تُدمج في المعجم، بالاسم الذي تختاره.</li>
+          <li><strong>بلا ملف عامّ:</strong> لا صفحة لك يراها الناس. يظهر الاسم الذي تختاره — أو «مساهم» إن لم تختر اسمًا — على مقترحاتك وقراراتك في طلبات التعديل، وهي مفتوحة للجميع، وعلى ما يُعتمد منها. وإن غيّرت اسمك أو محوته تغيّر حيث يظهر.</li>
           <li><strong>مساهماتك:</strong> المقترحات التي ترسلها ومصادرها وقرارات المراجعين وملاحظاتهم تُحفظ سجلًّا عامًّا لما تغيّر في المعجم. وحذف الحساب يحذف مقترحاتك التي لم تُدمج ويمحو اسمك من كل ما دُمج، وتبقى الصياغة المدموجة في المعجم منسوبةً إلى «مساهم سابق».</li>
           <li><strong>الدخول عبر Google أو Apple</strong> يصلنا منه بريدك الموثَّق ومعرّف حسابك عندهم فقط.</li>
           <li><strong>رسالة الدخول</strong> تُرسل إلى بريدك عبر مزوّد البريد، ولا نستعمل البريد لغيرها.</li>
@@ -55,7 +55,7 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/priva
 
         <h2>حقوقك</h2>
         <ul>
-          <li>تصدّر ما على جهازك ونسخة حسابك من الخادم من «حسابي» ← «بياناتك». ونسخة الحساب فيها كل ما يحفظه الخادم لك: ما تزامنه، والنسخ المستبدلة، وعلامات الحذف، وما شاركته مما تبحث عنه، وطرق دخولك.</li>
+          <li>تصدّر ما على جهازك ونسخة حسابك من الخادم من «حسابي» ← «بياناتك». ونسخة الحساب فيها كل ما يحفظه الخادم لك: ما تزامنه، والنسخ المستبدلة، وعلامات الحذف، وما شاركته مما تبحث عنه، وطرق دخولك، ومساهماتك: مقترحاتك وقراراتك وبلاغاتك وما يُنسب إليك.</li>
           <li>تحذف ما على جهازك بضغطتين، وتحذف حسابك بخطوتين؛ وحذف بيانات الجهاز يُخرجه من الحساب أولًا فلا يحذف ما في الحساب.</li>
         </ul>
 
@@ -85,7 +85,7 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/priva
         <li><strong>Encrypted on the server:</strong> each synced item — what it says and what it is called — is stored encrypted (AES-GCM), bound to your account; the server finds it by a keyed fingerprint that does not give the word back, and decrypts it only to send it to your devices. Not encrypted: your account details above, the kind of each item (a note, a setting), its size and when it changed.</li>
         <li><strong>The reading journal syncs only if you turn that on</strong> in your Profile: what you looked up day by day, every root you have met and when, and the last place you looked something up. Turned off, all of it is removed from the server.</li>
         <li><strong>Sharing what you look up happens only if you turn it on:</strong> the words, roots and verses you look up are kept encrypted for a year, then deleted; turned off, what you shared is removed at once.</li>
-        <li><strong>No public profile:</strong> your name appears only on contributions merged into the lexicon, under the name you choose.</li>
+        <li><strong>No public profile:</strong> there is no page about you. The name you choose — or &ldquo;a contributor&rdquo; without one — appears on your proposals and decisions in the review queue, which anyone can read, and on what is merged from them; change or clear it and it changes wherever it appears.</li>
         <li><strong>Your contributions:</strong> the proposals you send, their sources, and the reviewers&apos; decisions and notes are kept as the public record of what changed in the lexicon. Deleting your account removes your unmerged proposals and your name from everything merged; merged wording stays in the lexicon, credited to a former contributor.</li>
         <li><strong>Signing in with Google or Apple</strong> gives us only your verified e-mail address and their identifier for your account.</li>
         <li><strong>The sign-in e-mail</strong> is sent through an e-mail provider, and we use your address for nothing else.</li>
@@ -104,7 +104,7 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/priva
 
       <h2>Your rights</h2>
       <ul>
-        <li>Export what is on your device and your account&apos;s copy from the server, under Profile → Your data. The account&apos;s copy holds everything the server keeps for you: what you sync, the replaced versions, the deletion markers, the lookups you shared and the ways you sign in.</li>
+        <li>Export what is on your device and your account&apos;s copy from the server, under Profile → Your data. The account&apos;s copy holds everything the server keeps for you: what you sync, the replaced versions, the deletion markers, the lookups you shared, the ways you sign in, and your contributions: your proposals, decisions and reports, and what is credited to you.</li>
         <li>Delete what is on your device in two clicks and your account in two steps; deleting a device&apos;s data signs it out first, so it never deletes the account&apos;s.</li>
       </ul>
 
