@@ -23,6 +23,7 @@ Files: `infra/compose.prod.yml`, `infra/Caddyfile`, `.env.example` (every variab
 ```
 POSTGRES_PASSWORD=<long random>
 REVALIDATE_SECRET=<long random>
+INTERNAL_TOKEN=<long random>   # the web server's renders send it to the API and skip the per-IP rate limit
 PUBLIC_URL=https://<domain>
 SITE_ADDRESS=<domain>
 DATASET_VERSION=2026.10.0

@@ -46,6 +46,10 @@
 
 ## Lessons
 
+- [2026-10-03] Run the e2e suite against the production build, not the dev server: dev recompiles on file changes and served error pages mid-run that looked like product bugs; against `next start` the same suite ran green in a quarter of the time.
+- [2026-10-03] A per-IP rate limit behind a server that renders pages counts every visitor as the web host: server renders now carry a shared internal token (JADHR_INTERNAL_TOKEN). Tests share one IP too — the e2e API runs with a higher limit.
+- [2026-10-03] Measure touch targets with layout size (offsetHeight), not the painted box: an opening popover's scale animation reported 42.7 px for a 44 px item.
+
 - [2026-10-03] Never reveal content on `:focus-within` above a tappable element: a tap focuses the button on mousedown, the revealed tools pushed the word down, and the click landed on the verse instead — every phone tap was lost. Reveal on hover, `:focus-visible` or an explicit state.
 - [2026-10-03] A portal into server-rendered DOM needs a flag set after the first commit, not "is client": after a client-side navigation the client flag is already true during the first render, when the new page's DOM does not exist yet.
 - [2026-10-03] Esc belongs to the innermost layer: a page-level Esc handler must stand down while any dialog or term card is open, or one keypress closes the card and the entry behind it.
