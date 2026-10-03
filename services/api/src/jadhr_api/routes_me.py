@@ -111,7 +111,7 @@ def signout(u: User) -> ORJSONResponse:
 
 @router.get("/me", summary="The signed-in account, its devices and how much it holds")
 def me(u: User) -> ORJSONResponse:
-    return ok(accounts.me(u))
+    return ok({**accounts.me(u), "held": sync.held(u)})
 
 
 class _MePatch(BaseModel):

@@ -12,13 +12,14 @@ the reader turned that on (NTB-Q02).
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException
 from sqlalchemy import Connection, text
 
 from .accounts import key_hash, q, q1, seal, tx, unseal
+from .settings import get_settings
 
 STORES = {
     "saved",
@@ -284,6 +285,52 @@ def restore(u: dict[str, Any], history_id: int) -> dict[str, Any]:
         "applied": [{"store": store, "key": key}],
         "rejected": [],
         "refused": [],
+    }
+
+
+def held(u: dict[str, Any]) -> dict[str, Any]:
+    """What the server keeps for this account, counted, with the day the oldest of each kind goes (plan B35): the
+    privacy page's periods shown for one account. Counts only — nothing is unsealed to say them."""
+    s = get_settings()
+    with tx() as conn:
+        rows = q(
+            conn,
+            """select store, count(*) filter (where not deleted) as live, count(*) filter (where deleted) as gone,
+                      min(updated_at) filter (where deleted) as first_gone
+               from accounts.records where user_id = :u group by store""",
+            {"u": u["id"]},
+        )
+        hist = q1(
+            conn,
+            "select count(*) as n, min(replaced_at) as first from accounts.record_history where user_id = :u",
+            {"u": u["id"]},
+        )
+        looks = q1(
+            conn,
+            "select count(*) as n, min(at) as first from accounts.lookup_events where user_id = :u",
+            {"u": u["id"]},
+        )
+
+    def goes(first: datetime | None, days: int) -> str | None:
+        return None if first is None else (first + timedelta(days=days)).isoformat()
+
+    gone = [r["first_gone"] for r in rows if r["first_gone"] is not None]
+    return {
+        "stores": {r["store"]: int(r["live"]) for r in rows if r["live"]},
+        "used": sum(int(r["live"]) + int(r["gone"]) for r in rows),
+        "limit": MAX_RECORDS,
+        "deletions": {
+            "count": sum(int(r["gone"]) for r in rows),
+            "first_goes": goes(min(gone) if gone else None, s.tombstone_days),
+        },
+        "history": {
+            "count": int(hist["n"]) if hist else 0,
+            "first_goes": goes(hist["first"] if hist else None, s.history_days),
+        },
+        "lookups": {
+            "count": int(looks["n"]) if looks else 0,
+            "first_goes": goes(looks["first"] if looks else None, s.lookup_retention_days),
+        },
     }
 
 

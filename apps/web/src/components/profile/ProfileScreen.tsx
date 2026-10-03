@@ -44,6 +44,12 @@ export function ProfileScreen({ initialTab }: { initialTab: Tab }) {
   const session = useAccount((s) => s.session);
   const [tab, setTab] = useState<Tab>(initialTab);
   const me = useQuery({ queryKey: ["me", session], queryFn: () => authFetch<Me>("/me"), enabled: client && !!session, staleTime: 30_000 });
+  // what the server keeps (B35) and the devices change with each sync: read again after one
+  const synced = useSyncStatus((s) => s.last);
+  const { refetch } = me;
+  useEffect(() => {
+    if (synced) void refetch();
+  }, [synced, refetch]);
   const strip = useRef<HTMLDivElement>(null);
   // on a phone the strip scrolls sideways: the open tab is brought into view, as the shared nav does
   useEffect(() => {

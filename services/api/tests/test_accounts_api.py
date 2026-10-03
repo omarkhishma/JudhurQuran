@@ -632,3 +632,36 @@ def test_restoring_a_backup_then_reapplying_deletions_removes_the_accounts_delet
         accounts.q(
             conn, "delete from accounts.deleted_accounts where user_id = :u returning user_id", {"u": uid}
         )
+
+
+def test_the_account_says_what_the_server_keeps_and_when_the_oldest_of_each_kind_goes(email: str) -> None:
+    """Plan B35: counts per kind, the account's cap, and the day the oldest deletion marker, replaced version and
+    shared lookup goes — each period the setting the purge uses."""
+    h = sign_in(email)
+    s = get_settings()
+    t0 = int(time.time() * 1000) - 60_000
+
+    def push(store: str, key: str, value: object, at: int, deleted: bool = False) -> None:
+        rec = {"store": store, "key": key, "value": value, "deleted": deleted, "updated_at": at}
+        assert client.post("/api/v1/me/sync", headers=h, json={"records": [rec]}).status_code == 200
+
+    push("saved", "b:lemma:ilm", {"label": "a"}, t0)
+    push("saved", "b:lemma:ilm", {"label": "b"}, t0 + 1000)  # the first kept as a replaced version
+    push("saved", "b:root:علم", {"label": "c"}, t0)
+    push("saved", "b:root:علم", None, t0 + 2000, deleted=True)  # a deletion marker
+    push("prefs", "size", 1.2, t0)
+    client.patch("/api/v1/me", headers=h, json={"settings": {"share_lookups": True}})
+    client.post("/api/v1/me/lookups", headers=h, json={"events": [{"lemma": "ilm", "root": "علم"}]})
+    held = client.get("/api/v1/me", headers=h).json()["held"]
+    assert held["stores"] == {"saved": 1, "prefs": 1}
+    assert held["used"] == 3 and held["limit"] == 20_000
+    assert held["deletions"]["count"] == 1 and held["history"]["count"] >= 1 and held["lookups"]["count"] == 1
+
+    def days_left(iso: str) -> float:
+        from datetime import datetime
+
+        return (datetime.fromisoformat(iso).timestamp() - time.time()) / 86400
+
+    assert abs(days_left(held["deletions"]["first_goes"]) - s.tombstone_days) < 0.01
+    assert abs(days_left(held["history"]["first_goes"]) - s.history_days) < 0.01
+    assert abs(days_left(held["lookups"]["first_goes"]) - s.lookup_retention_days) < 0.01

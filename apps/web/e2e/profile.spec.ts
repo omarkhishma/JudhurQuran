@@ -146,6 +146,12 @@ test("signed in: the name credited, the journal synced only when turned on, this
   await expect(page.locator(".profile-id")).toContainText("قارئ الاختبار");
   await expect(page.getByText(/^متزامن • جهاز واحد/)).toBeVisible();
   await expect(page.locator(".account-row").filter({ hasText: "هذا الجهاز" })).toBeVisible();
+  // what the server keeps, as the server counts it (B35): the star and the verse note
+  const held = async () => ((await (await page.request.get("/api/v1/me", { headers: h })).json()) as { held: { stores: Record<string, number> } }).held;
+  await expect.poll(async () => (await held()).stores.saved).toBe(2);
+  const kept = page.locator(".account-card").filter({ hasText: "ما يحفظه الخادم لك" });
+  await expect(kept.locator(".account-held > div").filter({ hasText: "المحفوظات" })).toContainText(ar(2));
+  await expect(kept).toContainText("من ٢٠٬٠٠٠ عنصر يتسع لها الحساب");
   // the journal stays on the device until the reader turns it on
   const journal = async () => ((await (await page.request.get("/api/v1/me/export", { headers: h })).json()) as { records: { store: string }[] }).records.filter((r) => r.store === "journal").length;
   await expect.poll(async () => ((await (await page.request.get("/api/v1/me/export", { headers: h })).json()) as { records: unknown[] }).records.length).toBeGreaterThan(0);

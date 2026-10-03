@@ -4,15 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { SignInPanel } from "@/components/account/SignInPanel";
-import { usePathname } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { signOutHere } from "@/lib/account/actions";
 import { errorKind } from "@/lib/account/errors";
 import { type Account, authFetch, useAccount } from "@/lib/account/store";
-import { formatNumber, verseRef } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
 import type { ReadingContext, Session } from "@/lib/reader/store";
 import { runSync } from "@/lib/sync/run";
 
-export type Me = Account & { created_at: string; devices: { id: string; device: string | null; created_at: string; last_seen_at: string; current: boolean }[]; records: number };
+type Kept = { count: number; first_goes: string | null };
+/** What the server keeps for the account (plan B35): counts, the cap, and when the oldest of each kind goes. */
+export type Held = { stores: Partial<Record<string, number>>; used: number; limit: number; deletions: Kept; history: Kept; lookups: Kept };
+export type Me = Account & { created_at: string; devices: { id: string; device: string | null; created_at: string; last_seen_at: string; current: boolean }[]; records: number; held?: Held };
 type Version = { id: number; store: string; key: string; value: unknown; deleted: boolean; updated_at: number; replaced_at: number };
 
 /** An error as the reader is told it, in their language (F21). */
@@ -49,6 +52,7 @@ export function AccountPanel({ me, onChanged }: { me: Me | null; onChanged: () =
       <ProfileForm />
       <Choices onChanged={onChanged} />
       <Devices me={me} onChanged={onChanged} />
+      <OnTheServer me={me} />
       <History />
       <SignOut />
       <DeleteAccount />
@@ -191,6 +195,51 @@ function Devices({ me, onChanged }: { me: Me | null; onChanged: () => void }) {
           </li>
         ))}
       </ul>
+    </Card>
+  );
+}
+
+/**
+ * Plan B35: what the server keeps for this account — how many of each kind, against the account's cap, and the day
+ * the oldest deletion marker, replaced version and shared lookup goes. The privacy page's periods, for this account.
+ */
+function OnTheServer({ me }: { me: Me | null }) {
+  const t = useTranslations("me");
+  const ta = useTranslations("account");
+  const locale = useLocale();
+  const held = me?.held;
+  if (!held) return null;
+  const day = (iso: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso));
+  const kept = (key: "heldDeletions" | "heldHistory" | "heldLookups", k: Kept) => (
+    <li className="flex flex-wrap justify-between gap-x-3">
+      <span>{t(key, cnt(k.count, locale))}</span>
+      {k.first_goes && <span className="text-t3">{t("heldFirstGoes", { date: day(k.first_goes) })}</span>}
+    </li>
+  );
+  const stores = Object.entries(held.stores).filter(([, n]) => (n ?? 0) > 0) as [string, number][];
+  return (
+    <Card title={t("heldTitle")}>
+      {stores.length ? (
+        <dl className="account-held">
+          {stores.map(([store, n]) => (
+            <div key={store}>
+              <dt>{ta(`store.${store}`)}</dt>
+              <dd>{formatNumber(n, locale)}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="text-[12.5px] text-t3">{t("heldNone")}</p>
+      )}
+      <p className="text-[12.5px] text-t2">{t("heldUsed", { used: formatNumber(held.used, locale), limit: formatNumber(held.limit, locale) })}</p>
+      <ul className="flex flex-col gap-1 text-[12.5px] text-t2">
+        {kept("heldDeletions", held.deletions)}
+        {kept("heldHistory", held.history)}
+        {kept("heldLookups", held.lookups)}
+      </ul>
+      <Link href="/privacy" className="self-start text-[12.5px] underline-offset-2 hover:underline">
+        {t("heldHow")}
+      </Link>
     </Card>
   );
 }

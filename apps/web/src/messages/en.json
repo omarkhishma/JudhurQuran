@@ -1876,7 +1876,15 @@
     "syncDone": "Synced at {when}.",
     "full": "{count, plural, one {One new item stays} other {{n} new items stay}} on this device: the account holds as many as it can.",
     "unreadable": "Not synced this time, because this browser could not read it: {stores}.",
-    "toData": "Your data: export or delete it"
+    "toData": "Your data: export or delete it",
+    "heldTitle": "What the server keeps for you",
+    "heldNone": "Nothing synced yet.",
+    "heldUsed": "{used} of the {limit} items an account can hold, deletion markers included.",
+    "heldDeletions": "{count, plural, =0 {No deletion markers} one {One deletion marker} other {{n} deletion markers}}",
+    "heldHistory": "{count, plural, =0 {No replaced versions} one {One replaced version} other {{n} replaced versions}}",
+    "heldLookups": "{count, plural, =0 {No shared lookups} one {One shared lookup} other {{n} shared lookups}}",
+    "heldFirstGoes": "the oldest goes by {date}",
+    "heldHow": "How long each is kept"
   },
   "contrib": {
     "title": "Review queue",
