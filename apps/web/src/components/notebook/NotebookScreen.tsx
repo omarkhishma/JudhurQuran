@@ -202,6 +202,9 @@ function NoteEditor({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
   const locale = useLocale();
   const update = useNotebook((s) => s.update);
   const remove = useNotebook((s) => s.remove);
+  // the reader's tags so far, offered as they type a new one (NTB-21)
+  const notes = useNotebook((s) => s.notes);
+  const known = useMemo(() => [...new Set(notes.flatMap((n) => n.tags))].filter((tg) => !x.tags.includes(tg)).sort((a, b) => a.localeCompare(b, locale)), [notes, x.tags, locale]);
   const [tag, setTag] = useState("");
   const [confirm, setConfirm] = useState(false);
   const resolved = useResolved(x.body);
@@ -237,8 +240,16 @@ function NoteEditor({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
           className="tag-input"
           placeholder={t("tagPlaceholder")}
           aria-label={t("addTag")}
+          list={known.length ? "notebook-tags" : undefined}
           dir="auto"
         />
+        {known.length > 0 && (
+          <datalist id="notebook-tags">
+            {known.map((tg) => (
+              <option key={tg} value={tg} />
+            ))}
+          </datalist>
+        )}
       </div>
       <textarea value={x.body} onChange={(e) => update(x.id, { body: e.target.value })} rows={10} className="field notebook-body" placeholder={t("bodyPlaceholder")} aria-label={t("bodyLabel")} dir="auto" />
       <LinkedChips resolved={resolved} />
@@ -282,8 +293,16 @@ function VerseNoteEditor({ x, name, onDeleted }: { x: Item; name: (n: number) =>
           <Link href={`/quran/${surahOf(key)}/${key.split(":")[1]}`} className="underline-offset-2 hover:underline">{t("openVerse")}</Link>
         </div>
       </figure>
-      {/* an emptied verse note is deleted by the store, so the text is saved when it has some */}
+      {/* an emptied verse note is deleted by the store, so the text is saved when it has some — and emptying it
+          asks whether to delete the note or bring its text back, rather than keeping the old text unsaid (NTB-35) */}
       <textarea value={draft} onChange={(e) => { setDraft(e.target.value); if (e.target.value.trim()) setNote(key, e.target.value); }} rows={8} className="field notebook-body" aria-label={t("bodyLabel")} dir="auto" />
+      {!draft.trim() && (
+        <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-t2" role="status">
+          <span>{t("emptied")}</span>
+          <button type="button" className="btn btn-danger" onClick={() => { setNote(key, ""); onDeleted(); }}>{t("delete")}</button>
+          <button type="button" className="btn" onClick={() => setDraft(x.body)}>{t("restoreText")}</button>
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         <button type="button" className="btn" onClick={() => download(`note-${key.replace(":", "-")}.md`, toMarkdown({ ...x, body: draft, title: ref }, locale), "text/markdown")}>{t("export")}</button>
         <span className="flex-1" />

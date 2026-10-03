@@ -360,7 +360,9 @@
     "review": "Review",
     "noStreak": "Everything here is derived from your reading; nothing asks you to keep a streak.",
     "private": "Your notebook lives in this browser; the server keeps none of it unless you sign in to sync it across your devices.",
-    "back": "← All notes"
+    "back": "← All notes",
+    "emptied": "You emptied this note. Delete it, or bring its text back?",
+    "restoreText": "Bring the text back"
   },
   "surah": {
     "index": "Surah index",
