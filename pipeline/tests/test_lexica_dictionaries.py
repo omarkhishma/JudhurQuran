@@ -242,10 +242,22 @@ def test_split_precision_against_openiti(work: str, words: list[dict]) -> None:
         for a in arts
         if a.body.strip()
     ]
-    precision, verdicts = boundary_precision(entries, read_oracle(path, style), skip_head=skip_head)
+    oracle = read_oracle(path, style)
+    precision, verdicts = boundary_precision(entries, oracle, skip_head=skip_head)
     print(f"\n{work}: boundary precision {precision:.2f} on {len(verdicts)} sampled entries against {name}")
     for v in verdicts:
         if not v.ok:
             print("  ", v)
     assert len(verdicts) == 50
     assert precision >= minimum
+    # The oracle must be able to fail: the same sample, each entry run on into the next (two articles
+    # as one) or cut short by a third (entries of 20 words or more), scores near zero.
+    late = [(h, b + "\n" + entries[i + 1][1]) for i, (h, b) in enumerate(entries[:-1])]
+    early = [
+        (h, " ".join(b.split(" ")[: -max(10, len(b.split(" ")) * 3 // 10)]))
+        for h, b in entries
+        if len(b.split(" ")) >= 20
+    ]
+    for wrong in (late, early):
+        p_wrong, _ = boundary_precision(wrong, oracle, skip_head=skip_head)
+        assert p_wrong <= 0.2, (work, p_wrong)
