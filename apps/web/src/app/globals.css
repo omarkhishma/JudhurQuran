@@ -4431,3 +4431,23 @@ a.wotd-pill:hover {
 .backlink:hover {
   background: var(--card-2);
 }
+
+/* a browser that would not save, said on every page until dismissed (RDR-444, NTB-Q01) */
+.storage-warning {
+  position: fixed;
+  inset-inline: 12px;
+  bottom: 12px;
+  z-index: 90;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  max-width: 720px;
+  margin-inline: auto;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--line));
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--sh-open);
+  color: var(--t1);
+}

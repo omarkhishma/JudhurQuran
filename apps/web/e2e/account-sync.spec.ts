@@ -1,4 +1,5 @@
 import { type Browser, expect, type Page, test } from "@playwright/test";
+import { stored } from "./helpers";
 
 /**
  * Accounts and sync (PLAN P6.1, P6.2, P6.4; PRF-33, PRF-Q02, NTB-Q02): sign-in by a link that works once; what a
@@ -8,6 +9,7 @@ import { type Browser, expect, type Page, test } from "@playwright/test";
  */
 
 type Rec = { store: string; key: string; value: unknown; deleted?: boolean };
+type Nb = { notes: { title: string; body: string }[] };
 const NOTE = { id: "n1", title: "عن العلم", body: "أصل", tags: [], created: 1759000000000, updated: 1759000000000, links: { roots: [], verses: [] } };
 
 const address = () => `e2e-${test.info().project.name}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}@example.org`;
@@ -96,7 +98,7 @@ test("what a device holds joins the account on sign-in, and a second device gets
   const b = await device(browser, null);
   await b.goto("/");
   await signIn(b, email);
-  await expect.poll(async () => (await local(b, "jadhr-notebook"))?.notes?.[0]?.title).toBe("عن العلم");
+  await expect.poll(async () => (await stored<Nb>(b, "jadhr-notebook"))?.notes?.[0]?.title).toBe("عن العلم");
   expect((await local(b, "jadhr-saved")).bookmarks.map((x: { label: string }) => x.label)).toEqual(["عِلْم"]);
   expect((await local(b, "jadhr-saved")).notes["quran:2:255"].text).toBe("آية الكرسي");
   expect(Object.keys((await local(b, "jadhr-review")).cards)).toEqual(["علم"]);
@@ -122,7 +124,7 @@ test("an edit travels both ways: the newer wins, the older is kept to restore, a
   const b = await device(browser, null);
   await b.goto("/");
   await signIn(b, email);
-  await expect.poll(async () => (await local(b, "jadhr-notebook"))?.notes?.length).toBe(1);
+  await expect.poll(async () => (await stored<Nb>(b, "jadhr-notebook"))?.notes?.length).toBe(1);
 
   // A edits while offline: the change waits, stamped when it was made
   await a.goto("/notebook?note=n1");
@@ -136,7 +138,7 @@ test("an edit travels both ways: the newer wins, the older is kept to restore, a
   // A comes back: its older edit loses, is kept with the replaced versions, and A takes B's
   await a.context().setOffline(false);
   await a.reload();
-  await expect.poll(async () => (await local(a, "jadhr-notebook"))?.notes?.[0]?.body).toBe("نسخة ب");
+  await expect.poll(async () => (await stored<Nb>(a, "jadhr-notebook"))?.notes?.[0]?.body).toBe("نسخة ب");
   const hist = (await (await a.request.get("/api/v1/me/history", { headers: await bearer(a) })).json()) as { data: Rec[] };
   expect(hist.data.filter((r) => r.key === "n:n1").map((r) => (r.value as { body: string } | null)?.body)).toContain("نسخة أ");
 
@@ -146,7 +148,7 @@ test("an edit travels both ways: the newer wins, the older is kept to restore, a
   await b.locator(".notebook-editor").getByRole("button", { name: "احذف" }).last().click();
   await expect.poll(async () => (await records(b)).filter((r) => r.key === "n:n1")).toEqual([]);
   await a.reload();
-  await expect.poll(async () => (await local(a, "jadhr-notebook"))?.notes?.length).toBe(0);
+  await expect.poll(async () => (await stored<Nb>(a, "jadhr-notebook"))?.notes?.length).toBe(0);
   await dropAccount(a);
   await b.context().close();
 });

@@ -22,3 +22,23 @@ export function arCount(n: number, forms: { one: string; two: string; few: strin
   const f = cat === "zero" ? forms.other : forms[cat];
   return f.replace("#", ar(n));
 }
+
+/** A persisted store's state as this browser keeps it: localStorage, or IndexedDB for the notebook (NTB-Q01). */
+export async function stored<T = Record<string, unknown>>(page: Page, key: string): Promise<T | null> {
+  return page.evaluate<T | null, string>(
+    (k) =>
+      new Promise((resolve) => {
+        const ls = localStorage.getItem(k);
+        const open = indexedDB.open("keyval-store");
+        open.onerror = () => resolve(ls ? JSON.parse(ls).state : null);
+        open.onsuccess = () => {
+          const db = open.result;
+          if (!db.objectStoreNames.contains("keyval")) return resolve(ls ? JSON.parse(ls).state : null);
+          const get = db.transaction("keyval", "readonly").objectStore("keyval").get(k);
+          get.onsuccess = () => resolve(get.result?.state ?? (ls ? JSON.parse(ls).state : null));
+          get.onerror = () => resolve(null);
+        };
+      }),
+    key,
+  );
+}

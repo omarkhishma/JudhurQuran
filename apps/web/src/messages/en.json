@@ -31,7 +31,10 @@
     "errorTitle": "Something went wrong",
     "errorBody": "Sorry — this page couldn't be loaded. Please try again in a moment.",
     "home": "Home",
-    "rootsCount": "{count, plural, =0 {no roots} one {{n} root} other {{n} roots}}"
+    "rootsCount": "{count, plural, =0 {no roots} one {{n} root} other {{n} roots}}",
+    "storageFailed": "This browser would not save: what you do lasts until you close the page. Export what is here to keep it.",
+    "storageExport": "Export what is here",
+    "storageDismiss": "OK"
   },
   "nav": {
     "read": "Read",
@@ -1321,7 +1324,6 @@
     "asbabClassicalNote": "Narrations with their chains as the two books give them, not graded here; the vetted ones are those above, from the Tafsir Center's database.",
     "noArticlesOfKind": "No articles of this kind of dictionary for this root.",
     "relatedNone": "No other verse stands on its roots.",
-    "storageFailed": "This browser would not save; what you do lasts until you close the page.",
     "stopRecite": "Stop the recitation",
     "resumeHere": "resume here",
     "stoppedAt": "You stopped at verse {n}",

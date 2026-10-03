@@ -13,7 +13,7 @@ import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { foldLatin, type Mention, parseMentions } from "@/lib/notebook/mentions";
 import { getJSON } from "@/lib/reader/api";
 import { mergeSessions, type SavedTrail, usePersonal } from "@/lib/reader/store";
-import { type NoteLinks, useNotebook } from "@/lib/store/notebook";
+import { type NoteLinks, useNotebook, useNotebookReady } from "@/lib/store/notebook";
 import { useSaved } from "@/lib/store/saved";
 import { useDebounced } from "@/lib/useDebounced";
 
@@ -42,7 +42,10 @@ const download = (name: string, text: string, type: string) => {
 export function NotebookScreen({ initialTab, initialNote }: { initialTab: "notes" | "journal"; initialNote: string | null }) {
   const t = useTranslations("notebook");
   const locale = useLocale();
-  const client = useIsClient();
+  // the notes are read from IndexedDB a moment after the page: nothing is said about them before then
+  const isClient = useIsClient();
+  const ready = useNotebookReady();
+  const client = isClient && ready;
   const items = useItems();
   const [tab, setTab] = useState(initialTab);
   const [selected, setSelected] = useState<string | null>(initialNote);

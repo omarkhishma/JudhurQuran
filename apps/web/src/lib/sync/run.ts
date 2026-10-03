@@ -2,6 +2,8 @@
 
 import { create } from "zustand";
 import { type Account, ApiError, authFetch, SignedOut, useAccount } from "@/lib/account/store";
+import { whenHydrated } from "@/lib/store/idbStorage";
+import { useNotebook } from "@/lib/store/notebook";
 import { adapters } from "./adapters";
 import { type Change, commit, emptyState, type Incoming, type Outgoing, plan, reconcile, STORES, type StoreName, type SyncState } from "./engine";
 
@@ -73,6 +75,8 @@ type PullResult = { records: Incoming[]; cursor: number; more: boolean; settings
 async function once(touched: Set<StoreName>): Promise<void> {
   const { session, user } = useAccount.getState();
   if (!session || !user) return;
+  // a store read asynchronously must be read before it is compared: an empty notebook would look like deletions
+  await whenHydrated(useNotebook);
   useSyncStatus.setState({ state: "syncing", error: null });
   const state = loadState(user.id);
   const all = adapters(deviceId());

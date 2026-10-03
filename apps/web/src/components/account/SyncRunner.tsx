@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { AUTH_KEY, useAccount } from "@/lib/account/store";
 import { DOCS_EVENT } from "@/lib/graph/persist";
+import { STORES_CHANNEL, type StoreMessage, TAB_ID } from "@/lib/store/idbStorage";
 import { usePersonal, usePrefs } from "@/lib/reader/store";
 import { useAnalyseChoices } from "@/lib/store/analyseChoices";
 import { useAudio } from "@/lib/store/audio";
@@ -44,7 +45,16 @@ export function SyncRunner() {
       else void PERSISTED[e.key]?.persist.rehydrate();
     };
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    // stores kept in IndexedDB announce their writes on a channel instead
+    const channel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(STORES_CHANNEL) : null;
+    if (channel)
+      channel.onmessage = (e: MessageEvent<StoreMessage>) => {
+        if (e.data?.from !== TAB_ID) void PERSISTED[e.data?.name]?.persist.rehydrate();
+      };
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      channel?.close();
+    };
   }, []);
 
   useEffect(() => {

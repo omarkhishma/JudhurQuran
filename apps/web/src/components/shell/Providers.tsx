@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { SyncRunner } from "@/components/account/SyncRunner";
+import { StorageWarning } from "@/components/shell/StorageWarning";
 import { AudioEngine } from "@/components/audio/AudioEngine";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       {children}
       <AudioEngine />
       <SyncRunner />
+      <StorageWarning />
     </QueryClientProvider>
   );
 }

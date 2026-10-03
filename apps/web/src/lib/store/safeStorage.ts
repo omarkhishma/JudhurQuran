@@ -12,6 +12,12 @@ let failed = false;
 /** Whether a write has failed this session (a write can fail before anything listens for it). */
 export const storageFailed = () => failed;
 
+/** Tell the reader, once, that this browser would not save (StorageWarning listens). */
+export function reportStorageFailure(): void {
+  failed = true;
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("jadhr:storage-error"));
+}
+
 const storage: StateStorage = {
   getItem: (name) => {
     try {
@@ -24,8 +30,7 @@ const storage: StateStorage = {
     try {
       localStorage.setItem(name, value);
     } catch {
-      failed = true;
-      if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("jadhr:storage-error"));
+      reportStorageFailure();
     }
   },
   removeItem: (name) => {
