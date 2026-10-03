@@ -243,6 +243,9 @@ test("deleting a card takes its wires in one step that undo brings back whole, a
   await drag(page, card.locator(".react-flow__handle-left"), note.locator(".react-flow__handle-right"));
   await expect(undo).toHaveAttribute("title", `تراجع: ربط ${lemma.data.ar} ← ملاحظة`);
   await expect.poll(async () => (await storedGraph(page, id))!.edges.find((e) => e.source === lemma.id && e.target.startsWith("note:"))?.data, { timeout: 10_000 }).toEqual({ rel: "describes" });
+  // the word in the middle of the canvas, clear of the panels, before it is moved
+  await pickByFind(page, "العالمين", lemma.id);
+  await page.waitForTimeout(300);
   const box = (await card.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + 14);
   await page.mouse.down();
@@ -627,13 +630,16 @@ test("the editor has its own header: the title edited in place, the way back to 
   await expect(details).toContainText("هذه الخريطة");
   await page.locator('.react-flow__node[data-id="verse:1:2"]').click({ position: { x: 60, y: 14 } });
   await expect(details).toContainText("١:٢");
+  await details.getByRole("tab", { name: "الإعدادات" }).click();
   await expect(details).toContainText("ترد في");
+  // hidden, it folds to a rail (EDT-165), and stays so when the page is opened again
   await header.getByRole("button", { name: "التفاصيل" }).click();
-  await expect(details).toHaveCount(0);
+  await expect(page.locator(".graph-details")).toHaveCount(0);
+  await expect(page.locator(".details-rail")).toBeVisible();
   await expect(header.getByRole("button", { name: "التفاصيل" })).toHaveAttribute("aria-pressed", "false");
   await page.reload();
   await expect(page.locator(".graph-card").first()).toBeVisible();
-  await expect(page.getByRole("complementary", { name: "التفاصيل" })).toHaveCount(0);
+  await expect(page.locator(".graph-details")).toHaveCount(0);
 });
 
 test("the library finds a card on the map, says what each kind is, adds from the dataset by kind and by dropping, and knows the map's roots (P8.1-A, EDT-032…047, QAN-15)", async ({ page, isMobile }) => {
@@ -1026,6 +1032,7 @@ test("a card's fields: ten kinds from its menu, edited in place — kept on Ente
   await card.click({ position: { x: 40, y: 14 } });
   const details = page.getByRole("complementary", { name: "التفاصيل" });
   if (!(await details.isVisible())) await page.locator(".editor-header").getByRole("button", { name: "التفاصيل" }).click();
+  await details.getByRole("tab", { name: "الإعدادات" }).click();
   const label = details.getByRole("textbox", { name: "اسم الحقل" }).first();
   await label.fill("مطلع");
   await label.press("Enter");
@@ -1287,4 +1294,150 @@ test("a Notebook note reaches a map by its id, describing what it mentions; a di
   if (!(await details.isVisible())) await page.locator(".editor-header").getByRole("button", { name: "التفاصيل" }).click();
   await expect(details.locator(".quote-full")).toHaveText(e.body);
   await expect(details).toContainText("للعرض فقط");
+});
+
+// ─── P8.1-D: the details — Meaning and Settings ───
+
+/** A card brought to the middle and selected by the library's find (EDT-039), as a reader reaches one off-screen. */
+async function pickByFind(page: Page, query: string, id: string) {
+  const find = page.getByRole("searchbox", { name: "ابحث عن بطاقة في الخريطة" });
+  await find.fill(query);
+  for (let i = 0; i < 12 && (await page.locator(`.react-flow__node[data-id="${id}"].selected`).count()) === 0; i++) await find.press("Enter");
+  await expect(page.locator(`.react-flow__node[data-id="${id}"].selected`)).toHaveCount(1);
+  await find.fill("");
+}
+
+test("the details' Meaning: a root's core idea in Ibn Fāris's words and its dictionaries by death date, quoted onto the map by id; a word's own meanings and its root; a verse's place, its plain explanation and its words, added at their places (P8.1-D, EDT-166–181, EDT-248, HWF-50, QAN-17, QAN-18)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the details panel is the desktop's; the phone editor is P8.6a's");
+  await returning(page);
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  const details = page.getByRole("complementary", { name: "التفاصيل" });
+  const undo = page.locator(".editor-header").getByRole("button", { name: "تراجع", exact: true });
+  await expect(details.locator(".details-head")).toContainText("لا شيء محدد");
+
+  // a word: its header and badge, the chain it comes from, its own meanings (al-Mufradāt on it), its count
+  const w = await api<{ ar: { full: string }; corpus_freq: number; mufradat: { work: { title_ar: string }; subentries: { headword_ar: string }[] } | null }>(page, "/words/alamin?limit=0");
+  await pickByFind(page, "العالمين", "lemma:alamin");
+  await expect(details.locator(".details-head")).toContainText(`كلمة · ${w.ar.full}`);
+  await expect(details.locator(".kind-badge")).toHaveText("كلمة");
+  await expect(details.getByRole("tab", { name: "المعنى" })).toHaveAttribute("aria-selected", "true");
+  const body = details.locator(".details-body");
+  await expect(body).toContainText("معاني الكلمة");
+  if (w.mufradat) await expect(body).toContainText(w.mufradat.work.title_ar);
+  await expect(body).toContainText(`ورد ${ar(w.corpus_freq)} مرة في القرآن`);
+  await expect(body).toContainText("اسم · من الجذر ع ل م");
+  // its root, by the breadcrumb (EDT-167): Ibn Fāris's words with his page, a three-letter root counted as letters
+  const root = await api<{ occurrences: number; lexicon: { core_meaning: { text: string; page_ref: string }; works: { id: string; death_ce: number | null; entries: { id: number }[] }[] } }>(page, `/roots/${encodeURIComponent("علم")}`);
+  await details.locator(".crumb").first().click();
+  await expect(page.locator('.react-flow__node[data-id="root:علم"].selected')).toHaveCount(1);
+  await expect(details.locator(".details-head")).toContainText("جذر · ع ل م");
+  await expect(body).toContainText(`«${root.lexicon.core_meaning.text}»`);
+  await expect(body).toContainText(root.lexicon.core_meaning.page_ref);
+  await expect(body).toContainText("جذر ثلاثي");
+  // the dictionaries: opened from the pill, in the order their compilers died, the first two open (EDT-176…179)
+  await body.getByRole("button", { name: "في المعاجم" }).click();
+  const byDeath = [...root.lexicon.works].sort((a, b) => (a.death_ce ?? 9999) - (b.death_ce ?? 9999)).map((d) => d.id);
+  await expect(body.locator(".dict-row")).toHaveCount(byDeath.length);
+  expect(await body.locator(".dict-row").evaluateAll((els) => els.map((e) => e.getAttribute("data-dict")))).toEqual(byDeath);
+  await expect(body.locator(".dict-entry")).toHaveCount(Math.min(2, byDeath.length));
+  await body.getByRole("button", { name: "عن هذه الوسوم" }).click();
+  await expect(body).toContainText("وليست ترتيبًا لمرجعيته");
+  // an entry quoted beside the root, by its id (EDT-180, QAN-18, D22)
+  const first = root.lexicon.works.find((d) => d.id === byDeath[0])!.entries[0].id;
+  await body.locator(".dict-entry").first().getByRole("button", { name: "اقتبس هذه المادة في ملاحظة بجانب البطاقة" }).click();
+  await expect(undo).toHaveAttribute("title", "تراجع: اقتباس مادة");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === `quote:${first}`)?.data, { timeout: 10_000 }).toEqual({ kind: "note", entry: first });
+  expect((await storedGraph(page, id))!.edges.some((e) => e.source === "root:علم" && e.target === `quote:${first}` && e.data?.rel === "describes")).toBe(true);
+  await details.locator(".crumb").first().waitFor({ state: "detached" }).catch(() => {});
+  await pickByFind(page, "ع ل م", "root:علم");
+  await body.locator(".dict-entry").first().getByRole("button", { name: "هذه المادة على الخريطة: اربطها بهذه البطاقة" }).click();
+  await expect(page.locator(".graph-toast").last()).toContainText("هذه المادة مقتبسة على الخريطة من قبل");
+
+  // a verse: its place, al-Muyassar's plain explanation with its credit, and its words with their roots
+  const muyassar = await api<{ passages: { from_ayah: number; text: string }[] }>(page, "/works/muyassar/surahs/1");
+  const verse = await api<{ words: { location: string; lemma_slug: string | null; lemma: string | null }[] }>(page, "/verses/1:2");
+  await pickByFind(page, "١:٢", "verse:1:2");
+  await expect(body).toContainText("الفاتحة: ٢");
+  await expect(body).toContainText("مكية · ٧ آيات");
+  await expect(body).toContainText(muyassar.passages.find((p) => p.from_ayah === 2)!.text.slice(0, 40));
+  await expect(body.locator(".verse-word-row")).toHaveCount(verse.words.length);
+  // a word of the verse onto the map beside it, linked at its place, the verse marking it (QAN-17)
+  const rabb = verse.words.find((x) => x.location === "1:2:3")!;
+  await body.locator(".verse-word-row").nth(2).getByRole("button", { name: /أضف الكلمة إلى اللوحة/ }).click();
+  await expect(undo).toHaveAttribute("title", `تراجع: إضافة الكلمة ${rabb.lemma}`);
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.find((e) => e.source === `lemma:${rabb.lemma_slug}` && e.target === "verse:1:2")?.data, { timeout: 10_000 }).toEqual({ rel: "attests", place: "1:2:3" });
+  expect((await storedGraph(page, id))!.nodes.find((n) => n.id === "verse:1:2")!.data.places).toContain("1:2:3");
+  await expect(page.locator(`.react-flow__node[data-id="lemma:${rabb.lemma_slug}"].selected`)).toHaveCount(1);
+  // a word with a root has a way to its root's card (EDT-173)
+  await expect(details.locator(".details-head")).toContainText("كلمة ·");
+  await expect(body.getByRole("button", { name: "أضف هذا الجذر إلى اللوحة" })).toBeVisible();
+});
+
+test("the details' Settings: the headword (a note's words, edited in one step; a card of the data shown, not edited), fields added there, links cut there; several cards folded and unfolded together; a group opens on its settings; hidden to a rail that a selection opens again (P8.1-D, EDT-138, EDT-164, EDT-165, EDT-168, EDT-169, EDT-182–185, EDT-187, EDT-223, HWF-31, HWF-38)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the details panel is the desktop's; the phone editor is P8.6a's");
+  await returning(page);
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  const details = page.getByRole("complementary", { name: "التفاصيل" });
+  const body = details.locator(".details-body");
+  const undo = page.locator(".editor-header").getByRole("button", { name: "تراجع", exact: true });
+  // nothing selected: how to begin, and the map by kind (EDT-182)
+  await expect(body).toContainText("اختر بطاقة لتقرأ مادتها");
+  await expect(body).toContainText("هذه الخريطة");
+
+  // a verse: its text is the mushaf's (L1); a field added here; a link cut here, in one named step (EDT-183…185)
+  await pickByFind(page, "١:٢", "verse:1:2");
+  await details.getByRole("tab", { name: "الإعدادات" }).click();
+  await expect(details.getByRole("tab", { name: "الإعدادات" })).toHaveAttribute("aria-selected", "true");
+  await expect(body).toContainText("نص الآية من المصحف، ولا يُحرَّر.");
+  await body.getByRole("button", { name: "+ إضافة" }).click();
+  await body.getByRole("menuitem", { name: "نص قصير" }).click();
+  await expect.poll(async () => ((await storedGraph(page, id))!.nodes.find((n) => n.id === "verse:1:2")!.data.fields as unknown[] | undefined)?.length, { timeout: 10_000 }).toBe(1);
+  const before = (await storedGraph(page, id))!.edges.filter((e) => e.source === "verse:1:2" || e.target === "verse:1:2");
+  await expect(body.locator(".link-row")).toHaveCount(before.length);
+  await expect(body.locator(".link-row").first()).toContainText("من");
+  await body.locator(".link-row").first().getByRole("button", { name: /أزل هذه الصلة/ }).click();
+  await expect(undo).toHaveAttribute("title", "تراجع: إزالة صلة");
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.filter((e) => e.source === "verse:1:2" || e.target === "verse:1:2").length, { timeout: 10_000 }).toBe(before.length - 1);
+  await page.keyboard.press("Meta+z");
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.filter((e) => e.source === "verse:1:2" || e.target === "verse:1:2").length, { timeout: 10_000 }).toBe(before.length);
+
+  // a note: its words are its headword, edited here as one step (EDT-183, EDT-223)
+  await addNote(page, "مسودة");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.some((n) => n.data.kind === "note" && n.data.text === "مسودة"), { timeout: 10_000 }).toBe(true);
+  const noteId = (await storedGraph(page, id))!.nodes.find((n) => n.data.kind === "note")!.id;
+  await page.locator(`.react-flow__node[data-id="${noteId}"]`).click({ position: { x: 40, y: 14 } });
+  await details.getByRole("tab", { name: "الإعدادات" }).click();
+  const headword = body.getByRole("textbox", { name: "نص الملاحظة" });
+  await headword.fill("الحمد لله");
+  await headword.blur();
+  await expect(undo).toHaveAttribute("title", "تراجع: تعديل العنوان");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === noteId)!.data.text, { timeout: 10_000 }).toBe("الحمد لله");
+
+  // several cards: by kind, folded and unfolded together (EDT-187)
+  await page.locator(`.react-flow__node[data-id="${noteId}"]`).focus();
+  await page.keyboard.press("Meta+a");
+  const cards = (await storedGraph(page, id))!.nodes.length;
+  await expect(details.locator(".details-head")).toContainText(arCount(cards, { one: "بطاقة واحدة محددة", two: "بطاقتان محددتان", few: "# بطاقات محددة", many: "# بطاقة محددة", other: "# بطاقة محددة" }));
+  await body.getByRole("button", { name: "اطوِ الكل" }).click();
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.every((n) => n.data.folded), { timeout: 10_000 }).toBe(true);
+  await body.getByRole("button", { name: "افتح الكل" }).click();
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.some((n) => n.data.folded), { timeout: 10_000 }).toBe(false);
+  // a group has settings only (HWF-31)
+  await page.keyboard.press("Meta+g");
+  await expect(details.getByRole("tab", { name: "المعنى" })).toBeDisabled();
+  await expect(details.getByRole("tab", { name: "الإعدادات" })).toHaveAttribute("aria-selected", "true");
+  await expect(body.getByRole("textbox", { name: "اسم المجموعة" })).toBeVisible();
+
+  // hidden, a rail; a card selected opens it again (EDT-165, HWF-38)
+  await details.getByRole("button", { name: "أخفِ هذه اللوحة" }).click();
+  await expect(page.locator(".graph-details")).toHaveCount(0);
+  await expect(page.locator(".details-rail")).toBeVisible();
+  await pickByFind(page, "العالمين", "lemma:alamin");
+  await expect(page.locator(".graph-details")).toBeVisible();
 });

@@ -10,20 +10,9 @@ import { cnt, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { usePrefs, useReader } from "@/lib/reader/store";
 import type { DictEntry, DictWork, WordPayload } from "@/lib/reader/types";
+import { DICT_KIND } from "@/lib/lexica";
 
-/** Kind and tag per dictionary (design 03 §3.5.4, RDR-047…056). */
-export const DICT_KIND: Record<string, { kind: "earliest" | "general" | "root" | "interpretive" | "english"; tag: string }> = {
-  ayn: { kind: "earliest", tag: "earliest" },
-  tahdhib: { kind: "general", tag: "general" },
-  sihah: { kind: "general", tag: "selective" },
-  maqayis: { kind: "root", tag: "rootSemantic" },
-  mufradat: { kind: "interpretive", tag: "interpretive" },
-  "ibn-qutaybah-gharib": { kind: "interpretive", tag: "gharib" },
-  lisan: { kind: "general", tag: "comprehensive" },
-  qamus: { kind: "general", tag: "concise" },
-  taj: { kind: "general", tag: "encyclopedic" },
-  lane: { kind: "english", tag: "english" },
-};
+export { DICT_KIND } from "@/lib/lexica";
 const KINDS = ["all", "earliest", "general", "root", "interpretive", "english"] as const;
 
 export function deathLabel(d: { death_hijri: number | null; death_ce: number | null }, locale: string, t: ReturnType<typeof useTranslations>): string {

@@ -29,7 +29,7 @@ import { useEntryTitles } from "@/lib/graph/quote";
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
 import { allowedRels, checkLink, META, type Refusal } from "@/lib/graph/relations";
-import { KIND_COLOR, KIND_SIZE, type Field, type GraphEdge, type GraphKind, type GraphNode, type Rel } from "@/lib/graph/types";
+import { KIND_COLOR, KIND_SIZE, type Field, type FieldKind, type GraphEdge, type GraphKind, type GraphNode, type Rel } from "@/lib/graph/types";
 import { useTheme } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { useGraphUi } from "@/lib/graph/uiPrefs";
@@ -89,6 +89,20 @@ export type CanvasTools = {
   renameField: (id: string, field: string, label: string) => void;
   editField: (id: string, field: string, value: Field["value"], fileName?: string) => void;
   removeField: (id: string, field: string) => void;
+  addField: (id: string, kind: FieldKind) => void;
+  /** a note's text edited in the details (EDT-183, EDT-223) */
+  editHeadword: (id: string, text: string) => void;
+  /** every card given folded or unfolded at once (EDT-187) */
+  foldTo: (ids: string[], folded: boolean) => void;
+  /** cards deleted with their wires, one step (EDT-187) */
+  remove: (ids: string[]) => void;
+  unlink: (edgeId: string) => void;
+  /** a dictionary's article quoted on a note beside a card and describing it; the quotation already on the map is
+   * linked instead (EDT-180, QAN-18, D22) */
+  attachQuote: (id: string, entry: number) => void;
+  /** a card of the dataset beside another and linked to it — a word's root, a verse's word — or, already on the map,
+   * selected and linked (EDT-173, QAN-17) */
+  addLinked: (card: GraphNode, edge: GraphEdge, beside: string, label: string, places?: { verse: string; place: string }) => void;
 };
 
 const ToolsContext = createContext<CanvasTools | null>(null);
@@ -560,6 +574,67 @@ function CanvasInner({
     const [a, b] = order.length === 2 ? order : sel;
     onConnect({ source: a, target: b, sourceHandle: null, targetHandle: null });
   }, [toast, t, onConnect]);
+  /** A wire cut, one step, said with Undo. */
+  const unlinkEdge = useCallback(
+    (id: string) => {
+      commit(t("doUnlink", cnt(1, locale)), live.current.nodes, live.current.edges.filter((e) => e.id !== id));
+      toast(t("doUnlink", cnt(1, locale)), true);
+    },
+    [commit, t, locale, toast],
+  );
+  /** A dictionary's article quoted on a note beside a card, describing it; already on the map, it is linked. */
+  const attachQuote = useCallback(
+    (id: string, entry: number) => {
+      const ns = live.current.nodes;
+      const n = ns.find((x) => x.id === id);
+      if (!n) return;
+      const qid = `quote:${entry}`;
+      const have = ns.find((x) => x.id === qid);
+      const edge = link(id, qid, "describes");
+      if (have) {
+        if (!live.current.edges.some((e) => (e.source === id && e.target === qid) || (e.source === qid && e.target === id))) commit(t("doQuoteLink"), ns, [...live.current.edges, edge]);
+        select(qid);
+        center(qid);
+        return toast(t("quoteOnMap"));
+      }
+      const size = KIND_SIZE.note;
+      const taken: Rect[] = ns.map((x) => ({ x: x.position.x, y: x.position.y, ...sizeOf(x) }));
+      const spot = freeSpot(taken, { x: n.position.x - size.width / 2 - 64, y: n.position.y + size.height / 2 }, size.width, size.height);
+      const note: GraphNode = { id: qid, type: "card", position: spot, data: { kind: "note", entry } };
+      commit(t("doQuote"), [...ns, note], [...live.current.edges, edge]);
+      reveal(spot, size.width, size.height);
+      toast(t("quoted"), true);
+    },
+    [commit, t, select, center, toast, reveal],
+  );
+  /** A card of the dataset beside another, linked to it; on the map already, linked if it was not and selected. */
+  const addLinked = useCallback(
+    (card: GraphNode, edge: GraphEdge, beside: string, label: string, places?: { verse: string; place: string }) => {
+      const ns = live.current.nodes;
+      const es = live.current.edges;
+      const by = ns.find((x) => x.id === beside);
+      if (!by) return;
+      // a verse marks the word's place in it, as a seed does (F5)
+      const mark = (list: GraphNode[]) =>
+        places ? list.map((x) => (x.id === places.verse && !(x.data.places ?? []).includes(places.place) ? { ...x, data: { ...x.data, places: [...(x.data.places ?? []), places.place] } } : x)) : list;
+      const linked = es.some((e) => (e.source === edge.source && e.target === edge.target) || (e.source === edge.target && e.target === edge.source));
+      if (ns.some((x) => x.id === card.id)) {
+        if (!linked) commit(label, mark(ns), [...es, edge]);
+        select(card.id);
+        center(card.id);
+        return;
+      }
+      const size = KIND_SIZE[card.data.kind];
+      const taken: Rect[] = ns.map((x) => ({ x: x.position.x, y: x.position.y, ...sizeOf(x) }));
+      // a parent to the right of the card, a child to its left: the map reads right to left
+      const parent = edge.target === beside;
+      const at = { x: by.position.x + (parent ? sizeOf(by).w + 64 + size.width / 2 : -size.width / 2 - 64), y: by.position.y + size.height / 2 };
+      const spot = freeSpot(taken, at, size.width, size.height);
+      commit(label, [...mark(ns).map((x) => (x.selected ? { ...x, selected: false } : x)), { ...card, position: spot, selected: true }], [...es, edge]);
+      reveal(spot, size.width, size.height);
+    },
+    [commit, select, center, reveal],
+  );
   /** A note beside a card, describing it (EDT-067's "Attach description"). */
   const attachNote = useCallback(
     (id: string) => {
@@ -699,6 +774,8 @@ function CanvasInner({
       if (inField(e.target) || menuOpen.current) return;
       const at = e.target as HTMLElement;
       const onCanvas = at === document.body || !!at.closest?.(".react-flow");
+      // the editor's own keys (⌘A, ⌘D, ⌘G) answer anywhere in the editor outside a field, as the design's do
+      const inEditor = onCanvas || !!at.closest?.(".graph-details, .library, .editor-header");
       const mod = e.metaKey || e.ctrlKey;
       const k = e.key.toLowerCase();
       const sel = live.current.nodes.filter((n) => n.selected);
@@ -706,14 +783,14 @@ function CanvasInner({
         e.preventDefault();
         if (e.shiftKey) redo();
         else undo();
-      } else if (mod && k === "d" && editable && onCanvas) {
+      } else if (mod && k === "d" && editable && inEditor) {
         e.preventDefault();
         duplicate();
-      } else if (mod && k === "g" && editable && onCanvas) {
+      } else if (mod && k === "g" && editable && inEditor) {
         e.preventDefault();
         if (e.shiftKey) ungroup();
         else group();
-      } else if (mod && k === "a" && onCanvas) {
+      } else if (mod && k === "a" && inEditor) {
         e.preventDefault();
         setNodes((ns) => ns.map((n) => ({ ...n, selected: true })));
         useGraphUi.getState().set({ detailsOpen: true });
@@ -866,6 +943,19 @@ function CanvasInner({
     renameField: (id, fid, label) => updateFields(id, t("doRenameField"), (fs) => fs.map((f) => (f.id === fid ? { ...f, label } : f))),
     editField: actions.editField,
     removeField: actions.removeField,
+    addField: actions.addField,
+    editHeadword: (id, text) => commit(t("doEditHeadword"), nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, text } } : n)), edges),
+    foldTo: (ids, to) => {
+      const set = new Set(ids);
+      setNodes((ns) => ns.map((n) => (set.has(n.id) && n.data.kind !== "frame" && !!n.data.folded !== to ? { ...n, data: { ...n.data, folded: to } } : n)));
+    },
+    remove: (ids) => {
+      const set = new Set(ids);
+      onDelete({ nodes: nodes.filter((n) => set.has(n.id)), edges: edges.filter((e) => set.has(e.source) || set.has(e.target)) });
+    },
+    unlink: unlinkEdge,
+    attachQuote,
+    addLinked,
   };
 
   const selectedEdge = editable ? edges.find((e) => e.selected) : undefined;
@@ -905,12 +995,9 @@ function CanvasInner({
       selected: new Set(selected.map((n) => n.id)),
       kindOf: (id: string) => nodes.find((n) => n.id === id)?.data.kind,
       editable,
-      unlink: (id: string) => {
-        commit(t("doUnlink", cnt(1, locale)), live.current.nodes, live.current.edges.filter((e) => e.id !== id));
-        toast(t("doUnlink", cnt(1, locale)), true);
-      },
+      unlink: unlinkEdge,
     }),
-    [selected, nodes, editable, commit, t, locale, toast],
+    [selected, nodes, editable, unlinkEdge],
   );
   const menuItems = (): MenuItem[] => {
     if (!menu) return [];

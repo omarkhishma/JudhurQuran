@@ -12,7 +12,7 @@ import { upgrade } from "@/lib/graph/migrate";
 import { cleanTitle } from "@/lib/graph/sanitize";
 import { translitOn, useGraphUi } from "@/lib/graph/uiPrefs";
 import { useWhereSaved } from "@/lib/graph/whereSaved";
-import { Details } from "./Details";
+import { Details, DetailsRail } from "./Details";
 import { EditorHeader } from "./EditorHeader";
 import { EditorHelp } from "./EditorHelp";
 import { GraphCanvas, type CanvasTools } from "./GraphCanvas";
@@ -290,7 +290,7 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
           </>
         }
         start={<Library kind={doc.kind} onPick={() => {}} pendingDrop={pendingDrop} setPendingDrop={setPendingDrop} onHelp={() => setHelp(true)} />}
-        end={detailsOpen ? <Details title={title} /> : null}
+        end={detailsOpen ? <Details title={title} /> : <DetailsRail />}
       />
       <EditorHelp open={help} onClose={() => setHelp(false)} />
     </div>
