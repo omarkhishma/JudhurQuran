@@ -105,9 +105,13 @@ export type GraphDoc = {
   updatedAt: number;
   /** Made from a seed and not yet opened: the editor lays it out once with the cards' measured sizes. */
   pendingLayout?: boolean;
+  /** Shared for comments (P8.1-E): the server's copy, and the revision this copy was last saved as there. */
+  shared?: SharedRef;
 };
 
-export type GraphMeta = Pick<GraphDoc, "id" | "title" | "kind" | "createdAt" | "updatedAt"> & { nodeCount: number };
+export type SharedRef = { id: string; revision: number };
+
+export type GraphMeta = Pick<GraphDoc, "id" | "title" | "kind" | "createdAt" | "updatedAt"> & { nodeCount: number; shared?: string };
 
 export const KIND_COLOR: Record<NodeKind, string> = {
   root: "var(--c-root)",

@@ -7,11 +7,12 @@ import { cnt, formatNumber } from "@/lib/format";
 import { META } from "@/lib/graph/relations";
 import { FIELD_KINDS, KIND_COLOR, type GraphNode, type NodeKind } from "@/lib/graph/types";
 import { useGraphUi } from "@/lib/graph/uiPrefs";
+import { CommentsPanel, useDetailsTab, useSharedMap, type DetailsTab as Tab } from "./Comments";
 import { FieldEditor } from "./FieldEditor";
 import { useCanvasTools, type CanvasTools } from "./GraphCanvas";
 import { Meaning } from "./Meaning";
+import { MapSettings } from "./Sharing";
 
-type Tab = "meaning" | "settings";
 const KINDS: NodeKind[] = ["root", "pattern", "lemma", "verse", "note", "frame"];
 
 /**
@@ -19,7 +20,9 @@ const KINDS: NodeKind[] = ["root", "pattern", "lemma", "verse", "note", "frame"]
  * a way to hide the panel; for one card, the chain of cards it comes from; and two tabs — Meaning, what the card
  * stands for in the sources, and Settings, what the reader keeps on it: its headword (a note's own words; a card of
  * the dataset shows its own and is not edited, L1, L2), its fields and its links. Several cards: fold, unfold, tidy or
- * delete them together. A group has settings only. Nothing selected: what the map holds and how to begin.
+ * delete them together. A group has settings only. Nothing selected: what the map holds and how to begin, and its
+ * settings — sharing and history. Comments (P8.1-E): on the card, or on the whole map. A shared map read by others
+ * has Meaning and Comments only.
  */
 export function Details({ title }: { title: string }) {
   const t = useTranslations("graph");
@@ -29,9 +32,23 @@ export function Details({ title }: { title: string }) {
   const sel = tools.selected;
   const one = sel.length === 1 ? sel[0] : null;
   const frame = one?.data.kind === "frame" ? one : null;
-  const [tab, setTab] = useState<Tab>("meaning");
-  // a group has no meaning of its own: it opens on its settings (HWF-31), and so does a selection just grouped
-  const shown: Tab = frame ? "settings" : tab;
+  const { tab, set: setTab, focus } = useDetailsTab();
+  const map = useSharedMap();
+  // each map opens on Meaning, as it did when the tab was the panel's own
+  useEffect(() => () => useDetailsTab.setState({ tab: "meaning", focus: null }), []);
+  // a card's comment marker opens its comments: the card is selected for them
+  const asked = useRef<number | null>(null);
+  useEffect(() => {
+    if (!focus || asked.current === focus.at) return;
+    asked.current = focus.at;
+    setUi({ detailsOpen: true });
+    tools.select(focus.id);
+    tools.center(focus.id);
+  }, [focus, tools, setUi]);
+  // a shared map read by others has no settings; a group has no meaning of its own: it opens on its settings
+  // (HWF-31), and so does a selection just grouped
+  const tabs: Tab[] = tools.editable ? ["meaning", "settings", "comments"] : ["meaning", "comments"];
+  const shown: Tab = frame && tab === "meaning" ? "settings" : tabs.includes(tab) ? tab : "meaning";
   const kindName = (n: GraphNode) => t(n.data.phrase ? "kindPhrase" : n.data.entry ? "kindQuote" : META[n.data.kind].label);
   const head = frame
     ? t("detailsHeadGroup", { label: frame.data.title || t("groupUntitled") })
@@ -55,9 +72,9 @@ export function Details({ title }: { title: string }) {
         </button>
       </header>
       {one && !frame && <Breadcrumb tools={tools} card={one} />}
-      {sel.length > 0 && (
+      {(sel.length > 0 || map.gid || tools.editable) && (
         <div className="details-tabs" role="tablist" aria-label={t("details")}>
-          {(["meaning", "settings"] as const).map((k) => (
+          {tabs.map((k) => (
             <button
               key={k}
               type="button"
@@ -70,22 +87,25 @@ export function Details({ title }: { title: string }) {
               disabled={!!frame && k === "meaning"}
               onClick={() => setTab(k)}
               onKeyDown={(e) => {
-                // the arrows move between the tabs, as a tab list does
+                // the arrows move between the tabs, as a tab list does (in the reading direction)
                 if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
                 e.preventDefault();
-                const next: Tab = shown === "meaning" ? "settings" : "meaning";
-                if (frame && next === "meaning") return;
+                const on = tabs.filter((x) => !(frame && x === "meaning"));
+                const forward = (e.key === "ArrowLeft") === (document.documentElement.dir === "rtl");
+                const next = on[(on.indexOf(shown) + (forward ? 1 : on.length - 1)) % on.length];
                 setTab(next);
                 document.getElementById(`${tabsId}-${next}`)?.focus();
               }}
             >
-              {t(k === "meaning" ? "tabMeaning" : "tabSettings")}
+              {t(k === "meaning" ? "tabMeaning" : k === "settings" ? "tabSettings" : "tabComments")}
             </button>
           ))}
         </div>
       )}
-      <div className="details-body" role={sel.length > 0 ? "tabpanel" : undefined} id={`${tabsId}-panel`} aria-labelledby={sel.length > 0 ? `${tabsId}-${shown}` : undefined}>
-        {frame ? (
+      <div className="details-body" role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${shown}`}>
+        {shown === "comments" ? (
+          <CommentsPanel tools={tools} />
+        ) : frame ? (
           <FrameDetails tools={tools} frame={frame} />
         ) : one ? (
           shown === "meaning" ? (
@@ -99,6 +119,8 @@ export function Details({ title }: { title: string }) {
           ) : (
             <ManySettings tools={tools} />
           )
+        ) : shown === "settings" ? (
+          <MapSettings tools={tools} />
         ) : (
           <MapSummary tools={tools} title={title} />
         )}

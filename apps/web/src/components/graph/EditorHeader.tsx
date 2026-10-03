@@ -20,7 +20,7 @@ export function EditorHeader({
   reader,
   onImport,
   onShare,
-  shareCopied,
+  shared,
   detailsOpen,
   onDetails,
   onHelp,
@@ -31,7 +31,8 @@ export function EditorHeader({
   reader: { href: string; word: string | null };
   onImport: (file: File, tools: CanvasTools) => void;
   onShare: () => void;
-  shareCopied: boolean;
+  /** shared for comments (P8.1-E) */
+  shared: boolean;
   detailsOpen: boolean;
   onDetails: () => void;
   onHelp: () => void;
@@ -82,8 +83,10 @@ export function EditorHeader({
         <Icon name="book" />
         {reader.word ? t("readerAt", { word: reader.word }) : t("reader")}
       </Link>
-      <button type="button" className="btn shrink-0" onClick={onShare} aria-live="polite">
-        {shareCopied ? t("shareCopied") : t("share")}
+      <button type="button" className="btn shrink-0" onClick={onShare} aria-haspopup="dialog" title={t(shared ? "sharedOnTitle" : "shareTitle")}>
+        <Icon name="share" />
+        {t("share")}
+        {shared && <span className="dot" style={{ background: "var(--good)" }} aria-label={t("sharedOn")} />}
       </button>
       <button type="button" className="btn shrink-0 max-md:hidden" aria-pressed={detailsOpen} onClick={onDetails} title={t("detailsToggle")}>
         {t("details")}

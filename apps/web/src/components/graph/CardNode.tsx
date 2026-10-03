@@ -12,6 +12,7 @@ import type { ExtractOptions, VerseWord } from "@/lib/graph/extract";
 import { getJSON } from "@/lib/reader/api";
 import { useAudio } from "@/lib/store/audio";
 import type { CardStats } from "./GraphCanvas";
+import { CommentMarker } from "./Comments";
 import { FieldEditor } from "./FieldEditor";
 import { opening, useEntry } from "@/lib/graph/quote";
 import { excerptOf, keyOf, markedVerse, useVerseText } from "@/lib/graph/verseText";
@@ -95,6 +96,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
           <span className="text-[10.5px] font-medium tracking-wide" style={{ color }}>{t(data.phrase ? "kindPhrase" : data.entry ? "kindQuote" : meta.label)}</span>
         </span>
         <span className="flex items-center gap-1">
+          {/* what is open in the comments on this card (EDT-194) */}
+          <CommentMarker id={id} />
           {data.count != null && <span className="mono text-[11px] text-t3">{formatNumber(data.count, locale)}</span>}
           <button
             type="button"

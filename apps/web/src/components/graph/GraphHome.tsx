@@ -1,9 +1,12 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
+import { useAccount } from "@/lib/account/store";
 import { createGraph, deleteGraph } from "@/lib/graph/persist";
+import { listShared, sharedPath, stopSharing, type SharedRow } from "@/lib/graph/shared";
 import { useMyGraphs } from "@/lib/graph/useMyGraphs";
 import type { GraphKind } from "@/lib/graph/types";
 import { cnt, formatNumber } from "@/lib/format";
@@ -23,6 +26,14 @@ export function GraphHome() {
   const [message, setMessage] = useState<{ text: string; id?: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const where = useWhereSaved();
+  // maps shared for comments: this reader's own, with what is new in their comments, and those shared with them
+  const session = useAccount((s) => s.session);
+  const shared = useQuery({ queryKey: ["shared-maps", session], queryFn: listShared, enabled: !!session, refetchOnWindowFocus: true });
+  const sharedRows = shared.data?.data ?? [];
+  const mineShared = new Map(sharedRows.filter((r) => r.owner.mine && r.local_id).map((r) => [r.local_id!, r]));
+  const here = new Set(graphs?.map((g) => g.id) ?? []);
+  // shared with this reader, and this reader's own shared maps that this browser does not hold
+  const others = sharedRows.filter((r) => !r.owner.mine || !here.has(r.local_id ?? ""));
   // files no map holds any more, once a day has passed (lib/graph/files)
   useEffect(() => {
     void sweepFiles().catch(() => 0);
@@ -140,22 +151,62 @@ export function GraphHome() {
                 <span className="text-[12.5px] text-t3">
                   {t("cards", cnt(g.nodeCount, locale))} • {t("updated", { date: new Date(g.updatedAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB") })}
                 </span>
+                {g.shared && <SharedLine row={mineShared.get(g.id)} />}
               </Link>
               <button
                 type="button"
                 className={"btn " + (confirming === g.id ? "border-bad text-bad" : "")}
                 onClick={async () => {
                   if (confirming !== g.id) return setConfirming(g.id);
+                  // a shared map deleted here stops being shared: its link and comments go with it
+                  if (g.shared) await stopSharing(g.shared).catch(() => {});
                   await deleteGraph(g.id);
                   setConfirming(null);
+                  void shared.refetch();
                 }}
               >
-                {confirming === g.id ? t("deleteConfirm") : t("delete")}
+                {confirming === g.id ? t(g.shared ? "deleteSharedConfirm" : "deleteConfirm") : t("delete")}
               </button>
             </li>
           ))}
         </ul>
+
+        {others.length > 0 && (
+          <>
+            <h2 className="label-caps mt-10 mb-3">{t("sharedWithYou")}</h2>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {others.map((r) => (
+                <li key={r.id} className="card p-4">
+                  <Link href={sharedPath(r.id)} className="block min-w-0">
+                    <span className="block truncate font-semibold">{r.title || t("untitled")}</span>
+                    <span className="text-[12.5px] text-t3">
+                      {r.owner.mine ? t("sharedYoursElsewhere") : r.owner.name ? t("sharedBy", { name: r.owner.name }) : t("sharedByReader")} • {t("cards", cnt(r.cards, locale))}
+                    </span>
+                    <SharedLine row={r} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
     </div>
+  );
+}
+
+/** A shared map's comments, as its row says them: how many are open, what is new, and whether it names the reader. */
+function SharedLine({ row }: { row?: SharedRow }) {
+  const t = useTranslations("graph");
+  const locale = useLocale();
+  return (
+    <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-t2">
+      <span className="flex items-center gap-1">
+        <span className="dot" style={{ background: "var(--good)" }} aria-hidden="true" />
+        {t("sharedOn")}
+      </span>
+      {row && row.open > 0 && <span>{t("openComments", cnt(row.open, locale))}</span>}
+      {row && row.unread > 0 && <span className="font-medium text-t1">{t("newComments", cnt(row.unread, locale))}</span>}
+      {row && row.mentions > 0 && <span className="font-medium text-word">{t("mentionsYou", cnt(row.mentions, locale))}</span>}
+    </span>
   );
 }

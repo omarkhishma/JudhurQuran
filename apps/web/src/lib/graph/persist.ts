@@ -5,7 +5,8 @@ import { storageFrozen } from "@/lib/store/safeStorage";
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
 import { upgrade } from "./migrate";
 import { cleanDoc, cleanKind, cleanTitle } from "./sanitize";
-import type { GraphDoc, GraphMeta } from "./types";
+import { dropVersions } from "./history";
+import type { GraphDoc, GraphMeta, SharedRef } from "./types";
 
 /** Local-first storage: graphs live in this browser's IndexedDB, and sync to the account when signed in (P6). */
 const INDEX = "jadhr-graphs-index";
@@ -28,7 +29,33 @@ export async function loadGraph(id: string): Promise<GraphDoc | undefined> {
   if (!doc) return undefined;
   const kind = cleanKind(doc.kind);
   const { nodes, edges } = await upgrade(doc.version, kind, doc.nodes, doc.edges);
-  return { ...doc, version: 2, kind, nodes, edges };
+  return { ...doc, version: 2, kind, nodes, edges, shared: cleanShared(doc.shared) };
+}
+
+const SHARED_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** A shared map's link, kept only in its own shape (a record synced from another device is read like any other). */
+export function cleanShared(v: unknown): SharedRef | undefined {
+  const s = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  return typeof s.id === "string" && SHARED_ID.test(s.id) && Number.isInteger(s.revision) && (s.revision as number) >= 1 ? { id: s.id, revision: s.revision as number } : undefined;
+}
+
+/**
+ * A map's link to its shared copy written into the stored map, or taken off it (null) — only if the stored copy is
+ * still the one the editor last wrote (`base`); the stored time moves on, so the change syncs to the owner's other
+ * devices like any other.
+ */
+export async function markShared(id: string, shared: SharedRef | null, base: number): Promise<SaveOutcome> {
+  const stored = await get<GraphDoc>(KEY(id));
+  if (!stored) return { conflict: "gone" };
+  if (stored.updatedAt > base) return { conflict: "newer" };
+  const updatedAt = Math.max(Date.now(), base + 1);
+  const next: GraphDoc = { ...stored, updatedAt };
+  if (shared) next.shared = shared;
+  else delete next.shared;
+  await putGraph(next);
+  changed();
+  return { saved: updatedAt };
 }
 
 export async function saveGraph(doc: GraphDoc): Promise<void> {
@@ -66,12 +93,13 @@ export const GRAPHS_SYNCED_EVENT = "jadhr:graphs-synced";
 export async function putGraph(doc: GraphDoc): Promise<void> {
   if (storageFrozen()) return;
   await set(KEY(doc.id), doc);
-  const meta: GraphMeta = { id: doc.id, title: doc.title, kind: doc.kind, createdAt: doc.createdAt, updatedAt: doc.updatedAt, nodeCount: doc.nodes.length };
+  const meta: GraphMeta = { id: doc.id, title: doc.title, kind: doc.kind, createdAt: doc.createdAt, updatedAt: doc.updatedAt, nodeCount: doc.nodes.length, ...(cleanShared(doc.shared) ? { shared: doc.shared!.id } : {}) };
   await update<GraphMeta[]>(INDEX, (index = []) => [...index.filter((g) => g.id !== doc.id), meta]);
 }
 
 export async function deleteGraph(id: string, quiet = false): Promise<void> {
   await del(KEY(id));
+  await dropVersions(id);
   await update<GraphMeta[]>(INDEX, (index = []) => index.filter((g) => g.id !== id));
   if (!quiet) changed();
 }
