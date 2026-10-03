@@ -97,7 +97,7 @@ export function UserTextReader({ id }: { id: string }) {
       </div>
       {read.isError && <p className="text-[12.5px] text-bad" role="alert">{t("previewFailed")}</p>}
       {tokens.map((ws, pi) => (
-        <p key={pi} className="user-passage" dir="rtl" lang="ar">
+        <p key={pi} id={`p${pi + 1}`} className="user-passage" dir="rtl" lang="ar">
           {ws.map((w) => {
             const r = read.data?.[i++]?.r;
             const word = `${w.surface} `;

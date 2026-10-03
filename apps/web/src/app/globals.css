@@ -2257,6 +2257,20 @@ button.type-chip:hover {
   color: color-mix(in srgb, var(--c-root) 85%, var(--t1));
   background: color-mix(in srgb, var(--c-root) 12%, var(--card));
 }
+.detect-pill.is-form {
+  color: color-mix(in srgb, var(--c-form) 85%, var(--t1));
+  background: var(--form-wash);
+}
+/* the simpler engine answered (SRC-40): said, not hidden */
+.search-fallback {
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--amber) 35%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--amber) 7%, var(--card));
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--t2);
+}
 .search-body {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
@@ -3293,6 +3307,11 @@ button.type-chip:hover {
 }
 .user-passage {
   font-size: 22px;
+  scroll-margin-top: 72px;
+}
+.user-passage:target {
+  background: var(--sentence-wash);
+  border-radius: 8px;
 }
 .pv-word.is-hit {
   text-decoration: underline dotted var(--line-2);
