@@ -80,6 +80,9 @@ const group = (rs: Incoming[]): Partial<Record<StoreName, Change[]>> => {
 type PushResult = { applied: { store: string; key: string }[]; rejected: { store: string; key: string; server: Incoming }[] };
 type PullResult = { records: Incoming[]; cursor: number; more: boolean; settings: Account["settings"] };
 
+/** Whether a run must follow at once (the journal just turned on, so this device's own goes up). */
+let followUp = false;
+
 async function once(touched: Set<StoreName>): Promise<void> {
   const { session, user } = useAccount.getState();
   if (!session || !user) return;
@@ -95,7 +98,7 @@ async function once(touched: Set<StoreName>): Promise<void> {
     delete state.dirty.journal;
   }
   const enabled = STORES.filter((s) => s !== "journal" || journalOn);
-  const readAll = async () => Object.fromEntries(await Promise.all(enabled.map(async (s) => [s, await all[s].read()] as const)));
+  const readAll = async (stores: readonly StoreName[] = enabled) => Object.fromEntries(await Promise.all(stores.map(async (s) => [s, await all[s].read()] as const)));
 
   const { push, tooLarge } = plan(await readAll(), state, Date.now(), { appendOnly: new Set(["journal"]) });
   saveState(state); // when each change was first seen survives a failed push
@@ -119,8 +122,12 @@ async function once(touched: Set<StoreName>): Promise<void> {
     more = r.more;
   }
   if (JSON.stringify(settings) !== JSON.stringify(user.settings)) useAccount.getState().setUser({ ...user, settings });
-  const changes = reconcile(incoming, await readAll(), state);
-  if (!settings.sync_journal) delete changes.journal;
+  // the journal turned on elsewhere is learnt from this pull: its records are taken now (the cursor moves past
+  // them), and this device's own go up in the run that follows
+  const journalNow = !!settings.sync_journal;
+  if (journalNow && !journalOn) followUp = true;
+  const changes = reconcile(incoming, await readAll(STORES.filter((s) => s !== "journal" || journalNow)), state);
+  if (!journalNow) delete changes.journal;
   await write(all, changes, touched);
   state.cursor = cursor;
   saveState(state);
@@ -149,9 +156,11 @@ export function runSync(): Promise<Set<StoreName>> {
     let relearned = false;
     do {
       again = false;
+      followUp = false;
       try {
         if (typeof navigator !== "undefined" && navigator.locks) await navigator.locks.request("jadhr-sync", () => once(touched));
         else await once(touched);
+        if (followUp) again = true;
       } catch (e) {
         if (e instanceof SignedOut) {
           useSyncStatus.setState({ state: "idle", error: null });
