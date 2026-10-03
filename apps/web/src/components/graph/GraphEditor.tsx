@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createGraph, encodeShare, fileBase, GRAPHS_SYNCED_EVENT, loadGraph, newId, saveGraphOver, storedAt } from "@/lib/graph/persist";
 import type { GraphDoc, GraphEdge, GraphNode } from "@/lib/graph/types";
-import type { SearchResult, WordDetail } from "@/lib/types";
+import type { SearchResult } from "@/lib/types";
+import { lemmaId, patternId, verseId } from "@/lib/graph/build";
 import { useDebounced } from "@/lib/useDebounced";
 import { useWhereSaved } from "@/lib/graph/whereSaved";
 import { formatNumber, verseRef } from "@/lib/format";
@@ -248,37 +249,40 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
     queryFn: async () => (await (await fetch(`/api/v1/search?q=${encodeURIComponent(dq)}&limit=6`)).json()) as SearchResult,
   });
 
-  async function addWord(location: string) {
-    const w = (await (await fetch(`/api/v1/words/${location}`)).json()) as WordDetail;
+  type LemmaRow = { slug: string; ar: string; pos: string; pos_label?: { ar: string; en: string }; occurrences: number; root: string | null };
+  const addLemma = (l: LemmaRow, first?: string) =>
     onAdd(
       [
         {
-          id: `word:${location}`,
+          id: lemmaId(l.slug),
           type: "card",
           position: { x: 0, y: 0 },
-          data: {
-            kind: "word",
-            sub: w.text_imlaei,
-            count: w.occurrences.form,
-            rootKey: w.root?.key,
-            lemmaId: w.lemma?.id,
-            form: w.text_imlaei,
-            verse: { key: w.verse.key, location },
-          },
+          data: { kind: "lemma", slug: l.slug, ar: l.ar, sub: l.pos_label?.[locale === "ar" ? "ar" : "en"] ?? l.pos, count: l.occurrences, ...(l.root ? { rootKey: l.root } : {}), ...(first ? { first } : {}) },
         },
       ],
       [],
-      t("doAddWord", { word: w.text_imlaei }),
+      t("doAddWord", { word: l.ar }),
     );
+
+  /** A written form found by search adds its word (the lemma), first met where the search found it. */
+  async function addForm(lemma: number, sample: string) {
+    const d = (await (await fetch(`/api/v1/lemmas?ids=${lemma}`)).json()) as { data: { slug: string; ar: string; pos: string; occurrences: number; root: string | null }[] };
+    if (d.data[0]) addLemma(d.data[0], sample);
   }
 
   function addVerse(key: string) {
+    onAdd([{ id: verseId(key), type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", verse: { key } } }], [], t("doAddVerse", { ref: verseRef(key, locale) }));
+  }
+
+  function addPattern(p: { slug: string; ar: { full: string; translit: string }; lemma_count: number }) {
     onAdd(
-      [{ id: `verse:${key}`, type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", ar: key, verse: { key } } }],
+      [{ id: patternId(p.slug), type: "card", position: { x: 0, y: 0 }, data: { kind: "pattern", slug: p.slug, ar: p.ar.full, sub: p.ar.translit, count: p.lemma_count } }],
       [],
-      t("doAddVerse", { ref: verseRef(key, locale) }),
+      t("doAddPattern", { pattern: p.ar.full }),
     );
   }
+
+  const lemmaIds = new Set(data?.results.lemmas.map((l) => l.id));
 
   return (
     <aside className="flex max-h-[42dvh] w-full shrink-0 flex-col border-b border-line bg-panel md:max-h-none md:w-[300px] md:border-b-0 md:border-e" aria-label={t("palette")}>
@@ -323,11 +327,37 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
             </button>
           </li>
         ))}
-        {data?.results.words.map((w) => (
-          <li key={`w${w.form}-${w.lemma_id}`}>
-            <button type="button" className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-start hover:bg-card" onClick={() => void addWord(w.sample)}>
-              <span className="flex items-center gap-2"><span className="dot" style={{ background: "var(--c-word)" }} /><span className="ar-classical text-[18px]" lang="ar">{w.display}</span></span>
-              <span className="mono text-[11px] text-t3">{formatNumber(w.occurrences, locale)}</span>
+        {data?.results.lemmas.slice(0, 6).map((l) => (
+          <li key={`l${l.id}`}>
+            <button type="button" className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-start hover:bg-card" onClick={() => addLemma(l)}>
+              <span className="flex items-center gap-2">
+                <span className="dot" style={{ background: "var(--c-word)" }} />
+                <span className="ar-classical text-[18px]" lang="ar">{l.ar}</span>
+                {l.root_spaced && <span className="ar-classical text-[13px] text-root" lang="ar">{l.root_spaced}</span>}
+              </span>
+              <span className="mono text-[11px] text-t3">{formatNumber(l.occurrences, locale)}</span>
+            </button>
+          </li>
+        ))}
+        {data?.results.words
+          .filter((w) => w.lemma_id != null && !lemmaIds.has(w.lemma_id))
+          .map((w) => (
+            <li key={`w${w.form}-${w.lemma_id}`}>
+              <button type="button" className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-start hover:bg-card" onClick={() => void addForm(w.lemma_id!, w.sample)}>
+                <span className="flex items-center gap-2"><span className="dot" style={{ background: "var(--c-word)" }} /><span className="ar-classical text-[18px]" lang="ar">{w.display}</span></span>
+                <span className="mono text-[11px] text-t3">{formatNumber(w.occurrences, locale)}</span>
+              </button>
+            </li>
+          ))}
+        {data?.results.patterns?.slice(0, 3).map((p) => (
+          <li key={`p${p.slug}`}>
+            <button type="button" className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-start hover:bg-card" onClick={() => addPattern(p)}>
+              <span className="flex items-center gap-2">
+                <span className="dot" style={{ background: "var(--c-form)" }} />
+                <span className="ar-classical text-[18px] text-form" lang="ar">{p.ar.full}</span>
+                <span className="text-[11px] text-t3">{t("kindPattern")}</span>
+              </span>
+              <span className="mono text-[11px] text-t3">{formatNumber(p.lemma_count, locale)}</span>
             </button>
           </li>
         ))}

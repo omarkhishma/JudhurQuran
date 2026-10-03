@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  addEdge,
   applyEdgeChanges,
   applyNodeChanges,
   Background,
@@ -22,23 +21,22 @@ import { toPng } from "html-to-image";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { useQueryClient } from "@tanstack/react-query";
-import { expandForms, type RootGraphPayload, verseId, edgeId } from "@/lib/graph/build";
+import { link, verseId } from "@/lib/graph/build";
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
-import type { GraphEdge, GraphKind, GraphNode } from "@/lib/graph/types";
+import { allowedRels, checkLink, META, NAMED_ON_CANVAS, type Refusal } from "@/lib/graph/relations";
+import { KIND_COLOR, KIND_SIZE, type GraphEdge, type GraphKind, type GraphNode, type Rel } from "@/lib/graph/types";
 import { useTheme } from "@/lib/client";
 import { cnt, verseRef } from "@/lib/format";
-import { CardNode, GraphActionsContext, type GraphActions } from "./CardNode";
+import { CardNode, FrameNode, GraphActionsContext, type GraphActions } from "./CardNode";
 
 type Snapshot = { label: string; nodes: GraphNode[]; edges: GraphEdge[] };
 
-const nodeTypes = { card: CardNode };
+const nodeTypes = { card: CardNode, frame: FrameNode };
 
 export type GraphCanvasProps = {
   initialNodes: GraphNode[];
   initialEdges: GraphEdge[];
-  payload?: RootGraphPayload; // root-graph data for on-demand expansion
   editable?: boolean;
   autoLayout?: boolean;
   title: string;
@@ -54,19 +52,19 @@ export type GraphCanvasProps = {
 };
 
 /** A card as an undo label names it: its letters, word or verse, else its kind (handoff §4.3, EDT-230). */
-function cardName(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase") => string, locale: string): string {
+function cardName(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "kindFrame") => string, locale: string): string {
   if (!n) return "";
   const d = n.data;
-  if (d.kind === "note") return t("kindNote");
-  if (d.kind === "verse") return d.verse ? verseRef(d.verse.key, locale) : t("kindPhrase");
-  if (d.kind === "word") return d.form ?? d.ar ?? "";
+  if (d.kind === "note") return t(d.phrase ? "kindPhrase" : "kindNote");
+  if (d.kind === "frame") return d.title || t("kindFrame");
+  if (d.kind === "verse") return d.verse ? verseRef(d.verse.key, locale) : "";
   return d.ar ?? "";
 }
 
 /** The cards a first view opens on: the word and verse the reader came from, else every focus card. */
 function firstView(nodes: GraphNode[]): GraphNode[] {
   const focus = nodes.filter((n) => n.data.focus);
-  const near = focus.filter((n) => n.data.kind === "word" || n.data.kind === "verse");
+  const near = focus.filter((n) => n.data.kind === "lemma" || n.data.kind === "verse");
   return near.length ? near : focus;
 }
 
@@ -81,7 +79,6 @@ export function GraphCanvas(props: GraphCanvasProps) {
 function CanvasInner({
   initialNodes,
   initialEdges,
-  payload,
   editable = false,
   autoLayout = false,
   title,
@@ -179,13 +176,24 @@ function CanvasInner({
   const addCards = useCallback(
     (newNodes: GraphNode[], newEdges: GraphEdge[], label: string) => {
       const ids = new Set(nodes.map((n) => n.id));
-      const center = rf.screenToFlowPosition({
-        x: (wrapper.current?.clientWidth ?? 800) / 2,
-        y: (wrapper.current?.clientHeight ?? 600) / 2,
-      });
+      // the middle of the canvas as the reader sees it, in the map's coordinates
+      const box = wrapper.current?.getBoundingClientRect();
+      const center = rf.screenToFlowPosition({ x: (box?.left ?? 0) + (box?.width ?? 800) / 2, y: (box?.top ?? 0) + (box?.height ?? 600) / 2 });
+      // each new card in the free place nearest the middle, never on top of another card
+      const sizeOf = (n: GraphNode) => ({ w: n.measured?.width ?? KIND_SIZE[n.data.kind].width, h: n.measured?.height ?? KIND_SIZE[n.data.kind].height });
+      const taken = nodes.map((n) => ({ x: n.position.x, y: n.position.y, ...sizeOf(n) }));
+      const free = (x: number, y: number, w: number, h: number) => !taken.some((r) => x < r.x + r.w + 24 && x + w + 24 > r.x && y < r.y + r.h + 24 && y + h + 24 > r.y);
+      const steps = [0, 1, -1, 2, -2, 3, -3];
       const fresh = newNodes
         .filter((n) => !ids.has(n.id))
-        .map((n, i) => ({ ...n, position: n.position.x || n.position.y ? n.position : { x: center.x - 120 + i * 30, y: center.y - 60 + i * 30 } }));
+        .map((n) => {
+          if (n.position.x || n.position.y) return n;
+          const { w, h } = sizeOf(n);
+          const spots = steps.flatMap((i) => steps.map((j) => ({ x: center.x - w / 2 + i * (w + 40), y: center.y - h / 2 + j * (h + 40) }))).sort((a, b) => Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y));
+          const at = spots.find((p) => free(p.x, p.y, w, h)) ?? spots[0];
+          taken.push({ ...at, w, h });
+          return { ...n, position: at };
+        });
       const eids = new Set(edges.map((e) => e.id));
       commit(label, [...nodes, ...fresh], [...edges, ...newEdges.filter((e) => !eids.has(e.id))]);
     },
@@ -198,7 +206,6 @@ function CanvasInner({
 
   // A card's further forms or places, read when asked (F6: the editor has no root payload of its own, so it reads
   // the root's; F18: a failed read is said, never silent). The cards are added to the map as it is when they arrive.
-  const qc = useQueryClient();
   const [expanding, setExpanding] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   useEffect(() => {
@@ -210,46 +217,44 @@ function CanvasInner({
     async (id: string) => {
       const node = live.current.nodes.find((n) => n.id === id);
       if (!node || expanding) return;
-      const { kind, lemmaId: lemma, rootKey, form, cursor } = node.data;
+      const { kind, slug, cursor } = node.data;
+      if (kind !== "lemma" || !slug) return;
       setExpanding(id);
       try {
-        if (kind === "lemma" && lemma != null && (payload || rootKey)) {
-          const g: RootGraphPayload =
-            payload ?? (await qc.fetchQuery({ queryKey: ["root-graph", rootKey], queryFn: () => getJSON<RootGraphPayload>(`/roots/${encodeURIComponent(rootKey!)}/graph`), staleTime: 10 * 60_000 }));
-          const { nodes: now, edges: wires } = live.current;
-          const add = expandForms(g, lemma, new Set(now.map((n) => n.id)));
-          const updated = now.map((n) => (n.id === id ? { ...n, data: { ...n.data, more: undefined } } : n));
-          await tidy(t("doExtractWords", cnt(add.nodes.length, locale)), { nodes: [...updated, ...add.nodes], edges: [...wires, ...add.edges] });
-        } else if (kind === "word" && rootKey && form) {
-          const qs = new URLSearchParams({ form, limit: "8" });
-          if (lemma != null) qs.set("lemma", String(lemma));
-          if (cursor) qs.set("cursor", cursor);
-          const page = await getJSON<{ total: number; next_cursor: string | null; data: { location: string; verse_key: string }[] }>(`/roots/${encodeURIComponent(rootKey)}/occurrences?${qs}`);
-          const { nodes: now, edges: wires } = live.current;
-          const present = new Set(now.map((n) => n.id));
-          const newNodes: GraphNode[] = [];
-          const newEdges: GraphEdge[] = [];
-          for (const o of page.data) {
-            const vid = verseId(o.location);
-            if (present.has(vid)) continue;
-            newNodes.push({ id: vid, type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", verse: { key: o.verse_key, location: o.location } } });
-            newEdges.push({ id: edgeId(id, vid), source: id, target: vid });
+        const qs = new URLSearchParams({ limit: "8" });
+        if (cursor) qs.set("cursor", cursor);
+        const page = await getJSON<{ total: number; next_cursor: string | null; data: { location: string; verse_key: string }[] }>(`/words/${encodeURIComponent(slug)}/attestations?${qs}`);
+        const { nodes: now, edges: wires } = live.current;
+        const byId = new Map(now.map((n) => [n.id, n]));
+        const newNodes: GraphNode[] = [];
+        const newEdges: GraphEdge[] = [];
+        const marked = new Map<string, string[]>(); // a verse already on the map: the places it now marks too
+        for (const o of page.data) {
+          const vid = verseId(o.verse_key);
+          const had = byId.get(vid) ?? newNodes.find((n) => n.id === vid);
+          if (!had) newNodes.push({ id: vid, type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", verse: { key: o.verse_key }, places: [o.location] } });
+          else if (!had.data.places?.includes(o.location)) {
+            if (newNodes.includes(had)) had.data.places = [...(had.data.places ?? []), o.location];
+            else marked.set(vid, [...(marked.get(vid) ?? had.data.places ?? []), o.location]);
           }
-          const shown = now.filter((n) => wires.some((e) => e.source === id && e.target === n.id)).length + newNodes.length;
-          const updated = now.map((n) =>
-            n.id === id
-              ? { ...n, data: { ...n.data, expanded: true, cursor: page.next_cursor, more: page.next_cursor ? { kind: "verses" as const, remaining: Math.max(0, page.total - shown) } : undefined } }
-              : n,
-          );
-          await tidy(t("doExtractVerses", cnt(newNodes.length, locale)), { nodes: [...updated, ...newNodes], edges: [...wires, ...newEdges] });
+          if (![...wires, ...newEdges].some((e) => e.source === id && e.target === vid)) newEdges.push(link(id, vid, "attests", { place: o.location }));
         }
+        const shown = new Set([...wires, ...newEdges].filter((e) => e.source === id && e.data?.rel === "attests").map((e) => e.data?.place)).size;
+        const updated = now.map((n) =>
+          n.id === id
+            ? { ...n, data: { ...n.data, expanded: true, cursor: page.next_cursor, more: page.next_cursor ? { kind: "verses" as const, remaining: Math.max(0, page.total - shown) } : undefined } }
+            : marked.has(n.id)
+              ? { ...n, data: { ...n.data, places: marked.get(n.id) } }
+              : n,
+        );
+        await tidy(t("doExtractVerses", cnt(newNodes.length, locale)), { nodes: [...updated, ...newNodes], edges: [...wires, ...newEdges] });
       } catch {
-        setNotice(t(kind === "lemma" ? "formsFailed" : "versesFailed"));
+        setNotice(t("versesFailed"));
       } finally {
         setExpanding(null);
       }
     },
-    [expanding, payload, qc, tidy, t, locale],
+    [expanding, tidy, t, locale],
   );
 
   const actions: GraphActions = useMemo(
@@ -293,14 +298,41 @@ function CanvasInner({
     },
     [editable, commit, nodes, edges, t, locale],
   );
+  /** A refused link, said in the product's words (EDT-127, EDT-243, HWF-16): which kinds, and what to try. */
+  const refuse = useCallback(
+    (why: Refusal, source: string, target: string) => {
+      if (why === "same") return;
+      if (why === "dup") return setNotice(t("linkDup"));
+      if (why === "loop") return setNotice(t("linkLoop"));
+      const a = nodes.find((n) => n.id === source)?.data.kind;
+      const b = nodes.find((n) => n.id === target)?.data.kind;
+      if (!a || !b) return;
+      setNotice(t("linkPair", { fem: META[a].fem ? "f" : "m", a: t(META[a].def), b: t(META[b].def), type: t(`mapType_${kind}`) }));
+    },
+    [nodes, t, kind],
+  );
   const onConnect = useCallback(
     (c: Connection) => {
-      if (!editable || c.source === c.target) return;
+      if (!editable) return;
+      const ok = checkLink(kind, nodes, edges, c.source, c.target);
+      if ("refused" in ok) return refuse(ok.refused, c.source, c.target);
       const name = (id: string) => cardName(nodes.find((n) => n.id === id), t, locale);
-      commit(t("doLink", { a: name(c.source), b: name(c.target) }), nodes, addEdge({ ...c, id: edgeId(c.source, c.target) }, edges));
+      commit(t("doLink", { a: name(c.source), b: name(c.target) }), nodes, [...edges, link(c.source, c.target, ok.rel)]);
     },
-    [editable, commit, nodes, edges, t, locale],
+    [editable, kind, commit, refuse, nodes, edges, t, locale],
   );
+  /** A link's relation changed in its panel, checked as a new link would be. */
+  const setRel = (e: GraphEdge, rel: Rel) => {
+    const ok = checkLink(kind, nodes, edges, e.source, e.target, rel, e.id);
+    if ("refused" in ok) return refuse(ok.refused, e.source, e.target);
+    commit(t("doRelation", { rel: t(`rel_${rel}`) }), nodes, edges.map((x) => (x.id === e.id ? { ...x, data: { ...x.data!, rel } } : x)));
+  };
+  const setEdgeField = (e: GraphEdge, field: "label" | "source", value: string) => {
+    const v = value.trim();
+    if (v === (e.data?.[field] ?? "")) return;
+    const data = { ...e.data!, [field]: v || undefined };
+    commit(t(field === "label" ? "doLabelLink" : "doSourceLink"), nodes, edges.map((x) => (x.id === e.id ? { ...x, data, label: field === "label" ? v || undefined : x.label } : x)));
+  };
 
   // Drag end is one undoable step.
   const dragStart = useRef<GraphNode[] | null>(null);
@@ -340,13 +372,22 @@ function CanvasInner({
   }
 
   function exportJson() {
-    const doc = { version: 1, title, kind, nodes: nodes.map(({ id, position, data }) => ({ id, position, data })), edges: edges.map(({ id, source, target, data }) => ({ id, source, target, data })) };
+    const doc = { version: 2, title, kind, nodes: nodes.map(({ id, position, data }) => ({ id, position, data })), edges: edges.map(({ id, source, target, data }) => ({ id, source, target, data })) };
     download(URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" })), `${fileName}.json`);
   }
 
   const selectedEdge = editable ? edges.find((e) => e.selected) : undefined;
-  // a link that rests on an uncertain reading is drawn dashed in amber (F4)
-  const drawn = useMemo(() => edges.map((e) => (e.data?.reading ? { ...e, className: "edge-reading" } : e)), [edges]);
+  const kindOf = (id: string) => nodes.find((n) => n.id === id)?.data.kind;
+  // a relation the kinds do not say is named on its link; one resting on an uncertain reading is dashed amber (F4)
+  const drawn = useMemo(
+    () =>
+      edges.map((e) => {
+        const rel = e.data?.rel;
+        const named = !e.data?.label && rel && NAMED_ON_CANVAS.includes(rel) ? t(`rel_${rel}`) : undefined;
+        return { ...e, ...(named ? { label: named } : {}), ...(e.data?.reading ? { className: "edge-reading" } : {}) };
+      }),
+    [edges, t],
+  );
 
   return (
     <GraphActionsContext.Provider value={actions}>
@@ -384,23 +425,36 @@ function CanvasInner({
           </div>
         </div>
         {selectedEdge && (
-          <div className="flex items-center gap-2 border-b border-line bg-card px-3 py-2">
-            <label className="text-[12.5px] text-t3" htmlFor="edge-label">{t("edgeLabel")}</label>
-            <input
-              id="edge-label"
-              className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-card px-2 text-[14px] outline-none focus:border-ring"
-              defaultValue={selectedEdge.data?.label ?? ""}
-              key={selectedEdge.id}
-              onBlur={(e) => {
-                const label = e.target.value.trim();
-                if (label === (selectedEdge.data?.label ?? "")) return;
-                commit(
-                  t("doLabelLink"),
-                  nodes,
-                  edges.map((x) => (x.id === selectedEdge.id ? { ...x, data: label ? { label } : undefined, label: label || undefined } : x)),
-                );
-              }}
-            />
+          <div className="link-panel flex flex-wrap items-center gap-2 border-b border-line bg-card px-3 py-2" key={selectedEdge.id}>
+            <label className="flex items-center gap-1.5 text-[12.5px] text-t3">
+              {t("linkRelation")}
+              <select
+                className="h-8 rounded-lg border border-line bg-card px-2 text-[13.5px] text-t1"
+                value={selectedEdge.data?.rel ?? "next"}
+                onChange={(e) => setRel(selectedEdge, e.target.value as Rel)}
+              >
+                {[...new Set([selectedEdge.data?.rel ?? "next", ...allowedRels(kind, kindOf(selectedEdge.source) ?? "note", kindOf(selectedEdge.target) ?? "note")])].map((r) => (
+                  <option key={r} value={r}>{t(`rel_${r}`)}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex min-w-[200px] flex-1 items-center gap-1.5 text-[12.5px] text-t3">
+              {t("edgeLabel")}
+              <input
+                className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-card px-2 text-[14px] text-t1 outline-none focus:border-ring"
+                defaultValue={selectedEdge.data?.label ?? ""}
+                onBlur={(e) => setEdgeField(selectedEdge, "label", e.target.value)}
+              />
+            </label>
+            <label className="flex min-w-[200px] flex-1 items-center gap-1.5 text-[12.5px] text-t3">
+              {t("linkSource")}
+              <input
+                className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-card px-2 text-[14px] text-t1 outline-none focus:border-ring"
+                defaultValue={selectedEdge.data?.source ?? ""}
+                placeholder={t("linkSourceHint")}
+                onBlur={(e) => setEdgeField(selectedEdge, "source", e.target.value)}
+              />
+            </label>
           </div>
         )}
         <div ref={wrapper} className="relative min-h-0 flex-1" dir="ltr" aria-label={t("canvasLabel")}>
@@ -438,7 +492,7 @@ function CanvasInner({
             defaultEdgeOptions={{ type: "default", style: { stroke: "var(--edge)", strokeWidth: 1.5 } }}
           >
             <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="var(--dot)" />
-            <MiniMap pannable zoomable nodeColor={(n) => `var(--c-${n.data.kind === "lemma" ? "form" : n.data.kind === "verse" ? "sentence" : n.data.kind === "note" ? "desc" : n.data.kind})`} className="!hidden md:!block" />
+            <MiniMap pannable zoomable nodeColor={(n) => KIND_COLOR[(n as GraphNode).data.kind]} className="!hidden md:!block" />
           </ReactFlow>
           {notice && (
             <p className="graph-notice" role="alert" dir="auto">

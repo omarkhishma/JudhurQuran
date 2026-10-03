@@ -7,7 +7,8 @@ import { createGraph, deleteGraph } from "@/lib/graph/persist";
 import { useMyGraphs } from "@/lib/graph/useMyGraphs";
 import type { GraphKind } from "@/lib/graph/types";
 import { cnt, formatNumber } from "@/lib/format";
-import { cleanGraph, cleanKind, cleanTitle } from "@/lib/graph/sanitize";
+import { upgrade } from "@/lib/graph/migrate";
+import { cleanKind, cleanTitle, type Cleaned } from "@/lib/graph/sanitize";
 import { useWhereSaved } from "@/lib/graph/whereSaved";
 
 const MAX_IMPORT = 5 * 1024 * 1024;
@@ -42,8 +43,15 @@ export function GraphHome() {
     }
     const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
     if (!Array.isArray(o.nodes)) return setMessage({ text: t("importNoNodes") });
-    const got = cleanGraph(o.nodes, Array.isArray(o.edges) ? o.edges : []);
-    const id = await createGraph({ title: cleanTitle(o.title, t("untitled")), kind: cleanKind(o.kind), nodes: got.nodes, edges: got.edges, pendingLayout: true });
+    const kind = cleanKind(o.kind);
+    let got: Cleaned;
+    try {
+      // a file exported before version 2 is migrated, which reads its words' slugs from the dataset
+      got = await upgrade(o.version, kind, o.nodes, o.edges);
+    } catch {
+      return setMessage({ text: t("importOffline") });
+    }
+    const id = await createGraph({ title: cleanTitle(o.title, t("untitled")), kind, nodes: got.nodes, edges: got.edges, pendingLayout: true });
     const skipped = got.skippedNodes + got.skippedEdges;
     setMessage({
       text:

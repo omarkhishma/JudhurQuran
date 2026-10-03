@@ -69,3 +69,25 @@ export const wordAt = (v: VerseText, location: string) => {
   const w = v.words.find((x) => x.location === location);
   return w ? v.tokens.slice(w.token_from - 1, w.token_to).map((t) => t.text).join(" ") : null;
 };
+
+export type Segment = { text: string; marked: boolean };
+
+/** The whole verse, the words at these places marked: a verse card that holds several places. */
+export function markedVerse(v: VerseText, places: string[]): Segment[] {
+  const marked = new Set<number>();
+  for (const p of places) {
+    const w = v.words.find((x) => x.location === p);
+    if (w) for (let i = w.token_from - 1; i < w.token_to; i++) marked.add(i);
+  }
+  const out: Segment[] = [];
+  v.tokens.forEach((tok, i) => {
+    const m = marked.has(i);
+    const last = out[out.length - 1];
+    if (last && last.marked === m) last.text += ` ${tok.text}`;
+    else out.push({ text: tok.text, marked: m });
+  });
+  return out;
+}
+
+/** The verse a place is in: `2:255:3` → `2:255`. */
+export const keyOf = (place: string) => place.split(":").slice(0, 2).join(":");

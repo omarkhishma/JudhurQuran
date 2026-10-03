@@ -7,9 +7,9 @@ import { api } from "./helpers";
  * existing graph replaces nothing. Expectations come from the API and from the stored graph.
  */
 
-type Card = { id: string; position: { x: number; y: number }; data: { kind: string; rootKey?: string; lemmaId?: number; form?: string } };
-type Doc = { id: string; title: string; pendingLayout?: boolean; nodes: Card[]; edges: { id: string; source: string; target: string; label?: string }[] };
-type VerseWord = { location: string; root: string | null; lemma_id: number | null; text_imlaei: string };
+type Card = { id: string; position: { x: number; y: number }; data: { kind: string; rootKey?: string; slug?: string; places?: string[] } };
+type Doc = { id: string; title: string; version: number; pendingLayout?: boolean; nodes: Card[]; edges: { id: string; source: string; target: string; label?: string; data?: { rel: string; place?: string } }[] };
+type VerseWord = { location: string; root: string | null; lemma_slug: string | null; text_imlaei: string };
 
 const RETURNING = { state: { visited: true, onboarded: true, wordStates: {}, stars: {}, trail: [], progress: {}, proposals: [], savedTrails: [] }, version: 1 };
 
@@ -57,27 +57,32 @@ test("graph hand-off: a word opens a dialog whose rows are exactly the cards the
   await dialog.getByRole("link", { name: "افتح محرر الخرائط" }).click();
   const doc = await storedGraph(page, await editorId(page));
   const kinds = countKinds(doc);
-  expect(shown).toEqual({ "جذر": kinds.root, "صيغة": kinds.lemma, "كلمة": kinds.word, "آية": kinds.verse });
-  // the root at the centre, the verse the reader came from linked to the word read there
+  // the document's version 2 kinds: a root, its words (lemmas) and the verse (P8.1a, QAN-01)
+  expect(shown).toEqual({ "جذر": kinds.root, "كلمة": kinds.lemma, "آية": kinds.verse });
+  expect(doc.version).toBe(2);
+  // the root at the centre, the verse the reader came from linked to the word read there, at its place
   const root = await api<{ occurrences: number }>(page, `/roots/${encodeURIComponent("علم")}`);
   expect(doc.nodes.filter((n) => n.data.kind === "root").map((n) => n.data.rootKey)).toEqual(["علم"]);
-  expect(doc.nodes.some((n) => n.id === "verse:1:2:4")).toBeTruthy();
-  expect(doc.edges.some((e) => e.target === "verse:1:2:4" && e.source.startsWith("word:"))).toBeTruthy();
+  expect(doc.nodes.find((n) => n.id === "verse:1:2")?.data.places).toEqual(["1:2:4"]);
+  expect(doc.edges.find((e) => e.target === "verse:1:2")).toMatchObject({ source: "lemma:alamin", data: { rel: "attests", place: "1:2:4" } });
   expect(root.occurrences).toBeGreaterThan(0);
   await expect(page.locator(".graph-card").first()).toBeVisible();
 });
 
 test("graph hand-off: a verse becomes one card linked to each of its words with a root, their lemmas and roots (RDR-365)", async ({ page }) => {
   const v = await api<{ words: VerseWord[] }>(page, "/verses/2:255");
-  const words = v.words.filter((w) => w.root && w.lemma_id != null);
+  const words = v.words.filter((w) => w.root && w.lemma_slug);
   await page.goto(`/graph/seed?s=${seedParam({ seed: "verse", key: "2:255" })}`);
   const doc = await storedGraph(page, await editorId(page));
   const kinds = countKinds(doc);
   expect(kinds.verse).toBe(1);
   expect(kinds.root).toBe(new Set(words.map((w) => w.root)).size);
-  expect(kinds.lemma).toBe(new Set(words.map((w) => w.lemma_id)).size);
-  expect(kinds.word).toBe(new Set(words.map((w) => `${w.lemma_id}:${w.text_imlaei}`)).size);
-  expect(doc.edges.filter((e) => e.target === "verse:2:255")).toHaveLength(kinds.word);
+  expect(kinds.lemma).toBe(new Set(words.map((w) => w.lemma_slug)).size);
+  expect(kinds.word).toBeUndefined();
+  // each word is linked to the verse once, at its first place there
+  const into = doc.edges.filter((e) => e.target === "verse:2:255");
+  expect(into).toHaveLength(kinds.lemma);
+  for (const e of into) expect(e.data?.place, e.source).toBe(words.find((w) => `lemma:${w.lemma_slug}` === e.source)!.location);
 });
 
 test("graph hand-off: adding to an existing graph keeps every card where it was and duplicates nothing (RDR-367)", async ({ page }) => {
@@ -97,8 +102,8 @@ test("graph hand-off: adding to an existing graph keeps every card where it was 
   expect(new Set(after.nodes.map((n) => n.id)).size).toBe(after.nodes.length);
   expect(new Set(after.edges.map((e) => e.id)).size).toBe(after.edges.length);
   // the verse's words with a root are all on the graph now, linked to the new verse card
-  for (const w of add.words.filter((x) => x.root && x.lemma_id != null)) {
-    expect(after.nodes.some((n) => n.id === `word:${w.lemma_id}:${w.text_imlaei}`), w.location).toBeTruthy();
+  for (const w of add.words.filter((x) => x.root && x.lemma_slug)) {
+    expect(after.nodes.some((n) => n.id === `lemma:${w.lemma_slug}`), w.location).toBeTruthy();
   }
   expect(after.nodes.some((n) => n.id === "verse:1:2")).toBeTruthy();
 });

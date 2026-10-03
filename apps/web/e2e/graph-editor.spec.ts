@@ -35,32 +35,41 @@ test("a shared map draws its verses from the dataset, never from the link (F3, l
   const v = await api<Verse>(page, "/verses/2:255");
   const w = v.words[4];
   const forged = {
+    v: 2,
     t: "خريطة",
     k: "free",
     n: [
-      ["verse:2:255", 0, 0, { kind: "verse", ar: "2:255", verse: { key: "2:255", surahName: "سورة مزورة", left: "نص مزور", word: "مزور", right: "نص مزور" } }],
-      [`verse:${w.location}`, 420, 0, { kind: "verse", verse: { key: "2:255", location: w.location, left: "نص مزور", word: "مزور", right: "" } }],
-      [`word:${w.location}`, 0, 300, { kind: "word", ar: "مزور", verse: { key: "2:255", location: w.location, left: "نص مزور", word: "مزور", right: "" } }],
+      ["verse:2:255", 0, 0, { kind: "verse", ar: "نص مزور", verse: { key: "2:255", surahName: "سورة مزورة", left: "نص مزور", word: "مزور", right: "نص مزور" } }],
+      ["verse:3:7", 420, 0, { kind: "verse", verse: { key: "3:7", left: "نص مزور" }, places: ["3:7:2", "2:255:1"] }],
       ["evil", 0, 600, { kind: "script", ar: "مزور" }],
     ],
-    e: [["e1", "verse:2:255", "nowhere", ""]],
+    e: [["e1", "verse:2:255", "nowhere", { rel: "next" }]],
   };
+  const v37 = await api<Verse>(page, "/verses/3:7");
   await page.goto(`/graph/view#${shareFragment(forged)}`);
   const cards = page.locator(".graph-card");
-  await expect(cards).toHaveCount(3);
+  await expect(cards).toHaveCount(2);
   await expect(page.locator(".react-flow")).not.toContainText("مزور");
-  await expect(page.locator(".react-flow")).not.toContainText("سورة مزورة");
   // the whole verse, word for word as the dataset holds it
-  const whole = cards.filter({ has: page.locator("p.quran") }).first();
-  await expect(whole).toContainText(v.tokens.map((x) => x.text).join(" "));
-  await expect(whole).toContainText("البقرة: ٢٥٥");
-  // an occurrence is cut around its word, and says so on both sides
-  const occ = page.locator(`.react-flow__node[data-id="verse:${w.location}"] p.quran`);
-  const word = v.tokens.slice(w.token_from - 1, w.token_to).map((x) => x.text).join(" ");
-  await expect(occ.locator("mark")).toHaveText(word);
+  const whole = page.locator('.react-flow__node[data-id="verse:2:255"] p.quran');
+  await expect(whole).toHaveText(v.tokens.map((x) => x.text).join(" "));
+  await expect(page.locator('.react-flow__node[data-id="verse:2:255"]')).toContainText("البقرة: ٢٥٥");
+  // one place, the verse cut around it and saying so; a place in another verse is not this verse's
+  const one = v37.words[1];
+  const occ = page.locator('.react-flow__node[data-id="verse:3:7"] p.quran');
+  await expect(occ.locator("mark")).toHaveText(v37.tokens.slice(one.token_from - 1, one.token_to).map((x) => x.text).join(" "));
   await expect(occ).toContainText("…");
-  // a word card's headline is the word at its place
-  await expect(page.locator(`.react-flow__node[data-id="word:${w.location}"] p.quran`).first()).toHaveText(word);
+
+  // a link made before version 2 is read the same way: its words dropped, its verses drawn
+  const v1 = {
+    t: "قديمة",
+    k: "free",
+    n: [[`verse:${w.location}`, 0, 0, { kind: "verse", verse: { key: "2:255", location: w.location, left: "نص مزور", word: "مزور", right: "" } }]],
+    e: [],
+  };
+  await page.goto(`/graph/view#${shareFragment(v1)}`);
+  await expect(page.locator('.react-flow__node[data-id="verse:2:255"] mark')).toHaveText(v.tokens.slice(w.token_from - 1, w.token_to).map((x) => x.text).join(" "));
+  await expect(page.locator(".react-flow")).not.toContainText("مزور");
 });
 
 /** Write a stored map as another tab or a sync from another device would: newer, with a card of its own. */
@@ -210,27 +219,87 @@ test("deleting a card takes its wires in one step that undo brings back whole, a
   await expect(undo).toBeDisabled();
 
   // folding is saved and is not an undo step (the cards of the first view: the word read and its verse)
-  const verse = before.nodes.find((n) => n.id === "verse:1:2:4")!;
-  const word = before.nodes.find((n) => n.data.kind === "word" && n.data.focus)!;
+  const verse = before.nodes.find((n) => n.id === "verse:1:2")!;
   await page.locator(`.react-flow__node[data-id="${verse.id}"]`).getByRole("button", { name: "طيّ البطاقة" }).click();
   await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === verse.id)?.data.folded, { timeout: 10_000 }).toBe(true);
   await expect(undo).toBeDisabled();
 
-  // a link and a move are named by what they did
-  const card = page.locator(`.react-flow__node[data-id="${word.id}"]`);
-  // hover() waits until each handle is still and nothing covers it
-  await page.locator(`.react-flow__node[data-id="${verse.id}"] .react-flow__handle-left`).hover();
-  await page.mouse.down();
-  await card.locator(".react-flow__handle-right").hover();
-  await page.mouse.up();
-  await expect(undo).toHaveAttribute("title", `تراجع: ربط ١:٢ ← ${word.data.form}`);
-  await expect.poll(async () => (await storedGraph(page, id))!.edges.some((e) => e.source === verse.id && e.target === word.id), { timeout: 10_000 }).toBe(true);
+  // a link that would loop back along the lexicon's spine is refused, and says why
+  const card = page.locator(`.react-flow__node[data-id="${lemma.id}"]`);
+  await drag(page, page.locator(`.react-flow__node[data-id="${verse.id}"] .react-flow__handle-left`), card.locator(".react-flow__handle-right"));
+  await expect(page.getByRole("alert").filter({ hasText: "هذا الربط يصنع حلقة." })).toBeVisible();
+  await expect(undo).toBeDisabled();
+  // a link to a note is named by what it joins, and a move by how many cards
+  await addNote(page, "عن العالمين");
+  const note = page.locator('.react-flow__node[data-id^="note:"]');
+  await drag(page, card.locator(".react-flow__handle-left"), note.locator(".react-flow__handle-right"));
+  await expect(undo).toHaveAttribute("title", `تراجع: ربط ${lemma.data.ar} ← ملاحظة`);
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.find((e) => e.source === lemma.id && e.target.startsWith("note:"))?.data, { timeout: 10_000 }).toEqual({ rel: "describes" });
   const box = (await card.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + 14);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2 + 40, box.y + 60, { steps: 6 });
   await page.mouse.up();
   await expect(undo).toHaveAttribute("title", "تراجع: نقل بطاقة");
+});
+
+/** Drag a link from one handle to another; hover() waits until each is still and nothing covers it. */
+async function drag(page: Page, from: ReturnType<Page["locator"]>, to: ReturnType<Page["locator"]>) {
+  await from.hover();
+  await page.mouse.down();
+  await to.hover();
+  await page.mouse.up();
+}
+
+test("a link takes a relation its map allows: chosen, changed and named, and the pairs it does not allow said in its words (P8.1a, D17, EDT-127, EDT-135, HWF-16)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "linking by dragging is the desktop's");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto("/graph");
+  await page.getByRole("button", { name: "حقل دلالي" }).click();
+  const id = await editorId(page);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  const palette = page.getByRole("complementary", { name: "أضف بطاقة" });
+  await palette.getByRole("textbox").fill("علم");
+  const rows = palette.locator("li").filter({ has: page.locator(".text-root") }).filter({ hasNot: page.locator(".text-\\[18px\\].text-root") });
+  await rows.nth(0).getByRole("button").click();
+  await rows.nth(1).getByRole("button").click();
+  const lemmas = page.locator('.react-flow__node[data-id^="lemma:"]');
+  await expect(lemmas).toHaveCount(2);
+  // both cards in view
+  await page.getByRole("button", { name: "ملاءمة" }).click();
+  await page.waitForTimeout(400);
+  const [a, b] = [await lemmas.nth(0).getAttribute("data-id"), await lemmas.nth(1).getAttribute("data-id")];
+  // in a semantic field two words are near in meaning until the reader says otherwise, and the relation is named
+  await drag(page, lemmas.nth(0).locator(".react-flow__handle-left"), lemmas.nth(1).locator(".react-flow__handle-right"));
+  await expect.poll(async () => (await storedGraph(page, id))?.edges.map((e) => [e.source, e.target, e.data?.rel])).toEqual([[a, b, "near-in-meaning"]]);
+  await expect(page.locator(".react-flow__edge")).toContainText("قريب المعنى");
+  // the same pair the other way is the same link
+  await drag(page, lemmas.nth(1).locator(".react-flow__handle-left"), lemmas.nth(0).locator(".react-flow__handle-right"));
+  await expect(page.getByRole("alert").filter({ hasText: "هاتان البطاقتان مربوطتان من قبل." })).toBeVisible();
+  // chosen in the link's panel, with its «فرق» and its source
+  await page.locator(".react-flow__edge").first().focus();
+  await page.keyboard.press("Enter");
+  const panel = page.locator(".link-panel");
+  await panel.getByRole("combobox", { name: "الصلة" }).selectOption("opposite-of");
+  await expect(page.getByRole("button", { name: "تراجع", exact: true })).toHaveAttribute("title", "تراجع: جعل الصلة: ضدّ");
+  await panel.getByRole("textbox", { name: "وصف الصلة (اختياري)" }).fill("الفرق بينهما");
+  await panel.getByRole("textbox", { name: "المصدر" }).fill("الفروق اللغوية، ٨٨");
+  await panel.getByRole("textbox", { name: "المصدر" }).blur();
+  await expect
+    .poll(async () => (await storedGraph(page, id))?.edges[0].data, { timeout: 10_000 })
+    .toEqual({ rel: "opposite-of", label: "الفرق بينهما", source: "الفروق اللغوية، ٨٨" });
+
+  // a root map allows no word-to-word link: said with the kinds and the map's type
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  await editorId(page);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  await palette.getByRole("textbox").fill("صبر");
+  await palette.locator("li").filter({ has: page.locator(".text-root") }).filter({ hasNot: page.locator(".text-\\[18px\\].text-root") }).first().getByRole("button").click();
+  const sabr = (await api<{ results: { lemmas: { slug: string }[] } }>(page, `/search?q=${encodeURIComponent("صبر")}&limit=6`)).results.lemmas[0].slug;
+  const other = page.locator(`.react-flow__node[data-id="lemma:${sabr}"]`);
+  await expect(other).toHaveCount(1);
+  await drag(page, page.locator('.react-flow__node[data-id="lemma:alamin"] .react-flow__handle-left'), other.locator(".react-flow__handle-right"));
+  await expect(page.getByRole("alert").filter({ hasText: "لا تُربط الكلمة بالكلمة في خريطة الجذر — جرّب ملاحظة." })).toBeVisible();
 });
 
 test("counts read as Arabic and English count them (F10, QAN-14)", async ({ page }) => {
@@ -246,15 +315,6 @@ test("counts read as Arabic and English count them (F10, QAN-14)", async ({ page
   const n = (await storedGraph(page, two))!.nodes.length;
   await page.goto("/graph");
   await expect(page.locator(`a[href="/graph/edit/${two}"]`)).toContainText(arCount(n, { one: "بطاقة واحدة", two: "بطاقتان", few: "# بطاقات", many: "# بطاقة", other: "# بطاقة" }));
-  // a lemma card's further forms
-  const g = await api<{ lemmas: { id: number; forms: unknown[] }[] }>(page, `/roots/${encodeURIComponent("علم")}/graph`);
-  const many = g.lemmas.find((l) => l.forms.length > 4)!;
-  await page.goto(`/graph/root/${encodeURIComponent("علم")}`);
-  await expect(page.locator(`.react-flow__node[data-id="lemma:${many.id}"]`)).toContainText(
-    arCount(many.forms.length - 3, { one: "+صيغة أخرى", two: "+صيغتان أخريان", few: "+# صيغ أخرى", many: "+# صيغة أخرى", other: "+# صيغة أخرى" }),
-  );
-  await page.goto(`/en/graph/root/${encodeURIComponent("علم")}`);
-  await expect(page.locator(`.react-flow__node[data-id="lemma:${many.id}"]`)).toContainText(`+${many.forms.length - 3} more forms`);
   await page.goto("/en/graph");
   await expect(page.locator(`a[href="/en/graph/edit/${two}"]`)).toContainText(n === 1 ? "1 card" : `${n} cards`);
   expect(ar(3)).toBe("٣");
@@ -370,33 +430,35 @@ test("a map exported keeps its type and is named from its title; a file is impor
   await expect(page.getByRole("main").locator('a[href^="/graph/edit/"]').filter({ hasText: title })).toHaveCount(3);
 });
 
-test("in the editor a lemma's further forms open from the root's data, and a failed read says so (F6, F18)", async ({ page }) => {
+test("a word's places open in the editor by its slug, marked in verses already on the map, and a failed read says so (F18, P8.1a)", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
   await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
   const id = await editorId(page);
   await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
-  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
-  const g = await api<{ lemmas: { id: number; forms: { form: string }[] }[] }>(page, `/roots/${encodeURIComponent("علم")}/graph`);
-  const before = (await storedGraph(page, id))!;
-  const lemma = g.lemmas.find((l) => l.forms.length > 3 && before.nodes.some((n) => n.id === `lemma:${l.id}` && (n.data.more as { remaining: number } | undefined)?.remaining))!;
-  const words = (d: Doc) => d.nodes.filter((n) => n.data.kind === "word" && n.data.lemmaId === lemma.id).length;
-  const card = page.locator(`.react-flow__node[data-id="lemma:${lemma.id}"]`);
+  const att = await api<{ total: number; data: { location: string; verse_key: string }[] }>(page, "/words/alamin/attestations?limit=8");
+  const card = page.locator('.react-flow__node[data-id="lemma:alamin"]');
+  const button = card.getByRole("button", { name: /^المواضع/ });
+  // when the read fails: said, and the button works again once it can
+  await page.route("**/api/v1/words/*/attestations*", (r) => r.fulfill({ status: 500, body: "{}" }));
   // the card may lie beyond the canvas's view, which panning is not what this test is about: the button is pressed
-  await card.getByRole("button", { name: /صيغة أخرى|صيغ أخرى|صيغتان/ }).dispatchEvent("click");
-  await expect.poll(async () => words((await storedGraph(page, id))!), { timeout: 10_000 }).toBe(lemma.forms.length);
-  const added = lemma.forms.length - words(before);
-  await expect(page.getByRole("button", { name: "تراجع", exact: true })).toHaveAttribute("title", `تراجع: ${arCount(added, { one: "استخراج كلمة", two: "استخراج كلمتين", few: "استخراج # كلمات", many: "استخراج # كلمة", other: "استخراج # كلمة" })}`);
-
-  // a word's places, when the read fails: said, and the button works again once it can
-  await page.route("**/api/v1/roots/*/occurrences*", (r) => r.fulfill({ status: 500, body: "{}" }));
-  const word = page.locator('.react-flow__node[data-id^="word:"]').filter({ has: page.getByRole("button", { name: /^المواضع/ }) }).first();
-  await word.getByRole("button", { name: /^المواضع/ }).dispatchEvent("click");
+  await button.dispatchEvent("click");
   await expect(page.getByRole("alert").filter({ hasText: "تعذّر تحميل المواضع الآن" })).toBeVisible();
-  await page.unroute("**/api/v1/roots/*/occurrences*");
-  const verses = (await storedGraph(page, id))!.nodes.filter((n) => n.data.kind === "verse").length;
-  await expect(word.getByRole("button", { name: /^المواضع/ })).toBeEnabled();
-  await word.getByRole("button", { name: /^المواضع/ }).dispatchEvent("click");
-  await expect.poll(async () => (await storedGraph(page, id))!.nodes.filter((n) => n.data.kind === "verse").length, { timeout: 10_000 }).toBeGreaterThan(verses);
+  await page.unroute("**/api/v1/words/*/attestations*");
+  await expect(button).toBeEnabled();
+  await button.dispatchEvent("click");
+  // each place is a verse card marking it, one card per verse, linked from the word at its place
+  const keys = new Set(att.data.map((o) => o.verse_key));
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.filter((e) => e.source === "lemma:alamin" && e.data?.rel === "attests").length, { timeout: 10_000 }).toBe(keys.size);
+  const doc = (await storedGraph(page, id))!;
+  for (const o of att.data) {
+    expect(doc.nodes.find((n) => n.id === `verse:${o.verse_key}`)?.data.places, o.location).toContain(o.location);
+    expect(doc.edges.find((e) => e.source === "lemma:alamin" && e.target === `verse:${o.verse_key}`)?.data?.rel).toBe("attests");
+  }
+  // the verse the reader came from was already on the map: it is not there twice (F5)
+  expect(doc.nodes.filter((n) => n.id === "verse:1:2")).toHaveLength(1);
+  // and the places still to open are counted as Arabic counts them
+  const rest = att.total - att.data.length;
+  await expect(card).toContainText(arCount(rest, { one: "+موضع آخر", two: "+موضعان آخران", few: "+# مواضع أخرى", many: "+# موضعًا آخر", other: "+# موضع آخر" }));
 });
 
 test("Explore's set becomes a map of its words, titled by the set, with no numbered path (F12)", async ({ page }) => {
@@ -416,7 +478,7 @@ test("Explore's set becomes a map of its words, titled by the set, with no numbe
 test("the Analyser's readings of the reader's own text are reviewed before a map, and an unsure one kept is marked as a reading (F4, HWF-22, QAN-19)", async ({ page }) => {
   const a = await api<{ tokens: { surface: string; confidence: number; candidates: { lemma: { slug: string } | null }[] }[] }>(page, `/analyse?q=${encodeURIComponent("فالعلم نور")}`);
   const low = a.tokens.find((t) => t.confidence < 0.8 && t.candidates[0]?.lemma)!;
-  const ilm = (await api<{ lemma_id: number; root: { key: string } }>(page, `/words/${low.candidates[0].lemma!.slug}?limit=0`));
+  const ilm = { slug: low.candidates[0].lemma!.slug, root: (await api<{ root: { key: string } }>(page, `/words/${low.candidates[0].lemma!.slug}?limit=0`)).root };
   const review = async () => {
     await page.goto(`/analyse?q=${encodeURIComponent("فالعلم نور")}`);
     await page.getByRole("link", { name: "ابنِ خريطة من هذا ←" }).click();
@@ -433,7 +495,7 @@ test("the Analyser's readings of the reader's own text are reviewed before a map
   // left as it was: the unsure reading does not enter the map
   await page.getByRole("button", { name: "ابنِ الخريطة بما اخترت" }).click();
   const left = (await storedGraph(page, await editorId(page)))!;
-  expect(left.nodes.some((n) => n.id === `lemma:${ilm.lemma_id}`)).toBe(false);
+  expect(left.nodes.some((n) => n.id === `lemma:${ilm.slug}`)).toBe(false);
   expect(left.nodes.some((n) => n.data.reading), "nothing is marked when nothing unsure was kept").toBe(false);
 
   // kept: marked on its card, its root reached only through it, and their links
@@ -442,7 +504,7 @@ test("the Analyser's readings of the reader's own text are reviewed before a map
   await page.getByRole("button", { name: "ابنِ الخريطة بما اخترت" }).click();
   const id = await editorId(page);
   const kept = (await storedGraph(page, id))!;
-  const card = kept.nodes.find((n) => n.id === `lemma:${ilm.lemma_id}`)!;
+  const card = kept.nodes.find((n) => n.id === `lemma:${ilm.slug}`)!;
   expect(card.data.reading).toEqual({ conf: low.confidence });
   expect(kept.nodes.find((n) => n.id === `root:${ilm.root.key}`)?.data.reading).toEqual({ conf: low.confidence });
   expect(kept.edges.filter((e) => e.target === card.id).every((e) => e.data?.reading === true)).toBe(true);
@@ -451,4 +513,60 @@ test("the Analyser's readings of the reader's own text are reviewed before a map
     `قراءة غير مؤكدة · ${new Intl.NumberFormat("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(low.confidence)}`,
   );
   await expect(page.locator(".react-flow__edge.edge-reading").first()).toBeAttached();
+});
+
+test("a map saved as version 1 opens as version 2 — words by slug, one card per verse with its places — and is written as version 2 at its next change (P8.1a, F5)", async ({ page }) => {
+  const alamin = await api<{ lemma_id: number }>(page, "/words/alamin?limit=0");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto("/graph");
+  const T = Date.now() - 60_000;
+  const v1 = {
+    version: 1,
+    id: "oldmap00001",
+    title: "خريطة قديمة",
+    kind: "root",
+    createdAt: T,
+    updatedAt: T,
+    nodes: [
+      { id: "root:علم", type: "card", position: { x: 600, y: 0 }, data: { kind: "root", ar: "ع ل م", rootKey: "علم" } },
+      { id: `lemma:${alamin.lemma_id}`, type: "card", position: { x: 300, y: 0 }, data: { kind: "lemma", ar: "عَٰلَمِين", lemmaId: alamin.lemma_id, count: 73 } },
+      { id: `word:${alamin.lemma_id}:العالمين`, type: "card", position: { x: 0, y: 0 }, data: { kind: "word", lemmaId: alamin.lemma_id, form: "العالمين", count: 61, verse: { key: "1:2", location: "1:2:4" } } },
+      { id: "verse:1:2:4", type: "card", position: { x: -300, y: 0 }, data: { kind: "verse", verse: { key: "1:2", location: "1:2:4" } } },
+      { id: "verse:1:2", type: "card", position: { x: -300, y: 300 }, data: { kind: "verse", verse: { key: "1:2" } } },
+    ],
+    edges: [
+      { id: "a", source: "root:علم", target: `lemma:${alamin.lemma_id}` },
+      { id: "b", source: `lemma:${alamin.lemma_id}`, target: `word:${alamin.lemma_id}:العالمين` },
+      { id: "c", source: `word:${alamin.lemma_id}:العالمين`, target: "verse:1:2:4" },
+    ],
+  };
+  await page.evaluate(
+    (doc) =>
+      new Promise<void>((resolve) => {
+        const open = indexedDB.open("keyval-store");
+        open.onsuccess = () => {
+          const tx = open.result.transaction("keyval", "readwrite");
+          tx.objectStore("keyval").put(doc, `jadhr-graph:${doc.id}`);
+          tx.objectStore("keyval").put([{ id: doc.id, title: doc.title, kind: doc.kind, createdAt: doc.createdAt, updatedAt: doc.updatedAt, nodeCount: doc.nodes.length }], "jadhr-graphs-index");
+          tx.oncomplete = () => resolve();
+        };
+      }),
+    v1,
+  );
+  await page.goto("/graph/edit/oldmap00001");
+  await expect(page.locator(".react-flow__node")).toHaveCount(3);
+  await expect(page.locator('.react-flow__node[data-id="lemma:alamin"]')).toContainText("العالمين");
+  await expect(page.locator('.react-flow__node[data-id="verse:1:2"] mark')).toHaveCount(1);
+  // nothing is written until the reader changes the map
+  await page.waitForTimeout(1500);
+  expect((await storedGraph(page, "oldmap00001"))!.updatedAt).toBe(T);
+  await addNote(page, "بعد الترحيل");
+  await expect.poll(async () => (await storedGraph(page, "oldmap00001")) as unknown as { version: number }, { timeout: 10_000 }).toMatchObject({ version: 2 });
+  const doc = (await storedGraph(page, "oldmap00001"))!;
+  expect(doc.nodes.map((n) => n.id).sort()).toEqual(["lemma:alamin", "root:علم", "verse:1:2", doc.nodes.find((n) => n.id.startsWith("note:"))!.id].sort());
+  expect(doc.nodes.find((n) => n.id === "verse:1:2")?.data.places).toEqual(["1:2:4"]);
+  expect(doc.edges.map((e) => [e.source, e.target, e.data])).toEqual([
+    ["root:علم", "lemma:alamin", { rel: "derives" }],
+    ["lemma:alamin", "verse:1:2", { rel: "attests", place: "1:2:4" }],
+  ]);
 });

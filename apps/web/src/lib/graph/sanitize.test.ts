@@ -3,44 +3,46 @@ import { cleanGraph, cleanKind, cleanTitle } from "./sanitize";
 import { excerptOf, wordAt, type VerseText } from "./verseText";
 
 describe("cleanGraph", () => {
-  it("keeps a verse's key and place and drops any words a map carries (F3)", () => {
+  it("keeps a verse's key and the places in it, and drops any words a map carries (F3)", () => {
     const { nodes } = cleanGraph(
       [
-        { id: "verse:2:255:1", position: { x: 1, y: 2 }, data: { kind: "verse", verse: { key: "2:255", location: "2:255:1", surahName: "x", left: "forged", word: "forged", right: "forged" } } },
-        { id: "verse:9:9", position: { x: 0, y: 0 }, data: { kind: "verse", verse: { key: "9:9", location: "2:1:1" } } },
+        { id: "verse:2:255", position: { x: 1, y: 2 }, data: { kind: "verse", verse: { key: "2:255", surahName: "x", left: "forged", word: "forged", right: "forged" }, places: ["2:255:1", "2:1:1", "x"] } },
         { id: "verse:bad", position: { x: 0, y: 0 }, data: { kind: "verse", verse: { key: "<b>2:255</b>" } } },
       ],
       [],
     );
-    expect(nodes[0].data.verse).toEqual({ key: "2:255", location: "2:255:1" });
-    // a place in another verse is not this verse's place
-    expect(nodes[1].data.verse).toEqual({ key: "9:9" });
-    expect(nodes[2].data.verse).toBeUndefined();
+    expect(nodes[0].data).toEqual({ kind: "verse", verse: { key: "2:255" }, places: ["2:255:1"] });
+    expect(nodes[1].data.verse).toBeUndefined();
   });
 
-  it("drops unknown kinds, duplicate ids and wires without both ends, and counts them (F16)", () => {
+  it("drops unknown kinds, duplicate ids, links without both ends and links to a frame, and counts them (F16)", () => {
     const out = cleanGraph(
       [
         { id: "a", position: { x: 0, y: 0 }, data: { kind: "root", ar: "ع ل م" } },
         { id: "a", position: { x: 0, y: 0 }, data: { kind: "root" } },
         { id: "b", position: { x: "x", y: Infinity }, data: { kind: "note", text: "mine", onclick: "alert(1)" } },
         { id: "c", data: { kind: "widget" } },
+        { id: "f", data: { kind: "frame", title: "group", size: { w: 400, h: 300 } } },
         null,
       ],
       [
-        { id: "e1", source: "a", target: "b", data: { label: "near" } },
+        { id: "e1", source: "a", target: "b", data: { rel: "describes", label: "near", source: "al-ʿAskarī, 12" } },
         { id: "e1", source: "b", target: "a" },
         { source: "a", target: "c" },
-        { source: "b", target: "a" },
+        { source: "b", target: "a", data: { rel: "nonsense" } },
+        { source: "a", target: "f", data: { rel: "describes" } },
       ],
     );
-    expect(out.nodes.map((n) => n.id)).toEqual(["a", "b"]);
+    expect(out.nodes.map((n) => n.id)).toEqual(["a", "b", "f"]);
     expect(out.nodes[1].position).toEqual({ x: 0, y: 0 });
     expect(out.nodes[1].data).toEqual({ kind: "note", text: "mine" });
+    expect(out.nodes[2]).toMatchObject({ type: "frame", data: { kind: "frame", title: "group", size: { w: 400, h: 300 } } });
     expect(out.skippedNodes).toBe(3);
     expect(out.edges.map((e) => e.id)).toEqual(["e1", "e:b->a"]);
-    expect(out.edges[0].data).toEqual({ label: "near" });
-    expect(out.skippedEdges).toBe(2);
+    expect(out.edges[0].data).toEqual({ rel: "describes", label: "near", source: "al-ʿAskarī, 12" });
+    // a relation this app does not know is read as a plain step
+    expect(out.edges[1].data).toEqual({ rel: "next" });
+    expect(out.skippedEdges).toBe(3);
   });
 
   it("reads a title and a map type only in their own shape", () => {

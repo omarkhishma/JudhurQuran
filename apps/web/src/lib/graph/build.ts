@@ -1,5 +1,5 @@
 import type { PatternMethod } from "@/lib/types";
-import type { GraphEdge, GraphNode, VerseExcerpt } from "./types";
+import type { EdgeData, GraphEdge, GraphNode, Rel } from "./types";
 
 export type RootGraphPayload = {
   root: { key: string; letters: string[]; spaced: string; translit: string; occurrences: number; verse_count: number; surah_count: number; lemma_count: number; usul?: "one" | "several" | "unrelated" | null };
@@ -19,10 +19,19 @@ export type RootGraphPayload = {
 };
 
 export const rootId = (key: string) => `root:${key}`;
-export const lemmaId = (id: number) => `lemma:${id}`;
-export const wordId = (lemma: number, form: string) => `word:${lemma}:${form}`;
-export const verseId = (location: string) => `verse:${location}`;
+export const patternId = (slug: string) => `pattern:${slug}`;
+export const lemmaId = (slug: string) => `lemma:${slug}`;
+/** one card per verse, whatever brought it (F5): `verse:2:255` */
+export const verseId = (key: string) => `verse:${key}`;
 export const edgeId = (a: string, b: string) => `e:${a}->${b}`;
+/** a link with what it says (P8.1a) */
+export const link = (source: string, target: string, rel: Rel, extra: Omit<EdgeData, "rel"> = {}): GraphEdge => ({
+  id: edgeId(source, target),
+  source,
+  target,
+  data: { rel, ...extra },
+  ...(extra.label ? { label: extra.label } : {}),
+});
 
 export const POS_AR: Record<string, string> = { V: "فعل", N: "اسم", ADJ: "صفة", PN: "علم", IMPN: "اسم فعل" };
 const DER_AR: Record<string, string> = { ACT_PCPL: "اسم فاعل", PASS_PCPL: "اسم مفعول", VN: "مصدر" };
@@ -34,29 +43,41 @@ export function lemmaSub(l: RootGraphPayload["lemmas"][number]): string {
     .join(" • ");
 }
 
-function wordNode(lemma: number, f: RootGraphPayload["lemmas"][number]["forms"][number], rootKey: string, focus: boolean): GraphNode {
-  // the place only: the card reads the verse's words from the dataset (law L1)
-  const verse: VerseExcerpt = { key: f.first.verse_key, location: f.first.location };
+/** The earlier of two places, in mushaf order. */
+export function firstPlace(a: string | undefined, b: string | undefined): string | undefined {
+  if (!a || !b) return a ?? b;
+  const [p, q] = [a, b].map((x) => x.split(":").map(Number));
+  return (p[0] - q[0] || p[1] - q[1] || p[2] - q[2]) <= 0 ? a : b;
+}
+
+/** A lemma's card: the word, its commonest written forms with their counts, and the place it first occurs. */
+function lemmaCard(l: RootGraphPayload["lemmas"][number], rootKey: string, focus: boolean): GraphNode {
   return {
-    id: wordId(lemma, f.form),
+    id: lemmaId(l.slug),
     type: "card",
     position: { x: 0, y: 0 },
-    data: { kind: "word", ar: f.first.word, sub: f.form, count: f.occurrences, rootKey, lemmaId: lemma, form: f.form, verse, focus },
+    data: {
+      kind: "lemma",
+      slug: l.slug,
+      ar: l.ar,
+      sub: lemmaSub(l),
+      count: l.occurrences,
+      rootKey,
+      forms: l.forms.slice(0, 3).map((f) => ({ form: f.form, count: f.occurrences })),
+      first: l.forms.reduce<string | undefined>((m, f) => firstPlace(m, f.first.location), undefined),
+      focus,
+    },
   };
 }
 
 /**
- * The default root-family graph: root → every lemma → its most frequent word forms (each card shows the
- * word, its root and the first verse it occurs in). Further forms and every verse open on demand, so the
- * canvas stays readable even for roots with hundreds of occurrences.
+ * The default root-family graph: the root and each of its words (lemmas), every word card with its commonest
+ * written forms and the verse it first occurs in. Its places open on demand. Patterns between them come with the
+ * root graph from the full data (P8.2).
  */
 export function buildRootGraph(
   g: RootGraphPayload,
-  {
-    formsPerLemma = 3,
-    focusLocation,
-    focus,
-  }: { formsPerLemma?: number; focusLocation?: string; focus?: { lemmaSlug: string; form?: string | null } } = {},
+  { focusLocation, focus }: { focusLocation?: string; focus?: { lemmaSlug: string } } = {},
 ): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const nodes: GraphNode[] = [];
   const edges: GraphEdge[] = [];
@@ -69,52 +90,11 @@ export function buildRootGraph(
     data: { kind: "root", ar: r.spaced, sub: r.translit, count: r.occurrences, rootKey: r.key, usul: r.usul ?? null, focus: !!focusLocation || !!focus },
   });
   for (const l of g.lemmas) {
-    const lid = lemmaId(l.id);
-    // the word the reader came from: by its first location (?focus=) or by its lemma and surface form (a seed)
-    const onFocusLemma = focus?.lemmaSlug === l.slug;
-    const focusForm = focusLocation
-      ? l.forms.find((f) => f.first.location === focusLocation)?.form
-      : onFocusLemma && focus?.form && l.forms.some((f) => f.form === focus.form)
-        ? focus.form
-        : undefined;
-    const shown = l.forms.slice(0, formsPerLemma);
-    if (focusForm && !shown.some((f) => f.form === focusForm)) shown.push(l.forms.find((f) => f.form === focusForm)!);
-    nodes.push({
-      id: lid,
-      type: "card",
-      position: { x: 0, y: 0 },
-      data: {
-        kind: "lemma",
-        ar: l.ar,
-        sub: lemmaSub(l),
-        count: l.occurrences,
-        rootKey: r.key,
-        lemmaId: l.id,
-        more: l.forms.length > shown.length ? { kind: "forms", remaining: l.forms.length - shown.length } : undefined,
-        focus: !!focusForm || onFocusLemma,
-      },
-    });
-    edges.push({ id: edgeId(rid, lid), source: rid, target: lid });
-    for (const f of shown) {
-      const w = wordNode(l.id, f, r.key, f.form === focusForm);
-      nodes.push(w);
-      edges.push({ id: edgeId(lid, w.id), source: lid, target: w.id });
-    }
-  }
-  return { nodes, edges };
-}
-
-/** Remaining word forms of one lemma (expansion of a lemma card). */
-export function expandForms(g: RootGraphPayload, lemma: number, present: Set<string>): { nodes: GraphNode[]; edges: GraphEdge[] } {
-  const l = g.lemmas.find((x) => x.id === lemma);
-  if (!l) return { nodes: [], edges: [] };
-  const nodes: GraphNode[] = [];
-  const edges: GraphEdge[] = [];
-  for (const f of l.forms) {
-    const id = wordId(lemma, f.form);
-    if (present.has(id)) continue;
-    nodes.push(wordNode(lemma, f, g.root.key, false));
-    edges.push({ id: edgeId(lemmaId(lemma), id), source: lemmaId(lemma), target: id });
+    // the word the reader came from: by a place it first occurs in (?focus=) or by its slug (a seed)
+    const on = focus?.lemmaSlug === l.slug || (!!focusLocation && l.forms.some((f) => f.first.location === focusLocation));
+    const card = lemmaCard(l, r.key, on);
+    nodes.push(card);
+    edges.push(link(rid, card.id, "derives"));
   }
   return { nodes, edges };
 }

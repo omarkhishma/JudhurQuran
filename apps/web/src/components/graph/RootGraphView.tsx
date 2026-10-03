@@ -26,7 +26,6 @@ export function RootGraphView({ payload, focus }: { payload: RootGraphPayload; f
     <GraphCanvas
       initialNodes={initial.nodes}
       initialEdges={initial.edges}
-      payload={payload}
       autoLayout
       title={title}
       fileName={`root-${payload.root.translit}`}

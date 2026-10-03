@@ -9,10 +9,10 @@ import { formatNumber } from "@/lib/format";
 import { buildSeedGraph, seedRows } from "@/lib/graph/seed";
 import { encodeSeed, type Seed } from "@/lib/graph/seedCodec";
 import { useMyGraphs } from "@/lib/graph/useMyGraphs";
+import { META } from "@/lib/graph/relations";
 import { KIND_COLOR } from "@/lib/graph/types";
 import { useReader } from "@/lib/reader/store";
 
-const KIND_LABEL = { root: "kindRoot", lemma: "kindLemma", word: "kindWord", verse: "kindVerse", note: "kindNote" } as const;
 
 /** The editor's address for a seed: it builds the cards itself, so the link works in a new tab and when shared (RDR-369). */
 export function seedHref(seed: Seed, into: string | null): string {
@@ -69,7 +69,7 @@ function HandoffDialog({ seed, onClose }: { seed: Seed; onClose: () => void }) {
             {rows.map((r) => (
               <li key={r.kind}>
                 <span className="dot" style={{ background: KIND_COLOR[r.kind] }} />
-                <span className="text-[12.5px] font-medium">{tg(KIND_LABEL[r.kind])}</span>
+                <span className="text-[12.5px] font-medium">{tg(META[r.kind].label)}</span>
                 <span className="ar-classical min-w-0 flex-1 truncate text-[15px] text-t2" lang="ar" dir="rtl">{r.detail}</span>
                 <span className="mono text-[11.5px] text-t3">{formatNumber(r.n, locale)}</span>
               </li>

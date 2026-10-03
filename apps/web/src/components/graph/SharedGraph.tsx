@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 import { useRouter } from "@/i18n/navigation";
@@ -15,11 +16,14 @@ export function SharedGraph() {
   const t = useTranslations("graph");
   const router = useRouter();
   const hash = useSyncExternalStore(subscribeHash, () => window.location.hash.slice(1), () => null);
-  if (hash === null) return null;
-  const doc = hash ? decodeShare(hash) : null;
-  if (!doc) return <p className="p-6 text-t2">{t("invalidShare")}</p>;
+  // read (and, for a link made before version 2, migrated) once per link
+  const q = useQuery({ queryKey: ["shared-graph", hash], queryFn: () => (hash ? decodeShare(hash) : null), enabled: hash !== null, staleTime: Infinity, gcTime: 0, retry: false });
+  if (hash === null || q.isPending) return null;
+  const doc = q.data;
+  if (!doc) return <p className="p-6 text-t2">{t(q.isError ? "sharedFailed" : "invalidShare")}</p>;
   return (
     <GraphCanvas
+      key={hash}
       initialNodes={doc.nodes}
       initialEdges={doc.edges}
       title={doc.title || t("untitled")}

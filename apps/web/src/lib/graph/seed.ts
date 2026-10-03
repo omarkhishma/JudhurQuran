@@ -1,14 +1,14 @@
 "use client";
 
+import { REVIEW_BELOW } from "@/lib/analyse";
 import { getJSON } from "@/lib/reader/api";
 import type { WordPayload } from "@/lib/reader/types";
 import type { Verse } from "@/lib/types";
-import { buildRootGraph, edgeId, lemmaId, POS_AR, rootId, verseId, wordId, type RootGraphPayload } from "./build";
+import { buildRootGraph, lemmaId, link, POS_AR, rootId, verseId, type RootGraphPayload } from "./build";
 import { layout } from "./layout";
 import { createGraph, loadGraph, saveGraph } from "./persist";
-import { REVIEW_BELOW } from "@/lib/analyse";
 import type { Seed, TrailSeedStep } from "./seedCodec";
-import type { GraphEdge, GraphKind, GraphNode, NodeKind, VerseExcerpt } from "./types";
+import type { GraphEdge, GraphKind, GraphNode, NodeKind } from "./types";
 
 /** The cards a seed becomes, before they are laid out and stored. The title is a message key with values. */
 export type SeedGraph = {
@@ -27,9 +27,6 @@ function surahNames(): Promise<Map<number, string>> {
   return surahNamesP;
 }
 
-/** A verse card names its verse and, for an occurrence, the word's place — the words are read when it is drawn. */
-const excerpt = (key: string, location?: string): VerseExcerpt => (location ? { key, location } : { key });
-
 async function rootSummaries(keys: string[]): Promise<Map<string, RootSummary>> {
   if (!keys.length) return new Map();
   const d = await getJSON<{ data: RootSummary[] }>(`/roots?keys=${encodeURIComponent(keys.join(","))}&limit=${keys.length}`);
@@ -37,30 +34,29 @@ async function rootSummaries(keys: string[]): Promise<Map<string, RootSummary>> 
 }
 
 const card = (id: string, kind: NodeKind, data: Omit<GraphNode["data"], "kind">): GraphNode => ({ id, type: "card", position: { x: 0, y: 0 }, data: { kind, ...data } });
-const link = (source: string, target: string, label?: string): GraphEdge => ({ id: edgeId(source, target), source, target, ...(label ? { data: { label }, label } : {}) });
 const spaced = (key: string) => key.split("").join(" ");
+/** a verse card, with the words to mark in it */
+const verseCard = (key: string, places: string[], extra: Omit<GraphNode["data"], "kind" | "verse" | "places"> = {}) =>
+  card(verseId(key), "verse", { verse: { key }, ...(places.length ? { places } : {}), ...extra });
 
-/** A word seed: its root at the centre, the patterns built on it, the family words, and the verse it came from. */
+/** A word seed: its root at the centre with the words of its family, the word itself marked, and the verse it came from. */
 async function wordSeed(slug: string, at: string | null | undefined): Promise<SeedGraph> {
   const w = await getJSON<WordPayload>(`/words/${encodeURIComponent(slug)}?limit=0${at ? `&at=${at}` : ""}`);
   const occ = w.occurrence;
   const title = { key: "wordTitle" as const, values: { word: occ?.surface.full ?? w.ar.full } };
   let nodes: GraphNode[] = [];
   let edges: GraphEdge[] = [];
-  let wordCard: string;
+  const lid = lemmaId(w.slug);
   if (w.root) {
     const g = await getJSON<RootGraphPayload>(`/roots/${encodeURIComponent(w.root.key)}/graph`);
-    ({ nodes, edges } = buildRootGraph(g, { focus: { lemmaSlug: w.slug, form: occ?.surface_imlaei ?? null } }));
-    wordCard = occ?.surface_imlaei ? wordId(w.lemma_id, occ.surface_imlaei) : lemmaId(w.lemma_id);
+    ({ nodes, edges } = buildRootGraph(g, { focus: { lemmaSlug: w.slug } }));
   } else {
     // a particle or pronoun has no root (L2): its own card, never a pseudo-root
-    wordCard = lemmaId(w.lemma_id);
-    nodes.push(card(wordCard, "lemma", { ar: w.ar.full, sub: POS_AR[w.pos.tag] ?? w.pos.ar ?? w.pos.tag, count: w.corpus_freq, lemmaId: w.lemma_id, focus: true }));
+    nodes.push(card(lid, "lemma", { slug: w.slug, ar: w.ar.full, sub: POS_AR[w.pos.tag] ?? w.pos.ar ?? w.pos.tag, count: w.corpus_freq, focus: true }));
   }
   if (occ) {
-    const vid = verseId(occ.location);
-    nodes.push(card(vid, "verse", { ar: occ.verse_key, verse: excerpt(occ.verse_key, occ.location), focus: true }));
-    if (nodes.some((n) => n.id === wordCard)) edges.push(link(wordCard, vid));
+    nodes.push(verseCard(occ.verse_key, [occ.location], { focus: true }));
+    if (nodes.some((n) => n.id === lid)) edges.push(link(lid, verseId(occ.verse_key), "attests", { place: occ.location }));
   }
   return { kind: "root", title, nodes, edges };
 }
@@ -70,35 +66,32 @@ async function rootSeed(root: string): Promise<SeedGraph> {
   return { kind: "root", title: { key: "rootTitle", values: { root: g.root.spaced } }, ...buildRootGraph(g) };
 }
 
-/** A verse seed: the verse as one card, linked to every word with a root, its lemma and its root. */
+/** A verse seed: the verse as one card, each of its words with a root linked to it at its place, with its root. */
 async function verseSeed(key: string): Promise<SeedGraph> {
   const [v, names] = await Promise.all([getJSON<Verse>(`/verses/${key}`), surahNames()]);
   const name = names.get(v.surah) ?? "";
-  const words = v.words.filter((w) => w.root && w.lemma_id != null);
+  const words = v.words.filter((w) => w.root && w.lemma_slug);
   const roots = await rootSummaries([...new Set(words.map((w) => w.root!))]);
-  const vid = `verse:${v.key}`;
-  const nodes = new Map<string, GraphNode>([[vid, card(vid, "verse", { ar: v.key, verse: excerpt(v.key), focus: true })]]);
+  const vid = verseId(v.key);
+  const nodes = new Map<string, GraphNode>([[vid, verseCard(v.key, [], { focus: true })]]);
   const edges = new Map<string, GraphEdge>();
   const add = (n: GraphNode) => nodes.has(n.id) || nodes.set(n.id, n);
   const join = (e: GraphEdge) => edges.has(e.id) || edges.set(e.id, e);
   for (const w of words) {
     const r = roots.get(w.root!);
     const rid = rootId(w.root!);
-    const lid = lemmaId(w.lemma_id!);
-    const wid = wordId(w.lemma_id!, w.text_imlaei);
+    const lid = lemmaId(w.lemma_slug!);
     add(card(rid, "root", { ar: r?.spaced ?? spaced(w.root!), sub: r?.translit, count: r?.occurrences, rootKey: w.root! }));
-    add(card(lid, "lemma", { ar: w.lemma ?? w.text_imlaei, sub: POS_AR[w.pos] ?? w.pos, rootKey: w.root!, lemmaId: w.lemma_id! }));
-    add(card(wid, "word", { ar: w.text_uthmani, sub: w.text_imlaei, rootKey: w.root!, lemmaId: w.lemma_id!, form: w.text_imlaei, verse: excerpt(v.key, w.location) }));
-    join(link(rid, lid));
-    join(link(lid, wid));
-    join(link(wid, vid));
+    add(card(lid, "lemma", { slug: w.lemma_slug!, ar: w.lemma ?? w.text_imlaei, sub: POS_AR[w.pos] ?? w.pos, rootKey: w.root!, first: w.location }));
+    join(link(rid, lid, "derives"));
+    join(link(lid, vid, "attests", { place: w.location }));
   }
   return { kind: "free", title: { key: "verseTitle", values: { name, ayah: v.ayah, key: v.key } }, nodes: [...nodes.values()], edges: [...edges.values()] };
 }
 
 /**
  * A trail seed: each step as a card in the order it was taken, numbered along the way; words keep their roots.
- * With a phrase (the Analyser's, ANA-22), the phrase is a sentence card holding its words instead of a path.
+ * With a phrase (the Analyser's, ANA-22), the phrase is the reader's note holding its words instead of a path.
  */
 async function trailSeed(steps: TrailSeedStep[], phrase?: string, set?: string): Promise<SeedGraph> {
   // a word read from the reader's text with less than REVIEW_BELOW confidence, and kept by them, is a reading (F4);
@@ -134,30 +127,34 @@ async function trailSeed(steps: TrailSeedStep[], phrase?: string, set?: string):
     }
     const w = words[i];
     if (w) {
-      const id = lemmaId(w.lemma_id);
+      const id = lemmaId(w.slug);
       const conf = readingOf(s.id);
-      nodes.set(id, card(id, "lemma", { ar: w.ar.full, sub: w.ar.translit, count: w.corpus_freq, rootKey: w.root?.key, lemmaId: w.lemma_id, ...(conf != null ? { reading: { conf } } : {}) }));
+      nodes.set(id, card(id, "lemma", { slug: w.slug, ar: w.ar.full, sub: w.ar.translit, count: w.corpus_freq, rootKey: w.root?.key, ...(conf != null ? { reading: { conf } } : {}) }));
       if (conf != null) readings.add(id);
       if (w.root) {
         const rid = rootCard(w.root.key);
-        edges.set(edgeId(rid, id), conf != null ? { ...link(rid, id), data: { reading: true } } : link(rid, id));
+        const e = link(rid, id, "derives", conf != null ? { reading: true } : {});
+        edges.set(e.id, e);
         if (conf == null) surelyRooted.add(rid);
       }
       path.push(id);
     }
     const v = verses[i];
     if (v) {
-      const id = `verse:${v.key}`;
-      nodes.set(id, card(id, "verse", { ar: v.key, verse: excerpt(v.key) }));
+      const id = verseId(v.key);
+      nodes.set(id, verseCard(v.key, []));
       path.push(id);
     }
   });
   if (phrase) {
-    // a sentence card without a verse: the reader's own phrase, linked to each of its words
-    // its id from its text: the same phrase is one card, two phrases on one map are two
+    // the reader's own phrase is their text: a note, linked to each of its words; its id from its text, so the
+    // same phrase is one card and two phrases on one map are two
     const pid = `phrase:${[...phrase].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7).toString(36)}`;
-    nodes.set(pid, card(pid, "verse", { ar: phrase }));
-    for (const id of new Set(path)) edges.set(edgeId(pid, id), readings.has(id) ? { ...link(pid, id), data: { reading: true } } : link(pid, id));
+    nodes.set(pid, card(pid, "note", { text: phrase, phrase: true }));
+    for (const id of new Set(path)) {
+      const e = link(pid, id, "describes", readings.has(id) ? { reading: true } : {});
+      edges.set(e.id, e);
+    }
     // a root reached only through readings is a reading too, as sure as the surest of them
     for (const n of nodes.values())
       if (n.data.kind === "root" && !surelyRooted.has(n.id)) {
@@ -170,7 +167,7 @@ async function trailSeed(steps: TrailSeedStep[], phrase?: string, set?: string):
   // a set is not a path: its cards stand together, with no numbered links (F12)
   if (set) return { kind: "free", title: { key: "setTitle", values: { name: set } }, nodes: [...nodes.values()], edges: [...edges.values()] };
   for (let i = 1; i < path.length; i++) {
-    const e = link(path[i - 1], path[i], String(i));
+    const e = link(path[i - 1], path[i], "next", { label: String(i) });
     if (path[i - 1] !== path[i] && !edges.has(e.id)) edges.set(e.id, e);
   }
   return { kind: "free", title: { key: "trailTitle", values: { count: path.length } }, nodes: [...nodes.values()], edges: [...edges.values()] };
@@ -193,7 +190,7 @@ export function buildSeedGraph(seed: Seed): Promise<SeedGraph> {
 
 /** Counts per card kind with a few names each — the hand-off's "cards that will be created" (RDR-364). */
 export function seedRows(g: SeedGraph): { kind: NodeKind; n: number; detail: string }[] {
-  const order: NodeKind[] = ["root", "lemma", "word", "verse"];
+  const order: NodeKind[] = ["root", "pattern", "lemma", "verse"];
   return order
     .map((kind) => {
       const of = g.nodes.filter((n) => n.data.kind === kind);
@@ -216,6 +213,9 @@ export async function saveSeedGraph(g: SeedGraph, title: string, into: string | 
   }
   const have = new Set(existing.nodes.map((n) => n.id));
   const fresh = g.nodes.filter((n) => !have.has(n.id));
+  // a verse already on the map takes the places the seed marks in it, and stays where it is (F5)
+  const marks = new Map(g.nodes.filter((n) => have.has(n.id) && n.data.places?.length).map((n) => [n.id, n.data.places!]));
+  const kept = existing.nodes.map((n) => (marks.has(n.id) ? { ...n, data: { ...n.data, places: [...new Set([...(n.data.places ?? []), ...marks.get(n.id)!])] } } : n));
   const all = new Set([...have, ...fresh.map((n) => n.id)]);
   const haveEdges = new Set(existing.edges.map((e) => e.id));
   const newEdges = g.edges.filter((e) => !haveEdges.has(e.id) && all.has(e.source) && all.has(e.target));
@@ -227,6 +227,6 @@ export async function saveSeedGraph(g: SeedGraph, title: string, into: string | 
     const newRight = Math.max(...laid.map((n) => n.position.x + 260));
     for (const n of laid) n.position = { x: n.position.x + (right - newRight), y: n.position.y - top + bottom + 160 };
   }
-  await saveGraph({ ...existing, nodes: [...existing.nodes, ...laid], edges: [...existing.edges, ...newEdges] });
+  await saveGraph({ ...existing, nodes: [...kept, ...laid], edges: [...existing.edges, ...newEdges] });
   return existing.id;
 }

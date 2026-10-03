@@ -3,7 +3,8 @@
 import { del, get, set, update } from "idb-keyval";
 import { storageFrozen } from "@/lib/store/safeStorage";
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
-import { cleanDoc, cleanGraph, cleanKind, cleanTitle } from "./sanitize";
+import { upgrade } from "./migrate";
+import { cleanDoc, cleanKind, cleanTitle } from "./sanitize";
 import type { GraphDoc, GraphMeta } from "./types";
 
 /** Local-first storage: graphs live in this browser's IndexedDB, and sync to the account when signed in (P6). */
@@ -20,10 +21,14 @@ export async function listGraphs(): Promise<GraphMeta[]> {
   return ((await get<GraphMeta[]>(INDEX)) ?? []).sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
-/** A stored map, read through the rules of lib/graph/sanitize (an older copy loses the verse words it kept). */
+/** A stored map, read as version 2 through lib/graph/sanitize — a version-1 copy (this browser's, or one synced
+ * from another device) migrated on the way (lib/graph/migrate), and written as version 2 at its next save. */
 export async function loadGraph(id: string): Promise<GraphDoc | undefined> {
-  const doc = await get<GraphDoc>(KEY(id));
-  return doc ? cleanDoc(doc) : undefined;
+  const doc = await get<Record<string, unknown> & GraphDoc>(KEY(id));
+  if (!doc) return undefined;
+  const kind = cleanKind(doc.kind);
+  const { nodes, edges } = await upgrade(doc.version, kind, doc.nodes, doc.edges);
+  return { ...doc, version: 2, kind, nodes, edges };
 }
 
 export async function saveGraph(doc: GraphDoc): Promise<void> {
@@ -89,35 +94,42 @@ export function encodeShare(doc: GraphDoc): string {
   const slim = {
     t: doc.title,
     k: doc.kind,
+    v: 2,
     n: doc.nodes.map((n) => [n.id, Math.round(n.position.x), Math.round(n.position.y), n.data]),
-    e: doc.edges.map((e) => [e.id, e.source, e.target, e.data?.label ?? ""]),
+    e: doc.edges.map((e) => [e.id, e.source, e.target, e.data]),
   };
   return compressToEncodedURIComponent(JSON.stringify(slim));
 }
 
-export function decodeShare(fragment: string): GraphDoc | null {
+/** A share link's map, read as version 2 (a link made before carries version 1 and is migrated). */
+export async function decodeShare(fragment: string): Promise<GraphDoc | null> {
+  let s: { v?: unknown; t?: unknown; k?: unknown; n?: unknown; e?: unknown };
   try {
     const json = decompressFromEncodedURIComponent(fragment);
     if (!json) return null;
-    const s = JSON.parse(json) as { t?: unknown; k?: unknown; n?: unknown; e?: unknown };
-    if (!Array.isArray(s.n) || !Array.isArray(s.e)) return null;
-    // a link is anyone's text: only what a map of ours can hold is kept, and a verse is drawn from its key (F3)
-    const row = (x: unknown) => (Array.isArray(x) ? x : []);
-    const { nodes, edges } = cleanGraph(
-      s.n.map((x) => row(x)).map(([id, x, y, data]) => ({ id, position: { x, y }, data })),
-      s.e.map((x) => row(x)).map(([id, source, target, label]) => ({ id, source, target, data: { label: label || undefined } })),
-    );
-    const now = Date.now();
-    return { version: 1, id: newId(), title: cleanTitle(s.t, ""), kind: cleanKind(s.k), createdAt: now, updatedAt: now, nodes, edges };
+    s = JSON.parse(json);
   } catch {
     return null;
   }
+  if (!Array.isArray(s.n) || !Array.isArray(s.e)) return null;
+  // a link is anyone's text: only what a map of ours can hold is kept, and a verse is drawn from its key (F3)
+  const row = (x: unknown) => (Array.isArray(x) ? x : []);
+  const kind = cleanKind(s.k);
+  const v2 = s.v === 2;
+  const { nodes, edges } = await upgrade(
+    v2 ? 2 : 1,
+    kind,
+    s.n.map((x) => row(x)).map(([id, x, y, data]) => ({ id, position: { x, y }, data })),
+    s.e.map((x) => row(x)).map(([id, source, target, d]) => ({ id, source, target, data: v2 ? d : { label: d || undefined } })),
+  );
+  const now = Date.now();
+  return { version: 2, id: newId(), title: cleanTitle(s.t, ""), kind, createdAt: now, updatedAt: now, nodes, edges };
 }
 
 /** Create and store a new graph; returns its id. (Timestamps and ids are made here, outside render.) */
 export async function createGraph(input: Pick<GraphDoc, "title" | "kind" | "nodes" | "edges" | "pendingLayout">): Promise<string> {
   const id = newId();
   const now = Date.now();
-  await saveGraph({ version: 1, id, createdAt: now, updatedAt: now, ...input });
+  await saveGraph({ version: 2, id, createdAt: now, updatedAt: now, ...input });
   return id;
 }

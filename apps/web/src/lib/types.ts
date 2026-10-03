@@ -296,7 +296,7 @@ export type SearchResult = {
     verses: { key: string; surah: number; ayah: number; text_qpc: string; text_imlaei: string; name_ar: string; name_translit: string }[];
     surahs: Surah[];
     roots: { key: string; spaced: string; translit: string; occurrences: number; lemma_count: number; verse_count: number }[];
-    lemmas: { id: number; ar: string; pos: string; occurrences: number; root: string | null; gloss_en?: string | null }[];
+    lemmas: { id: number; slug: string; ar: string; pos: string; pos_label?: { ar: string; en: string }; occurrences: number; root: string | null; root_spaced?: string | null; gloss_en?: string | null }[];
     patterns?: { slug: string; ar: { full: string; translit: string }; lemma_count: number }[];
     words: {
       form: string;
