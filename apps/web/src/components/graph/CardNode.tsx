@@ -11,6 +11,8 @@ import { excerptOf, keyOf, markedVerse, useVerseText } from "@/lib/graph/verseTe
 
 export type GraphActions = {
   editable: boolean;
+  /** transliteration shown on the cards (QAN-22) */
+  translit: boolean;
   /** the card whose places are being read */
   expanding: string | null;
   toggleFold: (id: string) => void;
@@ -20,6 +22,7 @@ export type GraphActions = {
 
 export const GraphActionsContext = createContext<GraphActions>({
   editable: false,
+  translit: false,
   expanding: null,
   toggleFold: () => {},
   expand: () => {},
@@ -100,7 +103,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
 
         {!data.folded && (
           <>
-            {data.sub && data.kind !== "note" && (
+            {data.sub && data.kind !== "note" && (actions.translit || (data.kind !== "root" && data.kind !== "pattern")) && (
               <p
                 className={"text-[12px] text-t3 " + (data.kind === "root" || data.kind === "pattern" ? "" : "ar-classical text-[14px]")}
                 dir={data.kind === "root" || data.kind === "pattern" ? "ltr" : "rtl"}

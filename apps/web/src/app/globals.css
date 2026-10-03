@@ -5031,3 +5031,244 @@ a.wotd-pill:hover {
   stroke: var(--amber) !important;
   stroke-dasharray: 5 4;
 }
+
+/* ── the graph editor's frame (P8.1-A): its own header, the library, the details ── */
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  flex-shrink: 0;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.editor-mark {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  background: var(--c-root);
+}
+.editor-title {
+  min-width: 0;
+  max-width: min(260px, 45vw);
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--t1);
+  text-align: start;
+}
+.editor-title:hover {
+  border-color: var(--line);
+}
+.editor-title-input {
+  width: 200px;
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--ring);
+  border-radius: 6px;
+  background: var(--card-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--t1);
+  outline: none;
+}
+.library {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  max-height: 42dvh;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+@media (min-width: 768px) {
+  .library {
+    width: 260px;
+    max-height: none;
+    border-bottom: 0;
+    border-inline-end: 1px solid var(--line);
+  }
+}
+.library-rail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 6px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+@media (min-width: 768px) {
+  .library-rail {
+    flex-direction: column;
+    width: 40px;
+    border-bottom: 0;
+    border-inline-end: 1px solid var(--line);
+  }
+  .library-rail-label {
+    writing-mode: vertical-rl;
+  }
+}
+.library-rail-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--t3);
+}
+.library-find,
+.library-section,
+.library-foot {
+  padding: 10px 12px;
+}
+.library-section + .library-section,
+.library-foot {
+  border-top: 1px solid var(--line);
+}
+.library-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+.library-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.type-tile,
+.root-tile {
+  display: block;
+  width: 100%;
+  padding: 8px 9px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  text-align: start;
+  cursor: grab;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.type-tile:hover,
+.root-tile:hover {
+  border-color: var(--ring);
+  box-shadow: var(--sh);
+}
+.root-tile.is-present {
+  opacity: 0.55;
+  cursor: pointer;
+}
+.graph-details {
+  display: none;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 14px;
+  border-inline-start: 1px solid var(--line);
+  background: var(--panel);
+}
+@media (min-width: 768px) {
+  .graph-details {
+    display: block;
+    width: 300px;
+  }
+}
+.kbd.is-text {
+  font-family: inherit;
+}
+.kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card-2);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  color: var(--t1);
+  text-align: center;
+}
+/* the canvas's messages (EDT-071), its empty state (EDT-063) and its search (EDT-039) */
+.graph-toast {
+  position: absolute;
+  bottom: 56px;
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(480px, calc(100% - 32px));
+  padding: 8px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 99px;
+  background: var(--card);
+  box-shadow: var(--sh);
+  font-size: 13px;
+  color: var(--t1);
+  transform: translateX(-50%);
+  animation: graph-toast-rise 0.18s ease-out;
+}
+.graph-toast-undo {
+  font-weight: 600;
+  color: var(--ring);
+}
+.graph-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 4;
+  max-width: 290px;
+  padding: 16px 18px;
+  border: 1px dashed var(--line-2);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  text-align: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.graph-canvas .react-flow__node.is-dim {
+  opacity: 0.22;
+}
+.graph-canvas .react-flow__node.is-match .graph-card {
+  border-color: color-mix(in srgb, var(--ring) 55%, var(--line)) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 18%, transparent);
+}
+/* Tidy: the cards glide to their places (EDT-009) */
+.graph-canvas.is-gliding .react-flow__node {
+  transition: transform 0.38s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.graph-canvas .react-flow__handle {
+  transition: box-shadow 0.12s;
+}
+.graph-canvas .react-flow__handle:hover {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent);
+}
+.editor-help {
+  animation: dc-pop 0.16s ease-out;
+}
+@keyframes graph-toast-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .graph-toast,
+  .editor-help {
+    animation: none;
+  }
+  .graph-canvas.is-gliding .react-flow__node {
+    transition: none;
+  }
+}

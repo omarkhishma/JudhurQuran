@@ -42,8 +42,11 @@ function Build({ seed, into }: { seed: Seed | null; into: string | null }) {
     },
   });
   useEffect(() => {
-    if (job.data) router.replace(`/graph/edit/${job.data}`);
-  }, [job.data, router]);
+    if (!job.data) return;
+    // a word's map remembers the word, for the editor's way back to the reader (EDT-020)
+    const qs = seed?.seed === "word" ? `?${new URLSearchParams({ w: seed.slug, ...(seed.at ? { at: seed.at } : {}) })}` : "";
+    router.replace(`/graph/edit/${job.data}${qs}`);
+  }, [job.data, router, seed]);
 
   return (
     <div className="mx-auto flex max-w-[560px] flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center">

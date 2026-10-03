@@ -7,6 +7,7 @@ import {
   BackgroundVariant,
   getNodesBounds,
   getViewportForBounds,
+  MarkerType,
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
@@ -19,7 +20,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { toPng } from "html-to-image";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { link, verseId } from "@/lib/graph/build";
 import { getJSON } from "@/lib/reader/api";
@@ -34,25 +35,77 @@ type Snapshot = { label: string; nodes: GraphNode[]; edges: GraphEdge[] };
 
 const nodeTypes = { card: CardNode, frame: FrameNode };
 
+/** A message on the canvas (EDT-071): with Undo when what it reports can be undone, then gone. */
+type Toast = { id: number; text: string; undo: boolean };
+
+/**
+ * What the canvas offers the frame around it — the editor's header, its library and its details (P8.1-A): the map
+ * as it is, what is selected, and the acts the reader can take on it.
+ */
+export type CanvasTools = {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  kind: GraphKind;
+  editable: boolean;
+  selected: GraphNode[];
+  undoLabel: string | null;
+  redoLabel: string | null;
+  undo: () => void;
+  redo: () => void;
+  tidy: () => void;
+  fit: () => void;
+  exportPng: () => void;
+  exportJson: () => void;
+  /** a whole map read from a file, in place of this one's cards: one step, undone in one */
+  importCards: (nodes: GraphNode[], edges: GraphEdge[], label: string) => void;
+  /** cards added where the reader dropped them (a point in the page) or in the free space nearest the middle */
+  addCards: (nodes: GraphNode[], edges: GraphEdge[], label: string, at?: { x: number; y: number }) => void;
+  select: (id: string | null) => void;
+  center: (id: string) => void;
+  toast: (text: string, undo?: boolean) => void;
+  /** cards that match a search; the others are dimmed (EDT-039). Null: no search. */
+  setMatches: (ids: string[] | null) => void;
+  cardName: (id: string) => string;
+};
+
+const ToolsContext = createContext<CanvasTools | null>(null);
+
+/** The canvas's tools, for the editor's header, library and details rendered around it. */
+export function useCanvasTools(): CanvasTools {
+  const tools = useContext(ToolsContext);
+  if (!tools) throw new Error("useCanvasTools outside GraphCanvas");
+  return tools;
+}
+
 export type GraphCanvasProps = {
   initialNodes: GraphNode[];
   initialEdges: GraphEdge[];
   editable?: boolean;
   autoLayout?: boolean;
   title: string;
-  onTitleChange?: (t: string) => void;
   onChange?: (nodes: GraphNode[], edges: GraphEdge[]) => void;
+  /** for the built-in toolbar of a view that is not the editor */
   toolbarExtra?: React.ReactNode;
   status?: React.ReactNode;
   fileName?: string;
-  /** the map's type, written into its JSON export so it comes back as it was (F16) */
+  /** the map's type: the relations a link may take, and written into its JSON export (F16, P8.1a) */
   kind?: GraphKind;
-  /** Lets an editor add cards from outside the canvas (palette). */
-  registerAdd?: (add: (nodes: GraphNode[], edges: GraphEdge[], label: string) => void) => void;
+  /** the editor's own frame around the canvas — its header, its library at the start, its details at the end —
+   * which read the canvas's tools with useCanvasTools */
+  header?: React.ReactNode;
+  start?: React.ReactNode;
+  end?: React.ReactNode;
+  /** something dragged from the library and dropped on the canvas: its payload and the point in the page */
+  onDropPayload?: (payload: string, at: { x: number; y: number }) => void;
+  onHelp?: () => void;
+  /** transliteration on the cards (QAN-22) */
+  translit?: boolean;
 };
 
+export const DRAG_TYPE = "application/x-jadhr-card";
+
 /** A card as an undo label names it: its letters, word or verse, else its kind (handoff §4.3, EDT-230). */
-function cardName(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "kindFrame") => string, locale: string): string {
+function nameOf(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "kindFrame") => string, locale: string): string {
   if (!n) return "";
   const d = n.data;
   if (d.kind === "note") return t(d.phrase ? "kindPhrase" : "kindNote");
@@ -68,6 +121,12 @@ function firstView(nodes: GraphNode[]): GraphNode[] {
   return near.length ? near : focus;
 }
 
+const sizeOf = (n: GraphNode) => ({ w: n.measured?.width ?? KIND_SIZE[n.data.kind].width, h: n.measured?.height ?? KIND_SIZE[n.data.kind].height });
+const inField = (el: EventTarget | null) => {
+  const h = el as HTMLElement | null;
+  return !!h && (h.tagName === "INPUT" || h.tagName === "TEXTAREA" || h.tagName === "SELECT" || h.isContentEditable);
+};
+
 export function GraphCanvas(props: GraphCanvasProps) {
   return (
     <ReactFlowProvider>
@@ -82,13 +141,17 @@ function CanvasInner({
   editable = false,
   autoLayout = false,
   title,
-  onTitleChange,
   onChange,
   toolbarExtra,
   status,
   fileName = "jadhr-map",
   kind = "free",
-  registerAdd,
+  header,
+  start,
+  end,
+  onDropPayload,
+  onHelp,
+  translit = false,
 }: GraphCanvasProps) {
   const t = useTranslations("graph");
   const locale = useLocale();
@@ -103,6 +166,7 @@ function CanvasInner({
   // a stored graph opens on its focus cards (a seed's path) at a legible zoom, not shrunk to fit everything
   const [focusIds] = useState(() => firstView(initialNodes).map((n) => ({ id: n.id })));
   const wrapper = useRef<HTMLDivElement>(null);
+  const [gliding, setGliding] = useState(false);
 
   // Notify the owner (autosave) whenever the document changes.
   const onChangeRef = useRef(onChange);
@@ -119,6 +183,15 @@ function CanvasInner({
     live.current = { nodes, edges };
   });
 
+  // a message on the canvas: one at a time, with Undo for 5.2 s when it can be undone, else for 2.6 s (HWF-26)
+  const [toastNow, setToastNow] = useState<Toast | null>(null);
+  const toast = useCallback((text: string, undo = false) => setToastNow({ id: Date.now() + Math.random(), text, undo }), []);
+  useEffect(() => {
+    if (!toastNow) return;
+    const id = setTimeout(() => setToastNow(null), toastNow.undo ? 5200 : 2600);
+    return () => clearTimeout(id);
+  }, [toastNow]);
+
   /** Every mutation goes through commit(label, …) so undo carries a human-readable label (handoff §4.3). */
   const commit = useCallback((label: string, nextNodes: GraphNode[], nextEdges: GraphEdge[]) => {
     setPast((p) => [...p.slice(-80), { label, nodes: live.current.nodes, edges: live.current.edges }]);
@@ -127,14 +200,19 @@ function CanvasInner({
     setEdges(nextEdges);
   }, []);
 
+  const fit = useCallback(() => rf.fitView({ padding: 0.12, duration: 250, maxZoom: 1 }), [rf]);
+
   const tidy = useCallback(
     async (label = t("tidy"), base?: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
       const src = base ?? { nodes: rf.getNodes(), edges: rf.getEdges() };
       const laid = await layout(src.nodes, src.edges);
+      // the cards glide to their places (EDT-009)
+      setGliding(true);
+      setTimeout(() => setGliding(false), 420);
       commit(label, laid, src.edges);
-      requestAnimationFrame(() => rf.fitView({ padding: 0.12, duration: 250 }));
+      requestAnimationFrame(() => fit());
     },
-    [rf, commit, t],
+    [rf, commit, t, fit],
   );
 
   // First layout with measured card sizes.
@@ -144,8 +222,8 @@ function CanvasInner({
       void layout(rf.getNodes(), rf.getEdges()).then((laid) => {
         setNodes(laid);
         // Readable first view: fit, but never below a zoom where Arabic on the cards stays legible.
-        // Open on the path the reader came by (root → lemma → word → verse) when there is one, else on the
-        // root and its forms (the right edge), where the reading of the map begins.
+        // Open on the path the reader came by (root → word → verse) when there is one, else on the
+        // root and its words (the right edge), where the reading of the map begins.
         const focus = firstView(laid);
         const anchor = focus.length ? focus : laid.filter((n) => n.data.kind === "root" || n.data.kind === "lemma");
         requestAnimationFrame(() =>
@@ -174,13 +252,12 @@ function CanvasInner({
   }, [future, nodes, edges]);
 
   const addCards = useCallback(
-    (newNodes: GraphNode[], newEdges: GraphEdge[], label: string) => {
+    (newNodes: GraphNode[], newEdges: GraphEdge[], label: string, at?: { x: number; y: number }) => {
       const ids = new Set(nodes.map((n) => n.id));
-      // the middle of the canvas as the reader sees it, in the map's coordinates
+      // the point dropped on, or the middle of the canvas as the reader sees it, in the map's coordinates
       const box = wrapper.current?.getBoundingClientRect();
-      const center = rf.screenToFlowPosition({ x: (box?.left ?? 0) + (box?.width ?? 800) / 2, y: (box?.top ?? 0) + (box?.height ?? 600) / 2 });
-      // each new card in the free place nearest the middle, never on top of another card
-      const sizeOf = (n: GraphNode) => ({ w: n.measured?.width ?? KIND_SIZE[n.data.kind].width, h: n.measured?.height ?? KIND_SIZE[n.data.kind].height });
+      const center = rf.screenToFlowPosition(at ?? { x: (box?.left ?? 0) + (box?.width ?? 800) / 2, y: (box?.top ?? 0) + (box?.height ?? 600) / 2 });
+      // each new card in the free place nearest that point, never on top of another card
       const taken = nodes.map((n) => ({ x: n.position.x, y: n.position.y, ...sizeOf(n) }));
       const free = (x: number, y: number, w: number, h: number) => !taken.some((r) => x < r.x + r.w + 24 && x + w + 24 > r.x && y < r.y + r.h + 24 && y + h + 24 > r.y);
       const steps = [0, 1, -1, 2, -2, 3, -3];
@@ -189,36 +266,27 @@ function CanvasInner({
         .map((n) => {
           if (n.position.x || n.position.y) return n;
           const { w, h } = sizeOf(n);
-          const spots = steps.flatMap((i) => steps.map((j) => ({ x: center.x - w / 2 + i * (w + 40), y: center.y - h / 2 + j * (h + 40) }))).sort((a, b) => Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y));
-          const at = spots.find((p) => free(p.x, p.y, w, h)) ?? spots[0];
-          taken.push({ ...at, w, h });
-          return { ...n, position: at };
+          const spots = steps.flatMap((i) => steps.map((j) => ({ x: center.x - w / 2 + i * (w + 40), y: center.y - (at ? 20 : h / 2) + j * (h + 40) }))).sort((a, b) => Math.hypot(a.x - center.x, a.y - center.y) - Math.hypot(b.x - center.x, b.y - center.y));
+          const spot = spots.find((p) => free(p.x, p.y, w, h)) ?? spots[0];
+          taken.push({ ...spot, w, h });
+          return { ...n, position: spot };
         });
+      if (!fresh.length) return;
       const eids = new Set(edges.map((e) => e.id));
       commit(label, [...nodes, ...fresh], [...edges, ...newEdges.filter((e) => !eids.has(e.id))]);
     },
     [nodes, edges, commit, rf],
   );
 
-  useEffect(() => {
-    registerAdd?.(addCards);
-  }, [registerAdd, addCards]);
-
-  // A card's further forms or places, read when asked (F6: the editor has no root payload of its own, so it reads
-  // the root's; F18: a failed read is said, never silent). The cards are added to the map as it is when they arrive.
+  // A card's places, read when asked (F18: a failed read is said, never silent). The cards are added to the map as
+  // it is when they arrive.
   const [expanding, setExpanding] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  useEffect(() => {
-    if (!notice) return;
-    const id = setTimeout(() => setNotice(null), 6000);
-    return () => clearTimeout(id);
-  }, [notice]);
   const expand = useCallback(
     async (id: string) => {
       const node = live.current.nodes.find((n) => n.id === id);
       if (!node || expanding) return;
-      const { kind, slug, cursor } = node.data;
-      if (kind !== "lemma" || !slug) return;
+      const { kind: k, slug, cursor } = node.data;
+      if (k !== "lemma" || !slug) return;
       setExpanding(id);
       try {
         const qs = new URLSearchParams({ limit: "8" });
@@ -249,19 +317,25 @@ function CanvasInner({
         );
         await tidy(t("doExtractVerses", cnt(newNodes.length, locale)), { nodes: [...updated, ...newNodes], edges: [...wires, ...newEdges] });
       } catch {
-        setNotice(t("versesFailed"));
+        toast(t("versesFailed"));
       } finally {
         setExpanding(null);
       }
     },
-    [expanding, tidy, t, locale],
+    [expanding, tidy, t, locale, toast],
   );
+
+  // folding is a view of the card, not an edit: saved, never an undo step (EDT-099, EDT-210)
+  const fold = useCallback((ids: string[]) => {
+    const set = new Set(ids);
+    setNodes((ns) => ns.map((n) => (set.has(n.id) && n.data.kind !== "frame" ? { ...n, data: { ...n.data, folded: !n.data.folded } } : n)));
+  }, []);
 
   const actions: GraphActions = useMemo(
     () => ({
       editable,
-      // folding is a view of the card, not an edit: saved, never an undo step (EDT-099, EDT-210)
-      toggleFold: (id) => setNodes((ns) => ns.map((n) => (n.id === id ? { ...n, data: { ...n.data, folded: !n.data.folded } } : n))),
+      translit,
+      toggleFold: (id) => fold([id]),
       setText: (id, text) =>
         commit(
           t("doEditNote"),
@@ -271,7 +345,7 @@ function CanvasInner({
       expand: (id) => void expand(id),
       expanding,
     }),
-    [editable, nodes, edges, commit, t, expand, expanding],
+    [editable, translit, fold, nodes, edges, commit, t, expand, expanding],
   );
 
   // A deletion is one step: xyflow removes the wires and then the cards in two changes, which would each commit
@@ -295,31 +369,32 @@ function CanvasInner({
         nodes.filter((n) => !ids.has(n.id)),
         edges.filter((e) => !eids.has(e.id) && !ids.has(e.source) && !ids.has(e.target)),
       );
+      toast(label, true);
     },
-    [editable, commit, nodes, edges, t, locale],
+    [editable, commit, nodes, edges, t, locale, toast],
   );
   /** A refused link, said in the product's words (EDT-127, EDT-243, HWF-16): which kinds, and what to try. */
   const refuse = useCallback(
     (why: Refusal, source: string, target: string) => {
       if (why === "same") return;
-      if (why === "dup") return setNotice(t("linkDup"));
-      if (why === "loop") return setNotice(t("linkLoop"));
+      if (why === "dup") return toast(t("linkDup"));
+      if (why === "loop") return toast(t("linkLoop"));
       const a = nodes.find((n) => n.id === source)?.data.kind;
       const b = nodes.find((n) => n.id === target)?.data.kind;
       if (!a || !b) return;
-      setNotice(t("linkPair", { fem: META[a].fem ? "f" : "m", a: t(META[a].def), b: t(META[b].def), type: t(`mapType_${kind}`) }));
+      toast(t("linkPair", { fem: META[a].fem ? "f" : "m", a: t(META[a].def), b: t(META[b].def), type: t(`mapType_${kind}`) }));
     },
-    [nodes, t, kind],
+    [nodes, t, kind, toast],
   );
+  const cardName = useCallback((id: string) => nameOf(nodes.find((n) => n.id === id), t, locale), [nodes, t, locale]);
   const onConnect = useCallback(
     (c: Connection) => {
       if (!editable) return;
       const ok = checkLink(kind, nodes, edges, c.source, c.target);
       if ("refused" in ok) return refuse(ok.refused, c.source, c.target);
-      const name = (id: string) => cardName(nodes.find((n) => n.id === id), t, locale);
-      commit(t("doLink", { a: name(c.source), b: name(c.target) }), nodes, [...edges, link(c.source, c.target, ok.rel)]);
+      commit(t("doLink", { a: cardName(c.source), b: cardName(c.target) }), nodes, [...edges, link(c.source, c.target, ok.rel)]);
     },
-    [editable, kind, commit, refuse, nodes, edges, t, locale],
+    [editable, kind, commit, refuse, nodes, edges, t, cardName],
   );
   /** A link's relation changed in its panel, checked as a new link would be. */
   const setRel = (e: GraphEdge, rel: Rel) => {
@@ -334,26 +409,58 @@ function CanvasInner({
     commit(t(field === "label" ? "doLabelLink" : "doSourceLink"), nodes, edges.map((x) => (x.id === e.id ? { ...x, data, label: field === "label" ? v || undefined : x.label } : x)));
   };
 
+  const select = useCallback((id: string | null) => {
+    setNodes((ns) => ns.map((n) => (n.selected === (n.id === id) ? n : { ...n, selected: n.id === id })));
+    setEdges((es) => es.map((e) => (e.selected ? { ...e, selected: false } : e)));
+  }, []);
+  const center = useCallback(
+    (id: string) => {
+      const n = live.current.nodes.find((x) => x.id === id);
+      if (!n) return;
+      const { w, h } = sizeOf(n);
+      void rf.setCenter(n.position.x + w / 2, n.position.y + h / 2, { zoom: Math.max(rf.getZoom(), 0.6), duration: 250 });
+    },
+    [rf],
+  );
+
   // Drag end is one undoable step.
   const dragStart = useRef<GraphNode[] | null>(null);
 
+  // the canvas's keys (EDT-253, EDT-254): undo and redo, fit, 100 %, zoom steps, tidy, fold the selection, select all,
+  // clear, and the list of them
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      const el = e.target as HTMLElement;
-      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable) return;
+      if (inField(e.target)) return;
       const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key.toLowerCase() === "z") {
+      const k = e.key.toLowerCase();
+      if (mod && k === "z") {
         e.preventDefault();
         if (e.shiftKey) redo();
         else undo();
-      } else if (!mod && e.key.toLowerCase() === "f") rf.fitView({ padding: 0.12, duration: 250 });
-      else if (!mod && e.key.toLowerCase() === "t") void tidy();
+      } else if (mod && k === "a") {
+        e.preventDefault();
+        setNodes((ns) => ns.map((n) => ({ ...n, selected: true })));
+      } else if (mod) return;
+      else if (k === "f") fit();
+      else if (k === "1") void rf.zoomTo(1, { duration: 200 });
+      else if (k === "+" || k === "=") void rf.zoomIn({ duration: 150 });
+      else if (k === "-") void rf.zoomOut({ duration: 150 });
+      else if (k === "t" && editable) void tidy();
+      else if (k === "?" || (e.shiftKey && k === "/")) onHelp?.();
+      else if (k === "enter") {
+        const ids = live.current.nodes.filter((n) => n.selected).map((n) => n.id);
+        const at = e.target as HTMLElement;
+        if (ids.length && (at === document.body || at.closest(".react-flow"))) {
+          e.preventDefault();
+          fold(ids);
+        }
+      } else if (k === "escape") select(null);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [undo, redo, tidy, rf]);
+  }, [undo, redo, tidy, fit, rf, onHelp, fold, select, editable]);
 
-  async function exportPng() {
+  const exportPng = useCallback(async () => {
     const viewport = wrapper.current?.querySelector<HTMLElement>(".react-flow__viewport");
     if (!viewport) return;
     const bounds = getNodesBounds(rf.getNodes());
@@ -369,12 +476,58 @@ function CanvasInner({
       style: { width: `${width}px`, height: `${height}px`, transform: `translate(${vp.x}px, ${vp.y}px) scale(${vp.zoom})` },
     });
     download(url, `${fileName}.png`);
-  }
+    toast(t("exportedCards", cnt(nodes.length, locale)));
+  }, [rf, fileName, toast, t, nodes.length, locale]);
 
-  function exportJson() {
+  const exportJson = useCallback(() => {
     const doc = { version: 2, title, kind, nodes: nodes.map(({ id, position, data }) => ({ id, position, data })), edges: edges.map(({ id, source, target, data }) => ({ id, source, target, data })) };
     download(URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" })), `${fileName}.json`);
-  }
+    toast(t("exportedCards", cnt(nodes.length, locale)));
+  }, [title, kind, nodes, edges, fileName, toast, t, locale]);
+
+  const importCards = useCallback(
+    (next: GraphNode[], nextEdges: GraphEdge[], label: string) => {
+      commit(label, next, nextEdges);
+      // laid out afresh once the cards are measured, then fitted (EDT-260); the import stays one undo step
+      setTimeout(
+        () =>
+          void layout(rf.getNodes(), rf.getEdges()).then((laid) => {
+            setNodes(laid);
+            requestAnimationFrame(() => fit());
+          }),
+        250,
+      );
+    },
+    [commit, rf, fit],
+  );
+
+  const [matches, setMatchList] = useState<string[] | null>(null);
+  const setMatches = useCallback((ids: string[] | null) => setMatchList(ids), []);
+  const matchSet = useMemo(() => (matches ? new Set(matches) : null), [matches]);
+
+  const selected = useMemo(() => nodes.filter((n) => n.selected), [nodes]);
+  const tools: CanvasTools = {
+    nodes,
+    edges,
+    kind,
+    editable,
+    selected,
+    undoLabel: past.length ? past[past.length - 1].label : null,
+    redoLabel: future.length ? future[future.length - 1].label : null,
+    undo,
+    redo,
+    tidy: () => void tidy(),
+    fit,
+    exportPng: () => void exportPng(),
+    exportJson,
+    importCards,
+    addCards,
+    select,
+    center,
+    toast,
+    setMatches,
+    cardName,
+  };
 
   const selectedEdge = editable ? edges.find((e) => e.selected) : undefined;
   const kindOf = (id: string) => nodes.find((n) => n.id === id)?.data.kind;
@@ -388,42 +541,41 @@ function CanvasInner({
       }),
     [edges, t],
   );
+  // a search dims what does not match and rings what does (EDT-039); frames are left as they are
+  const shown = useMemo(
+    () => (matchSet ? nodes.map((n) => (n.data.kind === "frame" ? n : { ...n, className: matchSet.has(n.id) ? "is-match" : "is-dim" })) : nodes),
+    [nodes, matchSet],
+  );
 
   return (
+    <ToolsContext.Provider value={tools}>
     <GraphActionsContext.Provider value={actions}>
       <div className="flex h-full min-h-0 flex-col">
-        <div className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-3 py-2">
-          {onTitleChange ? (
-            <input
-              value={title}
-              onChange={(e) => onTitleChange(e.target.value)}
-              aria-label={t("rename")}
-              className="h-8 min-w-0 max-w-[260px] flex-1 rounded-lg border border-transparent bg-transparent px-2 text-[15px] font-semibold outline-none hover:border-line focus:border-ring"
-            />
-          ) : (
+        {header ?? (
+          <div className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-3 py-2">
             <h1 className="min-w-0 truncate px-1 text-[15px] font-semibold">{title}</h1>
-          )}
-          {status}
-          <div className="ms-auto flex flex-wrap items-center gap-1.5">
-            <div className="seg-group">
-              <button type="button" className="seg" onClick={() => void tidy()} aria-keyshortcuts="T">{t("tidy")}</button>
-              <button type="button" className="seg" onClick={() => rf.fitView({ padding: 0.12, duration: 250 })} aria-keyshortcuts="F">{t("fit")}</button>
+            {status}
+            <div className="ms-auto flex flex-wrap items-center gap-1.5">
+              <div className="seg-group">
+                <button type="button" className="seg" onClick={() => void tidy()} aria-keyshortcuts="T">{t("tidy")}</button>
+                <button type="button" className="seg" onClick={fit} aria-keyshortcuts="F">{t("fit")}</button>
+              </div>
+              <div className="seg-group">
+                <button type="button" className="seg" onClick={undo} disabled={!past.length} title={past.length ? t("undoLabel", { label: past[past.length - 1].label }) : t("undo")} aria-keyshortcuts="Meta+Z">
+                  {t("undo")}
+                </button>
+                <button type="button" className="seg" onClick={redo} disabled={!future.length} title={future.length ? t("redoLabel", { label: future[future.length - 1].label }) : t("redo")} aria-keyshortcuts="Meta+Shift+Z">
+                  {t("redo")}
+                </button>
+              </div>
+              <div className="seg-group">
+                <button type="button" className="seg" onClick={() => void exportPng()}>{t("exportPng")}</button>
+                <button type="button" className="seg" onClick={exportJson}>{t("exportJson")}</button>
+              </div>
+              {toolbarExtra}
             </div>
-            <div className="seg-group">
-              <button type="button" className="seg" onClick={undo} disabled={!past.length} title={past.length ? t("undoLabel", { label: past[past.length - 1].label }) : t("undo")} aria-keyshortcuts="Meta+Z">
-                {t("undo")}
-              </button>
-              <button type="button" className="seg" onClick={redo} disabled={!future.length} title={future.length ? t("redoLabel", { label: future[future.length - 1].label }) : t("redo")} aria-keyshortcuts="Meta+Shift+Z">
-                {t("redo")}
-              </button>
-            </div>
-            <div className="seg-group">
-              <button type="button" className="seg" onClick={() => void exportPng()}>{t("exportPng")}</button>
-              <button type="button" className="seg" onClick={exportJson}>{t("exportJson")}</button>
-            </div>
-            {toolbarExtra}
           </div>
-        </div>
+        )}
         {selectedEdge && (
           <div className="link-panel flex flex-wrap items-center gap-2 border-b border-line bg-card px-3 py-2" key={selectedEdge.id}>
             <label className="flex items-center gap-1.5 text-[12.5px] text-t3">
@@ -457,59 +609,106 @@ function CanvasInner({
             </label>
           </div>
         )}
-        <div ref={wrapper} className="relative min-h-0 flex-1" dir="ltr" aria-label={t("canvasLabel")}>
-          <ReactFlow<GraphNode, GraphEdge>
-            nodes={nodes}
-            edges={drawn}
-            nodeTypes={nodeTypes}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onDelete={onDelete}
-            onNodeDragStart={() => (dragStart.current = nodes)}
-            onNodeDragStop={(_, __, dragged) => {
-              const before = dragStart.current;
-              dragStart.current = null;
-              if (!before) return;
-              const was = new Map(before.map((n) => [n.id, n.position]));
-              const moved = dragged.filter((n) => {
-                const p = was.get(n.id);
-                return p && (Math.round(p.x) !== Math.round(n.position.x) || Math.round(p.y) !== Math.round(n.position.y));
-              });
-              if (!moved.length) return;
-              setPast((p) => [...p.slice(-80), { label: t("doMove", cnt(moved.length, locale)), nodes: before, edges }]);
-              setFuture([]);
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          {start}
+          <div
+            ref={wrapper}
+            className={"graph-canvas relative min-h-0 flex-1" + (gliding ? " is-gliding" : "")}
+            dir="ltr"
+            role="region"
+            aria-label={t("canvasLabel")}
+            onDragOver={(e) => {
+              if (editable && onDropPayload && e.dataTransfer.types.includes(DRAG_TYPE)) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "copy";
+              }
             }}
-            nodesConnectable={editable}
-            elementsSelectable
-            deleteKeyCode={editable ? ["Backspace", "Delete"] : null}
-            minZoom={0.15}
-            maxZoom={2}
-            fitView={!autoLayout}
-            fitViewOptions={focusIds.length ? { nodes: focusIds, padding: 0.25, minZoom: 0.6, maxZoom: 1 } : undefined}
-            proOptions={{ hideAttribution: false }}
-            colorMode={theme === "dark" ? "dark" : "light"}
-            defaultEdgeOptions={{ type: "default", style: { stroke: "var(--edge)", strokeWidth: 1.5 } }}
+            onDrop={(e) => {
+              const payload = e.dataTransfer.getData(DRAG_TYPE);
+              if (!editable || !payload || !onDropPayload) return;
+              e.preventDefault();
+              onDropPayload(payload, { x: e.clientX, y: e.clientY });
+            }}
           >
-            <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="var(--dot)" />
-            <MiniMap pannable zoomable nodeColor={(n) => KIND_COLOR[(n as GraphNode).data.kind]} className="!hidden md:!block" />
-          </ReactFlow>
-          {notice && (
-            <p className="graph-notice" role="alert" dir="auto">
-              {notice}
-            </p>
-          )}
-          <div className="pointer-events-none absolute bottom-3 start-3 flex gap-1 rounded-lg bg-card/90 p-1 shadow-rest" dir="ltr">
-            <button type="button" className="pointer-events-auto btn icon-btn" aria-label="−" onClick={() => rf.zoomOut({ duration: 150 })}>
-              <Icon name="minus" />
-            </button>
-            <button type="button" className="pointer-events-auto btn icon-btn" aria-label="+" onClick={() => rf.zoomIn({ duration: 150 })}>
-              <Icon name="plus" />
-            </button>
+            <ReactFlow<GraphNode, GraphEdge>
+              nodes={shown}
+              edges={drawn}
+              nodeTypes={nodeTypes}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              onDelete={onDelete}
+              onNodeDoubleClick={(e, n) => {
+                if (inField(e.target) || (e.target as HTMLElement).closest("button, a")) return;
+                fold([n.id]);
+              }}
+              onNodeDragStart={() => (dragStart.current = nodes)}
+              onNodeDragStop={(_, __, dragged) => {
+                const before = dragStart.current;
+                dragStart.current = null;
+                if (!before) return;
+                const was = new Map(before.map((n) => [n.id, n.position]));
+                const moved = dragged.filter((n) => {
+                  const p = was.get(n.id);
+                  return p && (Math.round(p.x) !== Math.round(n.position.x) || Math.round(p.y) !== Math.round(n.position.y));
+                });
+                if (!moved.length) return;
+                setPast((p) => [...p.slice(-80), { label: t("doMove", cnt(moved.length, locale)), nodes: before, edges }]);
+                setFuture([]);
+              }}
+              nodesConnectable={editable}
+              elementsSelectable
+              deleteKeyCode={editable ? ["Backspace", "Delete"] : null}
+              zoomOnDoubleClick={false}
+              minZoom={0.15}
+              maxZoom={2}
+              fitView={!autoLayout}
+              fitViewOptions={focusIds.length ? { nodes: focusIds, padding: 0.25, minZoom: 0.6, maxZoom: 1 } : { maxZoom: 1 }}
+              proOptions={{ hideAttribution: false }}
+              colorMode={theme === "dark" ? "dark" : "light"}
+              defaultEdgeOptions={{ type: "default", style: { stroke: "var(--edge)", strokeWidth: 1.5 }, markerEnd: { type: MarkerType.ArrowClosed, color: "var(--edge)", width: 14, height: 14 } }}
+            >
+              <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="var(--dot)" />
+              <MiniMap pannable zoomable nodeColor={(n) => KIND_COLOR[(n as GraphNode).data.kind]} className="!hidden md:!block" />
+            </ReactFlow>
+            {nodes.length === 0 && (
+              // an empty map says how to begin (EDT-063)
+              <div className="graph-empty" dir={locale === "ar" ? "rtl" : "ltr"}>
+                <p className="text-[14px] font-semibold text-t1">{t(editable ? "emptyTitle" : "emptyReadTitle")}</p>
+                <p className="mt-1 text-[12.5px] leading-relaxed text-t2">{t(editable ? "emptyBody" : "emptyReadBody")}</p>
+              </div>
+            )}
+            {toastNow && (
+              <div key={toastNow.id} className="graph-toast" role="status" aria-live="polite" dir={locale === "ar" ? "rtl" : "ltr"}>
+                <span>{toastNow.text}</span>
+                {toastNow.undo && past.length > 0 && (
+                  <button
+                    type="button"
+                    className="graph-toast-undo"
+                    onClick={() => {
+                      undo();
+                      setToastNow(null);
+                    }}
+                  >
+                    {t("undo")}
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="pointer-events-none absolute bottom-3 start-3 flex gap-1 rounded-lg bg-card/90 p-1 shadow-rest" dir="ltr">
+              <button type="button" className="pointer-events-auto btn icon-btn" aria-label={t("zoomOut")} title={t("zoomOut")} onClick={() => rf.zoomOut({ duration: 150 })}>
+                <Icon name="minus" />
+              </button>
+              <button type="button" className="pointer-events-auto btn icon-btn" aria-label={t("zoomIn")} title={t("zoomIn")} onClick={() => rf.zoomIn({ duration: 150 })}>
+                <Icon name="plus" />
+              </button>
+            </div>
           </div>
+          {end}
         </div>
       </div>
     </GraphActionsContext.Provider>
+    </ToolsContext.Provider>
   );
 }
 

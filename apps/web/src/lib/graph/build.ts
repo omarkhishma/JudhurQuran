@@ -51,6 +51,8 @@ export function firstPlace(a: string | undefined, b: string | undefined): string
 }
 
 /** A lemma's card: the word, its commonest written forms with their counts, and the place it first occurs. */
+/** A word's card in a root's family starts folded unless it is the word the reader came from (the design's
+ * startFolded, EDT-004): the family reads at a glance, and a card opens to its forms and first verse. */
 function lemmaCard(l: RootGraphPayload["lemmas"][number], rootKey: string, focus: boolean): GraphNode {
   return {
     id: lemmaId(l.slug),
@@ -66,6 +68,7 @@ function lemmaCard(l: RootGraphPayload["lemmas"][number], rootKey: string, focus
       forms: l.forms.slice(0, 3).map((f) => ({ form: f.form, count: f.occurrences })),
       first: l.forms.reduce<string | undefined>((m, f) => firstPlace(m, f.first.location), undefined),
       focus,
+      ...(focus ? {} : { folded: true as const }),
     },
   };
 }

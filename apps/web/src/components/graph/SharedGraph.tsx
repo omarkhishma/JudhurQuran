@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { translitOn, useGraphUi } from "@/lib/graph/uiPrefs";
 import { useSyncExternalStore } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { decodeShare, fileBase, saveGraph } from "@/lib/graph/persist";
@@ -14,6 +15,7 @@ function subscribeHash(cb: () => void) {
 
 export function SharedGraph() {
   const t = useTranslations("graph");
+  const translit = translitOn(useGraphUi((u) => u.translit), useLocale());
   const router = useRouter();
   const hash = useSyncExternalStore(subscribeHash, () => window.location.hash.slice(1), () => null);
   // read (and, for a link made before version 2, migrated) once per link
@@ -29,6 +31,7 @@ export function SharedGraph() {
       title={doc.title || t("untitled")}
       fileName={fileBase(doc.title || t("untitled"))}
       kind={doc.kind}
+      translit={translit}
       status={<span className="text-[12px] text-t3">{t("viewShared")}</span>}
       toolbarExtra={
         <button

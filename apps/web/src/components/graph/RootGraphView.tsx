@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { translitOn, useGraphUi } from "@/lib/graph/uiPrefs";
 import { useMemo, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { buildRootGraph, type RootGraphPayload } from "@/lib/graph/build";
@@ -10,6 +11,7 @@ import { GraphCanvas } from "./GraphCanvas";
 
 export function RootGraphView({ payload, focus }: { payload: RootGraphPayload; focus?: string }) {
   const t = useTranslations("graph");
+  const translit = translitOn(useGraphUi((u) => u.translit), useLocale());
   const router = useRouter();
   const initial = useMemo(() => buildRootGraph(payload, { focusLocation: focus }), [payload, focus]);
   const current = useRef<{ nodes: GraphNode[]; edges: GraphEdge[] }>(initial);
@@ -30,6 +32,7 @@ export function RootGraphView({ payload, focus }: { payload: RootGraphPayload; f
       title={title}
       fileName={`root-${payload.root.translit}`}
       kind="root"
+      translit={translit}
       onChange={(nodes, edges) => (current.current = { nodes, edges })}
       toolbarExtra={
         <>

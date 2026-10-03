@@ -110,7 +110,7 @@ const seedParam = (seed: object) => Buffer.from(JSON.stringify(seed), "utf8").to
 async function addNote(page: Page, text: string) {
   const boxes = page.getByRole("textbox", { name: "ملاحظة" });
   const n = await boxes.count();
-  await page.getByRole("complementary", { name: "أضف بطاقة" }).getByRole("button", { name: "ملاحظة" }).click();
+  await page.locator(".type-tile").filter({ hasText: "ملاحظة" }).click();
   await expect(boxes).toHaveCount(n + 1);
   const box = boxes.nth(n);
   await box.fill(text);
@@ -128,14 +128,16 @@ test("a map reopened by a link in the same tab shows the work done since, and op
   const saved = (await storedGraph(page, id))!.updatedAt;
 
   // away and back by the app's own links: My maps, then the map
-  await page.getByRole("banner").getByRole("link", { name: "الخريطة", exact: true }).click();
+  await page.locator(".editor-header").getByRole("link", { name: "خرائطي" }).click();
   await expect(page).toHaveURL(/\/graph$/);
   await page.getByRole("main").locator(`a[href="/graph/edit/${id}"]`).click();
   await expect(page.getByRole("textbox", { name: "ملاحظة" })).toHaveValue("ملاحظتي");
   await page.waitForTimeout(1500);
   expect((await storedGraph(page, id))!.updatedAt, "opening is not an edit").toBe(saved);
 
-  // a hand-off into this map from the reader, reached without reloading the page
+  // a hand-off into this map from the reader, reached without reloading the page (by My maps' search)
+  await page.locator(".editor-header").getByRole("link", { name: "خرائطي" }).click();
+  await expect(page).toHaveURL(/\/graph$/);
   await page.getByRole("banner").getByRole("button", { name: /بحث/ }).click();
   const box = page.getByRole("combobox", { name: /اكتب كلمة أو جذرًا/ });
   await box.fill("2:255");
@@ -201,7 +203,7 @@ test("deleting a card takes its wires in one step that undo brings back whole, a
   const lemma = before.nodes.find((n) => n.data.kind === "lemma" && n.data.focus)!;
   const wires = before.edges.filter((e) => e.source === lemma.id || e.target === lemma.id);
   expect(wires.length, "the lemma card has wires").toBeGreaterThan(1);
-  const undo = page.getByRole("button", { name: "تراجع", exact: true });
+  const undo = page.locator(".editor-header").getByRole("button", { name: "تراجع", exact: true });
 
   await page.locator(`.react-flow__node[data-id="${lemma.id}"]`).click({ position: { x: 40, y: 14 } });
   await page.keyboard.press("Delete");
@@ -227,7 +229,7 @@ test("deleting a card takes its wires in one step that undo brings back whole, a
   // a link that would loop back along the lexicon's spine is refused, and says why
   const card = page.locator(`.react-flow__node[data-id="${lemma.id}"]`);
   await drag(page, page.locator(`.react-flow__node[data-id="${verse.id}"] .react-flow__handle-left`), card.locator(".react-flow__handle-right"));
-  await expect(page.getByRole("alert").filter({ hasText: "هذا الربط يصنع حلقة." })).toBeVisible();
+  await expect(page.locator(".graph-toast").filter({ hasText: "هذا الربط يصنع حلقة." })).toBeVisible();
   await expect(undo).toBeDisabled();
   // a link to a note is named by what it joins, and a move by how many cards
   await addNote(page, "عن العالمين");
@@ -258,7 +260,7 @@ test("a link takes a relation its map allows: chosen, changed and named, and the
   await page.getByRole("button", { name: "حقل دلالي" }).click();
   const id = await editorId(page);
   await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
-  const palette = page.getByRole("complementary", { name: "أضف بطاقة" });
+  const palette = page.getByRole("complementary", { name: "المكتبة" }).locator("section").filter({ hasText: "أضف من المصحف والمعجم" });
   await palette.getByRole("textbox").fill("علم");
   const rows = palette.locator("li").filter({ has: page.locator(".text-root") }).filter({ hasNot: page.locator(".text-\\[18px\\].text-root") });
   await rows.nth(0).getByRole("button").click();
@@ -275,13 +277,13 @@ test("a link takes a relation its map allows: chosen, changed and named, and the
   await expect(page.locator(".react-flow__edge")).toContainText("قريب المعنى");
   // the same pair the other way is the same link
   await drag(page, lemmas.nth(1).locator(".react-flow__handle-left"), lemmas.nth(0).locator(".react-flow__handle-right"));
-  await expect(page.getByRole("alert").filter({ hasText: "هاتان البطاقتان مربوطتان من قبل." })).toBeVisible();
+  await expect(page.locator(".graph-toast").filter({ hasText: "هاتان البطاقتان مربوطتان من قبل." })).toBeVisible();
   // chosen in the link's panel, with its «فرق» and its source
   await page.locator(".react-flow__edge").first().focus();
   await page.keyboard.press("Enter");
   const panel = page.locator(".link-panel");
   await panel.getByRole("combobox", { name: "الصلة" }).selectOption("opposite-of");
-  await expect(page.getByRole("button", { name: "تراجع", exact: true })).toHaveAttribute("title", "تراجع: جعل الصلة: ضدّ");
+  await expect(page.locator(".editor-header").getByRole("button", { name: "تراجع", exact: true })).toHaveAttribute("title", "تراجع: جعل الصلة: ضدّ");
   await panel.getByRole("textbox", { name: "وصف الصلة (اختياري)" }).fill("الفرق بينهما");
   await panel.getByRole("textbox", { name: "المصدر" }).fill("الفروق اللغوية، ٨٨");
   await panel.getByRole("textbox", { name: "المصدر" }).blur();
@@ -299,7 +301,7 @@ test("a link takes a relation its map allows: chosen, changed and named, and the
   const other = page.locator(`.react-flow__node[data-id="lemma:${sabr}"]`);
   await expect(other).toHaveCount(1);
   await drag(page, page.locator('.react-flow__node[data-id="lemma:alamin"] .react-flow__handle-left'), other.locator(".react-flow__handle-right"));
-  await expect(page.getByRole("alert").filter({ hasText: "لا تُربط الكلمة بالكلمة في خريطة الجذر — جرّب ملاحظة." })).toBeVisible();
+  await expect(page.locator(".graph-toast").filter({ hasText: "لا تُربط الكلمة بالكلمة في خريطة الجذر — جرّب ملاحظة." })).toBeVisible();
 });
 
 test("counts read as Arabic and English count them (F10, QAN-14)", async ({ page }) => {
@@ -307,10 +309,10 @@ test("counts read as Arabic and English count them (F10, QAN-14)", async ({ page
   // a trail of two steps and one of three, titled in the reader's digits and number
   await page.goto(`/graph/seed?s=${seedParam({ seed: "trail", steps: [{ kind: "verse", id: "1:2" }, { kind: "root", id: "رحم" }] })}`);
   const two = await editorId(page);
-  await expect(page.getByRole("textbox", { name: "إعادة التسمية" })).toHaveValue("مسار قراءة (خطوتان)");
+  await expect(page.locator(".editor-title h1")).toHaveText("مسار قراءة (خطوتان)");
   await page.goto(`/graph/seed?s=${seedParam({ seed: "trail", steps: [{ kind: "word", id: "alamin" }, { kind: "verse", id: "1:2" }, { kind: "root", id: "رحم" }] })}`);
   await editorId(page);
-  await expect(page.getByRole("textbox", { name: "إعادة التسمية" })).toHaveValue("مسار قراءة (٣ خطوات)");
+  await expect(page.locator(".editor-title h1")).toHaveText("مسار قراءة (٣ خطوات)");
   // My maps counts each map's cards
   const n = (await storedGraph(page, two))!.nodes.length;
   await page.goto("/graph");
@@ -368,10 +370,12 @@ test("My maps and the hand-off's choices hold a map as soon as it is made or ren
   await expect(page.getByText("لا خرائط بعد", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "خريطة حرة" }).click();
   const id = await editorId(page);
+  await page.locator(".editor-title").click();
   await page.getByRole("textbox", { name: "إعادة التسمية" }).fill("خريطتي الجديدة");
+  await page.getByRole("textbox", { name: "إعادة التسمية" }).press("Enter");
   await expect(page.locator(".save-pill")).toHaveText("حُفظت", { timeout: 10_000 });
   // back by the app's own link: the list read when the page first opened would not have it
-  await page.getByRole("banner").getByRole("link", { name: "الخريطة", exact: true }).click();
+  await page.locator(".editor-header").getByRole("link", { name: "خرائطي" }).click();
   await expect(page.getByRole("main").locator(`a[href="/graph/edit/${id}"]`)).toContainText("خريطتي الجديدة");
   // and the reader's hand-off offers it
   await page.getByRole("banner").getByRole("button", { name: /بحث/ }).click();
@@ -398,7 +402,7 @@ test("a map exported keeps its type and is named from its title; a file is impor
   await page.goto(`/graph/seed?s=${seedParam({ seed: "root", root: "رحم" })}`);
   await editorId(page);
   await expect(page.locator(".save-pill")).toHaveText("حُفظت", { timeout: 15_000 });
-  const title = await page.getByRole("textbox", { name: "إعادة التسمية" }).inputValue();
+  const title = await page.locator(".editor-title h1").innerText();
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "ملف JSON" }).click()]);
   expect(download.suggestedFilename()).toBe(`${title.trim().replace(/\s+/g, "-").toLowerCase()}.json`);
   const exported = JSON.parse(await (await download.createReadStream()).toArray().then((b) => Buffer.concat(b).toString("utf8"))) as { title: string; kind: string; nodes: Card[]; edges: Doc["edges"] };
@@ -442,7 +446,7 @@ test("a word's places open in the editor by its slug, marked in verses already o
   await page.route("**/api/v1/words/*/attestations*", (r) => r.fulfill({ status: 500, body: "{}" }));
   // the card may lie beyond the canvas's view, which panning is not what this test is about: the button is pressed
   await button.dispatchEvent("click");
-  await expect(page.getByRole("alert").filter({ hasText: "تعذّر تحميل المواضع الآن" })).toBeVisible();
+  await expect(page.locator(".graph-toast").filter({ hasText: "تعذّر تحميل المواضع الآن" })).toBeVisible();
   await page.unroute("**/api/v1/words/*/attestations*");
   await expect(button).toBeEnabled();
   await button.dispatchEvent("click");
@@ -467,7 +471,7 @@ test("Explore's set becomes a map of its words, titled by the set, with no numbe
   await page.goto("/explore?set=doers");
   await page.getByRole("link", { name: "اعرضها خريطة" }).click();
   const id = await editorId(page);
-  await expect(page.getByRole("textbox", { name: "إعادة التسمية" })).toHaveValue(`مجموعة: ${set.title_ar}`);
+  await expect(page.locator(".editor-title h1")).toHaveText(`مجموعة: ${set.title_ar}`);
   const doc = (await storedGraph(page, id))!;
   expect(doc.edges.filter((e) => e.label || e.data?.label), "no numbered links").toEqual([]);
   expect(doc.nodes.filter((n) => n.data.kind === "lemma")).toHaveLength(new Set(set.items.map((x) => x.slug)).size);
@@ -569,4 +573,183 @@ test("a map saved as version 1 opens as version 2 — words by slug, one card pe
     ["root:علم", "lemma:alamin", { rel: "derives" }],
     ["lemma:alamin", "verse:1:2", { rel: "attests", place: "1:2:4" }],
   ]);
+});
+
+test("the editor has its own header: the title edited in place, the way back to My maps and to the reader at the word, details, help (P8.1-A, EDT-001…024, EDT-249)", async ({ page, isMobile }) => {
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  const header = page.locator(".editor-header");
+  // its own header, not the site's
+  await expect(page.getByRole("navigation", { name: "التنقل الرئيسي" })).toHaveCount(0);
+  await expect(header.getByRole("link", { name: "خرائطي" })).toHaveAttribute("href", "/graph");
+  await expect(header.getByRole("link", { name: /^المصحف · / })).toHaveAttribute("href", "/quran/1?w=alamin&at=1:2:4");
+  // the title: Escape leaves it, an empty one keeps the old, Enter keeps the new
+  const title = header.locator(".editor-title h1");
+  const was = await title.innerText();
+  await header.locator(".editor-title").click();
+  const input = header.getByRole("textbox", { name: "إعادة التسمية" });
+  await input.fill("لن يبقى");
+  await input.press("Escape");
+  await expect(title).toHaveText(was);
+  await header.locator(".editor-title").click();
+  await input.fill("   ");
+  await input.press("Enter");
+  await expect(title).toHaveText(was);
+  await header.locator(".editor-title").click();
+  await input.fill("  عالمون  ");
+  await input.press("Enter");
+  await expect(title).toHaveText("عالمون");
+  await expect.poll(async () => (await storedGraph(page, id))?.title, { timeout: 10_000 }).toBe("عالمون");
+  // the keys, from the header's ? and from the key itself
+  await header.getByRole("button", { name: "اختصارات لوحة المفاتيح" }).click();
+  const help = page.getByRole("dialog", { name: "لوحة المفاتيح والمؤشر" });
+  await expect(help).toContainText("ترتيب الخريطة كلها");
+  await help.getByRole("button", { name: "أغلق الاختصارات" }).click();
+  await expect(help).toHaveCount(0);
+  if (isMobile) return;
+  await page.locator(".react-flow__pane").click();
+  await page.keyboard.press("?");
+  await expect(help).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(help).toHaveCount(0);
+  // the details: the map with nothing selected, a card when one is; hidden and shown, and remembered
+  const details = page.getByRole("complementary", { name: "التفاصيل" });
+  await expect(details).toContainText("هذه الخريطة");
+  await page.locator('.react-flow__node[data-id="verse:1:2"]').click({ position: { x: 60, y: 14 } });
+  await expect(details).toContainText("١:٢");
+  await expect(details).toContainText("ترد في");
+  await header.getByRole("button", { name: "التفاصيل" }).click();
+  await expect(details).toHaveCount(0);
+  await expect(header.getByRole("button", { name: "التفاصيل" })).toHaveAttribute("aria-pressed", "false");
+  await page.reload();
+  await expect(page.locator(".graph-card").first()).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "التفاصيل" })).toHaveCount(0);
+});
+
+test("the library finds a card on the map, says what each kind is, adds from the dataset by kind and by dropping, and knows the map's roots (P8.1-A, EDT-032…047, QAN-15)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "dragging onto the canvas is the desktop's");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  const library = page.getByRole("complementary", { name: "المكتبة" });
+  const doc = (await storedGraph(page, id))!;
+
+  // find: folded Arabic, counted, stepped, the rest dimmed; Escape clears
+  const find = library.getByRole("searchbox", { name: "ابحث عن بطاقة في الخريطة" });
+  await find.fill("العالمين");
+  const hits = doc.nodes.filter((n) => n.id === "lemma:alamin" || n.id === "verse:1:2").length;
+  await expect(library).toContainText(`${ar(hits)} من ${ar(doc.nodes.length)} بطاقة تطابق`);
+  await expect(page.locator(".react-flow__node.is-dim")).toHaveCount(doc.nodes.length - hits);
+  await find.press("Enter");
+  await expect(page.locator(".graph-toast")).toHaveText(`المطابقة ١ من ${ar(hits)}`);
+  await expect(page.locator(".react-flow__node.selected")).toHaveCount(1);
+  await find.press("Escape");
+  await expect(page.locator(".react-flow__node.is-dim")).toHaveCount(0);
+  await find.fill("لا يوجد مثله");
+  await find.press("Enter");
+  await expect(page.locator(".graph-toast")).toHaveText("لا شيء يطابق هذا البحث");
+  await find.fill("");
+
+  // the map's roots: on the map already, said and shown
+  const root = await api<{ data: { pattern_count: number; lemma_count: number }[] }>(page, `/roots?keys=${encodeURIComponent("علم")}`);
+  const tile = library.locator(".root-tile").first();
+  await expect(tile).toHaveAttribute("title", "على اللوحة");
+  await expect(tile).toContainText(arCount(root.data[0].lemma_count, { one: "كلمة واحدة", two: "كلمتان", few: "# كلمات", many: "# كلمة", other: "# كلمة" }));
+  await tile.click();
+  await expect(page.locator(".graph-toast")).toHaveText("هذا الجذر على اللوحة من قبل");
+  await expect(page.locator('.react-flow__node[data-id="root:علم"].selected')).toHaveCount(1);
+
+  // a kind's tile narrows the search to its kind; the card chosen is added
+  await library.locator(".type-tile").filter({ hasText: "جذر" }).click();
+  await expect(library).toContainText("اختر جذر من البحث");
+  await library.getByRole("textbox", { name: /ابحث عن جذر أو كلمة/ }).fill("صبر");
+  const adds = library.locator("section").filter({ hasText: "أضف من المصحف والمعجم" }).locator("li");
+  await expect(adds.first()).toBeVisible();
+  for (const li of await adds.all()) await expect(li.locator(".dot")).toHaveAttribute("style", /--c-root/);
+  await adds.first().getByRole("button").click();
+  await expect(page.locator('.react-flow__node[data-id="root:صبر"]')).toHaveCount(1);
+  await expect(library).not.toContainText("اختر جذر من البحث");
+
+  // a row dragged onto the canvas lands where it is dropped
+  const canvas = page.locator(".graph-canvas");
+  const box = (await canvas.boundingBox())!;
+  const drop = { x: box.x + box.width * 0.3, y: box.y + box.height * 0.3 };
+  const row = adds.filter({ hasText: "صَبْر" }).first();
+  await library.getByRole("textbox", { name: /ابحث عن جذر أو كلمة/ }).fill("صبر");
+  const lemmaRow = library.locator("section").filter({ hasText: "أضف من المصحف والمعجم" }).locator("li").filter({ has: page.locator('[style*="--c-word"]') }).first();
+  await expect(lemmaRow).toBeVisible();
+  const dataTransfer = await page.evaluateHandle(() => new DataTransfer());
+  await lemmaRow.getByRole("button").dispatchEvent("dragstart", { dataTransfer });
+  await canvas.dispatchEvent("drop", { dataTransfer, clientX: drop.x, clientY: drop.y });
+  const added = page.locator('.react-flow__node[data-id^="lemma:"]').filter({ hasNot: page.locator(".ring-2") });
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.length, { timeout: 10_000 }).toBe(doc.nodes.length + 2);
+  const dropped = (await storedGraph(page, id))!.nodes.find((n) => n.id.startsWith("lemma:") && !doc.nodes.some((m) => m.id === n.id))!;
+  const at = await page.locator(`.react-flow__node[data-id="${dropped.id}"]`).boundingBox();
+  expect(Math.abs(at!.x + at!.width / 2 - drop.x), "dropped where the pointer was").toBeLessThan(60);
+  expect(row).toBeTruthy();
+  expect(added).toBeTruthy();
+
+  // a note's tile adds a note; the types fold away, and the library to its rail, remembered
+  await library.locator(".type-tile").filter({ hasText: "ملاحظة" }).click();
+  await expect(page.locator('.react-flow__node[data-id^="note:"]')).toHaveCount(1);
+  await library.getByRole("button", { name: /^أنواع البطاقات/ }).click();
+  await expect(library.locator(".type-tile")).toHaveCount(0);
+  await library.getByRole("button", { name: "أخفِ هذه اللوحة" }).click();
+  await expect(page.locator(".library-rail")).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".library-rail")).toBeVisible();
+  await page.locator(".library-rail").getByRole("button", { name: "أظهر المكتبة" }).click();
+  await expect(page.getByRole("complementary", { name: "المكتبة" }).locator(".type-tile")).toHaveCount(0);
+});
+
+test("an empty map says how to begin; export and import say what they did, import undone in one step; transliteration is a preference (P8.1-A, EDT-063, EDT-071, EDT-237, QAN-22)", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto("/graph");
+  await page.getByRole("button", { name: "خريطة حرة" }).click();
+  await editorId(page);
+  await expect(page.locator(".graph-empty")).toContainText("لا شيء على اللوحة بعد");
+  await addNote(page, "الأولى");
+  await expect(page.locator(".graph-empty")).toHaveCount(0);
+  // export says how many cards
+  const [download] = await Promise.all([page.waitForEvent("download"), page.locator(".editor-header").getByRole("button", { name: "ملف JSON" }).click()]);
+  expect(download.suggestedFilename()).toBe("خريطة-حرة.json");
+  await expect(page.locator(".graph-toast")).toHaveText("صُدّرت بطاقة واحدة");
+  // import into this map: its cards in place of these, said, and undone in one step
+  const file = { name: "m.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ version: 2, title: "مستوردة", kind: "free", nodes: [{ id: "root:رحم", position: { x: 0, y: 0 }, data: { kind: "root", ar: "ر ح م", rootKey: "رحم", sub: "r-ḥ-m" } }, { id: "note:a", position: { x: 0, y: 0 }, data: { kind: "note", text: "ب" } }], edges: [{ source: "note:a", target: "root:رحم", data: { rel: "describes" } }] })) };
+  await page.locator('.editor-header input[type="file"]').setInputFiles(file);
+  await expect(page.locator(".graph-toast")).toContainText("استُوردت الخريطة: بطاقتان وصلة واحدة");
+  await expect(page.locator(".editor-title h1")).toHaveText("مستوردة");
+  await expect(page.locator('.react-flow__node[data-id="root:رحم"]')).toBeVisible();
+  // transliteration: off in Arabic until the reader turns it on
+  const rootCard = page.locator('.react-flow__node[data-id="root:رحم"]');
+  await expect(rootCard).not.toContainText("r-ḥ-m");
+  await page.getByRole("switch", { name: /النقل الحرفي/ }).click();
+  await expect(rootCard).toContainText("r-ḥ-m");
+  await page.locator(".graph-toast").getByRole("button", { name: "تراجع" }).click().catch(() => page.locator(".editor-header").getByRole("button", { name: "تراجع", exact: true }).click());
+  await expect(page.locator('.react-flow__node[data-id="root:رحم"]')).toHaveCount(0);
+  await expect(page.locator('.react-flow__node[data-id^="note:"]')).toHaveCount(1);
+});
+
+test("the canvas's keys: 1 is 100 %, Enter and a double-click fold, ⌘A selects every card, Escape clears (P8.1-A, EDT-253, EDT-254)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "keys are the desktop's");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  await page.locator(".react-flow__pane").click();
+  await page.keyboard.press("1");
+  await expect.poll(async () => page.locator(".react-flow__viewport").evaluate((el) => getComputedStyle(el).transform)).toMatch(/^matrix\(1, 0, 0, 1,/);
+  const verse = page.locator('.react-flow__node[data-id="verse:1:2"]');
+  await verse.dblclick({ position: { x: 60, y: 14 } });
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === "verse:1:2")?.data.folded, { timeout: 10_000 }).toBe(true);
+  await verse.click({ position: { x: 60, y: 14 } });
+  await page.keyboard.press("Enter");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === "verse:1:2")?.data.folded ?? false, { timeout: 10_000 }).toBe(false);
+  await page.keyboard.press("Control+a");
+  await expect(page.locator(".react-flow__node.selected")).toHaveCount((await storedGraph(page, id))!.nodes.length);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".react-flow__node.selected")).toHaveCount(0);
 });
