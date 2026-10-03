@@ -249,7 +249,7 @@ function NoteEditor({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
   const known = useMemo(() => [...new Set(notes.flatMap((n) => n.tags))].filter((tg) => !x.tags.includes(tg)).sort((a, b) => a.localeCompare(b, locale)), [notes, x.tags, locale]);
   const [tag, setTag] = useState("");
   const [confirm, setConfirm] = useState(false);
-  const resolved = useResolved(x.body);
+  const { resolved, settled } = useResolved(x.body);
   // the links the mentions resolve to are kept on the note, so grouping by root and sūra needs no lookup
   const links: NoteLinks = useMemo(
     () => ({
@@ -259,9 +259,11 @@ function NoteEditor({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
     }),
     [resolved],
   );
+  // written only once every mention is read: while they are being read the links would be empty, and a note handed
+  // to a map or synced in that moment would lose them
   useEffect(() => {
-    if (JSON.stringify(links) !== JSON.stringify({ roots: x.roots, verses: x.verses, words: x.words ?? [] })) update(x.id, { links });
-  }, [links, x.id, x.roots, x.verses, x.words, update]);
+    if (settled && JSON.stringify(links) !== JSON.stringify({ roots: x.roots, verses: x.verses, words: x.words ?? [] })) update(x.id, { links });
+  }, [settled, links, x.id, x.roots, x.verses, x.words, update]);
   const fmt = (n: number) => new Date(n).toLocaleString(locale === "ar" ? "ar-EG" : "en-GB", { dateStyle: "medium", timeStyle: "short" });
   return (
     <article className="flex flex-col gap-3">
@@ -410,7 +412,7 @@ function TrailView({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
 
 /** The mentions of a body, each resolved against the data: a verse checked against its sūra's length, a root
  * and a word through search, a lexicon by its Arabic or English name (NTB-28, Q04). */
-function useResolved(body: string): Resolved[] {
+function useResolved(body: string): { resolved: Resolved[]; settled: boolean } {
   const locale = useLocale();
   const db = useDebounced(body, 400);
   const mentions = useMemo(() => parseMentions(db), [db]);
@@ -429,7 +431,13 @@ function useResolved(body: string): Resolved[] {
       staleTime: Infinity,
     })),
   });
-  return mentions.map((m, i): Resolved => {
+  // every mention read: the typing has paused, and the sūras, the lexica and the searches it needs have answered
+  const settled =
+    db === body &&
+    (!mentions.some((m) => m.kind === "verse") || !surahs.isPending) &&
+    (!mentions.some((m) => m.kind === "word") || !lexica.isPending) &&
+    searches.every((q, i) => mentions[i].kind === "verse" || !q.isPending);
+  const resolved = mentions.map((m, i): Resolved => {
     if (m.kind === "verse") {
       const s = surahs.data?.data.find((x) => x.number === m.surah);
       if (!s || m.ayah < 1 || m.ayah > s.verse_count) return { mention: m, href: null, label: m.raw, kind: "none" };
@@ -452,6 +460,7 @@ function useResolved(body: string): Resolved[] {
     if (w?.slug) return { mention: m, href: `/read?w=${encodeURIComponent(w.slug)}`, label: w.ar, kind: "word", root: w.root ?? undefined, slug: w.slug };
     return { mention: m, href: null, label: m.raw, kind: d ? "none" : "word" };
   });
+  return { resolved, settled };
 }
 
 /**
