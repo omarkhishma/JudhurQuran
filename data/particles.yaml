@@ -1,0 +1,224 @@
+# Particle registry — the classical works on particles and function words, parsed into editor-side entries
+# (PLAN P3.8, RDR-548): an entry per particle headword, its numbered senses verbatim, the verses quoted in
+# them, and a mechanical link to the corpus lemmas, prefixes and pronouns that share its form.
+#
+# Every row the pipeline emits is status `extracted`: a mechanical reading of the named work, never a
+# reviewed entry. Editors review in the workbench (L2: no generated religious or linguistic content — every
+# sense is the author's words, with the work, edition, page and milestone behind it). Particles get no
+# root, never a pseudo-root: a headword is linked only to the lemma, prefix or pronoun the corpus itself
+# writes the same way, with the method stored.
+#
+# Files are OpenITI release 2025.1.9 (tag v2025.1.9, commit below) — the release data/relations.yaml pins —
+# fetched raw at that commit into data/raw/openiti-particles/ (SHA256SUMS.txt and SOURCE.txt there). Paths
+# are relative to data/raw/. Each file is sha256-pinned; the pipeline refuses to build from a file that
+# differs.
+#
+# Licence: OpenITI publishes the corpus under CC BY-NC-SA 4.0 (decision D18: non-commercial display with
+# attribution is approved for launch; anything redistributed from these rows stays CC BY-NC-SA 4.0). The
+# authors are public domain (d. 749 and 761 AH); the editions' apparatus is not used (the OpenITI cleaned
+# versions drop it). Licence evidence: data/licences.yaml entries `mughni` and `jana-dani`.
+
+openiti:
+  release: "2025.1.9"
+  tag: v2025.1.9
+  commit: cfc4157a3cf2054c0888f133970a4eaa3e22e58c
+  repository: https://github.com/OpenITI/RELEASE
+  zenodo: https://zenodo.org/records/17767721
+  doi: 10.5281/zenodo.17767721
+  licence: CC BY-NC-SA 4.0
+  licence_url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  # Verbatim, OpenITI documentation (raw.githubusercontent.com/OpenITI/documentation/master/index.md, "How
+  # can I use OpenITI? What license is used?"), read 2026-10-03 (sha256 41c356b2…, unchanged since the
+  # relation seeds read it); Zenodo record 17767721 carries license id cc-by-nc-sa-4.0.
+  licence_clause: >-
+    OpenITI is published under the CC BY-NC-SA 4.0 license. You can use the corpus and publish or share
+    your works based on it according to the license. Please, do cite the files or the corpus if you use
+    them.
+  corpus_citation: >-
+    Nigst, Lorenz; Romanov, Maxim; Savant, Sarah Bowen; Seydi, Masoumeh; Verkinderen, Peter (2025).
+    OpenITI: a Machine-Readable Corpus of Islamicate Texts. Version 2025.1.9. Zenodo.
+    https://doi.org/10.5281/zenodo.17767721
+
+# Transformations applied to every file before parsing — the cleaner the relation seeds use
+# (pipeline/src/jadhr_pipeline/relations/openiti.py; its rules and ids are listed in data/relations.yaml →
+# cleaning_rules), plus one opt-in rule named per source in `extra_cleaning`. Every row's text is a slice
+# of the cleaned file; the tests re-run the cleaning and check it.
+cleaning_rules:
+  - id: header-dropped
+  - id: annotator-lines-dropped
+  - id: auto-heading-inline
+  - id: paragraphs
+  - id: page-marks
+  - id: milestones
+  - id: line-marks
+  - id: quote-markup
+  - id: stray-marks
+  - id: folio-marks
+  - id: whitespace
+  - id: inline-heading-marks
+    description: "«& X &» — al-Jāmiʿ al-Kabīr's heading markup inside the running text («… شرحها & حرف الألف &»): the ampersands are removed and X stands as a heading paragraph of its own. Opt-in per source (extra_cleaning)."
+
+# How a headword is linked to the corpus (pipeline/src/jadhr_pipeline/particles/mapping.py). Mechanical only;
+# the method and confidence are stored on every entry.
+mapping_rules:
+  - id: lemma-form
+    description: "The particle's form as the heading prints it equals the spelling of corpus lemmas with marks removed and hamza seats kept (إن ≠ أن). Mushaf conventions are read as such: a dagger alif is dropped (لَٰكِن → لكن), a final yā' counts with or without its dots (فِى = في), the madda sign over a long vowel is a mark (أَلَآ = ألا), and a lemma written with tanwīn alif (إِذًا) is the spelling of «إذن», not of «إذا»."
+  - id: shape-words
+    description: "Words in the heading that state the form's shape narrow the candidates: the first letter's vowel («المكسورة», «بالفتح», «بضم الميم» — the lemma's first vowel or hamza seat), madda («بالمد» — the word opens with آ), and doubling («المشددة», «والتشديد» → a shadda; «الخفيفة», «الساكنة النون», «والتخفيف» → none). A shadda on a lemma's first letter is the previous word assimilated (لَّمَّا), not the word's own doubling. Shape words that name another letter's vowel («بلام مشددة مفتوحة أو مكسورة») set nothing."
+  - id: letter-count
+    description: "al-Murādī orders his chapters by the number of letters, a doubled letter counted twice (إنّ is ثلاثي, إنْ ثنائي; لكنّ خماسي, لكنْ رباعي): a candidate lemma must have the chapter's count (a dagger alif counts as a letter, except after ى)."
+  - id: function-words-first
+    description: "When several lemmas share the form, the function-word lemmas (rootless, or tagged with a particle, pronoun or adverb part of speech) are linked; content words of the same spelling (خَلَا 'passed', نِعْمَ) are kept as candidates only. Several function-word lemmas of one form (مِن and مَن) are all linked, confidence shared-form; a heading of two forms where only one links («كلا وكلتا») is confidence partial."
+  - id: affix-form
+    description: "A one-letter particle («الباء», «الواو المفردة») is linked to the corpus prefixes written with that letter (bi+; w:CONJ+, w:REM+ …) and the non-pronoun suffixes (+n:EMPH, +VOC); «يا», «ها», «أل» to the prefixes written so (a prefix is read in its most frequent spelling). Letter names are read with the table in particles/mapping.py (الهمزة ء، الألف ا، الباء ب …), or the source's letter_overrides. Attached pronouns (PRON:* suffixes) are names, not particles, and are not linked."
+  - id: pronoun-stem
+    description: "A free pronoun («هو وهي وهم», «أنتم») is linked to the corpus pronoun stems (PRON, no lemma in the corpus) written the same way and not attached to a preposition prefix."
+  - id: normalised-form
+    description: "Only for a form that matches nothing as printed: the same steps on the project's normalised form (jadhr_arabic.normalize), confidence high instead of exact — keeping the first letter's hamza seat (أيا is not إيّا; a hamzat al-waṣl, written ا, meets any alif: «أل» = «ٱل»), and never for a one-letter form (آ is not أ)."
+
+# Per source: the work, edition, pinned file(s) and attribution; `parser` (particles/entries.py) and the
+# parser's corrections read off the text, each with its evidence — never guessed:
+#   supplied_headwords  a headword the typing dropped (the entry opens with what it is): section or chapter,
+#                       the words the entry opens with, the headword, and the entry's words that name it
+#   run_in_headings     a heading the typing ran into a sentence (Mughnī: the text, found once in its
+#                       section; Janā: the paragraph it opens)
+#   not_headings        paragraphs the heading rule would take for entries, with the reason
+#   letter_overrides    the letter a one-letter heading names, where the author's name differs
+#   chapter_lists       al-Murādī: a chapter whose particles are stated in prose, not as a list
+#   list_slips / heading_slips   typing slips in his lists and headings, with what they read
+sources:
+  - id: mughni
+    parser: mughni
+    sort_order: 1
+    title_ar: مغني اللبيب عن كتب الأعاريب
+    title_en: Mughnī al-Labīb ʿan Kutub al-Aʿārīb
+    author_ar: ابن هشام الأنصاري، جمال الدين أبو محمد عبد الله بن يوسف
+    author_en: Ibn Hishām al-Anṣārī, Jamāl al-Dīn Abū Muḥammad ʿAbd Allāh b. Yūsuf
+    death_hijri: 761
+    death_ce: 1360
+    edition_ar: تحقيق مازن المبارك ومحمد علي حمد الله، دار الفكر، دمشق، الطبعة السادسة 1985م
+    edition_en: "ed. Māzin al-Mubārak and Muḥammad ʿAlī Ḥamd Allāh (Damascus: Dār al-Fikr, 6th ed., 1985)"
+    scope_ar: الباب الأول في تفسير المفردات (ص 17–489)
+    scope_en: "Chapter one, on single words (al-mufradāt), printed pages 17–489"
+    openiti_uri: 0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+    # Version choice. OpenITI 2025.1.9 holds three versions. JK001131 is the primary and cleaned version and
+    # carries the full edition card (editor, 6th edition, Dār al-Fikr, Damascus, 1985) and the edition's page
+    # markers (pp. 1–918; they follow shamela.ws book 6972: its page 1 is printed page 12, the author's
+    # introduction, as here). Shamela0006972 is the same typing (99.96% of its 30-letter runs are in
+    # JK001131) with the same card, but 548 of its 907 page markers read «PageV00P000» and its Quran quotes
+    # are {…} instead of OpenITI quote tags; it is pinned as a cross-check. Shia003952Vols is another edition
+    # (Muḥammad Muḥyī al-Dīn ʿAbd al-Ḥamīd, 1404) with its footnotes in the text; not used.
+    openiti_status: OpenITI primary version (PRIMARY_VERSION, CLEANED_VERSION)
+    file: openiti-particles/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+    sha256: 57f5142f72a1d4a01a16c5ecdfda5ecb07b2a7a03ab2fc13b3e7202a6e7a686b
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+    cross_check:
+      openiti_uri: 0761JamalDinIbnHisham.MughniLabib.Shamela0006972-ara1
+      file: openiti-particles/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.Shamela0006972-ara1
+      sha256: f37ac2bb4b273f59169053dd0ac2abf50a52846a7e87ddf689ee5c0b87f77e7d
+    extra_cleaning: [inline-heading-marks]
+    quote_styles: [brackets, triggers]
+    # The typist's page-marker slips, in both versions alike: no marker for page 207 (206 → 208), page 232
+    # marked twice and 233 never, 680 twice, 787 → 887 → 788 (and on to 918). Text on those pages is cited
+    # with the page its marker gives. Chapter one is affected by the first two.
+    known_page_slips: ["206 → 208", "232, 232, 234", "680 twice", "787 → 887 → 788"]
+    # Headwords the typing dropped: the entry opens with what the headword is, and its own words name it.
+    supplied_headwords:
+      - section: حرف الياء
+        opens_with: حرف موضوع البعيد لنداء
+        headword: يا
+        evidence: "وإذا ولي يا ما ليس بمنادى كالفعل في / < ألا يا اسجدوا >"
+    # A heading the typing ran into the end of the previous paragraph after a stray «$».
+    run_in_headings:
+      - section: حرف الألف
+        text: إي بالكسر والسكون
+        reason: "the typing printed «$ إي بالكسر والسكون» at the end of the line before «حرف جواب بمعنى نعم»"
+    # The letter a one-letter heading names, where the author's name for it is not the letter's own: Ibn
+    # Hishām calls the hamza «الألف» at the head of the book, and says so where the soft alif's section
+    # opens («حرف الألف … والمراد هنا الحرف الهاوي … فأما الذي يراد به الهمزة فقد مر في صدر الكتاب»).
+    letter_overrides:
+      - heading: الألف المفردة
+        letter: ء
+        evidence: "«فأما الذي يراد به الهمزة فقد مر في صدر الكتاب» (the second «حرف الألف»)"
+    # Paragraphs the heading rule would read as entries but that discuss a word of the verse just quoted.
+    not_headings:
+      - section: حرف الألف
+        opens_with: أحيا فعل مضارع
+        reason: "«أحيا» from al-Mutanabbī's verse quoted before it («أحيا وأيسر ما قاسيت ما قتلا»)"
+      - section: حرف الألف
+        opens_with: ألاف بضم الهمزة
+        reason: "«ألاف» from the verse quoted before it, explained as the plural of آلف"
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: ابن هشام الأنصاري (ت 761هـ)، مغني اللبيب عن كتب الأعاريب، تحقيق مازن المبارك ومحمد علي حمد الله (دمشق: دار الفكر، ط6، 1985م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0761JamalDinIbnHisham.MughniLabib.JK001131-ara1، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Source: Ibn Hishām al-Anṣārī (d. 761 AH), Mughnī al-Labīb ʿan Kutub al-Aʿārīb, ed. Māzin al-Mubārak and Muḥammad ʿAlī Ḥamd Allāh (Damascus: Dār al-Fikr, 6th ed., 1985). Digital text: OpenITI release 2025.1.9, file 0761JamalDinIbnHisham.MughniLabib.JK001131-ara1, CC BY-NC-SA 4.0."
+    use: "Editor-side particle entries (PLAN P3.8): Ibn Hishām's entries in chapter one, each numbered sense verbatim with its printed page and milestone, the verses it quotes, and the corpus forms it is linked to; status extracted until reviewed. Shown to readers only after review, with this attribution; CC BY-NC-SA 4.0 (D18)."
+
+  - id: jana-dani
+    parser: jana
+    sort_order: 2
+    title_ar: الجنى الداني في حروف المعاني
+    title_en: al-Janā al-Dānī fī Ḥurūf al-Maʿānī
+    author_ar: المرادي، بدر الدين أبو محمد الحسن بن قاسم (ابن أم قاسم)
+    author_en: al-Murādī, Badr al-Dīn Abū Muḥammad al-Ḥasan b. Qāsim (Ibn Umm Qāsim)
+    death_hijri: 749
+    death_ce: 1348
+    edition_ar: تحقيق فخر الدين قباوة ومحمد نديم فاضل، دار الكتب العلمية، بيروت، الطبعة الأولى 1413هـ / 1992م
+    edition_en: "ed. Fakhr al-Dīn Qabāwa and Muḥammad Nadīm Fāḍil (Beirut: Dār al-Kutub al-ʿIlmiyya, 1st ed., 1413/1992)"
+    scope_ar: الأبواب الخمسة (الأحادي، الثنائي، الثلاثي، الرباعي، الخماسي)
+    scope_en: "The five chapters of particles by number of letters"
+    openiti_uri: 0749BadrDinMisriMuradi.JanaDani.JK010091-ara1
+    # Version choice. OpenITI 2025.1.9 holds two versions of one typing: their letters agree but for two
+    # (JK «تممم», «وذد» where Shamela has «تمم», «وقد»; the build re-checks this, page_alignment). The text
+    # is read from JK010091, the primary and cleaned version. Its page markers are al-Jāmiʿ al-Kabīr's
+    # screens (106 for the book), so the printed pages come from Shamela0026099 (page_source), which names
+    # the edition (Qabāwa and Fāḍil, Dār al-Kutub al-ʿIlmiyya, 1st ed. 1413/1992) and whose page markers
+    # follow shamela.ws book 26099 (checked: its page 1 is printed page 19, the author's introduction; its
+    # page 226 is printed page 244, «وزاد ابن عصفور أن عن تكون اسما»). Shamela0026099's own text is not used:
+    # its conversion lifted 181 bold words out of their sentences onto heading lines, sometimes from inside
+    # a word («كما تقدم» → «كم / ا ت / قد / م»).
+    openiti_status: OpenITI primary version (PRIMARY_VERSION, CLEANED_VERSION); pages from the secondary version Shamela0026099
+    file: openiti-particles/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.JK010091-ara1
+    sha256: d0469b2ba91df5544337d2403b2a30a651f736e35759aabbc835663d40ed2bd0
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.JK010091-ara1
+    page_source:
+      openiti_uri: 0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1
+      file: openiti-particles/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1
+      sha256: 756890608761e098054af5b7c912ae5078ff3e008820e638d47acf2a759ba64d
+      source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0749BadrDinMisriMuradi/0749BadrDinMisriMuradi.JanaDani/0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1
+      method: letter-alignment
+      max_letters_differing: 2
+    quote_styles: [dquotes, triggers]
+    # The fifth chapter states its particles in prose, not as a list: «وهو ثلاثة أحرف: واحد متفق على حرفيته،
+    # وهو لكن، واثنان فيهما خلاف، وهما: أنتما، وأنتن، إذا وقعا فصلا».
+    chapter_lists:
+      - chapter: الباب الخامس في الخماسي
+        items: [لكن, أنتما, أنتن]
+        stated: 3
+        stated_ar: ثلاثة
+    # Slips of the typing in the chapter lists and headings, read off the text.
+    list_slips:
+      - chapter: الباب الثاني في الثنائي
+        printed: مها
+        reads: ها
+        evidence: "the list «وهل، ومها، وهو» and the entry the chapter gives in that place, «ها ⏎ لفظ مشترك؛ يكون اسما وحرفا»"
+    # Headwords the typing dropped: the entry opens with what the headword is, and its own words name it.
+    supplied_headwords:
+      - chapter: الباب الثالث في الثلاثي
+        opens_with: لفظ مشترك؛ يكون اسما وحرفا.
+        headword: إذا
+        evidence: "the next paragraph «فإذا كانت اسما فلها أقسام: الأول: أن تكون ظرفا لما يستقبل من الزمان»; the chapter lists «وإذن، وإذا» in this place"
+    # A headword printed at the start of its first sentence, with no word saying what it is after it.
+    run_in_headings:
+      - chapter: الباب الثالث في الثلاثي
+        opens_with: على التي تجر ما بعدها
+        reason: "«على التي تجر ما بعدها فيها خلاف» — the headword «على» opens the sentence"
+    heading_slips:
+      - printed: أمتا
+        reads: أما
+        evidence: "the chapter's list «إذ ما، وألا، وإلا، وأما، وإما» and the entry's own words «حرف بسيط، فيه معنى الشرط، مؤول بمهمها يكن من شيء»"
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: المرادي (ت 749هـ)، الجنى الداني في حروف المعاني، تحقيق فخر الدين قباوة ومحمد نديم فاضل (بيروت: دار الكتب العلمية، ط1، 1413هـ/1992م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0749BadrDinMisriMuradi.JanaDani.JK010091-ara1، وأرقام الصفحات من الملف 0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Source: al-Murādī (d. 749 AH), al-Janā al-Dānī fī Ḥurūf al-Maʿānī, ed. Fakhr al-Dīn Qabāwa and Muḥammad Nadīm Fāḍil (Beirut: Dār al-Kutub al-ʿIlmiyya, 1413/1992). Digital text: OpenITI release 2025.1.9, file 0749BadrDinMisriMuradi.JanaDani.JK010091-ara1, page numbers from 0749BadrDinMisriMuradi.JanaDani.Shamela0026099-ara1, CC BY-NC-SA 4.0."
+    use: "Editor-side particle entries (PLAN P3.8): al-Murādī's entry for each particle he lists, each numbered sense verbatim with its printed page and milestone, the verses it quotes, and the corpus forms it is linked to; status extracted until reviewed. Shown to readers only after review, with this attribution; CC BY-NC-SA 4.0 (D18)."
