@@ -132,3 +132,28 @@ test("English: the same hub with the name glossed and Latin digits", async ({ pa
   await expect(page.locator(".hub-name")).toContainText("jadhr, “root”");
   await expect(page.getByRole("navigation", { name: "Three ways in" })).toContainText(`${meta.dataset.counts.surahs} sūras`);
 });
+
+test("the roots due for review, quietly: a chip on the hub and a count before the tab's title, off with its preference (plan B30)", async ({ page }) => {
+  // a starred word whose root's card fell due yesterday
+  await page.addInitScript(([personal]) => {
+    if (sessionStorage.getItem("seeded")) return;
+    sessionStorage.setItem("seeded", "1");
+    localStorage.setItem("jadhr-personal", JSON.stringify(personal));
+    localStorage.setItem("jadhr-saved", JSON.stringify({ state: { bookmarks: [{ kind: "lemma", key: "ilm", label: "عِلْم", at: 1 }], notes: {}, history: [] }, version: 2 }));
+    const due = Date.now() - 86_400_000;
+    localStorage.setItem("jadhr-review", JSON.stringify({ state: { cards: { علم: { root: "علم", ease: 2.5, interval: 1, due, reps: 1, lapses: 0, last: due - 86_400_000, grade: "good" } } }, version: 1 }));
+  }, [seed({})]);
+  await page.goto("/");
+  const chip = page.locator(".hub-chip[data-kind=due]");
+  await expect(chip).toHaveText("جذر واحد حان موعد مراجعته");
+  await expect(chip).toHaveAttribute("href", "/read?mode=review");
+  await expect.poll(() => page.title()).toMatch(/^\(١\) /);
+  // the count follows the page's own title as the reader moves on
+  await page.goto("/explore");
+  await expect.poll(() => page.title()).toMatch(/^\(١\) /);
+  // turned off: nothing, anywhere
+  await page.evaluate(() => localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { dueSignal: false }, version: 2 })));
+  await page.goto("/");
+  await expect(page.locator(".hub-chip[data-kind=due]")).toHaveCount(0);
+  await expect.poll(() => page.title()).not.toMatch(/^\(/);
+});

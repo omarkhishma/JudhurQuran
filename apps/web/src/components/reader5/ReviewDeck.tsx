@@ -2,18 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import { useFocusTrap } from "@/components/ui/useFocusTrap";
 import { Link } from "@/i18n/navigation";
 import { normalize } from "@/lib/arabic/normalize";
-import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, toArabicDigits, verseRef } from "@/lib/format";
 import { useSurahRoots } from "@/lib/reader/api";
-import { usePersonal, useReader } from "@/lib/reader/store";
+import { useReader } from "@/lib/reader/store";
 import type { Ar } from "@/lib/reader/types";
+import { useMyRoots } from "@/lib/review/due";
 import { dueOrder, type Grade, type ReviewCard, useReview } from "@/lib/store/review";
-import { useSaved } from "@/lib/store/saved";
 import { useTranslitOn } from "@/lib/useTranslit";
 import type { ChapterInfo } from "./ReaderShell";
 
@@ -29,49 +28,6 @@ type RootReview = {
 };
 
 const SESSION = 20;
-
-/**
- * The roots of the reader's starred and known words (RDR-345, 360: starred, or learning then confirmed), as
- * {key, spaced}. The words go in a POST body; the answer is cached for the session only.
- */
-export function useMyRoots() {
-  const client = useIsClient();
-  const bookmarks = useSaved((s) => s.bookmarks);
-  const states = usePersonal((s) => s.wordStates);
-  const slugs = useMemo(() => [...new Set([...bookmarks.filter((b) => b.kind === "lemma").map((b) => b.key), ...Object.keys(states).filter((k) => states[k] === "known")])].sort(), [bookmarks, states]);
-  return useQuery({
-    queryKey: ["my-roots", slugs.join(",")],
-    queryFn: async () => {
-      const r = await fetch("/api/v1/lemmas/roots", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slugs }) });
-      if (!r.ok) throw new Error(String(r.status));
-      const d = (await r.json()) as { data: { root: RootRef | null }[] };
-      const seen = new Map<string, RootRef>();
-      for (const x of d.data) if (x.root && !seen.has(x.root.key)) seen.set(x.root.key, { key: x.root.key, spaced: x.root.spaced });
-      return [...seen.values()];
-    },
-    enabled: client && slugs.length > 0,
-    staleTime: Infinity,
-  });
-}
-
-/** The time, moving on every minute: what is due changes as the clock does, not only when something is graded. */
-function useNow(step = 60_000): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), step);
-    return () => clearInterval(id);
-  }, [step]);
-  return now;
-}
-
-/** How many of the reader's roots are due now: the header's badge (RDR-346, from the scheduler). */
-export function useDueCount(): number | null {
-  const mine = useMyRoots();
-  const cards = useReview((s) => s.cards);
-  const now = useNow();
-  if (!mine.data?.length) return null;
-  return dueOrder(mine.data.map((r) => r.key), cards, now).length;
-}
 
 export function ReviewDeck({ chapter }: { chapter: ChapterInfo }) {
   const open = useReader((s) => s.review);

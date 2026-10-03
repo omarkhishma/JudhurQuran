@@ -3,8 +3,9 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { usePersonal } from "@/lib/reader/store";
+import { useDueSignal } from "@/lib/review/due";
 
 export type SurahName = [number, string, string];
 
@@ -22,6 +23,7 @@ export function ContextStrip({ surahs }: { surahs: SurahName[] }) {
   const context = usePersonal((s) => s.context);
   const clearedAt = usePersonal((s) => s.contextClearedAt);
   const clear = usePersonal((s) => s.clearContext);
+  const due = useDueSignal();
   if (!client) return null;
 
   const name = (n: number) => {
@@ -43,6 +45,8 @@ export function ContextStrip({ surahs }: { surahs: SurahName[] }) {
   }
   if (context?.word && context.wordAr) chips.push({ key: "word", href: `/read?w=${encodeURIComponent(context.word)}`, label: context.wordAr, ar: true, color: "var(--c-word)" });
   if (context?.root) chips.push({ key: "root", href: `/concordance?root=${encodeURIComponent(context.root)}`, label: context.root.split("").join(" "), ar: true, color: "var(--c-root)" });
+  // plan B30: the roots due, quietly beside the places to resume — no streak, no reminder
+  if (due) chips.push({ key: "due", href: "/read?mode=review", label: t("dueRoots", cnt(due, locale)), ar: locale === "ar", color: "var(--c-root)" });
   if (!chips.length) return null;
 
   return (
@@ -55,8 +59,8 @@ export function ContextStrip({ surahs }: { surahs: SurahName[] }) {
               <li key={c.key}>
                 <Link href={c.href} className="hub-chip" data-kind={c.key}>
                   <span className="dot" style={{ background: c.color }} aria-hidden="true" />
-                  {c.key !== "text" && <span className="text-[11.5px] text-t3">{t(c.key === "word" ? "resumeWord" : "resumeRoot")}</span>}
-                  <span className={c.key === "text" ? "" : "ar-classical text-[16px]"} lang={c.ar ? "ar" : undefined} dir="auto">
+                  {(c.key === "word" || c.key === "root") && <span className="text-[11.5px] text-t3">{t(c.key === "word" ? "resumeWord" : "resumeRoot")}</span>}
+                  <span className={c.key === "text" || c.key === "due" ? "" : "ar-classical text-[16px]"} lang={c.ar ? "ar" : undefined} dir="auto">
                     {c.label}
                   </span>
                 </Link>

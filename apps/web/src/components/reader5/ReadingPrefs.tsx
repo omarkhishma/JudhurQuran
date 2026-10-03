@@ -65,6 +65,7 @@ export function ReadingPrefs({ onClose }: { onClose: (how?: "key" | "pointer") =
       <Switch checked={p.wordStates} onChange={(v) => p.set({ wordStates: v })} label={t("prefStates")} hint={t("prefStatesHint")} />
       <Switch checked={p.panelTabs} onChange={(v) => p.set({ panelTabs: v })} label={t("prefTabs")} hint={t("prefTabsHint")} />
       <Switch checked={p.explainTerms} onChange={(v) => p.set({ explainTerms: v })} label={t("prefExplain")} hint={t("prefExplainHint")} />
+      <Switch checked={p.dueSignal} onChange={(v) => p.set({ dueSignal: v })} label={t("prefDue")} hint={t("prefDueHint")} />
       <hr className="mx-1 my-1.5 border-line" />
       <div className="flex items-center justify-between px-1.5 pb-1">
         <p className="label-caps">{t("dictsShown")}</p>

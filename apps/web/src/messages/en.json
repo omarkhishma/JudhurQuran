@@ -183,7 +183,8 @@
     "nameGloss": "jadhr, “root”",
     "searchTry": "Try:",
     "searchExamples": "عِلْم | k-t-b | 2:255 | البقرة 255",
-    "promptSignIn": "Sign in to sync"
+    "promptSignIn": "Sign in to sync",
+    "dueRoots": "{count, plural, one {One root due for review} other {{n} roots due for review}}"
   },
   "explore": {
     "title": "Explore",
@@ -1455,7 +1456,9 @@
     "tool_analyse_hint": "Each word of the verse in the Analyser — its parts, root and pattern, from the Quranic corpus",
     "askAnalyse": "Analyse it anyway →",
     "account": "My account",
-    "omniWordAt": "word {n} of the verse • {name}"
+    "omniWordAt": "word {n} of the verse • {name}",
+    "prefDue": "Count the roots due for review",
+    "prefDueHint": "On the home page and in the browser tab's title — no reminders, no streaks."
   },
   "concordance": {
     "title": "Concordance",

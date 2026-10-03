@@ -11,7 +11,7 @@ import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
 import { THEME_KEY } from "@/lib/site";
 import type { ChapterInfo } from "./ReaderShell";
 import { ReadingPrefs } from "./ReadingPrefs";
-import { useDueCount } from "./ReviewDeck";
+import { useDueCount } from "@/lib/review/due";
 
 const SIZE_MIN = 0.8;
 const SIZE_MAX = 1.6;

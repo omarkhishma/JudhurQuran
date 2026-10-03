@@ -186,6 +186,8 @@ export type Prefs = {
   translation: string;
   tafsirs: string[];
   reciter: string | null;
+  /** plan B30: the count of roots due, on the home page and in the tab's title; quiet, and the reader's to turn off */
+  dueSignal: boolean;
 };
 
 type PrefsState = Prefs & {
@@ -215,6 +217,7 @@ export const DEFAULT_PREFS: Prefs = {
   translation: "saheeh",
   tafsirs: ["muyassar", "saadi", "ibn-kathir", "tabari", "qurtubi", "baghawi", "mukhtasar"],
   reciter: null,
+  dueSignal: true,
 };
 
 export const usePrefs = create<PrefsState>()(

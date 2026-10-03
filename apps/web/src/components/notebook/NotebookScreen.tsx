@@ -3,7 +3,7 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { useDueCount } from "@/components/reader5/ReviewDeck";
+import { useDueCount } from "@/lib/review/due";
 import { useStepViews } from "@/components/reader5/trailSteps";
 import { ProposalForm } from "@/components/contrib/ProposalForm";
 import { Dialog } from "@/components/ui/Dialog";
