@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic } from "@/lib/arabic/normalize";
@@ -11,6 +11,7 @@ import { getJSON } from "@/lib/reader/api";
 import { useIsClient } from "@/lib/client";
 import { usePersonal, useReader, type SuggestTarget } from "@/lib/reader/store";
 import { SITE } from "@/lib/site";
+import { storageFailed } from "@/lib/store/safeStorage";
 import { useDebounced } from "@/lib/useDebounced";
 import type { ChapterInfo } from "./ReaderShell";
 import { GraphHandoff } from "./GraphHandoff";
@@ -20,6 +21,21 @@ export function Overlays({ chapter }: { chapter: ChapterInfo }) {
   const omnibox = useReader((s) => s.omnibox);
   const setOmnibox = useReader((s) => s.setOmnibox);
   const ask = useReader((s) => s.ask);
+
+  // a browser that refuses to store says so once (RDR-444); what the reader did still works this session
+  const showToast = useReader((s) => s.showToast);
+  const tr = useTranslations("rd");
+  const told = useRef(false);
+  useEffect(() => {
+    const onFail = () => {
+      if (told.current) return;
+      told.current = true;
+      showToast(tr("storageFailed"));
+    };
+    if (storageFailed()) onFail(); // a write that failed while the page was loading
+    window.addEventListener("jadhr:storage-error", onFail);
+    return () => window.removeEventListener("jadhr:storage-error", onFail);
+  }, [showToast, tr]);
 
   // ⌘K / Ctrl+K anywhere opens the omnibox with an empty query (RDR-423).
   useEffect(() => {

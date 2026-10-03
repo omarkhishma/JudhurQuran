@@ -69,6 +69,7 @@ function RelatedDrawer({ verseKey }: { verseKey: string }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[11.5px] text-t3">{t("relatedMethod")}</p>
+      {q.data && q.data.data.length === 0 && <p className="text-[12.5px] text-t3">{t("relatedNone")}</p>}
       {(q.data?.data ?? []).map((r) => (
         <Link key={r.verse.key} href={`/quran/${r.verse.surah}/${r.verse.ayah}`} className="related-row">
           <span className="flex items-center gap-2 text-[11.5px] text-t3">

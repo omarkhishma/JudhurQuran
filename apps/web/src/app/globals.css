@@ -348,7 +348,7 @@ button:disabled {
 }
 /* Dark in both themes: an aside, not part of the page. */
 .term-card {
-  z-index: 60;
+  z-index: 75;
   background: #18181d;
   color: #ededf2;
   border: 1px solid rgba(255, 255, 255, 0.12);

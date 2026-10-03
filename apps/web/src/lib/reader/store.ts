@@ -7,6 +7,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Seed } from "@/lib/graph/seedCodec";
+import { safeJSONStorage } from "@/lib/store/safeStorage";
 
 export type Mode = "empty" | "word" | "verse" | "index" | "surah";
 export type Selection = { slug: string; at: string | null };
@@ -214,6 +215,7 @@ export const usePrefs = create<PrefsState>()(
     }),
     {
       name: "jadhr-prefs",
+      storage: safeJSONStorage,
       version: 2,
       migrate: (old) => ({ ...DEFAULT_PREFS, ...((old as Partial<Prefs>) ?? {}) }),
     },
@@ -327,6 +329,7 @@ export const usePersonal = create<PersonalState>()(
     }),
     {
       name: "jadhr-personal",
+      storage: safeJSONStorage,
       version: 2,
       // version 2 adds the reader's verse links and topics
       migrate: (old) => ({ links: {}, topics: [], verseTopics: {}, ...((old as Partial<PersonalState>) ?? {}) }) as PersonalState,

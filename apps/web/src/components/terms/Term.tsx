@@ -2,6 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
 import { useGlossary } from "@/lib/reader/api";
@@ -101,7 +102,9 @@ export function Term({ id, children }: { id: TermId; children: React.ReactNode }
       <button ref={button} type="button" className="term" aria-expanded={open} aria-controls={open ? cardId : undefined} onClick={toggle}>
         {children}
       </button>
-      {place && (
+      {place &&
+        // portalled to the body: above the header and the onboarding card, never inside the sheet's stacking context (RDR-012)
+        createPortal(
         <div
           ref={card}
           id={cardId}
@@ -137,7 +140,8 @@ export function Term({ id, children }: { id: TermId; children: React.ReactNode }
               {locale === "ar" ? "أوقف شرح المصطلحات" : "Stop explaining terms"}
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

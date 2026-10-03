@@ -39,6 +39,13 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
   const wordStates = usePersonal((s) => s.wordStates);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  // closed with Esc, a popover hands focus back to the button that opened it (RDR-461)
+  const prefsBtn = useRef<HTMLButtonElement>(null);
+  const moreBtn = useRef<HTMLButtonElement>(null);
+  const closePrefs = (how?: "key" | "pointer") => {
+    setPrefsOpen(false);
+    if (how === "key") (prefsBtn.current ?? moreBtn.current)?.focus();
+  };
   const [progress, setProgress] = useState(0);
   const [page, setPage] = useState<number | null>(null);
   const wide = bp !== "phone";
@@ -150,11 +157,11 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
       )}
       {wide && (
         <div className="relative">
-          <button type="button" className="hdr-btn" aria-expanded={prefsOpen} onClick={() => setPrefsOpen((v) => !v)} title={t("readingTitle")}>
+          <button ref={prefsBtn} type="button" className="hdr-btn" aria-expanded={prefsOpen} onClick={() => setPrefsOpen((v) => !v)} title={t("readingTitle")}>
             <Icon name="sliders" size={13} />
             {t("reading")}
           </button>
-          {prefsOpen && <ReadingPrefs onClose={() => setPrefsOpen(false)} />}
+          {prefsOpen && <ReadingPrefs onClose={closePrefs} />}
         </div>
       )}
       {wide && (
@@ -189,12 +196,15 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
       )}
       {!wide && (
         <div className="relative">
-          <button type="button" className="hdr-btn hdr-more" aria-label={t("more")} aria-expanded={moreOpen} onClick={() => setMoreOpen((v) => !v)}>
+          <button ref={moreBtn} type="button" className="hdr-btn hdr-more" aria-label={t("more")} aria-expanded={moreOpen} onClick={() => setMoreOpen((v) => !v)}>
             ⋯
           </button>
           {moreOpen && (
             <MoreMenu
-              onClose={() => setMoreOpen(false)}
+              onClose={(how) => {
+                setMoreOpen(false);
+                if (how === "key") moreBtn.current?.focus();
+              }}
               onPrefs={() => {
                 setMoreOpen(false);
                 setPrefsOpen(true);
@@ -206,7 +216,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
               onGraph={handoff}
             />
           )}
-          {prefsOpen && <ReadingPrefs onClose={() => setPrefsOpen(false)} />}
+          {prefsOpen && <ReadingPrefs onClose={closePrefs} />}
         </div>
       )}
       <button
@@ -257,7 +267,7 @@ function MoreMenu({
   toggleTheme,
   onGraph,
 }: {
-  onClose: () => void;
+  onClose: (how?: "key" | "pointer") => void;
   onPrefs: () => void;
   size: number;
   setSize: (n: number) => void;
@@ -271,8 +281,8 @@ function MoreMenu({
   const setReview = useReader((s) => s.setReview);
   useEffect(() => {
     box.current?.querySelector<HTMLElement>("button,a")?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    const onDown = (e: PointerEvent) => !box.current?.contains(e.target as Node) && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose("key");
+    const onDown = (e: PointerEvent) => !box.current?.contains(e.target as Node) && onClose("pointer");
     window.addEventListener("keydown", onKey);
     window.addEventListener("pointerdown", onDown);
     return () => {
@@ -306,11 +316,11 @@ function MoreMenu({
           {t("graphEditor")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
         </button>
       ) : (
-        <Link href="/graph" role="menuitem" onClick={onClose}>
+        <Link href="/graph" role="menuitem" onClick={() => onClose()}>
           {t("graphEditor")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
         </Link>
       )}
-      <Link href="/library" role="menuitem" onClick={onClose}>
+      <Link href="/library" role="menuitem" onClick={() => onClose()}>
         {t("library")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
       </Link>
     </div>

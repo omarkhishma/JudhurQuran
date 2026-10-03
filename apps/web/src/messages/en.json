@@ -1014,7 +1014,11 @@
     "licence": "licence",
     "asbabNoVetted": "No vetted narration for this verse in the Tafsir Center's database.",
     "asbabClassical": "{count, plural, one {# narration} other {{n} narrations}} in the books of occasions: al-Wāḥidī and al-Suyūṭī",
-    "asbabClassicalNote": "Narrations with their chains as the two books give them, not graded here; the vetted ones are those above, from the Tafsir Center's database."
+    "asbabClassicalNote": "Narrations with their chains as the two books give them, not graded here; the vetted ones are those above, from the Tafsir Center's database.",
+    "noArticlesOfKind": "No articles of this kind of dictionary for this root.",
+    "relatedNone": "No other verse stands on its roots.",
+    "storageFailed": "This browser would not save; what you do lasts until you close the page.",
+    "stopRecite": "Stop the recitation"
   },
   "concordance": {
     "title": "Concordance",

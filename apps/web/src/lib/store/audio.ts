@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { safeJSONStorage } from "@/lib/store/safeStorage";
 
 export type VerseAudio = { key: string; ayah: number; url: string; segments: [number, number, number][] };
 
@@ -124,6 +125,6 @@ export const useAudio = create<AudioState>()(
       stop: () => set({ playing: false, queue: [], index: 0, token: null, slice: null, surah: null }),
       set: (p) => set(p),
     }),
-    { name: "jadhr-audio", partialize: (s) => ({ reciter: s.reciter, follow: s.follow, speed: s.speed, repeat: s.repeat }) },
+    { name: "jadhr-audio", storage: safeJSONStorage, partialize: (s) => ({ reciter: s.reciter, follow: s.follow, speed: s.speed, repeat: s.repeat }) },
   ),
 );

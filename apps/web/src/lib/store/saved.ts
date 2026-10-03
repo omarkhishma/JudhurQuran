@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { safeJSONStorage } from "@/lib/store/safeStorage";
 
 /** Personal, device-local state (never sent to a server): bookmarks, verse notes, recent words. */
 /** A starred entry is a lemma keyed by its slug (the reader's ☆, RDR-520: one list for every screen);
@@ -43,7 +44,7 @@ export const useSaved = create<SavedState>()(
         set((s) => ({ history: [{ ...v, at: Date.now() }, ...s.history.filter((x) => x.location !== v.location)].slice(0, 60) })),
       clearAll: () => set({ bookmarks: [], notes: {}, history: [] }),
     }),
-    { name: "jadhr-saved", version: 1 },
+    { name: "jadhr-saved", storage: safeJSONStorage, version: 1 },
   ),
 );
 

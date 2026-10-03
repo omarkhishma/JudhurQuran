@@ -48,7 +48,7 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
             </div>
             <div className="passage-tools" role="toolbar" aria-label={t("verseTools", { ref: v.key })}>
               {PRIMARY.map((tool) => (
-                <button key={tool} className="ptool" data-tool={tool} data-verse-key={v.key} aria-pressed={DRAWERS.has(tool) ? false : undefined} title={t(`tool_${tool}_hint`)}>
+                <button key={tool} className="ptool" data-tool={tool} data-verse-key={v.key} aria-pressed={tool === "audio" || DRAWERS.has(tool) ? false : undefined} title={t(`tool_${tool}_hint`)}>
                   {t(`tool_${tool}`)}
                   {/* the number of distinct roots in the verse (RDR-145) */}
                   {tool === "roots" && <span className="ptool-badge mono">{formatNumber(new Set(v.words.map((w) => w.root).filter(Boolean)).size, locale)}</span>}

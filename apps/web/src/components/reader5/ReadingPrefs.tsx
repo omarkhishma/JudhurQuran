@@ -13,7 +13,7 @@ type Dict = { key: string; name_ar: string; name_en: string; author_ar: string; 
 
 /** Reading preferences popover (design 03 §3.2, inventory RDR-032…059): the union of the spec's four
  * toggles and the prototype's eight (D21), plus the dictionaries shown. Esc, outside tap close it. */
-export function ReadingPrefs({ onClose }: { onClose: () => void }) {
+export function ReadingPrefs({ onClose }: { onClose: (how?: "key" | "pointer") => void }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const p = usePrefs();
@@ -23,10 +23,10 @@ export function ReadingPrefs({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     box.current?.querySelector<HTMLElement>("button")?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose("key");
     const onDown = (e: PointerEvent) => {
       const el = e.target as HTMLElement;
-      if (!box.current?.contains(el) && !el.closest("[aria-expanded]")) onClose();
+      if (!box.current?.contains(el) && !el.closest("[aria-expanded]")) onClose("pointer");
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("pointerdown", onDown);
@@ -74,7 +74,13 @@ export function ReadingPrefs({ onClose }: { onClose: () => void }) {
         <Switch
           key={d.key}
           checked={!p.dictOff[d.key]}
-          onChange={(v) => p.set({ dictOff: { ...p.dictOff, [d.key]: !v } })}
+          onChange={(v) => {
+            // only the switched-off dictionaries are kept (RDR-612)
+            const next = { ...p.dictOff };
+            if (v) delete next[d.key];
+            else next[d.key] = true;
+            p.set({ dictOff: next });
+          }}
           label={isAr ? d.name_ar : d.name_en}
           hint={
             isAr

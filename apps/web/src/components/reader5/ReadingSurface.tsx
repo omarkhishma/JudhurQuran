@@ -65,6 +65,21 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const wordStates = usePersonal((s) => s.wordStates);
   const setProgress = usePersonal((s) => s.setProgress);
   const playVerse = useAudio((s) => s.playVerse);
+  const stopAudio = useAudio((s) => s.stop);
+  const playingKey = useAudio((s) => (s.playing && s.mode !== "word" && s.surah && s.queue[s.index] ? `${s.surah}:${s.queue[s.index].ayah}` : null));
+  // the Recite tool of the verse being recited reads as pressed, and says it stops
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    root.querySelectorAll<HTMLElement>('.ptool[data-tool="audio"][aria-pressed="true"]').forEach((el) => {
+      el.setAttribute("aria-pressed", "false");
+      el.removeAttribute("aria-label");
+    });
+    if (!playingKey) return;
+    const el = root.querySelector<HTMLElement>(`.ptool[data-tool="audio"][data-verse-key="${CSS.escape(playingKey)}"]`);
+    el?.setAttribute("aria-pressed", "true");
+    el?.setAttribute("aria-label", t("stopRecite"));
+  }, [playingKey, t]);
   const [drawer, setDrawer] = useState<{ key: string; tool: DrawerTool } | null>(null);
   // The verse whose full toolbar is drawn: hovered, else focused, else long-pressed, else open.
   const [hoverVerse, setHoverVerse] = useState<string | null>(null);
@@ -347,6 +362,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     if (press.current.timer) clearTimeout(press.current.timer);
     press.current.timer = null;
   }
+  useEffect(() => () => cancelPress(), []); // nor after the page has gone (RDR-540)
 
   function onClick(e: React.MouseEvent) {
     closeCard();
@@ -380,7 +396,11 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   }
 
   async function runTool(tool: DrawerTool | "audio" | "tafsir" | "copy" | "cite", key: string) {
-    if (tool === "audio") return void playVerse(key);
+    if (tool === "audio") {
+      // the verse being recited: its Recite tool stops it (RDR-144)
+      if (playingKey === key) return stopAudio();
+      return void playVerse(key);
+    }
     if (tool === "tafsir") {
       openVerse(key);
       setPrefs({ panelOpen: true });

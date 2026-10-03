@@ -73,6 +73,7 @@ export function DictionariesSection({ w }: { w: WordPayload }) {
             ))}
           </div>
           <p className="text-[11.5px] text-t3">{t("byDeathDate")}</p>
+          {listed.length === 0 && <p className="text-[12.5px] text-t3">{t("noArticlesOfKind")}</p>}
           {listed.map((d) => (
             <Article key={d.id} d={d} w={w} />
           ))}
