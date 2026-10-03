@@ -22,11 +22,11 @@ test("the design's sample: particles, a word from the Quran, a clitic reading ma
 
 test("a verse reference is read from the corpus, every word at confidence 1, linked to its place", async ({ page }) => {
   await page.goto(`/analyse?q=${encodeURIComponent("20:114")}`);
-  await expect(page.locator(".analyse-source")).toContainText("الآية 20:114");
+  await expect(page.locator(".analyse-source")).toContainText("الآية ٢٠:١١٤");
   const rows = page.locator(".analyse-row:not(.analyse-head)");
   await expect(rows.first()).toBeVisible();
   await expect(page.locator(".analyse-row.is-unsure")).toHaveCount(0);
-  await expect(rows.filter({ hasText: "عِلۡمٗا" }).getByRole("link", { name: "20:114:17" })).toBeVisible();
+  await expect(rows.filter({ hasText: "عِلۡمٗا" }).getByRole("link", { name: "٢٠:١١٤:١٧" })).toBeVisible();
 });
 
 test("choosing among candidates is remembered, the view and phrase live in the address bar, and CoNLL-U is copied", async ({ page, context, browserName, isMobile }) => {
@@ -60,4 +60,32 @@ test("the phrase seeds the graph editor", async ({ page }) => {
   await page.getByRole("link", { name: "ابنِ خريطة من هذا ←" }).click();
   await expect(page).toHaveURL(/\/graph\/edit\//, { timeout: 30_000 });
   await expect(page.locator(".graph-card").first()).toBeVisible();
+});
+
+test("punctuation is not part of a word, and after the article no verb is read (ANA-F05)", async ({ page }) => {
+  const plain = await api<A>(page, `/analyse?q=${encodeURIComponent("إن العلم لا يدرك إلا بالتعلم")}`);
+  await page.goto(`/analyse?q=${encodeURIComponent("إن «العلمَ»، لا يُدرك - إلا بالتعلم.")}`);
+  const rows = page.locator(".analyse-row:not(.analyse-head)");
+  await expect(rows).toHaveCount(plain.tokens.length);
+  const last = rows.last();
+  await expect(last).toContainText("بالتعلم");
+  await expect(last).not.toContainText("بالتعلم.");
+  // بال + تعلم: not the verb تَعْلَم but a noun on تَفَعُّل from ع ل م
+  await expect(last).toContainText("بعد فصل «بال»، بالوزن وحده");
+  await expect(last.locator(".text-root").first()).toHaveText("ع ل م");
+});
+
+test("the interlinear view carries each Quranic word's transliteration (ANA-25)", async ({ page }) => {
+  await page.goto(`/analyse?q=${encodeURIComponent("20:114")}&view=interlinear`);
+  const card = page.locator(".interlinear-card").filter({ hasText: "عِلۡمٗا" });
+  await expect(card.locator("[lang='ar-Latn']")).toHaveText(/ʿ/);
+});
+
+test("the reader's own phrase seeds the graph as a sentence card holding its words (ANA-22)", async ({ page }) => {
+  await page.goto(`/analyse?q=${encodeURIComponent("العلم نور والجهل ظلام")}`);
+  await page.getByRole("link", { name: "ابنِ خريطة من هذا ←" }).click();
+  await expect(page).toHaveURL(/\/graph\/edit\//, { timeout: 30_000 });
+  const phrase = page.locator(".graph-card").filter({ hasText: "عبارة" }).filter({ hasText: "العلم نور والجهل ظلام" });
+  await expect(phrase).toHaveCount(1);
+  await expect(page.locator(".react-flow__edge")).not.toHaveCount(0);
 });

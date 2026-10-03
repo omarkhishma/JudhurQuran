@@ -12,7 +12,7 @@ import type { GraphEdge, GraphKind, GraphNode, NodeKind, VerseExcerpt } from "./
 /** The cards a seed becomes, before they are laid out and stored. The title is a message key with values. */
 export type SeedGraph = {
   kind: GraphKind;
-  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle"; values: Record<string, string> };
+  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle" | "phraseTitle"; values: Record<string, string> };
   nodes: GraphNode[];
   edges: GraphEdge[];
 };
@@ -98,8 +98,11 @@ async function verseSeed(key: string): Promise<SeedGraph> {
   return { kind: "free", title: { key: "verseTitle", values: { name, ayah: String(v.ayah), key: v.key } }, nodes: [...nodes.values()], edges: [...edges.values()] };
 }
 
-/** A trail seed: each step as a card in the order it was taken, numbered along the way; words keep their roots. */
-async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[]): Promise<SeedGraph> {
+/**
+ * A trail seed: each step as a card in the order it was taken, numbered along the way; words keep their roots.
+ * With a phrase (the Analyser's, ANA-22), the phrase is a sentence card holding its words instead of a path.
+ */
+async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[], phrase?: string): Promise<SeedGraph> {
   const seen = new Set<string>();
   const unique = steps.filter((s) => !seen.has(`${s.kind}:${s.id}`) && seen.add(`${s.kind}:${s.id}`));
   const names = await surahNames();
@@ -135,6 +138,15 @@ async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[
       path.push(id);
     }
   });
+  if (phrase) {
+    // a sentence card without a verse: the reader's own phrase, linked to each of its words
+    // its id from its text: the same phrase is one card, two phrases on one map are two
+    const pid = `phrase:${[...phrase].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7).toString(36)}`;
+    nodes.set(pid, card(pid, "verse", { ar: phrase }));
+    for (const id of new Set(path)) edges.set(edgeId(pid, id), link(pid, id));
+    const head = phrase.split(/\s+/).slice(0, 4).join(" ");
+    return { kind: "free", title: { key: "phraseTitle", values: { phrase: phrase.split(/\s+/).length > 4 ? `${head}…` : head } }, nodes: [...nodes.values()], edges: [...edges.values()] };
+  }
   for (let i = 1; i < path.length; i++) {
     const e = link(path[i - 1], path[i], String(i));
     if (path[i - 1] !== path[i] && !edges.has(e.id)) edges.set(e.id, e);
@@ -151,7 +163,7 @@ export function buildSeedGraph(seed: Seed): Promise<SeedGraph> {
     case "verse":
       return verseSeed(seed.key);
     case "trail":
-      return trailSeed(seed.steps);
+      return trailSeed(seed.steps, seed.phrase);
   }
 }
 

@@ -7,7 +7,7 @@ import { Term } from "@/components/terms/Term";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link } from "@/i18n/navigation";
 import { type Analysis, type AnalysedToken, type Candidate, REVIEW_BELOW, SAMPLE, toConllu } from "@/lib/analyse";
-import { cnt, formatNumber } from "@/lib/format";
+import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { encodeSeed, type Seed } from "@/lib/graph/seedCodec";
 import { getJSON } from "@/lib/reader/api";
 import { useAnalyseChoices } from "@/lib/store/analyseChoices";
@@ -81,7 +81,10 @@ export function AnalyseScreen({ initialQ, initialView, initial }: { initialQ: st
       return keys.length === 1 ? { seed: "verse", key: keys[0] } : { seed: "trail", steps: keys.map((id) => ({ kind: "verse" as const, id })) };
     }
     const steps = a.tokens.map((tk) => chosen(tk)?.lemma?.slug).filter((s): s is string => !!s).map((id) => ({ kind: "word" as const, id }));
-    return steps.length ? { seed: "trail", steps } : null;
+    if (!steps.length) return null;
+    // a phrase placed in one verse brings its verse; the reader's own phrase comes as a sentence card (ANA-22)
+    if (a.source.kind === "quran" && a.source.verse_key) return { seed: "trail", steps: [{ kind: "verse" as const, id: a.source.verse_key }, ...steps] };
+    return { seed: "trail", steps, phrase: a.text.replace(/\s+/g, " ").slice(0, 600) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [a, choices]);
 
@@ -125,7 +128,7 @@ export function AnalyseScreen({ initialQ, initialView, initial }: { initialQ: st
       )}
       {a?.source.kind === "quran" && a.source.verse_key && (
         <p className="analyse-source text-[12.5px] text-t2">
-          {t(!a.source.whole_verse ? "sourcePhrase" : a.source.verse_key.includes("-") ? "sourceRange" : "sourceVerse", { ref: a.source.verse_key })}{" "}
+          {t(!a.source.whole_verse ? "sourcePhrase" : a.source.verse_key.includes("-") ? "sourceRange" : "sourceVerse", { ref: locale === "ar" ? toArabicDigits(a.source.verse_key) : a.source.verse_key })}{" "}
           <Link href={`/quran/${a.source.verse_key.split("-")[0].replace(":", "/")}`} className="underline-offset-2 hover:underline">{t("openInReader")}</Link>
         </p>
       )}
@@ -159,6 +162,12 @@ export function AnalyseScreen({ initialQ, initialView, initial }: { initialQ: st
             return (
               <li key={`${i}-${tk.surface}`} className={"interlinear-card" + (tk.kind !== "particle" && tk.confidence < REVIEW_BELOW ? " is-unsure" : "")}>
                 <span className={tk.kind === "gold" || a.source.kind === "quran" ? "quran text-[26px] leading-[1.7]" : "ar-classical text-[26px] leading-[1.6]"} lang="ar">{tk.surface}</span>
+                {/* the transliteration line where the corpus reads the word (ANA-25) */}
+                {c?.translit && (
+                  <span className="text-[11.5px] italic text-t3" lang="ar-Latn" dir="ltr">
+                    {c.translit}
+                  </span>
+                )}
                 <span className="text-[11.5px] text-t2" lang="en" dir="ltr">{tk.kind === "particle" ? t("particleShort") : (c?.gloss_en ?? "?")}</span>
                 {c?.root && tk.kind !== "particle" && <span className="ar-classical text-[14px] text-root" lang="ar">{c.root.spaced}</span>}
                 <span className={"mono text-[10.5px] " + (tk.confidence >= REVIEW_BELOW ? "text-good" : "text-amber")}>{conf(tk.confidence, locale)}</span>
@@ -277,11 +286,11 @@ function TokenRow({ tk, pick, onPick }: { tk: AnalysedToken; pick: number; onPic
               </span>
             )}
             <span className="text-[11.5px] text-t3">
-              {t(`how_${tk.kind}`, { ...cnt(c?.count ?? 0, locale), clitics: tk.clitics.join("، ") })}
+              {t(tk.kind === "pattern" && tk.clitics.length ? "how_pattern_clitic" : `how_${tk.kind}`, { ...cnt(c?.count ?? 0, locale), clitics: tk.clitics.join("، ") })}
               {c?.location && (
                 <>
                   {" · "}
-                  <Link href={`/word/${c.location}`} className="underline-offset-2 hover:underline" dir="ltr">{c.location}</Link>
+                  <Link href={`/word/${c.location}`} className="underline-offset-2 hover:underline" dir="ltr">{locale === "ar" ? toArabicDigits(c.location) : c.location}</Link>
                 </>
               )}
               {c?.lemma && (

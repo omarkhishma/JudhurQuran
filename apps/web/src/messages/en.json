@@ -511,7 +511,9 @@
     "trailTitle": "Reading trail ({n} steps)",
     "seedBuilding": "The editor is preparing the cards…",
     "seedUnreadable": "This link carries no seed the editor can read.",
-    "seedFailed": "The cards could not be built from this link."
+    "seedFailed": "The cards could not be built from this link.",
+    "kindPhrase": "Phrase",
+    "phraseTitle": "Phrase: {phrase}"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",
@@ -1341,7 +1343,8 @@
     "entry": "entry",
     "choose": "choose among {n} readings",
     "chooseLabel": "Readings of «{word}»",
-    "sourceRange": "Verses {ref}: the Quranic Arabic Corpus's analysis, verse by verse, each word at its place (ten verses at most)."
+    "sourceRange": "Verses {ref}: the Quranic Arabic Corpus's analysis, verse by verse, each word at its place (ten verses at most).",
+    "how_pattern_clitic": "after taking off «{clitics}», by the pattern alone; the root is a Quranic root"
   },
   "library": {
     "title": "Library",

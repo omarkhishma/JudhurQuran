@@ -49,7 +49,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
       <div className="flex items-center justify-between gap-3 px-3 pt-2.5">
         <span className="flex items-center gap-1.5">
           <span className="dot" style={{ background: color }} />
-          <span className="text-[10.5px] font-medium tracking-wide" style={{ color }}>{t(KIND_LABEL[data.kind])}</span>
+          <span className="text-[10.5px] font-medium tracking-wide" style={{ color }}>{t(data.kind === "verse" && !data.verse ? "kindPhrase" : KIND_LABEL[data.kind])}</span>
         </span>
         <span className="flex items-center gap-1">
           {data.count != null && <span className="mono text-[11px] text-t3">{formatNumber(data.count, locale)}</span>}

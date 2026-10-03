@@ -11,11 +11,13 @@ export type Seed =
   | { seed: "word"; slug: string; at?: string | null }
   | { seed: "root"; root: string }
   | { seed: "verse"; key: string }
-  | { seed: "trail"; steps: TrailSeedStep[] };
+  | { seed: "trail"; steps: TrailSeedStep[]; phrase?: string };
 
 const LOCATION = /^\d{1,3}:\d{1,3}:\d{1,3}$/;
 const VERSE_KEY = /^\d{1,3}:\d{1,3}$/;
 const MAX_STEPS = 40;
+/** a phrase from the Analyser travels with its words as a sentence card (ANA-22) */
+const MAX_PHRASE = 600;
 
 function bytesToBase64Url(bytes: Uint8Array): string {
   let bin = "";
@@ -49,7 +51,8 @@ export function validSeed(x: unknown): Seed | null {
         if ((st?.kind === "word" || st?.kind === "root") && str(st.id)) steps.push({ kind: st.kind, id: st.id });
         else if (st?.kind === "verse" && str(st.id, 8) && VERSE_KEY.test(st.id)) steps.push({ kind: "verse", id: st.id });
       }
-      return steps.length ? { seed: "trail", steps } : null;
+      const phrase = str(o.phrase, MAX_PHRASE) ? o.phrase.trim() : "";
+      return steps.length ? { seed: "trail", steps, ...(phrase ? { phrase } : {}) } : null;
     }
     default:
       return null;

@@ -1,7 +1,7 @@
 /** The Analyser's payload (API /analyse, services/api analyse.py) and its CoNLL-U export (P4.3, ANA-28, Q06). */
 
 export type Label = { ar: string; en: string; tag: string };
-export type Segment = { kind: "prefix" | "stem" | "suffix"; text: string; index: number; label?: Label; root?: string; features?: Record<string, unknown> };
+export type Segment = { kind: "prefix" | "stem" | "suffix"; text: string; index: number; label?: Label; root?: string; features?: Record<string, Label | undefined> };
 export type Candidate = {
   lemma: { slug: string; ar: string; pos: string } | null;
   root: { key: string; spaced: string; translit: string } | null;
@@ -10,6 +10,8 @@ export type Candidate = {
   features: Record<string, Label | boolean | Record<string, unknown> | undefined> | null;
   segments: Segment[] | null;
   gloss_en: string | null;
+  /** the word's transliteration where the corpus reads it (ANA-25) */
+  translit?: string | null;
   count: number;
   share: number;
   confidence: number;
@@ -63,18 +65,29 @@ const FEATS: Record<string, Record<string, [string, string]>> = {
   aspect: { PERF: ["Aspect", "Perf"], IMPF: ["Aspect", "Imp"], IMPV: ["Mood", "Imp"] },
 };
 
-function feats(c: Candidate | undefined, placed: boolean): string {
+// participles and verbal nouns (ANA-30): UD Arabic writes them with VerbForm, a participle with its voice
+const DERIVATION: Record<string, string[]> = { ACT_PCPL: ["VerbForm=Part", "Voice=Act"], PASS_PCPL: ["VerbForm=Part", "Voice=Pass"], VN: ["VerbForm=Vnoun"] };
+
+function featList(c: Candidate | undefined, placed: boolean): string[] {
   // inflection is known only for a Quranic word read at its place
   const f = placed ? c?.features : null;
-  if (!f) return "_";
+  if (!f) return [];
   const out: string[] = [];
   for (const [k, map] of Object.entries(FEATS)) {
     const v = f[k] as Label | undefined;
     const hit = v && typeof v === "object" && "tag" in v ? map[String(v.tag)] : undefined;
     if (hit) out.push(`${hit[0]}=${hit[1]}`);
   }
+  const d = f.derivation as Label | undefined;
+  for (const x of (d && DERIVATION[String(d.tag)]) ?? []) if (!out.some((o) => o.split("=")[0] === x.split("=")[0])) out.push(x);
   if (f.indefinite === true) out.push("Definite=Ind");
-  return out.length ? out.sort().join("|") : "_";
+  return out;
+}
+
+const featStr = (xs: string[]) => (xs.length ? [...new Set(xs)].sort().join("|") : "_");
+
+function feats(c: Candidate | undefined, placed: boolean): string {
+  return featStr(featList(c, placed));
 }
 
 const clean = (s: string) => s.replace(/[\t\n\r|=]/g, " ").trim() || "_";
@@ -98,9 +111,96 @@ export function toConllu(a: Analysis, chosen: (t: AnalysedToken) => Candidate | 
   return groups.map((g) => sentence(a, g, chosen)).join("");
 }
 
+/** One syntactic word of a CoNLL-U sentence. */
+type Part = { form: string; lemma: string; upos: string; xpos: string; feats: string; misc: string[] };
+
+// proclitics by the corpus's prefix tag (UD Arabic): conjunctions, prepositions, the future «سَ», particles
+const PREFIX_POS: Record<string, [string, string]> = {
+  "bi+": ["ADP", "P"], "ka+": ["ADP", "P"], "ta+": ["ADP", "P"], "sa+": ["AUX", "FUT"], "ya+": ["PART", "VOC"], "ha+": ["PART", "ATT"],
+}; // prettier-ignore
+const PREFIX_FUNCTION: Record<string, string> = { CONJ: "CCONJ", REM: "CCONJ", RSLT: "CCONJ", CAUS: "SCONJ", CIRC: "SCONJ", PRP: "SCONJ", P: "ADP" };
+function prefixPos(tag: string): [string, string] {
+  if (PREFIX_POS[tag]) return PREFIX_POS[tag];
+  const f = tag.match(/:([A-Z]+)\+$/)?.[1] ?? "X";
+  return [PREFIX_FUNCTION[f] ?? "PART", f];
+}
+
+/** «PRON:3MP» → Gender=Masc|Number=Plur|Person=3, and the person-gender-number to compare with a verb's. */
+function pron(tag: string): { feats: string; pgn: { p: string; g: string; n: string } } | null {
+  const m = tag.match(/PRON:(\d)([MF]?)([SDP])/);
+  if (!m) return null;
+  const xs = [`Person=${m[1]}`, `Number=${FEATS.number[m[3]][1]}`, ...(m[2] ? [`Gender=${FEATS.gender[m[2]][1]}`] : [])];
+  return { feats: featStr(xs), pgn: { p: m[1], g: m[2], n: m[3] } };
+}
+
+// the letters a free-text clitic was read as (analyse.py _PREFIXES / _SUFFIXES), the article kept on its word
+const PROCLITIC: Record<string, [string, string]> = { "و": ["CCONJ", "CONJ"], "ف": ["CCONJ", "CONJ"], "ب": ["ADP", "P"], "ك": ["ADP", "P"], "ل": ["ADP", "P"], "س": ["AUX", "FUT"] };
+const ENCLITIC: Record<string, string> = { "ه": "3MS", "ها": "3FS", "هما": "3D", "هم": "3MP", "هن": "3FP", "ك": "2S", "كما": "2D", "كم": "2MP", "كن": "2FP", "ني": "1S", "ي": "1S", "نا": "1P", "تم": "2MP", "تما": "2D" };
+
+/**
+ * A token as UD Arabic tokenises it (ANA-Q06): proclitics and object or possessive pronouns are words of
+ * their own under a multiword-token range; the article stays on its word (Definite=Def); a verb's subject
+ * suffix, which agrees with the verb, stays on the verb. Quranic words split by the corpus's segments; a
+ * free-text word by the clitics it was read with.
+ */
+function split(t: AnalysedToken, c: Candidate | undefined, whole: Part, placed: boolean): Part[] {
+  const segs = c?.segments;
+  if (segs && segs.length > 1 && (t.kind === "gold" || t.kind === "form" || t.kind === "particle")) {
+    const si = segs.findIndex((s) => s.kind === "stem");
+    if (si < 0) return [whole];
+    const stem = segs[si];
+    let form = stem.text;
+    let definite = false;
+    const pre: Part[] = [];
+    for (const s of segs.slice(0, si)) {
+      const tag = s.label?.tag ?? "";
+      if (tag === "Al+") {
+        form = s.text + form;
+        definite = true;
+        continue;
+      }
+      const [u, x] = prefixPos(tag);
+      pre.push({ form: s.text, lemma: clean(s.text), upos: u, xpos: x, feats: "_", misc: [] });
+    }
+    const sf = stem.features ?? {};
+    const stemPos = sf.pos?.tag ?? c?.pos;
+    const post: Part[] = [];
+    segs.slice(si + 1).forEach((s, k) => {
+      const tag = s.label?.tag ?? "";
+      const pr = pron(tag);
+      // the verb's own subject: its first suffix, agreeing with it in person and number (and gender when both give it)
+      const agrees = !!pr && stemPos === "V" && k === 0 && pr.pgn.p === String(sf.person?.tag ?? "") && pr.pgn.n === String(sf.number?.tag ?? "") && (!pr.pgn.g || !sf.gender?.tag || pr.pgn.g === String(sf.gender.tag));
+      if (agrees || tag === "+n:EMPH" || tag === "+VOC") {
+        form += s.text;
+        return;
+      }
+      post.push(pr ? { form: s.text, lemma: clean(s.text), upos: "PRON", xpos: "PRON", feats: pr.feats, misc: [] } : { form: s.text, lemma: clean(s.text), upos: "PART", xpos: tag.replace(/[+:]/g, "") || "_", feats: "_", misc: [] });
+    });
+    if (!pre.length && !post.length) return [whole];
+    const fs = featList(c, placed);
+    return [...pre, { ...whole, form, feats: featStr(definite && !fs.includes("Definite=Ind") ? [...fs, "Definite=Def"] : fs) }, ...post];
+  }
+  if (t.kind === "clitic" && t.clitics.length && t.stem) {
+    const [p, s] = [t.clitics.find((x) => t.key.startsWith(x)) ?? "", t.clitics.find((x) => !t.key.startsWith(x) && t.key.endsWith(x)) ?? ""];
+    // «وال»/«بال»: letters, then the article; «لل»/«ولل»: the preposition ل, then the article whose alif fell
+    const article = p.endsWith("ال") || p.endsWith("لل") ? "ال" : "";
+    const letters = p.endsWith("ال") ? p.slice(0, -2) : p.endsWith("لل") ? p.slice(0, -1) : p;
+    const pre: Part[] = [...letters].map((ch) => {
+      const [u, x] = PROCLITIC[ch] ?? ["PART", "_"];
+      return { form: ch, lemma: ch, upos: u, xpos: x, feats: "_", misc: [] };
+    });
+    const post: Part[] = s ? [{ form: s, lemma: s, upos: "PRON", xpos: "PRON", feats: pron(`PRON:${ENCLITIC[s] ?? ""}`)?.feats ?? "_", misc: [] }] : [];
+    if (!pre.length && !post.length) return [whole];
+    return [...pre, { ...whole, form: article + t.stem }, ...post];
+  }
+  return [whole];
+}
+
 function sentence(a: Analysis, g: { id: string; text: string; tokens: AnalysedToken[] }, chosen: (t: AnalysedToken) => Candidate | undefined): string {
   const lines = [`# sent_id = ${g.id}`, `# text = ${g.text}`];
-  g.tokens.forEach((t, i) => {
+  const row = (id: number, p: Part) => [String(id), clean(p.form), p.lemma, p.upos, p.xpos, p.feats, "_", "_", "_", p.misc.length ? p.misc.join("|") : "_"].join("\t");
+  let id = 0;
+  for (const t of g.tokens) {
     const c = t.kind === "particle" ? t.particle : chosen(t);
     const pos = c?.pos ?? (t.kind === "particle" ? "P" : null);
     const misc: string[] = [];
@@ -109,7 +209,12 @@ function sentence(a: Analysis, g: { id: string; text: string; tokens: AnalysedTo
     misc.push(`Source=${t.kind === "gold" || (t.kind === "particle" && a.source.kind === "quran") ? "QAC" : `Jadhr-${t.kind}`}`);
     misc.push(`Confidence=${t.confidence.toFixed(2)}`);
     if (t.location) misc.push(`Loc=${t.location}`);
-    lines.push([String(i + 1), clean(t.surface), c?.lemma ? clean(c.lemma.ar) : "_", pos ? (UPOS[pos] ?? "X") : "X", pos ?? "_", feats(c, t.kind === "gold"), "_", "_", "_", misc.join("|")].join("\t"));
-  });
+    const placed = t.kind === "gold";
+    const whole: Part = { form: t.surface, lemma: c?.lemma ? clean(c.lemma.ar) : "_", upos: pos ? (UPOS[pos] ?? "X") : "X", xpos: pos ?? "_", feats: feats(c, placed), misc };
+    const parts = split(t, c, whole, placed);
+    // a multiword token: the range line with the surface, then each syntactic word (UD §Tokenization)
+    if (parts.length > 1) lines.push([`${id + 1}-${id + parts.length}`, clean(t.surface), "_", "_", "_", "_", "_", "_", "_", "_"].join("\t"));
+    for (const p of parts) lines.push(row(++id, p));
+  }
   return lines.join("\n") + "\n\n";
 }
