@@ -2159,3 +2159,162 @@ button.type-chip:hover {
   border-color: transparent;
 }
 }
+
+@layer components {
+/* ─── Search (design 05 §5.2) ─────────────────────────────────────────────── */
+.search-screen {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 640px;
+  height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ring);
+  border-radius: 12px;
+  background: var(--card);
+}
+.search-bar:focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 22%, transparent);
+}
+.search-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-size: 18px;
+  color: var(--t1);
+}
+.search-input:focus-visible {
+  outline: none;
+}
+.search-detect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.detect-pill {
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--c-word) 80%, var(--t1));
+  background: color-mix(in srgb, var(--c-word) 12%, var(--card));
+}
+.detect-pill.is-root {
+  color: color-mix(in srgb, var(--c-root) 85%, var(--t1));
+  background: color-mix(in srgb, var(--c-root) 12%, var(--card));
+}
+.search-body {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.search-filters-toggle {
+  display: none;
+  align-self: flex-start;
+}
+.search-side {
+  position: sticky;
+  top: 70px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.search-facets {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.facet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  min-height: 28px;
+  cursor: pointer;
+}
+.facet-row input {
+  accent-color: var(--ring);
+}
+.letter-box {
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  font-family: var(--font-classical);
+  font-size: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--t1);
+}
+.letter-box:focus {
+  border-color: var(--ring);
+}
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+.result-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 6px;
+}
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--t1);
+}
+.result-row:hover {
+  border-color: var(--ring);
+}
+.result-row.is-verse {
+  align-items: flex-start;
+}
+.result-row.is-verse .dot {
+  margin-top: 12px;
+}
+@media (max-width: 899px) {
+  .search-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .search-filters-toggle {
+    display: inline-flex;
+  }
+  .search-side {
+    display: none;
+    position: static;
+  }
+  .search-side.is-open {
+    display: block;
+  }
+  .result-row.is-verse {
+    flex-wrap: wrap;
+  }
+}
+}
