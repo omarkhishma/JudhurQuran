@@ -17,6 +17,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import analyse, concordance, content, knowledge, lexicon
@@ -546,6 +547,16 @@ def root_graph(request: Request, root: str) -> Response:
 def loanword_dispute(request: Request) -> Response:
     with connect() as conn:
         return cached(request, content.loanword_dispute(conn))
+
+
+class _Tokens(BaseModel):
+    tokens: list[str] = Field(max_length=20000)
+
+
+@router.post("/analyse/tokens", summary="The reader's own text, form by form (not stored, not cached)")
+def analyse_tokens(body: _Tokens) -> Response:
+    with connect() as conn:
+        return ORJSONResponse(analyse.analyse_many(conn, body.tokens), headers={"Cache-Control": "no-store"})
 
 
 @router.get(

@@ -335,3 +335,75 @@ def analyse(conn: Connection, text: str) -> dict[str, Any]:
         "counts": {"tokens": len(tokens), "roots": len(roots), "to_review": review},
         "truncated": truncated,
     }
+
+
+MAX_BATCH_FORMS = 3000
+MAX_SLOW_FORMS = 400  # forms that need the clitic or pattern path, read one by one
+
+
+def analyse_many(conn: Connection, tokens: list[str]) -> dict[str, Any]:
+    """The reader's own text (the Library's add-a-text, LIB-29…33): every distinct written form once, compact.
+    Forms the Quran spells are resolved in one query; the rest take the clitic and pattern paths one by one,
+    up to a cap (the remainder is reported, not guessed). Nothing is stored."""
+    keys: list[str] = []
+    seen: set[str] = set()
+    for t in tokens:
+        k = _key(t)
+        if k and k not in seen:
+            seen.add(k)
+            keys.append(k)
+    keys = keys[:MAX_BATCH_FORMS]
+    found = rows(
+        conn,
+        """with m as (
+             select coalesce(case when w.norm = any(:ks) then w.norm end, w.norm_uthmani) as k,
+                    w.lemma_id, w.root_id, w.pos, count(*)::int as n
+             from content.words w where w.norm = any(:ks) or w.norm_uthmani = any(:ks)
+             group by 1, 2, 3, 4)
+           select m.k, m.n, m.pos, l.slug, l.ar as lemma_ar, r.key as root_key, r.spaced, l.gloss_en
+           from m left join content.lemmas l on l.id = m.lemma_id left join content.roots r on r.id = m.root_id
+           order by m.k, m.n desc""",
+        {"ks": keys},
+    )
+    by: dict[str, list[dict[str, Any]]] = {}
+    for r in found:
+        by.setdefault(r["k"], []).append(r)
+    out: dict[str, dict[str, Any]] = {}
+    slow = 0
+    for k in keys:
+        rs = by.get(k)
+        if rs:
+            total = sum(r["n"] for r in rs)
+            top = rs[0]
+            if top["pos"] not in CONTENT_POS and not top["root_key"]:
+                out[k] = {"kind": "particle", "confidence": 1.0, "lemma": top["slug"], "root": None}
+            else:
+                out[k] = {
+                    "kind": "form",
+                    "confidence": round(top["n"] / total, 2),
+                    "lemma": top["slug"],
+                    "lemma_ar": top["lemma_ar"],
+                    "root": top["root_key"],
+                    "root_spaced": top["spaced"],
+                    "gloss_en": top["gloss_en"],
+                }
+        elif slow < MAX_SLOW_FORMS:
+            slow += 1
+            a = analyse_word(conn, k)
+            c = a["candidates"][0] if a["candidates"] else None
+            out[k] = {
+                "kind": a["kind"],
+                "confidence": a["confidence"],
+                "lemma": (c["lemma"] or {}).get("slug") if c else None,
+                "lemma_ar": (c["lemma"] or {}).get("ar") if c else None,
+                "root": (c["root"] or {}).get("key") if c else None,
+                "root_spaced": (c["root"] or {}).get("spaced") if c else None,
+                "gloss_en": c["gloss_en"] if c else None,
+            }
+    # each input token's key, in order, so the page maps its words to these results without normalising itself
+    return {
+        "token_keys": [_key(t) for t in tokens],
+        "forms": out,
+        "distinct": len(keys),
+        "unread": len(keys) - len(out),
+    }

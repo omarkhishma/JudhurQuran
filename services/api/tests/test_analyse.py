@@ -65,3 +65,20 @@ def test_a_range_is_read_verse_by_verse_up_to_ten_verses() -> None:
     assert sorted({t["verse_key"] for t in a["tokens"]}) == [f"1:{i}" for i in range(1, 8)]
     long = analyse("2:1-20")
     assert long["truncated"] is True and len({t["verse_key"] for t in long["tokens"]}) == 10
+
+
+def test_a_readers_text_is_read_form_by_form_and_nothing_is_cached() -> None:
+    """The Library's add-a-text (LIB-29…33): each distinct form once, each token mapped to its form's result."""
+    toks = ["إن", "العلم", "لا", "يدرك", "بالتعلم", "مستكتبون", "العلم", "زززز"]
+    r = client.post("/api/v1/analyse/tokens", json={"tokens": toks})
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
+    d = r.json()
+    assert len(d["token_keys"]) == len(toks) and d["token_keys"][1] == d["token_keys"][6]
+    f = {t: d["forms"][k] for t, k in zip(toks, d["token_keys"], strict=True)}
+    assert f["إن"]["kind"] == "particle" and f["العلم"]["root"] == "علم" and f["العلم"]["confidence"] == 1.0
+    assert (
+        f["بالتعلم"]["kind"] == "clitic"
+        and f["مستكتبون"]["kind"] == "pattern"
+        and f["زززز"]["kind"] == "none"
+    )
+    assert d["distinct"] == 7 and d["unread"] == 0

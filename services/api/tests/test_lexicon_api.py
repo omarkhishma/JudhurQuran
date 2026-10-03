@@ -196,3 +196,10 @@ def test_loanword_claims_and_the_dispute_with_its_views() -> None:
     members = [m for g in get("/api/v1/words/alim-2", limit=0)["family"] for m in g["members"]]
     assert [m["slug"] for m in members if m["loanword"]] == ["alim-2"] and len(members) > 1
     assert get("/api/v1/words/ilm", limit=0)["loanwords"] == []
+
+
+def test_the_text_catalogue_gives_the_qurans_lemma_count_for_coverage_by_unique_word() -> None:
+    """LIB-Q04: the Library measures what a reader knows over the Quran's distinct lemmas."""
+    (q,) = [t for t in get("/api/v1/texts")["data"] if t["kind"] == "quran"]
+    lemmas = sum(1 for _ in (REPO / "data/build/2026.10.0/lemmas.jsonl").open(encoding="utf-8"))
+    assert q["lemma_count"] == lemmas and q["chapter_count"] == 114 and q["passage_count"] == 6236
