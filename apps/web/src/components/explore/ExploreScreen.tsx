@@ -11,6 +11,8 @@ import { cnt, formatNumber, toArabicDigits, verseRef } from "@/lib/format";
 import { encodeSeed } from "@/lib/graph/seedCodec";
 import { getJSON } from "@/lib/reader/api";
 import { usePersonal, type WordState } from "@/lib/reader/store";
+import { useStar } from "@/lib/store/saved";
+import { useTranslitOn } from "@/lib/useTranslit";
 import { StudyDeck } from "./StudyDeck";
 
 const pct = (x: number, locale: string) => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { style: "percent", maximumFractionDigits: 1 }).format(x);
@@ -61,6 +63,7 @@ export function ExploreScreen({ sets, word, wotdLabel, setId, initialSet }: { se
 function WordOfTheDayCard({ w, label }: { w: WordOfTheDay | null; label: string }) {
   const t = useTranslations("explore");
   const locale = useLocale();
+  const translit = useTranslitOn();
   if (!w) return <div className="wotd-card is-missing" role="alert">{t("wotdMissing")}</div>;
   const at = w.attestation;
   return (
@@ -72,10 +75,11 @@ function WordOfTheDayCard({ w, label }: { w: WordOfTheDay | null; label: string 
         <Link id="wotd-word" href={`/read?mode=ask&q=${encodeURIComponent(w.lemma.ar.full)}`} className="wotd-word" lang="ar" dir="rtl">
           {w.lemma.ar.full}
         </Link>
-        <span className="wotd-sub" dir="ltr" lang="en">
-          {w.lemma.ar.translit}
-          {locale !== "ar" && w.lemma.gloss_en ? ` — ${w.lemma.gloss_en}` : ""}
-        </span>
+        {(translit || locale !== "ar") && (
+          <span className="wotd-sub" dir="ltr" lang="en">
+            {[translit ? w.lemma.ar.translit : null, locale !== "ar" ? w.lemma.gloss_en : null].filter(Boolean).join(" — ")}
+          </span>
+        )}
       </div>
       <div className="flex flex-wrap gap-1.5">
         <Link href={`/roots/${encodeURIComponent(w.root.key)}`} className="wotd-pill">
@@ -132,12 +136,21 @@ function ProgressCard() {
     <section className="progress-card" aria-labelledby="explore-progress">
       <p id="explore-progress" className="label-caps">{t("progress")}</p>
       <p className="text-[28px] font-semibold leading-tight">{t("met", cnt(slugs.length, locale))}</p>
-      {slugs.length > 0 && (
+      {slugs.length > 0 && <p className="text-[12.5px] text-t2">{t("metSplit", { known: formatNumber(known, locale), learning: formatNumber(slugs.length - known, locale) })}</p>}
+      {/* the roots and the share of the Quran only once known: never a ٠ that is really "loading" (COL-11) */}
+      {slugs.length > 0 && cov.isPending && <span className="block h-[34px] w-2/3 animate-pulse rounded-md bg-card-2" aria-hidden="true" />}
+      {cov.data && cov.data.roots > 0 && (
         <p className="text-[12.5px] text-t2">
-          {t("metSplit", { known: formatNumber(known, locale), learning: formatNumber(slugs.length - known, locale), roots: formatNumber(cov.data?.roots ?? 0, locale) })}
+          {t("metRoots", cnt(cov.data.roots, locale))}
+          {cov.data.coverage > 0 && <> • {t("coverage", { pct: pct(cov.data.coverage, locale) })}</>}
         </p>
       )}
-      {cov.data && cov.data.coverage > 0 && <p className="text-[12.5px] text-t2">{t("coverage", { pct: pct(cov.data.coverage, locale) })}</p>}
+      {cov.isError && (
+        <p className="flex flex-wrap items-center gap-2 text-[12.5px] text-t2" role="alert">
+          {t("coverageFailed")}
+          <button type="button" className="btn" onClick={() => void cov.refetch()}>{t("coverageRetry")}</button>
+        </p>
+      )}
       <p className="mt-auto text-[11.5px] text-t3">{t("noStreaks")}</p>
     </section>
   );
@@ -238,8 +251,16 @@ function SetItemRow({ x }: { x: SetItem }) {
   const client = useIsClient();
   const state = usePersonal((s) => s.wordStates[x.slug]);
   const setState = usePersonal((s) => s.setWordState);
+  const [starred, toggleStar] = useStar(x.slug, x.ar.full);
+  const translit = useTranslitOn();
   const shown = client ? state : undefined;
   const next: WordState = shown === "learning" ? "known" : shown === "known" ? "new" : "learning";
+  // Keep stars the word, as the deck's Keep does, so it reaches the review (COL-38, RDR-360: one list, RDR-520);
+  // the third press lets it go, star and all
+  const keep = () => {
+    setState(x.slug, next);
+    if ((next === "new") === starred) toggleStar();
+  };
   return (
     <div className="set-item">
       <span className="mono text-[11px] text-t3">{formatNumber(x.ordinal, locale).padStart(2, locale === "ar" ? "٠" : "0")}</span>
@@ -247,14 +268,18 @@ function SetItemRow({ x }: { x: SetItem }) {
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="text-[13.5px] text-t1">{locale === "ar" ? (x.pos.ar ?? "") : (x.gloss_en ?? x.pos.en ?? "")}</span>
         <span className="text-[12px] text-t3">
-          <span dir="ltr" lang="en">{x.ar.translit}</span>
-          {x.pattern && (
+          {translit && (
             <>
+              <span dir="ltr" lang="en">{x.ar.translit}</span>
               {" • "}
-              <span className="ar-classical text-[14px]" lang="ar">{x.pattern.ar.full}</span>
             </>
           )}
-          {" • "}
+          {x.pattern && (
+            <>
+              <span className="ar-classical text-[14px]" lang="ar">{x.pattern.ar.full}</span>
+              {" • "}
+            </>
+          )}
           {t("inQuran", cnt(x.occurrences, locale))}
           {x.first && (
             <>
@@ -274,7 +299,7 @@ function SetItemRow({ x }: { x: SetItem }) {
         <button
           type="button"
           className={"btn keep-btn" + (shown === "learning" ? " is-learning" : shown === "known" ? " is-known" : "")}
-          onClick={() => setState(x.slug, next)}
+          onClick={keep}
           title={t("keepHint")}
           aria-pressed={shown === "learning" || shown === "known"}
         >

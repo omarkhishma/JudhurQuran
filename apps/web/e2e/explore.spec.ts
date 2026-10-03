@@ -34,7 +34,9 @@ test("progress counts words met and how much of the Quran they cover, with no st
   await page.goto("/explore");
   const card = page.getByRole("region", { name: "تقدّمك" });
   await expect(card).toContainText("كلمتان لقيتهما");
-  await expect(card).toContainText(`تعرف ${ar(1)} • تتعلّم ${ar(1)} • جذور ${ar(cov.roots)}`);
+  await expect(card).toContainText(`تعرف ${ar(1)} • تتعلّم ${ar(1)}`);
+  // the roots only once known: never a ٠ that means "loading" (COL-11)
+  await expect(card).toContainText(`من ${arCount(cov.roots, { one: "جذر واحد", two: "جذرين", few: "# جذور", many: "# جذرًا", other: "# جذر" })}`);
   await expect(card).toContainText(new Intl.NumberFormat("ar-EG", { style: "percent", maximumFractionDigits: 1 }).format(cov.coverage));
   await expect(card).toContainText("لا عدّاد أيام");
 });
@@ -57,20 +59,21 @@ test("the sets: counted from the data, what the reader has met, and a set opens 
   await expect(page.locator(".set-card")).toHaveCount(sets.length);
 });
 
-test("in a set: root chips per word, Keep cycles learning → known → off and is kept, particles say no root, the rule quoted (COL-32…36, 52)", async ({ page }) => {
+test("in a set: root chips per word, Keep cycles learning → known → off and stars the word so it reaches review, particles say no root, the rule quoted (COL-32…38, 52, RDR-360)", async ({ page }) => {
   const doers = await api<SetDetail>(page, "/collections/doers");
   await page.goto("/explore?set=doers");
   const first = page.locator(".set-item").first();
   await expect(first.locator(".root-chip")).toHaveAttribute("href", `/concordance?root=${encodeURIComponent(doers.items[0].root!.key)}`);
   const keep = first.getByRole("button", { name: "احتفظ بها" });
   const state = () => page.evaluate((s) => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state?.wordStates?.[s], doers.items[0].slug);
+  const starred = () => page.evaluate((s) => (JSON.parse(localStorage.getItem("jadhr-saved") ?? "{}").state?.bookmarks ?? []).some((b: { kind: string; key: string }) => b.kind === "lemma" && b.key === s), doers.items[0].slug);
   await keep.click();
   await expect(first.getByRole("button", { name: "أتعلّمها" })).toBeVisible();
-  expect(await state()).toBe("learning");
+  expect([await state(), await starred()]).toEqual(["learning", true]);
   await first.getByRole("button", { name: "أتعلّمها" }).click();
-  expect(await state()).toBe("known");
+  expect([await state(), await starred()]).toEqual(["known", true]);
   await first.getByRole("button", { name: "أعرفها ✓" }).click();
-  expect(await state()).toBe("new");
+  expect([await state(), await starred()]).toEqual(["new", false]);
   await page.goto("/explore?set=particles");
   await expect(page.locator(".set-item").first()).toContainText("لا جذر");
   await page.goto("/explore?set=places");

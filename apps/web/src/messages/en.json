@@ -195,7 +195,7 @@
     "wotdMissing": "The word of the day could not be loaded right now.",
     "progress": "Your progress",
     "met": "{count, plural, =0 {No words met yet} one {one word met} other {{n} words met}}",
-    "metSplit": "{known} known • {learning} learning • {roots} roots",
+    "metSplit": "{known} known • {learning} learning",
     "coverage": "covering {pct} of the Quran's words",
     "noStreaks": "No streaks, no guilt — the words wait.",
     "sets": "Collections",
@@ -229,7 +229,6 @@
     "flipHint": "Tap the card or press Space to see its back",
     "skip": "Skip",
     "keepCard": "Keep",
-    "deckKeys": "← skip • → keep",
     "deckDone": "That's every card",
     "deckSummary": "You kept {kept} and skipped {skipped}. What you kept is on your study list, and its root families join the review.",
     "deckReview": "Go to review",
@@ -237,7 +236,12 @@
     "deckClose": "Back to the set",
     "loading": "Loading…",
     "failed": "This could not be loaded right now.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "deckSkipKey": "skip",
+    "deckKeepKey": "keep",
+    "metRoots": "from {count, plural, one {one root} other {{n} roots}}",
+    "coverageFailed": "Their roots and how much of the Quran they cover could not be worked out just now.",
+    "coverageRetry": "Try again"
   },
   "review": {
     "title": "Review",

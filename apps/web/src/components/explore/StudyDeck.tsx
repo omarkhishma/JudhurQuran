@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { ListenOccurrence } from "@/components/reader5/Listen";
+import { ListenOccurrence, WordAudioNote } from "@/components/reader5/Listen";
 import { Dialog } from "@/components/ui/Dialog";
 import { Link } from "@/i18n/navigation";
 import type { SetItem } from "@/lib/collections";
@@ -12,6 +12,7 @@ import { getJSON } from "@/lib/reader/api";
 import { usePersonal } from "@/lib/reader/store";
 import type { WordPayload } from "@/lib/reader/types";
 import { useSaved } from "@/lib/store/saved";
+import { useTranslitOn } from "@/lib/useTranslit";
 
 const SWIPE = 80;
 
@@ -24,6 +25,7 @@ const SWIPE = 80;
 export function StudyDeck({ title, items, onClose }: { title: string; items: SetItem[]; onClose: () => void }) {
   const t = useTranslations("explore");
   const locale = useLocale();
+  const translit = useTranslitOn();
   const [i, setI] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [kept, setKept] = useState(0);
@@ -69,6 +71,13 @@ export function StudyDeck({ title, items, onClose }: { title: string; items: Set
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  // the end card replaces the focused card: focus moves to its first action, and back to the card on "again"
+  const endFirst = useRef<HTMLAnchorElement>(null);
+  const cardBtn = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    (done ? endFirst.current : cardBtn.current)?.focus({ preventScroll: true });
+  }, [done]);
+
   const occ = word.data?.occurrence;
   return (
     <Dialog open onClose={onClose} label={t("deck", { title })} width={520}>
@@ -84,7 +93,7 @@ export function StudyDeck({ title, items, onClose }: { title: string; items: Set
             <p className="text-[17px] font-semibold">{t("deckDone")}</p>
             <p className="text-[13.5px] leading-relaxed text-t2">{t("deckSummary", { kept: formatNumber(kept, locale), skipped: formatNumber(items.length - kept, locale) })}</p>
             <div className="flex flex-wrap gap-2">
-              <Link href="/read?mode=review" className="btn btn-primary">{t("deckReview")}</Link>
+              <Link ref={endFirst} href="/read?mode=review" className="btn btn-primary">{t("deckReview")}</Link>
               <button type="button" className="btn" onClick={() => { setI(0); setKept(0); setFlipped(false); }}>{t("deckAgain")}</button>
               <button type="button" className="btn" onClick={onClose}>{t("deckClose")}</button>
             </div>
@@ -92,6 +101,7 @@ export function StudyDeck({ title, items, onClose }: { title: string; items: Set
         ) : (
           <>
             <button
+              ref={cardBtn}
               type="button"
               className={"deck-card" + (flipped ? " is-back" : "")}
               // focus starts on the card, so Space turns it rather than pressing the close button
@@ -119,7 +129,11 @@ export function StudyDeck({ title, items, onClose }: { title: string; items: Set
               ) : (
                 <span className="flex flex-col items-center gap-1.5 text-center">
                   <span className="ar-classical text-[30px]" lang="ar" dir="rtl">{x.ar.full}</span>
-                  <span className="text-[13px] text-t2" dir="ltr" lang="en">{x.ar.translit}{locale !== "ar" && x.gloss_en ? ` — ${x.gloss_en}` : ""}</span>
+                  {(translit || locale !== "ar") && (
+                    <span className="text-[13px] text-t2" dir="ltr" lang="en">
+                      {[translit ? x.ar.translit : null, locale !== "ar" ? x.gloss_en : null].filter(Boolean).join(" — ")}
+                    </span>
+                  )}
                   <span className="text-[12.5px] text-t2">
                     {x.root ? <span className="ar-classical text-[17px] text-root" lang="ar">{x.root.spaced}</span> : t("noRoot")}
                     {x.pattern && <span className="ar-classical ms-2 text-[16px] text-form" lang="ar">{x.pattern.ar.full}</span>}
@@ -139,7 +153,12 @@ export function StudyDeck({ title, items, onClose }: { title: string; items: Set
               {occ && x.first && <ListenOccurrence verseKey={x.first.verse_key} audio={occ.audio} />}
               <button type="button" className="btn btn-primary min-h-[44px] flex-1" onClick={() => answer(true)}>{t("keepCard")}</button>
             </div>
-            <p className="text-center text-[11.5px] text-t3" dir="ltr">{t("deckKeys")}</p>
+            {/* the recording's quality said under it, as everywhere (D10, COL-44) */}
+            {occ && x.first && <WordAudioNote audio={occ.audio} />}
+            {/* each arrow beside the word it does, in the reading order of either language (COL-41) */}
+            <p className="hidden text-center text-[11.5px] text-t3 min-[900px]:block">
+              <kbd dir="ltr">←</kbd> {t("deckSkipKey")} • <kbd dir="ltr">→</kbd> {t("deckKeepKey")}
+            </p>
           </>
         )}
       </div>
