@@ -428,6 +428,19 @@ test("rail: ajzāʾ and a mushaf page take the reader where they begin (P2.1)", 
   const d = await api<{ juz: { number: number; surah: number; ayah: number }[] }>(page, "/divisions");
   await page.goto("/quran/1");
   const rail = page.locator(".reader-rail");
+test("rail: every root of the sūra is reachable, each with its transliteration (RDR-073)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the rail is an overlay on phones");
+  await returning(page);
+  const r = await api<{ data: { key: string; translit: string }[] }>(page, "/surahs/2/roots");
+  expect(r.data.length).toBeGreaterThan(60);
+  await page.goto("/quran/2");
+  const list = page.locator(".reader-rail").getByRole("list", { name: "جذور هذه السورة" });
+  await expect(list.locator("li")).toHaveCount(60);
+  await page.locator(".reader-rail").getByRole("button", { name: `كل جذور السورة (${ar(r.data.length)})` }).click();
+  await expect(list.locator("li")).toHaveCount(r.data.length);
+  await expect(list.locator("li").last()).toContainText(r.data[r.data.length - 1].translit);
+});
+
   await rail.getByRole("button", { name: "الأجزاء" }).click();
   const j4 = d.juz[3];
   await rail.locator(`a[href$="/quran/${j4.surah}#v${j4.ayah}"]`).first().click();

@@ -18,6 +18,8 @@ type SurahRow = { number: number; name_ar: string; name_translit: string; name_e
  * The rail (design 03 §3.4, adapted per RDR-541): the sūra index with juzʾ navigation in place of the
  * prototype's library + chapters, and the roots of this sūra — a tap underlines every word built on it.
  */
+const ROOTS_FIRST = 60;
+
 export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; overlay: boolean; onNavigate: () => void }) {
   const t = useTranslations("rd");
   const locale = useLocale();
@@ -26,6 +28,7 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
   const list = useRef<HTMLUListElement>(null);
   const surahs = useQuery({ queryKey: ["surahs"], queryFn: () => getJSON<{ data: SurahRow[] }>("/surahs"), staleTime: Infinity });
   const roots = useSurahRoots(chapter.number);
+  const [allRoots, setAllRoots] = useState(false);
   const focusRoot = useReader((s) => s.focusRoot);
   const study = usePrefs((s) => s.wordStates);
   const states = usePersonal((s) => s.wordStates);
@@ -120,7 +123,7 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
         )}
       </div>
       <ul className="flex flex-col gap-0.5" aria-label={t("rootsOfSurah")}>
-        {(roots.data?.data ?? []).slice(0, 60).map((r) => {
+        {(roots.data?.data ?? []).slice(0, allRoots ? undefined : ROOTS_FIRST).map((r) => {
           const on = focusRoot === r.key;
           return (
             <li key={r.key}>
@@ -132,6 +135,7 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
                 title={t("highlightRootTitle", { root: r.spaced })}
               >
                 <span className="ar-classical text-[17px] tracking-[.06em] text-root" lang="ar">{r.spaced}</span>
+                <span className="mono text-[10.5px] text-t3" dir="ltr" lang="en">{r.translit}</span>
                 <span className="rail-bar" aria-hidden="true">
                   <span style={{ width: `${(r.here / max) * 100}%` }} />
                 </span>
@@ -141,6 +145,12 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
           );
         })}
       </ul>
+      {(roots.data?.data.length ?? 0) > ROOTS_FIRST && (
+        // every root of the sūra is reachable (al-Baqara uses 585); the first rows keep the page light (RDR-073)
+        <button type="button" className="btn self-start text-[12px]" aria-expanded={allRoots} onClick={() => setAllRoots((v) => !v)}>
+          {allRoots ? t("fewerRoots") : t("allRoots", cnt(roots.data!.data.length, locale))}
+        </button>
+      )}
     </aside>
   );
 }

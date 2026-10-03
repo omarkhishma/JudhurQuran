@@ -982,7 +982,10 @@
     "particlesTitle": "عند النحاة",
     "particleViaAffix": "«{text}» في هذه الكلمة: {label}",
     "particleSenses": "{count, plural, =0 {بلا وجوه معدودة} one {وجه واحد} two {وجهان} few {{n} أوجه} many {{n} وجهًا} other {{n} وجه}}",
-    "particlesStatus": "مداخل منقولة كما هي من مغني اللبيب لابن هشام والجنى الداني للمرادي، ربطت بالكلمات آليًا ولم يراجعها محرر بعد."
+    "particlesStatus": "مداخل منقولة كما هي من مغني اللبيب لابن هشام والجنى الداني للمرادي، ربطت بالكلمات آليًا ولم يراجعها محرر بعد.",
+    "allRoots": "كل جذور السورة ({n})",
+    "fewerRoots": "أقل",
+    "prefTranslationWork": "الترجمة"
   },
   "concordance": {
     "title": "الفهرس السياقي",
