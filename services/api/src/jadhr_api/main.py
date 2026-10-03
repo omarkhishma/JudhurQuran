@@ -44,6 +44,7 @@ from .search import search as run_search
 from .settings import get_settings
 
 API_PREFIX = "/api/v1"
+MAX_BODY = 8_000_000  # bytes: the largest request body the API reads
 CONTENT_CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
 
 
@@ -861,6 +862,13 @@ def create_app() -> FastAPI:
             response = await call_next(request)
             response.headers.setdefault("X-Content-Type-Options", "nosniff")
             return response
+        # a body has a stated length within bounds: a push is sent in chunks well under this (F16)
+        if request.method in ("POST", "PUT", "PATCH"):
+            length = request.headers.get("content-length")
+            if length is None or not length.isdigit():
+                return error(411, "length_required", "Send the length of the body.")
+            if int(length) > MAX_BODY:
+                return error(413, "too_large", "That body is too large.")
         ip = (
             request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")
         ).split(",")[0]
@@ -886,6 +894,7 @@ def create_app() -> FastAPI:
             404: "not_found",
             405: "bad_request",
             409: "conflict",
+            411: "length_required",
             413: "too_large",
             422: "unprocessable",
             429: "rate_limited",

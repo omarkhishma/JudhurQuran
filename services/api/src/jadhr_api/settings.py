@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     session_days: int = 90
     login_token_minutes: int = 15
     history_days: int = 30
+    # a deletion's tombstone travels to every device; after this it goes, and a device behind it resyncs in full
+    tombstone_days: int = 90
+    # requests one account may make in a minute, and sign-in mails one address may ask for in an hour
+    account_rate_per_minute: int = 600
+    mail_per_ip_per_hour: int = 20
     lookup_retention_days: int = 365
     # sign-in with Google and Apple appears only when these are set (no button that only pretends)
     google_client_id: str | None = None

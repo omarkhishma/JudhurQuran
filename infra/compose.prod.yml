@@ -5,10 +5,18 @@
 # See docs/DEPLOY.md. Nothing here runs against production without the owner's go.
 name: jadhr-quran
 
+# every container's own log rotates; nothing here keeps a request log (Caddy's access log is filtered and kept 7 days)
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_USER: jadhr
       POSTGRES_DB: jadhr
@@ -25,6 +33,7 @@ services:
     # Derived index (rebuilt by the loader after every release); Postgres stays the source of truth.
     image: opensearchproject/opensearch:2.19.3
     restart: unless-stopped
+    logging: *logging
     environment:
       discovery.type: single-node
       DISABLE_SECURITY_PLUGIN: "true"
@@ -41,6 +50,7 @@ services:
   api:
     build: { context: .., dockerfile: services/api/Dockerfile }
     restart: unless-stopped
+    logging: *logging
     depends_on: { db: { condition: service_healthy }, search: { condition: service_healthy } }
     environment:
       JADHR_DATABASE_URL: postgresql+psycopg://jadhr:${POSTGRES_PASSWORD}@db:5432/jadhr
@@ -76,6 +86,7 @@ services:
         NEXT_PUBLIC_SITE_URL: ${PUBLIC_URL}
         JADHR_API_ORIGIN: http://api:8000
     restart: unless-stopped
+    logging: *logging
     depends_on: [api]
     environment:
       JADHR_API_ORIGIN: http://api:8000
@@ -85,6 +96,7 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    logging: *logging
     depends_on: [web, api]
     ports: ["${HTTP_PORT:-80}:80", "${HTTPS_PORT:-443}:443"]
     environment:
@@ -94,11 +106,13 @@ services:
       - caddy_data:/data
       - caddy_config:/config
 
-  # The account schema, dumped daily and kept fourteen days (what the privacy page states). The content schema
-  # needs no backup: it is rebuilt from data/build/<version>. Copy the volume off the server as well.
+  # The account and contribution schemas, dumped daily and kept fourteen days exactly (what the privacy page states: a dump is
+  # removed once it is 13 days and 23 hours old, before the next one is made). The content schema needs no backup:
+  # it is rebuilt from data/build/<version>. Off-server copies keep the same fourteen days (docs/DEPLOY.md).
   backup:
     image: postgres:17-alpine
     restart: unless-stopped
+    logging: *logging
     depends_on: { db: { condition: service_healthy } }
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD}
@@ -110,8 +124,8 @@ services:
       - >-
         while true; do
         f=/backups/accounts-$$(date -u +%Y%m%dT%H%M).sql.gz;
-        pg_dump -h db -U jadhr -d jadhr -n accounts --no-owner | gzip > $$f.tmp && mv $$f.tmp $$f;
-        find /backups -name 'accounts-*.sql.gz' -mtime +14 -delete;
+        pg_dump -h db -U jadhr -d jadhr -n accounts -n contributions --no-owner | gzip > $$f.tmp && mv $$f.tmp $$f;
+        find /backups -name 'accounts-*.sql.gz' -mmin +20100 -delete;
         sleep 86400;
         done
 
@@ -125,6 +139,9 @@ services:
       JADHR_SEARCH_URL: http://search:9200
       JADHR_WEB_REVALIDATE_URL: http://web:3000/api/revalidate
       JADHR_REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+      # migrations that seal account data (0021) and the maintenance commands use the same key as the API
+      JADHR_DATA_KEY: ${DATA_KEY:?set DATA_KEY (openssl rand -base64 32)}
+      JADHR_ENVIRONMENT: production
     volumes:
       - ../data/build:/data/build:ro
       - ../data/sources.yaml:/data/sources.yaml:ro

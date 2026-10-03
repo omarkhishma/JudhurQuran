@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
 import json
 import secrets
 import smtplib
 import threading
+import time
 from collections import deque
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -88,6 +90,21 @@ def _aead() -> AESGCM:
     return AESGCM(key)
 
 
+@lru_cache
+def _hash_key() -> bytes:
+    # its own key, derived from the data key, so a hash of a record's key is never the record's ciphertext key
+    s = get_settings()
+    base = (
+        base64.b64decode(s.data_key) if s.data_key else hashlib.sha256(b"jadhr-development-data-key").digest()
+    )
+    return hashlib.sha256(b"jadhr-record-key-hash:" + base).digest()
+
+
+def key_hash(user_id: Any, store: str, key: str) -> str:
+    """A record's key, found without being readable: a keyed hash only the server's data key can make (F2)."""
+    return hmac.new(_hash_key(), f"{user_id}:{store}:{key}".encode(), hashlib.sha256).hexdigest()
+
+
 def seal(plain: bytes, aad: str) -> bytes:
     nonce = secrets.token_bytes(12)
     return nonce + _aead().encrypt(nonce, plain, aad.encode())
@@ -154,6 +171,25 @@ def safe_return(path: str | None) -> str:
     if not path or not path.startswith("/") or path.startswith("//") or "\\" in path or len(path) > 300:
         return "/me"
     return path
+
+
+_mail_by_ip: dict[str, deque[float]] = {}
+_MAIL_LOCK = threading.Lock()
+
+
+def mail_allowed(ip: str) -> bool:
+    """Sign-in mail is capped per sender too, so one address cannot send it to strangers in bulk (F16)."""
+    now = time.monotonic()
+    with _MAIL_LOCK:
+        q = _mail_by_ip.setdefault(ip, deque())
+        while q and now - q[0] > 3600:
+            q.popleft()
+        if len(q) >= get_settings().mail_per_ip_per_hour:
+            return False
+        q.append(now)
+        for k in [k for k, v in _mail_by_ip.items() if not v]:
+            del _mail_by_ip[k]
+        return True
 
 
 def request_link(email: str, return_to: str | None, locale: str) -> None:
@@ -233,6 +269,25 @@ def verify_link(token: str, device: str | None) -> dict[str, Any] | None:
         return {"session": session, "user": _user_out(u), "return_to": t["return_to"] or "/me"}
 
 
+_by_session: dict[str, deque[float]] = {}
+_SESSION_LOCK = threading.Lock()
+
+
+def _account_rate(session_hash: str) -> None:
+    """The contract's limit per account (08 §8.1), beside the per-address one (F16)."""
+    now = time.monotonic()
+    with _SESSION_LOCK:
+        q = _by_session.setdefault(session_hash, deque())
+        while q and now - q[0] > 60:
+            q.popleft()
+        if len(q) >= get_settings().account_rate_per_minute:
+            raise HTTPException(status_code=429, detail="Too many requests from this account; slow down.")
+        q.append(now)
+        if len(_by_session) > 10_000:
+            for k in [k for k, v in _by_session.items() if not v or now - v[-1] > 60]:
+                del _by_session[k]
+
+
 def current_user(authorization: str | None = Header(None)) -> dict[str, Any]:
     """The bearer session's account, or 401. Sliding: each use pushes the session's last-seen time."""
     if not authorization or not authorization.startswith("Bearer "):
@@ -248,6 +303,7 @@ def current_user(authorization: str | None = Header(None)) -> dict[str, Any]:
         )
     if u is None:
         raise HTTPException(status_code=401, detail="This session has ended. Sign in again.")
+    _account_rate(h)
     return u
 
 
@@ -312,6 +368,9 @@ def update_me(u: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
                     text(f"delete from accounts.{table} where user_id = :u and store = 'journal'"),
                     {"u": u["id"]},
                 )
+        if (u["settings"] or {}).get("share_lookups") and not settings.get("share_lookups"):
+            # sharing lookups is a choice too: turned off, what was shared goes (F5)
+            conn.execute(text("delete from accounts.lookup_events where user_id = :u"), {"u": u["id"]})
     return {**u, **fields, "settings": settings}
 
 
@@ -347,6 +406,27 @@ def purge() -> dict[str, int]:
                 f"delete from accounts.lookup_events where at < now() - interval '{int(s.lookup_retention_days)} days'",
             ),
             ("delete_requests", "delete from accounts.delete_requests where expires_at < now()"),
+            # a deleted account's id, kept so a restored backup can delete it again, outlives the backups by a day
+            (
+                "deleted_accounts",
+                "delete from accounts.deleted_accounts where deleted_at < now() - interval '15 days'",
+            ),
         ):
             out[name] = conn.execute(text(sql)).rowcount
+        # deletions travel for a stated period; the account remembers how far they were purged, so a device whose
+        # cursor is behind that point resyncs in full instead of missing them (F6)
+        days = int(s.tombstone_days)
+        conn.execute(
+            text(
+                f"""update accounts.users u set tombstone_horizon = greatest(u.tombstone_horizon, t.seq)
+                    from (select user_id, max(seq) as seq from accounts.records
+                          where deleted and updated_at < now() - interval '{days} days' group by user_id) t
+                    where t.user_id = u.id"""
+            )
+        )
+        out["tombstones"] = conn.execute(
+            text(
+                f"delete from accounts.records where deleted and updated_at < now() - interval '{days} days'"
+            )
+        ).rowcount
     return out

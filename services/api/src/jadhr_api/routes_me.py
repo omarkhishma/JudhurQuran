@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 
@@ -36,11 +36,16 @@ class _EmailLink(BaseModel):
     "/auth/email",
     summary="Send a sign-in link (the answer is the same whether or not the address has an account)",
 )
-def email_link(body: _EmailLink) -> ORJSONResponse:
+def email_link(body: _EmailLink, request: Request) -> ORJSONResponse:
     if not accounts.email_enabled():
         raise HTTPException(status_code=503, detail="Sign-in by e-mail is not available here yet.")
     if not re.match(accounts.EMAIL_RE, body.email.strip()):
         raise HTTPException(status_code=422, detail="Check the e-mail address.")
+    ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(
+        ","
+    )[0]
+    if not accounts.mail_allowed(ip.strip()):
+        raise HTTPException(status_code=429, detail="Too many sign-in links from here; try again later.")
     accounts.request_link(body.email, body.return_to, body.locale)
     return ok({"sent": True}, 202)
 

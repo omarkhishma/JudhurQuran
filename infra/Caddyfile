@@ -37,8 +37,24 @@
 		reverse_proxy web:3000
 	}
 
+	# What the privacy page says (P6.5, audit 11 F1): the page asked for without its query string (no sign-in
+	# token, no search), the address shortened, no headers; kept seven days, then gone.
 	log {
-		output stdout
-		format json
+		output file /data/access.log {
+			roll_size 50MiB
+			roll_keep 20
+			roll_keep_for 168h
+		}
+		format filter {
+			wrap json
+			fields {
+				request>uri regexp \?.* ""
+				request>remote_ip ip_mask 16 32
+				request>client_ip ip_mask 16 32
+				request>headers delete
+				request>tls delete
+				resp_headers delete
+			}
+		}
 	}
 }

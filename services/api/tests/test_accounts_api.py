@@ -175,7 +175,7 @@ def test_records_sync_newest_wins_nothing_is_destroyed_and_values_are_encrypted(
             "records": [{**rec, "value": {"label": "عِلْم", "key": "ilm", "kind": "lemma"}, "updated_at": 1}]
         },
     ).json()
-    assert same == {"applied": [{"store": "saved", "key": "lemma:ilm"}], "rejected": []}
+    assert same == {"applied": [{"store": "saved", "key": "lemma:ilm"}], "rejected": [], "refused": []}
     assert len(client.get("/api/v1/me/history", headers=h).json()["data"]) == n_hist
     # a tie with a different value keeps the server's and keeps the other as a replaced version
     cur = client.get("/api/v1/me/export", headers=h).json()["records"][0]
@@ -311,7 +311,8 @@ def test_deleting_the_account_leaves_nothing_of_it_in_any_table(email: str) -> N
     assert before["sessions"] == 1 and before["login_tokens"] >= 1
     token = client.post("/api/v1/me/delete", headers=h).json()["confirm"]
     assert client.post("/api/v1/me/delete/confirm", headers=h, json={"confirm": token}).status_code == 200
-    assert held() == {tb: 0 for tb in before}
+    # nothing of the account is left — but its id, alone, for fifteen days, so a restored backup can delete it again
+    assert held() == {tb: (1 if tb == "deleted_accounts" else 0) for tb in before}
     # and no row in any schema (the contributions too, P7) still points at the account
     with accounts.tx() as conn:
         refs = accounts.q(
@@ -409,3 +410,199 @@ def test_google_sign_in_checks_the_id_token_against_the_providers_key(
     assert r.status_code == 200 and r.json()["user"]["email"] == email
     answers.append(token({"sub": sub}))  # next time the identity alone is enough
     assert finish().json()["user"]["email"] == email
+
+
+# ─── P6.5: the fix pass from audit 11 ──────────────────────────────────────────
+
+
+def test_keys_are_sealed_like_values_and_lookups_are_sealed_whole(email: str) -> None:
+    """F2: nothing in the account's rows names its content — not the value, not the key."""
+    h = sign_in(email)
+    client.patch("/api/v1/me", headers=h, json={"settings": {"share_lookups": True}})
+    client.post(
+        "/api/v1/me/sync",
+        headers=h,
+        json={
+            "records": [{"store": "saved", "key": "n:quran:2:255", "value": {"text": "آية"}, "updated_at": 5}]
+        },
+    )
+    client.post(
+        "/api/v1/me/lookups", headers=h, json={"events": [{"lemma": "ilm", "root": "علم", "verse": "2:255"}]}
+    )
+    with accounts.tx() as conn:
+        raw = accounts.q(
+            conn,
+            "select r.* from accounts.records r join accounts.users u on u.id = r.user_id where u.email = :e",
+            {"e": email},
+        )
+        looks = accounts.q(
+            conn,
+            "select l.* from accounts.lookup_events l join accounts.users u on u.id = l.user_id where u.email = :e",
+            {"e": email},
+        )
+    blob = b"".join(bytes(v) for r in raw + looks for v in r.values() if isinstance(v, (bytes, memoryview)))
+    text = " ".join(str(v) for r in raw + looks for v in r.values() if not isinstance(v, (bytes, memoryview)))
+    for secret in ("2:255", "quran", "علم", "ilm"):
+        assert secret not in text and secret.encode() not in blob, secret
+    # and the reader gets them back as they were
+    assert client.get("/api/v1/me/sync", headers=h).json()["records"][0]["key"] == "n:quran:2:255"
+
+
+def test_the_export_holds_everything_and_every_table_is_accounted_for(email: str) -> None:
+    """F5, PRF-14: live records, deletions, replaced versions, shared lookups, identities; every table of the
+    schema is either in the export or named here as a secret or a passing state, so a new table cannot be missed."""
+    h = sign_in(email)
+    client.patch("/api/v1/me", headers=h, json={"settings": {"share_lookups": True}})
+    rec = {"store": "saved", "key": "b:lemma:ilm", "value": {"label": "a"}, "updated_at": 10}
+    client.post("/api/v1/me/sync", headers=h, json={"records": [rec]})
+    client.post(
+        "/api/v1/me/sync", headers=h, json={"records": [{**rec, "value": {"label": "b"}, "updated_at": 20}]}
+    )
+    client.post(
+        "/api/v1/me/sync",
+        headers=h,
+        json={"records": [{**rec, "key": "b:root:x", "deleted": True, "value": None, "updated_at": 30}]},
+    )
+    client.post("/api/v1/me/lookups", headers=h, json={"events": [{"lemma": "ilm"}]})
+    out = client.get("/api/v1/me/export", headers=h).json()
+    assert [r["value"]["label"] for r in out["records"]] == ["b"]
+    assert out["deleted"][0]["key"] == "b:root:x" and out["history"][0]["value"]["label"] == "a"
+    assert out["lookups"][0]["lemma"] == "ilm" and out["identities"] == [] and out["account"]["devices"]
+    exported = {
+        "users": "account",
+        "records": "records/deleted",
+        "record_history": "history",
+        "lookup_events": "lookups",
+        "identities": "identities",
+        "sessions": "account.devices",
+    }
+    not_data = {
+        "login_tokens": "a secret, by address",
+        "delete_requests": "a secret for ten minutes",
+        "deleted_accounts": "an id after the account is gone",
+    }
+    with accounts.tx() as conn:
+        tables = {
+            r["t"]
+            for r in accounts.q(
+                conn,
+                "select table_name as t from information_schema.tables where table_schema = 'accounts' and table_type = 'BASE TABLE'",
+            )
+        }
+    assert tables == set(exported) | set(not_data)
+    # turning sharing off takes the shared lookups off the server
+    client.patch("/api/v1/me", headers=h, json={"settings": {"share_lookups": False}})
+    assert client.get("/api/v1/me/export", headers=h).json()["lookups"] == []
+
+
+def test_a_clock_ahead_wins_nothing_and_a_full_account_refuses_only_the_new(
+    email: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    h = sign_in(email)
+    future = int((time.time() + 86_400 * 365) * 1000)
+    client.post(
+        "/api/v1/me/sync",
+        headers=h,
+        json={"records": [{"store": "saved", "key": "k1", "value": 1, "updated_at": future}]},
+    )
+    stored = client.get("/api/v1/me/sync", headers=h).json()["records"][0]["updated_at"]
+    assert stored <= int(time.time() * 1000) + 1000  # F13: bounded by the server's clock
+    from jadhr_api import sync
+
+    monkeypatch.setattr(sync, "MAX_RECORDS", 1)
+    r = client.post(
+        "/api/v1/me/sync",
+        headers=h,
+        json={
+            "records": [
+                {"store": "saved", "key": "k1", "value": 2, "updated_at": 1},
+                {"store": "saved", "key": "k2", "value": 3, "updated_at": 2},
+            ]
+        },
+    ).json()
+    # F14: the existing record's change is judged as ever; only the new one is refused
+    assert r["refused"] == [{"store": "saved", "key": "k2", "reason": "full"}] and len(r["rejected"]) == 1
+
+
+def test_deletions_are_purged_after_their_period_and_a_device_behind_resyncs_in_full(email: str) -> None:
+    h = sign_in(email)
+    client.post(
+        "/api/v1/me/sync",
+        headers=h,
+        json={"records": [{"store": "saved", "key": "before", "value": 1, "updated_at": 1}]},
+    )
+    client.post(
+        "/api/v1/me/sync",
+        headers=h,
+        json={
+            "records": [{"store": "saved", "key": "gone", "value": None, "deleted": True, "updated_at": 2}]
+        },
+    )
+    client.post(
+        "/api/v1/me/sync",
+        headers=h,
+        json={"records": [{"store": "saved", "key": "kept", "value": 1, "updated_at": 3}]},
+    )
+    first = client.get("/api/v1/me/sync", headers=h).json()
+    behind = first["records"][0]["seq"]  # a device that synced the first record only, before the deletion
+    with accounts.tx() as conn:
+        accounts.q(
+            conn,
+            "update accounts.records r set updated_at = now() - interval '400 days' from accounts.users u where u.id = r.user_id and u.email = :e and r.deleted returning r.seq",
+            {"e": email},
+        )
+    accounts.purge()
+    later = client.get("/api/v1/me/sync", headers=h, params={"since": behind}).json()
+    assert later["full"] is True and [r["key"] for r in later["records"]] == ["before", "kept"]
+    assert client.get("/api/v1/me/sync", headers=h, params={"since": first["cursor"]}).json()["full"] is False
+
+
+def test_requests_are_bounded_per_body_per_account_and_sign_in_mail_per_sender(
+    email: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    h = sign_in(email)
+    r = client.post("/api/v1/me/sync", headers={**h, "content-length": "9000000"}, content=b"{}")
+    assert r.status_code == 413
+    s = get_settings()
+    monkeypatch.setattr(s, "account_rate_per_minute", 2)
+    codes = [client.get("/api/v1/me", headers=h).status_code for _ in range(3)]
+    assert codes[-1] == 429
+    monkeypatch.setattr(s, "mail_per_ip_per_hour", 1)
+    accounts._mail_by_ip.clear()
+    hdr = {"x-forwarded-for": "198.51.100.7"}
+    assert client.post("/api/v1/auth/email", headers=hdr, json={"email": f"a{email}"}).status_code == 202
+    assert client.post("/api/v1/auth/email", headers=hdr, json={"email": f"b{email}"}).status_code == 429
+    accounts._mail_by_ip.clear()
+    with accounts.tx() as conn:
+        accounts.q(
+            conn,
+            "delete from accounts.login_tokens where email in (:a, :b) returning email",
+            {"a": f"a{email}", "b": f"b{email}"},
+        )
+
+
+def test_a_deleted_account_is_remembered_by_its_id_only_so_a_restore_can_delete_it_again(email: str) -> None:
+    h = sign_in(email)
+    uid = client.get("/api/v1/me", headers=h).json()["id"]
+    token = client.post("/api/v1/me/delete", headers=h).json()["confirm"]
+    client.post("/api/v1/me/delete/confirm", headers=h, json={"confirm": token})
+    with accounts.tx() as conn:
+        row = accounts.q1(conn, "select * from accounts.deleted_accounts where user_id = :u", {"u": uid})
+        assert row is not None and set(row) == {"user_id", "deleted_at"}
+        accounts.q(
+            conn, "delete from accounts.deleted_accounts where user_id = :u returning user_id", {"u": uid}
+        )
+
+
+def test_restoring_a_backup_then_reapplying_deletions_removes_the_accounts_deleted_since(email: str) -> None:
+    """F4: an account deleted after a dump comes back with a restore; the command deletes it again."""
+    from jadhr_api.maintenance import reapply_deletions
+
+    h = sign_in(email)
+    uid = client.get("/api/v1/me", headers=h).json()["id"]
+    with accounts.tx() as conn:  # as if the account had been deleted, then a backup from before was restored
+        accounts.q(conn, "insert into accounts.deleted_accounts (user_id) values (:u) returning user_id", {"u": uid})
+    assert reapply_deletions() >= 1
+    assert client.get("/api/v1/me", headers=h).status_code == 401
+    with accounts.tx() as conn:
+        accounts.q(conn, "delete from accounts.deleted_accounts where user_id = :u returning user_id", {"u": uid})
