@@ -35,6 +35,7 @@ def registry_ids() -> set[str]:
     ids |= {r["id"] for r in _yaml(REPO / "data/recitations.yaml")["reciters"]}
     ids |= {s["id"] for s in _yaml(REPO / "data/patterns.yaml")["sources"]}
     ids |= {s["id"] for s in _yaml(REPO / "data/particles.yaml")["sources"]}
+    ids |= {s["id"] for s in _yaml(REPO / "data/loanwords.yaml")["sources"]}
     ids |= {s["id"] for s in _yaml(REPO / "data/relations.yaml")["sources"]}
     ids |= {s["id"] for s in _yaml(REPO / "data/knowledge.yaml")["sources"]}  # evaluation-only ones too
     return ids
