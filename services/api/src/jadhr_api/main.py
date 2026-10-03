@@ -391,11 +391,13 @@ def roots(
     l3: str | None = Query(None, max_length=1),
     l4: str | None = Query(None, max_length=1),
     order: str = Query("frequency", pattern="^(frequency|alphabetical)$"),
+    keys: str | None = Query(None, max_length=600, description="comma-separated root keys (e.g. علم,رحم)"),
     limit: int = Query(50, ge=1, le=2000),
     offset: int = Query(0, ge=0),
 ) -> Response:
+    key_list = [k.strip() for k in keys.split(",") if k.strip()][:100] if keys else None
     with connect() as conn:
-        data, total = content.roots_list(conn, [l1, l2, l3, l4], order, limit, offset)
+        data, total = content.roots_list(conn, [l1, l2, l3, l4], order, limit, offset, key_list)
         return cached(request, {"data": data, "total": total, "limit": limit, "offset": offset})
 
 

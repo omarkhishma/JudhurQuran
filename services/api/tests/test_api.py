@@ -144,6 +144,20 @@ def test_root_builder_filters_by_position() -> None:
     assert d["total"] >= 1 and all(r["letters"][:2] == ["ك", "ت"] for r in d["data"])
 
 
+def test_roots_by_keys_return_exactly_those_roots() -> None:
+    d = get("/api/v1/roots", keys="علم,رحم,zzz", limit=10)
+    assert {r["key"] for r in d["data"]} == {"علم", "رحم"} and d["total"] == 2
+    for r in d["data"]:
+        assert r["occurrences"] == get(f"/api/v1/roots/{r['key']}")["occurrences"]
+
+
+def test_root_graph_lemmas_carry_their_slugs() -> None:
+    g = get("/api/v1/roots/علم/graph")
+    for lem in g["lemmas"]:
+        w = get(f"/api/v1/words/{lem['slug']}", limit=0)
+        assert w["root"]["key"] == "علم" and w["lemma_id"] == lem["id"]
+
+
 # ─── The Arabic search assertions (handoff §9.6, adapted) ───────────────────
 
 

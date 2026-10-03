@@ -158,7 +158,8 @@ def _root_summary(conn: Connection, root_id: int) -> dict[str, Any] | None:
 def root_lemmas(conn: Connection, root_id: int) -> list[dict[str, Any]]:
     lem = rows(
         conn,
-        """select id, key, ar, ar_bare, pos, verb_form, derivation, occurrences, verse_count, gloss_en, pattern, pattern_method
+        """select id, key, slug, ar, ar_bare, pos, verb_form, derivation, occurrences, verse_count, gloss_en, pattern,
+                  pattern_method
            from content.lemmas where root_id = :r order by occurrences desc, id""",
         {"r": root_id},
     )
@@ -404,13 +405,22 @@ def root_detail(conn: Connection, raw: str) -> dict[str, Any] | None:
 
 
 def roots_list(
-    conn: Connection, letters: list[str | None], order: str, limit: int, offset: int
+    conn: Connection,
+    letters: list[str | None],
+    order: str,
+    limit: int,
+    offset: int,
+    keys: list[str] | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
-    conds, params = [], {"limit": limit, "offset": offset}
+    conds: list[str] = []
+    params: dict[str, Any] = {"limit": limit, "offset": offset}
     for i, letter in enumerate(letters):
         if letter:
             conds.append(f"letters[{i + 1}] = :l{i}")
             params[f"l{i}"] = letter
+    if keys:
+        conds.append("key = any(:keys)")
+        params["keys"] = keys
     where = ("where " + " and ".join(conds)) if conds else ""
     order_sql = "occurrences desc, key" if order == "frequency" else "key"
     total = int(scalar(conn, f"select count(*) from content.roots {where}", params) or 0)

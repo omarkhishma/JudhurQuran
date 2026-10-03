@@ -322,6 +322,7 @@ def word_payload(
     }
     return {
         "slug": lem["slug"],
+        "lemma_id": lem["id"],
         "uri": f"lemma:{lem['slug']}",
         "ar": ar(content.lemma_display(lem["ar"]), lem["translit"]),
         "pos": {"tag": lem["pos"], "ar": lem["pos_ar"], "en": lem["pos_en"]},
