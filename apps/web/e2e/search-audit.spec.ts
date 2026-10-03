@@ -119,3 +119,11 @@ test("English: a transliteration and an English gloss are told apart (SRC-41)", 
   await page.goto(`/en/search?q=${encodeURIComponent("knowledge")}`);
   await expect(page.locator(".detect-pill")).toHaveText("English gloss");
 });
+
+test("the everyday spelling finds what the mushaf writes with a dagger alif (السماوات)", async ({ page }) => {
+  const modern = await api<Totals>(page, `/search?q=${encodeURIComponent("السماوات")}&limit=30`);
+  const tanzil = await api<Totals>(page, `/search?q=${encodeURIComponent("السموات")}&limit=30`);
+  expect(modern.totals.verses).toBe(tanzil.totals.verses);
+  await page.goto(`/search?q=${encodeURIComponent("السماوات")}`);
+  await expect(group(page, "الآيات").locator(".mono").first()).toHaveText(ar(modern.totals.verses));
+});
