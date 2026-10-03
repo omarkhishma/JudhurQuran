@@ -9,6 +9,7 @@ import { getJSON } from "@/lib/reader/api";
 import type { Contrast, RelationSource, WordPayload, WordRelations, WujuhEntry } from "@/lib/reader/types";
 import { Fold } from "../VerseKnowledge";
 import { showHemistichs } from "@/lib/openiti";
+import { CreditLine } from "../CreditLine";
 
 export function useWordRelations(slug: string, at: string | null) {
   return useQuery({
@@ -149,6 +150,9 @@ export function WujuhBlock({ w }: { w: WordPayload }) {
       <ContrastList items={r.furuq} sources={r.sources} title={t("secFuruq")} lead={t("furuqLead")} />
       <ContrastList items={r.addad} sources={r.sources} title={t("secAddad")} lead={t("addadLead")} />
       <p className="text-[11px] text-t3">{t("extractedNote")}</p>
+      <ul className="flex flex-col gap-0.5">
+        {[...new Set([...r.wujuh, ...r.furuq, ...r.addad].map((x) => x.source_id))].map((id) => r.sources[id] && <CreditLine key={id} s={r.sources[id]} />)}
+      </ul>
     </div>
   );
 }

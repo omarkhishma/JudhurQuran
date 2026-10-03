@@ -7,6 +7,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import type { ClassicalRow, ClassicalSource, LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
+import { CreditLine } from "../CreditLine";
 import { PatternFunction, WordChip } from "./Family";
 
 /** Shapes (design 03 §3.5.3, RDR-226…232): the root's patterns with every family word on each
@@ -147,9 +148,9 @@ function Classical({ rows, sources }: { rows: ClassicalRow[]; sources: Classical
         ))}
       </ol>
       <p className="text-[11px] text-t3">{t("classicalStatus")}</p>
-      <ul className="text-[10.5px] text-t3">
+      <ul className="flex flex-col gap-0.5">
         {sources.map((s) => (
-          <li key={s.id}>{locale === "ar" ? s.attribution_ar : s.attribution_en}</li>
+          <CreditLine key={s.id} s={s} />
         ))}
       </ul>
     </section>

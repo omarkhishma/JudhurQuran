@@ -1009,7 +1009,9 @@
     "marksLinks": "{count, plural, one {رابط واحد} two {رابطان} few {{n} روابط} many {{n} رابطًا} other {{n} رابط}}",
     "marksTopic": "موضوع · {label}",
     "marksLinksTitle": "افتح الآيات المرتبطة",
-    "marksTopicTitle": "افتح المواضيع"
+    "marksTopicTitle": "افتح المواضيع",
+    "creditChanges": "النص منقول كما هو، مقطّعًا إلى مداخل",
+    "licence": "الترخيص"
   },
   "concordance": {
     "title": "الفهرس السياقي",

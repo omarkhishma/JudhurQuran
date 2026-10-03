@@ -10,6 +10,7 @@ import { showHemistichs } from "@/lib/openiti";
 import { getJSON } from "@/lib/reader/api";
 import type { Features, Label, Mufradat, ParticleEntry, ParticleLink, WordPayload } from "@/lib/reader/types";
 import { FORM_TERM, TAG_TERM } from "@/lib/terms";
+import { CreditLine } from "../CreditLine";
 import { WujuhBlock } from "./Wujuh";
 
 /**
@@ -303,7 +304,9 @@ function ParticleSenses({ e }: { e: ParticleEntry }) {
           {s.page != null && <span className="mono shrink-0 text-[10.5px] text-t3">{page(s.page_vol, s.page)}</span>}
         </div>
       ))}
-      <p className="text-[10.5px] text-t3">{locale === "ar" ? e.source.attribution_ar : e.source.attribution_en}</p>
+      <ul>
+        <CreditLine s={e.source} />
+      </ul>
     </div>
   );
 }

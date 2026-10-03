@@ -1009,7 +1009,9 @@
     "marksLinks": "{count, plural, one {# link} other {{n} links}}",
     "marksTopic": "Topic · {label}",
     "marksLinksTitle": "Open the linked verses",
-    "marksTopicTitle": "Open the topics"
+    "marksTopicTitle": "Open the topics",
+    "creditChanges": "quoted as it stands, cut into entries",
+    "licence": "licence"
   },
   "concordance": {
     "title": "Concordance",

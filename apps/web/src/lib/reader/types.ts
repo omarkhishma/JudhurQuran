@@ -142,7 +142,7 @@ export type ParticleEntry = {
   page: number | null;
   status: string;
   senses: { id: string; kind: "intro" | "sense" | "note"; list_no: number | null; list_depth: number | null; parent_id: string | null; sense_index: number | null; marker_ar: string | null; label_ar: string | null; text_ar: string; page_vol: number | null; page: number | null }[];
-  source: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; edition_ar: string | null; licence: string; attribution_ar: string; attribution_en: string };
+  source: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; edition_ar: string | null; licence: string; licence_url: string | null; attribution_ar: string; attribution_en: string };
 };
 
 export type Occurrence = {

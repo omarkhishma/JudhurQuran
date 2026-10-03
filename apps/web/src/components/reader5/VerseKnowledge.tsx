@@ -38,6 +38,14 @@ export function SourceCredit({ s }: { s: KnowledgeSource | undefined }) {
       <a href={s.url} target="_blank" rel="noreferrer" className="hover:text-t1 hover:underline">
         {locale === "ar" ? s.attribution_ar : s.attribution_en}
       </a>
+      {s.license_url && (
+        <>
+          {" · "}
+          <a href={s.license_url} target="_blank" rel="noreferrer license" className="underline-offset-2 hover:text-t1 hover:underline">
+            {locale === "ar" && s.license_ar ? s.license_ar : s.license}
+          </a>
+        </>
+      )}
     </p>
   );
 }
