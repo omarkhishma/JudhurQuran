@@ -19,8 +19,24 @@ export type PatternInfo = {
   method?: string | null;
 };
 
+/** al-Suyūṭī's entry on a word reported as non-Arabic (P3.7a), verbatim. */
+export type LoanwordEntry = {
+  id: string;
+  headword_ar: string;
+  text_ar: string;
+  page: number | null;
+  languages: { key: string; name_ar: string; name_en: string }[];
+  confidence: string;
+  method: string;
+  scope: string;
+  attribution_ar: string;
+  attribution_en: string;
+};
+
 export type LemmaLite = {
   slug: string;
+  /** al-Suyūṭī reports this word as non-Arabic (family members only) */
+  loanword?: boolean;
   ar: Ar;
   pos: PosLabel;
   gloss_en: string | null;
@@ -229,6 +245,7 @@ export type WordPayload = {
   lemma_id: number;
   mufradat: Mufradat | null;
   particles: ParticleLink[];
+  loanwords: LoanwordEntry[];
   uri: string;
   ar: Ar;
   pos: PosLabel;

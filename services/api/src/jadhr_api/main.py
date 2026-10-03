@@ -539,7 +539,18 @@ def root_graph(request: Request, root: str) -> Response:
         return cached(request, g)
 
 
-@router.get("/analyse", summary="A phrase word by word: corpus analysis for Quranic text, ranked candidates otherwise")
+@router.get(
+    "/loanwords/dispute",
+    summary="Whether the Quran holds non-Arabic words: al-Suyūṭī's account, view by view",
+)
+def loanword_dispute(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, content.loanword_dispute(conn))
+
+
+@router.get(
+    "/analyse", summary="A phrase word by word: corpus analysis for Quranic text, ranked candidates otherwise"
+)
 def analyse_phrase(request: Request, q: str = Query("", max_length=600)) -> Response:
     with connect() as conn:
         return cached(request, analyse.analyse(conn, q))

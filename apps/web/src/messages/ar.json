@@ -1100,7 +1100,20 @@
     "signsTitle": "علامات الآية",
     "signAfter": "بعد «{word}»:",
     "signAtStart": "في أول الآية:",
-    "signPage": "ص {page}"
+    "signPage": "ص {page}",
+    "loanTitle": "في المعرّب",
+    "loanLanguages": "اللغات المذكورة:",
+    "loanLinkInferred": "رُبطت الكلمة بهذا المدخل آليًا",
+    "loanDispute": "الخلاف في وقوع المعرّب في القرآن",
+    "loanView_denial": "مَن نفى وقوعه",
+    "loanView_occurrence": "مَن أثبته",
+    "loanView_author": "اختيار السيوطي",
+    "loanView_reconciliation": "مَن جمع بين القولين",
+    "loanHeldBy": "القائلون كما يسمّيهم:",
+    "loanStatus": "مستخرج آليًا من نص الكتاب كما هو، ولم يراجعه محرر بعد.",
+    "loanMark": "معرّب؟",
+    "loanMarkTitle": "يذكر السيوطي أنها معرّبة: قد لا تشترك في معنى الجذر",
+    "loanPage": "ص {page}"
   },
   "concordance": {
     "title": "الفهرس السياقي",

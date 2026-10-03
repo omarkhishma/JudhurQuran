@@ -11,6 +11,7 @@ import { getJSON } from "@/lib/reader/api";
 import type { Features, Label, Mufradat, ParticleEntry, ParticleLink, WordPayload } from "@/lib/reader/types";
 import { FORM_TERM, TAG_TERM } from "@/lib/terms";
 import { CreditLine } from "../CreditLine";
+import { LoanwordsBlock } from "./Loanwords";
 import { WujuhBlock } from "./Wujuh";
 
 /**
@@ -155,6 +156,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
         </section>
       )}
       {w.particles.length > 0 && <ParticlesBlock items={w.particles} />}
+      {w.loanwords?.length > 0 && <LoanwordsBlock items={w.loanwords} />}
       {w.mufradat && <MufradatBlock m={w.mufradat} />}
       <WujuhBlock w={w} />
       {w.senses.length === 0 && (

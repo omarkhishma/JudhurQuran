@@ -1057,6 +1057,58 @@ def token_signs(conn: Connection, verse_id: int, token_to: int) -> list[str]:
     ]
 
 
+# Loanword claims (P3.7a): what al-Suyūṭī's al-Muhadhdhab reports about a word's being non-Arabic, verbatim,
+# and the dispute over whether the Quran holds such words at all — every view with the names the text gives.
+
+
+def lemma_loanwords(conn: Connection, lemma_id: int) -> list[dict[str, Any]]:
+    return rows(
+        conn,
+        """select e.id, e.headword_ar, e.text_ar, e.page, e.pages, e.languages, e.said_non_arabic, e.chapter_ar,
+                  l.method, l.confidence, l.scope, l.verse_keys, s.id as source_id,
+                  s.attribution_ar, s.attribution_en
+           from content.loanword_links l join content.loanword_entries e on e.id = l.entry_id
+           join content.loanword_sources s on s.id = e.source_id
+           where l.lemma_id = :l order by e.seq""",
+        {"l": lemma_id},
+    )
+
+
+def lemma_has_loanword(conn: Connection, lemma_id: int) -> bool:
+    return bool(
+        scalar(conn, "select 1 from content.loanword_links where lemma_id = :l limit 1", {"l": lemma_id})
+    )
+
+
+def loanword_dispute(conn: Connection) -> dict[str, Any]:
+    """The introduction of al-Muhadhdhab, view by view, verbatim, with its source."""
+    source = one(
+        conn,
+        """select id, title_ar, title_en, author_ar, author_en, death_hijri, death_ce, edition_ar, edition_en,
+                  licence, licence_url, attribution_ar, attribution_en from content.loanword_sources order by sort_order limit 1""",
+    )
+    passages = rows(
+        conn,
+        """select id, ordinal, kind, view_id, view_stated_as_ar, view_held_by_ar, speakers, text_ar, page
+           from content.loanword_passages where section = 'introduction' and kind = 'text' order by ordinal""",
+    )
+    views: list[dict[str, Any]] = []
+    for p in passages:
+        if not views or views[-1]["id"] != p["view_id"]:
+            views.append(
+                {
+                    "id": p["view_id"],
+                    "stated_as_ar": p["view_stated_as_ar"],
+                    "held_by_ar": p["view_held_by_ar"] or [],
+                    "passages": [],
+                }
+            )
+        views[-1]["passages"].append(
+            {"id": p["id"], "text_ar": p["text_ar"], "page": p["page"], "speakers": p["speakers"] or []}
+        )
+    return {"source": source, "views": views}
+
+
 def recitation_surah(conn: Connection, reciter_id: str, surah_no: int) -> dict[str, Any] | None:
     r = one(
         conn,

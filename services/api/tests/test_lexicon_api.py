@@ -177,3 +177,22 @@ def test_mushaf_signs_and_the_signs_on_a_word() -> None:
     assert d["source"]["attribution_ar"].startswith("«التعريف بهذا المصحف»")
     assert get("/api/v1/words/rayb", at="2:2:4", limit=0)["occurrence"]["signs"] == ["muanaqa"]
     assert get("/api/v1/words/ilm", at="20:114:17", limit=0)["occurrence"]["signs"] == []
+
+
+def test_loanword_claims_and_the_dispute_with_its_views() -> None:
+    """P3.7a: al-Suyūṭī's entry on a word, verbatim with its page; the dispute view by view; the family marks it."""
+    w = get("/api/v1/words/istabraq", limit=0)
+    (e,) = w["loanwords"]
+    assert (
+        e["headword_ar"] == "استبرق"
+        and e["page"] == 38
+        and "الفارسية" in {x["name_ar"] for x in e["languages"]}
+    )
+    assert e["attribution_ar"].startswith("المصدر: السيوطي")
+    d = get("/api/v1/loanwords/dispute")
+    assert [v["id"] for v in d["views"]][:4] == ["denial", "occurrence", "author", "reconciliation"]
+    assert d["views"][0]["passages"][0]["text_ar"].startswith("اختلفت الأئمة في وقوع المعرب في القرآن")
+    assert w["family"][0]["members"][0]["loanword"] is True  # a word with no root: its family is itself
+    members = [m for g in get("/api/v1/words/alim-2", limit=0)["family"] for m in g["members"]]
+    assert [m["slug"] for m in members if m["loanword"]] == ["alim-2"] and len(members) > 1
+    assert get("/api/v1/words/ilm", limit=0)["loanwords"] == []

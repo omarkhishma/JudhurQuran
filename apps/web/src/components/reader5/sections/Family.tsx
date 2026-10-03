@@ -20,6 +20,7 @@ export function PatternFunction({ p }: { p: PatternInfo }) {
 }
 
 export function WordChip({ m, current }: { m: LemmaLite; current?: boolean }) {
+  const t = useTranslations("rd");
   const openWord = useReader((s) => s.openWord);
   const locale = useLocale();
   return (
@@ -32,6 +33,8 @@ export function WordChip({ m, current }: { m: LemmaLite; current?: boolean }) {
     >
       <span className="ar-classical text-[19px] leading-[1.6]" lang="ar" dir="rtl">{m.ar.full}</span>
       <span className="mono text-[10.5px] text-t3">{formatNumber(m.occurrences, locale)}</span>
+      {/* said to be non-Arabic: shared letters need not mean a shared meaning (P3.7a) */}
+      {m.loanword && <span className="loan-mark" title={t("loanMarkTitle")}>{t("loanMark")}</span>}
     </button>
   );
 }

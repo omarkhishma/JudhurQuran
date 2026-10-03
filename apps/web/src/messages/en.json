@@ -1100,7 +1100,20 @@
     "signsTitle": "Signs in this verse",
     "signAfter": "after «{word}»:",
     "signAtStart": "at the start of the verse:",
-    "signPage": "p. {page}"
+    "signPage": "p. {page}",
+    "loanTitle": "Said to be a loanword",
+    "loanLanguages": "Languages named:",
+    "loanLinkInferred": "the word was linked to this entry mechanically",
+    "loanDispute": "The dispute over loanwords in the Quran",
+    "loanView_denial": "Those who denied it",
+    "loanView_occurrence": "Those who affirmed it",
+    "loanView_author": "al-Suyūṭī's own view",
+    "loanView_reconciliation": "Those who reconciled the two",
+    "loanHeldBy": "Held by, as the text names them:",
+    "loanStatus": "Extracted mechanically from the book's text as it stands; not yet reviewed by an editor.",
+    "loanMark": "loanword?",
+    "loanMarkTitle": "al-Suyūṭī reports it as non-Arabic: it may not share the root's meaning",
+    "loanPage": "p. {page}"
   },
   "concordance": {
     "title": "Concordance",

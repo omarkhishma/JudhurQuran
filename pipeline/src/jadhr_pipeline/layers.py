@@ -16,6 +16,7 @@ from typing import Any
 import yaml
 
 from .knowledge import build_knowledge
+from .loanwords import build_loanwords
 from .meanings import build_gharib, build_mufradat
 from .particles import build_particles
 from .patterns_catalog import build_pattern_catalog
@@ -52,6 +53,7 @@ def build_layers(
     gharib_registry: Path | None = None,
     lexica_registry: Path | None = None,
     particles_registry: Path | None = None,
+    loanwords_registry: Path | None = None,
 ) -> dict[str, Any]:
     """Build the layers into ``out`` and merge their reports into ``out/report.json``: the Quran knowledge
     layers, the relation seeds and, when its registry is given, the pattern catalog (P3.3)."""
@@ -100,6 +102,11 @@ def build_layers(
         q_tables, q_report = build_particles(raw, out, particles_registry)
         m_tables.update(q_tables)
         report["particles"] = q_report.get("totals")
+    # P3.7a loanword claims from al-Suyūṭī's al-Muhadhdhab, with the dispute over loanwords in the Quran
+    if loanwords_registry is not None:
+        w_tables, w_report = build_loanwords(raw, out, loanwords_registry)
+        m_tables.update(w_tables)
+        report["loanwords"] = w_report.get("totals")
     for name, rows in m_tables.items():
         _write(out, name, rows)
 

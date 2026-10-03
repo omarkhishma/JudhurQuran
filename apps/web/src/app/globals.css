@@ -3143,3 +3143,10 @@ button.type-chip:hover {
     grid-row: 1;
   }
 }
+
+/* loanword claims (P3.7a) */
+.loanwords { display: flex; flex-direction: column; gap: 8px; }
+.loanword-entry { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.loanword-entry .is-clamped { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.loan-view { display: flex; flex-direction: column; gap: 4px; padding-inline-start: 10px; border-inline-start: 2px solid var(--line-2); }
+.loan-mark { font-size: 10px; padding: 0 5px; border-radius: 99px; background: color-mix(in srgb, var(--amber) 16%, transparent); color: var(--t2); }

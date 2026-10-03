@@ -144,13 +144,22 @@ def _family(conn: Connection, root_id: int) -> list[dict[str, Any]]:
             {"ids": [x["pattern_id"] for x in lemmas if x["pattern_id"]]},
         )
     }
+    # lemmas al-Suyūṭī reports as non-Arabic: the family shows them apart (P3.7a)
+    claimed = {
+        r["lemma_id"]
+        for r in rows(
+            conn,
+            "select distinct lemma_id from content.loanword_links where lemma_id = any(:ids)",
+            {"ids": [x["id"] for x in lemmas]},
+        )
+    }
     groups: dict[int | None, dict[str, Any]] = {}
     for x in lemmas:
         g = groups.setdefault(
             x["pattern_id"],
             {"pattern": _pattern_out(pats.get(x["pattern_id"])) if x["pattern_id"] else None, "members": []},
         )
-        g["members"].append(_lemma_out(x))
+        g["members"].append(_lemma_out(x) | {"loanword": x["id"] in claimed})
     out = list(groups.values())
     out.sort(key=lambda g: (g["pattern"] is None, -sum(m["occurrences"] for m in g["members"])))
     return out
@@ -314,7 +323,12 @@ def word_payload(
     family = (
         _family(conn, lem["root_id"])
         if lem["root_id"]
-        else [{"pattern": _pattern_out(pattern), "members": [_lemma_out(lem)]}]
+        else [
+            {
+                "pattern": _pattern_out(pattern),
+                "members": [_lemma_out(lem) | {"loanword": content.lemma_has_loanword(conn, lem["id"])}],
+            }
+        ]
     )
     lex = (
         content.root_lexicon(conn, root["key"], excerpt=900) if root else {"core_meaning": None, "works": []}
@@ -351,6 +365,8 @@ def word_payload(
         "particles": content.particle_links(
             conn, lem["slug"], occurrence["segments"] if occurrence else None
         ),
+        # what al-Suyūṭī reports about the word's being non-Arabic (P3.7a), verbatim
+        "loanwords": content.lemma_loanwords(conn, lem["id"]),
         "senses": senses,
         "senses_status": "linked" if senses else "pending",
         "core_meaning": lex["core_meaning"],
