@@ -66,7 +66,7 @@
 | Concordance `/concordance` | ✅ | Quran concordance per CON-01…39 and CON-Q01…Q09 (e2e `concordance.spec.ts`). Waits on P11 corpora: the Texts filter (CON-03), distribution per text and era (CON-37), hadith matn/isnad and grade filters (CON-Q06) |
 | Analyser `/analyse` | ✅ | For the Quran's words (P4.3). Waits on P7 (choices to review) and P11 (a morphology service for non-Quranic Arabic) |
 | Collections `/explore` | ✅ | P5.2: word of the day, progress without streaks, six curated sets, set view, study deck |
-| Notebook `/notebook` | ⬜ | Verse notes exist only inside "saved" |
+| Notebook `/notebook` | ✅ | P5.4: notes, verse notes, trails, mentions, journal. Propose from a note waits on P7 |
 | Review queue `/review` | ⬜ | Needs accounts + proposals |
 | Classroom `/classroom` | ⬜ | |
 | Published Graph `/g/<slug>` | ⬜ | |
@@ -227,7 +227,7 @@ The design's panel stands on content that the prototype faked: every sense list,
 - P4.5 Exit ◆: any word findable four ways across every loaded text; inventory sections closed.
   - Status 2026-10-03: the audit (research 09) closed 180 of 219 items and found 11 faults; since then all 22 buildable items (group A) and the faults are built and tested, with the shell items they depended on (SHL-32, 34, S04, Q07) and the reader's RDR-150 and RDR-172. A word is findable four ways (word, mushaf spelling, root letters, transliteration) plus by reference, in Search, the omnibox, the Concordance and the Analyser. **Waiting on later phases (17, group B, to go before the owner as exceptions):** hadith and book sources, texts and era views, hadith filters and structure (P11, P11.2), URL and PDF/photo import (P11.3a), choices to the review queue (P7), a morphology service for non-Quranic Arabic (P11), the reader's texts in the reader's rail and the concordance (P11).
 
-### P5 · Explore and study ⬜ (inventory HUB, COL, NTB; review deck RDR §25)
+### P5 · Explore and study ✅ pending its inventory audit (inventory HUB, COL, NTB; review deck RDR §25)
 - P5.1 Hub: masthead, search, context strip, the three primary cards (Read · Look up · Map), "everything on the platform" grid linking every surface, local-first sign-in prompt, footer (data license, version, contribute, API).
   - Status 2026-10-03 ✅: the word of the day API (`/word-of-the-day`, Mecca's day, DECISIONS) and the hub rebuilt — the root of the day as the glyph with its word, the name جَذْر in Ibn Fāris's words, the premise, the search with Quran-first examples as links and ⌘K back to it, the resume strip (sūra and verse, word, root; Clear keeps the reading), three doors counted from the data, twenty surfaces with visible purposes ("being built" where they are), the local-first note with counts and a complete export, the dataset version in the footer; Saved's export and delete now cover every local store (e2e `hub.spec.ts`; 1440/390, both themes). Sign-in waits on P6; "Contribute" waits on the review queue (P7).
 - P5.2 Collections: word of the day (deterministic by date), progress without streaks, curated Quranic sets (editorially chosen, sourced), set as a map, study swipe deck (Skip/Keep → learning + starred) — built from the spec text alone, because the prototype's plan marks it done but no file contains it.
@@ -237,6 +237,7 @@ The design's panel stands on content that the prototype faked: every sense list,
 - P5.4 Notebook: notes (word, verse, marginalia, saved trails) with search, grouping and tags; journal from the session log.
   - Status 2026-10-03 ✅: `/notebook` — free notes, the reader's verse notes and saved trails in one list, searched with Arabic folded, grouped into real sections by root, sūra or tag; a note with title, tags (no duplicates, removable) and a body whose @-mentions link verses and ranges, roots, words and lexicons (the prototype's colon, macron and swallowing bugs fixed, NTB-27); a verse note with its verse verbatim, whole on request, edited where the reader keeps it; a trail with its steps; delete asks first; Markdown export per note and for all; the journal: this week's lookups by the reader's own days, sessions with roots met and notes written that day, all-time counts, the scheduler's due count, and no streak; phones show the list or the note (e2e `notebook.spec.ts`, unit `mentions.test.ts`; DECISIONS). **Waiting:** proposing from a note (P7, with accounts: a prefilled form, never an automatic submission, NTB-Q07) and a note as a graph description card (P8).
 - P5.5 Exit ◆: journey B end to end without an account.
+  - Status 2026-10-03 ✅: journey B walks end to end on desktop and phone without an account — the shelf, the reader, a starred word, the header's due count (or the ⋯ menu), the family drilled and in context, the grade in the scheduler, and Collections' Keep bringing a family into the queue (e2e `journey-b.spec.ts`). By D20 a tap on the Quran does not mark a word "learning"; the star and Keep do. The P5 inventory audit (HUB, COL, NTB, RDR §25) runs next as research 10.
 
 ### P6 · Accounts and sync (local-first) 🔒 D3 (inventory PRF, SHR, MAP)
 - P6.1 Auth, sessions, roles; privacy policy; lookup events opt-in with stated retention.
