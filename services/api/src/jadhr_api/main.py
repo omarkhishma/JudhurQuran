@@ -348,6 +348,15 @@ def pattern(request: Request, slug: str) -> Response:
         return cached(request, p)
 
 
+@router.get("/particles/{entry_id}", summary="A particle entry (Mughnī, al-Janā al-Dānī) with its senses")
+def particle(request: Request, entry_id: str) -> Response:
+    with connect() as conn:
+        e = content.particle_entry(conn, entry_id)
+        if e is None:
+            raise not_found("particle entry")
+        return cached(request, e)
+
+
 @router.get("/glossary", summary="The plain-language glossary (Arabic and English)")
 def glossary(request: Request) -> Response:
     with connect() as conn:

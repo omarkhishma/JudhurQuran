@@ -801,6 +801,69 @@ def lemma_mufradat(conn: Connection, lemma_key: str) -> dict[str, Any] | None:
     return {"work": work, "subentries": subs}
 
 
+def particle_links(
+    conn: Connection, slug: str, segments: list[dict[str, Any]] | None
+) -> list[dict[str, Any]]:
+    """The particle entries that treat this word (P3.8): by its lemma, or by an affix of this occurrence
+    (its prefix و or ب, its suffix ن …, by the corpus tag). A summary each; the senses load on demand."""
+    affixes = [
+        s
+        for s in segments or []
+        if s.get("kind") in ("prefix", "suffix") and (s.get("label") or {}).get("tag")
+    ]
+    tags = [s["label"]["tag"] for s in affixes]
+    found = rows(
+        conn,
+        """select e.id, e.source_id, e.headword_ar, e.descriptor_ar, e.section_ar, e.sense_count, e.stated_count,
+                  e.match_method, e.match_confidence, e.page_vol, e.page, e.affix_tags,
+                  (:slug = any(e.lemma_slugs)) as by_lemma,
+                  s.title_ar, s.title_en, s.author_ar, s.author_en
+           from content.particle_entries e join content.particle_sources s on s.id = e.source_id
+           where :slug = any(e.lemma_slugs) or e.affix_tags && cast(:tags as text[])
+           order by (:slug = any(e.lemma_slugs)) desc, s.sort_order, e.seq""",
+        {"slug": slug, "tags": tags},
+    )
+    out = []
+    for e in found:
+        hit = [a for a in affixes if a["label"]["tag"] in e["affix_tags"]]
+        e["via"] = (
+            {"kind": "lemma"}
+            if e.pop("by_lemma")
+            else {"kind": "affix", "text": hit[0]["text"], "label": hit[0]["label"]}
+        )
+        e.pop("affix_tags")
+        out.append(e)
+    return out
+
+
+def particle_entry(conn: Connection, entry_id: str) -> dict[str, Any] | None:
+    """One particle entry with every intro, numbered sense and note in the author's order, and its source."""
+    e = one(
+        conn,
+        """select id, source_id, headword_ar, descriptor_ar, section_ar, sense_count, stated_count, match_method,
+                  match_confidence, locator, page_vol, page, status
+           from content.particle_entries where id = :id""",
+        {"id": entry_id},
+    )
+    if e is None:
+        return None
+    e["senses"] = rows(
+        conn,
+        """select id, kind, list_no, list_depth, parent_id, sense_index, marker_ar, label_ar, text_ar, verses, page_vol,
+                  page, status
+           from content.particle_senses where entry_id = :id order by ordinal""",
+        {"id": entry_id},
+    )
+    e["source"] = one(
+        conn,
+        """select id, title_ar, title_en, author_ar, author_en, death_hijri, death_ce, edition_ar, edition_en,
+                  licence, licence_url, attribution_ar, attribution_en
+           from content.particle_sources where id = :s""",
+        {"s": e["source_id"]},
+    )
+    return e
+
+
 def lexicon_works(conn: Connection) -> list[dict[str, Any]]:
     return rows(
         conn,

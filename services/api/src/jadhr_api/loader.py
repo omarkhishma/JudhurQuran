@@ -156,6 +156,35 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                                                         "reference_start", "reference_end", "reference_surah",
                                                         "reference_ayahs", "verse_keys", "status", "method", "score",
                                                         "exact", "candidates", "ref_mismatch"], {"candidates"}),
+    # Particle entries (P3.8), built by jadhr_pipeline.particles through the layers step
+    ("particle_sources", "particle_sources.jsonl", ["id", "sort_order", "title_ar", "title_en", "author_ar",
+                                                    "author_en", "death_hijri", "death_ce", "edition_ar",
+                                                    "edition_en", "scope_ar", "scope_en", "openiti_uri", "page_uri",
+                                                    "openiti_release", "openiti_commit", "source_url", "file_sha256",
+                                                    "page_source_sha256", "licence", "licence_url", "licence_clause",
+                                                    "redistributable", "attribution_ar", "attribution_en", "use"],
+     set()),
+    ("particle_entries", "particle_entries.jsonl", ["id", "source_id", "seq", "section_ar", "chapter_letters",
+                                                    "heading_ar", "headword_ar", "headword_supplied",
+                                                    "headword_evidence_ar", "descriptor_ar", "listed_as_ar",
+                                                    "mapped_forms_ar", "lemma_ids", "lemma_keys", "lemma_slugs",
+                                                    "affix_tags", "corpus_pos", "corpus_links",
+                                                    "homograph_lemma_keys", "match_method", "match_confidence",
+                                                    "match_constraints", "match_excluded", "unmapped_reason",
+                                                    "stated_count", "stated_count_ar", "sense_count",
+                                                    "first_list_count", "lists", "locator", "page_vol", "page",
+                                                    "milestone", "notes", "status"],
+     {"listed_as_ar", "mapped_forms_ar", "corpus_pos", "corpus_links", "homograph_lemma_keys", "match_constraints",
+      "match_excluded", "lists", "notes"}),
+    ("particle_senses", "particle_senses.jsonl", ["id", "entry_id", "source_id", "ordinal", "kind", "list_no",
+                                                  "list_depth", "parent_id", "sense_index", "marker_ar",
+                                                  "marker_noun_ar", "label_ar", "text_ar", "verses", "locator",
+                                                  "page_vol", "page", "milestone", "notes", "status"],
+     {"verses", "notes"}),
+    ("particle_citations", "particle_citations.jsonl", ["id", "sense_id", "ordinal", "kind", "marked_by", "quote",
+                                                        "start_offset", "end_offset", "surah", "surah_hint",
+                                                        "verse_keys", "candidates", "status", "method", "score",
+                                                        "exact", "hint_mismatch"], {"verse_keys", "candidates"}),
     # Pattern catalog (P3.3), built by jadhr_pipeline.patterns_catalog through the layers step
     ("pattern_sources", "pattern_sources.jsonl", ["id", "role", "comments_on", "sort_order", "title_ar", "title_en",
                                                   "author_ar", "author_en", "death_hijri", "death_ce", "edition_ar",
@@ -178,6 +207,10 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
 ]  # fmt: skip
 
 TRUNCATE_ORDER = [
+    "particle_citations",
+    "particle_senses",
+    "particle_entries",
+    "particle_sources",
     "mufradat_citations",
     "mufradat_senses",
     "mufradat_subentries",
@@ -241,6 +274,7 @@ RENAMES: dict[str, dict[str, str]] = {
     "mufradat_subentries": _OFFSETS,
     "mufradat_senses": _OFFSETS,
     "mufradat_citations": _OFFSETS,
+    "particle_citations": _OFFSETS,
 }
 
 # Every loaded table must be emptied first, or a reload would duplicate rows.

@@ -337,6 +337,9 @@ def word_payload(
         "root": _root_out(root) if root else None,
         "pattern": _pattern_out(pattern) | {"method": lem["pattern_method"]} if pattern else None,
         "occurrence": occurrence,
+        "particles": content.particle_links(
+            conn, lem["slug"], occurrence["segments"] if occurrence else None
+        ),
         "senses": senses,
         "senses_status": "linked" if senses else "pending",
         "core_meaning": lex["core_meaning"],

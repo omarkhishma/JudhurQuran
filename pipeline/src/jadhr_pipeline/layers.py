@@ -17,6 +17,7 @@ import yaml
 
 from .knowledge import build_knowledge
 from .meanings import build_gharib, build_mufradat
+from .particles import build_particles
 from .patterns_catalog import build_pattern_catalog
 from .relations import build_relations
 
@@ -50,6 +51,7 @@ def build_layers(
     patterns_registry: Path | None = None,
     gharib_registry: Path | None = None,
     lexica_registry: Path | None = None,
+    particles_registry: Path | None = None,
 ) -> dict[str, Any]:
     """Build the layers into ``out`` and merge their reports into ``out/report.json``: the Quran knowledge
     layers, the relation seeds and, when its registry is given, the pattern catalog (P3.3)."""
@@ -93,6 +95,11 @@ def build_layers(
         f_tables, f_report = build_mufradat(raw, out, lexica_registry)
         m_tables.update(f_tables)
         report["mufradat"] = f_report.get("totals")
+    # P3.8 particle entries from Ibn Hishām's Mughnī and al-Murādī's al-Janā al-Dānī
+    if particles_registry is not None:
+        q_tables, q_report = build_particles(raw, out, particles_registry)
+        m_tables.update(q_tables)
+        report["particles"] = q_report.get("totals")
     for name, rows in m_tables.items():
         _write(out, name, rows)
 
