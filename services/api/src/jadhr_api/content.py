@@ -138,6 +138,23 @@ def _attach_tokens_and_words(conn: Connection, verses: list[dict[str, Any]], ful
         v["words"] = by_verse_w[v["id"]]
 
 
+def verses_by_key(conn: Connection, keys: list[tuple[int, int]]) -> list[dict[str, Any]]:
+    """Several verses at once, with their tokens, words and sūra name, in the order asked: what a map draws its
+    verse cards from, so the text always comes from the hash-checked dataset, never from the map (P8.0, F3)."""
+    if not keys:
+        return []
+    found = rows(
+        conn,
+        f"""select {_VERSE_COLS}, s.name_ar as surah_name_ar, s.name_translit as surah_name_translit
+            from content.verses v join content.surahs s on s.number = v.surah
+            where (v.surah, v.ayah) in (select * from unnest(cast(:s as int[]), cast(:a as int[])))""",
+        {"s": [k[0] for k in keys], "a": [k[1] for k in keys]},
+    )
+    _attach_tokens_and_words(conn, found, full_words=False)
+    order = {k: i for i, k in enumerate(keys)}
+    return sorted(found, key=lambda v: order.get((v["surah"], v["ayah"]), 0))
+
+
 def surah_verses(conn: Connection, number: int, start: int, end: int) -> list[dict[str, Any]]:
     verses = rows(
         conn,

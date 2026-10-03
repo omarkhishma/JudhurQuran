@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { encodeShare, loadGraph, newId, saveGraph } from "@/lib/graph/persist";
 import type { GraphDoc, GraphEdge, GraphNode } from "@/lib/graph/types";
-import type { SearchResult, Verse, WordDetail } from "@/lib/types";
+import type { SearchResult, WordDetail } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
 import { formatNumber } from "@/lib/format";
 import { GraphCanvas } from "./GraphCanvas";
@@ -109,9 +109,6 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
 
   async function addWord(location: string) {
     const w = (await (await fetch(`/api/v1/words/${location}`)).json()) as WordDetail;
-    const toks = w.verse.tokens;
-    const a = w.token_from - 1;
-    const b = w.token_to;
     onAdd(
       [
         {
@@ -120,20 +117,12 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
           position: { x: 0, y: 0 },
           data: {
             kind: "word",
-            ar: toks.slice(a, b).map((x) => x.text).join(" "),
             sub: w.text_imlaei,
             count: w.occurrences.form,
             rootKey: w.root?.key,
             lemmaId: w.lemma?.id,
             form: w.text_imlaei,
-            verse: {
-              key: w.verse.key,
-              surahName: w.verse.surah_name_ar,
-              left: toks.slice(Math.max(0, a - 5), a).map((x) => x.text).join(" "),
-              word: toks.slice(a, b).map((x) => x.text).join(" "),
-              right: toks.slice(b, b + 5).map((x) => x.text).join(" "),
-              location,
-            },
+            verse: { key: w.verse.key, location },
           },
         },
       ],
@@ -142,18 +131,9 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
     );
   }
 
-  async function addVerse(key: string) {
-    const v = (await (await fetch(`/api/v1/verses/${key}`)).json()) as Verse & { surah_name_ar?: string };
-    const surah = (await (await fetch(`/api/v1/surahs/${v.surah}?end=1`)).json()) as { surah: { name_ar: string } };
+  function addVerse(key: string) {
     onAdd(
-      [
-        {
-          id: `verse:${key}`,
-          type: "card",
-          position: { x: 0, y: 0 },
-          data: { kind: "verse", verse: { key, surahName: surah.surah.name_ar, left: v.tokens.map((x) => x.text).join(" "), word: "", right: "" } },
-        },
-      ],
+      [{ id: `verse:${key}`, type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", ar: key, verse: { key } } }],
       [],
       t("addVerse"),
     );
@@ -212,7 +192,7 @@ function Palette({ onAdd, kind }: { onAdd: AddFn; kind: GraphDoc["kind"] }) {
         ))}
         {data?.results.verses.slice(0, 4).map((v) => (
           <li key={`v${v.key}`}>
-            <button type="button" className="flex w-full items-start gap-2 rounded-lg px-2 py-2 text-start hover:bg-card" onClick={() => void addVerse(v.key)}>
+            <button type="button" className="flex w-full items-start gap-2 rounded-lg px-2 py-2 text-start hover:bg-card" onClick={() => addVerse(v.key)}>
               <span className="dot mt-3" style={{ background: "var(--c-sentence)" }} />
               <span className="min-w-0">
                 <span className="quran line-clamp-2 text-[16px] leading-[2]" lang="ar">{v.text_qpc}</span>

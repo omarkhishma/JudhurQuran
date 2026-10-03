@@ -3,6 +3,7 @@
 import { del, get, set, update } from "idb-keyval";
 import { storageFrozen } from "@/lib/store/safeStorage";
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
+import { cleanDoc, cleanGraph, cleanKind, cleanTitle } from "./sanitize";
 import type { GraphDoc, GraphMeta } from "./types";
 
 /** Local-first storage: graphs live in this browser's IndexedDB, and sync to the account when signed in (P6). */
@@ -19,17 +20,14 @@ export async function listGraphs(): Promise<GraphMeta[]> {
   return ((await get<GraphMeta[]>(INDEX)) ?? []).sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
+/** A stored map, read through the rules of lib/graph/sanitize (an older copy loses the verse words it kept). */
 export async function loadGraph(id: string): Promise<GraphDoc | undefined> {
-  return get<GraphDoc>(KEY(id));
+  const doc = await get<GraphDoc>(KEY(id));
+  return doc ? cleanDoc(doc) : undefined;
 }
 
 export async function saveGraph(doc: GraphDoc): Promise<void> {
-  await putGraph({
-    ...doc,
-    updatedAt: Date.now(),
-    nodes: doc.nodes.map(({ id, type, position, data }) => ({ id, type, position, data })),
-    edges: doc.edges.map(({ id, source, target, data, label }) => ({ id, source, target, data, label })),
-  });
+  await putGraph({ ...cleanDoc(doc), updatedAt: Date.now() });
   changed();
 }
 
@@ -67,18 +65,16 @@ export function decodeShare(fragment: string): GraphDoc | null {
   try {
     const json = decompressFromEncodedURIComponent(fragment);
     if (!json) return null;
-    const s = JSON.parse(json) as { t: string; k: GraphDoc["kind"]; n: [string, number, number, GraphDoc["nodes"][number]["data"]][]; e: [string, string, string, string][] };
+    const s = JSON.parse(json) as { t?: unknown; k?: unknown; n?: unknown; e?: unknown };
+    if (!Array.isArray(s.n) || !Array.isArray(s.e)) return null;
+    // a link is anyone's text: only what a map of ours can hold is kept, and a verse is drawn from its key (F3)
+    const row = (x: unknown) => (Array.isArray(x) ? x : []);
+    const { nodes, edges } = cleanGraph(
+      s.n.map((x) => row(x)).map(([id, x, y, data]) => ({ id, position: { x, y }, data })),
+      s.e.map((x) => row(x)).map(([id, source, target, label]) => ({ id, source, target, data: { label: label || undefined } })),
+    );
     const now = Date.now();
-    return {
-      version: 1,
-      id: newId(),
-      title: s.t,
-      kind: s.k,
-      createdAt: now,
-      updatedAt: now,
-      nodes: s.n.map(([id, x, y, data]) => ({ id, type: "card", position: { x, y }, data })),
-      edges: s.e.map(([id, source, target, label]) => ({ id, source, target, data: label ? { label } : undefined, label: label || undefined })),
-    };
+    return { version: 1, id: newId(), title: cleanTitle(s.t, ""), kind: cleanKind(s.k), createdAt: now, updatedAt: now, nodes, edges };
   } catch {
     return null;
   }

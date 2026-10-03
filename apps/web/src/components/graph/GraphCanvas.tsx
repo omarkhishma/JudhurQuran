@@ -207,7 +207,7 @@ function CanvasInner({
           if (node.data.cursor) qs.set("cursor", node.data.cursor);
           void fetch(`/api/v1/roots/${encodeURIComponent(node.data.rootKey)}/occurrences?${qs}`)
             .then((r) => r.json())
-            .then((page: { total: number; next_cursor: string | null; data: { location: string; verse_key: string; left: string; keyword: string; right: string; surah_name_ar: string }[] }) => {
+            .then((page: { total: number; next_cursor: string | null; data: { location: string; verse_key: string }[] }) => {
               const present = new Set(nodes.map((n) => n.id));
               const newNodes: GraphNode[] = [];
               const newEdges: GraphEdge[] = [];
@@ -218,17 +218,7 @@ function CanvasInner({
                   id: vid,
                   type: "card",
                   position: { x: 0, y: 0 },
-                  data: {
-                    kind: "verse",
-                    verse: {
-                      key: o.verse_key,
-                      surahName: o.surah_name_ar,
-                      left: o.left.split(" ").slice(-5).join(" "),
-                      word: o.keyword,
-                      right: o.right.split(" ").slice(0, 5).join(" "),
-                      location: o.location,
-                    },
-                  },
+                  data: { kind: "verse", verse: { key: o.verse_key, location: o.location } },
                 });
                 newEdges.push({ id: edgeId(id, vid), source: id, target: vid });
               }

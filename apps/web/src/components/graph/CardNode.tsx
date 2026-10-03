@@ -5,7 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { createContext, memo, useContext, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { citeVerse, formatNumber } from "@/lib/format";
-import { KIND_COLOR, type GraphNode } from "@/lib/graph/types";
+import { KIND_COLOR, type GraphNode, type VerseExcerpt } from "@/lib/graph/types";
+import { excerptOf, useVerseText, wordAt } from "@/lib/graph/verseText";
 
 export type GraphActions = {
   editable: boolean;
@@ -82,19 +83,11 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
             <p className="mt-1 whitespace-pre-wrap text-[14px] text-t1">{data.text}</p>
           )
         ) : data.kind === "verse" && data.verse ? (
-          <p className="quran mt-1 text-[19px] leading-[2.1] text-t1" lang="ar">
-            <span className="text-t2">{data.verse.left} </span>
-            <mark className="rounded bg-sentence-wash px-0.5 text-t1">{data.verse.word}</mark>
-            <span className="text-t2"> {data.verse.right}</span>
-          </p>
+          <VerseLine verse={data.verse} />
+        ) : data.kind === "word" && data.verse?.location ? (
+          <WordHead verse={data.verse} />
         ) : (
-          <p
-            className={
-              (data.kind === "word" ? "quran text-[30px] leading-[1.8]" : "ar-classical text-[28px] leading-[1.5]") +
-              (data.kind === "root" ? " text-root" : " text-t1")
-            }
-            lang="ar"
-          >
+          <p className={"ar-classical text-[28px] leading-[1.5]" + (data.kind === "root" ? " text-root" : " text-t1")} lang="ar">
             {data.ar}
           </p>
         )}
@@ -106,20 +99,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
                 {data.sub}
               </p>
             )}
-            {data.kind === "word" && data.verse && (
-              <div className="mt-2 rounded-lg bg-card-2 px-2 py-1.5">
-                <p className="text-[10.5px] text-t3">{t("firstVerse")}</p>
-                <p className="quran line-clamp-2 text-[16px] leading-[2]" lang="ar">
-                  <span className="text-t3">{data.verse.left} </span>
-                  <span className="text-word">{data.verse.word}</span>
-                  <span className="text-t3"> {data.verse.right}</span>
-                </p>
-                <p className="text-[11px] text-t3">{citeVerse(data.verse.surahName, Number(data.verse.key.split(":")[0]), Number(data.verse.key.split(":")[1]), locale)}</p>
-              </div>
-            )}
-            {data.kind === "verse" && data.verse && (
-              <p className="mt-1 text-[11.5px] text-t3">{citeVerse(data.verse.surahName, Number(data.verse.key.split(":")[0]), Number(data.verse.key.split(":")[1]), locale)}</p>
-            )}
+            {data.kind === "word" && data.verse && <FirstVerse verse={data.verse} />}
+            {data.kind === "verse" && data.verse && <VerseCite verse={data.verse} />}
             {data.kind === "note" && <p className="mt-1 text-[10.5px] text-t3">{t("personalNote")}</p>}
             {data.kind === "root" && (data.usul === "several" || data.usul === "unrelated") && (
               <p className="usul-chip mt-1.5 rounded-md bg-card-2 px-2 py-1 text-[11.5px] leading-relaxed text-t2" data-usul={data.usul}>
@@ -163,3 +144,60 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
 }
 
 export const CardNode = memo(CardNodeImpl);
+
+/** The verse's words around the place, drawn from the dataset, every cut marked «…» (law L1; P8.0 F3). */
+function Excerpted({ verse, className, wordClass, around = 5 }: { verse: VerseExcerpt; className: string; wordClass: string; around?: number }) {
+  const t = useTranslations("graph");
+  const v = useVerseText(verse.key);
+  if (v.isPending) return <span className="mt-1 block h-6 animate-pulse rounded bg-card-2" aria-hidden="true" />;
+  if (!v.data) return <p className="mt-1 text-[12px] text-t3">{t("verseUnavailable")}</p>;
+  const x = excerptOf(v.data, verse.location, around);
+  return (
+    <p className={className} lang="ar">
+      {x.cutLeft && <span className="text-t3">… </span>}
+      <span className="text-t2">{x.left}</span>
+      {x.word && (
+        <>
+          {" "}
+          <mark className={wordClass}>{x.word}</mark>{" "}
+        </>
+      )}
+      <span className="text-t2">{x.right}</span>
+      {x.cutRight && <span className="text-t3"> …</span>}
+    </p>
+  );
+}
+
+function VerseLine({ verse }: { verse: VerseExcerpt }) {
+  return <Excerpted verse={verse} className="quran mt-1 text-[19px] leading-[2.1] text-t1" wordClass="rounded bg-sentence-wash px-0.5 text-t1" />;
+}
+
+/** A word card's headline: the word as the mushaf writes it at its place, from the dataset. */
+function WordHead({ verse }: { verse: VerseExcerpt }) {
+  const v = useVerseText(verse.key);
+  const word = v.data && verse.location ? wordAt(v.data, verse.location) : null;
+  if (v.isPending) return <span className="mt-1 block h-10 w-24 animate-pulse rounded bg-card-2" aria-hidden="true" />;
+  return (
+    <p className="quran text-[30px] leading-[1.8] text-t1" lang="ar">
+      {word ?? "—"}
+    </p>
+  );
+}
+
+function VerseCite({ verse }: { verse: VerseExcerpt }) {
+  const locale = useLocale();
+  const v = useVerseText(verse.key);
+  if (!v.data) return null;
+  return <p className="mt-1 text-[11.5px] text-t3">{citeVerse(v.data.surah_name_ar, v.data.surah, v.data.ayah, locale, v.data.surah_name_translit)}</p>;
+}
+
+function FirstVerse({ verse }: { verse: VerseExcerpt }) {
+  const t = useTranslations("graph");
+  return (
+    <div className="mt-2 rounded-lg bg-card-2 px-2 py-1.5">
+      <p className="text-[10.5px] text-t3">{t("firstVerse")}</p>
+      <Excerpted verse={verse} around={3} className="quran text-[16px] leading-[2]" wordClass="bg-transparent text-word" />
+      <VerseCite verse={verse} />
+    </div>
+  );
+}

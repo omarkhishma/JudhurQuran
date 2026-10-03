@@ -22,7 +22,7 @@ export function SharedGraph() {
     <GraphCanvas
       initialNodes={doc.nodes}
       initialEdges={doc.edges}
-      title={doc.title}
+      title={doc.title || t("untitled")}
       status={<span className="text-[12px] text-t3">{t("viewShared")}</span>}
       toolbarExtra={
         <button

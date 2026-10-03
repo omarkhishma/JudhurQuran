@@ -728,7 +728,8 @@
     "seedUnreadable": "هذا الرابط لا يحمل بذرة يقرؤها المحرر.",
     "seedFailed": "تعذّر بناء البطاقات من هذا الرابط.",
     "kindPhrase": "عبارة",
-    "phraseTitle": "عبارة: {phrase}"
+    "phraseTitle": "عبارة: {phrase}",
+    "verseUnavailable": "تعذّر تحميل هذه الآية الآن."
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",

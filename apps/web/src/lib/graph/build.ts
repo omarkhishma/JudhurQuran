@@ -35,14 +35,8 @@ export function lemmaSub(l: RootGraphPayload["lemmas"][number]): string {
 }
 
 function wordNode(lemma: number, f: RootGraphPayload["lemmas"][number]["forms"][number], rootKey: string, focus: boolean): GraphNode {
-  const verse: VerseExcerpt = {
-    key: f.first.verse_key,
-    surahName: f.first.surah_name_ar,
-    left: f.first.left,
-    word: f.first.word,
-    right: f.first.right,
-    location: f.first.location,
-  };
+  // the place only: the card reads the verse's words from the dataset (law L1)
+  const verse: VerseExcerpt = { key: f.first.verse_key, location: f.first.location };
   return {
     id: wordId(lemma, f.form),
     type: "card",

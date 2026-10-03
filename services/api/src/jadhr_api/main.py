@@ -232,6 +232,25 @@ def word_relations(
         return cached(request, out)
 
 
+@router.get(
+    "/verses", summary="Several verses by key (up to 60), with their tokens and words — a map's verse cards"
+)
+def verses(
+    request: Request, keys: str = Query(..., max_length=600, description="comma-separated, as 2:255,1:1")
+) -> Response:
+    pairs: list[tuple[int, int]] = []
+    for k in dict.fromkeys(x.strip() for x in keys.split(",") if x.strip()):
+        try:
+            s_str, a_str = k.split(":")
+            pairs.append((int(s_str), int(a_str)))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="each key must look like 2:255") from exc
+    if len(pairs) > 60:
+        raise HTTPException(status_code=422, detail="at most 60 verses at once")
+    with connect() as conn:
+        return cached(request, {"data": content.verses_by_key(conn, pairs)})
+
+
 @router.get("/verses/{key}", summary="One verse (e.g. 2:255) with full word morphology")
 def verse(request: Request, key: str) -> Response:
     try:

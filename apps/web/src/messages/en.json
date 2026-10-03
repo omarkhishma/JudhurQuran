@@ -728,7 +728,8 @@
     "seedUnreadable": "This link carries no seed the editor can read.",
     "seedFailed": "The cards could not be built from this link.",
     "kindPhrase": "Phrase",
-    "phraseTitle": "Phrase: {phrase}"
+    "phraseTitle": "Phrase: {phrase}",
+    "verseUnavailable": "This verse could not be loaded just now."
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

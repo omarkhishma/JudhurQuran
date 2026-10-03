@@ -3,7 +3,10 @@ import type { Edge, Node } from "@xyflow/react";
 /** The five card kinds of the handoff, mapped to Quranic data. Colour is the type. */
 export type NodeKind = "root" | "lemma" | "word" | "verse" | "note";
 
-export type VerseExcerpt = { key: string; surahName: string; left: string; word: string; right: string; location?: string };
+/** A verse on a card: its key and, for a word, its place — never its words, which are read from the dataset when
+ * the card is drawn (lib/graph/verseText; P8.0, law L1). Maps saved before kept the words too; lib/graph/sanitize
+ * drops them on read. */
+export type VerseExcerpt = { key: string; location?: string };
 
 export type GraphNodeData = {
   kind: NodeKind;

@@ -217,6 +217,23 @@ def test_search_verse_references() -> None:
     assert get("/api/v1/search", q="quran")["detected"]["kind"] != "verse_ref"
 
 
+def test_verses_by_key_for_a_maps_cards() -> None:
+    """P8.0 F3: a map draws its verse cards' text from the dataset, several verses in one request, in the order
+    asked; an unknown key is left out, a malformed one refused."""
+    d = get("/api/v1/verses", keys="2:255,1:1,2:300")
+    assert [v["key"] for v in d["data"]] == ["2:255", "1:1"]
+    v = d["data"][0]
+    assert v["surah_name_ar"] and v["tokens"] and v["words"][0]["location"] == "2:255:1"
+    assert " ".join(t["text"] for t in d["data"][1]["tokens"]).startswith(
+        d["data"][1]["text_qpc"].split(" ")[0]
+    )
+    assert client.get("/api/v1/verses", params={"keys": "x"}).status_code == 400
+    assert (
+        client.get("/api/v1/verses", params={"keys": ",".join(f"2:{i}" for i in range(1, 62))}).status_code
+        == 422
+    )
+
+
 def test_search_word_locations() -> None:
     """A word's place, as the reader's addresses and the citations write it, finds its verse; a place with no word
     finds nothing."""
