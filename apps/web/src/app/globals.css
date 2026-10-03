@@ -3925,3 +3925,114 @@ a.wotd-pill:hover {
     font-size: 40px;
   }
 }
+
+/* ─── Review deck (P5.3, inventory RDR §25) ─────────────────────────────────── */
+.review-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 92;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+  animation: review-in 0.14s ease-out;
+}
+@keyframes review-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .review-overlay {
+    animation: none;
+  }
+}
+.review-bar {
+  flex: none;
+  min-height: 52px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.review-progress {
+  width: 120px;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--card-3);
+  overflow: hidden;
+}
+.review-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--c-root);
+  margin-inline-end: auto;
+}
+.review-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 28px 16px 60px;
+}
+.review-card {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--sh);
+}
+.review-card.is-wide {
+  width: min(820px, 100%);
+}
+.review-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-height: 48px;
+  padding: 6px 10px;
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+}
+.review-row.is-open {
+  border-style: solid;
+  border-color: var(--line);
+}
+.review-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 90px;
+}
+.review-bars > span {
+  height: 7px;
+  border-radius: 4px;
+  background: var(--card-3);
+}
+.review-bars > span + span {
+  width: 60%;
+}
+.review-blank {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 84px;
+  border-bottom: 2px solid var(--c-word);
+  margin-inline: 2px;
+  color: var(--t3);
+}
+.review-blank.is-right {
+  color: var(--good);
+  border-color: var(--good);
+}
+.review-blank.is-wrong {
+  color: var(--bad);
+  border-color: var(--bad);
+}

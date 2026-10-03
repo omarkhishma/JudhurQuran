@@ -12,6 +12,7 @@ import { getJSON, useWord } from "@/lib/reader/api";
 import { tokenText } from "@/lib/reader/verseText";
 import { useIsClient } from "@/lib/client";
 import { type CiteTarget, type MorphKey, usePersonal, usePrefs, useReader, type SuggestTarget } from "@/lib/reader/store";
+import { ReviewDeck } from "./ReviewDeck";
 import { SITE } from "@/lib/site";
 import { storageFailed } from "@/lib/store/safeStorage";
 import { useDebounced } from "@/lib/useDebounced";
@@ -65,7 +66,7 @@ export function Overlays({ chapter }: { chapter: ChapterInfo }) {
       <SuggestDialog />
       {!ask && <Onboarding chapter={chapter} />}
       <Toast />
-      <ReviewOverlay />
+      <ReviewDeck chapter={chapter} />
     </>
   );
 }
@@ -514,18 +515,3 @@ function Toast() {
   );
 }
 
-function ReviewOverlay() {
-  const t = useTranslations("rd");
-  const review = useReader((s) => s.review);
-  const setReview = useReader((s) => s.setReview);
-  if (!review) return null;
-  return (
-    <Dialog open onClose={() => setReview(false)} label={t("review")} width={520}>
-      <div className="flex flex-col gap-3 p-5">
-        <h2 className="text-[16px] font-semibold">{t("review")}</h2>
-        <p className="text-[13.5px] leading-relaxed text-t2">{t("reviewBuilding")}</p>
-        <button type="button" className="btn self-start" onClick={() => setReview(false)}>{t("backToReading")}</button>
-      </div>
-    </Dialog>
-  );
-}

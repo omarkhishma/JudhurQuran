@@ -9,9 +9,9 @@ import { cnt, formatNumber } from "@/lib/format";
 import { useBreakpoint } from "@/lib/reader/media";
 import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
 import { THEME_KEY } from "@/lib/site";
-import { useSaved } from "@/lib/store/saved";
 import type { ChapterInfo } from "./ReaderShell";
 import { ReadingPrefs } from "./ReadingPrefs";
+import { useDueCount } from "./ReviewDeck";
 
 const SIZE_MIN = 0.8;
 const SIZE_MAX = 1.6;
@@ -19,6 +19,7 @@ const SIZE_MAX = 1.6;
 /** The reader's bespoke header (design 03 §3.2, inventory RDR-016…031), mirrored for Arabic. */
 export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; surfaceRef: React.RefObject<HTMLDivElement | null> }) {
   const t = useTranslations("rd");
+  const tr = useTranslations("review");
   const locale = useLocale();
   const bp = useBreakpoint();
   const theme = useTheme();
@@ -35,7 +36,8 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
   const setRailOverlay = useReader((s) => s.setRailOverlay);
   const railOverlay = useReader((s) => s.railOverlay);
   const selection = useReader((s) => s.selection);
-  const starredCount = useSaved((s) => s.bookmarks.filter((b) => b.kind === "lemma").length);
+  // the roots due now by the scheduler, not the size of a queue (RDR-346)
+  const due = useDueCount();
   const wordStates = usePersonal((s) => s.wordStates);
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -150,9 +152,11 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
         <button type="button" className="hdr-btn" onClick={() => setReview(true)} title={t("reviewTitle")}>
           <Icon name="calendar" size={13} />
           {t("review")}
-          <span className="mono rounded-[5px] bg-card-2 px-1.5 text-[11px] text-t2" aria-label={t("reviewQueued", { n: formatNumber(starredCount, locale) })}>
-            {formatNumber(starredCount, locale)}
-          </span>
+          {due != null && (
+            <span className={"mono rounded-[5px] px-1.5 text-[11px] " + (due ? "bg-root-wash text-root" : "bg-card-2 text-t3")} aria-label={tr("badge", cnt(due, locale))}>
+              {formatNumber(due, locale)}
+            </span>
+          )}
         </button>
       )}
       {wide && (
