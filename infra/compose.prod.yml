@@ -48,6 +48,7 @@ services:
       JADHR_ENVIRONMENT: production
       JADHR_PUBLIC_BASE_URL: ${PUBLIC_URL:?set PUBLIC_URL}
       JADHR_CORS_ORIGINS: '["${PUBLIC_URL}"]'
+      JADHR_INTERNAL_TOKEN: ${INTERNAL_TOKEN:?set INTERNAL_TOKEN}
       WEB_CONCURRENCY: ${API_WORKERS:-2}
 
   web:
@@ -62,6 +63,7 @@ services:
     environment:
       JADHR_API_ORIGIN: http://api:8000
       JADHR_REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set REVALIDATE_SECRET}
+      JADHR_INTERNAL_TOKEN: ${INTERNAL_TOKEN:?set INTERNAL_TOKEN}
 
   caddy:
     image: caddy:2-alpine

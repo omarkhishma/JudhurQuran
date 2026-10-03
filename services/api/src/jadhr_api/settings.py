@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3210"]
     public_base_url: str = "http://localhost:8000"
     rate_limit_per_minute: int = 600
+    # Shared with the web server: its server-side renders send it and are not rate-limited per IP,
+    # since every render comes from the one web host. Unset → no request is exempt.
+    internal_token: str | None = None
     environment: str = "development"
     # After a release loads, the loader asks the web app to expire its cached pages (apps/web
     # src/app/api/revalidate). Unset → the step is skipped and the loader says so.

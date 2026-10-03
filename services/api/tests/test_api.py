@@ -329,3 +329,32 @@ def test_word_glosses_and_transliteration_are_verbatim_from_the_corpus() -> None
     assert (
         get("/api/v1/words/1:1:1")["gloss_en"] == "In (the) name"
     )  # punctuation kept as the corpus writes it
+
+
+def test_internal_token_exempts_server_renders_from_the_rate_limit(monkeypatch) -> None:
+    """Every server render comes from the web host; with the shared token they skip the per-IP limit."""
+    from jadhr_api import main as m
+    from jadhr_api.settings import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "rate_limit_per_minute", 3)
+    monkeypatch.setattr(s, "internal_token", "t0ken")
+    m._hits.clear()
+    app = m.create_app()
+    c = TestClient(app)
+    codes = [
+        c.get("/api/v1/surahs/1", headers={"x-forwarded-for": "203.0.113.9"}).status_code for _ in range(4)
+    ]
+    assert codes[-1] == 429
+    ok = [
+        c.get(
+            "/api/v1/surahs/1", headers={"x-forwarded-for": "203.0.113.9", "x-jadhr-internal": "t0ken"}
+        ).status_code
+        for _ in range(4)
+    ]
+    assert ok == [200] * 4
+    wrong = c.get(
+        "/api/v1/surahs/1", headers={"x-forwarded-for": "203.0.113.9", "x-jadhr-internal": "nope"}
+    ).status_code
+    assert wrong == 429
+    m._hits.clear()

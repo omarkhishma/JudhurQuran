@@ -526,6 +526,11 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def rate_limit(request: Request, call_next: Any) -> Response:
+        token = settings.internal_token
+        if token and request.headers.get("x-jadhr-internal") == token:
+            response = await call_next(request)
+            response.headers.setdefault("X-Content-Type-Options", "nosniff")
+            return response
         ip = (
             request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")
         ).split(",")[0]
