@@ -15,7 +15,7 @@ from sqlalchemy import Connection
 
 from .db import one, rows
 from .lexicon import ar
-from .search import LABELS, _lemma_candidates
+from .search import LABELS, LATIN_KINDS, ROOT_COLS, _lemma_candidates
 from .searchindex import PREFIX
 
 
@@ -81,6 +81,22 @@ def _patterns_query(q: str, latin: bool) -> dict[str, Any]:
     return {"bool": {"should": should, "minimum_should_match": 1}}
 
 
+def _dict_query(q: str, latin: bool) -> dict[str, Any]:
+    """Dictionary entries (SRC-Q03): the headword first, then the article's text."""
+    if latin:
+        should = [
+            {"match_phrase": {"body_en": {"query": q, "boost": 3}}},
+            {"match": {"body_en": {"query": q, "operator": "and"}}},
+        ]
+    else:
+        should = [
+            {"match": {"headword": {"query": q, "boost": 8}}},
+            {"match_phrase": {"body.exact": {"query": q, "boost": 4}}},
+            {"match_phrase": {"body": {"query": q, "boost": 2}}},
+        ]
+    return {"bool": {"should": should, "minimum_should_match": 1}}
+
+
 def _passages_query(q: str, latin: bool) -> dict[str, Any]:
     if latin:
         should = [
@@ -128,45 +144,60 @@ def _lemma_hit(conn: Connection, src: dict[str, Any], score: float) -> dict[str,
     }
 
 
-def search(conn: Connection, es: OpenSearch, q: str, limit: int = 20) -> dict[str, Any]:
+# which part of the plan answers a paged kind, and which total each part counts
+_PLAN_KIND = {
+    "words": "lemmas",
+    "family": "lemmas",
+    "passages": "verses",
+    "dict": "dictionary",
+    "patterns": "patterns",
+}
+
+
+def search(
+    conn: Connection, es: OpenSearch, q: str, limit: int = 20, offset: int = 0, only: str | None = None
+) -> dict[str, Any]:
     from .search import search_pg
 
-    # Detection, references, surah names and root letters are exact: the Postgres engine owns them.
-    base = search_pg(conn, q, limit)
+    # Detection, references, surah names, root letters and patterns are exact: the Postgres engine owns them.
+    base = search_pg(conn, q, limit, offset, only)
     kind = base["detected"]["kind"]
     results: dict[str, list[dict[str, Any]]] = base["results"]
-    results.setdefault("patterns", [])
+    totals: dict[str, int] = base["totals"]
     results.setdefault("passages", [])
-    if kind in ("empty", "verse_ref", "juz", "hizb", "page"):
+    if kind in ("empty", "verse_ref", "juz", "hizb", "page", "pattern"):
         base["engine"] = "opensearch"
         return base
 
-    latin = kind == "latin"
+    latin = kind in LATIN_KINDS
     if latin:
         from .search import chat_alphabet
 
         q = chat_alphabet(q)
     body: list[dict[str, Any]] = []
     plan: list[str] = []
+
+    def add(name: str, index: str, req: dict[str, Any]) -> None:
+        # ``only`` pages one kind: the rest of the plan is not asked
+        if only and _PLAN_KIND.get(name) != only:
+            return
+        frm = offset if only and _PLAN_KIND.get(name) == only else 0
+        body.extend(
+            [{"index": PREFIX + index}, {"size": limit, "from": frm, "track_total_hits": True, **req}]
+        )
+        plan.append(name)
+
     if kind == "root":
         keys = [r["key"] for r in results["roots"]]
-        body += [
-            {"index": PREFIX + "words"},
-            {"size": 200, "query": {"terms": {"root_key": keys}}, "sort": [{"occurrences": "desc"}]},
-        ]
-        plan.append("family")
+        add("family", "words", {"query": {"terms": {"root_key": keys}}, "sort": [{"occurrences": "desc"}]})
     else:
-        for name, query in (
-            ("words", _words_query(q, latin)),
-            ("roots", _roots_query(q, latin)),
-            ("patterns", _patterns_query(q, latin)),
-        ):
-            body += [{"index": PREFIX + name}, {"size": limit, "query": query}]
-            plan.append(name)
-        body += [
-            {"index": PREFIX + "passages"},
+        add("words", "words", {"query": _words_query(q, latin)})
+        add("roots", "roots", {"query": _roots_query(q, latin)})
+        add("patterns", "patterns", {"query": _patterns_query(q, latin)})
+        add(
+            "passages",
+            "passages",
             {
-                "size": limit,
                 "query": _passages_query(q, latin),
                 "highlight": {
                     "fields": {"ar": {}, "trans_en": {}},
@@ -175,13 +206,30 @@ def search(conn: Connection, es: OpenSearch, q: str, limit: int = 20) -> dict[st
                     "number_of_fragments": 0,
                 },
             },
-        ]
-        plan.append("passages")
-    responses = es.msearch(body=body)["responses"]
+        )
+        add(
+            "dict",
+            "dict_articles",
+            {
+                "query": _dict_query(q, latin),
+                "_source": ["entry_id", "work_id", "root_key", "headword"],
+                "highlight": {
+                    "fields": {
+                        "body": {"fragment_size": 150, "number_of_fragments": 1},
+                        "body_en": {"fragment_size": 150, "number_of_fragments": 1},
+                    },
+                    "pre_tags": ["⁨"],
+                    "post_tags": ["⁩"],
+                },
+            },
+        )
+    responses = es.msearch(body=body)["responses"] if body else []
     for name, res in zip(plan, responses, strict=True):
         if "error" in res:
             raise RuntimeError(f"{name}: {res['error']}")
         hits = res["hits"]["hits"]
+        if name in _PLAN_KIND:
+            totals[_PLAN_KIND[name]] = res["hits"]["total"]["value"]
         if name in ("words", "family"):
             lemmas = [h for h in (_lemma_hit(conn, x["_source"], x.get("_score") or 0.0) for x in hits) if h]
             results["lemmas"] = lemmas
@@ -191,14 +239,11 @@ def search(conn: Connection, es: OpenSearch, q: str, limit: int = 20) -> dict[st
                 s = h["_source"]
                 if s["key"] in have:
                     continue
-                r = one(
-                    conn,
-                    "select key, spaced, translit, occurrences, lemma_count, verse_count from content.roots where key = :k",
-                    {"k": s["key"]},
-                )
+                r = one(conn, f"select {ROOT_COLS} from content.roots where key = :k", {"k": s["key"]})
                 if r:
                     results["roots"].append(r | {"score": round(h["_score"] or 0, 3)})
             results["roots"] = results["roots"][:limit]
+            totals["roots"] = len(results["roots"])
         elif name == "patterns":
             results["patterns"] = [
                 {
@@ -238,6 +283,37 @@ def search(conn: Connection, es: OpenSearch, q: str, limit: int = 20) -> dict[st
             ]
             # the Postgres engine's verse list, now ranked by relevance
             results["verses"] = [p["verse"] for p in results["passages"]]
+        elif name == "dict":
+            works = {
+                w["id"]: w
+                for w in rows(
+                    conn,
+                    "select id, title_ar, title_en, author_ar, author_en, death_ce, lang from content.lexicon_works",
+                )
+            }
+            spaced = {
+                r["key"]: r["spaced"]
+                for r in rows(
+                    conn,
+                    "select key, spaced from content.roots where key = any(:k)",
+                    {"k": [h["_source"]["root_key"] for h in hits]},
+                )
+            }
+            results["dictionary"] = [
+                {
+                    "entry_id": h["_source"]["entry_id"],
+                    "work": works.get(h["_source"]["work_id"]),
+                    "root_key": h["_source"]["root_key"],
+                    "root_spaced": spaced.get(h["_source"]["root_key"]),
+                    "headword": h["_source"]["headword"],
+                    "excerpt": (
+                        (h.get("highlight", {}).get("body") or h.get("highlight", {}).get("body_en"))
+                        or [None]
+                    )[0],
+                    "score": round(h["_score"] or 0, 3),
+                }
+                for h in hits
+            ]
     ar_label, en_label = LABELS[kind]
     base["detected"].update(label_ar=ar_label, label_en=en_label)
     base["engine"] = "opensearch"

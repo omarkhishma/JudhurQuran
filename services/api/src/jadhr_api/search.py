@@ -19,7 +19,7 @@ from sqlalchemy import Connection
 
 from . import searchindex
 from .content import lemma_display
-from .db import one, rows
+from .db import one, rows, scalar
 
 _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 _REF_RE = re.compile(r"^\s*(\d{1,3})\s*[:：.\-/ ]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?\s*$")
@@ -48,11 +48,24 @@ LABELS = {
     "arabic_word": ("كلمة عربية", "Arabic word"),
     "arabic_phrase": ("عبارة عربية", "Arabic phrase"),
     "latin": ("نص لاتيني", "Latin text"),
+    "translit": ("نقل حرفي", "transliteration"),
+    "english": ("معنى بالإنجليزية", "English gloss"),
+    "pattern": ("وزن", "pattern"),
     "juz": ("جزء", "juzʾ"),
     "hizb": ("حزب", "ḥizb"),
     "page": ("صفحة", "page"),
 }
 
+
+# Latin queries are classified as a transliteration, an English gloss, or left undecided (SRC-41)
+LATIN_KINDS = ("latin", "translit", "english")
+# the signs of a transliteration typed by hand: a diacritic, a chat digit, an apostrophe for ʿ/ʾ, a doubled vowel
+_TRANSLIT_MARK = re.compile(r"[ʿʾ'’`āīūḥṣḍṭẓġšṯḏḫ]|[a-z][235679]|[235679][a-z]|aa|ii|uu|ee|oo", re.I)
+_FOLD_LATIN = str.maketrans("āīūḥṣḍṭẓġšṯḏḫ", "aiuhsdtzgstdh")
+# the same fold in SQL: translate() drops the trailing ʿ and ʾ, which have no counterpart
+FOLD_LATIN_SQL = "translate(lower({}), 'āīūḥṣḍṭẓġšṯḏḫʿʾ', 'aiuhsdtzgstdh')"
+# a range lists at most this many verses
+MAX_RANGE = 50
 
 _CHAT_DIGITS = str.maketrans({"2": "ʾ", "3": "ʿ", "5": "kh", "6": "ṭ", "7": "ḥ", "9": "ṣ"})
 
@@ -65,6 +78,13 @@ def chat_alphabet(q: str) -> str:
     s = re.sub(r"a{2,}", "ā", s)
     s = re.sub(r"(?:ee|ii)+", "ī", s)
     return re.sub(r"(?:oo|uu)+", "ū", s)
+
+
+def fold_latin(s: str) -> str:
+    """A Latin query or transliteration reduced for comparison: chat digits read, diacritics, ʿ, ʾ,
+    apostrophes, hyphens and spaces dropped (kitāb, kitab and ki-tab meet)."""
+    s = unicodedata.normalize("NFC", chat_alphabet(s.strip())).translate(_FOLD_LATIN)
+    return re.sub(r"[ʿʾ'’`\-\s_]", "", s)
 
 
 def _simplify_latin(s: str) -> str:
@@ -87,6 +107,50 @@ def _surah_by_name(conn: Connection, q: str) -> dict[str, Any] | None:
         ):
             return s
     return None
+
+
+def _pattern_match(conn: Connection, raw: str) -> dict[str, Any] | None:
+    """A query that names a pattern (SRC-09): its vowelled Arabic (مَفْعُول), its slug (maf3uul) or its
+    transliteration typed with a sign of transliteration (mafʿūl, maf'uul). An unvowelled form (مفعول) is
+    a word first; the patterns group still offers the pattern."""
+    pats = rows(conn, "select slug, ar, translit from content.patterns")
+    q = raw.strip()
+    if has_arabic(q):
+        if " " in q or not _HARAKAT.search(q):
+            return None
+        v = _vowelled(q)
+        return next((p for p in pats if _vowelled(p["ar"]) == v), None)
+    if " " in q:
+        return None
+    low = q.lower()
+    hit = next((p for p in pats if p["slug"] == low), None)
+    if hit or not _TRANSLIT_MARK.search(q):
+        return hit
+    f = fold_latin(q)
+    return next((p for p in pats if fold_latin(p["translit"]) == f), None)
+
+
+def _latin_kind(conn: Connection, q: str) -> str:
+    """Transliteration when the query carries its signs or spells a Quranic word's transliteration; an
+    English gloss when a gloss uses it as a word; otherwise undecided ("latin")."""
+    if _TRANSLIT_MARK.search(q):
+        return "translit"
+    f = fold_latin(q)
+    if f and one(
+        conn,
+        f"select 1 from content.lemmas where {FOLD_LATIN_SQL.format('translit')} = :f limit 1",
+        {"f": f},
+    ):
+        return "translit"
+    words = re.escape(q.strip().lower())
+    if words and one(
+        # the glosses are the corpus's word-by-word ones, on each occurrence
+        conn,
+        r"select 1 from content.words where lower(gloss_en) ~ :p limit 1",
+        {"p": rf"\m{words}\M"},
+    ):
+        return "english"
+    return "latin"
 
 
 def detect(conn: Connection, q: str) -> tuple[str, dict[str, Any]]:
@@ -120,6 +184,9 @@ def detect(conn: Connection, q: str) -> tuple[str, dict[str, Any]]:
     s = _surah_by_name(conn, raw)
     if s:
         return "surah", {"surah": s["number"]}
+    p = _pattern_match(conn, raw)
+    if p:
+        return "pattern", {"pattern": p["slug"]}
     if has_arabic(raw):
         tokens = raw.split()
         if 2 <= len(tokens) <= 5 and all(len(normalize(t)) == 1 for t in tokens):
@@ -133,13 +200,18 @@ def detect(conn: Connection, q: str) -> tuple[str, dict[str, Any]]:
         candidates = root_input_candidates(raw)
         if candidates:
             return "root", {"letters": candidates[0], "candidates": candidates}
-    return "latin", {}
+    return _latin_kind(conn, raw), {}
+
+
+# a root result carries its letters (the root builder narrows by position) and its meaning: Ibn Fāris's
+# statement in Arabic, an English gloss where one exists (SRC-18)
+ROOT_COLS = "key, letters, spaced, translit, occurrences, lemma_count, verse_count, gist_ar, gloss_en"
 
 
 def _root_row(conn: Connection, key: str) -> dict[str, Any] | None:
     return one(
         conn,
-        "select key, spaced, translit, occurrences, lemma_count, verse_count from content.roots where key = :k",
+        f"select {ROOT_COLS} from content.roots where key = :k",
         {"k": key},
     )
 
@@ -185,27 +257,67 @@ def rank_lemmas(lemmas: list[dict[str, Any]], q: str) -> list[dict[str, Any]]:
     return [lem for _, lem in sorted(enumerate(lemmas), key=key)]
 
 
-def search(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
+# kinds a client can page through with ``only`` and ``offset`` (SRC-21, SRC-23)
+PAGED = ("verses", "lemmas", "dictionary")
+
+
+def search(
+    conn: Connection, q: str, limit: int = 20, offset: int = 0, only: str | None = None
+) -> dict[str, Any]:
     """OpenSearch when it is reachable (scored, multi-field, highlighted); Postgres otherwise. The
-    response says which engine answered. Detection, references and root letters are exact lookups in
-    Postgres either way."""
+    response says which engine answered, and ``totals`` counts the matches of each kind, not the results
+    returned (SRC-12). ``only`` with ``offset`` pages through one kind. Detection, references and root
+    letters are exact lookups in Postgres either way."""
     from . import search_os
 
     es = searchindex.client()
     out: dict[str, Any] | None = None
     if searchindex.available(es):
         try:
-            out = search_os.search(conn, es, q, limit)
+            out = search_os.search(conn, es, q, limit, offset, only)
         except Exception:  # an index problem must never take search down: fall back
             out = None
     if out is None:
-        out = search_pg(conn, q, limit)
+        out = search_pg(conn, q, limit, offset, only)
         out["engine"] = "postgres"
-    out["results"]["lemmas"] = rank_lemmas(out["results"].get("lemmas", []), q)
+    if out["detected"]["kind"] != "pattern" and not offset:
+        out["results"]["lemmas"] = rank_lemmas(out["results"].get("lemmas", []), q)
     return out
 
 
-def search_pg(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
+def _pattern_payload(p: dict[str, Any]) -> dict[str, Any]:
+    from .lexicon import ar
+
+    return {
+        "slug": p["slug"],
+        "ar": ar(p["ar"], p["translit"]),
+        "form_number": p["form_number"],
+        "occurrences": p["occurrences"],
+        "lemma_count": p["lemma_count"],
+    }
+
+
+def _lemma_rows(
+    conn: Connection, where: str, params: dict[str, Any], order: str = "l.occurrences desc, l.id"
+) -> list[dict[str, Any]]:
+    out = rows(
+        conn,
+        f"""select l.id, l.slug, l.ar, l.translit, l.pos, l.pos_ar, l.pos_en, l.occurrences, l.gloss_en,
+                   r.key as root, r.spaced as root_spaced, p.slug as pattern
+            from content.lemmas l left join content.roots r on r.id = l.root_id
+            left join content.patterns p on p.id = l.pattern_id
+            where {where} order by {order} limit :limit offset :offset""",
+        params,
+    )
+    for lem in out:
+        lem["ar"] = lemma_display(lem["ar"])
+        lem["pos_label"] = {"ar": lem.pop("pos_ar"), "en": lem.pop("pos_en")}
+    return out
+
+
+def search_pg(
+    conn: Connection, q: str, limit: int = 20, offset: int = 0, only: str | None = None
+) -> dict[str, Any]:
     kind, info = detect(conn, q)
     results: dict[str, list[dict[str, Any]]] = {
         "verses": [],
@@ -213,8 +325,12 @@ def search_pg(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
         "roots": [],
         "lemmas": [],
         "words": [],
+        "patterns": [],
+        "dictionary": [],
     }
+    totals: dict[str, int] = {}
     norm_q = normalize(q)
+    page = {"limit": limit, "offset": offset}
     # Text pasted from a mushaf is matched on the Uthmani shadow; everyday spelling on the imlāʾī one.
     wcol, vcol = ("norm_uthmani", "norm_uthmani") if is_uthmani(q) else ("norm", "norm")
 
@@ -223,19 +339,22 @@ def search_pg(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
         where = {"juz": "juz = :n", "hizb": "(hizb_quarter - 1) / 4 + 1 = :n", "page": "page = :n"}[kind]
         v = one(
             conn,
-            f"select key, surah, ayah, text_qpc, text_imlaei from content.verses where {where} order by id limit 1",
+            f"""select v.key, v.surah, v.ayah, v.text_qpc, v.text_imlaei, s.name_ar, s.name_translit
+                from content.verses v join content.surahs s on s.number = v.surah where {where} order by v.id limit 1""",
             {"n": info["number"]},
         )
         if v:
             results["verses"].append(v)
     elif kind == "verse_ref":
-        v = one(
+        # a range lists its verses, up to MAX_RANGE (SRC-Q01)
+        last = min(info["to"] or info["ayah"], info["ayah"] + MAX_RANGE - 1)
+        results["verses"] = rows(
             conn,
-            "select key, surah, ayah, text_qpc, text_imlaei from content.verses where surah = :s and ayah = :a",
-            {"s": info["surah"], "a": info["ayah"]},
+            """select v.key, v.surah, v.ayah, v.text_qpc, v.text_imlaei, s.name_ar, s.name_translit
+               from content.verses v join content.surahs s on s.number = v.surah
+               where v.surah = :s and v.ayah between :a and :b order by v.ayah""",
+            {"s": info["surah"], "a": info["ayah"], "b": max(last, info["ayah"])},
         )
-        if v:
-            results["verses"].append(v)
     elif kind == "surah":
         s = one(conn, "select * from content.surahs where number = :n", {"n": info["surah"]})
         if s:
@@ -245,11 +364,33 @@ def search_pg(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
         keys = [root_key(c) for c in info.get("candidates") or [info["letters"]]]
         results["roots"] = rows(
             conn,
-            """select key, spaced, translit, occurrences, lemma_count, verse_count from content.roots
-               where key = any(:ks) order by occurrences desc, id""",
+            f"select {ROOT_COLS} from content.roots where key = any(:ks) order by occurrences desc, id",
             {"ks": keys},
         )
-    if kind in ("arabic_word", "arabic_phrase") or (
+        # the whole family of the roots found (09 §9.6: a root query returns the family)
+        fam = "r.key = any(:ks)"
+        results["lemmas"] = _lemma_rows(conn, fam, {"ks": keys, **page})
+        totals["lemmas"] = int(
+            scalar(
+                conn,
+                f"select count(*) from content.lemmas l join content.roots r on r.id = l.root_id where {fam}",
+                {"ks": keys},
+            )
+            or 0
+        )
+    elif kind == "pattern":
+        p = one(
+            conn,
+            "select id, slug, ar, translit, form_number, occurrences, lemma_count from content.patterns where slug = :s",
+            {"s": info["pattern"]},
+        )
+        assert p is not None
+        results["patterns"] = [_pattern_payload(p)]
+        # every word on the pattern (SRC-22), most used first
+        results["lemmas"] = _lemma_rows(conn, "l.pattern_id = :pid", {"pid": p["id"], **page})
+        totals["lemmas"] = p["lemma_count"]
+        info = {**info, "ar": p["ar"], "translit": p["translit"]}
+    if kind in ("arabic_word", "arabic_phrase", "pattern") or (
         kind == "surah" and has_arabic(q) and not norm_q.isdigit()
     ):
         # A surah name (النور، الفجر) is also an Arabic word — search it as one too.
@@ -271,15 +412,16 @@ def search_pg(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
             )
             for w in results["words"]:
                 w["lemma"] = lemma_display(w["lemma"])
-            results["lemmas"] = rows(
-                conn,
-                """select l.id, l.ar, l.pos, l.occurrences, r.key as root from content.lemmas l
-                   left join content.roots r on r.id = l.root_id
-                   where l.norm = any(:qs) or l.norm_plain = any(:qs) order by l.occurrences desc limit :limit""",
-                {"qs": _lemma_candidates(norm_q), "limit": limit},
+            lemma_where = "l.norm = any(:qs) or l.norm_plain = any(:qs)"
+            results["lemmas"] = _lemma_rows(conn, lemma_where, {"qs": _lemma_candidates(norm_q), **page})
+            totals["lemmas"] = int(
+                scalar(
+                    conn,
+                    f"select count(*) from content.lemmas l where {lemma_where}",
+                    {"qs": _lemma_candidates(norm_q)},
+                )
+                or 0
             )
-            for lem in results["lemmas"]:
-                lem["ar"] = lemma_display(lem["ar"])
             root_keys: list[str] = []
             letters = parse_root_input(q)
             if letters and 3 <= len(letters) <= 4:
@@ -295,41 +437,62 @@ def search_pg(conn: Connection, q: str, limit: int = 20) -> dict[str, Any]:
                     results["roots"].append(r)
                 if len(results["roots"]) >= 5:
                     break
+            # a pattern written without its vowels (فاعل) is offered beside the word
+            results["patterns"] = [
+                _pattern_payload(p)
+                for p in rows(
+                    conn,
+                    "select slug, ar, translit, form_number, occurrences, lemma_count from content.patterns order by lemma_count desc",
+                )
+                if normalize(p["ar"]) == norm_q
+            ]
         pattern = "%" + norm_q.replace("%", "").replace("_", "") + "%"
         results["verses"] = rows(
             conn,
             f"""select v.key, v.surah, v.ayah, v.text_qpc, v.text_imlaei, s.name_ar, s.name_translit
                from content.verses v join content.surahs s on s.number = v.surah
-               where v.{vcol} like :p order by v.id limit :limit""",
-            {"p": pattern, "limit": limit},
+               where v.{vcol} like :p order by v.id limit :limit offset :offset""",
+            {"p": pattern, **page},
         )
-    if kind == "latin":
+        totals["verses"] = int(
+            scalar(conn, f"select count(*) from content.verses v where v.{vcol} like :p", {"p": pattern}) or 0
+        )
+    if kind in LATIN_KINDS:
         like = "%" + q.strip().lower().replace("%", "").replace("_", "") + "%"
-        results["lemmas"] = rows(
-            conn,
-            """select l.id, l.ar, l.pos, l.occurrences, l.gloss_en, r.key as root from content.lemmas l
-               left join content.roots r on r.id = l.root_id
-               where lower(l.gloss_en) like :p order by l.occurrences desc limit :limit""",
-            {"p": like, "limit": limit},
+        folded = "%" + fold_latin(q).replace("%", "").replace("_", "") + "%"
+        # a gloss, or a transliteration with or without its diacritics (kitab finds kitāb, SRC-40)
+        lemma_where = (
+            f"lower(l.gloss_en) like :p or {FOLD_LATIN_SQL.format('l.translit')} like :f"
+            " or l.id in (select lemma_id from content.words where lower(gloss_en) like :p)"
         )
-        for lem in results["lemmas"]:
-            lem["ar"] = lemma_display(lem["ar"])
+        results["lemmas"] = _lemma_rows(conn, lemma_where, {"p": like, "f": folded, **page})
+        totals["lemmas"] = int(
+            scalar(
+                conn, f"select count(*) from content.lemmas l where {lemma_where}", {"p": like, "f": folded}
+            )
+            or 0
+        )
         results["words"] = rows(
             conn,
-            """select w.norm as form, min(w.text_imlaei) as display, count(*)::int as occurrences,
+            f"""select w.norm as form, min(w.text_imlaei) as display, count(*)::int as occurrences,
                       (array_agg(w.location order by w.id))[1] as sample, l.id as lemma_id, l.ar as lemma, r.key as root, false as exact
                from content.words w left join content.lemmas l on l.id = w.lemma_id
                left join content.roots r on r.id = w.root_id
-               where lower(w.translit) like :p or lower(w.gloss_en) like :p
+               where {FOLD_LATIN_SQL.format("w.translit")} like :f or lower(w.gloss_en) like :p
                group by w.norm, l.id, l.ar, r.key order by count(*) desc limit :limit""",
-            {"p": like, "limit": limit},
+            {"p": like, "f": folded, "limit": limit},
         )
         for w in results["words"]:
             w["lemma"] = lemma_display(w["lemma"])
 
+    for k, v in results.items():
+        totals.setdefault(k, len(v))
+    if only in PAGED:
+        results = {k: (v if k == only else []) for k, v in results.items()}
     ar, en = LABELS[kind]
     return {
         "query": q,
         "detected": {"kind": kind, "label_ar": ar, "label_en": en, **info},
         "results": results,
+        "totals": totals,
     }

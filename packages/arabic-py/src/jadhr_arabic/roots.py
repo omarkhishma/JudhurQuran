@@ -30,6 +30,12 @@ LETTER_NAMES_AR: dict[str, str] = {
 # Every carrier of a hamza radical folds to ء; alef maksura folds to ي.
 _RADICAL_FOLD = str.maketrans({"أ": "ء", "إ": "ء", "آ": "ء", "ؤ": "ء", "ئ": "ء", "ٱ": "ء", "ى": "ي"})
 
+
+def fold_radical(letter: str) -> str:
+    """One radical as stored: a hamza on any seat is ء, alef maqṣūra is ي (أ → ء, ى → ي)."""
+    return letter.translate(_RADICAL_FOLD)
+
+
 # Latin input (k-t-b, ʿ-l-m, q-r-').
 _LATIN_TO_AR: dict[str, str] = {
     "ʾ": "ء", "'": "ء", "’": "ء", "ʿ": "ع", "3": "ع", "`": "ع", "b": "ب", "t": "ت", "ṯ": "ث",

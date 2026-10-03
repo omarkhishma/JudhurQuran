@@ -656,12 +656,20 @@ def lemma(request: Request, lemma_id: int) -> Response:
         return cached(request, lem)
 
 
-@router.get("/search", summary="Search verses, surahs, roots, lemmas and word forms")
+@router.get(
+    "/search", summary="Search verses, surahs, roots, lemmas, patterns, word forms and dictionary entries"
+)
 def search(
-    request: Request, q: str = Query(..., min_length=1, max_length=200), limit: int = Query(20, ge=1, le=100)
+    request: Request,
+    q: str = Query(..., min_length=1, max_length=200),
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0, le=10000),
+    only: str | None = Query(
+        None, pattern="^(verses|lemmas|dictionary)$", description="page through one kind"
+    ),
 ) -> Response:
     with connect() as conn:
-        return cached(request, run_search(conn, q, limit))
+        return cached(request, run_search(conn, q, limit, offset, only))
 
 
 # ─── rate limiting (per client IP, sliding minute) ─────────────────────────

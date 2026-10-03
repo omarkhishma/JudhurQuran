@@ -7,8 +7,8 @@ import hashlib
 import re
 from typing import Any
 
+from jadhr_arabic import fold_radical, root_input_candidates
 from jadhr_arabic import key as root_key
-from jadhr_arabic import root_input_candidates
 from sqlalchemy import Connection
 
 from .db import one, rows, scalar
@@ -452,8 +452,9 @@ def roots_list(
     params: dict[str, Any] = {"limit": limit, "offset": offset}
     for i, letter in enumerate(letters):
         if letter:
+            # typed as أ إ آ ؤ ئ or ى, stored as ء and ي (SRC-15)
             conds.append(f"letters[{i + 1}] = :l{i}")
-            params[f"l{i}"] = letter
+            params[f"l{i}"] = fold_radical(letter)
     if keys:
         conds.append("key = any(:keys)")
         params["keys"] = keys

@@ -13,7 +13,16 @@ from .normalize import (
     strip_marks,
 )
 from .romanise import scholarly, slug_lemma, slug_pattern
-from .roots import display_letters, from_qac, key, parse_root_input, root_input_candidates, spaced, translit
+from .roots import (
+    display_letters,
+    fold_radical,
+    from_qac,
+    key,
+    parse_root_input,
+    root_input_candidates,
+    spaced,
+    translit,
+)
 
 __all__ = [
     "BuckwalterError",
@@ -22,6 +31,7 @@ __all__ = [
     "display_bare",
     "display_letters",
     "fold",
+    "fold_radical",
     "from_qac",
     "has_arabic",
     "has_marks",

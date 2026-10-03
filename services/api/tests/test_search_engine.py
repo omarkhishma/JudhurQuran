@@ -127,3 +127,97 @@ def test_nouns_come_before_verbs_among_the_words_a_query_names() -> None:
         {"ar": "عُلِّمَ", "pos": "V", "occurrences": 5},
     ]
     assert [r["ar"] for r in rank_lemmas(rows, "علم")] == ["عِلْم", "عَلِمَ", "عُلِّمَ", "عَالَمِين"]
+
+
+# ─── Research screens audit (research 09): patterns, counts, paging, ranges, dictionaries ──────────
+
+
+def _page_all(q: str, only: str, key: str) -> list[str]:
+    seen: list[str] = []
+    while True:
+        r = client.get(
+            "/api/v1/search", params={"q": q, "only": only, "limit": 100, "offset": len(seen)}
+        ).json()
+        got = [x[key] for x in r["results"][only]]
+        if not got:
+            return seen
+        seen += got
+
+
+def test_a_pattern_query_names_the_pattern_and_lists_every_word_on_it() -> None:
+    """SRC-09, SRC-22: the slug, the vowelled wazn and a typed transliteration all name the pattern; its
+    words are all the words on it, counted and paged."""
+    pat = client.get("/api/v1/patterns/maf3uul", params={"limit": 1}).json()
+    for q in ("maf3uul", "مَفْعُول", "mafʿūl", "maf'uul"):
+        d = search(q, limit=10)
+        assert d["detected"]["kind"] == "pattern" and d["detected"]["pattern"] == "maf3uul", q
+        assert d["totals"]["lemmas"] == pat["lemma_count"]
+    words = _page_all("maf3uul", "lemmas", "slug")
+    assert len(words) == len(set(words)) == pat["lemma_count"]
+    one = client.get("/api/v1/search", params={"q": "maf3uul", "limit": 100}).json()["results"]["lemmas"]
+    assert {x["pattern"] for x in one} == {"maf3uul"}
+    # unvowelled, the same letters are a word first, with the pattern offered beside it
+    d = search("مفعول")
+    assert d["detected"]["kind"] == "arabic_word" and "maf3uul" in [
+        p["slug"] for p in d["results"]["patterns"]
+    ]
+
+
+def test_totals_count_the_matches_and_paging_reaches_them_all() -> None:
+    """SRC-12, SRC-23: a count is the number of matches, not of the results returned."""
+    d = search("mercy", limit=5)
+    assert len(d["results"]["verses"]) == 5 and d["totals"]["verses"] > 5
+    keys = _page_all("mercy", "verses", "key")
+    assert len(keys) == len(set(keys)) == d["totals"]["verses"]
+
+
+def test_latin_queries_are_told_apart() -> None:
+    """SRC-41: a transliteration (signs, chat digits, or a Quranic word's spelling) or an English gloss."""
+    for q in ("kitāb", "3ilm", "kitab"):
+        assert search(q)["detected"]["kind"] == "translit", q
+    for q in ("knowledge", "mercy"):
+        assert search(q)["detected"]["kind"] == "english", q
+
+
+def test_a_range_lists_its_verses() -> None:
+    """SRC-Q01: 2:255-257 and ٢:٢٥٥-٢٥٧ list the three verses in order."""
+    for q in ("2:255-257", "٢:٢٥٥-٢٥٧"):
+        d = search(q)
+        assert [v["key"] for v in d["results"]["verses"]] == ["2:255", "2:256", "2:257"], q
+
+
+def test_the_root_builder_finds_hamza_and_alef_maqsura_roots() -> None:
+    """SRC-15: أ إ آ ؤ ئ are the stored ء, and ى the stored ي."""
+
+    def keys(**ls: str) -> list[str]:
+        return [r["key"] for r in client.get("/api/v1/roots", params={**ls, "limit": 100}).json()["data"]]
+
+    assert "أمن" in keys(l1="أ", l2="م") and keys(l1="أ", l2="م") == keys(l1="ء", l2="م")
+    assert keys(l1="إ", l2="م") == keys(l1="ء", l2="م")
+    assert "هدي" in keys(l1="ه", l2="د", l3="ى")
+
+
+def test_roots_carry_their_meaning_and_dictionary_entries_are_found() -> None:
+    """SRC-18: Ibn Fāris's statement on each root; SRC-Q03: dictionary entries with their work."""
+    root = search("ع ل م")["results"]["roots"][0]
+    assert root["gist_ar"].startswith("العين واللام والميم") and root["letters"] == ["ع", "ل", "م"]
+    d = search("أمن")
+    entries = d["results"]["dictionary"]
+    assert entries and d["totals"]["dictionary"] >= len(entries)
+    assert any(e["root_key"] == "أمن" and e["work"]["title_ar"] for e in entries)
+    assert all("⁨" in (e["excerpt"] or "⁨") for e in entries)
+
+
+def test_the_postgres_engine_answers_the_same_questions() -> None:
+    """SRC-40: without OpenSearch, kitab still finds kitāb, a root still returns its family, a pattern its words."""
+    from jadhr_api.db import connect
+    from jadhr_api.search import search_pg
+
+    with connect() as conn:
+        assert search_pg(conn, "kitab", 5)["results"]["lemmas"][0]["slug"] == "kitab"
+        fam = search_pg(conn, "ع ل م", 50)
+        assert fam["totals"]["lemmas"] == client.get("/api/v1/roots/علم").json()["lemma_count"]
+        assert len(fam["results"]["lemmas"]) == fam["totals"]["lemmas"]
+        pat = search_pg(conn, "maf3uul", 200)
+        assert {x["pattern"] for x in pat["results"]["lemmas"]} == {"maf3uul"}
+        assert len(pat["results"]["lemmas"]) == pat["totals"]["lemmas"]
