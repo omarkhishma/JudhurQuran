@@ -480,7 +480,9 @@ def roots_list(
     total = int(scalar(conn, f"select count(*) from content.roots {where}", params) or 0)
     data = rows(
         conn,
-        f"""select key, letters, spaced, translit, occurrences, verse_count, surah_count, lemma_count
+        f"""select key, letters, spaced, translit, occurrences, verse_count, surah_count, lemma_count,
+                   (select count(distinct l.pattern)::int from content.lemmas l
+                     where l.root_id = content.roots.id and l.pattern is not null) as pattern_count
             from content.roots {where} order by {order_sql} limit :limit offset :offset""",
         params,
     )

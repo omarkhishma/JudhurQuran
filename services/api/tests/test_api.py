@@ -247,6 +247,16 @@ def test_lemmas_by_id_give_their_slugs() -> None:
     assert client.get("/api/v1/lemmas", params={"ids": ",".join(str(i) for i in range(1, 202))}).status_code == 422
 
 
+def test_roots_by_key_count_their_patterns_and_words() -> None:
+    """P8.1-A: a root's tile in the editor's library says how many patterns and words it has (EDT-044)."""
+    d = get("/api/v1/roots", keys="علم,رحم")
+    by = {r["key"]: r for r in d["data"]}
+    fam = get("/api/v1/roots/علم/graph")
+    assert by["علم"]["lemma_count"] == len(fam["lemmas"])
+    assert by["علم"]["pattern_count"] == len({x["pattern"] for x in fam["lemmas"] if x["pattern"]})
+    assert by["رحم"]["pattern_count"] >= 1
+
+
 def test_search_word_locations() -> None:
     """A word's place, as the reader's addresses and the citations write it, finds its verse; a place with no word
     finds nothing."""
