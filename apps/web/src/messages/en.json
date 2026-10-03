@@ -772,7 +772,18 @@
     "creditRecitations": "Recitations:",
     "creditTimings": "word timings:",
     "modified": "modified",
-    "allSources": "all sources"
+    "allSources": "all sources",
+    "hearRoot": "Hear the family across the Quran",
+    "hearWord": "Hear it everywhere it occurs",
+    "hearLoading": "Preparing the recitations…",
+    "hearFailed": "The recitations could not be loaded just now.",
+    "hearPlayer": "Hearing the occurrences",
+    "hearOf": "{n} of {of}",
+    "hearPrev": "Previous occurrence",
+    "hearNext": "Next occurrence",
+    "hearStop": "Stop listening",
+    "hearBy": "Recited by {reciter}, each word from his recitation of the verse",
+    "hearUntimed": "{count, plural, one {One occurrence has no timing and is left out} other {{n} occurrences have no timing and are left out}}"
   },
   "screens": {
     "building": "This screen is being built as part of the plan and is not finished yet.",

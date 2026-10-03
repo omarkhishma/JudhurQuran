@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HearPlaylist } from "@/components/audio/HearPlaylist";
 import { Backlinks } from "@/components/notebook/Backlinks";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -89,6 +90,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
           <p className="mt-3 text-[14px] text-t2" dir="ltr" lang="en">{r.translit}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <HearPlaylist root={r.key} />
           <Link href={`/graph/root/${encodeURIComponent(r.key)}`} className="btn min-h-[40px]">
             <Icon name="graph" />
             {t("openGraph")}

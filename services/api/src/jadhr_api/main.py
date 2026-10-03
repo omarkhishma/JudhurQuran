@@ -31,6 +31,7 @@ from . import (
     concordance,
     content,
     daily,
+    hear,
     knowledge,
     lexicon,
     review,
@@ -613,6 +614,23 @@ def root_review(request: Request, root: str, pick: int = Query(0, ge=0, le=1000)
         out = review.root_review(conn, root[:20], pick)
         if out is None:
             raise not_found("root")
+        return cached(request, out)
+
+
+@router.get(
+    "/hear", summary="Every occurrence of a root or a word as its slice of the word recitation, in order"
+)
+def hear_playlist(
+    request: Request,
+    root: str | None = Query(None, max_length=20),
+    lemma: str | None = Query(None, max_length=80),
+) -> Response:
+    if (root is None) == (lemma is None):
+        raise HTTPException(status_code=400, detail="give a root or a lemma")
+    with connect() as conn:
+        out = hear.playlist(conn, root=root, lemma=lemma)
+        if out is None:
+            raise not_found("root" if root is not None else "lemma")
         return cached(request, out)
 
 

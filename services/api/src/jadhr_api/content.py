@@ -979,11 +979,6 @@ def word_audio(conn: Connection, verse_key: str, token_from: int, token_to: int)
     )
     if v is None:
         return None
-    segs = [x for x in v["segments"] if token_from <= x[0] <= token_to]
-    if not segs:
-        return None
-    start, end = min(x[1] for x in segs), max(x[2] for x in segs)
-    q = v["quality"] or {}
     toks = {
         t["position"]: t["text"]
         for t in rows(
@@ -992,6 +987,19 @@ def word_audio(conn: Connection, verse_key: str, token_from: int, token_to: int)
             {"id": v["id"], "a": token_from, "b": token_to + 1},
         )
     }
+    return audio_slice(v, toks, token_from, token_to)
+
+
+def audio_slice(
+    v: dict[str, Any], toks: dict[int, str], token_from: int, token_to: int
+) -> dict[str, Any] | None:
+    """A word's slice from its verse's timings (``v``: the verse with its word-audio reciter, segments and
+    quality; ``toks``: the verse's display tokens by position, at least these and the next)."""
+    segs = [x for x in v["segments"] if token_from <= x[0] <= token_to]
+    if not segs:
+        return None
+    start, end = min(x[1] for x in segs), max(x[2] for x in segs)
+    q = v["quality"] or {}
     first, nxt = toks.get(token_from, ""), toks.get(token_to + 1)
     joined_next = set(q.get("joined_next") or [])
     flags: list[str] = []

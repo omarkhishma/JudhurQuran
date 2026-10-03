@@ -6,7 +6,8 @@ import { useAudio } from "@/lib/store/audio";
 /**
  * The single <audio> element of the app. Plays the queue (basmala first when a surah starts at ayah 1),
  * follows the word timings to mark the word being recited in the text, and scrolls it into view when
- * "follow" is on. Word mode plays only the word's slice of the verse recitation.
+ * "follow" is on. Word mode plays only the word's slice of the verse recitation; playlist mode plays slice
+ * after slice (B4), seeking within a verse's file when two occurrences share it.
  */
 export function AudioEngine() {
   const el = useRef<HTMLAudioElement>(null);
@@ -23,10 +24,16 @@ export function AudioEngine() {
       a.pause();
       return;
     }
+    const sliceKey = slice ? `${slice.start}-${slice.end}` : "";
     if (a.dataset.src !== src) {
       a.dataset.src = src;
+      a.dataset.slice = sliceKey;
       a.src = src;
       if (slice) a.currentTime = slice.start / 1000;
+    } else if (slice && a.dataset.slice !== sliceKey) {
+      // the next slice in the same verse's recitation
+      a.dataset.slice = sliceKey;
+      a.currentTime = slice.start / 1000;
     } else if (slice && Math.abs(a.currentTime * 1000 - slice.start) > 50 && !playing) {
       a.currentTime = slice.start / 1000;
     }
@@ -51,6 +58,14 @@ export function AudioEngine() {
       if (a && v && !st.inBasmala) {
         const ms = a.currentTime * 1000;
         if (st.slice && ms >= st.slice.end) {
+          if (st.mode === "playlist") {
+            // repeat holds the word; otherwise the next occurrence, until the last
+            if (st.repeat) a.currentTime = st.slice.start / 1000;
+            else if (st.index + 1 < st.queue.length) st.stepList(1);
+            else st.set({ playing: false, token: null });
+            raf.current = requestAnimationFrame(tick);
+            return;
+          }
           a.pause();
           useAudio.getState().set({ playing: false, token: null });
           clear();
@@ -82,12 +97,13 @@ export function AudioEngine() {
   function onEnded() {
     const st = useAudio.getState();
     if (st.inBasmala) return st.set({ inBasmala: false });
-    if (st.repeat && st.mode !== "word" && el.current) {
+    if (st.repeat && st.mode !== "word" && st.mode !== "playlist" && el.current) {
       el.current.currentTime = 0;
       void el.current.play();
       return;
     }
     if (st.mode === "surah" && st.index + 1 < st.queue.length) return st.set({ index: st.index + 1, token: null });
+    if (st.mode === "playlist" && st.index + 1 < st.queue.length) return st.stepList(1);
     st.set({ playing: false, token: null });
     document.querySelectorAll(".w.is-reading").forEach((n) => n.classList.remove("is-reading"));
   }

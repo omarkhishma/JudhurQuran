@@ -68,7 +68,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const markRead = usePersonal((s) => s.markRead);
   const playVerse = useAudio((s) => s.playVerse);
   const stopAudio = useAudio((s) => s.stop);
-  const playingKey = useAudio((s) => (s.playing && s.mode !== "word" && s.surah && s.queue[s.index] ? `${s.surah}:${s.queue[s.index].ayah}` : null));
+  const playingKey = useAudio((s) => (s.playing && s.mode !== "word" && s.mode !== "playlist" && s.surah && s.queue[s.index] ? `${s.surah}:${s.queue[s.index].ayah}` : null));
   // the Recite tool of the verse being recited reads as pressed, and says it stops
   useEffect(() => {
     const root = ref.current;

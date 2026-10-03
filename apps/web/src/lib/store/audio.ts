@@ -5,9 +5,11 @@ import { persist } from "zustand/middleware";
 import { safeJSONStorage } from "@/lib/store/safeStorage";
 import type { WordAudio } from "@/lib/types";
 
-export type VerseAudio = { key: string; ayah: number; url: string; segments: [number, number, number][] };
+export type VerseAudio = { key: string; ayah: number; url: string; segments: [number, number, number][]; slice?: { start: number; end: number }; item?: HearItem };
+/** One occurrence in a playlist (B4, "hear the root"): the word's slice of the word recitation, with where it is. */
+export type HearItem = { location: string; verse_key: string; surah: { number: number; name_ar: string; name_translit: string }; ayah: number; surface: string; lemma: { slug: string; ar: string } | null; audio: WordAudio };
 
-type Mode = "surah" | "verse" | "word";
+type Mode = "surah" | "verse" | "word" | "playlist";
 
 export const SPEEDS = [1, 0.75, 0.5] as const; // the prototype's control, mapped to real recitation (RDR-554)
 export type Speed = (typeof SPEEDS)[number];
@@ -36,6 +38,11 @@ type AudioState = {
   playVerse: (key: string) => void;
   /** a word's slice of the word-audio recitation (D10), whatever reciter the verses play in */
   playSlice: (key: string, audio: WordAudio) => void;
+  /** every occurrence of a root or a word, slice after slice (B4); `list` names it, so its player knows its own */
+  playList: (list: string, items: HearItem[], start?: number) => void;
+  /** the playlist's next or previous slice */
+  stepList: (dir: 1 | -1) => void;
+  list: string | null;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -65,10 +72,11 @@ export const useAudio = create<AudioState>()(
       slice: null,
       token: null,
       error: null,
+      list: null,
       setReciter: (id) => {
         const { playing, mode, surah, queue, index } = get();
         set({ reciter: id });
-        if (playing && mode !== "word" && surah) get().playSurah(surah, queue[index]?.ayah ?? 1);
+        if (playing && mode !== "word" && mode !== "playlist" && surah) get().playSurah(surah, queue[index]?.ayah ?? 1);
       },
       setFollow: (v) => set({ follow: v }),
       cycleSpeed: () => set((s) => ({ speed: SPEEDS[(SPEEDS.indexOf(s.speed) + 1) % SPEEDS.length] })),
@@ -118,9 +126,21 @@ export const useAudio = create<AudioState>()(
           error: null,
         });
       },
+      playList: (list, items, start = 0) => {
+        const queue: VerseAudio[] = items.map((x) => ({ key: x.verse_key, ayah: x.ayah, url: x.audio.url, segments: [], slice: { start: x.audio.start_ms, end: x.audio.end_ms }, item: x }));
+        if (!queue.length) return;
+        const i = Math.min(Math.max(0, start), queue.length - 1);
+        set({ mode: "playlist", list, surah: null, queue, index: i, basmalaUrl: null, inBasmala: false, slice: queue[i].slice ?? null, token: null, playing: true, error: null });
+      },
+      stepList: (dir) => {
+        const { queue, index, mode } = get();
+        const i = index + dir;
+        if (mode !== "playlist" || i < 0 || i >= queue.length) return;
+        set({ index: i, slice: queue[i].slice ?? null, token: null, playing: true });
+      },
       pause: () => set({ playing: false }),
       resume: () => set({ playing: true }),
-      stop: () => set({ playing: false, queue: [], index: 0, token: null, slice: null, surah: null }),
+      stop: () => set({ playing: false, queue: [], index: 0, token: null, slice: null, surah: null, list: null }),
       set: (p) => set(p),
     }),
     { name: "jadhr-audio", storage: safeJSONStorage, partialize: (s) => ({ reciter: s.reciter, follow: s.follow, speed: s.speed, repeat: s.repeat }) },

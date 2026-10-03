@@ -1,5 +1,6 @@
 "use client";
 
+import { HearPlaylist } from "@/components/audio/HearPlaylist";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
@@ -50,6 +51,8 @@ export function InQuranSection({ w, chapter }: { w: WordPayload; chapter: Chapte
   const maxCh = Math.max(1, ...dist.map((c) => c.occurrences));
   return (
     <div className="flex flex-col gap-3">
+      {/* every occurrence heard in order, the word's or its root's, as the scope says (B4) */}
+      <HearPlaylist key={scope} variant="inline" {...(scope === "root" && w.root ? { root: w.root.key } : { lemma: w.slug })} />
       {w.root && (
         <Segmented
           label={t("secInQuran")}

@@ -22,7 +22,7 @@ export function AudioBar({ surah, surahName }: { surah: number; surahName: strin
     queryKey: ["reciters"],
     queryFn: async () => ((await (await fetch("/api/v1/recitations")).json()) as { data: Reciter[] }).data,
   });
-  const active = a.surah === surah && (a.playing || a.queue.length > 0) && a.mode !== "word";
+  const active = a.surah === surah && (a.playing || a.queue.length > 0) && a.mode !== "word" && a.mode !== "playlist";
   const verse = active ? a.queue[a.index] : null;
   const reciter = data?.find((r) => r.id === a.reciter);
 
