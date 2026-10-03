@@ -12,7 +12,8 @@ import type { GraphEdge, GraphKind, GraphNode, NodeKind, VerseExcerpt } from "./
 /** The cards a seed becomes, before they are laid out and stored. The title is a message key with values. */
 export type SeedGraph = {
   kind: GraphKind;
-  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle" | "phraseTitle"; values: Record<string, string> };
+  /** numbers stay numbers here, written in the reader's digits where the title is made (SeedImport) */
+  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle" | "phraseTitle"; values: Record<string, string | number> };
   nodes: GraphNode[];
   edges: GraphEdge[];
 };
@@ -91,7 +92,7 @@ async function verseSeed(key: string): Promise<SeedGraph> {
     join(link(lid, wid));
     join(link(wid, vid));
   }
-  return { kind: "free", title: { key: "verseTitle", values: { name, ayah: String(v.ayah), key: v.key } }, nodes: [...nodes.values()], edges: [...edges.values()] };
+  return { kind: "free", title: { key: "verseTitle", values: { name, ayah: v.ayah, key: v.key } }, nodes: [...nodes.values()], edges: [...edges.values()] };
 }
 
 /**
@@ -146,7 +147,7 @@ async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[
     const e = link(path[i - 1], path[i], String(i));
     if (path[i - 1] !== path[i] && !edges.has(e.id)) edges.set(e.id, e);
   }
-  return { kind: "free", title: { key: "trailTitle", values: { n: String(path.length) } }, nodes: [...nodes.values()], edges: [...edges.values()] };
+  return { kind: "free", title: { key: "trailTitle", values: { count: path.length } }, nodes: [...nodes.values()], edges: [...edges.values()] };
 }
 
 export function buildSeedGraph(seed: Seed): Promise<SeedGraph> {

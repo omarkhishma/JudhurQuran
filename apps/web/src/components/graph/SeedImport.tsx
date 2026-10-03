@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { cnt, formatNumber } from "@/lib/format";
 import { useEffect } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { buildSeedGraph, saveSeedGraph } from "@/lib/graph/seed";
@@ -14,6 +15,7 @@ import { decodeSeed } from "@/lib/graph/seedCodec";
  */
 export function SeedImport({ encoded, into }: { encoded: string; into: string | null }) {
   const t = useTranslations("graph");
+  const locale = useLocale();
   const router = useRouter();
   const seed = decodeSeed(encoded);
   const job = useQuery({
@@ -24,7 +26,9 @@ export function SeedImport({ encoded, into }: { encoded: string; into: string | 
     retry: false,
     queryFn: async () => {
       const g = await buildSeedGraph(seed!);
-      return saveSeedGraph(g, t(g.title.key, g.title.values), into);
+      const values = Object.fromEntries(Object.entries(g.title.values).map(([k, v]) => [k, typeof v === "number" ? formatNumber(v, locale) : v]));
+      if (typeof g.title.values.count === "number") Object.assign(values, cnt(g.title.values.count, locale));
+      return saveSeedGraph(g, t(g.title.key, values), into);
     },
   });
   useEffect(() => {

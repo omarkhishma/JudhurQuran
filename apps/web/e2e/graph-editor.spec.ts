@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { compressToEncodedURIComponent } from "lz-string";
-import { api } from "./helpers";
+import { api, ar, arCount } from "./helpers";
 
 /**
  * The graph editor as built, after the P8.0 fixes (research 13 §2): what a map shows is read from the dataset,
@@ -231,4 +231,31 @@ test("deleting a card takes its wires in one step that undo brings back whole, a
   await page.mouse.move(box.x + box.width / 2 + 40, box.y + 60, { steps: 6 });
   await page.mouse.up();
   await expect(undo).toHaveAttribute("title", "تراجع: نقل بطاقة");
+});
+
+test("counts read as Arabic and English count them (F10, QAN-14)", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  // a trail of two steps and one of three, titled in the reader's digits and number
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "trail", steps: [{ kind: "verse", id: "1:2" }, { kind: "root", id: "رحم" }] })}`);
+  const two = await editorId(page);
+  await expect(page.getByRole("textbox", { name: "إعادة التسمية" })).toHaveValue("مسار قراءة (خطوتان)");
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "trail", steps: [{ kind: "word", id: "alamin" }, { kind: "verse", id: "1:2" }, { kind: "root", id: "رحم" }] })}`);
+  await editorId(page);
+  await expect(page.getByRole("textbox", { name: "إعادة التسمية" })).toHaveValue("مسار قراءة (٣ خطوات)");
+  // My maps counts each map's cards
+  const n = (await storedGraph(page, two))!.nodes.length;
+  await page.goto("/graph");
+  await expect(page.locator(`a[href="/graph/edit/${two}"]`)).toContainText(arCount(n, { one: "بطاقة واحدة", two: "بطاقتان", few: "# بطاقات", many: "# بطاقة", other: "# بطاقة" }));
+  // a lemma card's further forms
+  const g = await api<{ lemmas: { id: number; forms: unknown[] }[] }>(page, `/roots/${encodeURIComponent("علم")}/graph`);
+  const many = g.lemmas.find((l) => l.forms.length > 4)!;
+  await page.goto(`/graph/root/${encodeURIComponent("علم")}`);
+  await expect(page.locator(`.react-flow__node[data-id="lemma:${many.id}"]`)).toContainText(
+    arCount(many.forms.length - 3, { one: "+صيغة أخرى", two: "+صيغتان أخريان", few: "+# صيغ أخرى", many: "+# صيغة أخرى", other: "+# صيغة أخرى" }),
+  );
+  await page.goto(`/en/graph/root/${encodeURIComponent("علم")}`);
+  await expect(page.locator(`.react-flow__node[data-id="lemma:${many.id}"]`)).toContainText(`+${many.forms.length - 3} more forms`);
+  await page.goto("/en/graph");
+  await expect(page.locator(`a[href="/en/graph/edit/${two}"]`)).toContainText(n === 1 ? "1 card" : `${n} cards`);
+  expect(ar(3)).toBe("٣");
 });

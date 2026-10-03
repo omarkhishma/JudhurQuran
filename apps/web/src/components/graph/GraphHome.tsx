@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createGraph, deleteGraph, listGraphs } from "@/lib/graph/persist";
 import type { GraphDoc, GraphKind } from "@/lib/graph/types";
-import { formatNumber } from "@/lib/format";
+import { cnt } from "@/lib/format";
 
 export function GraphHome() {
   const t = useTranslations("graph");
@@ -90,7 +90,7 @@ export function GraphHome() {
               <Link href={`/graph/edit/${g.id}`} className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{g.title}</span>
                 <span className="text-[12.5px] text-t3">
-                  {t("cards", { n: formatNumber(g.nodeCount, locale) })} • {t("updated", { date: new Date(g.updatedAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB") })}
+                  {t("cards", cnt(g.nodeCount, locale))} • {t("updated", { date: new Date(g.updatedAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB") })}
                 </span>
               </Link>
               <button

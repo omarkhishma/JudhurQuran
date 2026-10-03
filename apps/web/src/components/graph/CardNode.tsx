@@ -4,7 +4,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useLocale, useTranslations } from "next-intl";
 import { createContext, memo, useContext, useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { citeVerse, formatNumber } from "@/lib/format";
+import { citeVerse, cnt, formatNumber } from "@/lib/format";
 import { KIND_COLOR, type GraphNode, type VerseExcerpt } from "@/lib/graph/types";
 import { excerptOf, useVerseText, wordAt } from "@/lib/graph/verseText";
 
@@ -112,8 +112,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
               {data.more && data.more.remaining > 0 && (
                 <button type="button" className="nodrag btn min-h-[26px] px-2 text-[11.5px]" onClick={() => actions.expand(id)}>
                   {data.more.kind === "forms"
-                    ? t("moreForms", { n: formatNumber(data.more.remaining, locale) })
-                    : t("moreVerses", { n: formatNumber(data.more.remaining, locale) })}
+                    ? t("moreForms", cnt(data.more.remaining, locale))
+                    : t("moreVerses", cnt(data.more.remaining, locale))}
                 </button>
               )}
               {data.kind === "word" && !data.expanded && data.count != null && data.count > 0 && (

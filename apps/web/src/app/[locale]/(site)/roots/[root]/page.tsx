@@ -9,7 +9,7 @@ import { DistributionChart } from "@/components/roots/DistributionChart";
 import { Concordance } from "@/components/roots/Concordance";
 import { RootLexicon } from "@/components/lexicon/RootLexicon";
 import { Icon } from "@/components/Icon";
-import { formatNumber, toArabicDigits } from "@/lib/format";
+import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { Term } from "@/components/terms/Term";
 import { localized } from "@/lib/seo";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
@@ -180,7 +180,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
                     {l.forms.length > 12 && (
                       <details className="mt-2">
                         <summary className="cursor-pointer text-[12.5px] text-word">
-                          {t("moreForms", { n: formatNumber(l.forms.length - 12, locale) })}
+                          {t("moreForms", cnt(l.forms.length - 12, locale))}
                         </summary>
                         <div className="mt-2">
                           <FormList forms={l.forms.slice(12)} locale={locale} />
