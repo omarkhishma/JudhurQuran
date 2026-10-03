@@ -260,17 +260,34 @@ test("copy puts the reference after the verse text (RDR-555)", async ({ page, co
   expect(text).toMatch(/^﴿.+﴾ \[الفاتحة: ٢\]$/);
 });
 
-test("verse mode carries the occasion of revelation verbatim with its source (P2.5a, P3.9)", async ({ page }) => {
+test("verse mode: the vetted occasions of revelation first, the classical books as their own closed layer (P2.5a, P3.9, D26)", async ({ page }) => {
   await returning(page);
-  const k = await api<{ asbab: { text: string; source_id: string }[]; sources: Record<string, { attribution_ar: string }> }>(page, "/verses/2:6/knowledge");
-  expect(k.asbab.length).toBeGreaterThan(0);
-  await page.goto("/quran/2/6");
-  const p = panel(page);
-  const layer = p.locator(".layer", { has: page.getByRole("button", { name: /أسباب النزول/ }) });
-  await expect(layer.locator(".kn-item")).toHaveCount(k.asbab.length);
-  const first = k.asbab[0].text.replace(/\s+/g, " ").trim().slice(0, 24);
-  await expect(layer).toContainText(first);
-  await expect(layer).toContainText(k.sources[k.asbab[0].source_id].attribution_ar);
+  type K = { asbab: { text: string; work: string; source_id: string }[]; sources: Record<string, { attribution_ar: string }> };
+  const k = await api<K>(page, "/verses/16:106/knowledge");
+  const vetted = k.asbab.filter((a) => a.work === "tafsircenter");
+  const classical = k.asbab.filter((a) => a.work !== "tafsircenter");
+  expect(vetted.length).toBeGreaterThan(0);
+  expect(classical.length).toBeGreaterThan(0);
+  await page.goto("/quran/16/106");
+  const layer = panel(page).locator(".layer", { has: page.getByRole("button", { name: /أسباب النزول/ }) });
+  const layerClassical = layer.locator(".kn-layer-classical");
+  // vetted narrations are shown; the classical ones sit in their own layer, closed until asked for
+  await expect(layer.locator(":scope .layer-body > .kn-item, :scope .kn-item:not(.kn-layer-classical .kn-item)")).toHaveCount(vetted.length);
+  await expect(layer).toContainText(vetted[0].text.replace(/\s+/g, " ").trim().slice(0, 24));
+  await expect(layer).toContainText(k.sources[vetted[0].source_id].attribution_ar);
+  await expect(layerClassical).not.toHaveAttribute("open", "");
+  await expect(layerClassical.locator("summary")).toContainText("الواحدي والسيوطي");
+  await layerClassical.locator("summary").click();
+  await expect(layerClassical.locator(".kn-item")).toHaveCount(classical.length);
+  await expect(layerClassical).toContainText("دون حكم على صحتها");
+
+  // a verse only the classical books treat: no vetted narration, said so; their layer still closed
+  const only = await api<K>(page, "/verses/102:1/knowledge");
+  expect(only.asbab.every((a) => a.work !== "tafsircenter")).toBeTruthy();
+  await page.goto("/quran/102/1");
+  const l2 = panel(page).locator(".layer", { has: page.getByRole("button", { name: /أسباب النزول/ }) });
+  await expect(l2).toContainText("لا رواية محقَّقة");
+  await expect(l2.locator(".kn-layer-classical")).not.toHaveAttribute("open", "");
 });
 
 test("wujūh: a Quranic word's senses from the classical books, the sense citing this verse marked (P3.1)", async ({ page }) => {

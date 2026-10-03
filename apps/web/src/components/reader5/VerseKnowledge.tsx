@@ -100,27 +100,42 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
   if (!q.data) return <div className="h-24 animate-pulse rounded-xl bg-card-2" role="status" aria-label={t("loading")} />;
   const k = q.data;
   const named = k.entities.filter((e) => e.wikidata_id);
+  const vetted = k.asbab.filter((a) => a.work === "tafsircenter");
+  const classical = k.asbab.filter((a) => a.work !== "tafsircenter");
+  const asbabItem = (a: (typeof k.asbab)[number]) => (
+    <article key={a.id} className="kn-item">
+      <p className="text-[11.5px] font-medium text-t2">{t(`work_${a.work}`)}{a.heading ? <span className="font-normal text-t3"> · {a.heading.replace(/\s+/g, " ").slice(0, 80)}</span> : null}</p>
+      <Fold text={a.text} className="ar-classical text-[15px] leading-[2]" />
+      {a.takhrij && (
+        <details className="kn-notes">
+          <summary>{t("takhrij")}</summary>
+          <p className="ar-classical text-[13.5px] leading-[1.9] text-t2" lang="ar" dir="rtl">{a.takhrij}</p>
+        </details>
+      )}
+      <EditorNotes notes={a.notes} />
+      {a.confidence && a.confidence !== "high" && <p className="text-[11px] text-amber">{t("keyedApprox")}</p>}
+      <SourceCredit s={k.sources[a.source_id]} />
+    </article>
+  );
   return (
     <>
       <VerseLayer title={t("secAsbab")} meta={k.asbab.length ? t("narrationsN", { n: formatNumber(k.asbab.length, locale) }) : undefined}>
         {k.asbab.length === 0 ? (
           <p className="text-[12.5px] text-t3">{t("asbabNone")}</p>
         ) : (
-          k.asbab.map((a) => (
-            <article key={a.id} className="kn-item">
-              <p className="text-[11.5px] font-medium text-t2">{t(`work_${a.work}`)}{a.heading ? <span className="font-normal text-t3"> · {a.heading.replace(/\s+/g, " ").slice(0, 80)}</span> : null}</p>
-              <Fold text={a.text} className="ar-classical text-[15px] leading-[2]" />
-              {a.takhrij && (
-                <details className="kn-notes">
-                  <summary>{t("takhrij")}</summary>
-                  <p className="ar-classical text-[13.5px] leading-[1.9] text-t2" lang="ar" dir="rtl">{a.takhrij}</p>
-                </details>
-              )}
-              <EditorNotes notes={a.notes} />
-              {a.confidence && a.confidence !== "high" && <p className="text-[11px] text-amber">{t("keyedApprox")}</p>}
-              <SourceCredit s={k.sources[a.source_id]} />
-            </article>
-          ))
+          // D26: the Tafsir Center's vetted narrations, with their takhrīj, by default; al-Wāḥidī and
+          // al-Suyūṭī as their own labelled layer — narrations as the books give them, ungraded here
+          <>
+            {vetted.length === 0 && <p className="text-[12.5px] text-t3">{t("asbabNoVetted")}</p>}
+            {vetted.map((a) => asbabItem(a))}
+            {classical.length > 0 && (
+              <details className="kn-layer-classical">
+                <summary>{t("asbabClassical", cnt(classical.length, locale))}</summary>
+                <p className="text-[11.5px] text-t3">{t("asbabClassicalNote")}</p>
+                {classical.map((a) => asbabItem(a))}
+              </details>
+            )}
+          </>
         )}
       </VerseLayer>
 

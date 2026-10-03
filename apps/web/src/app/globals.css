@@ -2820,6 +2820,16 @@ button.type-chip:hover {
 
 @layer components {
 /* ─── Verse links, topics and tool counts (RDR-142, 145…147, 156, 157) ───────── */
+.kn-layer-classical {
+  border-top: 1px dashed var(--line-2);
+  padding-top: 8px;
+}
+.kn-layer-classical > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--t2);
+  min-height: 32px;
+}
 .ptool-badge {
   font-size: 10.5px;
   color: var(--t3);

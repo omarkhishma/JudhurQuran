@@ -1011,7 +1011,10 @@
     "marksLinksTitle": "Open the linked verses",
     "marksTopicTitle": "Open the topics",
     "creditChanges": "quoted as it stands, cut into entries",
-    "licence": "licence"
+    "licence": "licence",
+    "asbabNoVetted": "No vetted narration for this verse in the Tafsir Center's database.",
+    "asbabClassical": "{count, plural, one {# narration} other {{n} narrations}} in the books of occasions: al-Wāḥidī and al-Suyūṭī",
+    "asbabClassicalNote": "Narrations with their chains as the two books give them, not graded here; the vetted ones are those above, from the Tafsir Center's database."
   },
   "concordance": {
     "title": "Concordance",
