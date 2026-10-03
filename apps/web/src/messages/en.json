@@ -483,7 +483,9 @@
     "dictBy": "{title} • {author}",
     "mineIn": "{title} • passage {n}",
     "lettersNarrow": "The letters narrow roots and words: {letters}",
-    "kindPattern": "Pattern"
+    "kindPattern": "Pattern",
+    "noteWordLoc": "press Enter to open the word there",
+    "goToWord": "Open the word at {ref}"
   },
   "footer": {
     "label": "Site links",
@@ -1452,7 +1454,8 @@
     "tool_analyse": "Analyse",
     "tool_analyse_hint": "Each word of the verse in the Analyser — its parts, root and pattern, from the Quranic corpus",
     "askAnalyse": "Analyse it anyway →",
-    "account": "My account"
+    "account": "My account",
+    "omniWordAt": "word {n} of the verse • {name}"
   },
   "concordance": {
     "title": "Concordance",

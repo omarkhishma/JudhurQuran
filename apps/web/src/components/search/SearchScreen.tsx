@@ -20,7 +20,7 @@ type Passage = { uri: string; ref: string; text: { slug: string; kind: string };
 export type SearchPayload = {
   query: string;
   engine?: string;
-  detected: { kind: string; label_ar: string; label_en: string; surah?: number; ayah?: number; to?: number | null; number?: number; pattern?: string; ar?: string; translit?: string };
+  detected: { kind: string; label_ar: string; label_en: string; surah?: number; ayah?: number; word?: number; to?: number | null; number?: number; pattern?: string; ar?: string; translit?: string };
   results: {
     verses: Verse[];
     surahs: { number: number; name_ar: string; name_translit: string; verse_count: number; revelation_place?: string }[];
@@ -39,9 +39,10 @@ const SOURCES = ["dictionary", "mine"] as const;
 type Kind = (typeof KINDS)[number] | (typeof SOURCES)[number];
 const ALL: Kind[] = [...KINDS, ...SOURCES];
 const EXAMPLES = ["الرحمن", "ك ت ب", "2:255", "الصلاة", "مَفْعُول", "s-b-r", "mercy"];
-const REFERENCE = ["verse_ref", "juz", "hizb", "page"];
+const REFERENCE = ["verse_ref", "word_loc", "juz", "hizb", "page"];
 const DETECT_NOTE: Record<string, string> = {
   verse_ref: "noteVerse",
+  word_loc: "noteWordLoc",
   juz: "noteDivision",
   hizb: "noteDivision",
   page: "noteDivision",
@@ -187,7 +188,8 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
   const total = ALL.reduce((a, k) => a + (kinds[k] ? counts[k] : 0), 0); // only what is shown (SRC-26)
   const exact = reference ? firstVerses[0]?.verse : undefined;
   const range = detected?.kind === "verse_ref" && detected.to && firstVerses.length > 1 ? `${verseRef(firstVerses[0].verse.key, locale)}–${formatNumber(firstVerses[firstVerses.length - 1].verse.ayah, locale)}` : null;
-  const exactHref = exact ? (detected?.kind === "verse_ref" ? `/quran/${exact.surah}/${exact.ayah}` : `/quran/${exact.surah}#v${exact.ayah}`) : null;
+  // a word's place opens the word there; a verse its panel; a juzʾ, ḥizb or page the reading where it begins
+  const exactHref = exact ? (detected?.kind === "word_loc" ? `/word/${exact.surah}:${exact.ayah}:${detected.word}` : detected?.kind === "verse_ref" ? `/quran/${exact.surah}/${exact.ayah}` : `/quran/${exact.surah}#v${exact.ayah}`) : null;
   // the verses as a concordance: the root asked for, or the root of the first word found
   const concordanceHref = detected?.kind === "root" && r?.roots[0] ? `/concordance?root=${encodeURIComponent(r.roots[0].key)}` : words.rows[0]?.slug && words.rows[0].root ? `/concordance?w=${encodeURIComponent(words.rows[0].slug)}` : null;
   // initial results come from the server render, so "has data" — not "has fetched" — decides
@@ -293,7 +295,7 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
         <span className="text-t3">{detected ? (DETECT_NOTE[detected.kind] ? t(DETECT_NOTE[detected.kind]) : "") : t("typeQuery")}</span>
         {exactHref && (
           <Link href={exactHref} className="btn ms-auto min-h-[32px]">
-            {range ? t("goToRange", { ref: range }) : t("goToVerse", { ref: verseRef(exact!.key, locale) })}
+            {range ? t("goToRange", { ref: range }) : detected?.kind === "word_loc" ? t("goToWord", { ref: verseRef(`${exact!.key}:${detected.word}`, locale) }) : t("goToVerse", { ref: verseRef(exact!.key, locale) })}
           </Link>
         )}
       </div>

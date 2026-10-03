@@ -167,7 +167,7 @@ def search(
     results: dict[str, list[dict[str, Any]]] = base["results"]
     totals: dict[str, int] = base["totals"]
     results.setdefault("passages", [])
-    if kind in ("empty", "verse_ref", "juz", "hizb", "page", "pattern"):
+    if kind in ("empty", "verse_ref", "word_loc", "juz", "hizb", "page", "pattern"):
         base["engine"] = "opensearch"
         return base
 

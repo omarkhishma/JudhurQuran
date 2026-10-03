@@ -57,7 +57,7 @@ export function Overlays({ chapter }: { chapter: ChapterInfo }) {
 }
 
 type OmniResults = {
-  detected: { kind: string; label_ar: string; label_en: string; surah?: number; ayah?: number; number?: number };
+  detected: { kind: string; label_ar: string; label_en: string; surah?: number; ayah?: number; word?: number; number?: number };
   results: {
     verses: { key: string; surah: number; ayah: number; text_qpc: string; name_ar: string }[];
     surahs: { number: number; name_ar: string; name_translit: string; verse_count: number }[];
@@ -89,19 +89,20 @@ function Omnibox({ onClose }: { onClose: () => void }) {
     if (!r) return [];
     const out: Row[] = [];
     const det = res.data!.detected;
-    // a juzʾ, ḥizb or page opens the reader where it begins (RDR-565), not the verse panel
+    // a juzʾ, ḥizb or page opens the reader where it begins (RDR-565), not the verse panel; a word's place the word
     const division = ["juz", "hizb", "page"].includes(det.kind) ? det : null;
+    const word = det.kind === "word_loc" ? det.word : null;
     for (const v of r.verses.slice(0, 5))
       out.push({
         group: t("omniVerses"),
         key: `v${v.key}`,
         dot: "var(--c-sentence)",
         ar: v.text_qpc.length > 60 ? v.text_qpc.slice(0, 60) + "…" : v.text_qpc,
-        sub: division ? t("divisionStart", { kind: locale === "ar" ? det.label_ar : det.label_en, n: formatNumber(det.number ?? 0, locale) }) : v.name_ar,
-        meta: v.key,
+        sub: division ? t("divisionStart", { kind: locale === "ar" ? det.label_ar : det.label_en, n: formatNumber(det.number ?? 0, locale) }) : word ? t("omniWordAt", { n: formatNumber(word, locale), name: v.name_ar }) : v.name_ar,
+        meta: word ? `${v.key}:${word}` : v.key,
         go: () => {
           onClose();
-          router.push(division ? `/quran/${v.surah}#v${v.ayah}` : `/quran/${v.surah}/${v.ayah}`);
+          router.push(division ? `/quran/${v.surah}#v${v.ayah}` : word ? `/word/${v.key}:${word}` : `/quran/${v.surah}/${v.ayah}`);
         },
       });
     for (const s of r.surahs.slice(0, 3))

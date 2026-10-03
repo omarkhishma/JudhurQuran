@@ -207,10 +207,23 @@ def test_search_root_letters_return_the_root() -> None:
 
 
 def test_search_verse_references() -> None:
-    for q in ("2:255", "٢:٢٥٥", "البقرة 255"):
+    # a citation's own prefix too: «Q 2:255», «Qurʾān 2:255», «القرآن الكريم ٢:٢٥٥» (P2.8)
+    for q in ("2:255", "٢:٢٥٥", "البقرة 255", "Q 2:255", "Q. 2:255", "Qurʾān 2:255", "القرآن الكريم ٢:٢٥٥"):
         d = get("/api/v1/search", q=q)
         assert d["detected"]["kind"] == "verse_ref", q
         assert d["results"]["verses"][0]["key"] == "2:255"
+    # a bare "q" or "quran" is not a reference
+    assert get("/api/v1/search", q="quran")["detected"]["kind"] != "verse_ref"
+
+
+def test_search_word_locations() -> None:
+    """A word's place, as the reader's addresses and the citations write it, finds its verse; a place with no word
+    finds nothing."""
+    for q in ("2:255:3", "٢:٢٥٥:٣", "Q 2:255:3"):
+        d = get("/api/v1/search", q=q)
+        assert d["detected"]["kind"] == "word_loc" and d["detected"]["word"] == 3, q
+        assert [v["key"] for v in d["results"]["verses"]] == ["2:255"], q
+    assert get("/api/v1/search", q="2:255:99")["results"]["verses"] == []
 
 
 def test_search_surah_name_also_searches_the_word() -> None:

@@ -483,7 +483,9 @@
     "dictBy": "{title} • {author}",
     "mineIn": "{title} • المقطع {n}",
     "lettersNarrow": "الحروف تحصر الجذور والكلمات: {letters}",
-    "kindPattern": "وزن"
+    "kindPattern": "وزن",
+    "noteWordLoc": "اضغط Enter لفتح الكلمة في موضعها",
+    "goToWord": "افتح الكلمة في {ref}"
   },
   "footer": {
     "label": "روابط الموقع",
@@ -1452,7 +1454,8 @@
     "tool_analyse": "حلّلها",
     "tool_analyse_hint": "كل كلمة من الآية في المحلّل: أجزاؤها وجذرها ووزنها، من المدونة القرآنية",
     "askAnalyse": "حلّلها على أي حال ←",
-    "account": "حسابي"
+    "account": "حسابي",
+    "omniWordAt": "الكلمة {n} من الآية • {name}"
   },
   "concordance": {
     "title": "الفهرس السياقي",

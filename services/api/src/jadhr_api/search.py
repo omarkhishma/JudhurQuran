@@ -23,6 +23,12 @@ from .db import one, rows, scalar
 
 _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 _REF_RE = re.compile(r"^\s*(\d{1,3})\s*[:：.\-/ ]\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?\s*$")
+# a word's place, «2:255:3», as the reader's addresses and the citations write it
+_LOC_RE = re.compile(r"^\s*(\d{1,3})\s*:\s*(\d{1,3})\s*:\s*(\d{1,3})\s*$")
+# a citation's own prefix before a reference: «Q 2:255», «Q. 2:255», «Qurʾān 2:255», «القرآن 2:255»
+_CITE_PREFIX = re.compile(
+    r"^\s*(?:q\.?|qur['ʾ’]?[aā]n|quran|koran|al-qur['ʾ’]?[aā]n|القرآن(?:\s*الكريم)?)\s*[,:]?\s*(?=\d)", re.I
+)
 _SURAH_NUM_RE = re.compile(r"^\s*(?:surah|sura|سورة)?\s*(\d{1,3})\s*$", re.I)
 _LATIN_SIMPLIFY = re.compile(r"[^a-z0-9]")
 # "الجزء 3", "حزب ١٠", "صفحة 50", "juz 3", "hizb 10", "page 50" (RDR-565)
@@ -43,6 +49,7 @@ _DIVISION_MAX = {"juz": 30, "hizb": 60, "page": 604}
 LABELS = {
     "empty": ("فارغ", "empty"),
     "verse_ref": ("رقم آية", "verse reference"),
+    "word_loc": ("موضع كلمة", "word location"),
     "surah": ("سورة", "surah"),
     "root": ("جذر", "root"),
     "arabic_word": ("كلمة عربية", "Arabic word"),
@@ -157,7 +164,10 @@ def detect(conn: Connection, q: str) -> tuple[str, dict[str, Any]]:
     raw = q.strip()
     if not raw:
         return "empty", {}
-    ascii_q = raw.translate(_DIGITS)
+    ascii_q = _CITE_PREFIX.sub("", raw.translate(_DIGITS), count=1)
+    m = _LOC_RE.match(ascii_q)
+    if m:
+        return "word_loc", {"surah": int(m.group(1)), "ayah": int(m.group(2)), "word": int(m.group(3))}
     m = _REF_RE.match(ascii_q)
     if m:
         return "verse_ref", {
@@ -353,6 +363,16 @@ def search_pg(
         )
         if v:
             results["verses"].append(v)
+    elif kind == "word_loc":
+        # the verse the word stands in; the word itself is opened at its place (the reader's /word/ address)
+        results["verses"] = rows(
+            conn,
+            """select v.key, v.surah, v.ayah, v.text_qpc, v.text_imlaei, s.name_ar, s.name_translit
+               from content.verses v join content.surahs s on s.number = v.surah
+               where v.surah = :s and v.ayah = :a
+                 and exists (select 1 from content.words w where w.location = :loc)""",
+            {"s": info["surah"], "a": info["ayah"], "loc": f"{info['surah']}:{info['ayah']}:{info['word']}"},
+        )
     elif kind == "verse_ref":
         # a range lists its verses, up to MAX_RANGE (SRC-Q01)
         last = min(info["to"] or info["ayah"], info["ayah"] + MAX_RANGE - 1)

@@ -99,3 +99,26 @@ test("the omnibox's pattern rows open Shapes on that pattern (RDR-377)", async (
   await expect(shapes.getByRole("button", { name: "هذا الوزن" })).toHaveAttribute("aria-pressed", "true");
   await expect(shapes).toContainText("فَاعِل");
 });
+
+test("a citation's reference and a word's place are understood wherever the reader types them (P2.8)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "keyboard shortcut");
+  await seed(page, []);
+  await page.goto("/quran/1");
+  await page.locator('.w[data-w="1:1:1"]').waitFor();
+  const box = page.getByRole("combobox", { name: "ابحث في كل شيء" });
+  // «Q 2:255», as a citation writes it, opens the verse
+  await page.keyboard.press("Control+k");
+  await box.fill("Q 2:255");
+  await expect(page.getByRole("option").first()).toContainText("البقرة");
+  await box.press("Enter");
+  await expect(page).toHaveURL(/\/quran\/2\/255$/);
+  // a word's place opens the word there
+  await page.keyboard.press("Control+k");
+  await box.fill("2:255:3");
+  await expect(page.getByRole("option").first()).toContainText("الكلمة ٣ من الآية");
+  await box.press("Enter");
+  await expect(page).toHaveURL(/\/word\/2:255:3$|at=2%3A255%3A3|at=2:255:3/);
+  // and the search page says where Enter goes
+  await page.goto("/search?q=2%3A255%3A3");
+  await expect(page.getByRole("link", { name: "افتح الكلمة في ٢:٢٥٥:٣" })).toHaveAttribute("href", "/word/2:255:3");
+});
