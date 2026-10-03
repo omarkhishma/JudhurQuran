@@ -1,4 +1,4 @@
-"""Licence register: every source the five registries name has an entry in data/licences.yaml, and every
+"""Licence register: every source the registries name has an entry in data/licences.yaml, and every
 entry quotes the terms it rests on (PLAN P1.8). A source added to a registry without its licence entry fails.
 
 Also runnable on its own: `uv run python pipeline/tests/test_licences.py [path/to/licences.yaml]`.
@@ -35,6 +35,7 @@ def registry_ids() -> set[str]:
     ids |= {r["id"] for r in _yaml(REPO / "data/recitations.yaml")["reciters"]}
     ids |= {s["id"] for s in _yaml(REPO / "data/patterns.yaml")["sources"]}
     ids |= {s["id"] for s in _yaml(REPO / "data/particles.yaml")["sources"]}
+    ids |= {s["id"] for s in _yaml(REPO / "data/relations.yaml")["sources"]}
     return ids
 
 

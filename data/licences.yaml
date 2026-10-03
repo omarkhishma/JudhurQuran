@@ -4,9 +4,8 @@
 # front of the owner. The summary and the owner's decisions are in docs/research/07-licence-register.md.
 #
 # One entry per id in data/sources.yaml, data/lexica.yaml, data/gharib.yaml, data/works.yaml,
-# data/recitations.yaml (its reciter ids), data/patterns.yaml and data/particles.yaml, plus `everyayah` and
-# `quran-align`, the two upstreams
-# recitations.yaml names in audio_url and timings_zip.
+# data/recitations.yaml (its reciter ids), data/patterns.yaml, data/particles.yaml and data/relations.yaml,
+# plus `everyayah` and `quran-align`, the two upstreams recitations.yaml names in audio_url and timings_zip.
 #
 # Fields
 #   urls_checked    every page, file or API answer read for this entry (pinned commits where a repo has one)
@@ -2155,3 +2154,277 @@ licences:
   - 'Met by today''s use under D18: non-commercial, attributed (the attribution names the release, both files and the licence), editor-side; when rows reach readers or a bulk file, anything shared from them stays CC BY-NC-SA 4.0 (ShareAlike) and stays out of a commercial launch (D2).'
   - 'The author is public domain (d. 749 AH / 1348 CE). The text file (JK010091) carries no edition card; the edition is named by the Shamela0026099 card (Fakhr al-Dīn Qabāwa and Muḥammad Nadīm Fāḍil, Dār al-Kutub al-ʿIlmiyya, 1413/1992), which is the same typing: their letters agree but for two. OpenITI''s cleaned version drops the edition''s paratext.'
   - 'shamela.ws pages were read only to check that the page markers follow the printed edition (its book 26099, page 1 = printed 19, page 226 = printed 244); no shamela.ws text is used.'
+- id: nuzha
+  registry: data/relations.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1.yml
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1
+    : 64037e51c700a7c3623bbb5b7e42b032b8d04f8389d279e50b6aea89d6bb8934
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1.yml
+    : 4dd6213e93f07234713a22472508d5e13a82b5d1783df10520dff7ec589462c3
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1.yml
+  - topic: other
+    quote: '90#VERS#ISSUES###: PRIMARY_VERSION, CLEANED_VERSION'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1.yml
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: محمد عبد الكريم كاظم الراضي'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: مؤسسة الرسالة'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1
+  - topic: other
+    quote: '#META# 045.EdYEAR :: 1404هـ - 1984م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0597IbnJawzi/0597IbnJawzi.NuzhatAcyun/0597IbnJawzi.NuzhatAcyun.JK007134-ara1
+  our_use: 'Shown to readers: Ibn al-Jawzī (d. 597 AH)''s Nuzhat al-aʿyun parsed into 321 wujūh entries with 1,659 numbered senses, each row a verbatim slice of the cleaned OpenITI text with printed page and milestone, Quran quotations resolved to verses and headwords mapped to roots mechanically, status extracted (pipeline/src/jadhr_pipeline/relations; tables relation_entries, relation_candidates, relation_citations). Served by GET /api/v1/words/{slug}/relations with the source''s attribution, licence and licence URL, and shown in every word entry''s Meanings section (WujuhBlock) as the senses of the word, the one whose verses include this occurrence marked, credited on screen by author, death date, title and page. Not in the bulk release (release.py EXCLUDED names the wujūh and furūq works).'
+  status: attention
+  notes:
+  - 'Terms read 2026-10-03 and unchanged: the OpenITI documentation page (41c356b2…), the Zenodo record for release 2025.1.9 (licence id cc-by-nc-sa-4.0, 035026a6…) and the CC BY-NC-SA 4.0 legal code (527c4e0e…) are byte-identical to what the pattern and particle entries recorded; the pinned file (64037e51…) equals today''s download at commit cfc4157a.'
+  - The author died 597 AH / 1201 CE (public domain). The edition is al-Rāḍī's (Muʾassasat al-Risāla, Beirut, 1404/1984); OpenITI flags the file PRIMARY_VERSION, CLEANED_VERSION with the paratext removed, and our cleaning rules (relations.yaml) remove only markup and the editor's folio marks.
+  - 'Not met: the screen credit (Wujuh.tsx SourceLine) gives only author, death date, title and page. CC BY-NC-SA 4.0 asks for the credit, the licence with its link and a note of our changes, and OpenITI asks that the file or corpus be cited; relations.yaml attribution_ar/en carries all of that and the API returns it with licence_url, but no page shows it.'
+  - 'Our records describe these rows as editor-side (relations.yaml header: ''editor-side relation candidates … Editors review in the workbench''), yet every reader sees them, under the note ''Extracted automatically from the source''s own text; not yet reviewed by an editor.'''
+  - Display is what D18 approved (non-commercial, with attribution); the API's answers carry the licence, so anything shared from these rows stays CC BY-NC-SA 4.0 (ShareAlike) and out of a commercial launch (D2).
+- id: damghani
+  registry: data/relations.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1.yml
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1
+    : 972931b22a01fd05ec335e96ed40949fe24f7dcf6da5e5f3f67ed3fd0cc6a20e
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1.yml
+    : a627ddadd309b8284f4d81a85b715960561d88651556dd2840a60f58ae9e791e
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1.yml
+  - topic: other
+    quote: '90#VERS#ISSUES###: PRIMARY_VERSION, CLEANED_VERSION'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1.yml
+  - topic: other
+    quote: '#META# المحقق: عبد العزيز سيد الأهل'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1
+  - topic: other
+    quote: '#META# دار النشر: دار العلم للملايين'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1
+  - topic: other
+    quote: '#META# سنة الطبع: 1980'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1
+  - topic: other
+    quote: 'ملاحظة: [هذا الكتاب من كتب المستودع بموقع المكتبة الشاملة]'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0478IbnMuhammadDamghani/0478IbnMuhammadDamghani.QamusQuran/0478IbnMuhammadDamghani.QamusQuran.ShamAY0034085-ara1
+  our_use: 'Shown to readers: al-Dāmaghānī (d. 478 AH)''s Qāmūs al-Qurʾān parsed into 493 wujūh entries with 2,345 numbered senses (printed pages 426–450 are missing from the digital text), each row a verbatim slice of the cleaned OpenITI text with printed page and milestone, Quran quotations resolved to verses and headwords mapped to roots mechanically, status extracted (pipeline/src/jadhr_pipeline/relations; tables relation_entries, relation_candidates, relation_citations). Served by GET /api/v1/words/{slug}/relations with the source''s attribution, licence and licence URL, and shown in every word entry''s Meanings section (WujuhBlock) beside Ibn al-Jawzī''s, the sense whose verses include this occurrence marked, credited on screen by author, death date, title and page. Not in the bulk release (release.py EXCLUDED names the wujūh and furūq works).'
+  status: attention
+  notes:
+  - 'Terms read 2026-10-03 and unchanged: the OpenITI documentation page (41c356b2…), the Zenodo record for release 2025.1.9 (licence id cc-by-nc-sa-4.0, 035026a6…) and the CC BY-NC-SA 4.0 legal code (527c4e0e…) are byte-identical to what the pattern and particle entries recorded; the pinned file (972931b2…) equals today''s download at commit cfc4157a.'
+  - The author died 478 AH / 1085 CE (public domain). The edition is Sayyid al-Ahl's (Dār al-ʿIlm li-l-Malāyīn, Beirut, 3rd ed., 1980); OpenITI flags the file PRIMARY_VERSION, CLEANED_VERSION with the paratext removed.
+  - The card says the typing reached OpenITI from Shamela's user repository («من كتب المستودع»), the route of the D22 lexica; here OpenITI publishes it under its own licence, so the D22 question is the edition behind it, which relations.yaml cites.
+  - 'Not met: the screen credit (Wujuh.tsx SourceLine) gives only author, death date, title and page. CC BY-NC-SA 4.0 asks for the credit, the licence with its link and a note of our changes, and OpenITI asks that the file or corpus be cited; relations.yaml attribution_ar/en carries all of that and the API returns it with licence_url, but no page shows it.'
+  - 'Our records describe these rows as editor-side (relations.yaml header: ''editor-side relation candidates … Editors review in the workbench''), yet every reader sees them, under the note ''Extracted automatically from the source''s own text; not yet reviewed by an editor.'''
+  - Display is what D18 approved (non-commercial, with attribution); the API's answers carry the licence, so anything shared from these rows stays CC BY-NC-SA 4.0 (ShareAlike) and out of a commercial launch (D2).
+- id: askari-furuq
+  registry: data/relations.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.JK006960-ara1
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1
+    : e58873e6f2219a1537bd85abace070070ed96bbac0018b6d51dd629784a8a505
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1.yml
+    : 727e4fc6f676b76987ca3bae0ee80844d695398a6cc0cd959de11624ff13c919
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.JK006960-ara1
+    : 2f4c59028b9002e384b9e0e4afc6563ea0ed3b4aa93cf97977ab38ec70f14cb8
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: '90#VERS#ISSUES###: formalized issues, separated with commas'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1.yml
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: محمد إبراهيم سليم'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: دار العلم والثقافة للنشر والتوزيع، القاهرة - مصر'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1
+  - topic: other
+    quote: '#META# 031.LibURL :: http://shamela.ws/index.php/book/10414'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.Shamela0010414-ara1
+  - topic: other
+    quote: '#META# 011.AuthorDIED :: 9999'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.JK006960-ara1
+  - topic: other
+    quote: '#META# 020.BookTITLE :: الفرق'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395AbuHilalCaskari/0395AbuHilalCaskari.FuruqLughawiyya/0395AbuHilalCaskari.FuruqLughawiyya.JK006960-ara1
+  our_use: 'Shown to readers: al-ʿAskarī (d. c. 395 AH)''s al-Furūq al-Lughawiyya parsed into 939 entries and 920 contrast rows (714 entries mapped to 350 roots) from the Shamela0010414 version; the JK006960 version is pinned as a cross-check, not parsed, each row a verbatim slice of the cleaned OpenITI text with printed page and milestone, Quran quotations resolved to verses and headwords mapped to roots mechanically, status extracted (pipeline/src/jadhr_pipeline/relations; tables relation_entries, relation_candidates, relation_citations). Served by GET /api/v1/words/{slug}/relations with the source''s attribution, licence and licence URL, and shown in every word entry''s Meanings section (WujuhBlock) by root, four at a time with the rest on request, credited on screen by author, death date, title and page. Not in the bulk release (release.py EXCLUDED names the wujūh and furūq works).'
+  status: attention
+  notes:
+  - 'Terms read 2026-10-03 and unchanged: the OpenITI documentation page (41c356b2…), the Zenodo record for release 2025.1.9 (licence id cc-by-nc-sa-4.0, 035026a6…) and the CC BY-NC-SA 4.0 legal code (527c4e0e…) are byte-identical to what the pattern and particle entries recorded; both pinned files equal today''s downloads at commit cfc4157a (Shamela0010414 e58873e6…, JK006960 2f4c5902…).'
+  - The author died c. 395 AH / 1005 CE (public domain). The edition is Salīm's (Dār al-ʿIlm wa-l-Thaqāfa, Cairo; the card gives no year).
+  - 'Unlike the other three relation seeds this version is not tagged CLEANED_VERSION: its version card is OpenITI''s unfilled template, so OpenITI records no removal of editorial matter for it. relations.yaml records our own check (no footnotes, no editor''s introduction), and the cleaning rules drop the editor''s folio marks (D22).'
+  - 'Not met: the screen credit (Wujuh.tsx SourceLine) gives only author, death date, title and page. CC BY-NC-SA 4.0 asks for the credit, the licence with its link and a note of our changes, and OpenITI asks that the file or corpus be cited; relations.yaml attribution_ar/en carries all of that and the API returns it with licence_url, but no page shows it.'
+  - 'Our records describe these rows as editor-side (relations.yaml header: ''editor-side relation candidates … Editors review in the workbench''), yet every reader sees them, under the note ''Extracted automatically from the source''s own text; not yet reviewed by an editor.'''
+  - Display is what D18 approved (non-commercial, with attribution); the API's answers carry the licence, so anything shared from these rows stays CC BY-NC-SA 4.0 (ShareAlike) and out of a commercial launch (D2).
+- id: anbari-addad
+  registry: data/relations.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1.yml
+  fetched: '2026-10-03'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: 035026a6457d837c99fd899446205f6707338cffed4480815ca9100a6eb01df2
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1
+    : 66ecea680d2b313f24153298bb54214a7cae602ffe66937fe278ad8ac40cf869
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1.yml
+    : b28fdbe0fd5304583335005b92e34c311f0e91200a4daa58caf7b040a7a49c3d
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply with this, all editions which are still in copyright must have their copyrighted content removed (that is all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1.yml
+  - topic: other
+    quote: '90#VERS#ISSUES###: PRIMARY_VERSION, CLEANED_VERSION'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1.yml
+  - topic: other
+    quote: '#META# المحقق: محمد أبو الفضل إبراهيم'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1
+  - topic: other
+    quote: '#META# الناشر: المكتبة العصرية، بيروت - لبنان'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1
+  - topic: other
+    quote: '#META# عام النشر: 1407 ه - 1987 م'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1
+  - topic: other
+    quote: '#META# digitization_comments: [ترقيم الكتاب موافق للمطبوع]'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0328AbuBakrIbnAnbari/0328AbuBakrIbnAnbari.Addad/0328AbuBakrIbnAnbari.Addad.Sham19Y0017077-ara1
+  our_use: 'Shown to readers: Ibn al-Anbārī (d. 328 AH)''s al-Aḍdād parsed into 355 entries and 355 antonym (didd) rows (188 entries mapped to 162 roots), with the editor''s entry numbers, each row a verbatim slice of the cleaned OpenITI text with printed page and milestone, Quran quotations resolved to verses and headwords mapped to roots mechanically, status extracted (pipeline/src/jadhr_pipeline/relations; tables relation_entries, relation_candidates, relation_citations). Served by GET /api/v1/words/{slug}/relations with the source''s attribution, licence and licence URL, and shown in every word entry''s Meanings section (WujuhBlock) by root, four at a time with the rest on request, credited on screen by author, death date, title and page. Not in the bulk release (the release writes only verses, words, lemmas and roots; release.py EXCLUDED does not name al-Aḍdād).'
+  status: attention
+  notes:
+  - 'Terms read 2026-10-03 and unchanged: the OpenITI documentation page (41c356b2…), the Zenodo record for release 2025.1.9 (licence id cc-by-nc-sa-4.0, 035026a6…) and the CC BY-NC-SA 4.0 legal code (527c4e0e…) are byte-identical to what the pattern and particle entries recorded; the pinned file (66ecea68…) equals today''s download at commit cfc4157a.'
+  - The author died 328 AH / 940 CE (public domain). The edition is Abū al-Faḍl Ibrāhīm's (al-Maktaba al-ʿAṣriyya, Beirut, 1407/1987), whose page numbering the file follows («ترقيم الكتاب موافق للمطبوع»); OpenITI flags it PRIMARY_VERSION, CLEANED_VERSION with the paratext removed.
+  - 'Not met: the screen credit (Wujuh.tsx SourceLine) gives only author, death date, title and page. CC BY-NC-SA 4.0 asks for the credit, the licence with its link and a note of our changes, and OpenITI asks that the file or corpus be cited; relations.yaml attribution_ar/en carries all of that and the API returns it with licence_url, but no page shows it.'
+  - 'Our records describe these rows as editor-side (relations.yaml header: ''editor-side relation candidates … Editors review in the workbench''), yet every reader sees them, under the note ''Extracted automatically from the source''s own text; not yet reviewed by an editor.'''
+  - Display is what D18 approved (non-commercial, with attribution); the API's answers carry the licence, so anything shared from these rows stays CC BY-NC-SA 4.0 (ShareAlike) and out of a commercial launch (D2).
