@@ -1,0 +1,414 @@
+# Loanword registry — al-Suyūṭī's «المهذب فيما وقع في القرآن من المعرب», parsed into editor-side rows (PLAN
+# P3.7a): the introduction's dispute over whether the Quran holds words that are not Arabic (every view with the
+# name the text gives), one entry per word of his list in the book's order under its letter chapter, verbatim,
+# with its printed page and milestone, the languages its text names (each with the words that name it), and a
+# mechanical link from the headword to the Quran's lemmas.
+#
+# Every row the pipeline emits is status `extracted`: a mechanical reading of the named work, never a
+# reviewed row (L2: no generated religious content — every claim is the author's words, with the work,
+# edition, page and milestone behind it; nothing is paraphrased, translated or summarised). The UI shows a
+# loanword claim only with the introduction's disagreement beside it, each view with its holders as the text
+# names them. Mapping a headword to a lemma is mechanical, the method stored on every link; where it is not
+# certain, nothing is linked and the candidates are kept with the reason.
+#
+# Files are OpenITI release 2025.1.9 (tag v2025.1.9, commit below) — the release data/particles.yaml and
+# data/relations.yaml pin — fetched raw at that tag into data/raw/openiti-loanwords/ (SOURCE.txt and
+# SHA256SUMS.txt there). Paths are relative to data/raw/. Each file is sha256-pinned; the pipeline refuses to
+# build from a file that differs.
+#
+# Licence: OpenITI publishes the corpus under CC BY-NC-SA 4.0 (decision D18: non-commercial display with
+# attribution is approved for launch; anything redistributed from these rows stays CC BY-NC-SA 4.0). The
+# author is public domain (d. 911 AH); the edition's apparatus (introduction, footnotes) is not in OpenITI's
+# cleaned version. Licence evidence: data/licences.yaml entry `muhadhdhab`.
+
+openiti:
+  release: "2025.1.9"
+  tag: v2025.1.9
+  commit: cfc4157a3cf2054c0888f133970a4eaa3e22e58c
+  repository: https://github.com/OpenITI/RELEASE
+  zenodo: https://zenodo.org/records/17767721
+  doi: 10.5281/zenodo.17767721
+  licence: CC BY-NC-SA 4.0
+  licence_url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  # Verbatim, OpenITI documentation (raw.githubusercontent.com/OpenITI/documentation/master/index.md, "How
+  # can I use OpenITI? What license is used?"), as data/particles.yaml and data/relations.yaml quote it;
+  # Zenodo record 17767721 (data/raw/openiti-2025.1.9/zenodo-record-17767721.json, sha256 035026a6…) carries
+  # license id cc-by-nc-sa-4.0.
+  licence_clause: >-
+    OpenITI is published under the CC BY-NC-SA 4.0 license. You can use the corpus and publish or share
+    your works based on it according to the license. Please, do cite the files or the corpus if you use
+    them.
+  corpus_citation: >-
+    Nigst, Lorenz; Romanov, Maxim; Savant, Sarah Bowen; Seydi, Masoumeh; Verkinderen, Peter (2025).
+    OpenITI: a Machine-Readable Corpus of Islamicate Texts. Version 2025.1.9. Zenodo.
+    https://doi.org/10.5281/zenodo.17767721
+
+# Transformations applied to the file before parsing: the cleaner the relation seeds and particle works use
+# (pipeline/src/jadhr_pipeline/relations/openiti.py; the rules and ids of data/relations.yaml → cleaning_rules),
+# after two opt-in rules of this source (pipeline/src/jadhr_pipeline/loanwords/text.py). Every row's text is a
+# slice of the cleaned file; the tests re-run the cleaning and check it.
+cleaning_rules:
+  - id: header-dropped
+  - id: annotator-lines-dropped
+  - id: auto-heading-inline
+  - id: paragraphs
+  - id: page-marks
+  - id: milestones
+  - id: line-marks
+  - id: quote-markup
+  - id: stray-marks
+  - id: folio-marks
+  - id: whitespace
+  - id: pipe-paragraphs
+    description: "In this typing a «|» inside the running text marks where a paragraph of the Shamela typing it was converted from ended (its 225 bars stand where ShamAY0034093 opens a new «#» line). The shared cleaner removes bars as printed-line marks, which would run each letter chapter into one paragraph; here a bar inside a line becomes a paragraph break. Heading bars («# |») are left to the cleaner. Whitespace only."
+  - id: name-marks
+    description: "The pages the Shamela typist typed afresh put a straight apostrophe around names («قال ' ابن مردويه ' حدثنا ' أحمد …»), a conversion residue like the «$» and «@» the shared cleaner drops: the 116 apostrophes (pages 67–79, 82 and 118) are removed and counted."
+
+# How a headword is linked to the Quran (pipeline/src/jadhr_pipeline/loanwords/linking.py). Mechanical only;
+# method, spelling level, confidence and scope are stored on every link.
+mapping_rules:
+  - id: quoted-phrase
+    description: "The entry quotes the Quran around the headword («يا أرض ابلعي ماءك», «وإذ قال إبراهيم لأبيه آزر», «لا وزر»): a run of two or more of the entry's words, five letters at least, that stands word for word (after the project's normalisation) in one sūra and aligns one of its words with a Quran word written as the headword. The aligned words are the occurrences; one lemma among them → linked at those occurrences (scope occurrence). Runs that point to different lemmas link nothing."
+  - id: word-form
+    description: "Quran words written as the headword once their proclitics (و ف ب ك ل س, the interrogative أ) are set aside, endings kept, a tanwīn alif optional («هونا» is «هون»); only when no such word exists, the same words with their attached pronouns and subject endings set aside too («فومها» → «فوم»), mushaf and imlāʾī spellings both."
+  - id: lemma-form
+    description: "Lemmas whose dictionary spelling is the headword (the mushaf's dagger alif also read as a written alif: صِرَٰط → صراط). Used when no word keeps the headword's endings; a link is of scope lemma when the headword is the lemma's own spelling, else of scope form with the occurrences of that form."
+  - id: article
+    description: "A headword with the article «ال» matches only Quran words that carry it, and only noun, adjective and proper-noun lemmas (a verb takes no article): «المهل» is not the verb «مهل»."
+  - id: initials-form
+    description: "A headword written as a sūra's opening letters («طه», «يس», «ن») is linked to those words; the corpus gives them no lemma (kind initials). A one-letter headword is matched only exactly and only to such letters."
+  - id: spelling-levels
+    description: "Spelling is compared at four levels and the strictest that finds anything decides: exact (marks removed, hamza seats kept, a final yā' with or without its dots), initial-alif (the typist's unmarked initial alif meets أ/إ/آ: «استبرق» = «إستبرق»), hamza-seat (the seat a hamza sits on and a tanwīn alif after it are conventions: «متكئا» = «متكأ»), normalised (the project's matching normalisation: «منساة» = «منسأة»). Confidence: exact, high, high, medium."
+  - id: one-lemma
+    description: "Several lemmas of one spelling (أَب father and أَبّ pasture for «أب»; بَيْع and بِيَع for «بيع») link nothing unless a quoted phrase decides: they stay as candidates with the reason. Proper names are linked like any word."
+  - id: several-words
+    description: "A heading of several words («الأولى والآخرة», «هيت لك») is linked word by word, a «و» before a later word set aside; a word whose only lemma is a function word (the preposition with its pronoun in «هيت لك») is not linked and the entry says so."
+  - id: candidates
+    description: "When nothing is linked, the entry keeps candidates for editors: the lemmas that share the spelling or the quoted phrases' lemmas, or — when nothing shares the spelling — lemmas of the same consonant skeleton or whose root letters are the headword's letters («قفل» → «أَقْفَال»), each with how it was found."
+
+# The languages an entry names, found by words in its text (after the heading). Each form is a word or a run of
+# words as this typing writes them, matched word for word (punctuation between words ignored); the match keeps
+# its span. name_ar / name_en are the UI's labels for the language, not the author's words — the author's words
+# are the matched span. «الفارسي» alone is not a form: in this book it is only the nisba of Abū ʿAlī al-Fārisī
+# («قال أبو علي الفارسي»). slip_forms are typing slips read as that language, each with its evidence.
+# Groups foreign, region and arabic-dialect name a language (an entry's language_keys); unnamed («بلغتهم») and
+# marker («معرب»، «أعجمي»: said to be non-Arabic, no language named) are kept on the entry but name none.
+languages:
+  - key: persian
+    group: foreign
+    name_ar: الفارسية
+    name_en: Persian
+    forms: [فارسي, فارسية, الفارسية, بالفارسية, فارسيين]
+  - key: rumi
+    group: foreign
+    name_ar: الرومية
+    name_en: Rūmī (Greek)
+    forms: [رومية, الرومية, بالرومية, بلغة الروم, بلسان الروم, بلسان الرومية]
+  - key: abyssinian
+    group: foreign
+    name_ar: الحبشية
+    name_en: Abyssinian (Ethiopic)
+    forms: [حبشية, الحبشية, بالحبشية, بالحبشة, بلسان الحبشة, بلغة الحبشة, بلحن الحبشة, بلسان الحبش, بكلام الحبش, بلسان الحبشي, بلسان الحبشية]
+  - key: nabataean
+    group: foreign
+    name_ar: النبطية
+    name_en: Nabataean
+    forms: [نبطي, نبطية, النبطية, بالنبطية, بلغة النبط, بلسان النبط, بكلام النبطية, باللغة النبطية, النبط يسمون]
+    slip_forms:
+      - form: بالنبيطية
+        evidence: "«سيناء» (p. 79): «قال: (سيناء) بالنبيطية: الحسن»; the set-aside copy of the same report (p. 58) and Shamela0026097 read «بالنبطية»."
+  - key: hebrew
+    group: foreign
+    name_ar: العبرانية
+    name_en: Hebrew
+    forms: [عبراني, عبرانية, العبرانية, بالعبرانية, بلغة العبرانية, العبرية, بالعبرية, بلسان العبرية]
+    slip_forms:
+      - form: بالعنبرانية
+        evidence: "«صلوات» (p. 85): «ذكر الجواليقي أنها بالعنبرانية: كنائس اليهود»; the set-aside copy (p. 58) and Shamela0026097 read «بالعبرانيد», both slips of «بالعبرانية»."
+      - form: بالعبرانيد
+        evidence: "the set-aside copy of «صلوات» (p. 58) and Shamela0026097: «ذكر الجواليقي أنها بالعبرانيد: كنائس اليهود»; the re-typed page 85 reads «بالعنبرانية»."
+  - key: syriac
+    group: foreign
+    name_ar: السريانية
+    name_en: Syriac
+    forms: [سرياني, سريانية, السريانية, بالسريانية, والسريانية, باللغة السريانية]
+    slip_forms:
+      - form: أوسريانية
+        evidence: "«ربانيون» (p. 60): «وأنما عبرانية أوسريانية» — «أو» run into «سريانية»; all three versions."
+  - key: coptic
+    group: foreign
+    name_ar: القبطية
+    name_en: Coptic
+    forms: [بالقبطية, بلسان القبط, والقبط يسمون]
+  - key: indian
+    group: foreign
+    name_ar: الهندية
+    name_en: Indian
+    forms: [بالهندية, بلغة الهند]
+  - key: berber
+    group: foreign
+    name_ar: البربرية
+    name_en: Berber
+    forms: [بلغة البربر, بلغة بربر]
+  - key: zanj
+    group: foreign
+    name_ar: الزنجية
+    name_en: Zanj
+    forms: [بالزنجية]
+  - key: turkic
+    group: foreign
+    name_ar: التركية
+    name_en: Turkic
+    forms: [بلسان الترك]
+  - key: hawrani
+    group: foreign
+    name_ar: الحورانية
+    name_en: Ḥawrānī
+    forms: [بلسان الحورانية]
+  - key: jewish
+    group: foreign
+    name_ar: لسان اليهود
+    name_en: the Jews' speech
+    forms: [بلسان اليهود, بلسان يهود يثرب, واليهودية]
+  - key: ajam
+    group: foreign
+    name_ar: لسان العجم
+    name_en: the speech of the ʿajam (non-Arabs)
+    forms: [بلغة العجم, بلسان العجم]
+  - key: maghrib
+    group: region
+    name_ar: لسان أهل المغرب
+    name_en: the speech of the people of the Maghrib
+    forms: [بلسان أهل المغرب, بلغة أهل المغرب]
+  - key: ifriqiya
+    group: region
+    name_ar: لسان أهل أفريقية
+    name_en: the speech of the people of Ifrīqiya
+    forms: [بلسان أهل أفريقية]
+  - key: yemen
+    group: arabic-dialect
+    name_ar: لغة أهل اليمن
+    name_en: the speech of the people of Yemen
+    forms: [بلغة أهل اليمن]
+  - key: himyar
+    group: arabic-dialect
+    name_ar: لغة حمير
+    name_en: Ḥimyarī
+    forms: [لغة حمير]
+  - key: theirs
+    group: unnamed
+    name_ar: لغتهم
+    name_en: "\"their language\" (not named)"
+    forms: [بلغتهم, بكلامهم]
+  - key: muarrab
+    group: marker
+    name_ar: معرب أو أعجمي
+    name_en: said to be Arabized or non-Arabic (no language named)
+    forms: [أعجمي, أعجمية, معرب, معربة, معربا, معربين, عربت, تعريب, غير عربي, ليس بعربي]
+
+# Words shaped like a language name («بالـ…ية») that name no language; any other such word left unmatched is
+# reported (report → languages → unrecognised_language_words).
+not_language_words:
+  - word: بالعربية
+    reason: "Arabic itself: «وكان من أعلم الناس بالعربية» (entry «هدنا»)"
+
+sources:
+  - id: muhadhdhab
+    sort_order: 1
+    title_ar: المهذب فيما وقع في القرآن من المعرب
+    title_en: al-Muhadhdhab fī-mā waqaʿa fī al-Qurʾān min al-muʿarrab
+    author_ar: السيوطي، جلال الدين أبو الفضل عبد الرحمن بن أبي بكر
+    author_en: al-Suyūṭī, Jalāl al-Dīn Abū al-Faḍl ʿAbd al-Raḥmān b. Abī Bakr
+    death_hijri: 911
+    death_ce: 1505
+    edition_ar: تحقيق سمير حسين حلبي، دار الكتب العلمية، بيروت، الطبعة الأولى 1408هـ / 1988م
+    edition_en: "ed. Samīr Ḥusayn Ḥalabī (Beirut: Dār al-Kutub al-ʿIlmiyya, 1st ed., 1408/1988)"
+    scope_ar: المقدمة، والألفاظ مرتبة على حروف المعجم، والخاتمة
+    scope_en: "The introduction, the words in their letter chapters, and the closing count and verses"
+    openiti_uri: 0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1
+    openiti_status: OpenITI primary version (PRIMARY_VERSION, CLEANED_VERSION)
+    file: openiti-loanwords/data/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1
+    sha256: fac2ad09d82c12055c132ca944d5f44417dbe62ece57c22a71cbda0100824208
+    card_file: openiti-loanwords/data/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1.yml
+    card_sha256: cbbc95643c94a49c945273ea58c5e4e82025f30793418f723fcd2abcba268067
+    source_url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.MuhadhdhabFimaWaqaca/0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1
+    extra_cleaning: [pipe-paragraphs, name-marks]
+    # Version choice — compared at build time (report → versions) and in the tests.
+    #
+    # Text and pages are read from JK009264, OpenITI's primary, cleaned version. It carries the edition card
+    # (Ḥalabī, Dār al-Kutub al-ʿIlmiyya, 1st ed., 1408/1988) and page markers PageV01P021…P146 (126 pages, none
+    # missing). It is the Shamela typing ShamAY0034093 (Abū Yaʿqūb's Shamela database, book 34093, the same
+    # card), cleaned: their letters agree but for 236 — ShamAY's Shamela card and a basmala before the
+    # introduction (221), and its «e» for the eulogy where JK009264 writes «صلى الله عليه وسلم» (15); its 126
+    # page markers stand at the same letter as JK009264's, and each of its 126 page labels («صفحة رقم N»)
+    # follows the marker of page N − 1. Its card says «[ترقيم الشاملة موافق للمطبوع]» (Shamela's numbering
+    # follows the print). ShamAY0034093 is pinned as the cross-check; its own text adds nothing.
+    #
+    # Shamela0026097 is another edition's typing (card: ed. al-Tihāmī al-Rājī al-Hāshimī, Maṭbaʿat Faḍāla,
+    # Morocco; pages 57–177, no marker for 133 and 150), and the base typing of most of JK009264: 5,130 of its
+    # 5,454 words stand in JK009264 in order, slips shared («فصارت عربيد», «بالعبرانيد», «سنة كالمكررة»). It
+    # is not read: (1) it leaves out the entry «لينة» and the chapter heading «حرف الياء»; (2) where the
+    # Ḥalabī pages were typed afresh (pp. 67–86, 126) its text is the shorter one — «سيناء» jumps from «حدثنا»
+    # to «عن الحسين» (homoeoteleuton), «صرهن» lacks al-Ḍaḥḥāk's report; (3) its pages are another edition's.
+    # It does carry two passages JK009264 lacks: the author's opening («الحمد لله الذي فضل هذه الأمة … هذا
+    # الكتاب تتبعت فيه الألفاظ المعربة … وإليه أضرع في الهداية إلى طرق السداد», 50 words) and its own closing
+    # line («انتهى إلينا والحمد لله تعالى على الصواب …»); they are reported, not added. It is pinned as the
+    # evidence for the set-aside blocks and slips below.
+    cross_check:
+      - role: same-typing
+        openiti_uri: 0911Suyuti.MuhadhdhabFimaWaqaca.ShamAY0034093-ara1
+        file: openiti-loanwords/data/0911Suyuti.MuhadhdhabFimaWaqaca.ShamAY0034093-ara1
+        sha256: ef52684c63abcd7610358f6c42446e60b309e99fc4a76527b0cfdff4c0c65ff0
+        card_file: openiti-loanwords/data/0911Suyuti.MuhadhdhabFimaWaqaca.ShamAY0034093-ara1.yml
+        card_sha256: 4ff24c70a34d4e49d9c3b9e6ae1bf4691e0ddfcf3c5486589fb4cb84be4429f5
+        max_letters_differing: 236
+      - role: other-edition
+        openiti_uri: 0911Suyuti.MuhadhdhabFimaWaqaca.Shamela0026097-ara1
+        file: openiti-loanwords/data/0911Suyuti.MuhadhdhabFimaWaqaca.Shamela0026097-ara1
+        sha256: 9e9dfa34a662c52e2d120b7db0238b7dd7afde25175205107a7fa696ce48167c
+        card_file: openiti-loanwords/data/0911Suyuti.MuhadhdhabFimaWaqaca.Shamela0026097-ara1.yml
+        card_sha256: 7f550d7b79d75002c191151973b1334f14c9f4570f688c752742e5d00de9af0a
+        edition_ar: تحقيق التهامي الراجي الهاشمي، مطبعة فضالة، بإشراف صندوق إحياء التراث الإسلامي المشترك بين المملكة المغربية ودولة الإمارات العربية المتحدة
+    # Blocks of the base typing the Shamela typist left in place when the Ḥalabī pages were typed afresh. They
+    # are not entries: each is kept as set-aside passages (one per copy, with the entry it repeats), reported
+    # and counted, so every letter of the file still belongs to a row. `from` and `to` are found once each.
+    set_aside:
+      - id: base-typing-sin-to-sad
+        from: "السجل): قال ابن مردويه: (حدثنا أحمد بن زياد"
+        to: "ويسمون الكنيسة صلوتا."
+        page: 58
+        evidence:
+          - "It stands inside the chapter «حرف الدال», between «(درى) قال شيدلة في (البرهان) الدرى المضيء بالحبشية.» and that entry's next sentence «وكذا قال أبو القاسم في لغات القرآن، والواسطي في الإرشاد.» (page 59), which follow each other directly in Shamela0026097 (its p. 88)."
+          - "It holds the entries of «حرف السين» from «السجل» to «سينا», a chapter heading «حرف الشين», «شطر», «شهر», «الصراط», «صرهن» and «صلوات» — every one given again under its own chapter heading on pages 67–86 of the same file."
+          - "It carries no page marker: page 58 would hold 618 words where the book's pages hold 39 (median; the largest other page, 30, holds 197). Without it page 58 holds 23."
+          - "It is the base typing letter for letter (Shamela0026097 pp. 95–108, same slips: «(سنين)», «الجاحظ بن حجر», «بالعبرانيد»), while pages 67–86 are a fresh typing with the apostrophes and square brackets of that typist and readings the base typing lacks (al-Ḍaḥḥāk's report in «صرهن»; «سيناء» without the jump from «حدثنا» to «عن الحسين»)."
+          - "Were the copies on pages 67–86 the set-aside ones instead, twenty printed pages would be empty."
+      - id: base-typing-munfatir-muhl
+        from: "(منتظر). قال ابن جرير"
+        to: "وقال أبو القاسم في لغات القرآن: (بلغة البربر)."
+        page: 125
+        evidence:
+          - "The same two entries follow at once on page 126 in the fresh typing («منفطر: قال ابن جرير … المهل: قال شيدلة …»); the author names each word once in his closing verses («ومنفطر», «ومهل»)."
+          - "This copy is the base typing letter for letter (Shamela0026097 p. 151, heading slip «(منتظر)» for the word its own text quotes, «السماء منفطر به»)."
+          - "Were the copy on page 126 the set-aside one, page 126 would be empty; without this copy page 125 holds 36 words (median 39)."
+    # Each copy in a set-aside block repeats the entry with the same headword, or the one named here.
+    copy_of:
+      - copy: سنين
+        entry: سينين
+        evidence: "the copy's own words «سينين الحسن بلسان الحبشة»"
+      - copy: سينا
+        entry: سيناء
+        evidence: "the copy's own words «من طور سينا … وسينا حسنه بالنبطية»; the fresh typing's heading «سيناء:»"
+      - copy: منتظر
+        entry: منفطر
+        evidence: "the copy's own quotation «(السماء منفطر به)»"
+      - copy: سرادق
+        entry: سرداق
+        evidence: "the fresh heading «سرداق» is a slip for «سرادق» (heading_slips)"
+    # Headwords printed without brackets (the fresh typing) or with one bracket only. `find` is the heading and
+    # the words after it, found once outside the set-aside blocks.
+    unbracketed_headings:
+      - {headword: تحت, find: "تحت): قال أبو القاسم", style: half-bracket}
+      - {headword: العرم, find: "العرم: قال بن أبي حاتم", style: bare}
+      - {headword: سجين, find: "سجين:\nذكر", style: bare}
+      - {headword: سرداق, find: "سرداق:\nقال الجواليقي", style: bare}
+      - {headword: سري, find: "سري: قال ابن جرير", style: bare}
+      - {headword: سفرة, find: "سفرة: قال ابن أبي حاتم", style: bare}
+      - {headword: سقر, find: "سقر: ذكر الجواليقي", style: bare}
+      - {headword: سكر, find: "سكر قال ابن مردويه", style: bare}
+      - {headword: سلسبيل, find: "سلسبيل:\nقال الجواليقي", style: bare}
+      - {headword: سنا, find: "سنا: عده الحافظ", style: bare}
+      - {headword: سندس, find: "سندس: ذكر الثعالبي", style: bare}
+      - {headword: سيدها, find: "سيدها: قال الواسطي", style: bare}
+      - {headword: سينين, find: "سينين: قال ابن أبي حاتم", style: bare}
+      - {headword: سيناء, find: "سيناء:\nقال ابن أبي حاتم", style: bare}
+      - {headword: شطر, find: "شطر: قال ابن أب يحاتم", style: bare}
+      - {headword: شهر, find: "شهر: قال الجواليقي ذكر", style: bare}
+      - {headword: الصراط, find: "الصراط: حكى النقاش", style: bare}
+      - {headword: صرهن, find: "صرهن: قال ابن جرير: حدثنا سلمان", style: bare}
+      - {headword: صلوات, find: "صلوات: ذكر الجواليقي أنها بالعنبرانية", style: bare}
+      - {headword: لينة, find: "لينة: قال الواسطي", style: bare}
+      - {headword: منفطر, find: "منفطر: قال ابن جرير", style: bare}
+      - {headword: المهل, find: "المهل: قال شيدلة", style: bare}
+      - {headword: هود, find: "هود: قال الجواليقي", style: bare}
+    # Brackets at the start of a sentence that the heading rule would read as a headword but that quote the
+    # Quran inside the entry before them. `find` is found once.
+    not_headings:
+      - find: "(فصرهن) قال: هي نبطية"
+        reason: "the word of 2:260 quoted inside «صرهن» after its chain «… عن سعيد بن جبير عن ابن عباس.»; the entry opened with «صرهن:» on page 83 and the base typing has the same report inside its «(صرهن)» entry"
+    # A heading the typing misspelt: the headword is linked by what it reads; the text stays as printed.
+    heading_slips:
+      - printed: سرداق
+        reads: سرادق
+        evidence: "the entry's own words «وقال الراغب: (السرادق) فارسي معرب»; the base typing's heading «(سرادق)» (set-aside copy, p. 58; Shamela0026097 p. 98); the author's verse «سرادق»"
+    # Paragraphs that are the editors' or the converter's headings, not the author's words.
+    editorial_headings:
+      - text: "1 (مقدمة) 1"
+        evidence: "the heading of the introduction in the Shamela typing («مقدمة»), set in OpenITI's heading markup"
+      - text: "الرأي الذي اختاره السيوطي."
+        evidence: "names the author in the third person between two of his own paragraphs; Shamela0026097 has it too, with a second such heading «مذهب أبي عبيد» before Abū ʿUbayd's view"
+    # The introduction: the views in the order the text gives them. A view runs from the paragraph that opens
+    # with `opens_with` to the next view (or to the end of the introduction); `stated_as` is the text's own
+    # words for the view and `held_by` the words that name who holds it, each found in the view's passages.
+    introduction:
+      views:
+        - id: denial
+          opens_with: اختلفت الأئمة في وقوع المعرب في القرآن
+          stated_as: على عدم وقوعه فيه
+          held_by: ["فالأكثرون ومنهم الإمام الشافعي، وابن جرير وأبو عبيدة والقاضي أبو بكر وابن فارس"]
+        - id: occurrence
+          opens_with: وذهب آخرون إلى وقوعه فيه
+          stated_as: وذهب آخرون إلى وقوعه فيه
+          held_by: [آخرون]
+        - id: author
+          opens_with: وأقوى ما رأيته للوقوع
+          stated_as: "وأقوى ما رأيته للوقوع - وهو اختياري -"
+          held_by: ["وهو اختياري"]
+        - id: reconciliation
+          opens_with: وقال أبو عبيد القاسم بن سلام
+          stated_as: والصواب عندي مذهب فيه تصديق القولين جميعا
+          held_by: ["أبو عبيد القاسم بن سلام", "وهذا هو الذي جزم به ابن جرير، ومال إلى هذا القول الجواليقي وابن الجوزي وآخرون"]
+        - id: list
+          opens_with: وهذا سرد الألفاظ الواردة في القرآن
+          stated_as: "وهذا سرد الألفاظ الواردة في القرآن (من ذلك) مرتبة على حروف العجم."
+          held_by: []
+    conclusion:
+      opens_with: فهذا ما وقفت عليه من الألفاظ المعربة في القرآن
+      colophon_opens_with: "جاء في خاتمة نسخة بغداد:"
+      colophon_note: "the editor's words «جاء في خاتمة نسخة بغداد:» introduce the Baghdad manuscript's colophon, which quotes al-Dāwūdī's copy of the author's note («علقه مؤلفه … سنة ثمان وسبعين وثمانمائة»)"
+    # The author's own count of his list, for the build's completeness check: his additions (72) to al-Subkī's
+    # 27 and Ibn Ḥajar's 24, without the six he counts as repeats, make 117; two more entries he says some
+    # count. Entries found − 6 − 2 must be 117.
+    author_count:
+      stated: 117
+      stated_ar: "فتمت بدونها مائة لفظة وسبع عشرة لفظة"
+      repeats: [آن, آنية, أواب, سيناء, مرقوم, سفرة]
+      repeats_ar: "سنة كالمكررة آن وآنية لأنهما من مادة (اناء) وأواب لأنه من مادة أو بي وسيناء لأنه من مادة سينين بل هو هو ومرقوم لأنه من مادة الرقيم وسفرة لأنه من مادة أسفار"
+      counted_by_some: [الأولى والآخرة, بطائنها]
+      counted_by_some_ar: "وبعضهم عد الأولى مع بطائنها والآخرة لمعاني الضد مقصور"
+    # Typing slips read off the three versions. None is applied to the text: every row keeps the letters as
+    # printed. They are reported (report → slips) so editors see them beside the rows.
+    slips:
+      - {printed: "فصارت عربيد", reads: "فصارت عربية", where: introduction, evidence: "all three versions; «العربيد» likewise in «اللغة العربيد» (same paragraph group)"}
+      - {printed: الخويني, reads: الجويني, where: introduction, evidence: "Shamela0026097 p. 63 «وقد رأيت الجويني»"}
+      - {printed: "ابن أيبي المغيرة", reads: "ابن أبي المغيرة", where: introduction, evidence: "all three versions"}
+      - {printed: "إنها عجيبة فصادق", reads: "إنها أعجمية فصادق", where: introduction, evidence: "Abū ʿUbayd's own pairing «أصولها أعجمية … فمن قال إنها عربية فهو صادق»; all three versions"}
+      - {printed: "سنة كالمكررة", reads: "ستة كالمكررة", where: conclusion, evidence: "the six words named after it (آن، آنية، أواب، سيناء، مرقوم، سفرة); all three versions"}
+      - {printed: "إلى إلى يهوذا", reads: "إلى يهوذا", where: "اليهود", evidence: "a doubled word; all three versions"}
+      - {printed: "هون بالهندية", reads: "هو بالهندية", where: "سندس", evidence: "the set-aside copy (p. 58) and Shamela0026097: «وقال شيدلة: هو بالهندية»"}
+      - {printed: "أ [و حاتم", reads: "أبو حاتم", where: "سجين", evidence: "the set-aside copy: «ذكر أبو حاتم في كتاب (الزينة)»"}
+      - {printed: "أ [ي الجوزاء", reads: "أبي الجوزاء", where: "السجل", evidence: "the set-aside copy: «عن أبي الجوزاء»"}
+      - {printed: "(غصرهن)", reads: "(فصرهن)", where: "صرهن", evidence: "the quoted word of 2:260 and the entry's «(فصرهن)» twice"}
+      - {printed: "الجواليق يلإي كتابه", reads: "الجواليقي في كتابه", where: "سينين", evidence: "the set-aside copy: «وذكره الجواليقي في كتابه»"}
+      - {printed: "عن ةمجاهد", reads: "عن مجاهد", where: "سري", evidence: "the set-aside copy: «عن مجاهد (سريا)»"}
+      - {printed: "بالطحاوية", reads: null, where: "غساق", evidence: "all three versions; names no language this book names elsewhere, so no language is read from it — left for editors"}
+    # Places where the fresh typing (the print's pages) says less than the base typing of the same words, read
+    # off the set-aside copies. Nothing is added; the entry carries its set-aside copy with the copy's languages.
+    known_differences:
+      - entry: سيدها
+        note: "the fresh typing (p. 77) has «أي: زوجها» with no language; the set-aside copy (p. 58) and Shamela0026097 read «أي زوجها (بلسان القبط)»"
+    licence: CC BY-NC-SA 4.0
+    redistributable: non-commercial, share-alike, with attribution
+    attribution_ar: "المصدر: السيوطي (ت 911هـ)، المهذب فيما وقع في القرآن من المعرب، تحقيق سمير حسين حلبي (بيروت: دار الكتب العلمية، ط1، 1408هـ/1988م). النص الرقمي: OpenITI، الإصدار 2025.1.9، الملف 0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Source: al-Suyūṭī (d. 911 AH), al-Muhadhdhab fī-mā waqaʿa fī al-Qurʾān min al-muʿarrab, ed. Samīr Ḥusayn Ḥalabī (Beirut: Dār al-Kutub al-ʿIlmiyya, 1st ed., 1408/1988). Digital text: OpenITI release 2025.1.9, file 0911Suyuti.MuhadhdhabFimaWaqaca.JK009264-ara1, CC BY-NC-SA 4.0."
+    use: "Editor-side loanword rows (PLAN P3.7a): al-Suyūṭī's introduction on the dispute over non-Arabic words in the Quran, as passages with the view and the names the text gives, and each word of his list verbatim with its printed page and milestone, the languages its text names, and the Quran lemmas it is linked to; status extracted until reviewed. Shown to readers only with this attribution and with the introduction's disagreement beside any loanword claim; CC BY-NC-SA 4.0 (D18)."
