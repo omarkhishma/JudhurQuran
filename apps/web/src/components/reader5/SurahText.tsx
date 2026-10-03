@@ -38,7 +38,7 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
       </header>
       <div className="passages">
         {payload.verses.map((v) => (
-          <article key={v.key} id={`v${v.ayah}`} data-verse={v.key} className="passage" aria-label={t("verseLabel", { ref: v.key })}>
+          <article key={v.key} id={`v${v.ayah}`} data-verse={v.key} data-page={v.page} className="passage" aria-label={t("verseLabel", { ref: v.key })}>
             <div className="passage-label">
               <span className="mono" dir="ltr">{v.key}</span>
               <span className="passage-rule" aria-hidden="true" />

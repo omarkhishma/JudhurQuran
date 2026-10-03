@@ -478,3 +478,35 @@ test("standard spelling is a labelled line under the mushaf text, never instead 
   await expect(line).toContainText(v.text_imlaei);
   await expect(page.locator('[data-verse="1:2"] .verse-line')).toContainText(v.tokens[0].text);
 });
+
+test("phone: touch targets meet the design's sizes (RDR-586)", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "phone only");
+  await returning(page);
+  await page.goto("/quran/1?w=rahman&at=1:1:3");
+  // layout height (offsetHeight), not the painted box: a popover's opening scale animation shrinks the latter
+  const sizes = async (sel: string) => page.locator(sel).evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent).map((e) => (e as HTMLElement).offsetHeight));
+  await expect(page.locator(".reader-sheet .layer-head").first()).toBeVisible();
+  for (const [sel, min] of [
+    [".reader-header button, .reader-header a.hdr-btn", 40],
+    [".reader-sheet .panel-icon", 44],
+    [".reader-sheet .panel-top .hdr-btn", 44],
+    [".reader-sheet .layer-head", 48],
+    ['.passage[data-hot] .ptool', 40],
+  ] as const) {
+    const hs = await sizes(sel);
+    expect(hs.length, sel).toBeGreaterThan(0);
+    expect(Math.min(...hs), sel).toBeGreaterThanOrEqual(min);
+  }
+  await page.getByRole("button", { name: "المزيد" }).click();
+  const items = await sizes(".more-menu > *");
+  expect(Math.min(...items)).toBeGreaterThanOrEqual(44);
+});
+
+test("the hairline reports the reading position in the sūra and the mushaf", async ({ page }) => {
+  await returning(page);
+  await page.goto("/quran/2#v100");
+  const bar = page.getByRole("progressbar", { name: "موضع القراءة" });
+  await expect(bar).toHaveAttribute("aria-valuetext", /من السورة · الصفحة .+ من ٦٠٤/);
+  const now = Number(await bar.getAttribute("aria-valuenow"));
+  expect(now).toBeGreaterThan(0);
+});

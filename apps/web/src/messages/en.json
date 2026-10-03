@@ -904,6 +904,8 @@
     "prefImlaei": "Standard spelling",
     "prefImlaeiHint": "The verse in everyday spelling under the mushaf text, for reading and searching. The mushaf text never changes.",
     "divisionStart": "Start of {kind} {n}",
-    "citedVia": "Accessed through"
+    "citedVia": "Accessed through",
+    "readingPosition": "Reading position",
+    "positionText": "{surah} of the sūra · page {page} of 604 ({mushaf} of the mushaf)"
   }
 }

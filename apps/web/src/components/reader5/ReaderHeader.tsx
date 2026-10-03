@@ -40,6 +40,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
   const [prefsOpen, setPrefsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [page, setPage] = useState<number | null>(null);
   const wide = bp !== "phone";
 
   // Reading-position hairline: how far through the sūra the reader has scrolled.
@@ -49,10 +50,25 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
     const onScroll = () => {
       const max = el.scrollHeight - el.clientHeight;
       setProgress(max > 0 ? Math.min(1, el.scrollTop / max) : 0);
+      // the mushaf page of the verse at the top of the reading area (position in the whole mushaf)
+      const edge = el.getBoundingClientRect().top + 40;
+      const top = Array.from(el.querySelectorAll<HTMLElement>(".passage[data-page]")).find((p) => p.getBoundingClientRect().bottom > edge);
+      setPage(top ? Number(top.dataset.page) : null);
+    };
+    // once per frame at most: the page lookup measures the verses
+    let frame = 0;
+    const throttled = () => {
+      if (!frame) frame = requestAnimationFrame(() => {
+        frame = 0;
+        onScroll();
+      });
     };
     onScroll();
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
+    el.addEventListener("scroll", throttled, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", throttled);
+      cancelAnimationFrame(frame);
+    };
   }, [surfaceRef]);
 
   function setSize(next: number) {
@@ -200,7 +216,25 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
         <Icon name="book" size={13} />
         {t("dictionary")}
       </button>
-      <span className="reader-hairline" style={{ width: `${progress * 100}%` }} aria-hidden="true" />
+      <span
+        className="reader-hairline"
+        style={{ width: `${progress * 100}%` }}
+        role="progressbar"
+        aria-label={t("readingPosition")}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress * 100)}
+        aria-valuetext={t("positionText", {
+          surah: new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { style: "percent", maximumFractionDigits: 0 }).format(progress),
+          page: formatNumber(page ?? 1, locale),
+          mushaf: new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { style: "percent", maximumFractionDigits: 0 }).format((page ?? 1) / 604),
+        })}
+        title={t("positionText", {
+          surah: new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { style: "percent", maximumFractionDigits: 0 }).format(progress),
+          page: formatNumber(page ?? 1, locale),
+          mushaf: new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { style: "percent", maximumFractionDigits: 0 }).format((page ?? 1) / 604),
+        })}
+      />
     </header>
   );
 }

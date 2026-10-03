@@ -904,6 +904,8 @@
     "prefImlaei": "الرسم الإملائي",
     "prefImlaeiHint": "الآية بالإملاء المعتاد تحت رسم المصحف، للقراءة والبحث. رسم المصحف لا يتغير.",
     "divisionStart": "بداية {kind} {n}",
-    "citedVia": "نقلًا عن"
+    "citedVia": "نقلًا عن",
+    "readingPosition": "موضع القراءة",
+    "positionText": "{surah} من السورة · الصفحة {page} من ٦٠٤ ({mushaf} من المصحف)"
   }
 }
