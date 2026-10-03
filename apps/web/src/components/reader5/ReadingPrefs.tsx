@@ -45,6 +45,7 @@ export function ReadingPrefs({ onClose }: { onClose: () => void }) {
       <p className="label-caps px-1.5 pb-1">{t("readingTitle")}</p>
       <Switch checked={translationOn} onChange={(v) => p.set({ translationLine: v })} label={t("prefTranslation")} hint={t("prefTranslationHint")} />
       {isAr && <Switch checked={p.muyassarLine} onChange={(v) => p.set({ muyassarLine: v })} label={t("prefMuyassar")} hint={t("prefMuyassarHint")} />}
+      <Switch checked={p.imlaeiLine} onChange={(v) => p.set({ imlaeiLine: v })} label={t("prefImlaei")} hint={t("prefImlaeiHint")} />
       <Switch checked={translitOn} onChange={(v) => p.set({ translitLine: v })} label={t("prefTranslit")} hint={t("prefTranslitHint")} />
       <Switch checked={p.tintRoot} onChange={(v) => p.set({ tintRoot: v })} label={t("prefTint")} hint={t("prefTintHint")} />
       <Switch checked={p.grammarBand} onChange={(v) => p.set({ grammarBand: v })} label={t("prefGrammar")} hint={t("prefGrammarHint")} />

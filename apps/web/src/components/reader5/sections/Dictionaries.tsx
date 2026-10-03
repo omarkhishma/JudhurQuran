@@ -74,7 +74,7 @@ export function DictionariesSection({ w }: { w: WordPayload }) {
           </div>
           <p className="text-[11.5px] text-t3">{t("byDeathDate")}</p>
           {listed.map((d) => (
-            <Article key={d.id} d={d} />
+            <Article key={d.id} d={d} w={w} />
           ))}
         </>
       )}
@@ -86,10 +86,11 @@ export function DictionariesSection({ w }: { w: WordPayload }) {
   );
 }
 
-function Article({ d }: { d: DictWork }) {
+function Article({ d, w }: { d: DictWork; w: WordPayload }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const showToast = useReader((s) => s.showToast);
+  const setCite = useReader((s) => s.setCite);
   const [open, setOpen] = useState<Record<number, boolean>>({});
   const k = DICT_KIND[d.id];
   return (
@@ -100,6 +101,22 @@ function Article({ d }: { d: DictWork }) {
         {k && <span className="tag-pill">{t(`tag_${k.tag}`)}</span>}
         <span className="flex-1" />
         <span className="text-[11.5px] text-t3">{(locale === "ar" ? d.author_ar : d.author_en) + " · " + deathLabel(d, locale, t)}</span>
+        <button
+          type="button"
+          className="text-[11.5px] text-t3 hover:text-t1"
+          onClick={() =>
+            setCite({
+              kind: "article",
+              slug: w.slug,
+              label: d.title_ar,
+              dict: { title_ar: d.title_ar, title_en: d.title_en, author_ar: d.author_ar, author_en: d.author_en },
+              root: { spaced: w.root!.ar_spaced, translit: w.root!.translit },
+              page: d.entries[0]?.page_ref ?? null,
+            })
+          }
+        >
+          {t("cite")}
+        </button>
       </header>
       {d.entries.map((e) => (
         <ArticleEntry key={e.id} e={e} lang={d.lang} expanded={!!open[e.id]} onToggle={() => setOpen((o) => ({ ...o, [e.id]: !o[e.id] }))} onCopied={() => showToast(t("entryCopied", { dict: locale === "ar" ? d.title_ar : d.title_en }))} />

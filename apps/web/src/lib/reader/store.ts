@@ -11,7 +11,18 @@ export type Mode = "empty" | "word" | "verse" | "index" | "surah";
 export type Selection = { slug: string; at: string | null };
 export type SectionId = "senses" | "family" | "patterns" | "lexica" | "timeline" | "usage";
 export const SECTIONS: SectionId[] = ["senses", "family", "patterns", "lexica", "timeline", "usage"];
-export type CiteTarget = { kind: "word"; slug: string; label: string } | { kind: "root"; key: string; label: string } | { kind: "verse"; key: string; label: string };
+export type CiteTarget =
+  | { kind: "word"; slug: string; label: string; at?: string | null }
+  | { kind: "root"; key: string; label: string }
+  | { kind: "verse"; key: string; label: string }
+  | {
+      kind: "article";
+      slug: string;
+      label: string;
+      dict: { title_ar: string; title_en: string; author_ar: string; author_en: string };
+      root: { spaced: string; translit: string };
+      page: string | null;
+    };
 export type SuggestTarget = { kind: "edit" | "sense" | "error"; slug: string; label: string; ordinal?: number; current: string };
 
 type ReaderState = {
@@ -130,6 +141,7 @@ export type Prefs = {
   translitLine: boolean | null; // null → locale default (off in Arabic, on in English)
   translationLine: boolean | null; // null → locale default
   muyassarLine: boolean; // al-Muyassar's plain Arabic explanation under each verse (Arabic UI option)
+  imlaeiLine: boolean; // D7: the verse in standard spelling, labelled, under the mushaf text (never instead of it)
   tintRoot: boolean; // underline the open word's root family (RDR-038)
   grammarBand: boolean; // RDR-039
   wordStates: boolean; // D20: an opt-in study mode, off by default on the Quran
@@ -158,6 +170,7 @@ export const DEFAULT_PREFS: Prefs = {
   translitLine: null,
   translationLine: null,
   muyassarLine: false,
+  imlaeiLine: false,
   tintRoot: true,
   grammarBand: false,
   wordStates: false,

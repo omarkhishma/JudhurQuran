@@ -45,7 +45,7 @@ export function Overlays({ chapter }: { chapter: ChapterInfo }) {
 }
 
 type OmniResults = {
-  detected: { kind: string; label_ar: string; label_en: string; surah?: number; ayah?: number };
+  detected: { kind: string; label_ar: string; label_en: string; surah?: number; ayah?: number; number?: number };
   results: {
     verses: { key: string; surah: number; ayah: number; text_qpc: string; name_ar: string }[];
     surahs: { number: number; name_ar: string; name_translit: string; verse_count: number }[];
@@ -75,17 +75,20 @@ function Omnibox({ onClose }: { onClose: () => void }) {
     const r = res.data?.results;
     if (!r) return [];
     const out: Row[] = [];
+    const det = res.data!.detected;
+    // a juzʾ, ḥizb or page opens the reader where it begins (RDR-565), not the verse panel
+    const division = ["juz", "hizb", "page"].includes(det.kind) ? det : null;
     for (const v of r.verses.slice(0, 5))
       out.push({
         group: t("omniVerses"),
         key: `v${v.key}`,
         dot: "var(--c-sentence)",
         ar: v.text_qpc.length > 60 ? v.text_qpc.slice(0, 60) + "…" : v.text_qpc,
-        sub: v.name_ar,
+        sub: division ? t("divisionStart", { kind: locale === "ar" ? det.label_ar : det.label_en, n: formatNumber(det.number ?? 0, locale) }) : v.name_ar,
         meta: v.key,
         go: () => {
           onClose();
-          router.push(`/quran/${v.surah}/${v.ayah}`);
+          router.push(division ? `/quran/${v.surah}#v${v.ayah}` : `/quran/${v.surah}/${v.ayah}`);
         },
       });
     for (const s of r.surahs.slice(0, 3))
@@ -176,21 +179,49 @@ function CiteDialog({ chapter }: { chapter: ChapterInfo }) {
   const version = meta.data?.dataset.version ?? "";
   const origin = typeof window !== "undefined" ? window.location.origin : SITE.url;
   const prefix = locale === "en" ? "/en" : "";
+  // the permalink matches the scope cited (RDR-387): a word at its place, a verse, a root, an article's entry
   const path =
-    cite.kind === "word" ? `/read?w=${encodeURIComponent(cite.slug)}` : cite.kind === "root" ? `/roots/${encodeURIComponent(cite.key)}` : `/quran/${cite.key.replace(":", "/")}`;
+    cite.kind === "word"
+      ? cite.at
+        ? `/word/${cite.at}`
+        : `/read?w=${encodeURIComponent(cite.slug)}`
+      : cite.kind === "article"
+        ? `/read?w=${encodeURIComponent(cite.slug)}`
+        : cite.kind === "root"
+          ? `/roots/${encodeURIComponent(cite.key)}`
+          : `/quran/${cite.key.replace(":", "/")}`;
   const url = `${origin}${prefix}${path}`;
   const today = new Date().toLocaleDateString(locale === "ar" ? "ar" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
   const name = locale === "ar" ? `${SITE.name.ar} — جذور ألفاظ القرآن الكريم` : `${SITE.name.en} — the Quran by its roots`;
-  const title =
-    cite.kind === "verse"
-      ? locale === "ar"
-        ? `﴿…﴾ [${chapter.nameAr}: ${formatNumber(Number(cite.key.split(":")[1]), locale)}]`
-        : `Quran ${cite.key}`
-      : cite.label;
+  const ar = locale === "ar";
+  const n = (x: string | number) => formatNumber(Number(x), locale);
+  // Quran conventions (RDR-566): ﴿…﴾ [البقرة: ٢٥٥] / Q 2:255; a word adds its place; a dictionary
+  // article is cited as the dictionary itself: «ابن منظور، لسان العرب، مادة (ع ل م)».
+  const verseText = (key: string) =>
+    typeof document === "undefined"
+      ? "…"
+      : Array.from(document.querySelectorAll<HTMLElement>(`[data-verse="${CSS.escape(key)}"] .w`))
+          .map((w) => w.textContent)
+          .join(" ") || "…";
+  let title = cite.label;
+  if (cite.kind === "verse") {
+    const [, a] = cite.key.split(":");
+    title = ar ? `﴿${verseText(cite.key)}﴾ [${chapter.nameAr}: ${n(a)}]` : `Q ${cite.key}`;
+  } else if (cite.kind === "word" && cite.at) {
+    const [, a, p] = cite.at.split(":");
+    title = ar ? `«${cite.label}» [${chapter.nameAr}: ${n(a)}، الكلمة ${n(p)}]` : `“${cite.label}” (Q ${cite.at})`;
+  } else if (cite.kind === "article") {
+    title = ar
+      ? `${cite.dict.author_ar.split("،")[0]}، ${cite.dict.title_ar}، مادة (${cite.root.spaced})${cite.page ? `، ${cite.page}` : ""}`
+      : `${cite.dict.author_en}, ${cite.dict.title_en}, s.v. ${cite.root.translit}${cite.page ? `, ${cite.page}` : ""}`;
+  }
   const year = new Date().getFullYear();
-  const key = `jadhr_${(cite.kind === "word" ? cite.slug : cite.kind === "root" ? cite.key : cite.key.replace(":", "_")).replace(/[^a-z0-9_]/gi, "")}`;
+  const key = `jadhr_${(cite.kind === "word" || cite.kind === "article" ? cite.slug : cite.key.replace(":", "_")).replace(/[^a-z0-9_]/gi, "")}`;
   const texts: Record<(typeof FORMATS)[number], string> = {
-    chicago: `“${title}.” ${name}, ${t("datasetVersion", { v: version })}. ${t("accessed")} ${today}. ${url}.`,
+    chicago:
+      cite.kind === "article"
+        ? `${title}. ${t("citedVia")} ${name}, ${t("datasetVersion", { v: version })}. ${t("accessed")} ${today}. ${url}.`
+        : `“${title}.” ${name}, ${t("datasetVersion", { v: version })}. ${t("accessed")} ${today}. ${url}.`,
     apa: `${SITE.name.en}. (${year}). ${title}. In ${name} (${version}). ${url}`,
     mla: `“${title}.” ${name}, ${version}, ${url}. ${t("accessed")} ${today}.`,
     bibtex: `@misc{${key},\n  title = {${title}},\n  howpublished = {${name}, ${version}},\n  url = {${url}},\n  year = {${year}}\n}`,

@@ -156,7 +156,8 @@ test("cite: a dialog with a versioned permalink and the real access date; Esc re
   await expect(dlg).toBeVisible();
   const version = (await api<{ dataset: { version: string } }>(page, "/meta")).dataset.version;
   await expect(dlg).toContainText(version);
-  await expect(dlg).toContainText("/read?w=ilm");
+  await expect(dlg).toContainText("/word/20:114:17"); // the permalink matches the word cited at its place
+  await expect(dlg).toContainText("«عِلْمًا» [طه: ١١٤، الكلمة ١٧]");
   const today = new Date().toLocaleDateString("ar", { day: "numeric", month: "long", year: "numeric" });
   await expect(dlg).toContainText(today);
   await page.keyboard.press("Escape");
@@ -437,4 +438,43 @@ test("recitation speed cycles 1×, 0.75×, 0.5× and repeat toggles (RDR-554)", 
   await expect(repeat).toHaveAttribute("aria-pressed", "true");
   await page.reload();
   await expect(page.getByRole("button", { name: /سرعة التلاوة/ })).toHaveText("0.5×");
+});
+
+test("cite a dictionary article by the Arabic convention (RDR-566)", async ({ page }) => {
+  await returning(page);
+  await page.addInitScript(() =>
+    localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { layerOpen: { senses: false, family: false, patterns: false, lexica: true, timeline: false, usage: false } }, version: 2 })),
+  );
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  const lex = panel(page).locator('[data-section="lexica"]');
+  const article = lex.locator(".dict-article").first();
+  const title = await article.locator("header .ar-classical").first().innerText();
+  await article.getByRole("button", { name: "استشهد" }).click();
+  const dlg = page.getByRole("dialog", { name: "استشهد بهذا" });
+  await expect(dlg).toContainText(`${title}، مادة (ع ل م)`);
+});
+
+test("omnibox: a juzʾ number opens the reader where it begins (RDR-565)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "keyboard shortcut");
+  await returning(page);
+  const d = await api<{ juz: { surah: number; ayah: number }[] }>(page, "/divisions");
+  await page.goto("/quran/1");
+  await page.locator('.w[data-w="1:1:1"]').waitFor();
+  await page.keyboard.press("Control+k");
+  const box = page.getByRole("combobox", { name: "ابحث في كل شيء" });
+  await box.fill("الجزء ٣");
+  await expect(page.getByRole("option").first()).toContainText("بداية");
+  await box.press("Enter");
+  await expect(page).toHaveURL(new RegExp(`/quran/${d.juz[2].surah}#v${d.juz[2].ayah}$`));
+});
+
+test("standard spelling is a labelled line under the mushaf text, never instead of it (D7)", async ({ page }) => {
+  await returning(page);
+  await page.addInitScript(() => localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { imlaeiLine: true }, version: 2 })));
+  const v = await api<{ text_imlaei: string; tokens: { text: string }[] }>(page, "/verses/1:2");
+  await page.goto("/quran/1");
+  const line = page.locator('[data-verse="1:2"] .verse-imlaei');
+  await expect(line).toBeVisible();
+  await expect(line).toContainText(v.text_imlaei);
+  await expect(page.locator('[data-verse="1:2"] .verse-line')).toContainText(v.tokens[0].text);
 });

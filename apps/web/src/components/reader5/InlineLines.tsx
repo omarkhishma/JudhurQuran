@@ -36,7 +36,11 @@ export function InlineLines({ chapter }: { chapter: number }) {
         return createPortal(
           <div className="inline-lines">
             {tfText && <p className="inline-muyassar" dir="rtl" lang="ar">{tfText}</p>}
-            {trText && <p className="inline-translation" dir="ltr" lang="en">{trText}</p>}
+            {trText && (
+              <p className="inline-translation" dir="ltr" lang="en" data-credit={tr.data ? `${tr.data.work.title_en} (${tr.data.work.author_en})` : undefined}>
+                {trText}
+              </p>
+            )}
           </div>,
           slot,
           slot.dataset.inline,

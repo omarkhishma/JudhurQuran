@@ -45,6 +45,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const translitPref = usePrefs((s) => s.translitLine);
   const wordStatesOn = usePrefs((s) => s.wordStates);
   const grammarBand = usePrefs((s) => s.grammarBand);
+  const imlaeiLine = usePrefs((s) => s.imlaeiLine);
   const panelOpen = usePrefs((s) => s.panelOpen);
   const notes = useSaved((s) => s.notes);
   const setPrefs = usePrefs((s) => s.set);
@@ -322,7 +323,9 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     if (tool === "copy") {
       const ayah = Number(key.split(":")[1]);
       const words = Array.from(ref.current?.querySelectorAll<HTMLElement>(`[data-verse="${CSS.escape(key)}"] .w`) ?? []).map((w) => w.textContent);
-      const text = `﴿${words.join(" ")}﴾ [${chapter.nameAr}: ${formatNumber(ayah, "ar")}]`;
+      // the translation shown under the verse goes with it, credited (RDR-555)
+      const tr = ref.current?.querySelector<HTMLElement>(`[data-inline="${CSS.escape(key)}"] .inline-translation`);
+      const text = `﴿${words.join(" ")}﴾ [${chapter.nameAr}: ${formatNumber(ayah, "ar")}]` + (tr ? `\n${tr.textContent} — ${tr.dataset.credit ?? ""}` : "");
       try {
         await navigator.clipboard.writeText(text);
         showToast(t("verseCopied"));
@@ -380,6 +383,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       className="reading"
       data-translit={translitOn ? "on" : "off"}
       data-grammar={grammarBand ? "on" : undefined}
+      data-imlaei={imlaeiLine ? "on" : undefined}
       style={{ ["--size" as string]: String(size), ["--band-hint" as string]: JSON.stringify(t("bandHint")) }}
       onClick={onClick}
       onMouseOver={onMouseOver}

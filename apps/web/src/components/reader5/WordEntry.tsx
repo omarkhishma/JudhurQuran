@@ -180,7 +180,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
           <Icon name="graph" size={13} />
           {t("openInGraph")}
         </Link>
-        <button type="button" className="btn" onClick={() => setCite({ kind: "word", slug: w.slug, label: w.ar.full })} title={t("citeTitle")}>
+        <button type="button" className="btn" onClick={() => setCite({ kind: "word", slug: w.slug, label: occ?.surface.full ?? w.ar.full, at: occ?.location ?? null })} title={t("citeTitle")}>
           <Icon name="quote" size={13} />
           {t("cite")}
         </button>

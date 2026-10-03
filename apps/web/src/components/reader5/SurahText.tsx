@@ -52,6 +52,9 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
             </div>
             <VerseLines v={v} />
             <div className="gram-band" data-band={v.key} />
+            <p className="verse-imlaei" dir="rtl" lang="ar">
+              <span className="verse-imlaei-label">{t("imlaeiLabel")}</span> {v.text_imlaei}
+            </p>
             <p className="verse-translit" data-translit dir="ltr" lang="en">
               {v.words.map((w) => w.translit ?? "").join(" ")}
             </p>

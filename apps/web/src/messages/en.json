@@ -899,6 +899,11 @@
     "stateKnown": "Known",
     "initialsExplain": "Quranic initials, read by the names of their letters; they have no root and no pattern. The exegetes' views on them are in the verse's tafsir.",
     "verseTafsirOf": "Tafsir of {ref}",
-    "tafsirView": "Tafsir view"
+    "tafsirView": "Tafsir view",
+    "imlaeiLabel": "Standard spelling:",
+    "prefImlaei": "Standard spelling",
+    "prefImlaeiHint": "The verse in everyday spelling under the mushaf text, for reading and searching. The mushaf text never changes.",
+    "divisionStart": "Start of {kind} {n}",
+    "citedVia": "Accessed through"
   }
 }
