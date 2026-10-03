@@ -8,6 +8,7 @@ import { createGraph, encodeShare, GRAPHS_SYNCED_EVENT, loadGraph, newId, saveGr
 import type { GraphDoc, GraphEdge, GraphNode } from "@/lib/graph/types";
 import type { SearchResult, WordDetail } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
+import { useWhereSaved } from "@/lib/graph/whereSaved";
 import { formatNumber, verseRef } from "@/lib/format";
 import { GraphCanvas } from "./GraphCanvas";
 
@@ -158,6 +159,7 @@ function EditorInner({ doc, notice, reload }: { doc: GraphDoc; notice: string | 
   }
 
   const conflict = status === "newer" || status === "gone";
+  const where = useWhereSaved();
   return (
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
       <Palette onAdd={(n, e, label) => addRef.current?.(n, e, label)} kind={doc.kind} />
@@ -191,11 +193,14 @@ function EditorInner({ doc, notice, reload }: { doc: GraphDoc; notice: string | 
           registerAdd={(fn) => (addRef.current = fn)}
           fileName={`map-${doc.id}`}
           status={
-            <span className="flex items-center gap-1.5 text-[12px] text-t3" aria-live="polite">
-              <span className="dot" style={{ background: status === "saved" ? "var(--good)" : "var(--amber)" }} />
-              {status === "saved" ? fresh ?? t("saved") : status === "saving" ? t("saving") : t("unsaved")}
-              <span className="hidden sm:inline">• {t("localOnly")}</span>
-            </span>
+            <>
+              {/* the save pill (EDT-015): announced politely, green once saved */}
+              <span className="save-pill" role="status" aria-live="polite">
+                <span className="dot" style={{ background: status === "saved" ? "var(--good)" : conflict ? "var(--amber)" : "var(--ring)" }} />
+                {status === "saved" ? fresh ?? t("saved") : status === "saving" ? t("saving") : t("unsaved")}
+              </span>
+              {where && <span className="hidden text-[12px] text-t3 lg:inline">{t(where === "account" ? "savedAccount" : "localOnly")}</span>}
+            </>
           }
           toolbarExtra={
             <button type="button" className="btn" onClick={() => void share()} aria-live="polite">

@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { compressToEncodedURIComponent } from "lz-string";
-import { api, ar, arCount } from "./helpers";
+import { api, ar, arCount, followSignInLink } from "./helpers";
 
 /**
  * The graph editor as built, after the P8.0 fixes (research 13 §2): what a map shows is read from the dataset,
@@ -258,4 +258,45 @@ test("counts read as Arabic and English count them (F10, QAN-14)", async ({ page
   await page.goto("/en/graph");
   await expect(page.locator(`a[href="/en/graph/edit/${two}"]`)).toContainText(n === 1 ? "1 card" : `${n} cards`);
   expect(ar(3)).toBe("٣");
+});
+
+/** Sign in by the mail link, as a reader does (the API's development outbox holds the link). */
+async function signIn(page: Page, email: string) {
+  const outbox = async () => ((await (await page.request.get(`/api/v1/auth/dev/outbox?email=${encodeURIComponent(email)}`)).json()) as { messages: { link: string }[] }).messages;
+  const before = (await outbox()).length;
+  await page.goto("/signin");
+  await page.locator("main").getByLabel("بريدك الإلكتروني").fill(email);
+  await page.locator("main").getByRole("button", { name: "أرسل رابط الدخول" }).click();
+  let link = "";
+  await expect.poll(async () => ((link = (await outbox()).length > before ? (await outbox()).at(-1)!.link : ""), link)).not.toBe("");
+  const u = new URL(link);
+  await followSignInLink(page, u.pathname + u.search);
+  await expect(page.getByRole("link", { name: /^حسابي:/ })).toBeVisible();
+}
+
+test("the editor says where maps are kept — this browser, or with the account once signed in — and announces each save (F7, EDT-015)", async ({ page, isMobile }) => {
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto("/graph");
+  await expect(page.getByRole("main")).toContainText("تُحفظ الخرائط في هذا المتصفح فقط");
+  await page.getByRole("button", { name: "خريطة حرة" }).click();
+  const id = await editorId(page);
+  const pill = page.locator(".save-pill");
+  await expect(pill).toHaveAttribute("role", "status");
+  await expect(pill).toHaveText("حُفظت");
+  await addNote(page, "أين تُحفظ");
+  await expect(pill).toHaveText("تغييرات غير محفوظة");
+  await expect(pill).toHaveText("حُفظت", { timeout: 10_000 });
+  if (!isMobile) await expect(page.getByText("محفوظة في هذا المتصفح فقط", { exact: true })).toBeVisible();
+
+  await signIn(page, `e2e-maps-${test.info().project.name}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}@example.org`);
+  await page.goto("/graph");
+  await expect(page.getByRole("main")).toContainText("تُحفظ الخرائط في هذا المتصفح وتُزامَن مع حسابك");
+  await expect(page.getByRole("main")).not.toContainText("في هذا المتصفح فقط");
+  await page.goto(`/graph/edit/${id}`);
+  await expect(pill).toHaveText("حُفظت");
+  if (!isMobile) await expect(page.getByText("محفوظة في هذا المتصفح ومع حسابك", { exact: true })).toBeVisible();
+  // the account goes, as it came
+  const h = { Authorization: `Bearer ${await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-auth") ?? "{}").state?.session)}` };
+  const { confirm } = (await (await page.request.post("/api/v1/me/delete", { headers: h })).json()) as { confirm: string };
+  expect((await page.request.post("/api/v1/me/delete/confirm", { headers: h, data: { confirm } })).ok()).toBeTruthy();
 });

@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { createGraph, deleteGraph, listGraphs } from "@/lib/graph/persist";
 import type { GraphDoc, GraphKind } from "@/lib/graph/types";
 import { cnt } from "@/lib/format";
+import { useWhereSaved } from "@/lib/graph/whereSaved";
 
 export function GraphHome() {
   const t = useTranslations("graph");
@@ -18,6 +19,7 @@ export function GraphHome() {
   const [root, setRoot] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const where = useWhereSaved();
 
   async function create(kind: GraphKind) {
     const title = kind === "topic" ? t("newTopic") : kind === "meaning" ? t("newMeaning") : t("newFree");
@@ -46,7 +48,9 @@ export function GraphHome() {
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="mx-auto max-w-[1000px] px-4 py-10">
         <h1 className="text-[28px] font-semibold">{t("editorTitle")}</h1>
-        <p className="mt-1 max-w-[75ch] text-t2">{t("editorLead")}</p>
+        <p className="mt-1 max-w-[75ch] text-t2">
+          {t("editorLead")} {where && t(where === "account" ? "leadAccount" : "leadBrowser")}
+        </p>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           {(["topic", "meaning", "free"] as const).map((k) => (
             <button key={k} type="button" onClick={() => void create(k)} className="card p-4 text-start hover:border-ring">
@@ -82,7 +86,10 @@ export function GraphHome() {
         </form>
         {message && <p className="mt-2 text-[13px] text-t2" role="status">{message}</p>}
 
-        <h2 className="label-caps mt-10 mb-3">{t("editorTitle")} • <span className="normal-case">{t("localOnly")}</span></h2>
+        <h2 className="label-caps mt-10 mb-3">
+          {t("editorTitle")}
+          {where && <span className="normal-case"> • {t(where === "account" ? "savedAccount" : "localOnly")}</span>}
+        </h2>
         {graphs && graphs.length === 0 && <p className="rounded-xl bg-card p-5 text-t2">{t("noGraphs")}</p>}
         <ul className="grid gap-2 sm:grid-cols-2">
           {graphs?.map((g) => (

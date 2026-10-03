@@ -4961,3 +4961,17 @@ a.wotd-pill:hover {
 .graph-conflict {
   background: color-mix(in srgb, var(--amber) 9%, var(--panel));
 }
+
+/* the editor's save status (EDT-015): a pill, its dot green once saved */
+.save-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--card);
+  font-size: 12px;
+  color: var(--t3);
+  white-space: nowrap;
+}

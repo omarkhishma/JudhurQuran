@@ -686,7 +686,7 @@
     "usulUnrelatedCard": "Ibn Fāris holds this root's uṣūl to be unrelated: its words share the letters, not the meaning.",
     "firstVerse": "First occurrence",
     "editorTitle": "My maps",
-    "editorLead": "Build your own maps: a topic map, a semantic field gathering words close in meaning with the distinctions between them, or a free map. Maps are saved in this browser only.",
+    "editorLead": "Build your own maps: a topic map, a semantic field gathering words close in meaning with the distinctions between them, or a free map.",
     "newTopic": "Topic map",
     "newMeaning": "Semantic field",
     "newFree": "Free map",
@@ -743,7 +743,10 @@
     "doUnlink": "{count, plural, one {Remove link} other {Remove {n} links}}",
     "doMove": "{count, plural, one {Move card} other {Move {n} cards}}",
     "doExtractWords": "{count, plural, one {Extract 1 word} other {Extract {n} words}}",
-    "doExtractVerses": "{count, plural, one {Extract 1 verse} other {Extract {n} verses}}"
+    "doExtractVerses": "{count, plural, one {Extract 1 verse} other {Extract {n} verses}}",
+    "leadBrowser": "Maps are saved in this browser only; sign in to have them on your other devices.",
+    "leadAccount": "Maps are saved in this browser and synced to your account.",
+    "savedAccount": "Saved in this browser and with your account"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",
