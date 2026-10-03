@@ -116,6 +116,7 @@ def _occurrence(conn: Connection, location: str, lemma_id: int) -> dict[str, Any
         "features": w["features"],
         "segments": w["segments"],
         "glosses": content.word_glosses(conn, w["location"]),
+        "meanings_here": content.word_meanings_here(conn, w["location"]),
         "variants": rows(
             conn,
             """select rv.source, rv.root_key, s.title_ar as source_title_ar, s.title_en as source_title_en
@@ -323,6 +324,7 @@ def word_payload(
     return {
         "slug": lem["slug"],
         "lemma_id": lem["id"],
+        "mufradat": content.lemma_mufradat(conn, lem["key"]),
         "uri": f"lemma:{lem['slug']}",
         "ar": ar(content.lemma_display(lem["ar"]), lem["translit"]),
         "pos": {"tag": lem["pos"], "ar": lem["pos_ar"], "en": lem["pos_en"]},

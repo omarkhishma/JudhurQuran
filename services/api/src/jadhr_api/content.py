@@ -755,6 +755,52 @@ def word_glosses(conn: Connection, location: str) -> list[dict[str, Any]]:
     )
 
 
+def word_meanings_here(conn: Connection, location: str) -> list[dict[str, Any]]:
+    """The contextual meaning of the phrase this word belongs to, from al-Muyassar fī Gharīb (P3.1), with the
+    work's credit; display-only, never bulk."""
+    return rows(
+        conn,
+        """select m.id, m.phrase_ar, m.meaning_ar, m.match_confidence, m.mushaf_page, m.locator, m.status,
+                  w.title_ar, w.title_en, w.publisher_ar, w.publisher_en, w.attribution_ar, w.attribution_en,
+                  w.display_only
+           from content.gharib_meanings m join content.gharib_works w on w.id = m.work_id
+           where :loc = any(m.word_locations) order by w.sort_order, m.seq""",
+        {"loc": location},
+    )
+
+
+def lemma_mufradat(conn: Connection, lemma_key: str) -> dict[str, Any] | None:
+    """al-Rāghib's treatment of this lemma (P3.1): the sub-entries of al-Mufradāt mapped to it, each verbatim
+    with its page, how it was mapped, and the senses al-Rāghib numbers in it."""
+    subs = rows(
+        conn,
+        """select s.id, s.entry_id, s.headword_ar, s.text_ar, s.page_ref, s.match_method, s.match_confidence,
+                  s.status, s.verses
+           from content.mufradat_subentries s
+           where s.lemma_key = :k or :k = any(s.lemma_keys) order by s.entry_id, s.seq""",
+        {"k": lemma_key},
+    )
+    if not subs:
+        return None
+    senses = rows(
+        conn,
+        """select subentry_id, list_no, sense_index, marker_ar, announcement_ar, stated_count, found_count, text_ar,
+                  verses, page_ref
+           from content.mufradat_senses where subentry_id = any(:ids) order by subentry_id, list_no, sense_index""",
+        {"ids": [s["id"] for s in subs]},
+    )
+    for s in subs:
+        s["senses"] = [
+            {k: v for k, v in x.items() if k != "subentry_id"} for x in senses if x["subentry_id"] == s["id"]
+        ]
+    work = one(
+        conn,
+        """select id, title_ar, title_en, author_ar, author_en, death_hijri, death_ce, attribution_ar, attribution_en,
+                  redistributable from content.lexicon_works where id = 'mufradat'""",
+    )
+    return {"work": work, "subentries": subs}
+
+
 def lexicon_works(conn: Connection) -> list[dict[str, Any]]:
     return rows(
         conn,

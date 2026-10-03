@@ -129,6 +129,33 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                                                           "sense_list", "sense_label_ar", "text_ar", "verses",
                                                           "derived_from", "derivation", "status"],
      {"terms_ar", "match_candidates", "target_match_candidates", "verses"}),
+    # Meanings (P3.1), built by jadhr_pipeline.meanings through the layers step
+    ("gharib_works", "gharib_works.jsonl", ["id", "sort_order", "lang", "title_ar", "title_en", "publisher_ar",
+                                            "publisher_en", "version", "source_url", "download_url", "licence",
+                                            "licence_clause", "licence_url", "redistributable", "display_only",
+                                            "attribution_ar", "attribution_en", "prepared_by_note", "file",
+                                            "file_sha256"], set()),
+    ("gharib_meanings", "gharib_meanings.jsonl", ["id", "work_id", "seq", "surah", "ayah", "ayah_label", "verse_keys",
+                                                  "word_locations", "phrase_ar", "meaning_ar", "locator", "paragraph",
+                                                  "line", "mushaf_page", "match_method", "match_confidence",
+                                                  "occurrences_in_verse", "rekeyed_from", "notes", "status"], set()),
+    ("mufradat_subentries", "mufradat_subentries.jsonl", ["id", "entry_id", "work_id", "article_headword_ar",
+                                                          "article_root_key", "seq", "start_offset", "end_offset",
+                                                          "text_ar", "cut_rule", "headword_ar", "headword_start",
+                                                          "headword_end", "headwords", "lemma_keys", "lemma_key",
+                                                          "match_method", "match_confidence", "unmapped_reason",
+                                                          "verses", "page_ref", "page_method", "source_ref",
+                                                          "article_sha256", "status"], {"headwords"}),
+    ("mufradat_senses", "mufradat_senses.jsonl", ["id", "subentry_id", "entry_id", "work_id", "list_no", "list_kind",
+                                                  "sense_index", "marker_ar", "marker_start", "marker_end",
+                                                  "announcement_ar", "announcement_start", "announcement_end",
+                                                  "stated_count", "found_count", "start_offset", "end_offset",
+                                                  "text_ar", "end_rule", "verses", "page_ref", "status"], set()),
+    ("mufradat_citations", "mufradat_citations.jsonl", ["id", "entry_id", "subentry_id", "work_id", "quote_ar",
+                                                        "start_offset", "end_offset", "marked_by", "reference_ar",
+                                                        "reference_start", "reference_end", "reference_surah",
+                                                        "reference_ayahs", "verse_keys", "status", "method", "score",
+                                                        "exact", "candidates", "ref_mismatch"], {"candidates"}),
     # Pattern catalog (P3.3), built by jadhr_pipeline.patterns_catalog through the layers step
     ("pattern_sources", "pattern_sources.jsonl", ["id", "role", "comments_on", "sort_order", "title_ar", "title_en",
                                                   "author_ar", "author_en", "death_hijri", "death_ce", "edition_ar",
@@ -151,6 +178,11 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
 ]  # fmt: skip
 
 TRUNCATE_ORDER = [
+    "mufradat_citations",
+    "mufradat_senses",
+    "mufradat_subentries",
+    "gharib_meanings",
+    "gharib_works",
     "pattern_functions",
     "pattern_sources",
     "relation_citations",
@@ -202,6 +234,15 @@ def _rows(
             yield tuple(Jsonb(obj.get(c)) if c in json_cols else obj.get(c) for c in columns)
 
 
+# Build fields stored under another name: `end` is reserved in SQL, `root` names a table elsewhere.
+_OFFSETS = {"start": "start_offset", "end": "end_offset"}
+RENAMES: dict[str, dict[str, str]] = {
+    "root_variants": {"root": "root_key"},
+    "mufradat_subentries": _OFFSETS,
+    "mufradat_senses": _OFFSETS,
+    "mufradat_citations": _OFFSETS,
+}
+
 # Every loaded table must be emptied first, or a reload would duplicate rows.
 _missing = {t for t, *_ in TABLES} - set(TRUNCATE_ORDER)
 if _missing:
@@ -244,7 +285,7 @@ def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[st
             if not path.exists():
                 counts[table] = 0
                 continue
-            rename = {"root": "root_key"} if table == "root_variants" else {}
+            rename = RENAMES.get(table, {})
             n = 0
             cols = ", ".join(f'"{c}"' for c in columns)
             with cur.copy(f"copy content.{table} ({cols}) from stdin") as copy:

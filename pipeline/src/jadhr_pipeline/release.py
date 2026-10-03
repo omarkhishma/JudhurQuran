@@ -93,8 +93,16 @@ EXCLUDED = [
         "reason": "the corpus terms allow display with credit and a link; bulk redistribution is ambiguous",
     },
     {
-        "data": "classical lexica (al-Mufradat, Maqayis, Lisan al-Arab, al-Sihah, Ibn Qutaybah)",
+        "data": "classical lexica (Kitab al-Ayn, Tahdhib al-Lugha, al-Sihah, Maqayis, al-Mufradat with its sub-entries and senses, Lisan al-Arab, al-Qamus al-Muhit, Taj al-Arus, Ibn Qutaybah)",
         "reason": "the digital text is display-only (research 02); Lane's Lexicon (CC BY-SA) is available from Perseus",
+    },
+    {
+        "data": "al-Muyassar fi Gharib al-Qur'an (KFGQPC) meanings per word",
+        "reason": "the Complex offers the file for display in applications; redistribution is not addressed (research 07, D19)",
+    },
+    {
+        "data": "pattern catalog and relation seeds (al-Shafiya, al-Kafiya, al-Radi, the wujuh and furuq works)",
+        "reason": "OpenITI texts under CC BY-NC-SA 4.0, whose share-alike would bind the whole release; shown on the site with credit",
     },
     {
         "data": "tafsir and translations",

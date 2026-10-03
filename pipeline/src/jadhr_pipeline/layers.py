@@ -16,6 +16,7 @@ from typing import Any
 import yaml
 
 from .knowledge import build_knowledge
+from .meanings import build_gharib, build_mufradat
 from .patterns_catalog import build_pattern_catalog
 from .relations import build_relations
 
@@ -47,6 +48,8 @@ def build_layers(
     knowledge_registry: Path,
     relations_registry: Path,
     patterns_registry: Path | None = None,
+    gharib_registry: Path | None = None,
+    lexica_registry: Path | None = None,
 ) -> dict[str, Any]:
     """Build the layers into ``out`` and merge their reports into ``out/report.json``: the Quran knowledge
     layers, the relation seeds and, when its registry is given, the pattern catalog (P3.3)."""
@@ -80,16 +83,31 @@ def build_layers(
             _write(out, name, rows)
         report["patterns_catalog"] = {k: p_report[k] for k in ("totals", "coverage") if k in p_report}
 
+    # P3.1 meanings: al-Muyassar per word occurrence, al-Mufradat cut into sub-entries and senses
+    m_tables: dict[str, list[dict[str, Any]]] = {}
+    if gharib_registry is not None:
+        g_tables, g_report = build_gharib(raw, out, gharib_registry)
+        m_tables.update(g_tables)
+        report["gharib"] = g_report.get("totals")
+    if lexica_registry is not None:
+        f_tables, f_report = build_mufradat(raw, out, lexica_registry)
+        m_tables.update(f_tables)
+        report["mufradat"] = f_report.get("totals")
+    for name, rows in m_tables.items():
+        _write(out, name, rows)
+
     report["knowledge"] = k_report
     report["relations"] = r_report
     report.setdefault("counts", {}).update(
         {name: len(rows) for name, rows in tables.items()}
         | {name: len(rows) for name, rows in r_tables.items()}
         | {name: len(rows) for name, rows in p_tables.items()}
+        | {name: len(rows) for name, rows in m_tables.items()}
     )
     (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     return {
         "knowledge": k_report.get("counts"),
         "relations": r_report.get("totals"),
         "patterns_catalog": {name: len(rows) for name, rows in p_tables.items()},
+        "meanings": {name: len(rows) for name, rows in m_tables.items()},
     }
