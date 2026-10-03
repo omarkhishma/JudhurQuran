@@ -57,8 +57,8 @@ test("graph hand-off: a word opens a dialog whose rows are exactly the cards the
   await dialog.getByRole("link", { name: "افتح محرر الخرائط" }).click();
   const doc = await storedGraph(page, await editorId(page));
   const kinds = countKinds(doc);
-  // the document's version 2 kinds: a root, its words (lemmas) and the verse (P8.1a, QAN-01)
-  expect(shown).toEqual({ "جذر": kinds.root, "كلمة": kinds.lemma, "آية": kinds.verse });
+  // the document's version 2 kinds: a root, its patterns, its words (lemmas) and the verse (P8.1a, P8.2, QAN-01)
+  expect(shown).toEqual({ "جذر": kinds.root, "وزن": kinds.pattern, "كلمة": kinds.lemma, "آية": kinds.verse });
   expect(doc.version).toBe(2);
   // the root at the centre, the verse the reader came from linked to the word read there, at its place
   const root = await api<{ occurrences: number }>(page, `/roots/${encodeURIComponent("علم")}`);

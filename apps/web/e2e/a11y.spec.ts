@@ -151,7 +151,9 @@ for (const theme of ["light", "dark"] as const)
       async (page: Page) => {
         await page.goto(`/graph/seed?s=${seedOf({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
         await expect(page).toHaveURL(/\/graph\/edit\//, { timeout: 30_000 });
-        await page.locator('.react-flow__node[data-id="verse:1:2"]').click({ position: { x: 60, y: 14 } });
+        // selected wherever the layout put it (a phone's canvas may not show it)
+        await page.locator('.react-flow__node[data-id="verse:1:2"]').waitFor();
+        await page.locator('.react-flow__node[data-id="verse:1:2"]').dispatchEvent("click");
         await page.locator(".react-flow__edge").first().focus();
       },
     ],

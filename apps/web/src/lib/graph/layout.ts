@@ -5,7 +5,8 @@ const elk = new ELK();
 
 /**
  * Layered auto-layout. The flow runs right → left so the root sits at the right edge, as Arabic
- * reads; spacing is generous so cards never crowd (the brief asks for "clear space between elements").
+ * reads; the design's spacing — 156 px between columns, 56 between cards (QAN-24) — so cards never crowd (the brief
+ * asks for "clear space between elements"); measured heights, so a long verse never overlaps the next.
  */
 export async function layout(nodes: GraphNode[], edges: GraphEdge[]): Promise<GraphNode[]> {
   const visible = new Set(nodes.map((n) => n.id));
@@ -14,8 +15,8 @@ export async function layout(nodes: GraphNode[], edges: GraphEdge[]): Promise<Gr
     layoutOptions: {
       "elk.algorithm": "layered",
       "elk.direction": "LEFT",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "120",
-      "elk.spacing.nodeNode": "36",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "156",
+      "elk.spacing.nodeNode": "56",
       "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
       "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
       "elk.layered.considerModelOrder.strategy": "NODES_AND_EDGES",

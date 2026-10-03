@@ -9,7 +9,11 @@ import { createGraph } from "@/lib/graph/persist";
 import type { GraphEdge, GraphNode } from "@/lib/graph/types";
 import { GraphCanvas } from "./GraphCanvas";
 
-export function RootGraphView({ payload, focus }: { payload: RootGraphPayload; focus?: string }) {
+/**
+ * A root's graph generated from the data, read-only (QAN-21): explored in place — folding and extracting change only
+ * this view — and kept as the reader's own map by "Save a copy". Its own page, or embedded on the root's page.
+ */
+export function RootGraphView({ payload, focus, embedded }: { payload: RootGraphPayload; focus?: string; embedded?: boolean }) {
   const t = useTranslations("graph");
   const translit = translitOn(useGraphUi((u) => u.translit), useLocale());
   const router = useRouter();
@@ -34,9 +38,14 @@ export function RootGraphView({ payload, focus }: { payload: RootGraphPayload; f
       kind="root"
       translit={translit}
       onChange={(nodes, edges) => (current.current = { nodes, edges })}
+      embedded={embedded}
       toolbarExtra={
         <>
-          <Link href={`/roots/${encodeURIComponent(payload.root.key)}`} className="btn">{t("openRoot")}</Link>
+          {embedded ? (
+            <Link href={`/graph/root/${encodeURIComponent(payload.root.key)}`} className="btn">{t("rootMapOpen")}</Link>
+          ) : (
+            <Link href={`/roots/${encodeURIComponent(payload.root.key)}`} className="btn">{t("openRoot")}</Link>
+          )}
           <button type="button" className="btn btn-primary" onClick={() => void saveCopy()} disabled={saving}>
             {t("saveCopy")}
           </button>

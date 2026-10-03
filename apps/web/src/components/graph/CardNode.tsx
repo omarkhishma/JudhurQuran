@@ -2,11 +2,16 @@
 
 import { Handle, NodeResizer, Position, type NodeProps } from "@xyflow/react";
 import { useLocale, useTranslations } from "next-intl";
-import { createContext, memo, useContext, useState } from "react";
+import { createContext, memo, useContext, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { citeVerse, cnt, formatNumber } from "@/lib/format";
 import { META } from "@/lib/graph/relations";
 import { FIELD_KINDS, KIND_COLOR, type Field, type FieldKind, type GraphNode } from "@/lib/graph/types";
+import { useQuery } from "@tanstack/react-query";
+import type { ExtractOptions, VerseWord } from "@/lib/graph/extract";
+import { getJSON } from "@/lib/reader/api";
+import { useAudio } from "@/lib/store/audio";
+import type { CardStats } from "./GraphCanvas";
 import { FieldEditor } from "./FieldEditor";
 import { opening, useEntry } from "@/lib/graph/quote";
 import { excerptOf, keyOf, markedVerse, useVerseText } from "@/lib/graph/verseText";
@@ -20,15 +25,17 @@ export type GraphActions = {
   /** the card whose places are being read */
   expanding: string | null;
   toggleFold: (id: string) => void;
-  expand: (id: string) => void;
+  expand: (id: string, opts?: ExtractOptions) => void;
   setText: (id: string, text: string) => void;
   addField: (id: string, kind: FieldKind) => void;
   editField: (id: string, field: string, value: Field["value"], fileName?: string) => void;
   removeField: (id: string, field: string) => void;
   attach: (id: string) => void;
   focusCard: (id: string) => void;
-  /** a card's place in the map: its children on it and its links */
-  stats: (id: string) => { children: number; links: number };
+  /** a card's place in the map and what it has left to extract (EDT-090, EDT-091) */
+  stats: (id: string) => CardStats;
+  /** what a verse can still link, its words and their roots (EDT-123) */
+  versePlan: (id: string, words: VerseWord[], particles: boolean) => { words: VerseWord[]; roots: string[] };
   toast: (text: string) => void;
 };
 
@@ -45,7 +52,8 @@ export const GraphActionsContext = createContext<GraphActions>({
   removeField: () => {},
   attach: () => {},
   focusCard: () => {},
-  stats: () => ({ children: 0, links: 0 }),
+  stats: () => ({ a: 0, b: 0, left: null }),
+  versePlan: () => ({ words: [], roots: [] }),
   toast: () => {},
 });
 
@@ -62,7 +70,6 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
   const color = KIND_COLOR[data.kind];
   const [draft, setDraft] = useState(data.text ?? "");
   const meta = META[data.kind];
-  const busy = !!actions.expanding;
   const translitLine = actions.translit || (data.kind !== "root" && data.kind !== "pattern");
   const summary = data.kind === "lemma" ? data.sub : (data.kind === "root" || data.kind === "pattern") && actions.translit ? data.sub : undefined;
 
@@ -77,6 +84,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
       }
       style={{ borderColor: data.reading ? "var(--amber)" : `color-mix(in srgb, ${color} 35%, var(--line))` }}
       dir="rtl"
+      data-kind={data.kind}
       data-map={actions.mapView || undefined}
     >
       {actions.mapView && <MapFace data={data} />}
@@ -125,7 +133,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
             <p className="mt-1 whitespace-pre-wrap text-[14px] text-t1">{data.text}</p>
           )
         ) : data.kind === "verse" && data.verse ? (
-          <VerseLine verseKey={data.verse.key} places={data.places ?? []} />
+          <VerseLine verseKey={data.verse.key} places={data.places ?? []} folded={!!data.folded} />
         ) : (
           <p className={"ar-classical text-[28px] leading-[1.5] " + (data.kind === "root" ? "text-root" : data.kind === "pattern" ? "text-form" : "text-t1")} lang="ar">
             {data.ar}
@@ -170,20 +178,12 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
                 {t(data.usul === "unrelated" ? "usulUnrelatedCard" : "usulSeveralCard")}
               </p>
             )}
-            <Stats id={id} kind={data.kind} />
+            <Stats id={id} data={data} />
             <Fields id={id} data={data} />
+            <Extract id={id} data={data} />
 
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {data.kind === "lemma" && data.slug && !data.expanded && data.count != null && data.count > 0 && (
-                <button type="button" className="nodrag btn min-h-[26px] px-2 text-[11.5px]" onClick={() => actions.expand(id)} disabled={busy} aria-busy={actions.expanding === id}>
-                  {t("showVerses", { n: formatNumber(data.count, locale) })}
-                </button>
-              )}
-              {data.more && data.more.remaining > 0 && (
-                <button type="button" className="nodrag btn min-h-[26px] px-2 text-[11.5px]" onClick={() => actions.expand(id)} disabled={busy} aria-busy={actions.expanding === id}>
-                  {t("moreVerses", cnt(data.more.remaining, locale))}
-                </button>
-              )}
+              {data.kind === "verse" && data.verse && <VersePlay verseKey={data.verse.key} />}
               {data.kind === "root" && data.rootKey && (
                 <Link href={`/roots/${encodeURIComponent(data.rootKey)}`} className="nodrag btn min-h-[26px] px-2 text-[11.5px]">
                   {t("openRoot")}
@@ -251,20 +251,244 @@ function Quote({ entry, folded }: { entry: number; folded: boolean }) {
   );
 }
 
-/** A card's place in the map (EDT-101's stats strip): its children on it, or its links. */
-function Stats({ id, kind }: { id: string; kind: GraphNode["data"]["kind"] }) {
+/**
+ * The stats strip (EDT-090, EDT-091): two or three numbers with their names — a root's patterns and words on the
+ * map and what is left to extract; a pattern's words, their verses and what is left; a word's verses, its parents and
+ * what is left; a verse's links, its words and what it has left to link; a note's links and fields.
+ */
+function Stats({ id, data }: { id: string; data: GraphNode["data"] }) {
   const t = useTranslations("graph");
   const locale = useLocale();
   const actions = useContext(GraphActionsContext);
-  const { children, links } = actions.stats(id);
-  if (kind === "note" || (!children && !links)) return null;
+  const s = actions.stats(id);
+  const verse = useQuery({ queryKey: ["graph-verse", data.verse?.key], queryFn: () => getJSON<{ words: VerseWord[] }>(`/verses/${data.verse!.key}`), enabled: data.kind === "verse" && !!data.verse, staleTime: Infinity });
+  const items: [number | null, string][] =
+    data.kind === "root"
+      ? [[s.a, "statForms"], [s.b, "statWordsShort"], [s.left, "statLeft"]]
+      : data.kind === "pattern"
+        ? [[s.a, "statWordsShort"], [s.b, "statVersesShort"], [s.left, "statLeft"]]
+        : data.kind === "lemma"
+          ? [[s.a, "statVersesShort"], [s.b, "statParents"], [s.left, "statLeft"]]
+          : data.kind === "verse"
+            ? [[s.a, "statLinked"], [verse.data?.words.length ?? null, "statVerseWords"], [verse.data ? actions.versePlan(id, verse.data.words, false).words.length : null, "statToLink"]]
+            : [[s.a, "statAttached"], [s.b, "statFields"]];
   return (
-    <p className="card-stats">
-      {kind === "root" && <span>{t("statWords", cnt(children, locale))}</span>}
-      {kind === "pattern" && <span>{t("statWords", cnt(children, locale))}</span>}
-      {kind === "lemma" && <span>{t("statVerses", cnt(children, locale))}</span>}
-      <span>{t("links", cnt(links, locale))}</span>
-    </p>
+    <dl className="card-stats">
+      {items
+        .filter(([v]) => v != null)
+        .map(([v, k]) => (
+          <div key={k}>
+            <dd className="mono">{formatNumber(v!, locale)}</dd>
+            <dt>{t(k)}</dt>
+          </div>
+        ))}
+    </dl>
+  );
+}
+
+/**
+ * Extract (EDT-110…121): one button in the kind's colour — a root's patterns, a pattern's words, a word's next ten
+ * verses («١٠ من ١٠٥»), with a sūra or a written form to choose from — dashed when there is nothing to draw from,
+ * plain when all is on the map. A verse links its words, extracts their roots, or both, its particles only when
+ * asked (QAN-08). A note has nothing to extract.
+ */
+function Extract({ id, data }: { id: string; data: GraphNode["data"] }) {
+  const t = useTranslations("graph");
+  const locale = useLocale();
+  const actions = useContext(GraphActionsContext);
+  const [open, setOpen] = useState(false);
+  const color = KIND_COLOR[data.kind];
+  if (data.kind === "frame") return null;
+  if (data.kind === "note")
+    return (
+      <div className="extract-row">
+        <button type="button" className="extract-btn is-none" disabled title={t("noteNoExtract")}>{t("noteAttached")}</button>
+      </div>
+    );
+  if (data.kind === "verse") return <VerseExtract id={id} data={data} />;
+  const s = actions.stats(id);
+  const left = s.left;
+  const mine = actions.expanding === id;
+  const total = data.kind === "lemma" ? (data.totals?.verses ?? (left != null ? left + s.a : null)) : null;
+  const label =
+    data.kind === "root"
+      ? left == null ? t("extractPatternsAny") : left > 0 ? t("extractPatterns", cnt(left, locale)) : t("allPatterns")
+      : data.kind === "pattern"
+        ? left == null ? t("extractWordsAny") : left > 0 ? t("extractWords", cnt(left, locale)) : t("allWords")
+        : left == null ? t("extractVersesAny") : left > 0 ? t("extractVersesOf", { k: formatNumber(Math.min(10, left), locale), ...cnt(total ?? left, locale) }) : t("allVerses");
+  const done = left === 0;
+  const none = data.kind === "lemma" ? !data.slug : data.kind === "pattern" ? !data.slug : !data.rootKey;
+  return (
+    <div className="extract-row nodrag">
+      <button
+        type="button"
+        className={"extract-btn" + (done ? " is-done" : none ? " is-none" : "")}
+        style={done || none ? undefined : { background: color, color: "var(--card)" }}
+        disabled={done || none || !!actions.expanding}
+        aria-busy={mine}
+        title={done ? t("extractDone") : t("extractHint", { label })}
+        onClick={() => actions.expand(id)}
+      >
+        {mine ? t("extracting") : label}
+      </button>
+      {data.kind === "lemma" && data.slug && !done && (
+        <button type="button" className="extract-caret" style={{ borderColor: color, color }} onClick={() => setOpen(!open)} aria-expanded={open} title={t("extractFilterHint")} aria-label={t("extractFilterHint")}>
+          ▾
+        </button>
+      )}
+      {open && data.kind === "lemma" && data.slug && (
+        <VerseFilter
+          slug={data.slug}
+          onPick={(opts) => {
+            setOpen(false);
+            actions.expand(id, opts);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** A word's verses narrowed to a sūra or a written form (QAN-06), the choices counted. */
+function VerseFilter({ slug, onPick }: { slug: string; onPick: (o: ExtractOptions) => void }) {
+  const t = useTranslations("graph");
+  const locale = useLocale();
+  const [surah, setSurah] = useState("");
+  const [form, setForm] = useState("");
+  const q = useQuery({
+    queryKey: ["graph-word-verses-facets", slug],
+    queryFn: () => getJSON<{ surahs: { surah: number; name_ar: string; name_translit: string; verses: number }[]; forms: { form: string; verses: number }[] }>(`/words/${encodeURIComponent(slug)}/verses?limit=1`),
+    staleTime: Infinity,
+  });
+  return (
+    <div className="extract-menu" role="group" aria-label={t("extractFilterHint")}>
+      {q.isPending ? (
+        <span className="block h-10 animate-pulse rounded bg-card-2" aria-hidden="true" />
+      ) : (
+        <>
+          <label className="flex flex-col gap-0.5 text-[11.5px] text-t3">
+            {t("filterSurah")}
+            <select className="field-input" value={surah} onChange={(e) => setSurah(e.target.value)}>
+              <option value="">{t("filterAll")}</option>
+              {q.data?.surahs.map((s) => (
+                <option key={s.surah} value={s.surah}>{`${locale === "ar" ? s.name_ar : s.name_translit} (${formatNumber(s.verses, locale)})`}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-0.5 text-[11.5px] text-t3">
+            {t("filterForm")}
+            <select className="field-input quran" lang="ar" value={form} onChange={(e) => setForm(e.target.value)}>
+              <option value="">{t("filterAll")}</option>
+              {q.data?.forms.map((f) => (
+                <option key={f.form} value={f.form}>{`${f.form} (${formatNumber(f.verses, locale)})`}</option>
+              ))}
+            </select>
+          </label>
+          <button type="button" className="btn text-[12px]" onClick={() => onPick({ ...(surah ? { surah: Number(surah) } : {}), ...(form ? { form } : {}) })}>
+            {t("filterExtract")}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** A verse's words and roots (EDT-115…118): the first thing left as its button; the three choices under its caret,
+ * each with what it brings; particles left out unless the reader asks for them (QAN-08). */
+function VerseExtract({ id, data }: { id: string; data: GraphNode["data"] }) {
+  const t = useTranslations("graph");
+  const locale = useLocale();
+  const actions = useContext(GraphActionsContext);
+  const [open, setOpen] = useState(false);
+  const [particles, setParticles] = useState(false);
+  const q = useQuery({ queryKey: ["graph-verse", data.verse!.key], queryFn: () => getJSON<{ words: VerseWord[] }>(`/verses/${data.verse!.key}`), staleTime: Infinity });
+  const color = KIND_COLOR.verse;
+  const plan = q.data ? actions.versePlan(id, q.data.words, particles) : { words: [], roots: [] };
+  const mine = actions.expanding === id;
+  const words = plan.words.length;
+  const roots = plan.roots.length;
+  const first = words ? t("linkWords", cnt(words, locale)) : roots ? t("extractRoots", cnt(roots, locale)) : t("allLinked");
+  const done = !!q.data && !words && !roots;
+  const run = (mode: "words" | "roots" | "both") => {
+    setOpen(false);
+    actions.expand(id, { mode, particles });
+  };
+  const spacedRoot = (k: string) => k.split("").join(" ");
+  return (
+    <div className="extract-row nodrag">
+      <button
+        type="button"
+        className={"extract-btn" + (done ? " is-done" : "")}
+        style={done ? undefined : { background: color, color: "var(--card)" }}
+        disabled={done || !q.data || !!actions.expanding}
+        aria-busy={mine}
+        title={done ? t("linkDone") : t("extractHint", { label: first })}
+        onClick={() => run(words ? "words" : "roots")}
+      >
+        {mine ? t("extracting") : first}
+      </button>
+      {!done && (
+        <button type="button" className="extract-caret" style={{ borderColor: color, color }} onClick={() => setOpen(!open)} aria-expanded={open} title={t("linkChoose")} aria-label={t("linkChoose")}>
+          ▾
+        </button>
+      )}
+      {open && (
+        <div className="extract-menu" role="group" aria-label={t("linkChoose")}>
+          {words > 0 && (
+            <button type="button" className="extract-option" onClick={() => run("words")}>
+              <span>{t("linkWords", cnt(words, locale))}</span>
+              <span className="ar-classical text-[14px] text-t2" lang="ar">{plan.words.map((w) => w.lemma).join("  ·  ")}</span>
+            </button>
+          )}
+          {roots > 0 && (
+            <button type="button" className="extract-option" onClick={() => run("roots")}>
+              <span>{t("extractRoots", cnt(roots, locale))}</span>
+              <span className="ar-classical text-[14px] text-root" lang="ar">{plan.roots.map(spacedRoot).join("  ·  ")}</span>
+            </button>
+          )}
+          {words > 0 && roots > 0 && (
+            <button type="button" className="extract-option" onClick={() => run("both")}>
+              <span>{t("linkBoth")}</span>
+              <span className="ar-classical text-[14px] text-t2" lang="ar">{[...plan.words.map((w) => w.lemma), ...plan.roots.map(spacedRoot)].join("  ·  ")}</span>
+            </button>
+          )}
+          <label className="flex items-center gap-2 text-[12px] text-t2">
+            <input type="checkbox" checked={particles} onChange={(e) => setParticles(e.target.checked)} />
+            {t("withParticles")}
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A verse recited (QAN-02): the reader's reciter, played here; credited in the details. */
+function VersePlay({ verseKey }: { verseKey: string }) {
+  const t = useTranslations("graph");
+  const reciter = useAudio((s) => s.reciter);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  async function toggle() {
+    if (playing && audio.current) {
+      audio.current.pause();
+      return;
+    }
+    try {
+      const r = await getJSON<{ url: string }>(`/recitations/${reciter}/verses/${verseKey}`);
+      audio.current?.pause();
+      const a = new Audio(r.url);
+      audio.current = a;
+      a.onplay = () => setPlaying(true);
+      a.onpause = a.onended = () => setPlaying(false);
+      await a.play();
+    } catch {
+      setPlaying(false);
+    }
+  }
+  return (
+    <button type="button" className="nodrag btn min-h-[26px] px-2 text-[11.5px]" onClick={() => void toggle()} aria-pressed={playing} title={t("playVerseHint")}>
+      {playing ? t("stopVerse") : t("playVerse")}
+    </button>
   );
 }
 
@@ -443,8 +667,17 @@ function Excerpted({ verseKey, places, className, wordClass, around = 5 }: { ver
   );
 }
 
-function VerseLine({ verseKey, places }: { verseKey: string; places: string[] }) {
-  return <Excerpted verseKey={verseKey} places={places} className="quran mt-1 text-[19px] leading-[2.1] text-t1" wordClass="rounded bg-sentence-wash px-0.5 text-t1" />;
+/** A verse on its card: open, around its marked word; folded, one line — the word with a word either side (QAN-03). */
+function VerseLine({ verseKey, places, folded }: { verseKey: string; places: string[]; folded?: boolean }) {
+  return (
+    <Excerpted
+      verseKey={verseKey}
+      places={folded ? places.slice(0, 1) : places}
+      around={folded ? 1 : 5}
+      className={"quran mt-1 leading-[2.1] text-t1 " + (folded ? "text-[17px]" : "text-[19px]")}
+      wordClass="rounded bg-sentence-wash px-0.5 text-t1"
+    />
+  );
 }
 
 function VerseCite({ verseKey }: { verseKey: string }) {

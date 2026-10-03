@@ -63,6 +63,12 @@ function cleanData(raw: unknown): GraphNodeData | null {
     const fields = d.fields.slice(0, 40).map(cleanField).filter((f): f is Field => !!f);
     if (fields.length) out.fields = fields;
   }
+  const tot = d.totals as Record<string, unknown> | undefined;
+  if (tot && typeof tot === "object") {
+    const totals = { patterns: int(tot.patterns, 0, 100_000), words: int(tot.words, 0, 100_000), verses: int(tot.verses, 0, 100_000) };
+    const kept = Object.fromEntries(Object.entries(totals).filter(([, v]) => v !== undefined));
+    if (Object.keys(kept).length) out.totals = kept;
+  }
   put("title", str(d.title, 200));
   const size = d.size as Record<string, unknown> | undefined;
   if (size && int(size.w, 40, 20_000) !== undefined && int(size.h, 40, 20_000) !== undefined) out.size = { w: size.w as number, h: size.h as number };

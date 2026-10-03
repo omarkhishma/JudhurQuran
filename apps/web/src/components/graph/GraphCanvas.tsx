@@ -23,7 +23,8 @@ import { toPng } from "html-to-image";
 import { useLocale, useTranslations } from "next-intl";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { link, verseId } from "@/lib/graph/build";
+import { link, verseId, type RootGraphPayload } from "@/lib/graph/build";
+import { fromPattern, fromRoot, fromVerses, linkVerse, versePlan, versesOf, type Added, type ExtractOptions, type RootRow, type VersePage, type VerseWord } from "@/lib/graph/extract";
 import { bundleFiles } from "@/lib/graph/files";
 import { useEntryTitles } from "@/lib/graph/quote";
 import { getJSON } from "@/lib/reader/api";
@@ -46,6 +47,18 @@ const edgeTypes = { rel: RelEdge };
 export const MAP_ZOOM = 0.35;
 const GRID = 8;
 const snap = (v: number) => Math.round(v / GRID) * GRID;
+/** A root's graph, read once a visit for every card that extracts from it. */
+const graphs = new Map<string, Promise<RootGraphPayload>>();
+function rootGraph(key: string): Promise<RootGraphPayload> {
+  let p = graphs.get(key);
+  if (!p) {
+    p = getJSON<RootGraphPayload>(`/roots/${encodeURIComponent(key)}/graph`);
+    graphs.set(key, p);
+    p.catch(() => graphs.delete(key));
+  }
+  return p;
+}
+
 /** a frame stays behind every card, selected or not: xyflow lifts a selected node by 1000 */
 const FRAME_Z = -1001;
 
@@ -137,6 +150,8 @@ export type GraphCanvasProps = {
   onHelp?: () => void;
   /** transliteration on the cards (QAN-22) */
   translit?: boolean;
+  /** inside a page (a root's map on its page, QAN-21): the wheel scrolls the page, a drag pans, ⌘ with the wheel zooms */
+  embedded?: boolean;
 };
 
 export const DRAG_TYPE = "application/x-jadhr-card";
@@ -151,6 +166,45 @@ function nameOf(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "ki
   if (d.kind === "frame") return d.title || t("kindFrame");
   if (d.kind === "verse") return d.verse ? verseRef(d.verse.key, locale) : "";
   return d.ar ?? "";
+}
+
+/**
+ * A card's stats (EDT-090, EDT-091): a root — its patterns and words on no pattern on the map, all its words under
+ * them, and what it has left to extract; a pattern — its words, their verses, what is left; a word — its verses, its
+ * parents, what is left; a verse — the cards linked to it; a note — what it is attached to and its fields. "Left" is
+ * known only when the card carries what the dataset holds (`totals`). A link from a root to a verse is not a pattern
+ * (HWF-51).
+ */
+export type CardStats = { a: number; b: number; left: number | null };
+function cardStats(id: string, nodes: GraphNode[], edges: GraphEdge[]): CardStats {
+  const by = new Map(nodes.map((n) => [n.id, n]));
+  const n = by.get(id);
+  if (!n) return { a: 0, b: 0, left: null };
+  const kidsOf = (x: string) => edges.filter((e) => e.source === x).map((e) => by.get(e.target)).filter((k): k is GraphNode => !!k);
+  const kids = kidsOf(id);
+  const t = n.data.totals;
+  const left = (all: number | undefined, on: number) => (all == null ? null : Math.max(0, all - on));
+  switch (n.data.kind) {
+    case "root": {
+      const forms = kids.filter((k) => k.data.kind === "pattern" || k.data.kind === "lemma");
+      const words = new Set([...kids.filter((k) => k.data.kind === "lemma"), ...kids.filter((k) => k.data.kind === "pattern").flatMap((p) => kidsOf(p.id).filter((k) => k.data.kind === "lemma"))].map((k) => k.id));
+      return { a: forms.length, b: words.size, left: left(t?.patterns, forms.length) };
+    }
+    case "pattern": {
+      const words = kids.filter((k) => k.data.kind === "lemma");
+      const verses = new Set(words.flatMap((w) => kidsOf(w.id).filter((k) => k.data.kind === "verse").map((k) => k.id)));
+      return { a: words.length, b: verses.size, left: left(t?.words, words.length) };
+    }
+    case "lemma": {
+      const verses = kids.filter((k) => k.data.kind === "verse").length;
+      const parents = edges.filter((e) => e.target === id && ["root", "pattern"].includes(by.get(e.source)?.data.kind ?? "")).length;
+      return { a: verses, b: parents, left: n.data.more ? n.data.more.remaining : left(t?.verses, verses) };
+    }
+    case "verse":
+      return { a: edges.filter((e) => e.target === id && by.get(e.source)?.data.kind !== "note").length, b: 0, left: null };
+    default:
+      return { a: edges.filter((e) => e.source === id || e.target === id).length, b: n.data.fields?.length ?? 0, left: null };
+  }
 }
 
 /** The cards a first view opens on: the word and verse the reader came from, else every focus card. */
@@ -218,6 +272,7 @@ function CanvasInner({
   onDropPayload,
   onHelp,
   translit = false,
+  embedded = false,
 }: GraphCanvasProps) {
   const t = useTranslations("graph");
   const locale = useLocale();
@@ -270,7 +325,7 @@ function CanvasInner({
   const fit = useCallback(() => rf.fitView({ padding: 0.1, duration: 250, maxZoom: 1, minZoom: 0.34 }), [rf]);
 
   const tidy = useCallback(
-    async (label = t("tidy"), base?: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
+    async (label = t("tidy"), base?: { nodes: GraphNode[]; edges: GraphEdge[] }, look?: string[]) => {
       const src = base ?? { nodes: rf.getNodes(), edges: rf.getEdges() };
       // frames are laid out by their cards: each wraps, after the layout, the cards it held before (EDT-154)
       const frames = src.nodes.filter((n) => n.data.kind === "frame");
@@ -293,7 +348,8 @@ function CanvasInner({
       setGliding(true);
       setTimeout(() => setGliding(false), 420);
       commit(label, laid, src.edges);
-      requestAnimationFrame(() => fit());
+      // a whole tidy shows the whole map; an extraction shows the card and what it brought, still readable
+      requestAnimationFrame(() => (look?.length ? void rf.fitView({ nodes: look.map((id) => ({ id })), padding: 0.2, minZoom: 0.5, maxZoom: 1, duration: 250 }) : fit()));
     },
     [rf, commit, t, fit],
   );
@@ -306,9 +362,11 @@ function CanvasInner({
         setNodes(laid);
         // Readable first view: fit, but never below a zoom where Arabic on the cards stays legible.
         // Open on the path the reader came by (root → word → verse) when there is one, else on the
-        // root and its words (the right edge), where the reading of the map begins.
+        // root and what comes out of it (the right edge), where the reading of the map begins.
         const focus = firstView(laid);
-        const anchor = focus.length ? focus : laid.filter((n) => n.data.kind === "root" || n.data.kind === "lemma");
+        const roots = laid.filter((n) => n.data.kind === "root");
+        const near = roots.length ? laid.filter((n) => n.data.kind === "root" || rf.getEdges().some((e) => roots.some((r) => r.id === e.source) && e.target === n.id)) : laid.filter((n) => n.data.kind === "lemma");
+        const anchor = focus.length ? focus : near;
         requestAnimationFrame(() =>
           rf.fitView({ nodes: anchor.length ? anchor : undefined, padding: 0.25, minZoom: 0.6, maxZoom: 1 }),
         );
@@ -382,47 +440,95 @@ function CanvasInner({
     [nodes, edges, commit, rf, reveal],
   );
 
-  // A card's places, read when asked (F18: a failed read is said, never silent). The cards are added to the map as
-  // it is when they arrive.
+  // What a card extracts from the dataset (P8.2; EDT-111…123, F18: a failed read is said, never silent): a root its
+  // patterns, a pattern its words, a word its verses ten at a time — within a sūra or a written form when asked —
+  // and a verse its words and their roots. The cards are added to the map as it is when they arrive, laid out, in
+  // one named step that undo takes back whole.
   const [expanding, setExpanding] = useState<string | null>(null);
   const expand = useCallback(
-    async (id: string) => {
+    async (id: string, opts: ExtractOptions = {}) => {
       const node = live.current.nodes.find((n) => n.id === id);
       if (!node || expanding) return;
-      const { kind: k, slug, cursor } = node.data;
-      if (k !== "lemma" || !slug) return;
+      const d = node.data;
       setExpanding(id);
       try {
-        const qs = new URLSearchParams({ limit: "8" });
-        if (cursor) qs.set("cursor", cursor);
-        const page = await getJSON<{ total: number; next_cursor: string | null; data: { location: string; verse_key: string }[] }>(`/words/${encodeURIComponent(slug)}/attestations?${qs}`);
         const { nodes: now, edges: wires } = live.current;
-        const byId = new Map(now.map((n) => [n.id, n]));
-        const newNodes: GraphNode[] = [];
-        const newEdges: GraphEdge[] = [];
-        const marked = new Map<string, string[]>(); // a verse already on the map: the places it now marks too
-        for (const o of page.data) {
-          const vid = verseId(o.verse_key);
-          const had = byId.get(vid) ?? newNodes.find((n) => n.id === vid);
-          // extracted cards start folded, as the design's startFolded has them (EDT-082)
-          if (!had) newNodes.push({ id: vid, type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", verse: { key: o.verse_key }, places: [o.location], folded: true } });
-          else if (!had.data.places?.includes(o.location)) {
-            if (newNodes.includes(had)) had.data.places = [...(had.data.places ?? []), o.location];
-            else marked.set(vid, [...(marked.get(vid) ?? had.data.places ?? []), o.location]);
+        let out: Added | null = null;
+        let label = "";
+        let said = "";
+        const update = new Map<string, Partial<GraphNode["data"]>>();
+        if (d.kind === "root" && d.rootKey) {
+          out = fromRoot(await rootGraph(d.rootKey), now, wires);
+          label = t("doExtractPatterns", cnt(out.count, locale));
+          said = t("extractedPatterns", cnt(out.count, locale));
+        } else if (d.kind === "pattern" && d.slug) {
+          // its words in the roots it hangs from on this map
+          const roots = wires.filter((e) => e.target === id).map((e) => now.find((n) => n.id === e.source)?.data.rootKey).filter((k): k is string => !!k);
+          out = fromPattern(d.slug, await Promise.all([...new Set(roots)].map(rootGraph)), now, wires);
+          label = t("doExtractWords", cnt(out.count, locale));
+          said = t("extractedWords", cnt(out.count, locale));
+        } else if (d.kind === "lemma" && d.slug) {
+          // ten new verses; a filter starts from the first verse, the plain sequence from where it stopped
+          const filtered = !!(opts.surah || opts.form);
+          const have = versesOf(id, wires);
+          const fresh: VersePage["data"] = [];
+          let cursor = !filtered && d.cursor?.startsWith("v:") ? d.cursor.slice(2) : null;
+          let total = 0;
+          let stop: string | null = cursor;
+          for (let i = 0; i < 40 && fresh.length < 10; i++) {
+            const qs = new URLSearchParams({ limit: "20" });
+            if (cursor) qs.set("cursor", cursor);
+            if (opts.surah) qs.set("surah", String(opts.surah));
+            if (opts.form) qs.set("form", opts.form);
+            const page = await getJSON<VersePage>(`/words/${encodeURIComponent(d.slug)}/verses?${qs}`);
+            total = page.total;
+            for (const v of page.data) {
+              if (fresh.length >= 10) break;
+              stop = v.cursor ?? stop;
+              if (!have.has(verseId(v.verse_key))) fresh.push(v);
+            }
+            cursor = page.next_cursor;
+            if (!cursor) break;
           }
-          if (![...wires, ...newEdges].some((e) => e.source === id && e.target === vid)) newEdges.push(link(id, vid, "attests", { place: o.location }));
+          out = fromVerses(id, { total, next_cursor: null, data: fresh }, now, wires);
+          const linked = new Set([...have, ...out.edges.filter((e) => e.source === id).map((e) => e.target)]).size;
+          const all = filtered ? (d.totals?.verses ?? linked) : total;
+          update.set(id, {
+            expanded: true,
+            // the plain sequence goes on from the verse after the last one taken
+            ...(filtered ? {} : { cursor: stop ? `v:${stop}` : null, totals: { ...d.totals, verses: total } }),
+            more: linked < all ? { kind: "verses", remaining: all - linked } : undefined,
+          });
+          label = t("doExtractVerses", cnt(out.count, locale));
+          said = t("extractedVerses", cnt(out.count, locale));
+        } else if (d.kind === "verse" && d.verse) {
+          const v = await getJSON<{ words: VerseWord[] }>(`/verses/${d.verse.key}`);
+          const plan = versePlan(id, v.words, wires, !!opts.particles);
+          const mode = opts.mode ?? (plan.words.length ? "words" : "roots");
+          const keys = mode === "words" ? [] : mode === "roots" ? plan.roots : plan.words.flatMap((w) => (w.root ? [w.root] : []));
+          const rows = keys.length ? (await getJSON<{ data: RootRow[] }>(`/roots?keys=${encodeURIComponent(keys.join(","))}&limit=${keys.length}`)).data : [];
+          out = linkVerse(id, v.words, plan, mode, new Map(rows.map((r) => [r.key, r])), now, wires);
+          const words = mode === "roots" ? 0 : plan.words.length;
+          const roots = mode === "words" ? 0 : mode === "roots" ? plan.roots.length : new Set(plan.words.flatMap((w) => (w.root ? [w.root] : []))).size;
+          const phrase = words && roots ? t("phraseWordsRoots", { words: t("phraseWords", cnt(words, locale)), roots: t("phraseRoots", cnt(roots, locale)) }) : words ? t("phraseWords", cnt(words, locale)) : t("phraseRoots", cnt(roots, locale));
+          label = t("doLinkPhrase", { phrase });
+          said = t("linkedPhrase", { phrase });
         }
-        const shown = new Set([...wires, ...newEdges].filter((e) => e.source === id && e.data?.rel === "attests").map((e) => e.data?.place)).size;
-        const updated = now.map((n) =>
-          n.id === id
-            ? { ...n, data: { ...n.data, expanded: true, cursor: page.next_cursor, more: page.next_cursor ? { kind: "verses" as const, remaining: Math.max(0, page.total - shown) } : undefined } }
-            : marked.has(n.id)
-              ? { ...n, data: { ...n.data, places: marked.get(n.id) } }
-              : n,
-        );
-        await tidy(t("doExtractVerses", cnt(newNodes.length, locale)), { nodes: [...updated, ...newNodes], edges: [...wires, ...newEdges] });
+        if (!out || (!out.nodes.length && !out.edges.length && !out.marks.size)) {
+          if (update.size) setNodes((ns) => ns.map((n) => (update.has(n.id) ? { ...n, data: { ...n.data, ...update.get(n.id) } } : n)));
+          toast(t("nothingLeft"));
+          return;
+        }
+        const added = out;
+        const updated = now.map((n) => {
+          const u = update.get(n.id);
+          const m = added.marks.get(n.id);
+          return u || m ? { ...n, data: { ...n.data, ...u, ...(m ? { places: m } : {}) } } : n;
+        });
+        await tidy(label, { nodes: [...updated, ...added.nodes], edges: [...wires, ...added.edges] }, [id, ...added.nodes.map((n) => n.id)]);
+        toast(said, true);
       } catch {
-        toast(t("versesFailed"));
+        toast(t(d.kind === "lemma" ? "versesFailed" : "extractFailed"));
       } finally {
         setExpanding(null);
       }
@@ -738,7 +844,7 @@ function CanvasInner({
           nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, text } } : n)),
           edges,
         ),
-      expand: (id) => void expand(id),
+      expand: (id, opts) => void expand(id, opts),
       expanding,
       // fields (EDT-104…107): a new one named for its kind, edited, renamed and removed, each a named step
       addField: (id, kind) => {
@@ -750,13 +856,9 @@ function CanvasInner({
       removeField: (id, fid) => updateFields(id, t("doRemoveField"), (fs) => fs.filter((f) => f.id !== fid)),
       attach: (id) => attachNote(id),
       focusCard,
-      // a root's and a pattern's words on the map, a word's verses (EDT-101)
-      stats: (id) => {
-        const kind = nodes.find((n) => n.id === id)?.data.kind;
-        const child = kind === "lemma" ? "verse" : "lemma";
-        const out = edges.filter((e) => e.source === id && nodes.find((n) => n.id === e.target)?.data.kind === child);
-        return { children: out.length, links: edges.filter((e) => e.source === id || e.target === id).length };
-      },
+      // a card's place in the map and what it has left to extract (EDT-090, EDT-091, HWF-51)
+      stats: (id) => cardStats(id, nodes, edges),
+      versePlan: (id, words, particles) => versePlan(id, words, edges, particles),
       toast: (text) => toast(text),
     }),
     [editable, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast],
@@ -1026,7 +1128,7 @@ function CanvasInner({
     // the design's order (EDT-067): fold, extract, attach, duplicate, group, then the link and the deletion
     return [
       { label: t(card.data.folded ? "unfold" : "fold"), keys: "↵", run: () => fold(many.map((n) => n.id)) },
-      ...(card.data.kind === "lemma" && card.data.slug && (!card.data.expanded || card.data.more?.remaining) ? [{ label: t("menuExtract"), keys: "E", run: () => void expand(card.id) }] : []),
+      ...(card.data.kind !== "note" && cardStats(card.id, nodes, edges).left !== 0 ? [{ label: t(card.data.kind === "verse" ? "menuLink" : card.data.kind === "root" ? "menuExtractPatterns" : card.data.kind === "pattern" ? "menuExtractWords" : "menuExtract"), keys: "E", run: () => void expand(card.id) }] : []),
       ...(card.data.kind !== "note" ? [{ label: t("menuAttachNote"), run: () => attachNote(card.id) }] : []),
       ...(cardsSel.some((n) => n.data.kind === "note") ? [{ label: t("menuDuplicate"), keys: "⌘D", run: duplicate }] : []),
       ...(cardsSel.length > 1 ? [{ label: t("doGroup", cnt(cardsSel.length, locale)), keys: "⌘G", run: group }] : []),
@@ -1045,28 +1147,34 @@ function CanvasInner({
     <WireContextValue.Provider value={wire}>
     <FrameActionsContext.Provider value={frameActions}>
     <GraphActionsContext.Provider value={actions}>
-      <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-full w-full min-h-0 min-w-0 flex-col">
         {header ?? (
           <div className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-3 py-2">
-            <h1 className="min-w-0 truncate px-1 text-[15px] font-semibold">{title}</h1>
+            {/* inside a page the section's heading names it */}
+            {!embedded && <h1 className="min-w-0 truncate px-1 text-[15px] font-semibold">{title}</h1>}
             {status}
             <div className="ms-auto flex flex-wrap items-center gap-1.5">
               <div className="seg-group">
                 <button type="button" className="seg" onClick={() => void tidy()} aria-keyshortcuts="T">{t("tidy")}</button>
                 <button type="button" className="seg" onClick={fit} aria-keyshortcuts="F">{t("fit")}</button>
               </div>
-              <div className="seg-group">
-                <button type="button" className="seg" onClick={undo} disabled={!past.length} title={past.length ? t("undoLabel", { label: past[past.length - 1].label }) : t("undo")} aria-keyshortcuts="Meta+Z">
-                  {t("undo")}
-                </button>
-                <button type="button" className="seg" onClick={redo} disabled={!future.length} title={future.length ? t("redoLabel", { label: future[future.length - 1].label }) : t("redo")} aria-keyshortcuts="Meta+Shift+Z">
-                  {t("redo")}
-                </button>
-              </div>
-              <div className="seg-group">
-                <button type="button" className="seg" onClick={() => void exportPng()}>{t("exportPng")}</button>
-                <button type="button" className="seg" onClick={exportJson}>{t("exportJson")}</button>
-              </div>
+              {/* a map inside a page keeps to what explores it; the full map has the rest */}
+              {!embedded && (
+                <>
+                  <div className="seg-group">
+                    <button type="button" className="seg" onClick={undo} disabled={!past.length} title={past.length ? t("undoLabel", { label: past[past.length - 1].label }) : t("undo")} aria-keyshortcuts="Meta+Z">
+                      {t("undo")}
+                    </button>
+                    <button type="button" className="seg" onClick={redo} disabled={!future.length} title={future.length ? t("redoLabel", { label: future[future.length - 1].label }) : t("redo")} aria-keyshortcuts="Meta+Shift+Z">
+                      {t("redo")}
+                    </button>
+                  </div>
+                  <div className="seg-group">
+                    <button type="button" className="seg" onClick={() => void exportPng()}>{t("exportPng")}</button>
+                    <button type="button" className="seg" onClick={exportJson}>{t("exportJson")}</button>
+                  </div>
+                </>
+              )}
               {toolbarExtra}
             </div>
           </div>
@@ -1139,7 +1247,8 @@ function CanvasInner({
                 "handle.ariaLabel": t("a11yHandle"),
               }}
               // a wheel or two fingers pan, ⌘ or Ctrl with them zooms (EDT-051); the 8 px grid (HWF-12)
-              panOnScroll
+              panOnScroll={!embedded}
+              preventScrolling={!embedded}
               panOnScrollSpeed={1}
               // the left button on empty space and the middle button anywhere pan (EDT-254)
               panOnDrag={[0, 1]}
@@ -1221,6 +1330,8 @@ function CanvasInner({
               fitView={!autoLayout}
               fitViewOptions={focusIds.length ? { nodes: focusIds, padding: 0.25, minZoom: 0.6, maxZoom: 1 } : { maxZoom: 1 }}
               proOptions={{ hideAttribution: false }}
+              // the credit at the corner the zoom pill leaves free
+              attributionPosition="bottom-left"
               colorMode={theme === "dark" ? "dark" : "light"}
               defaultEdgeOptions={{ type: "rel", markerEnd: { type: MarkerType.ArrowClosed, color: "var(--edge)", width: 14, height: 14 } }}
             >

@@ -8,6 +8,7 @@ import type { RootDetail, Source, Surah } from "@/lib/types";
 import { DistributionChart } from "@/components/roots/DistributionChart";
 import { Concordance } from "@/components/roots/Concordance";
 import { RootLexicon } from "@/components/lexicon/RootLexicon";
+import { RootMap } from "@/components/roots/RootMap";
 import { Icon } from "@/components/Icon";
 import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { Term } from "@/components/terms/Term";
@@ -57,6 +58,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
   setRequestLocale(locale);
   const t = await getTranslations("roots");
   const tl = await getTranslations("lexicon");
+  const tg = await getTranslations("graph");
   const [r, surahs, sources] = await Promise.all([
     load(root),
     api<{ data: Surah[] }>("/surahs"),
@@ -193,6 +195,12 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="mt-10 scroll-mt-24" aria-labelledby="root-map-h" id="map">
+        <h2 id="root-map-h" className="text-[18px] font-semibold">{tg("rootMapTitle")}</h2>
+        <p className="mb-3 text-[13.5px] text-t2">{tg("rootMapLead")}</p>
+        <RootMap rootKey={r.key} />
       </section>
 
       <section className="mt-10 scroll-mt-24" aria-labelledby="lexicon-h" id="lexicon">

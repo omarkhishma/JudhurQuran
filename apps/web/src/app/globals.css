@@ -5463,6 +5463,10 @@ a.wotd-pill:hover {
 .graph-canvas .react-flow__edge-path {
   opacity: var(--wire-idle);
 }
+/* a relation named on its wire never takes the pointer from the cards' handles beneath it; a picked wire's pill does */
+.wire-label:not(.is-picked) {
+  pointer-events: none !important;
+}
 .wire-label {
   position: absolute;
   z-index: 40;
@@ -5631,19 +5635,6 @@ a.wotd-pill:hover {
   width: 344px;
   box-shadow: var(--sh-open);
 }
-.card-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-  font-size: 11px;
-  color: var(--t3);
-}
-.card-stats > span {
-  padding: 1px 7px;
-  border-radius: 99px;
-  background: var(--card-2);
-}
 .card-fields {
   display: flex;
   flex-direction: column;
@@ -5796,4 +5787,116 @@ a.wotd-pill:hover {
 .react-flow__resize-control.frame-resize-line.top,
 .react-flow__resize-control.frame-resize-line.bottom {
   height: 8px;
+}
+/* a card's stats and its extraction (P8.2; EDT-090, EDT-110…118) */
+.card-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.card-stats > div {
+  display: flex;
+  flex-direction: column;
+}
+.card-stats dd {
+  font-size: 14px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--t1);
+}
+.card-stats dt {
+  font-size: 11px;
+  color: var(--t3);
+}
+.extract-row {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.extract-btn {
+  flex: 1;
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: center;
+}
+.extract-btn:disabled {
+  cursor: default;
+}
+.extract-btn.is-done {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--t3);
+}
+.extract-btn.is-none {
+  border: 1px dashed var(--line-2);
+  background: transparent;
+  color: var(--t3);
+}
+.extract-caret {
+  width: 32px;
+  border: 1px solid;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 12px;
+}
+.extract-menu {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: var(--sh);
+}
+.extract-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  text-align: start;
+  font-size: 12px;
+  font-weight: 500;
+}
+.extract-option:hover {
+  border-color: var(--ring);
+}
+/* a verse card is wider open: its words need the room (QAN-03) */
+.graph-card.is-open[data-kind="verse"] {
+  width: 420px;
+}
+/* a root's map on its page (QAN-21) */
+.root-map {
+  display: flex;
+  height: 560px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--canvas);
+}
+@media (max-width: 640px) {
+  .root-map {
+    height: 440px;
+  }
+}
+/* xyflow's credit keeps its own ground, so it reads over whatever card lies beneath it */
+.react-flow .react-flow__attribution {
+  background: var(--card);
+  border-radius: 0 4px 0 0;
+}
+.react-flow .react-flow__attribution a {
+  color: var(--t2);
 }

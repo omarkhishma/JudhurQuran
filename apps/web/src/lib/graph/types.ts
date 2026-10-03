@@ -45,6 +45,9 @@ export type GraphNodeData = {
   entry?: number;
   /** the reader's own fields on the card (EDT-092…109) */
   fields?: Field[];
+  /** what the dataset holds below this card, for its "to extract" count (P8.2, EDT-091): a root's patterns and words,
+   * a pattern's words in its root, a word's verses */
+  totals?: { patterns?: number; words?: number; verses?: number };
   title?: string; // a frame
   size?: { w: number; h: number }; // a frame
   folded?: boolean;
@@ -121,7 +124,7 @@ export const KIND_SIZE: Record<NodeKind, { width: number; height: number }> = {
   root: { width: 344, height: 250 },
   pattern: { width: 344, height: 220 },
   lemma: { width: 344, height: 360 },
-  verse: { width: 344, height: 280 },
+  verse: { width: 420, height: 280 },
   note: { width: 344, height: 230 },
   frame: { width: 420, height: 280 },
 };
