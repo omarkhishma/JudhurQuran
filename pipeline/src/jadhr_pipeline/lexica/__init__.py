@@ -29,6 +29,7 @@ from .registry import Registry, WorkSpec, load_registry
 from .rootmap import Match, RootMatcher
 from .shamela import Counters, load_pages, load_toc, read_lines
 from .taj import split_taj
+from .taqalib import split_taqalib
 from .tocworks import RawArticle, segment_toc_work
 
 __all__ = ["build_lexica", "load_registry", "work_articles"]
@@ -110,6 +111,8 @@ def _articles(spec: WorkSpec, counters: Counters, ctx: _Context) -> tuple[list[R
         return [RawArticle(a.headword, a.body, a.page_ref, a.source_ref) for a in lisan], {}
     if fmt == "shamela-taj":
         return split_taj(spec, lines, toc, counters, ctx.quran())
+    if fmt == "shamela-taqalib":  # al-ʿAyn, Tahdhīb: permutation groups
+        return split_taqalib(spec, lines, toc, counters)
     if fmt == "shamela-qamus":  # aligned to the root list of the commentary that follows it (Tāj)
         taj_articles, _, _ = ctx.articles(ctx.reg.work(spec.cfg["align_with"]))
         return split_qamus(spec, lines, toc, counters, taj_articles)
@@ -117,7 +120,11 @@ def _articles(spec: WorkSpec, counters: Counters, ctx: _Context) -> tuple[list[R
 
 
 def _map_roots(
-    spec: WorkSpec, arts: list[RawArticle], extra: dict[str, Any], matcher: RootMatcher
+    spec: WorkSpec,
+    arts: list[RawArticle],
+    extra: dict[str, Any],
+    matcher: RootMatcher,
+    occurrences: dict[str, int] | None = None,
 ) -> list[Match]:
     manual = spec.manual_roots()
     lane_tokens: list[list[str]] | None = extra.get("lane_tokens")
@@ -125,15 +132,20 @@ def _map_roots(
         lane_tokens if lane_tokens is not None else [a.match_heads or [a.headword] for a in arts]
     )
     # Pass 1: strict/manual, to know which roots already have a strict article in this work.
+    occ = occurrences or {}
+    per_head = [[matcher.match(h, manual, set()) for h in hs] for hs in heads]
+    own = Counter(  # roots with an article of their own (one heading)
+        c.root_key for cands in per_head if len(cands) == 1 for c in cands if c.match in ("strict", "manual")
+    )
     first: list[Match] = []
-    for hs in heads:
-        m = Match(None, None)
-        for h in hs:
-            cand = matcher.match(h, manual, set())
-            if cand.match in ("strict", "manual"):
-                m = cand
-                break
-        first.append(m)
+    for cands in per_head:
+        strict = [c for c in cands if c.match in ("strict", "manual")]
+        if len(strict) > 1 and spec.format == "shamela-taqalib":
+            # an article headed by two roots ("خور _ خير", al-Azharī's weak roots) is filed under the one
+            # without an article of its own in this work, else the one more frequent in the Quran
+            # (stable: else the first). Other works keep the first heading's root.
+            strict.sort(key=lambda c: (own[c.root_key] > 0, -occ.get(c.root_key or "", 0)))
+        first.append(strict[0] if strict else Match(None, None))
     strict_roots = {m.root_key for m in first if m.match in ("strict", "manual") and m.root_key}
     # Pass 2: loose matching for the rest.
     out: list[Match] = []
@@ -217,7 +229,9 @@ def build_lexica(
         arts = [arts[i] for i in keep]
         if "lane_tokens" in extra:
             extra["lane_tokens"] = [extra["lane_tokens"][i] for i in keep]
-        matches = _map_roots(spec, arts, extra, matcher)
+        matches = _map_roots(
+            spec, arts, extra, matcher, {r["key"]: int(r.get("occurrences") or 0) for r in roots}
+        )
         unmatched: list[dict[str, Any]] = []
         for n, (a, m) in enumerate(zip(arts, matches, strict=True), start=1):
             eid = base + n

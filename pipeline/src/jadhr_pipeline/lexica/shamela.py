@@ -32,8 +32,12 @@ MARKER_PATTERNS: dict[str, re.Pattern[str]] = {
     "guillemets": re.compile(r" ?\u00ab([\u0660-\u06690-9]{1,3})\u00bb"),
     "negation-parens": re.compile(r" ?\(\u00ac([\u0660-\u06690-9]{1,3})\)"),
     "parens": re.compile(r" ?\(([\u0660-\u06690-9]{1,3})\)"),
+    # Tahdhīb: a numbered parenthesis is a note marker unless it numbers a verse — at the end of a
+    # quotation ("…الْبَيِّنَة (٤) ﴾", "…الدُّنْيَا﴾ (١٠٨)") or after a sūra's name ("فِي سُورَة الْملك (٢٧)").
+    "parens-unless-verse": re.compile(r" ?\(([\u0660-\u06690-9]{1,3})\)(?!\s*\ufd3e)"),
     "none": re.compile(r"(?!)"),  # an edition with no reference markers in the body (Tāj)
 }
+_SURA_BEFORE = re.compile(r"(?:سور[ةه]\s+\S+(?:\s+\S+)?|\ufd3e)\s*$")
 _NOTE_NUMBER = re.compile(r"(?:^|[\r\n])\s*\(\u00ac?([\u0660-\u06690-9]{1,3})\)")
 _TOC_ID = re.compile(r"toc-(\d+)")
 _HSPACE = re.compile(r"[ \t\u00a0\u2000-\u200a\u202f\u205f\u3000]+")
@@ -127,6 +131,11 @@ def strip_markers(page: Page, style: str, counters: Counters) -> str:
 
     def repl(m: re.Match[str]) -> str:
         n = m.group(1).translate(ARABIC_DIGITS)
+        if style == "parens-unless-verse" and _SURA_BEFORE.search(
+            strip_marks(page.body[max(0, m.start() - 40) : m.start()])
+        ):
+            counters.add("footnote-markers-removed:verse-number-kept")
+            return m.group(0)
         counters.add("footnote-markers-removed")
         counters.add(
             "footnote-markers-removed:with-note-on-page"

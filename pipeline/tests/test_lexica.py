@@ -87,6 +87,8 @@ REVIEW_BY_WORK = {
     "lane": 271,
     "taj": 15,
     "qamus": 24,
+    "ayn": 196,
+    "tahdhib": 336,
 }
 
 
@@ -232,6 +234,7 @@ MARKERS = {
     "lisan": re.compile("\u00ab[\u0660-\u06690-9]{1,3}\u00bb"),
     "maqayis": re.compile("\\(\u00ac[\u0660-\u06690-9]{1,3}\\)"),
     "sihah": re.compile("\\([\u0660-\u06690-9]{1,3}\\)"),
+    "ayn": re.compile("\u00ab[\u0660-\u06690-9]{1,3}\u00bb"),
 }
 
 
@@ -304,7 +307,18 @@ def test_root_keys_are_canonical_and_rows_follow_the_contract(built: tuple, root
 
 
 # Display order by death date (CE): the nine dictionaries of the design plus Ibn Qutaybah's gharib.
-WORK_ORDER = ["ibn-qutaybah-gharib", "sihah", "maqayis", "mufradat", "lisan", "qamus", "taj", "lane"]
+WORK_ORDER = [
+    "ayn",
+    "ibn-qutaybah-gharib",
+    "tahdhib",
+    "sihah",
+    "maqayis",
+    "mufradat",
+    "lisan",
+    "qamus",
+    "taj",
+    "lane",
+]
 
 
 def test_entry_ids_do_not_move_when_the_display_order_changes(built: tuple) -> None:
@@ -315,6 +329,8 @@ def test_entry_ids_do_not_move_when_the_display_order_changes(built: tuple) -> N
         ("lisan", "رحم", 3007615),
         ("sihah", "رحم", 4004486),
         ("lane", "رحم", 5001538),
+        ("ayn", "رحم", 7001316),
+        ("tahdhib", "رحم", 8001666),
     ):
         (e,) = _entries(built, work, root)
         assert e["id"] == eid, (work, e["id"])
