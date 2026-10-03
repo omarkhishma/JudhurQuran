@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 
-from . import accounts, contrib, oidc, sync
+from . import accounts, contrib, oidc, shared_maps, sync
 from .settings import get_settings
 
 router = APIRouter(prefix="/api/v1")
@@ -168,7 +168,12 @@ def restore(u: User, history_id: int) -> ORJSONResponse:
 @router.get("/me/export", summary="Everything the account holds, as JSON")
 def export(u: User) -> ORJSONResponse:
     return ORJSONResponse(
-        {"account": accounts.me(u), **sync.export(u), "contributions": contrib.export_for(u)},
+        {
+            "account": accounts.me(u),
+            **sync.export(u),
+            "contributions": contrib.export_for(u),
+            **shared_maps.export_for(u),
+        },
         headers={**NO_STORE, "Content-Disposition": 'attachment; filename="jadhr-account.json"'},
     )
 

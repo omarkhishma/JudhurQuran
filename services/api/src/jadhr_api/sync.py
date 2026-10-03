@@ -405,8 +405,10 @@ def delete_account(u: dict[str, Any], token: str) -> bool:
         # sign-in links are kept by address, not by account: they go too; so do unmerged proposals and every name
         conn.execute(text("delete from accounts.login_tokens where email = :e"), {"e": u["email"]})
         from .contrib import forget
+        from .shared_maps import forget as forget_maps
 
         forget(conn, u["id"])
+        forget_maps(conn, u["id"])
         conn.execute(text("delete from accounts.users where id = :u"), {"u": u["id"]})
         # the id only, for fifteen days: a backup restored later deletes the account again (F4)
         conn.execute(
