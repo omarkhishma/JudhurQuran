@@ -25,10 +25,12 @@ export type GraphNodeData = {
   focus?: boolean; // on the path of the word the user came from
   expanded?: boolean; // word card: its verses have been opened
   cursor?: string | null; // word card: next page of verses
+  /** a reading of the reader's own text the Analyser was unsure of, kept by the reader: shown as such (F4) */
+  reading?: { conf: number };
 };
 
 export type GraphNode = Node<GraphNodeData>;
-export type GraphEdge = Edge<{ label?: string }>;
+export type GraphEdge = Edge<{ label?: string; reading?: boolean }>;
 
 export type GraphKind = "root" | "topic" | "meaning" | "free";
 

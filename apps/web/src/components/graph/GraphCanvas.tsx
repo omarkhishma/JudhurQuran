@@ -345,6 +345,8 @@ function CanvasInner({
   }
 
   const selectedEdge = editable ? edges.find((e) => e.selected) : undefined;
+  // a link that rests on an uncertain reading is drawn dashed in amber (F4)
+  const drawn = useMemo(() => edges.map((e) => (e.data?.reading ? { ...e, className: "edge-reading" } : e)), [edges]);
 
   return (
     <GraphActionsContext.Provider value={actions}>
@@ -404,7 +406,7 @@ function CanvasInner({
         <div ref={wrapper} className="relative min-h-0 flex-1" dir="ltr" aria-label={t("canvasLabel")}>
           <ReactFlow<GraphNode, GraphEdge>
             nodes={nodes}
-            edges={edges}
+            edges={drawn}
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}

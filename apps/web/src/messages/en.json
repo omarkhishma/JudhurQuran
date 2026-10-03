@@ -758,7 +758,16 @@
     "openImported": "Open it",
     "formsFailed": "This word's forms could not be loaded just now; try again.",
     "versesFailed": "The occurrences could not be loaded just now; try again.",
-    "setTitle": "Set: {name}"
+    "setTitle": "Set: {name}",
+    "reviewTitle": "Review the readings before they enter the map",
+    "reviewLead": "These are the Analyser's readings of your text, not the Quranic corpus's analysis. Those under 0.80 are not chosen; choose one if you judge it right, and it will be marked on the map as an uncertain reading. What you do not choose does not enter it.",
+    "reviewUnsureCount": "{count, plural, one {1 uncertain reading} other {{n} uncertain readings}}",
+    "reviewUnsure": "uncertain",
+    "reviewBuild": "Build the map with what you chose",
+    "reviewBack": "Back to the Analyser",
+    "noRoot": "no root",
+    "readingChip": "Uncertain reading · {conf}",
+    "readingHint": "The Analyser read this word of your text with less than 0.80 confidence, and you chose to keep it."
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

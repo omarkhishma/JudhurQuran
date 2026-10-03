@@ -44,9 +44,10 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
       className={
         "graph-card w-max max-w-[340px] min-w-[200px] rounded-xl border bg-card text-start shadow-rest " +
         (selected ? "outline-2 outline-offset-2 outline-ring " : "") +
-        (data.focus ? "ring-2 ring-ring/50 " : "")
+        (data.focus ? "ring-2 ring-ring/50 " : "") +
+        (data.reading ? "is-reading " : "")
       }
-      style={{ borderColor: `color-mix(in srgb, ${color} 35%, var(--line))` }}
+      style={{ borderColor: data.reading ? "var(--amber)" : `color-mix(in srgb, ${color} 35%, var(--line))` }}
       dir="rtl"
     >
       <Handle type="target" position={Position.Right} className="!h-2.5 !w-2.5 !border-2 !border-card" style={{ background: color }} />
@@ -105,6 +106,11 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
             {data.kind === "word" && data.verse && <FirstVerse verse={data.verse} />}
             {data.kind === "verse" && data.verse && <VerseCite verse={data.verse} />}
             {data.kind === "note" && <p className="mt-1 text-[10.5px] text-t3">{t("personalNote")}</p>}
+            {data.reading && (
+              <p className="reading-chip mt-1.5" title={t("readingHint")}>
+                {t("readingChip", { conf: new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.reading.conf) })}
+              </p>
+            )}
             {data.kind === "root" && (data.usul === "several" || data.usul === "unrelated") && (
               <p className="usul-chip mt-1.5 rounded-md bg-card-2 px-2 py-1 text-[11.5px] leading-relaxed text-t2" data-usul={data.usul}>
                 {t(data.usul === "unrelated" ? "usulUnrelatedCard" : "usulSeveralCard")}

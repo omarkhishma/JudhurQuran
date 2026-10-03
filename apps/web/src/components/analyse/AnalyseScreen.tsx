@@ -80,7 +80,16 @@ export function AnalyseScreen({ initialQ, initialView, initial }: { initialQ: st
       const keys = [...new Set(a.tokens.map((tk) => tk.verse_key).filter((k): k is string => !!k))];
       return keys.length === 1 ? { seed: "verse", key: keys[0] } : { seed: "trail", steps: keys.map((id) => ({ kind: "verse" as const, id })) };
     }
-    const steps = a.tokens.map((tk) => chosen(tk)?.lemma?.slug).filter((s): s is string => !!s).map((id) => ({ kind: "word" as const, id }));
+    // the reader's own words carry their confidence and their spelling, to be reviewed before they enter a map (F4)
+    const own = a.source.kind !== "quran";
+    const steps = a.tokens.flatMap((tk) => {
+      const c = chosen(tk);
+      const id = c?.lemma?.slug;
+      if (!id) return [];
+      // the confidence the Analyser shows for the token, or the candidate's when the reader chose another
+      const conf = choices[tk.key] != null ? c.confidence : tk.confidence;
+      return [own && tk.kind !== "gold" ? { kind: "word" as const, id, conf, s: tk.surface.slice(0, 40) } : { kind: "word" as const, id }];
+    });
     if (!steps.length) return null;
     // a phrase placed in one verse brings its verse; the reader's own phrase comes as a sentence card (ANA-22)
     if (a.source.kind === "quran" && a.source.verse_key) return { seed: "trail", steps: [{ kind: "verse" as const, id: a.source.verse_key }, ...steps] };

@@ -412,3 +412,43 @@ test("Explore's set becomes a map of its words, titled by the set, with no numbe
   // each word with a root is joined to it, and nothing else is joined
   for (const e of doc.edges) expect(e.source.startsWith("root:") && e.target.startsWith("lemma:"), e.id).toBe(true);
 });
+
+test("the Analyser's readings of the reader's own text are reviewed before a map, and an unsure one kept is marked as a reading (F4, HWF-22, QAN-19)", async ({ page }) => {
+  const a = await api<{ tokens: { surface: string; confidence: number; candidates: { lemma: { slug: string } | null }[] }[] }>(page, `/analyse?q=${encodeURIComponent("فالعلم نور")}`);
+  const low = a.tokens.find((t) => t.confidence < 0.8 && t.candidates[0]?.lemma)!;
+  const ilm = (await api<{ lemma_id: number; root: { key: string } }>(page, `/words/${low.candidates[0].lemma!.slug}?limit=0`));
+  const review = async () => {
+    await page.goto(`/analyse?q=${encodeURIComponent("فالعلم نور")}`);
+    await page.getByRole("link", { name: "ابنِ خريطة من هذا ←" }).click();
+    await expect(page.getByRole("heading", { name: "راجع القراءات قبل أن تدخل الخريطة" })).toBeVisible();
+  };
+  await review();
+  const rows = page.locator(".seed-review li");
+  await expect(rows).toHaveCount(2);
+  const unsure = rows.filter({ hasText: low.surface });
+  await expect(unsure).toHaveClass(/is-unsure/);
+  await expect(unsure).toContainText("غير مؤكدة");
+  await expect(unsure.getByRole("checkbox")).not.toBeChecked();
+  await expect(rows.filter({ hasText: "نور" }).getByRole("checkbox")).toBeChecked();
+  // left as it was: the unsure reading does not enter the map
+  await page.getByRole("button", { name: "ابنِ الخريطة بما اخترت" }).click();
+  const left = (await storedGraph(page, await editorId(page)))!;
+  expect(left.nodes.some((n) => n.id === `lemma:${ilm.lemma_id}`)).toBe(false);
+  expect(left.nodes.some((n) => n.data.reading), "nothing is marked when nothing unsure was kept").toBe(false);
+
+  // kept: marked on its card, its root reached only through it, and their links
+  await review();
+  await unsure.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "ابنِ الخريطة بما اخترت" }).click();
+  const id = await editorId(page);
+  const kept = (await storedGraph(page, id))!;
+  const card = kept.nodes.find((n) => n.id === `lemma:${ilm.lemma_id}`)!;
+  expect(card.data.reading).toEqual({ conf: low.confidence });
+  expect(kept.nodes.find((n) => n.id === `root:${ilm.root.key}`)?.data.reading).toEqual({ conf: low.confidence });
+  expect(kept.edges.filter((e) => e.target === card.id).every((e) => e.data?.reading === true)).toBe(true);
+  expect(kept.nodes.find((n) => n.data.kind === "lemma" && n.id !== card.id)?.data.reading).toBeUndefined();
+  await expect(page.locator(`.react-flow__node[data-id="${card.id}"] .reading-chip`)).toHaveText(
+    `قراءة غير مؤكدة · ${new Intl.NumberFormat("ar-EG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(low.confidence)}`,
+  );
+  await expect(page.locator(".react-flow__edge.edge-reading").first()).toBeAttached();
+});

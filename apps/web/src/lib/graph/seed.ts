@@ -6,7 +6,8 @@ import type { Verse } from "@/lib/types";
 import { buildRootGraph, edgeId, lemmaId, POS_AR, rootId, verseId, wordId, type RootGraphPayload } from "./build";
 import { layout } from "./layout";
 import { createGraph, loadGraph, saveGraph } from "./persist";
-import type { Seed } from "./seedCodec";
+import { REVIEW_BELOW } from "@/lib/analyse";
+import type { Seed, TrailSeedStep } from "./seedCodec";
 import type { GraphEdge, GraphKind, GraphNode, NodeKind, VerseExcerpt } from "./types";
 
 /** The cards a seed becomes, before they are laid out and stored. The title is a message key with values. */
@@ -99,7 +100,16 @@ async function verseSeed(key: string): Promise<SeedGraph> {
  * A trail seed: each step as a card in the order it was taken, numbered along the way; words keep their roots.
  * With a phrase (the Analyser's, ANA-22), the phrase is a sentence card holding its words instead of a path.
  */
-async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[], phrase?: string, set?: string): Promise<SeedGraph> {
+async function trailSeed(steps: TrailSeedStep[], phrase?: string, set?: string): Promise<SeedGraph> {
+  // a word read from the reader's text with less than REVIEW_BELOW confidence, and kept by them, is a reading (F4);
+  // the same word read surely elsewhere in the text, or from the corpus, is not
+  const unsure = new Map<string, number>();
+  const sure = new Set<string>();
+  for (const s of steps.filter((x) => x.kind === "word")) {
+    if (s.conf == null || s.conf >= REVIEW_BELOW) sure.add(s.id);
+    else unsure.set(s.id, Math.max(unsure.get(s.id) ?? 0, s.conf));
+  }
+  const readingOf = (slug: string) => (sure.has(slug) ? undefined : unsure.get(slug));
   const seen = new Set<string>();
   const unique = steps.filter((s) => !seen.has(`${s.kind}:${s.id}`) && seen.add(`${s.kind}:${s.id}`));
   const words = await Promise.all(unique.map((s) => (s.kind === "word" ? getJSON<WordPayload>(`/words/${encodeURIComponent(s.id)}?limit=0`).catch(() => null) : null)));
@@ -115,15 +125,23 @@ async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[
     return id;
   };
   const path: string[] = [];
+  const readings = new Set<string>();
+  const surelyRooted = new Set<string>();
   unique.forEach((s, i) => {
-    if (s.kind === "root" && roots.has(s.id)) path.push(rootCard(s.id));
+    if (s.kind === "root" && roots.has(s.id)) {
+      path.push(rootCard(s.id));
+      surelyRooted.add(rootId(s.id));
+    }
     const w = words[i];
     if (w) {
       const id = lemmaId(w.lemma_id);
-      nodes.set(id, card(id, "lemma", { ar: w.ar.full, sub: w.ar.translit, count: w.corpus_freq, rootKey: w.root?.key, lemmaId: w.lemma_id }));
+      const conf = readingOf(s.id);
+      nodes.set(id, card(id, "lemma", { ar: w.ar.full, sub: w.ar.translit, count: w.corpus_freq, rootKey: w.root?.key, lemmaId: w.lemma_id, ...(conf != null ? { reading: { conf } } : {}) }));
+      if (conf != null) readings.add(id);
       if (w.root) {
         const rid = rootCard(w.root.key);
-        edges.set(edgeId(rid, id), link(rid, id));
+        edges.set(edgeId(rid, id), conf != null ? { ...link(rid, id), data: { reading: true } } : link(rid, id));
+        if (conf == null) surelyRooted.add(rid);
       }
       path.push(id);
     }
@@ -139,7 +157,13 @@ async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[
     // its id from its text: the same phrase is one card, two phrases on one map are two
     const pid = `phrase:${[...phrase].reduce((h, ch) => (Math.imul(h, 31) + ch.charCodeAt(0)) >>> 0, 7).toString(36)}`;
     nodes.set(pid, card(pid, "verse", { ar: phrase }));
-    for (const id of new Set(path)) edges.set(edgeId(pid, id), link(pid, id));
+    for (const id of new Set(path)) edges.set(edgeId(pid, id), readings.has(id) ? { ...link(pid, id), data: { reading: true } } : link(pid, id));
+    // a root reached only through readings is a reading too, as sure as the surest of them
+    for (const n of nodes.values())
+      if (n.data.kind === "root" && !surelyRooted.has(n.id)) {
+        const confs = [...edges.values()].filter((e) => e.source === n.id).map((e) => nodes.get(e.target)?.data.reading?.conf ?? 1);
+        if (confs.length) n.data.reading = { conf: Math.max(...confs) };
+      }
     const head = phrase.split(/\s+/).slice(0, 4).join(" ");
     return { kind: "free", title: { key: "phraseTitle", values: { phrase: phrase.split(/\s+/).length > 4 ? `${head}…` : head } }, nodes: [...nodes.values()], edges: [...edges.values()] };
   }

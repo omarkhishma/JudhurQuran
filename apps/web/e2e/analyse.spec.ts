@@ -84,6 +84,8 @@ test("the interlinear view carries each Quranic word's transliteration (ANA-25)"
 test("the reader's own phrase seeds the graph as a sentence card holding its words (ANA-22)", async ({ page }) => {
   await page.goto(`/analyse?q=${encodeURIComponent("العلم نور والجهل ظلام")}`);
   await page.getByRole("link", { name: "ابنِ خريطة من هذا ←" }).click();
+  // the readings of the reader's own text are reviewed first (F4)
+  await page.getByRole("button", { name: "ابنِ الخريطة بما اخترت" }).click();
   await expect(page).toHaveURL(/\/graph\/edit\//, { timeout: 30_000 });
   const phrase = page.locator(".graph-card").filter({ hasText: "عبارة" }).filter({ hasText: "العلم نور والجهل ظلام" });
   await expect(phrase).toHaveCount(1);

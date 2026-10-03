@@ -5,7 +5,10 @@
  * (legacy-link redirect) and the client.
  */
 
-export type TrailSeedStep = { kind: "word" | "verse" | "root"; id: string };
+/** A word read from the reader's own text carries the Analyser's confidence and the word as written (`conf`, `s`):
+ * it is reviewed before it enters a map, and marked there as a reading when it was unsure (F4, QAN-19). A word
+ * from the corpus carries neither — its analysis is the corpus's. */
+export type TrailSeedStep = { kind: "word" | "verse" | "root"; id: string; conf?: number; s?: string };
 
 export type Seed =
   | { seed: "word"; slug: string; at?: string | null }
@@ -38,7 +41,10 @@ function validSteps(x: unknown): TrailSeedStep[] {
   const steps: TrailSeedStep[] = [];
   for (const s of x.slice(0, MAX_STEPS)) {
     const st = s as Record<string, unknown>;
-    if ((st?.kind === "word" || st?.kind === "root") && str(st.id)) steps.push({ kind: st.kind, id: st.id });
+    if (st?.kind === "word" && str(st.id)) {
+      const conf = typeof st.conf === "number" && st.conf >= 0 && st.conf <= 1 ? Math.round(st.conf * 100) / 100 : undefined;
+      steps.push({ kind: "word", id: st.id, ...(conf !== undefined ? { conf } : {}), ...(conf !== undefined && str(st.s, 40) ? { s: st.s } : {}) });
+    } else if (st?.kind === "root" && str(st.id)) steps.push({ kind: "root", id: st.id });
     else if (st?.kind === "verse" && str(st.id, 8) && VERSE_KEY.test(st.id)) steps.push({ kind: "verse", id: st.id });
   }
   return steps;

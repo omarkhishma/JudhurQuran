@@ -54,6 +54,8 @@ function cleanData(raw: unknown): GraphNodeData | null {
   }
   if (d.cursor === null) out.cursor = null;
   else put("cursor", str(d.cursor, 300));
+  const r = d.reading as Record<string, unknown> | undefined;
+  if (r && typeof r.conf === "number" && r.conf >= 0 && r.conf <= 1) out.reading = { conf: Math.round(r.conf * 100) / 100 };
   return out;
 }
 
@@ -94,7 +96,8 @@ export function cleanGraph(rawNodes: unknown[], rawEdges: unknown[]): Cleaned {
     eids.add(id);
     const data = (e.data ?? {}) as Record<string, unknown>;
     const label = str(data.label, 200) ?? str(e.label, 200);
-    edges.push({ id, source, target, ...(label ? { data: { label }, label } : {}) });
+    const reading = data.reading === true;
+    edges.push({ id, source, target, ...(label || reading ? { data: { ...(label ? { label } : {}), ...(reading ? { reading } : {}) } } : {}), ...(label ? { label } : {}) });
   }
   return { nodes, edges, skippedNodes, skippedEdges };
 }
