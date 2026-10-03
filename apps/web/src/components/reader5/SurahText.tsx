@@ -50,6 +50,8 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
               {PRIMARY.map((tool) => (
                 <button key={tool} className="ptool" data-tool={tool} data-verse-key={v.key} aria-pressed={DRAWERS.has(tool) ? false : undefined} title={t(`tool_${tool}_hint`)}>
                   {t(`tool_${tool}`)}
+                  {/* the number of distinct roots in the verse (RDR-145) */}
+                  {tool === "roots" && <span className="ptool-badge mono">{formatNumber(new Set(v.words.map((w) => w.root).filter(Boolean)).size, locale)}</span>}
                 </button>
               ))}
               <span className="ptool-more" data-more={v.key} />

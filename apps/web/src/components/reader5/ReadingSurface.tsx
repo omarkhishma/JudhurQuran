@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "@/i18n/navigation";
 import { useAfterMount } from "@/lib/client";
-import { formatNumber } from "@/lib/format";
-import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
+import { cnt, formatNumber } from "@/lib/format";
+import { usePersonal, usePrefs, useReader, verseRef } from "@/lib/reader/store";
 import { useAudio } from "@/lib/store/audio";
 import type { ChapterInfo } from "./ReaderShell";
 import { useDebounced } from "@/lib/useDebounced";
@@ -49,6 +49,18 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const imlaeiLine = usePrefs((s) => s.imlaeiLine);
   const panelOpen = usePrefs((s) => s.panelOpen);
   const notes = useSaved((s) => s.notes);
+  const links = usePersonal((s) => s.links);
+  const verseTopics = usePersonal((s) => s.verseTopics);
+  const topicList = usePersonal((s) => s.topics);
+  const topicLabel = new Map(topicList.map((x) => [x.id, x.label]));
+  const inChapter = (k: string) => k.startsWith(`quran:${chapter.number}:`);
+  const markedVerses = [
+    ...new Set([
+      ...Object.keys(notes).filter((k) => k.startsWith(`${chapter.number}:`)),
+      ...Object.keys(links).filter(inChapter).map((k) => k.slice(6)),
+      ...Object.keys(verseTopics).filter(inChapter).map((k) => k.slice(6)),
+    ]),
+  ];
   const setPrefs = usePrefs((s) => s.set);
   const wordStates = usePersonal((s) => s.wordStates);
   const setProgress = usePersonal((s) => s.setProgress);
@@ -502,21 +514,40 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
         )}
       {glossEl && selection?.at && createPortal(<InlineGloss key={selection.at} slug={selection.slug} at={selection.at} />, glossEl)}
       {mounted &&
-        Object.values(notes)
-          .filter((n) => n.verse.startsWith(`${chapter.number}:`))
-          .map((n) => {
-            const slot = document.querySelector(`[data-note="${CSS.escape(n.verse)}"]`);
-            return slot
-              ? createPortal(
-                  <button type="button" className="margin-note" data-tool="note" data-verse-key={n.verse}>
-                    <em>{t("noteMark")}</em>
-                    <span className="line-clamp-2 flex-1" dir="auto">{n.text}</span>
-                  </button>,
-                  slot,
-                  `note-${n.verse}`,
-                )
-              : null;
-          })}
+        markedVerses.map((key) => {
+          const slot = document.querySelector(`[data-note="${CSS.escape(key)}"]`);
+          if (!slot) return null;
+          const n = notes[key];
+          const linkCount = links[verseRef(key)]?.length ?? 0;
+          const verseTopicIds = verseTopics[verseRef(key)] ?? [];
+          return createPortal(
+            <>
+              {n && (
+                <button type="button" className="margin-note" data-tool="note" data-verse-key={key}>
+                  <em>{t("noteMark")}</em>
+                  <span className="line-clamp-2 flex-1" dir="auto">{n.text}</span>
+                </button>
+              )}
+              {(linkCount > 0 || verseTopicIds.length > 0) && (
+                // the marks row (RDR-142): the reader's links and topics on this verse, each opening its drawer
+                <div className="marks-row">
+                  {linkCount > 0 && (
+                    <button type="button" className="mark" data-tool="links" data-verse-key={key} title={t("marksLinksTitle")}>
+                      {t("marksLinks", cnt(linkCount, locale))}
+                    </button>
+                  )}
+                  {verseTopicIds.map((id) => (
+                    <button key={id} type="button" className="mark" data-tool="topic" data-verse-key={key} title={t("marksTopicTitle")}>
+                      {t("marksTopic", { label: topicLabel.get(id) ?? "" })}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>,
+            slot,
+            `marks-${key}`,
+          );
+        })}
       {bandEl && bandWord && createPortal(<GrammarBand key={bandWord.at} slug={bandWord.slug} at={bandWord.at} />, bandEl)}
       {moreEl && activeVerse && createPortal(<MoreTools verseKey={activeVerse} drawer={drawer} />, moreEl, `more-${activeVerse}`)}
       {drawerEl && drawer && createPortal(<VerseDrawer verseKey={drawer.key} tool={drawer.tool} onClose={() => setDrawer(null)} />, drawerEl)}
@@ -555,12 +586,19 @@ function roving(root: HTMLElement, el: HTMLElement | null) {
   (el ?? root.querySelector<HTMLElement>(".w"))?.setAttribute("tabindex", "0");
 }
 
-const MORE = ["tafsir", "related", "copy", "cite", "note", "graph"] as const;
-const MORE_DRAWERS = new Set<string>(["related", "note", "graph"]);
+const MORE = ["tafsir", "related", "links", "topic", "copy", "cite", "note", "graph"] as const;
+const MORE_DRAWERS = new Set<string>(["related", "links", "topic", "note", "graph"]);
 
 /** The six verse tools beyond Recite and Roots, drawn only into the verse being read (P2.10a). */
 function MoreTools({ verseKey, drawer }: { verseKey: string; drawer: { key: string; tool: DrawerTool } | null }) {
   const t = useTranslations("rd");
+  const locale = useLocale();
+  const me = verseRef(verseKey);
+  // the count on each tool, hidden at zero (RDR-146, 147)
+  const links = usePersonal((s) => s.links[me]?.length ?? 0);
+  const topics = usePersonal((s) => s.verseTopics[me]?.length ?? 0);
+  const note = useSaved((s) => (s.notes[verseKey] ? 1 : 0));
+  const badge: Partial<Record<(typeof MORE)[number], number>> = { links, topic: topics, note };
   return (
     <>
       {MORE.map((tool) => (
@@ -574,6 +612,7 @@ function MoreTools({ verseKey, drawer }: { verseKey: string; drawer: { key: stri
           title={t(`tool_${tool}_hint`)}
         >
           {t(`tool_${tool}`)}
+          {!!badge[tool] && <span className="ptool-badge mono">{formatNumber(badge[tool]!, locale)}</span>}
         </button>
       ))}
     </>

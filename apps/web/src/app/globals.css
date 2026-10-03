@@ -2818,3 +2818,37 @@ button.type-chip:hover {
 }
 }
 
+@layer components {
+/* ─── Verse links, topics and tool counts (RDR-142, 145…147, 156, 157) ───────── */
+.ptool-badge {
+  font-size: 10.5px;
+  color: var(--t3);
+}
+.marks-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding-top: 4px;
+}
+.mark {
+  font-size: 11.5px;
+  color: var(--t3);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.mark:hover {
+  color: var(--t1);
+}
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  border-bottom: 1px solid var(--line);
+}
+.topic-chip.is-on {
+  background: color-mix(in srgb, var(--c-root) 14%, var(--card));
+  border-color: var(--c-root);
+}
+}
+

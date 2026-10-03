@@ -225,6 +225,10 @@ export type WordState = "new" | "learning" | "known";
 export type TrailStep = { kind: "word" | "verse" | "root"; id: string; ts: number };
 export type ProgressEntry = { chapter: number; passage: number; at: number };
 export type SavedTrail = { id: string; steps: TrailStep[]; ts: number };
+/** A topic of the reader's own (RDR-157, 555); curated themes come with P8.3. */
+export type Topic = { id: string; label: string; ts: number };
+/** Verse keys in personal data carry their text, so links never collide across texts (RDR-432 BUG). */
+export const verseRef = (key: string) => `quran:${key}`;
 export type Proposal = {
   id: string;
   kind: "edit" | "sense" | "error";
@@ -247,7 +251,13 @@ type PersonalState = {
   onboarded: boolean;
   proposals: Proposal[];
   savedTrails: SavedTrail[];
+  links: Record<string, string[]>;
+  topics: Topic[];
+  verseTopics: Record<string, string[]>;
   setWordState: (slug: string, s: WordState) => void;
+  toggleLink: (from: string, to: string) => void;
+  addTopic: (label: string) => string;
+  toggleVerseTopic: (verse: string, topicId: string) => void;
   recordTrail: (kind: TrailStep["kind"], id: string) => void;
   truncateTrail: (index: number) => void;
   clearTrail: () => void;
@@ -262,7 +272,7 @@ const TRAIL_CAP = 40;
 
 export const usePersonal = create<PersonalState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       wordStates: {},
       trail: [],
       progress: {},
@@ -270,7 +280,35 @@ export const usePersonal = create<PersonalState>()(
       onboarded: false,
       proposals: [],
       savedTrails: [],
+      links: {},
+      topics: [],
+      verseTopics: {},
       setWordState: (slug, s) => set((st) => ({ wordStates: { ...st.wordStates, [slug]: s } })),
+      // a link is the reader's own, from one verse to another (RDR-156); the other side shows it as incoming
+      toggleLink: (from, to) =>
+        set((st) => {
+          const cur = st.links[from] ?? [];
+          const next = cur.includes(to) ? cur.filter((x) => x !== to) : [...cur, to];
+          const links = { ...st.links, [from]: next };
+          if (!next.length) delete links[from];
+          return { links };
+        }),
+      addTopic: (label) => {
+        const clean = label.trim();
+        const found = get().topics.find((x) => x.label === clean);
+        if (found) return found.id;
+        const id = `tp${Date.now().toString(36)}`;
+        set((st) => ({ topics: [...st.topics, { id, label: clean, ts: Date.now() }] }));
+        return id;
+      },
+      toggleVerseTopic: (verse, topicId) =>
+        set((st) => {
+          const cur = st.verseTopics[verse] ?? [];
+          const next = cur.includes(topicId) ? cur.filter((x) => x !== topicId) : [...cur, topicId];
+          const verseTopics = { ...st.verseTopics, [verse]: next };
+          if (!next.length) delete verseTopics[verse];
+          return { verseTopics };
+        }),
       recordTrail: (kind, id) =>
         set((st) => {
           const last = st.trail[st.trail.length - 1];
@@ -287,6 +325,11 @@ export const usePersonal = create<PersonalState>()(
       addProposal: (p) =>
         set((st) => ({ proposals: [...st.proposals, { ...p, id: `p${Date.now()}`, status: "pending" as const, ts: Date.now() }] })),
     }),
-    { name: "jadhr-personal", version: 1 },
+    {
+      name: "jadhr-personal",
+      version: 2,
+      // version 2 adds the reader's verse links and topics
+      migrate: (old) => ({ links: {}, topics: [], verseTopics: {}, ...((old as Partial<PersonalState>) ?? {}) }) as PersonalState,
+    },
   ),
 );
