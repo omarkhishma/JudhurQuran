@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { Term } from "@/components/terms/Term";
+import { TermText } from "@/components/terms/TermText";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { useReader } from "@/lib/reader/store";
 import type { LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
@@ -12,7 +13,7 @@ export function PatternFunction({ p }: { p: PatternInfo }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const fn = locale === "ar" ? p.function_ar : p.function_en;
-  if (fn) return <span>{fn}</span>;
+  if (fn) return <span><TermText text={fn} /></span>;
   const id = p.form_number ? FORM_TERM[p.form_number] : null;
   if (id) return <Term id={id}>{t("formN", { n: formatNumber(p.form_number!, locale) })}</Term>;
   return <span className="text-t3">{t("patternFunctionPending")}</span>;

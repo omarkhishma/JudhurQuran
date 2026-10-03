@@ -363,14 +363,6 @@ button:disabled {
   line-height: 1.75;
   color: #dcdce4;
 }
-.term-card-more {
-  display: inline-block;
-  margin-top: 8px;
-  font-size: 12.5px;
-  color: #9dbbff;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 
 /* ─── Mushaf text (the reader's words; Reader v5 styles them under .reading) ─── */
 .w {
@@ -2123,5 +2115,41 @@ button.type-chip:hover {
 }
 [dir="ltr"] .coverage-bar {
   background: linear-gradient(to right, var(--good) 0 var(--known), var(--amber) var(--known) var(--learning), var(--line) var(--learning) 100%);
+}
+}
+
+@layer components {
+/* Term card actions (RDR-278/279): a jump into the entry, more, and stop explaining */
+.term-card-x {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  color: #b4b4c2;
+  font-size: 12px;
+}
+.term-card-x:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+.term-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.term-card-pill {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ededf2;
+}
+.term-card-pill:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.term-card-pill.is-jump {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: transparent;
 }
 }

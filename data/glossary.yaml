@@ -18,6 +18,7 @@ categories:
 terms:
 - key: root
   category: grammar
+  jump_target: family
   href: /roots
   sort_order: 1
   ar:
@@ -28,6 +29,7 @@ terms:
     body: The core letters of a word — usually three, sometimes four — carrying a general meaning shared by every word built from them. From k-t-b come kataba (he wrote), kitāb (book) and maktūb (written).
 - key: lemma
   category: grammar
+  jump_target: family
   href: null
   sort_order: 2
   ar:
@@ -38,6 +40,7 @@ terms:
     body: The dictionary form of a word, without prefixes, suffixes or inflection. Both yaʿlamūna (they know) and ʿalimtum (you knew) have the lemma ʿalima (to know).
 - key: wazn
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 3
   ar:
@@ -48,6 +51,7 @@ terms:
     body: 'A mould the root letters are poured into, written with the letters f-ʿ-l: kātib (writer) has the pattern fāʿil, maktūb (written) the pattern mafʿūl. Words on one pattern often share a job — the doer, the thing done, the place.'
 - key: verbForm
   category: grammar
+  jump_target: patterns
   href: null
   sort_order: 4
   ar:
@@ -58,6 +62,7 @@ terms:
     body: 'The shape a verb takes: the plain Form I (ʿalima, to know) or a derived form whose added letters add to the meaning — ʿallama (Form II, to teach: make someone know), taʿallama (Form V, to learn).'
 - key: formOne
   category: grammar
+  jump_target: patterns
   href: null
   sort_order: 5
   ar:
@@ -68,6 +73,7 @@ terms:
     body: 'The plain verb, made of its three root letters only: kataba (he wrote), ʿalima (he knew). Every other verb form is built on it.'
 - key: derivedForm
   category: grammar
+  jump_target: patterns
   href: null
   sort_order: 6
   ar:
@@ -78,6 +84,7 @@ terms:
     body: 'A verb with letters added to its root, which shifts or adds to its meaning: akrama (Form IV, to honour), qātala (Form III, to fight), istaghfara (Form X, to seek forgiveness).'
 - key: activeParticiple
   category: grammar
+  jump_target: patterns
   href: null
   sort_order: 7
   ar:
@@ -88,6 +95,7 @@ terms:
     body: 'The word for the one who does the action: kātib (writer) from kataba, muʾmin (believer) from āmana. From Form I it has the pattern fāʿil.'
 - key: passiveParticiple
   category: grammar
+  jump_target: patterns
   href: null
   sort_order: 8
   ar:
@@ -98,6 +106,7 @@ terms:
     body: 'The word for what the action was done to: maktūb (written) from kataba, mukram (honoured) from akrama. From Form I it has the pattern mafʿūl.'
 - key: verbalNoun
   category: grammar
+  jump_target: patterns
   href: null
   sort_order: 9
   ar:
@@ -258,6 +267,7 @@ terms:
     body: The word in modern spelling, used only for search and indexing — الصلاة beside the mushaf's ٱلصَّلَوٰة.
 - key: concordance
   category: sources
+  jump_target: usage
   href: null
   sort_order: 25
   ar:
@@ -268,6 +278,7 @@ terms:
     body: A list of every place a word or root occurs in the Quran, each shown with the words around it.
 - key: occurrences
   category: sources
+  jump_target: usage
   href: /about#counting
   sort_order: 26
   ar:
@@ -278,6 +289,7 @@ terms:
     body: How many times the root or word appears in the mushaf, counting each word once. How we count is set out on the method page.
 - key: lexicon
   category: sources
+  jump_target: lexica
   href: null
   sort_order: 27
   ar:
@@ -288,6 +300,7 @@ terms:
     body: A dictionary of the language. The site shows the great classical Arabic dictionaries — Maqāyīs al-Lugha, Lisān al-ʿArab and others — each credited to its author and edition.
 - key: gharib
   category: sources
+  jump_target: senses
   href: null
   sort_order: 28
   ar:
@@ -308,6 +321,7 @@ terms:
     body: When sources trace a word to different roots, the primary attribution is shown together with the others, each credited.
 - key: gloss
   category: meaning
+  jump_target: senses
   href: null
   sort_order: 30
   ar:
@@ -328,6 +342,7 @@ terms:
     body: 'An Arabic word written in Latin letters so its sound can be read: ʿilm, kitāb.'
 - key: form2
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 32
   ar:
@@ -338,6 +353,7 @@ terms:
     body: Intensity or repetition (qaṭṭaʿa, to cut to pieces), making someone do the act (farraḥa, to gladden), or ascribing the quality (kadhdhaba, to call a liar). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
 - key: form3
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 33
   ar:
@@ -348,6 +364,7 @@ terms:
     body: Doing the act with or against another (qātala, to fight; jādala, to dispute); sometimes the plain meaning (sāfara, to travel). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
 - key: form4
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 34
   ar:
@@ -358,6 +375,7 @@ terms:
     body: Causing the act (akhraja, to bring out — make go out), entering a time or place (aṣbaḥa, to reach morning), or becoming. (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
 - key: form5
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 35
   ar:
@@ -368,6 +386,7 @@ terms:
     body: The act received or taken on oneself, from Form II (ʿallamtuhu fa-taʿallama, I taught him and he learned), effort (taṣabbara), or doing it little by little (tajarraʿa, to sip). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
 - key: form6
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 36
   ar:
@@ -378,6 +397,7 @@ terms:
     body: Mutual action among several (tasāʾalū, they asked one another), pretending (tamāraḍa, to feign illness), or gradual action. (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
 - key: form7
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 37
   ar:
@@ -388,6 +408,7 @@ terms:
     body: Undergoing the act — the result of Form I (kasartuhu fa-nkasara, I broke it and it broke). Never takes an object. (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
 - key: form8
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 38
   ar:
@@ -398,6 +419,7 @@ terms:
     body: Undergoing or doing for oneself (jamaʿtuhu fa-jtamaʿa, I gathered them and they gathered), taking for oneself (ittakhadha), or striving for it (iktasaba, to earn). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
 - key: form9
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 39
   ar:
@@ -408,6 +430,7 @@ terms:
     body: Mostly colours and defects, intensely (ibyaḍḍat, to turn white; iswaddat, to turn black). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
 - key: form10
   category: grammar
+  jump_target: patterns
   href: /about#wazn
   sort_order: 40
   ar:
@@ -416,3 +439,129 @@ terms:
   en:
     label: Form X — اسْتَفْعَلَ
     body: Seeking or asking (istaghfara, to seek forgiveness), turning into, or finding or deeming oneself so (istakbara, to be arrogant — deem oneself great). (Among its best-known meanings, as the morphology manuals list them — e.g. al-Ḥamlāwī, Shadhā al-ʿArf.)
+- key: pronoun
+  category: grammar
+  href: null
+  sort_order: 41
+  ar:
+    label: الضمير
+    body: 'كلمة تقوم مقام الاسم وتدل على متكلم أو مخاطب أو غائب: أنا، أنتَ، هو. لا جذر لها في المعجم ولا وزن.'
+  en:
+    label: 'Pronoun'
+    body: 'A word that stands for a noun and points to the speaker, the one addressed or someone absent: anā (I), anta (you), huwa (he). It has no root and no pattern.'
+- key: particle
+  category: grammar
+  href: null
+  sort_order: 42
+  ar:
+    label: الحرف
+    body: 'كلمة لا يتم معناها إلا مع غيرها، مثل: في، من، إنّ، لا. لا جذر لها ولا وزن.'
+  en:
+    label: 'Particle'
+    body: 'A word whose meaning is complete only with other words, such as fī (in), min (from), inna (indeed), lā (no). It has no root and no pattern.'
+- key: muqattaat
+  category: writing
+  href: null
+  sort_order: 43
+  ar:
+    label: الحروف المقطّعة
+    body: 'حروف تُفتتح بها بعض السور وتُقرأ بأسماء حروفها: الٓمٓ (ألف لام ميم)، حمٓ، قٓ. لا جذر لها ولا وزن.'
+  en:
+    label: 'Quranic initials'
+    body: 'Letters that open some sūras and are read by the names of the letters: alif lām mīm, ḥā mīm, qāf. They have no root and no pattern.'
+- key: nounOfPlace
+  category: grammar
+  jump_target: patterns
+  href: /about#wazn
+  sort_order: 44
+  ar:
+    label: اسم المكان والزمان
+    body: 'اسم مشتق يدل على مكان الفعل أو زمانه، ويأتي غالبًا على وزن مَفْعَل أو مَفْعِل: مَسْجِد، مَجْلِس، مَطْلَع.'
+  en:
+    label: 'Noun of place and time'
+    body: 'A derived noun naming where or when the action happens, mostly on mafʿal or mafʿil: masjid (place of prostration), majlis (sitting place), maṭlaʿ (time or place of rising).'
+- key: intensive
+  category: grammar
+  jump_target: patterns
+  href: /about#wazn
+  sort_order: 45
+  ar:
+    label: صيغة المبالغة
+    body: 'اسم مشتق يدل على كثرة الفعل أو شدته في صاحبه، ومن أوزانه فَعَّال وفَعُول وفَعِيل: عَلَّام، غَفُور، عَلِيم.'
+  en:
+    label: 'Intensive form'
+    body: 'A derived noun for someone who does something much or intensely; among its patterns faʿʿāl, faʿūl and faʿīl: ʿallām, ghafūr, ʿalīm.'
+- key: adjective
+  category: grammar
+  jump_target: patterns
+  href: /about#wazn
+  sort_order: 46
+  ar:
+    label: الصفة المشبهة
+    body: 'اسم مشتق يدل على صفة ثابتة في صاحبها، كحَسَن وكَرِيم وعَظِيم.'
+  en:
+    label: 'Stative adjective'
+    body: 'A derived noun for a lasting quality of its bearer, such as ḥasan (good), karīm (generous), ʿaẓīm (great).'
+- key: definite
+  category: grammar
+  href: null
+  sort_order: 47
+  ar:
+    label: المعرفة والنكرة
+    body: 'المعرفة اسم يدل على معيَّن، كالذي تسبقه «ال»: الكتاب؛ والنكرة اسم غير معيَّن: كتاب.'
+  en:
+    label: 'Definite and indefinite'
+    body: 'A definite noun points to something particular, like one carrying al-: al-kitāb (the book); an indefinite noun does not: kitāb (a book).'
+- key: wujuh
+  category: sources
+  jump_target: senses
+  href: null
+  sort_order: 48
+  ar:
+    label: الوجوه والنظائر
+    body: 'علم يعدّ المعاني التي جاءت عليها الكلمة الواحدة في القرآن (الوجوه)، ويجمع لكل معنى آياته المتشابهة فيه (النظائر). من كتبه «نزهة الأعين النواظر» لابن الجوزي و«قاموس القرآن» للدامغاني.'
+  en:
+    label: 'Wujūh and naẓāʾir'
+    body: 'A field that lists the senses one word carries in the Quran (wujūh) and gathers, for each sense, the verses alike in it (naẓāʾir). Among its books: Ibn al-Jawzī''s Nuzhat al-aʿyun and al-Dāmaghānī''s Qāmūs al-Qurʾān.'
+- key: furuq
+  category: sources
+  jump_target: senses
+  href: null
+  sort_order: 49
+  ar:
+    label: الفروق اللغوية
+    body: 'كتب تبيّن ما يفترق به لفظان متقاربان في المعنى، كالفرق بين العلم والمعرفة. أشهرها «الفروق اللغوية» لأبي هلال العسكري.'
+  en:
+    label: 'Furūq (distinctions)'
+    body: 'Books that set out how two words close in meaning differ, such as ʿilm and maʿrifa. The best known is Abū Hilāl al-ʿAskarī''s al-Furūq al-lughawiyya.'
+- key: addad
+  category: meaning
+  jump_target: senses
+  href: null
+  sort_order: 50
+  ar:
+    label: الأضداد
+    body: 'ألفاظ تُطلق على المعنى وضده. جمعها ابن الأنباري في كتابه «الأضداد».'
+  en:
+    label: 'Aḍdād (opposite senses)'
+    body: 'Words used for a meaning and its opposite. Ibn al-Anbārī gathered them in his book al-Aḍdād.'
+- key: asbab
+  category: sources
+  href: null
+  sort_order: 51
+  ar:
+    label: أسباب النزول
+    body: 'ما رُوي من الوقائع والأسئلة التي نزلت الآية في شأنها، يُنقل بالرواية ويُذكر معه تخريجه.'
+  en:
+    label: 'Occasions of revelation'
+    body: 'Reported events and questions a verse was revealed about; they are transmitted as reports and given with their sourcing (takhrīj).'
+- key: makkiMadani
+  category: sources
+  href: null
+  sort_order: 52
+  ar:
+    label: المكي والمدني
+    body: 'المكي ما نزل قبل الهجرة والمدني ما نزل بعدها في قول الجمهور، وفي بعض الآيات خلاف يُذكر بأصحابه.'
+  en:
+    label: 'Meccan and Medinan'
+    body: 'In the majority view, Meccan is what was revealed before the Hijra and Medinan what came after; some verses are disputed, and the views are given with those who hold them.'

@@ -42,3 +42,28 @@ test("a derived verb form explains itself, with its source", async ({ page }) =>
   await expect(card).toContainText("الطلب");
   await expect(card).toContainText("شذا العرف");
 });
+
+test("a term card jumps into the entry's section, and can stop explaining terms (RDR-278/279, P2.6)", async ({ page, isMobile }) => {
+  await page.addInitScript(RETURNING);
+  await page.addInitScript(() =>
+    localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { layerOpen: { senses: true, family: false, patterns: false, lexica: false, timeline: false, usage: false } }, version: 2 })),
+  );
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  const entry = page.locator(".reader-panel, .reader-sheet");
+  await entry.getByRole("button", { name: "الجذر", exact: true }).click();
+  const card = page.getByRole("dialog", { name: "الجذر" });
+  await card.getByRole("button", { name: "أرني الأسرة" }).click();
+  await expect(card).toBeHidden();
+  const family = entry.locator('[data-section="family"]');
+  await expect(family.locator(".layer-head")).toHaveAttribute("aria-expanded", "true");
+  await expect(family.locator(".layer-head")).toBeInViewport();
+  await entry.getByRole("button", { name: "الجذر", exact: true }).click();
+  await page.getByRole("dialog", { name: "الجذر" }).getByRole("button", { name: "أوقف شرح المصطلحات" }).click();
+  await expect(entry.locator(".term")).toHaveCount(0);
+  if (!isMobile) {
+    const toggle = page.getByRole("button", { name: "شرح المصطلحات" });
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await toggle.click();
+    await expect(entry.locator(".term").first()).toBeVisible();
+  }
+});

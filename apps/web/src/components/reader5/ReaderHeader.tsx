@@ -26,6 +26,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
   const railOpen = usePrefs((s) => s.railOpen);
   const panelOpen = usePrefs((s) => s.panelOpen);
   const wordStatesOn = usePrefs((s) => s.wordStates);
+  const explainTerms = usePrefs((s) => s.explainTerms);
   const setPrefs = usePrefs((s) => s.set);
   const ask = useReader((s) => s.ask);
   const setAsk = useReader((s) => s.setAsk);
@@ -139,6 +140,18 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
         </div>
       )}
       {wide && (
+        <button
+          type="button"
+          className="hdr-btn hdr-icon"
+          aria-pressed={explainTerms}
+          onClick={() => setPrefs({ explainTerms: !explainTerms })}
+          aria-label={t("prefExplain")}
+          title={t("prefExplainHint")}
+        >
+          <Icon name="info" size={14} />
+        </button>
+      )}
+      {wide && (
         <button type="button" className="hdr-btn hdr-icon" onClick={toggleTheme} aria-pressed={theme === "dark"} aria-label={theme === "dark" ? t("themeLight") : t("themeDark")} title={theme === "dark" ? t("themeLight") : t("themeDark")}>
           <Icon name={theme === "dark" ? "sun" : "moon"} size={14} />
         </button>
@@ -241,6 +254,7 @@ function MoreMenu({
       <button type="button" role="menuitem" onClick={() => { onClose(); setReview(true); }}>
         {t("reviewRoots")}
       </button>
+      <ExplainItem onClose={onClose} />
       <button type="button" role="menuitem" onClick={() => { toggleTheme(); onClose(); }}>
         {theme === "dark" ? t("themeLight") : t("themeDark")}
       </button>
@@ -251,5 +265,16 @@ function MoreMenu({
         {t("library")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
       </Link>
     </div>
+  );
+}
+
+function ExplainItem({ onClose }: { onClose: () => void }) {
+  const t = useTranslations("rd");
+  const on = usePrefs((s) => s.explainTerms);
+  const set = usePrefs((s) => s.set);
+  return (
+    <button type="button" role="menuitemcheckbox" aria-checked={on} onClick={() => { set({ explainTerms: !on }); onClose(); }}>
+      {t("prefExplain")} <span aria-hidden="true">{on ? "✓" : ""}</span>
+    </button>
   );
 }
