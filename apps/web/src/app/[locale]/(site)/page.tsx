@@ -1,139 +1,117 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { ContextStrip, type SurahName } from "@/components/home/ContextStrip";
+import { HubSearch } from "@/components/home/HubSearch";
+import { LocalFirstPrompt } from "@/components/home/LocalFirstPrompt";
+import { RootOfTheDay } from "@/components/home/RootOfTheDay";
+import { JsonLd, website } from "@/components/seo/JsonLd";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
-import type { Meta, Verse } from "@/lib/types";
-import { HomeSearch } from "@/components/home/HomeSearch";
-import { ContinueReading } from "@/components/home/ContinueReading";
+import { meccaToday, type WordOfTheDay } from "@/lib/daily";
+import { DESTINATIONS } from "@/lib/destinations";
 import { formatNumber } from "@/lib/format";
 import { localized } from "@/lib/seo";
-import { JsonLd, website } from "@/components/seo/JsonLd";
-import type { Metadata } from "next";
+import type { Meta, Surah } from "@/lib/types";
 
-const FEATURED_ROOTS = ["رحم", "علم", "كتب", "هدي", "قرأ", "صبر", "نور", "سلم"];
+// the root of the day changes at Mecca's midnight; the page is rebuilt often enough to follow it, and the
+// browser asks for the new day itself if a cached page is older than that (RootOfTheDay)
+export const revalidate = 600;
 
 export async function generateMetadata({ params }: PageProps<"/[locale]">): Promise<Metadata> {
   const { locale } = await params;
   return { alternates: localized(locale, "/") };
 }
 
-export default async function HomePage({ params }: PageProps<"/[locale]">) {
+/**
+ * The hub (06 §6.1, inventory HUB-01…50 with the Quran notes HUB-Q01…Q08): the root of the day as the
+ * masthead's glyph, the name جَذْر with its meaning in Ibn Fāris's words, the premise in one sentence, the
+ * search as the primary action, where the reader left off, three doors with counts from the data, every
+ * surface of the platform with what it is for, and the local-first note.
+ */
+export default async function HubPage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("home");
-  const [meta, first] = await Promise.all([
+  const t = await getTranslations("hub");
+  const [meta, surahs, lexica, word] = await Promise.all([
     api<Meta>("/meta"),
-    api<Verse & { words: Verse["words"] }>("/verses/96:1"),
+    api<{ data: Surah[] }>("/surahs"),
+    api<{ data: unknown[] }>("/lexicon/works"),
+    api<WordOfTheDay>(`/word-of-the-day?date=${meccaToday()}`).catch(() => null),
   ]);
   const c = meta.dataset.counts;
-  const firstWord = first.tokens[0];
+  const n = (x: number) => formatNumber(x, locale);
+  const names: SurahName[] = surahs.data.map((s) => [s.number, s.name_ar, s.name_translit]);
 
   return (
-    <div className="mx-auto max-w-[1100px] px-4">
+    <div className="hub">
       <JsonLd data={website(locale)} />
-      <section className="flex flex-col items-center pt-14 pb-10 text-center md:pt-20" aria-labelledby="home-title">
-        <figure className="mb-8">
-          <blockquote className="quran text-[34px] text-t1 md:text-[44px]" dir="rtl" lang="ar">
-            <Link
-              href={`/word/96:1:1`}
-              className="rounded-md bg-root-wash px-1 text-root underline decoration-root/40 underline-offset-[10px] hover:decoration-root"
-            >
-              {firstWord.text}
-            </Link>{" "}
-            {first.tokens.slice(1).map((tk) => tk.text).join(" ")}
-          </blockquote>
-          <figcaption className="mt-1 text-[12.5px] text-t3">
-            <Link href="/quran/96/1" className="hover:text-t1">
-              {locale === "ar" ? "العلق: ١ — أول ما نزل من القرآن" : "al-ʿAlaq 96:1 — the first revealed verse"}
-            </Link>
-          </figcaption>
+      <ContextStrip surahs={names} />
+      <section className="hub-hero" aria-labelledby="hub-title">
+        <RootOfTheDay initial={word} />
+        <h1 id="hub-title" className="hub-title">{t("title")}</h1>
+        <figure className="hub-name">
+          <figcaption className="label-caps">{t("nameLabel")}</figcaption>
+          <p>
+            <span className="ar-classical text-[22px] text-root" lang="ar">جَذْر</span>
+            {locale !== "ar" && <span className="text-[13px] text-t2"> {t("nameGloss")}</span>}
+            <span aria-hidden="true"> — </span>
+            <span className="ar-classical text-[18px]" lang="ar" dir="rtl">«{t("nameQuote")}»</span>
+          </p>
+          <cite className="text-[12px] not-italic text-t3">{t("nameCite")}</cite>
         </figure>
-        <h1 id="home-title" className="max-w-[22ch] text-[30px] font-semibold leading-tight text-t1 md:text-[40px]">
-          {t("title")}
-        </h1>
-        <p className="mt-4 max-w-[62ch] text-[15.5px] leading-relaxed text-t2">{t("lead")}</p>
-        <div className="mt-7 w-full max-w-[560px]">
-          <HomeSearch />
-        </div>
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
-          <Link href="/quran" className="btn btn-primary min-h-[40px] px-5 text-[14px]">
-            {t("startReading")}
+        <p className="hub-lead">{t("lead")}</p>
+        <HubSearch />
+        <nav aria-label={t("doors")} className="hub-doors">
+          <Link href="/read" className="hub-door">
+            <span className="dot" style={{ background: "var(--c-sentence)" }} aria-hidden="true" />
+            <span className="hub-door-title">{t("doorRead")}</span>
+            <span className="hub-door-sub">{t("doorReadSub", { surahs: n(c.surahs), verses: n(c.verses) })}</span>
           </Link>
-          <Link href="/roots" className="btn min-h-[40px] px-5 text-[14px]">
-            {t("exploreRoots")}
+          <Link href="/read?mode=lookup" className="hub-door">
+            <span className="dot" style={{ background: "var(--c-root)" }} aria-hidden="true" />
+            <span className="hub-door-title">{t("doorLookup")}</span>
+            <span className="hub-door-sub">{t("doorLookupSub", { roots: n(c.roots), lemmas: n(c.lemmas), lexica: lexica.data.length, lx: n(lexica.data.length) })}</span>
           </Link>
-        </div>
-        <ContinueReading />
+          <Link href="/graph" className="hub-door">
+            <span className="dot" style={{ background: "var(--c-form)" }} aria-hidden="true" />
+            <span className="hub-door-title">{t("doorMap")}</span>
+            <span className="hub-door-sub">{t("doorMapSub")}</span>
+          </Link>
+        </nav>
       </section>
 
-      <section aria-labelledby="how-title" className="py-8">
-        <h2 id="how-title" className="label-caps mb-4">{t("howTitle")}</h2>
-        <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {(
-            [
-              ["how1", "var(--c-word)"],
-              ["how2", "var(--c-root)"],
-              ["how3", "var(--c-form)"],
-              ["how4", "var(--c-sentence)"],
-            ] as const
-          ).map(([k, color], i) => (
-            <li key={k} className="card p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <span className="dot" style={{ background: color }} />
-                <span className="mono text-[11px] text-t3">{formatNumber(i + 1, locale)}</span>
-                <h3 className="text-[15px] font-semibold text-t1">{t(`${k}Title`)}</h3>
-              </div>
-              <p className="text-[13.5px] leading-relaxed text-t2">{t(`${k}Body`)}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section aria-labelledby="roots-title" className="py-8">
-        <h2 id="roots-title" className="label-caps mb-4">{t("featuredTitle")}</h2>
-        <ul className="flex flex-wrap gap-2">
-          {FEATURED_ROOTS.map((r) => (
-            <li key={r}>
-              <Link
-                href={`/roots/${encodeURIComponent(r)}`}
-                className="ar-classical inline-flex min-h-[44px] items-center rounded-xl border border-line bg-card px-4 text-[22px] text-root shadow-rest transition-colors hover:border-root"
-                lang="ar"
-              >
-                {r.split("").join(" ")}
-              </Link>
-            </li>
-          ))}
+      <section className="hub-section" aria-labelledby="hub-all">
+        <h2 id="hub-all" className="label-caps">{t("everything")}</h2>
+        <ul className="hub-all">
+          {DESTINATIONS.map((d) => {
+            const body = (
+              <>
+                <span className="hub-tile-title">{t(`dest.${d.key}.title`)}</span>
+                <span className="hub-tile-purpose">{t(`dest.${d.key}.purpose`)}</span>
+                {d.phase && <span className="hub-tile-phase">{t("building")}</span>}
+              </>
+            );
+            return (
+              <li key={d.key}>
+                {d.href ? (
+                  // twenty destinations: prefetching them all would render twenty pages per visit
+                  <Link href={d.href} prefetch={false} className="hub-tile" data-building={d.phase ? "" : undefined}>
+                    {body}
+                  </Link>
+                ) : (
+                  <div className="hub-tile" data-building="" aria-disabled="true">
+                    {body}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
 
-      <section aria-labelledby="stats-title" className="py-8">
-        <h2 id="stats-title" className="label-caps mb-4">{t("statsTitle")}</h2>
-        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {(
-            [
-              ["statSurahs", c.surahs],
-              ["statVerses", c.verses],
-              ["statWords", c.words],
-              ["statRoots", c.roots],
-              ["statLemmas", c.lemmas],
-            ] as const
-          ).map(([k, n]) => (
-            <div key={k} className="card flex flex-col gap-1 p-4">
-              <dd className="mono text-[24px] font-medium text-t1">{formatNumber(n, locale)}</dd>
-              <dt className="text-[13px] text-t2">{t(k)}</dt>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <section aria-labelledby="trust-title" className="py-8">
-        <div className="card p-5 md:p-6">
-          <h2 id="trust-title" className="mb-2 text-[16px] font-semibold">{t("trustTitle")}</h2>
-          <p className="max-w-[80ch] text-[14px] leading-relaxed text-t2">{t("trustBody")}</p>
-          <Link href="/sources" className="mt-3 inline-block text-[13.5px] text-word hover:underline">
-            {t("trustLink")}
-          </Link>
-        </div>
-      </section>
+      <div className="hub-section">
+        <LocalFirstPrompt />
+      </div>
     </div>
   );
 }

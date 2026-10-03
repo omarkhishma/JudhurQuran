@@ -56,32 +56,128 @@
     "me": "My account",
     "more": "More"
   },
-  "home": {
-    "rootLetters": "ع ل م",
+  "hub": {
+    "rootOfDay": "Root of the day",
+    "rootOfDayLink": "Root of the day: {root}, open its family",
+    "wordOfDay": "Word of the day: <w>{word}</w>",
     "title": "Read the Quran through the roots of its words",
-    "lead": "Tap any word in the mushaf to see its meaning and its root, how often that root occurs in the Quran, and every word built from it — then follow it through every verse, or open its map.",
-    "startReading": "Start reading",
-    "exploreRoots": "Explore roots",
-    "continueReading": "Continue where you left off",
-    "howTitle": "How it works",
-    "how1Title": "The word",
-    "how1Body": "Every word of the mushaf is real, selectable text you can tap.",
-    "how2Title": "The root",
-    "how2Body": "Most words go back to a root of three letters, from which a whole family of words branches out.",
-    "how3Title": "The family",
-    "how3Body": "See every form of the root in the Quran, where each occurs, and what the lexicons and tafsirs say.",
-    "how4Title": "The map",
-    "how4Body": "Follow the family on an open canvas: the root, its forms, and the verses.",
-    "statsTitle": "The Quran in numbers",
-    "statSurahs": "surahs",
-    "statVerses": "verses",
-    "statWords": "words",
-    "statRoots": "roots",
-    "statLemmas": "lemmas",
-    "featuredTitle": "Roots to start with",
-    "trustTitle": "Faithful text, cited sources",
-    "trustBody": "The Quran text is from the King Fahd Glorious Quran Printing Complex, shown exactly as published and checked automatically. Morphology is from the Quranic Arabic Corpus, and every claim names its source.",
-    "trustLink": "See sources and licenses"
+    "nameLabel": "The name",
+    "nameQuote": "الجيم والذال والراء أصلٌ واحدٌ، وهو الأصل من كلِّ شئ",
+    "nameCite": "Ibn Fāris, Maqāyīs al-Lugha 1:436",
+    "lead": "The Quran's words come in families, each going back to one root. Tap any word in the mushaf to see its root, the whole family, where each member occurs, and what the lexicons say about it.",
+    "searchLabel": "Search the Quran",
+    "searchPlaceholder": "A word, a root, or a verse",
+    "searchSubmit": "Search",
+    "searchKeys": "Press ⌘K or Ctrl+K to come back to this field",
+    "resume": "Pick up where you left off",
+    "resumeSurah": "Sūrat {name} · verse {ayah}",
+    "resumeVerse": "{name} {ayah}",
+    "resumeWord": "Word",
+    "resumeRoot": "Root",
+    "clear": "Clear",
+    "clearLabel": "Clear your last place from here (your reading stays saved)",
+    "doors": "Three ways in",
+    "doorRead": "Read",
+    "doorReadSub": "The whole mushaf: {surahs} sūras and {verses} verses, every word open to its root — and your own texts too.",
+    "doorLookup": "Look up",
+    "doorLookupSub": "{roots} roots and {lemmas} words, their patterns, and what {lexica, plural, one {one lexicon says} other {{lx} lexicons say}} about them.",
+    "doorMap": "Map",
+    "doorMapSub": "A root's family on an open canvas: the root, its forms, the verses — then export it.",
+    "everything": "Everything on the platform",
+    "building": "Being built",
+    "promptTitleEmpty": "Everything here works without an account",
+    "promptTitle": "On this device: {saved} and {notes}",
+    "promptSaved": "{count, plural, =0 {nothing saved} one {one saved item} other {{n} saved items}}",
+    "promptNotes": "{count, plural, =0 {no notes} one {one note} other {{n} notes}}",
+    "promptBody": "Your reading, stars and notes are kept in this browser only and never sent to any server. An account, when it comes, will sync them across your devices and let you propose edits to the lexicon; reading, search and maps never need one.",
+    "promptExport": "Export my data",
+    "promptDismiss": "Not now",
+    "promptNoTracking": "No tracking, no ads",
+    "dest": {
+      "read": {
+        "title": "Reader",
+        "purpose": "The mushaf with every word open to its root and meaning"
+      },
+      "ask": {
+        "title": "Ask about a word",
+        "purpose": "One word in a few minutes: the plain way in"
+      },
+      "explore": {
+        "title": "Explore",
+        "purpose": "Word of the day and curated sets of Quranic words"
+      },
+      "library": {
+        "title": "Library",
+        "purpose": "Your shelf, your progress through the sūras, your own texts"
+      },
+      "lookup": {
+        "title": "Dictionary",
+        "purpose": "Roots, patterns, classical lexicons and a word's history"
+      },
+      "roots": {
+        "title": "Roots index",
+        "purpose": "Every root of the Quran, found by its letters"
+      },
+      "concordance": {
+        "title": "Concordance",
+        "purpose": "Every occurrence of a root in context, and where it falls"
+      },
+      "analyser": {
+        "title": "Analyser",
+        "purpose": "Each word's parts, root and pattern, with a confidence"
+      },
+      "search": {
+        "title": "Search",
+        "purpose": "Verses, words and roots, in grouped results"
+      },
+      "graph": {
+        "title": "Graph",
+        "purpose": "Draw a root's family on an open canvas"
+      },
+      "split": {
+        "title": "Split view",
+        "purpose": "Text, dictionary and graph side by side"
+      },
+      "review": {
+        "title": "Review",
+        "purpose": "Recall the root families you have met"
+      },
+      "notebook": {
+        "title": "Notebook",
+        "purpose": "Your notes, trails and reading journal"
+      },
+      "saved": {
+        "title": "Saved",
+        "purpose": "The words and verses you kept"
+      },
+      "reviewQueue": {
+        "title": "Review queue",
+        "purpose": "Readers' proposals, merged after two independent approvals"
+      },
+      "classroom": {
+        "title": "Classroom",
+        "purpose": "Lessons for a group and a shared workspace"
+      },
+      "published": {
+        "title": "Published maps",
+        "purpose": "Maps their authors published, to read and embed"
+      },
+      "profile": {
+        "title": "My account",
+        "purpose": "Your contributions, and your data to export"
+      },
+      "api": {
+        "title": "API",
+        "purpose": "The data for those who build on it, in fixed releases"
+      },
+      "sources": {
+        "title": "Sources & licences",
+        "purpose": "Where every text comes from, and under which licence"
+      }
+    },
+    "nameGloss": "jadhr, “root”",
+    "searchTry": "Try:",
+    "searchExamples": "عِلْم | k-t-b | 2:255 | البقرة 255"
   },
   "surah": {
     "index": "Surah index",
@@ -164,7 +260,8 @@
     "label": "Site links",
     "attribution": "Quran text: King Fahd Glorious Quran Printing Complex, with the Tanzil Project text (tanzil.net) for verification. Morphology: the Quranic Arabic Corpus (corpus.quran.com). Every tafsir and translation is credited to its author and source where it appears.",
     "integrity": "The Quranic text is shown exactly as in its source and its integrity is checked automatically on every data update.",
-    "noAds": "No ads, no tracking — a project in service of the Book of Allah."
+    "noAds": "No ads, no tracking — a project in service of the Book of Allah.",
+    "dataset": "Dataset {version}"
   },
   "reader": {
     "toolbarLabel": "Reading tools",

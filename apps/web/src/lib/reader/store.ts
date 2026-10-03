@@ -289,6 +289,10 @@ type PersonalState = {
   context: ReadingContext | null;
   sessions: Session[];
   read: Record<string, number>;
+  /** when the reader last cleared the hub's resume strip: older positions stay hidden (HUB, SHL-27) */
+  contextClearedAt: number;
+  /** the hub's local-first note, dismissed (HUB-48: dismissible, never a wall) */
+  hubPromptHidden: boolean;
   setWordState: (slug: string, s: WordState) => void;
   recordLookup: (c: Partial<Omit<ReadingContext, "ts">>) => void;
   markRead: (surah: number, ayah: number) => void;
@@ -303,6 +307,8 @@ type PersonalState = {
   markVisited: () => void;
   setOnboarded: () => void;
   addProposal: (p: Omit<Proposal, "id" | "status" | "ts">) => void;
+  clearContext: () => void;
+  hideHubPrompt: () => void;
 };
 
 const TRAIL_CAP = 40;
@@ -323,6 +329,8 @@ export const usePersonal = create<PersonalState>()(
       context: null,
       sessions: [],
       read: {},
+      contextClearedAt: 0,
+      hubPromptHidden: false,
       setWordState: (slug, s) => set((st) => ({ wordStates: { ...st.wordStates, [slug]: s } })),
       // every lookup updates the reading context and today's session (RDR-113, 437, 441)
       recordLookup: (c) =>
@@ -382,6 +390,9 @@ export const usePersonal = create<PersonalState>()(
       setOnboarded: () => set({ onboarded: true }),
       addProposal: (p) =>
         set((st) => ({ proposals: [...st.proposals, { ...p, id: `p${Date.now()}`, status: "pending" as const, ts: Date.now() }] })),
+      // Clear forgets where the reader was, not what they read: positions and sessions stay (SHL-27)
+      clearContext: () => set({ context: null, contextClearedAt: Date.now() }),
+      hideHubPrompt: () => set({ hubPromptHidden: true }),
     }),
     {
       name: "jadhr-personal",

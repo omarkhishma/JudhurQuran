@@ -19,6 +19,7 @@ const ENDPOINTS: [string, string, string][] = [
   ["/api/v1/roots/{root}/occurrences", "فهرس السياقات (KWIC) للجذر", "KWIC concordance for a root"],
   ["/api/v1/roots/{root}/graph", "وثيقة خريطة الجذر", "Root-family graph document"],
   ["/api/v1/search?q=", "البحث الموحد", "Unified search"],
+  ["/api/v1/word-of-the-day?date=YYYY-MM-DD", "كلمة اليوم (اليوم بتوقيت مكة)، هي نفسها عند الجميع", "The word of the day (the day in Mecca), the same for everyone"],
   ["/api/v1/works · /verses/{key}/commentary", "التفاسير والترجمات", "Tafsir and translations"],
   ["/api/v1/lexicon/works · /lexicon/entries/{id}", "المعاجم (للعرض فقط)", "Dictionaries (display only)"],
 ];

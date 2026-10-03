@@ -3333,3 +3333,316 @@ button.type-chip:hover {
   border-color: color-mix(in srgb, var(--bad) 50%, var(--line-2));
   color: var(--bad);
 }
+
+/* ─── Hub (P5.1, inventory HUB, design 06 §6.1) ─────────────────────────────── */
+.hub {
+  background: var(--paper);
+  padding-bottom: 48px;
+}
+/* the hub is paper from the header to the footer (HUB-01), the footer's top margin included */
+body:has(.hub) {
+  background: var(--paper);
+}
+.hub-context {
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+.hub-context-row {
+  max-width: 1120px;
+  margin: 0 auto;
+  min-height: 44px;
+  padding: 4px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hub-context-scroll {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hub-context-label {
+  flex: none;
+  font-size: 12px;
+  color: var(--t3);
+  white-space: nowrap;
+}
+.hub-context-chips {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+.hub-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 2px 12px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--card);
+  color: var(--t1);
+  font-size: 13px;
+  white-space: nowrap;
+  transition: border-color 0.12s;
+}
+.hub-chip:hover {
+  border-color: var(--ring);
+}
+.hub-context-clear {
+  flex: none;
+  min-height: 34px;
+  padding: 0 6px;
+  font-size: 12.5px;
+  color: var(--t3);
+}
+.hub-context-clear:hover {
+  color: var(--t1);
+}
+.hub-hero {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: clamp(28px, 6vw, 60px) 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+.hub-rotd {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.hub-glyph,
+.hub-glyph-slot {
+  font-family: var(--font-classical);
+  font-size: 44px;
+  line-height: 1.5;
+  letter-spacing: 0.12em;
+  color: var(--c-root);
+  min-height: 66px;
+}
+.hub-glyph {
+  border-radius: 10px;
+  padding: 0 10px;
+}
+.hub-glyph:hover {
+  background: var(--root-wash);
+}
+.hub-rotd-cap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--t3);
+}
+.hub-rotd-word {
+  color: var(--t2);
+}
+.hub-rotd-word:hover {
+  color: var(--t1);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.hub-title {
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  margin-top: 6px;
+}
+:lang(ar) .hub-title {
+  letter-spacing: 0;
+}
+.hub-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--t2);
+}
+.hub-lead {
+  max-width: 640px;
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--t2);
+  text-wrap: pretty;
+}
+.hub-search-wrap {
+  width: min(560px, 100%);
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hub-search-try {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--t3);
+}
+.hub-try {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--card);
+  color: var(--t2);
+  font-size: 13px;
+}
+.hub-try:hover {
+  border-color: var(--ring);
+  color: var(--t1);
+}
+.hub-search {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-inline: 16px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--sh);
+}
+.hub-search:focus-within {
+  border-color: var(--ring);
+}
+.hub-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  background: transparent;
+  outline: none;
+  font-size: 17px;
+  color: var(--t1);
+}
+.hub-search-input::placeholder {
+  color: var(--t3);
+}
+.hub-search-go {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--t3);
+}
+.hub-search-go:hover {
+  border-color: var(--ring);
+  color: var(--t1);
+}
+.hub-doors {
+  width: min(680px, 100%);
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  text-align: start;
+}
+.hub-door {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card-2);
+  color: var(--t1);
+  transition: border-color 0.12s;
+}
+.hub-door:hover {
+  border-color: var(--ring);
+}
+.hub-door-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.hub-door-sub {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--t2);
+}
+.hub-section {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hub-all {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+.hub-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  height: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--t1);
+  transition: border-color 0.12s;
+}
+a.hub-tile:hover {
+  border-color: var(--ring);
+}
+.hub-tile[data-building] {
+  background: transparent;
+  border-style: dashed;
+}
+.hub-tile-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+.hub-tile-purpose {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--t2);
+}
+.hub-tile-phase {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--t3);
+}
+.hub-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+@media (max-width: 520px) {
+  .hub-all {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hub-glyph,
+  .hub-glyph-slot {
+    font-size: 38px;
+  }
+}
