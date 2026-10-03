@@ -1056,7 +1056,21 @@
     "tool_concordance_hint": "كل مواضع جذور هذه الآية في الفهرس السياقي",
     "drawer_concordance": "جذور الآية في الفهرس السياقي",
     "concAll": "في القرآن ({n})",
-    "sajdaMark": "موضع سجدة التلاوة"
+    "sajdaMark": "موضع سجدة التلاوة",
+    "glossTitle": "اقترح معنى حرفيًا أدق",
+    "morphTitle": "اقترح تصحيحًا للتحليل الصرفي",
+    "suggestAt": "«{word}» في الموضع {ref}",
+    "morphField": "ما تصححه",
+    "morphProposed": "الصواب في رأيك",
+    "morphWhyPlaceholder": "مثلًا: كتاب في الإعراب وموضعه، أو القاعدة التي تستند إليها",
+    "morphFootnote": "وإذا قُبل التصحيح نُسب إليك في سجل تغييرات التحليل.",
+    "quranTextClosed": "أما النص القرآني نفسه فلا يدخل في أي اقتراح: هو نص مجمع الملك فهد كما نشره.",
+    "gRoot": "الجذر",
+    "gLemma": "الصيغة المعجمية",
+    "suggestGloss": "اقترح معنى حرفيًا أدق",
+    "suggestMorph": "اقترح تصحيحًا",
+    "proposalGloss": "معنى حرفي اقترحته",
+    "proposalMorph": "تصحيح اقترحته · {field}"
   },
   "concordance": {
     "title": "الفهرس السياقي",

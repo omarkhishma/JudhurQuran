@@ -1,7 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import { api } from "./helpers";
 
-/** Verse furniture that is not a control (RDR-547). */
+/** Verse furniture that is not a control (RDR-547) and proposals on glosses and morphology (RDR-567). */
 
 const BASE = { visited: true, onboarded: true, wordStates: {}, stars: {}, trail: [], progress: {}, proposals: [] as unknown[], savedTrails: [] };
 const panel = (page: Page) => page.locator(".reader-panel, .reader-sheet");
@@ -50,4 +50,51 @@ test("waqf signs stay on the word they are written on (RDR-547)", async ({ page 
   expect(withSign, "2:2 carries a waqf sign").toBeTruthy();
   await page.goto("/quran/2#v2");
   await expect(page.locator('[data-verse="2:2"] button.w', { hasText: withSign!.text })).toHaveCount(1);
+});
+
+type Lbl = { ar: string };
+type Word = { root: { ar_spaced: string } | null; occurrence: { location: string; gloss_en: string | null; features: { case?: Lbl | null } } };
+
+test("a gloss and a morphology tag can be proposed for this place, and nothing reaches the Quranic text (RDR-567)", async ({ page }) => {
+  const w = await api<Word>(page, "/words/ilm?at=20:114:17&limit=0");
+  expect(w.occurrence.gloss_en).toBeTruthy();
+  expect(w.occurrence.features.case?.ar).toBeTruthy();
+  await seed(page, { layerOpen: { senses: true, family: false, patterns: false, lexica: false, timeline: false, usage: false } });
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  const p = panel(page);
+
+  await p.locator('[data-section="senses"]').getByRole("button", { name: "اقترح معنى حرفيًا أدق" }).first().click();
+  const g = page.getByRole("dialog", { name: "اقترح معنى حرفيًا أدق" });
+  await expect(g).toContainText("20:114:17");
+  await expect(g).toContainText(w.occurrence.gloss_en!);
+  await expect(g).toContainText("أما النص القرآني نفسه فلا يدخل في أي اقتراح");
+  const send = g.getByRole("button", { name: "أرسل للمراجعة" });
+  await expect(send).toBeDisabled(); // the wording still equals the current gloss
+  await g.locator("textarea").fill("knowledge, here: what God teaches");
+  await expect(send).toBeDisabled(); // a reason is required
+  await g.locator("input.field").fill("سبب للاختبار");
+  await send.click();
+  await expect(g).toHaveCount(0);
+
+  await p.getByRole("button", { name: "اقترح تصحيحًا" }).click();
+  const m = page.getByRole("dialog", { name: "اقترح تصحيحًا للتحليل الصرفي" });
+  const field = m.locator("select");
+  const options = await field.locator("option").allInnerTexts();
+  expect(options.slice(0, 3)).toEqual(["الجذر", "الصيغة المعجمية", "النوع"]);
+  await expect(m).toContainText(w.root!.ar_spaced);
+  await field.selectOption({ label: "الحالة الإعرابية" });
+  await expect(m).toContainText(w.occurrence.features.case!.ar);
+  await m.locator("textarea").fill("حالة أخرى");
+  await m.locator("input.field").fill("سبب للاختبار");
+  await expect(m).toContainText("نُسب إليك");
+  await m.getByRole("button", { name: "أرسل للمراجعة" }).click();
+
+  const box = p.getByRole("region", { name: "ما اقترحته" });
+  await expect(box).toContainText("معنى حرفي اقترحته · 20:114:17");
+  await expect(box).toContainText("تصحيح اقترحته · الحالة الإعرابية · 20:114:17");
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state.proposals);
+  expect(stored).toEqual([
+    expect.objectContaining({ kind: "gloss", slug: "ilm", at: "20:114:17", current: w.occurrence.gloss_en, status: "pending" }),
+    expect.objectContaining({ kind: "morphology", slug: "ilm", at: "20:114:17", field: "gCase", current: w.occurrence.features.case!.ar, text: "حالة أخرى" }),
+  ]);
 });

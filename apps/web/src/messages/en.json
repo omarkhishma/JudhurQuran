@@ -1056,7 +1056,21 @@
     "tool_concordance_hint": "Every place the roots of this verse occur, in the concordance",
     "drawer_concordance": "This verse's roots in the concordance",
     "concAll": "in the Quran ({n})",
-    "sajdaMark": "Place of prostration in recitation"
+    "sajdaMark": "Place of prostration in recitation",
+    "glossTitle": "Suggest a better gloss",
+    "morphTitle": "Suggest a correction to the analysis",
+    "suggestAt": "“{word}” at {ref}",
+    "morphField": "What you are correcting",
+    "morphProposed": "What it should be",
+    "morphWhyPlaceholder": "e.g. a work of iʿrāb and its page, or the rule you rely on",
+    "morphFootnote": "If it is accepted, the correction is credited to you in the analysis change log.",
+    "quranTextClosed": "The Quranic text itself is never open to proposals: it is the KFGQPC text as published.",
+    "gRoot": "Root",
+    "gLemma": "Lemma",
+    "suggestGloss": "Suggest a better gloss",
+    "suggestMorph": "Suggest a correction",
+    "proposalGloss": "Your gloss",
+    "proposalMorph": "Your correction · {field}"
   },
   "concordance": {
     "title": "Concordance",

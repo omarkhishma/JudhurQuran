@@ -25,7 +25,12 @@ export type CiteTarget =
       root: { spaced: string; translit: string };
       page: string | null;
     };
-export type SuggestTarget = { kind: "edit" | "sense" | "error"; slug: string; label: string; ordinal?: number; current: string };
+/** What a reader may propose (RDR-567): a sense, a gloss or a morphology tag — never the Quranic text. */
+export type SuggestKind = "edit" | "sense" | "error" | "gloss" | "morphology";
+/** A morphology field open to correction: its label's message key and the value shown now. */
+export type MorphKey = "gRoot" | "gLemma" | "gPos" | "gForm" | "gAspect" | "gVoice" | "gDerivation" | "gPgn" | "gCase" | "gMood" | "gGroup";
+export type SuggestField = { key: MorphKey; value: string };
+export type SuggestTarget = { kind: SuggestKind; slug: string; label: string; ordinal?: number; current: string; at?: string; fields?: SuggestField[] };
 
 type ReaderState = {
   mode: Mode;
@@ -254,10 +259,14 @@ export type Topic = { id: string; label: string; ts: number };
 export const verseRef = (key: string) => `quran:${key}`;
 export type Proposal = {
   id: string;
-  kind: "edit" | "sense" | "error";
+  kind: SuggestKind;
   slug: string;
   label: string;
   ordinal: number | null;
+  /** the occurrence a gloss or morphology proposal is about */
+  at?: string | null;
+  /** the morphology field corrected (a SuggestField key) */
+  field?: MorphKey | null;
   current: string;
   text: string;
   why: string;
