@@ -372,3 +372,41 @@ export type SurahCard = {
   };
   sources: Record<string, KnowledgeSource>;
 };
+
+/** What a sarf work says about a pattern, verbatim (P3.3), with al-Raḍī's commentary on it. */
+export type ClassicalRow = {
+  id: string;
+  source_id: string;
+  kind: "meaning" | "inventory" | "definition" | "statement";
+  section: string;
+  heading_ar: string | null;
+  pattern_ar: string | null;
+  form_number: number | null;
+  match_method: string | null;
+  match_confidence: "high" | "medium" | null;
+  text_ar: string;
+  examples_ar: string[];
+  locator: string;
+  page_vol: number | null;
+  page: number | null;
+  status: "extracted" | "reviewed";
+  via: "direct" | "inflected" | "suffix";
+  commentary: { id: string; source_id: string; text_ar: string; cue_ar: string | null; locator: string; page_vol: number | null; page: number | null; status: string }[];
+};
+export type ClassicalSource = {
+  id: string;
+  role: "matn" | "commentary";
+  title_ar: string;
+  title_en: string;
+  author_ar: string;
+  author_en: string;
+  death_hijri: number | null;
+  death_ce: number | null;
+  edition_ar: string | null;
+  edition_en: string | null;
+  page_numbering: "matches-print" | "unverified";
+  licence: string;
+  licence_url: string | null;
+  attribution_ar: string;
+  attribution_en: string;
+};

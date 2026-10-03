@@ -962,7 +962,15 @@
     "copySeed": "نسخ البذرة (JSON)",
     "seedCopied": "نُسخت البذرة",
     "openEditor": "افتح محرر الخرائط",
-    "graphRoot": "ارسم الجذر"
+    "graphRoot": "ارسم الجذر",
+    "classicalTitle": "ما قاله الصرفيون",
+    "classicalAt": "{work}، ص {page}",
+    "pageUnverified": "(ترقيم الصفحات غير متحقق من المطبوع)",
+    "classicalViaBase": "عن الوزن الذي يُبنى منه",
+    "classicalViaSuffix": "عن لاحقته",
+    "classicalMatchedByExamples": "رُبط بهذا الوزن بأمثلة الكتاب",
+    "classicalCommentary": "{count, plural, one {شرح واحد} two {شرحان} few {{n} شروح} many {{n} شرحًا} other {{n} شرح}} من {work}",
+    "classicalStatus": "نصوص منقولة كما هي من مصادرها وربطت بالأوزان آليًا، ولم يراجعها محرر بعد."
   },
   "concordance": {
     "title": "الفهرس السياقي",

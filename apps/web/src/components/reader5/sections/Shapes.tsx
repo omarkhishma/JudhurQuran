@@ -4,9 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
-import { cnt, cnt2 } from "@/lib/format";
+import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
-import type { LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
+import type { ClassicalRow, ClassicalSource, LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
 import { PatternFunction, WordChip } from "./Family";
 
 /** Shapes (design 03 §3.5.3, RDR-226…232): the root's patterns with every family word on each
@@ -72,7 +72,10 @@ function PatternView({ slug }: { slug: string | null }) {
   const locale = useLocale();
   const q = useQuery({
     queryKey: ["pattern", slug],
-    queryFn: () => getJSON<PatternInfo & { members: (LemmaLite & { root: { key: string; ar_spaced: string } | null })[] }>(`/patterns/${slug}`),
+    queryFn: () =>
+      getJSON<PatternInfo & { members: (LemmaLite & { root: { key: string; ar_spaced: string } | null })[]; classical: { rows: ClassicalRow[]; sources: ClassicalSource[] } }>(
+        `/patterns/${slug}`,
+      ),
     enabled: !!slug,
   });
   if (!slug) return <p className="text-[13px] text-t3">{t("noPattern")}</p>;
@@ -87,6 +90,7 @@ function PatternView({ slug }: { slug: string | null }) {
       <p className="text-[12.5px] text-t2">
         <PatternFunction p={p} /> — {t("patternSpread", { ...cnt(p.lemma_count, locale), ...cnt2(p.occurrences, locale) })}
       </p>
+      {p.classical.rows.length > 0 && <Classical rows={p.classical.rows} sources={p.classical.sources} />}
       <ul className="flex flex-col divide-y divide-line">
         {p.members.slice(0, 60).map((m) => (
           <li key={m.slug} className="flex items-center gap-3 py-1.5">
@@ -97,5 +101,57 @@ function PatternView({ slug }: { slug: string | null }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+/**
+ * What the sarf books say about this pattern (P3.3): each passage verbatim with its book and page, how it
+ * was matched to the pattern, and al-Raḍī's commentary on it. Extracted, not yet reviewed — said so (L3).
+ */
+function Classical({ rows, sources }: { rows: ClassicalRow[]; sources: ClassicalSource[] }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const src = new Map(sources.map((s) => [s.id, s]));
+  const cite = (id: string, vol: number | null, page: number | null) => {
+    const s = src.get(id);
+    if (!s) return id;
+    const name = locale === "ar" ? `${s.author_ar.split("،")[0]}، ${s.title_ar}` : `${s.author_en.split(",")[0]}, ${s.title_en}`;
+    const at = page != null ? (vol && vol > 1 ? `${formatNumber(vol, locale)}/${formatNumber(page, locale)}` : formatNumber(page, locale)) : null;
+    return at ? t("classicalAt", { work: name, page: at }) + (s.page_numbering === "unverified" ? ` ${t("pageUnverified")}` : "") : name;
+  };
+  return (
+    <section className="classical" aria-label={t("classicalTitle")}>
+      <p className="label-caps">{t("classicalTitle")}</p>
+      <ol className="flex flex-col gap-2">
+        {rows.map((r) => (
+          <li key={r.id} className="classical-row">
+            {r.heading_ar && <p className="text-[11px] text-t3" lang="ar" dir="rtl">{r.heading_ar}</p>}
+            <p className="ar-classical text-[17px] leading-[1.9] text-t1" lang="ar" dir="rtl">{r.text_ar}</p>
+            <p className="text-[11px] text-t3">
+              {cite(r.source_id, r.page_vol, r.page)}
+              {r.via !== "direct" && ` · ${t(r.via === "inflected" ? "classicalViaBase" : "classicalViaSuffix")}`}
+              {r.match_confidence === "medium" && ` · ${t("classicalMatchedByExamples")}`}
+            </p>
+            {r.commentary.length > 0 && (
+              <details className="mt-1">
+                <summary className="cursor-pointer text-[12px] text-t2">{t("classicalCommentary", { ...cnt(r.commentary.length, locale), work: src.get(r.commentary[0].source_id)?.[locale === "ar" ? "title_ar" : "title_en"] ?? "" })}</summary>
+                {r.commentary.map((c) => (
+                  <div key={c.id} className="mt-1 border-s-2 border-line ps-2">
+                    <p className="ar-classical text-[15.5px] leading-[1.9] text-t2" lang="ar" dir="rtl">{c.text_ar}</p>
+                    <p className="text-[11px] text-t3">{cite(c.source_id, c.page_vol, c.page)}</p>
+                  </div>
+                ))}
+              </details>
+            )}
+          </li>
+        ))}
+      </ol>
+      <p className="text-[11px] text-t3">{t("classicalStatus")}</p>
+      <ul className="text-[10.5px] text-t3">
+        {sources.map((s) => (
+          <li key={s.id}>{locale === "ar" ? s.attribution_ar : s.attribution_en}</li>
+        ))}
+      </ul>
+    </section>
   );
 }
