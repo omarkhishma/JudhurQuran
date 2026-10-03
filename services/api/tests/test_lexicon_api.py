@@ -135,6 +135,7 @@ def test_root_gist_is_ibn_faris_statement_cited_by_its_entry() -> None:
         "work_id": "maqayis",
         "entry_id": w["core_meaning"]["entry_id"],
         "page_ref": w["core_meaning"]["page_ref"],
+        "usul": "several",  # «أصلٌ صحيح له بابان»: two uṣūl (P3.7a)
     }
     assert (
         " … والأصل الآخر" in w["root"]["gist_ar"]

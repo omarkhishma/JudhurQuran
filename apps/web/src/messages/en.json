@@ -1091,7 +1091,9 @@
     "lvlOrd_3": "3",
     "lvlOrd_4": "4",
     "lvlOrd_5": "5",
-    "listSep": ", "
+    "listSep": ", ",
+    "usulSeveral": "Ibn Fāris gives this root more than one aṣl: its words share the letters, not one meaning.",
+    "usulUnrelated": "Ibn Fāris holds this root's uṣūl to be unrelated: its words share the letters, not the meaning."
   },
   "concordance": {
     "title": "Concordance",

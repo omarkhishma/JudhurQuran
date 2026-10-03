@@ -211,3 +211,48 @@ def core_statement(body: str) -> tuple[str | None, str]:
         for i, (s, e) in enumerate(merged)
     )
     return text, kind
+
+
+# Ibn Fāris saying the uṣūl do not meet: «كلمتان متباينتان», «لا يقاس بعضها ببعض», «غير موضوع على قياس»
+_UNRELATED = re.compile(
+    _any(
+        [
+            "متباين",
+            "متباينة",
+            "متباينان",
+            "متباينتان",
+            "متباينتين",
+            "متباينين",
+            "متباينات",
+            "لا يقاس بعضها ببعض",
+            "لا يقاس بعضه ببعض",
+            "لا تقاس منها",
+            "لا يجمعهما",
+            "ليس قياسها واحدا",
+            "ليس قياسهما واحدا",
+            "متباعدة",
+            "بعيدة القياس",
+            "بعيد القياس",
+            "غير منقاسة",
+            "لا تنقاس",
+            "لا ينقاس",
+            "لا يشبه بعضها بعضا",
+            "متضاد",
+            "متضادان",
+            "غير موضوع على قياس",
+            "ليس بقياس",
+        ]
+    )
+)
+
+
+def usul_kind(statement: str | None) -> str | None:
+    """How many uṣūl Ibn Fāris gives the root, from his statement: "one", "several" (two or more), or
+    "unrelated" (two or more that he says do not meet). The root's words then do not share one meaning,
+    and the family view says so (P3.7a)."""
+    if not statement:
+        return None
+    first = statement.split(GAP)[0]
+    if _UNRELATED.search(first):
+        return "unrelated"
+    return "several" if _announced(first) > 1 else "one"

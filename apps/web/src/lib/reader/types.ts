@@ -36,7 +36,8 @@ export type RootInfo = {
   translit: string;
   gloss_en: string | null;
   gist_ar: string | null;
-  gist_source: unknown;
+  /** where the core idea comes from, and how many uṣūl Ibn Fāris gives the root (P3.4, P3.7a) */
+  gist_source: { work_id: string; entry_id: number; page_ref: string | null; usul: "one" | "several" | "unrelated" | null } | null;
   occurrences: number;
   verse_count: number;
   surah_count: number;

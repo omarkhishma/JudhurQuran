@@ -588,6 +588,8 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 else (r or {}).get("confidence", "low")
             )
             e["displayable"] = e["root_key"] is not None and e["confidence"] in ("exact", "manual", "high")
+        from .lexica.maqayis_core import usul_kind
+
         # P3.4: a root's Arabic core idea is Ibn Fāris's statement of its aṣl in Maqāyīs — the article's
         # own words (lexica/maqayis_core.py), cited by its entry; an exact mapping wins over a loose one
         gist: dict[str, dict[str, Any]] = {}
@@ -600,9 +602,22 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             g = gist.get(r["key"])
             r["gist_ar"] = g["core_meaning"] if g else None
             r["gist_source"] = (
-                {"work_id": "maqayis", "entry_id": g["id"], "page_ref": g.get("page_ref")} if g else None
+                {
+                    "work_id": "maqayis",
+                    "entry_id": g["id"],
+                    "page_ref": g.get("page_ref"),
+                    "usul": usul_kind(g["core_meaning"]),
+                }
+                if g
+                else None
             )
-        report["lexica_root_gists"] = {"roots": len(roots_out), "with_gist": len(gist)}
+        report["lexica_root_gists"] = {
+            "roots": len(roots_out),
+            "with_gist": len(gist),
+            "usul": dict(
+                Counter((r["gist_source"] or {}).get("usul") for r in roots_out if r["gist_source"])
+            ),
+        }
     reciters_out, timings_out, rec_report = ([], [], {})
     if raw.recitations_registry:
         from .recitations import build_recitations

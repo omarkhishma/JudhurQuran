@@ -67,6 +67,12 @@ export function FamilySection({ w }: { w: WordPayload }) {
             <span className="block text-[11px] text-t3">— {w.core_meaning.author_ar}، {w.core_meaning.title_ar}</span>
           </p>
         )}
+        {(w.root.gist_source?.usul === "several" || w.root.gist_source?.usul === "unrelated") && (
+          // the family is the words that share these letters, not one meaning (P3.7a)
+          <p className="usul-note mt-1.5 rounded-md bg-card-2 px-2.5 py-1.5 text-[12px] leading-relaxed text-t2" data-usul={w.root.gist_source.usul}>
+            {t(w.root.gist_source.usul === "unrelated" ? "usulUnrelated" : "usulSeveral")}
+          </p>
+        )}
         <p className="mt-1 text-[12px] text-t3">
           {t("rootCounts", { ...cnt(w.root.occurrences, locale), ...cnt2(w.root.lemma_count, locale) })}
         </p>

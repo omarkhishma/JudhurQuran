@@ -199,9 +199,15 @@ def test_maqayis_statement_keeps_every_asl_and_only_the_articles_words(built: tu
     """P3.4: an article announcing several uṣūl keeps each where Ibn Fāris turns to it, joined by « … »;
     letters alone are followed by the statement; an article with no statement has none."""
     for root, expected in (
-        ("كرم", "الكاف والراء والميم أصل صحيح له بابان: أحدهما شرف في الشيء في نفسه أو شرف في خلق من الأخلاق. … والأصل الآخر الكرم، وهي القلادة."),
+        (
+            "كرم",
+            "الكاف والراء والميم أصل صحيح له بابان: أحدهما شرف في الشيء في نفسه أو شرف في خلق من الأخلاق. … والأصل الآخر الكرم، وهي القلادة.",
+        ),
         ("وسل", "الواو والسين واللام: كلمتان متباينتان جدا. الأولى الرغبة والطلب. … والأخرى السرقة."),
-        ("بهل", "الباء والهاء واللام. أصول ثلاثة: أحدهما التخلية، والثانى جنس من الدعاء، والثالث قلة فى الماء."),
+        (
+            "بهل",
+            "الباء والهاء واللام. أصول ثلاثة: أحدهما التخلية، والثانى جنس من الدعاء، والثالث قلة فى الماء.",
+        ),
     ):
         (e,) = _entries(built, "maqayis", root)
         assert _flat(e["core_meaning"]) == expected
@@ -442,3 +448,19 @@ def test_lane_transliteration_table() -> None:
     assert translit("A_i") == "\u0625\u0650"
     assert translit("A@l") == "\u0671\u0644"
     assert translit("y^w^") == "ئؤ"
+
+
+def test_usul_kind_reads_how_many_usul_ibn_faris_gives_and_whether_they_meet() -> None:
+    """P3.7a: «أصل واحد» one; «أصلان: أحدهما… والآخر…» several; «كلمتان متباينتان» unrelated."""
+    from jadhr_pipeline.lexica.maqayis_core import usul_kind
+
+    assert usul_kind("العين واللام والميم أصل صحيح واحد، يدل على أثر بالشئ يتميز به عن غيره.") == "one"
+    assert (
+        usul_kind("الكاف والراء والميم أصل صحيح له بابان: أحدهما شرف في الشيء. … والأصل الآخر الكرم.")
+        == "several"
+    )
+    assert usul_kind("الفاء والدال والحرف المعتل كلمتان متباينتان جدا.") == "unrelated"
+    assert (
+        usul_kind("الخاء والفاء والياء أصلان متباينان متضادان. فالأول الستر، والثاني الإظهار.") == "unrelated"
+    )
+    assert usul_kind(None) is None
