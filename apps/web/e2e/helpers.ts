@@ -43,3 +43,10 @@ export async function stored<T = Record<string, unknown>>(page: Page, key: strin
     key,
   );
 }
+
+/** Follow a sign-in link as the reader does: the page opens, and the link is spent only when they press the button
+ * (audit 11 F17). */
+export async function followSignInLink(page: Page, path: string): Promise<void> {
+  await page.goto(path);
+  await page.getByRole("button", { name: "ادخل", exact: true }).click();
+}

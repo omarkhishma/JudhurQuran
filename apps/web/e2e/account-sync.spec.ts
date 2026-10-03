@@ -1,5 +1,5 @@
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { ar, stored } from "./helpers";
+import { ar, followSignInLink, stored } from "./helpers";
 
 /**
  * Accounts and sync (PLAN P6.1, P6.2, P6.4; PRF-33, PRF-Q02, NTB-Q02): sign-in by a link that works once; what a
@@ -69,7 +69,7 @@ async function askLink(page: Page, email: string, from: "page" | "sheet" = "page
 }
 
 async function signIn(page: Page, email: string, from: "page" | "sheet" = "page"): Promise<void> {
-  await page.goto(await askLink(page, email, from));
+  await followSignInLink(page, await askLink(page, email, from));
   await expect(page.getByRole("link", { name: /^حسابي:/ })).toBeVisible();
 }
 
@@ -205,13 +205,16 @@ test("clearing this device signs it out first and never clears the account; a li
   const a = await device(browser, page, { saved: { state: { bookmarks: [{ kind: "lemma", key: "Eilom", label: "عِلْم", at: 1759000000000 }], notes: {}, history: [] }, version: 2 } });
   await a.goto("/");
   const link = await askLink(a, email);
-  await a.goto(link);
+  // opened elsewhere first — as a mail gateway checking links does — the link is not spent until pressed (F17)
+  const other = await (await browser.newContext()).newPage();
+  await other.goto(new URL(link, a.url()).toString());
+  await expect(other.getByRole("button", { name: "ادخل", exact: true })).toBeVisible();
+  await followSignInLink(a, link);
   await expect(a.getByRole("link", { name: /^حسابي:/ })).toBeVisible();
   await expect.poll(async () => (await records(a)).map((r) => r.key)).toContain("b:lemma:Eilom");
 
-  // the same link, again: refused, with a way to ask for another
-  const other = await (await browser.newContext()).newPage();
-  await other.goto(new URL(link, a.url()).toString());
+  // the same link, pressed again: refused, with a way to ask for another
+  await other.getByRole("button", { name: "ادخل", exact: true }).click();
   await expect(other.locator(".auth-card[role=alert]")).toContainText("انتهت صلاحية هذا الرابط أو استُعمل من قبل.");
   await expect(other.getByRole("link", { name: "اطلب رابطًا جديدًا" })).toHaveAttribute("href", "/signin");
 

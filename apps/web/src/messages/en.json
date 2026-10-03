@@ -1709,7 +1709,10 @@
       "analyse": "Analyser choices",
       "graphs": "Maps",
       "texts": "Your texts"
-    }
+    },
+    "verifyTitle": "Sign in on this browser",
+    "verifyHelp": "Press the button to finish signing in. The link works once, and is used only when you press it.",
+    "verifyButton": "Sign in"
   },
   "me": {
     "localName": "Local reader",

@@ -35,7 +35,7 @@ export function SignInPanel({ returnTo, onClose, headingId }: { returnTo: string
 
   async function go(provider: Provider) {
     setLeaving(provider);
-    if (!(await startOidc(provider, returnTo, locale))) {
+    if (!(await startOidc(provider, returnTo, locale).catch(() => false))) {
       setLeaving(null);
       setState("failed");
     }

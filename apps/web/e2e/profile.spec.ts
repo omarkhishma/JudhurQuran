@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import { ar, expectNoHorizontalScroll } from "./helpers";
+import { ar, expectNoHorizontalScroll, followSignInLink } from "./helpers";
 
 /**
  * The Profile (P6.3, inventory PRF; PRF-Q03; P6.4): who the reader is, what they have, their records in tabs that
@@ -128,7 +128,7 @@ async function signIn(page: Page, email: string): Promise<void> {
   let link = "";
   await expect.poll(async () => ((link = (await outbox()).length > before ? (await outbox()).at(-1)!.link : ""), link)).not.toBe("");
   const u = new URL(link);
-  await page.goto(u.pathname + u.search);
+  await followSignInLink(page, u.pathname + u.search);
   await expect(page).toHaveURL(/\/me\?tab=account$/);
 }
 

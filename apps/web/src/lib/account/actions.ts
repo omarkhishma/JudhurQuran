@@ -53,8 +53,12 @@ export async function startOidc(provider: Provider, returnTo: string, locale: st
   const verifier = random(48);
   const challenge = b64url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
   const state = random(24);
-  // for this tab only, and only until the provider answers
-  sessionStorage.setItem(OIDC_KEY, JSON.stringify({ provider, state, verifier, returnTo, locale }));
+  // for this tab only, and only until the provider answers; a browser that keeps nothing cannot finish this way (F19)
+  try {
+    sessionStorage.setItem(OIDC_KEY, JSON.stringify({ provider, state, verifier, returnTo, locale }));
+  } catch {
+    return false;
+  }
   const qs = new URLSearchParams({ redirect_uri: redirectUri(provider), state, challenge });
   const r = await fetch(`/api/v1/auth/oidc/${provider}/start?${qs}`);
   if (!r.ok) return false;
@@ -66,8 +70,8 @@ export async function finishOidc(provider: Provider, code: string, state: string
   let saved: { provider: string; state: string; verifier: string; returnTo: string; locale: string } | null = null;
   try {
     saved = JSON.parse(sessionStorage.getItem(OIDC_KEY) ?? "null");
+    sessionStorage.removeItem(OIDC_KEY);
   } catch {}
-  sessionStorage.removeItem(OIDC_KEY);
   // the state proves this answer belongs to the sign-in this tab began
   if (!saved || saved.provider !== provider || saved.state !== state) return null;
   const r = await fetch(`/api/v1/auth/oidc/${provider}/finish`, {

@@ -34,34 +34,36 @@ export function SignInScreen({ returnTo }: { returnTo: string }) {
   );
 }
 
-// a link works once: the same token is never sent twice (development runs each effect twice)
-const verifying = new Map<string, Promise<string | null>>();
-
-/** /auth/verify?token=…: the link from the e-mail, exchanged for a session here, then back where the reader was. */
+/**
+ * /auth/verify?token=…: the link from the e-mail. It is spent only when the reader presses the button (audit 11 F17):
+ * a mail gateway that opens links to check them would otherwise use it up, and sign in on its own machine. Then back
+ * where the reader was.
+ */
 export function VerifyScreen({ token }: { token: string | null }) {
   const t = useTranslations("account");
   const router = useRouter();
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    if (!token) return;
-    // the token leaves the address bar and the history at once
+  const [state, setState] = useState<"ready" | "working" | "failed">("ready");
+  if (!token) return <AuthStatus state="missing" message={t("verifyMissing")} />;
+  if (state !== "ready") return <AuthStatus state={state} message={state === "failed" ? t("verifyFailed") : t("verifying")} />;
+  async function go() {
+    setState("working");
+    // the token leaves the address bar and the history as it is used
     window.history.replaceState(null, "", window.location.pathname);
-    let p = verifying.get(token);
-    if (!p) {
-      p = verifyLink(token).catch(() => null);
-      verifying.set(token, p);
-    }
-    let live = true;
-    void p.then((to) => {
-      if (!live) return;
-      if (to) router.replace(to);
-      else setFailed(true);
-    });
-    return () => {
-      live = false;
-    };
-  }, [token, router]);
-  return <AuthStatus state={!token ? "missing" : failed ? "failed" : "working"} message={!token ? t("verifyMissing") : failed ? t("verifyFailed") : t("verifying")} />;
+    const to = await verifyLink(token!).catch(() => null);
+    if (to) router.replace(to);
+    else setState("failed");
+  }
+  return (
+    <div className="auth-screen">
+      <div className="auth-card">
+        <h1 className="text-[17px] font-semibold leading-snug">{t("verifyTitle")}</h1>
+        <p className="text-[13.5px] leading-relaxed text-t2">{t("verifyHelp")}</p>
+        <button type="button" className="btn btn-primary min-h-[44px] self-start" onClick={() => void go()}>
+          {t("verifyButton")}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 const finishing = new Map<string, Promise<{ returnTo: string; locale: string } | null>>();

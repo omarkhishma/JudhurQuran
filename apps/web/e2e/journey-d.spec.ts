@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { ar } from "./helpers";
+import { ar, followSignInLink } from "./helpers";
 
 /**
  * Journey D (P7.4 exit, 06 §6.3): a reader proposes a gloss from the Reader → the queue → a reviewer approves →
@@ -60,7 +60,7 @@ async function signIn(page: Page, email: string, name: string): Promise<Record<s
   await page.getByLabel("بريدك الإلكتروني").fill(email);
   await page.getByRole("button", { name: "أرسل رابط الدخول" }).click();
   await expect(page.getByText(`أُرسل إلى ${email}`)).toBeVisible();
-  await page.goto(await link(page, email, 0));
+  await followSignInLink(page, await link(page, email, 0));
   await expect(page).toHaveURL(/\/review/);
   const h = { Authorization: `Bearer ${await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-auth") ?? "{}").state?.session)}` };
   await page.request.patch("/api/v1/me", { headers: h, data: { display_name: name } });
@@ -163,7 +163,7 @@ test("a proposal written signed out is kept, sign-in is asked for after it, and 
     await form.getByLabel("بريدك الإلكتروني").fill(email);
     await form.getByRole("button", { name: "أرسل رابط الدخول" }).click();
     await expect(form.getByText(`أُرسل إلى ${email}`)).toBeVisible();
-    await page.goto(await link(page, email, 0));
+    await followSignInLink(page, await link(page, email, 0));
     await expect(page).toHaveURL(/\/quran\/2/);
     const h = { Authorization: `Bearer ${await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-auth") ?? "{}").state?.session)}` };
     await expect.poll(async () => ((await (await page.request.get("/api/v1/me/proposals", { headers: h })).json()) as { data: { text: string }[] }).data.map((p) => p.text)).toContain(text);
