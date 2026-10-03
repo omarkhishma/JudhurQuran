@@ -20,6 +20,7 @@ every confidence says how it was found. A morphology service for non-Quranic Ara
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections import Counter
 from typing import Any
 
@@ -68,11 +69,27 @@ _ROOT_SLOTS = ("ف", "ع", "ل")
 _TOKEN = re.compile(r"\S+")
 
 
+def _word(token: str) -> str:
+    """A token without the punctuation and signs at its edges («بالتعلم.», «العلمَ،», «(كتاب)» → the word):
+    full stops, commas, quotation marks, brackets, and the mushaf's ۞ and ۩ when they stand alone (ANA-F05)."""
+    i, j = 0, len(token)
+    while i < j and unicodedata.category(token[i])[0] in "PSZ":
+        i += 1
+    while j > i and unicodedata.category(token[j - 1])[0] in "PSZ":
+        j -= 1
+    return token[i:j]
+
+
 def _key(token: str) -> str:
-    """The matching key of a typed or pasted word: marks stripped, letters folded. The words table keeps
-    the same key of each word's everyday (imlāʾī) spelling (``norm``) and of its mushaf spelling
-    (``norm_uthmani``), so typed and pasted text both match."""
-    return normalize(token)
+    """The matching key of a typed or pasted word: edge punctuation dropped, marks stripped, letters folded.
+    The words table keeps the same key of each word's everyday (imlāʾī) spelling (``norm``) and of its mushaf
+    spelling (``norm_uthmani``), so typed and pasted text both match."""
+    return normalize(_word(token))
+
+
+def _has_article(taken: list[str]) -> bool:
+    """A proclitic that ends in the article (ال، وال، بال، لل …): what follows is a noun, never a verb."""
+    return any(c.endswith("ال") or c.endswith("لل") for c in taken)
 
 
 def _candidate(r: dict[str, Any], total: int, factor: float = 1.0) -> dict[str, Any]:
@@ -87,6 +104,8 @@ def _candidate(r: dict[str, Any], total: int, factor: float = 1.0) -> dict[str, 
         "features": r["features"],
         "segments": r["segments"],
         "gloss_en": r["gloss_en"],
+        # the word's transliteration where the corpus reads it (the interlinear's second line, ANA-25)
+        "translit": r.get("word_translit"),
         "count": r["n"],
         "share": round(share, 3),
         "confidence": round(share * factor, 2),
@@ -99,7 +118,7 @@ _FORM_SQL = """
       select w.lemma_id, w.root_id, w.pos, count(*)::int as n, min(w.id) as first_id
       from content.words w where w.norm = :k or w.norm_uthmani = :k
       group by w.lemma_id, w.root_id, w.pos)
-    select m.n, m.pos, w.features, w.segments, w.gloss_en, w.location,
+    select m.n, m.pos, w.features, w.segments, w.gloss_en, w.location, w.translit as word_translit,
            l.slug, l.ar as lemma_ar, r.key as root_key, r.spaced, r.translit,
            p.slug as pattern_slug, p.ar as pattern_ar
     from m join content.words w on w.id = m.first_id
@@ -128,13 +147,15 @@ def _strips(key: str) -> list[tuple[str, list[str]]]:
     return out
 
 
-def _by_pattern(conn: Connection, key: str) -> list[dict[str, Any]]:
+def _by_pattern(conn: Connection, key: str, nouns_only: bool = False) -> list[dict[str, Any]]:
     """Root candidates from the Quran's patterns: the word read against each pattern of its length, the
-    letters in the ف ع ل slots taken as the root, kept where that root exists in the Quran."""
+    letters in the ف ع ل slots taken as the root, kept where that root exists in the Quran. After the
+    article only noun patterns are read."""
     pats = rows(
         conn,
-        "select slug, ar, ar_bare, occurrences from content.patterns where length(ar_bare) = :n",
-        {"n": len(key)},
+        """select slug, ar, ar_bare, occurrences from content.patterns
+           where length(ar_bare) = :n and (not :nouns or coalesce(pos_hint, '') <> 'V')""",
+        {"n": len(key), "nouns": nouns_only},
     )
     found: dict[str, dict[str, Any]] = {}
     total = sum(p["occurrences"] for p in pats) or 1
@@ -167,6 +188,7 @@ def _by_pattern(conn: Connection, key: str) -> list[dict[str, Any]]:
                 "features": None,
                 "segments": None,
                 "gloss_en": None,
+                "translit": None,
                 "count": 0,
                 "share": 0.0,
                 "confidence": round(score, 2),
@@ -190,7 +212,7 @@ def _dedupe(cands: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def analyse_word(conn: Connection, token: str) -> dict[str, Any]:
     key = _key(token)
-    base = {"surface": token, "key": key, "clitics": []}
+    base = {"surface": _word(token) or token, "key": key, "clitics": []}
     if not key:
         return {**base, "kind": "none", "confidence": 0.0, "candidates": []}
     found = _by_form(conn, key)
@@ -202,6 +224,8 @@ def analyse_word(conn: Connection, token: str) -> dict[str, Any]:
         return {**base, "kind": "form", "confidence": cands[0]["confidence"], "candidates": cands}
     for stem, taken in _strips(key):
         found = _by_form(conn, stem)
+        if _has_article(taken):  # a word with the article cannot be a verb (ANA-F05)
+            found = [r for r in found if r["pos"] != "V"]
         if found:
             total = sum(r["n"] for r in found)
             cands = _dedupe([_candidate(r, total, CLITIC_FACTOR) for r in found if r["pos"] in CONTENT_POS])
@@ -215,7 +239,7 @@ def analyse_word(conn: Connection, token: str) -> dict[str, Any]:
                     "candidates": cands,
                 }
     for stem, taken in [(key, []), *_strips(key)]:
-        cands = _by_pattern(conn, stem)
+        cands = _by_pattern(conn, stem, nouns_only=_has_article(taken))
         if cands:
             return {
                 **base,
@@ -233,7 +257,7 @@ def _gold(conn: Connection, verse_id: int, positions: list[int] | None = None) -
     words = rows(
         conn,
         """select w.location, w.token_from, w.token_to, w.pos, w.features, w.segments, w.gloss_en,
-                  l.slug, l.ar as lemma_ar, r.key as root_key, r.spaced, r.translit, p.slug as pattern_slug, p.ar as pattern_ar
+                  w.translit as word_translit, l.slug, l.ar as lemma_ar, r.key as root_key, r.spaced, r.translit, p.slug as pattern_slug, p.ar as pattern_ar
            from content.words w left join content.lemmas l on l.id = w.lemma_id
            left join content.roots r on r.id = w.root_id left join content.patterns p on p.id = l.pattern_id
            where w.verse_id = :v order by w.position""",
@@ -314,7 +338,8 @@ def analyse(conn: Connection, text: str) -> dict[str, Any]:
         source = {"kind": "quran", "verse_key": key, "whole_verse": True}
         truncated = span > MAX_VERSES
     else:
-        surface = _TOKEN.findall(text)[:MAX_TOKENS]
+        # tokens that are only punctuation or a sign (a dash, ۞) are not words
+        surface = [t for t in _TOKEN.findall(text) if _key(t)][:MAX_TOKENS]
         placed = _verse_by_phrase(conn, [_key(t) for t in surface]) if len(surface) >= 2 else None
         if placed:
             v, positions = placed
@@ -323,7 +348,7 @@ def analyse(conn: Connection, text: str) -> dict[str, Any]:
         else:
             tokens = [analyse_word(conn, t) for t in surface]
             source = {"kind": "free", "verse_key": None, "whole_verse": False}
-        truncated = len(_TOKEN.findall(text)) > MAX_TOKENS
+        truncated = len([t for t in _TOKEN.findall(text) if _key(t)]) > MAX_TOKENS
     roots = Counter(c["root"]["key"] for t in tokens for c in t["candidates"][:1] if c["root"])
     review = sum(
         1 for t in tokens if t["kind"] not in ("particle", "gold") and t["confidence"] < REVIEW_BELOW
