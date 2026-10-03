@@ -35,7 +35,7 @@ export function TafsirSection({ verseKey }: { verseKey: string }) {
   const [picked, setPicked] = useState<string[]>(tafsirs.slice(0, 2));
   const works = useQuery({ queryKey: ["works"], queryFn: async () => (await getJSON<{ data: Work[] }>("/works")).data, staleTime: Infinity });
   const shown = mode === "one" ? [active] : picked;
-  const { data, isLoading } = useCommentary(verseKey, [...shown, translation]);
+  const { data, isLoading, isError } = useCommentary(verseKey, [...shown, translation]);
   const trans = data?.data.find((d) => d.work.id === translation);
   const tafsirWorks = (works.data ?? []).filter((w) => w.kind === "tafsir");
 
@@ -74,6 +74,7 @@ export function TafsirSection({ verseKey }: { verseKey: string }) {
       </section>
       <section className={"tafsir-cols px-4 py-4" + (mode === "compare" ? " is-compare" : "")} aria-busy={isLoading}>
         {isLoading && <p className="text-t3">…</p>}
+        {isError && <p className="text-[12.5px] text-bad" role="alert">{t("loadFailed")}</p>}
         {shown.map((id) => {
           const c = data?.data.find((d) => d.work.id === id);
           if (!c) return null;

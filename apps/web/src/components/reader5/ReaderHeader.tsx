@@ -231,6 +231,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
           } else setPrefs({ panelOpen: !panelOpen });
         }}
         title={t("dictionaryTitle")}
+        aria-keyshortcuts="Alt+P"
       >
         <Icon name="book" size={13} />
         {t("dictionary")}

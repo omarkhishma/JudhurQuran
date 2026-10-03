@@ -9,6 +9,7 @@ import { cnt, formatNumber } from "@/lib/format";
 import { getJSON, useWord } from "@/lib/reader/api";
 import { useBreakpoint } from "@/lib/reader/media";
 import { usePrefs, useReader } from "@/lib/reader/store";
+import { useAudio } from "@/lib/store/audio";
 import { useStar } from "@/lib/store/saved";
 import type { WordPayload } from "@/lib/reader/types";
 import { useDebounced } from "@/lib/useDebounced";
@@ -233,6 +234,7 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
   const cousins = w.family.flatMap((g) => g.members).filter((m) => m.slug !== w.slug).slice(0, 3);
   const first = w.attestations.items[0];
   const jumpTo = useReader((s) => s.jumpTo);
+  const playVerse = useAudio((s) => s.playVerse);
 
   // A new word starts the deck at its first card (RDR-530).
   useEffect(() => {
@@ -297,7 +299,15 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
         <p className="text-[13px] text-t3">{t("noAttestation")}</p>
       ),
       action: a.readHref ? (
-        <a className="btn min-h-[44px]" href={(locale === "en" ? "/en" : "") + a.readHref}>{t("readInPlace")}</a>
+        <span className="flex gap-2">
+          {/* hear the verse before going to it (RDR-185) */}
+          {first && (
+            <button type="button" className="btn min-h-[44px] min-w-[44px]" onClick={() => playVerse(first.verse_key)} aria-label={t("playVerse")} title={t("playVerse")}>
+              <Icon name="play" size={14} />
+            </button>
+          )}
+          <a className="btn min-h-[44px]" href={(locale === "en" ? "/en" : "") + a.readHref}>{t("readInPlace")}</a>
+        </span>
       ) : undefined,
     },
     {

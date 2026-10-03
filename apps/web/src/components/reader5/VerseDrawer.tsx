@@ -57,6 +57,7 @@ export function RootsDrawer({ verseKey }: { verseKey: string }) {
     staleTime: Infinity,
   });
   const byKey = new Map((info.data?.data ?? []).map((r) => [r.key, r]));
+  if (v.isError) return <p className="text-[12.5px] text-bad" role="alert">{t("loadFailed")}</p>;
   if (v.data && roots.length === 0) return <p className="text-[12.5px] text-t3">{t("noRootsInVerse")}</p>;
   return (
     <ul className="flex flex-col gap-1">
@@ -84,6 +85,7 @@ function RelatedDrawer({ verseKey }: { verseKey: string }) {
     <div className="flex flex-col gap-2">
       <p className="text-[11.5px] text-t3">{t("relatedMethod")}</p>
       {q.data && q.data.data.length === 0 && <p className="text-[12.5px] text-t3">{t("relatedNone")}</p>}
+      {q.isError && <p className="text-[12.5px] text-bad" role="alert">{t("loadFailed")}</p>}
       {(q.data?.data ?? []).map((r) => (
         <Link key={r.verse.key} href={`/quran/${r.verse.surah}/${r.verse.ayah}`} className="related-row">
           <span className="flex items-center gap-2 text-[11.5px] text-t3">
@@ -132,6 +134,7 @@ function GraphDrawer({ verseKey }: { verseKey: string }) {
   const built = useQuery({ queryKey: ["seed-graph", JSON.stringify({ seed: "verse", key: verseKey })], queryFn: () => buildSeedGraph({ seed: "verse", key: verseKey }), staleTime: 5 * 60_000 });
   const cols = (kind: "root" | "lemma" | "word") => (built.data?.nodes ?? []).filter((n) => n.data.kind === kind);
   const [roots, lemmas, words] = [cols("root"), cols("lemma"), cols("word")];
+  if (built.isError) return <p className="text-[12.5px] text-bad" role="alert">{t("loadFailed")}</p>;
   if (!built.data) return <div className="h-20 animate-pulse rounded-lg bg-card-2" />;
   return (
     <div className="flex flex-col gap-2">

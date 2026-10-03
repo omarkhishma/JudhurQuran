@@ -9,7 +9,7 @@ import { hasArabic } from "@/lib/arabic/normalize";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { useIsClient } from "@/lib/client";
-import { usePersonal, useReader, type SuggestTarget } from "@/lib/reader/store";
+import { usePersonal, usePrefs, useReader, type SuggestTarget } from "@/lib/reader/store";
 import { SITE } from "@/lib/site";
 import { storageFailed } from "@/lib/store/safeStorage";
 import { useDebounced } from "@/lib/useDebounced";
@@ -43,6 +43,12 @@ export function Overlays({ chapter }: { chapter: ChapterInfo }) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOmnibox(true);
+      }
+      // Alt+P opens or closes the dictionary panel (RDR-428); e.code, as Alt changes the key on macOS
+      if (e.altKey && !e.metaKey && !e.ctrlKey && e.code === "KeyP") {
+        e.preventDefault();
+        const p = usePrefs.getState();
+        p.set({ panelOpen: !p.panelOpen });
       }
     }
     window.addEventListener("keydown", onKey);

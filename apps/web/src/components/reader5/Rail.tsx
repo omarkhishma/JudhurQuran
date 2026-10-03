@@ -90,6 +90,7 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
         className="rail-search"
         dir="auto"
       />
+      {surahs.isError && <p className="px-2 text-[12px] text-bad" role="alert">{t("loadFailed")}</p>}
       <ul ref={list} className="rail-list" aria-label={t("surahIndex")}>
         {filtered.map((s) => {
           const current = s.number === chapter.number;
@@ -136,6 +137,7 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
           </button>
         )}
       </div>
+      {roots.isError && <p className="px-2 text-[12px] text-bad" role="alert">{t("loadFailed")}</p>}
       <ul className="flex flex-col gap-0.5" aria-label={t("rootsOfSurah")}>
         {(roots.data?.data ?? []).slice(0, allRoots ? undefined : ROOTS_FIRST).map((r) => {
           const on = focusRoot === r.key;

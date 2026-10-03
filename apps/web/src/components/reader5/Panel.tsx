@@ -161,7 +161,7 @@ function Grabber({ sheet, setSheet, onClose }: { sheet: "half" | "full"; setShee
   );
 }
 
-type SearchLemma = { slug: string; ar: string; envelope: { full: string; translit: string }; gloss_en: string | null; senses_en?: string[]; root: string | null; pos_label?: { ar: string; en: string } };
+type SearchLemma = { slug: string; ar: string; envelope: { full: string; translit: string }; gloss_en: string | null; senses_en?: string[]; root: string | null; root_spaced?: string | null; pos_label?: { ar: string; en: string } };
 
 function PanelSearch() {
   const t = useTranslations("rd");
@@ -175,18 +175,37 @@ function PanelSearch() {
     enabled: dq.length > 0,
   });
   const items = res.data?.results.lemmas ?? [];
+  // arrow keys move through the results, Enter opens the one marked (RDR-428)
+  const [active, setActive] = useState(0);
+  const pick = (x: SearchLemma) => {
+    openWord({ slug: x.slug, at: null });
+    setQ("");
+    setActive(0);
+  };
   return (
     <div className="panel-searchbar">
       <input
         type="search"
+        role="combobox"
+        aria-expanded={!!dq && items.length > 0}
+        aria-controls="panel-results"
+        aria-activedescendant={items[active] ? `pr-${items[active].slug}` : undefined}
         value={q}
-        onChange={(e) => setQ(e.target.value)}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setActive(0);
+        }}
         onKeyDown={(e) => {
           if (e.key === "Escape") setQ("");
-          if (e.key === "Enter" && items[0]) {
-            openWord({ slug: items[0].slug, at: null });
-            setQ("");
+          if (e.key === "ArrowDown" && items.length) {
+            e.preventDefault();
+            setActive((a) => (a + 1) % items.length);
           }
+          if (e.key === "ArrowUp" && items.length) {
+            e.preventDefault();
+            setActive((a) => (a - 1 + items.length) % items.length);
+          }
+          if (e.key === "Enter" && items[active]) pick(items[active]);
         }}
         placeholder={t("panelSearchPlaceholder")}
         aria-label={t("panelSearchLabel")}
@@ -194,23 +213,27 @@ function PanelSearch() {
         dir="auto"
       />
       {dq && (
-        <ul className="popover panel-results" aria-label={t("panelSearchLabel")}>
-          {res.isFetched && items.length === 0 && <li className="px-3 py-2 text-[12.5px] text-t3">{t("noResults")}</li>}
-          {items.map((x) => (
-            <li key={x.slug}>
-              <button
-                type="button"
-                className="panel-result"
-                onClick={() => {
-                  openWord({ slug: x.slug, at: null });
-                  setQ("");
-                }}
-              >
+        <ul id="panel-results" role="listbox" className="popover panel-results" aria-label={t("panelSearchLabel")}>
+          {res.isFetching && !res.data && <li className="px-3 py-2 text-[12.5px] text-t3" role="status">{t("searching")}</li>}
+          {res.isError && <li className="px-3 py-2 text-[12.5px] text-bad" role="alert">{t("loadFailed")}</li>}
+          {res.isFetched && !res.isError && items.length === 0 && <li className="px-3 py-2 text-[12.5px] text-t3">{t("noResults")}</li>}
+          {items.map((x, i) => (
+            <li key={x.slug} id={`pr-${x.slug}`} role="option" aria-selected={i === active}>
+              <button type="button" tabIndex={-1} className={"panel-result" + (i === active ? " is-active" : "")} onMouseEnter={() => setActive(i)} onClick={() => pick(x)}>
                 <span className="ar-classical min-w-[76px] text-[19px] leading-[1.6]" lang="ar" dir="rtl">{x.ar}</span>
-                <span className="min-w-0 flex-1 truncate text-[12.5px] text-t2" lang={locale === "ar" ? undefined : "en"}>
-                  {x.gloss_en ?? x.senses_en?.[0] ?? ""}
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-[12.5px] text-t2" lang={locale === "ar" ? undefined : "en"}>{x.gloss_en ?? x.senses_en?.[0] ?? ""}</span>
+                  {/* its transliteration and part of speech, and its root (RDR-193) */}
+                  <span className="mono truncate text-[10.5px] text-t3" dir="ltr">
+                    {x.envelope.translit}
+                    {x.pos_label ? ` · ${locale === "ar" ? x.pos_label.ar : x.pos_label.en}` : ""}
+                  </span>
                 </span>
-                <span className="mono text-[11px] text-t3" dir="ltr">{x.envelope.translit}</span>
+                {x.root_spaced ? (
+                  <span className="ar-classical text-[14px] text-root" lang="ar">{x.root_spaced}</span>
+                ) : (
+                  <span className="text-[11px] text-t3">{t("noRoot")}</span>
+                )}
               </button>
             </li>
           ))}

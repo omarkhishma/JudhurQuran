@@ -1037,7 +1037,9 @@
     "doorShapeMore": "{count, plural, one {# more like it} other {{n} more like it}}: {words}",
     "inQuranN": "{n} in the Quran",
     "graphFootnote": "plus one card for the verse itself, wired to every word above.",
-    "grammarNoPlace": "Select this word in the text to see its grammar there."
+    "grammarNoPlace": "Select this word in the text to see its grammar there.",
+    "searching": "Searching…",
+    "playVerse": "Hear the verse"
   },
   "concordance": {
     "title": "Concordance",
