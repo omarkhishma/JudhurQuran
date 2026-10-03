@@ -77,6 +77,7 @@ export function RootBuilder() {
               <li key={r.key}>
                 <Link
                   href={`/roots/${encodeURIComponent(r.key)}`}
+                  prefetch={false}
                   className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-line bg-card px-3 hover:border-root"
                 >
                   <span className="ar-classical text-[20px] text-root" lang="ar">{r.spaced}</span>

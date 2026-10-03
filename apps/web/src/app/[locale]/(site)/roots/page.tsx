@@ -46,6 +46,7 @@ export default async function RootsIndexPage({ params }: PageProps<"/[locale]/ro
                 <li key={r.key}>
                   <Link
                     href={`/roots/${encodeURIComponent(r.key)}`}
+                    prefetch={false}
                     className="flex min-h-[48px] items-center justify-between gap-2 rounded-xl border border-line bg-card px-3 hover:border-root"
                   >
                     <span className="ar-classical text-[19px] text-t1" lang="ar">{r.spaced}</span>

@@ -51,6 +51,7 @@ export function SurahIndex({ surahs }: { surahs: Surah[] }) {
           <li key={s.number}>
             <Link
               href={`/quran/${s.number}`}
+              prefetch={false}
               className="card flex min-h-[72px] items-center gap-3 px-4 py-3 transition-colors hover:border-ring"
             >
               <span className="mono flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card-2 text-[13px] text-t2">

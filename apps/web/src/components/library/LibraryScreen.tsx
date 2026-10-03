@@ -142,7 +142,8 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
               const r = client ? (read[`quran:${s.number}`] ?? 0) : 0;
               return (
                 <li key={s.number}>
-                  <Link href={`/quran/${s.number}`} className="surah-cell" aria-label={t("surahCell", { name: s.name_ar, read: formatNumber(r, locale), of: formatNumber(s.verse_count, locale) })}>
+                  {/* 114 sūras: prefetching each would render every sūra page on a visit to the shelf */}
+                  <Link href={`/quran/${s.number}`} prefetch={false} className="surah-cell" aria-label={t("surahCell", { name: s.name_ar, read: formatNumber(r, locale), of: formatNumber(s.verse_count, locale) })}>
                     <span className="mono text-[11px] text-t3">{formatNumber(s.number, locale)}</span>
                     <span className="ar-classical min-w-0 flex-1 truncate text-[16px]" lang="ar">{s.name_ar}</span>
                     <span className="text-[10.5px] text-t3">{s.revelation_place === "meccan" ? t("meccan") : t("medinan")}</span>
