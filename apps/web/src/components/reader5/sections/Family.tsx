@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Term } from "@/components/terms/Term";
 import { TermText } from "@/components/terms/TermText";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
+import { sourceLine } from "@/lib/reader/board";
 import { useReader } from "@/lib/reader/store";
 import type { LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
 import { FORM_TERM } from "@/lib/terms";
@@ -53,6 +54,7 @@ function GraphRootButton({ root }: { root: string }) {
 /** Word family (design 03 §3.5.2, RDR-221…225): every lemma on the root, grouped by pattern. */
 export function FamilySection({ w }: { w: WordPayload }) {
   const t = useTranslations("rd");
+  const tb = useTranslations("board");
   const locale = useLocale();
   if (!w.root) return <p className="text-[13px] text-t3">{t("noRootFamily")}</p>;
   return (
@@ -64,10 +66,22 @@ export function FamilySection({ w }: { w: WordPayload }) {
           <span className="flex-1" />
           <GraphRootButton root={w.root.key} />
         </div>
+        {w.root.gloss_en && (
+          <div className="mt-0.5">
+            <p className="text-[13px] text-t1" dir="ltr" lang="en">{w.root.gloss_en}</p>
+            {/* the credit in the reader's language, on its own line so neither direction breaks the other */}
+            <p className="text-[11px] text-t3">
+              {tb("gloss")}
+              {w.root.gloss_board?.sources.length ? tb("from", { works: sourceLine(w.root.gloss_board.sources, locale) }) : ""}
+            </p>
+          </div>
+        )}
         {w.core_meaning && (
           <p className="mt-1 text-[13.5px] leading-[1.9] text-t2" lang="ar" dir="rtl">
-            {w.core_meaning.text}
+            {/* the board's correction of where Ibn Fāris's statement was cut, when it made one */}
+            {w.root.gist_board?.kept === "corrected" && w.root.gist_ar ? w.root.gist_ar : w.core_meaning.text}
             <span className="block text-[11px] text-t3">— {w.core_meaning.author_ar}، {w.core_meaning.title_ar}</span>
+            {w.root.gist_board && <span className="block text-[11px] text-t3">{tb(w.root.gist_board.kept === "corrected" ? "coreCorrected" : "coreKept")}</span>}
           </p>
         )}
         {(w.root.gist_source?.usul === "several" || w.root.gist_source?.usul === "unrelated") && (

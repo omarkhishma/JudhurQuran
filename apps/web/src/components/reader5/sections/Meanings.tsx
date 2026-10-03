@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { Term } from "@/components/terms/Term";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
+import { sourceLine } from "@/lib/reader/board";
 import { EditorsNotes, MergedLine, MergedSenses, MyProposals, useDrafts, useWordContributions } from "@/components/contrib/WordContributions";
 import { type SuggestField, type SuggestTarget, useReader } from "@/lib/reader/store";
 import { showHemistichs } from "@/lib/openiti";
@@ -14,6 +15,7 @@ import { FORM_TERM, TAG_TERM } from "@/lib/terms";
 import { CreditLine } from "../CreditLine";
 import { LoanwordsBlock } from "./Loanwords";
 import { WujuhBlock } from "./Wujuh";
+import { ReviewMark, ReviewStatus } from "../BoardMark";
 
 /**
  * Meanings (design 03 §3.5.1, P2.5). Numbered sense lists are assembled by the editorial board from the
@@ -22,6 +24,7 @@ import { WujuhBlock } from "./Wujuh";
  */
 export function MeaningsSection({ w }: { w: WordPayload }) {
   const t = useTranslations("rd");
+  const tb = useTranslations("board");
   const locale = useLocale();
   const setSuggest = useReader((s) => s.setSuggest);
   const drafts = useDrafts(w.slug);
@@ -37,6 +40,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
       text: (
         <>
           <span className="text-word">{m.phrase_ar}</span>: {m.meaning_ar}
+          <ReviewMark review={m.review} />
         </>
       ),
       source: (
@@ -94,6 +98,9 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
                 ))}
                 {s.text_ar && <p className="text-[15px] leading-[1.8] text-t1" lang="ar" dir="rtl">{s.text_ar}</p>}
                 {s.text_en && <p className="text-[13.5px] italic text-t2" lang="en" dir="ltr">{s.text_en}</p>}
+                {s.status === "board" && s.sources.length > 0 && (
+                  <p className="text-[11px] text-t3" dir="auto">{sourceLine(s.sources, locale)}</p>
+                )}
                 <button type="button" className="suggest-link self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest({ kind: "edit", slug: w.slug, label: w.ar.full, ordinal: s.ordinal, current: s.text_ar ?? s.text_en ?? "" })}>
                   {t("suggestEdit")}
                 </button>
@@ -102,6 +109,7 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
           ))}
         </ol>
       ) : null}
+      {w.senses_board && <p className="text-[11px] text-t3">{tb("senses")}</p>}
       {/* a word with a sense list keeps its merged glosses too, beside the list (audit 12 F30) */}
       {w.senses.length > 0 && merges.filter((m) => m.kind === "gloss").map((m) => <MergedLine key={m.id} m={m} />)}
       {w.senses.length === 0 && (
@@ -284,9 +292,10 @@ function MufradatBlock({ m }: { m: Mufradat }) {
             {s.senses.length > 0 ? ` • ${t("sensesAsNumbered")}` : ""}
             {s.match_confidence === "medium" ? ` • ${t("matchedMedium")}` : ""}
           </p>
+          <ReviewMark review={s.review} />
         </article>
       ))}
-      <p className="text-[11px] text-t3">{t("mufradatStatus")}</p>
+      <ReviewStatus items={m.subentries} none={t("mufradatStatus")} />
     </section>
   );
 }
@@ -306,7 +315,7 @@ function ParticlesBlock({ items }: { items: ParticleLink[] }) {
           <ParticleItem key={p.id} p={p} />
         ))}
       </ul>
-      <p className="text-[11px] text-t3">{t("particlesStatus")}</p>
+      <ReviewStatus items={items} none={t("particlesStatus")} />
     </section>
   );
 }
@@ -328,6 +337,7 @@ function ParticleItem({ p }: { p: ParticleLink }) {
         <span className="text-[11.5px] text-t3">{`${author} • ${locale === "ar" ? p.title_ar : p.title_en}`}</span>
         <span className="mono text-[11px] text-t3">{t("particleSenses", cnt(p.sense_count, locale))}</span>
       </button>
+      <ReviewMark review={p.review} />
       {open && (q.isLoading ? <div className="h-16 animate-pulse rounded-lg bg-card-2" /> : q.data ? <ParticleSenses e={q.data} /> : null)}
     </li>
   );

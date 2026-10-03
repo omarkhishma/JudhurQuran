@@ -69,6 +69,8 @@ export async function discardEntry(id: string): Promise<void> {
 }
 export const decideEntry = (id: string, decision: "approve" | "changes", note: string) =>
   authFetch<Entry>(`/editorial/entries/${id}/decide`, { method: "POST", body: JSON.stringify({ decision, note: note || null }) });
+export type Work = { id: string; title_ar: string; title_en: string };
+export const getWorks = () => authFetch<{ data: Work[] }>("/editorial/works");
 export const getAwaiting = () => authFetch<{ data: Entry[] }>("/editorial/awaiting");
 export type VerdictItem = { row: string; verdict: "reviewed" | "corrected" | "rejected"; note?: string; correction?: string };
 export const saveVerdicts = (layer: Layer, items: VerdictItem[], submit: boolean) =>

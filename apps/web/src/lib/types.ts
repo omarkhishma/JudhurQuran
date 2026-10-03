@@ -1,3 +1,5 @@
+import type { BoardSource } from "./reader/types";
+
 /** Shapes returned by our API (/api/v1). Kept in sync with services/api content.py. */
 
 export type Label = { tag: string; ar: string; en: string };
@@ -200,6 +202,11 @@ export type WordDetail = {
 };
 
 export type RootDetail = RootSummary & {
+  /** the board's English gloss and its word on Ibn Fāris's statement, in force (P3.0c) */
+  gloss_en?: string | null;
+  gloss_board?: { approved_at: string | null; sources: BoardSource[] };
+  gist_ar?: string | null;
+  gist_board?: { kept: "source" | "corrected"; approved_at: string | null };
   lemmas: (LemmaSummary & { forms: { form: string; occurrences: number; sample: string }[] })[];
   distribution: {
     surah: number;

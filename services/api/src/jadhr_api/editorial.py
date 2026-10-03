@@ -12,16 +12,20 @@ release never loses it; every save, submission and decision is logged.
 from __future__ import annotations
 
 import json
+import threading
+import urllib.error
+import urllib.request
 import uuid
 from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import Connection
 
-from . import lexicon
+from . import board, lexicon
 from .accounts import q, q1, tx
 from .db import connect, one, rows
 from .refusal import Refusal
+from .settings import get_settings
 
 KINDS = ("root_gloss", "root_core", "pattern_function", "pattern_plain", "sense_list", "glossary", "verdict")
 BOARD = {"editor", "admin"}
@@ -298,6 +302,13 @@ _POOL = {
     "sense_list": "select count(*) from content.lemmas",
     "glossary": "select count(*) from content.glossary_terms",
 }
+
+
+def works(u: dict[str, Any]) -> list[dict[str, str]]:
+    """The works a source may name, by the id the reader resolves to a title (jadhr_api.board)."""
+    _board(u)
+    with connect() as conn:
+        return [{"id": k, **v} for k, v in board.works(conn).items()]
 
 
 def worklists(u: dict[str, Any]) -> dict[str, Any]:
@@ -747,7 +758,32 @@ def decide(u: dict[str, Any], entry_id: str, decision: str, note: str | None) ->
             )
             assert done is not None
             _log(conn, done["id"], u, "changes", done["revision"], {"note": note})
-        return _entry_out(done, {})
+        out = _entry_out(done, {})
+    if decision == "approve":
+        _in_force_changed()
+    return out
+
+
+def _in_force_changed() -> None:
+    """What the reader is served changed: this process reads it afresh, and the web's cached pages are expired so the
+    board's work shows at once rather than after a day."""
+    board.clear()
+    threading.Thread(target=_expire_web, daemon=True).start()
+
+
+def _expire_web() -> None:
+    s = get_settings()
+    if not s.web_revalidate_url:
+        return
+    req = urllib.request.Request(s.web_revalidate_url, method="POST", data=b"")
+    if s.revalidate_secret:
+        req.add_header("Authorization", f"Bearer {s.revalidate_secret}")
+    try:
+        with urllib.request.urlopen(req, timeout=15):
+            pass
+    except (urllib.error.URLError, TimeoutError):
+        # the pages expire on their own within the day; nothing the board did is lost
+        return
 
 
 def awaiting(u: dict[str, Any], limit: int) -> dict[str, Any]:

@@ -14,6 +14,9 @@ export type PatternInfo = {
   function_en: string | null;
   plain_ar: string | null;
   plain_en: string | null;
+  /** the board's function (quoted from the sarf books) and plain explanation (its own words), in force (P3.0c) */
+  function_board?: { approved_at: string | null; sources: BoardSource[] };
+  plain_board?: { approved_at: string | null };
   lemma_count: number;
   occurrences: number;
   method?: string | null;
@@ -22,6 +25,7 @@ export type PatternInfo = {
 /** al-Suyūṭī's entry on a word reported as non-Arabic (P3.7a), verbatim. */
 export type LoanwordEntry = {
   id: string;
+  review?: BoardReview;
   headword_ar: string;
   text_ar: string;
   page: number | null;
@@ -54,6 +58,9 @@ export type RootInfo = {
   gist_ar: string | null;
   /** where the core idea comes from, and how many uṣūl Ibn Fāris gives the root (P3.4, P3.7a) */
   gist_source: { work_id: string; entry_id: number; page_ref: string | null; usul: "one" | "several" | "unrelated" | null } | null;
+  /** the board's English gloss in force, and its word on Ibn Fāris's statement as cut (P3.0c) */
+  gloss_board?: { approved_at: string | null; sources: BoardSource[] };
+  gist_board?: { kept: "source" | "corrected"; approved_at: string | null };
   occurrences: number;
   verse_count: number;
   surah_count: number;
@@ -100,6 +107,7 @@ export type Gloss = {
 /** al-Muyassar fī Gharīb's meaning of the phrase this word belongs to (P3.1), display-only. */
 export type MeaningHere = {
   id: string;
+  review?: BoardReview;
   phrase_ar: string;
   meaning_ar: string;
   match_confidence: string;
@@ -121,6 +129,7 @@ export type Mufradat = {
   subentries: {
     id: string;
     entry_id: number;
+    review?: BoardReview;
     headword_ar: string;
     text_ar: string;
     page_ref: string | null;
@@ -135,6 +144,7 @@ export type Mufradat = {
 /** A particle entry treating this word (P3.8), by its lemma or by an affix of this occurrence. */
 export type ParticleLink = {
   id: string;
+  review?: BoardReview;
   source_id: string;
   headword_ar: string;
   descriptor_ar: string | null;
@@ -186,7 +196,12 @@ export type Occurrence = {
   variants: { source: string; root_key: string | null; source_title_ar: string; source_title_en: string }[];
 };
 
-export type Sense = { id: number; ordinal: number; text_ar: string | null; text_en: string | null; sources: unknown[]; status: string };
+/** The editorial board's verdict on a row a book gave (P3.0c). */
+export type BoardReview = { verdict: "reviewed" | "corrected"; note: string | null; correction?: string | null; approved_at: string | null };
+/** A source as the board cites it: a work and where in it, and the words quoted. */
+export type BoardSource = { work: string; ref: string; quote?: string; title_ar?: string; title_en?: string };
+/** A sense: the board's (`status: "board"`, with its sources) or one merged from a proposal. */
+export type Sense = { id: number; ordinal: number; text_ar: string | null; text_en: string | null; sources: BoardSource[]; status: string };
 
 export type DictEntry = {
   id: number;
@@ -260,6 +275,8 @@ export type WordPayload = {
   occurrence: Occurrence | null;
   senses: Sense[];
   senses_status: "pending" | "linked";
+  /** the board put this sense list in force (P3.0c) */
+  senses_board?: { approved_at: string | null };
   core_meaning: CoreMeaning;
   family: FamilyGroup[];
   shapes: { root_patterns: PatternInfo[]; same_pattern_other_roots: LemmaLite[] };
@@ -484,6 +501,7 @@ export type ClassicalRow = {
   page_vol: number | null;
   page: number | null;
   status: "extracted" | "reviewed";
+  review?: BoardReview;
   via: "direct" | "inflected" | "suffix";
   commentary: { id: string; source_id: string; text_ar: string; cue_ar: string | null; locator: string; page_vol: number | null; page: number | null; status: string }[];
 };

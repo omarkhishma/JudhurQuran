@@ -454,6 +454,12 @@ def root_detail(conn: Connection, raw: str) -> dict[str, Any] | None:
     )
     r["lexicon"] = root_lexicon(conn, r["key"])
     r.pop("id")
+    # the board's English gloss and its word on Ibn Fāris's statement, when in force (P3.0c)
+    from . import board
+
+    extra = one(conn, "select gloss_en, gist_ar from content.roots where key = :k", {"k": r["key"]})
+    r |= extra or {}
+    board.root(conn, r)
     return r
 
 
@@ -767,7 +773,11 @@ def root_graph(conn: Connection, raw: str) -> dict[str, Any] | None:
     for lem in lemmas:
         lem["pattern_slug"] = of.get(lem["id"])
     r.pop("id")
-    return {"root": r, "lemmas": lemmas, "patterns": sorted(patterns.values(), key=lambda p: -p["occurrences"])}
+    return {
+        "root": r,
+        "lemmas": lemmas,
+        "patterns": sorted(patterns.values(), key=lambda p: -p["occurrences"]),
+    }
 
 
 # ─── lexica ─────────────────────────────────────────────────────────────────
@@ -1136,7 +1146,7 @@ def token_signs(conn: Connection, verse_id: int, token_to: int) -> list[str]:
 def lemma_loanwords(conn: Connection, lemma_id: int) -> list[dict[str, Any]]:
     return rows(
         conn,
-        """select e.id, e.headword_ar, e.text_ar, e.page, e.pages, e.languages, e.said_non_arabic, e.chapter_ar,
+        """select e.id, l.id as link_id, e.headword_ar, e.text_ar, e.page, e.pages, e.languages, e.said_non_arabic, e.chapter_ar,
                   l.method, l.confidence, l.scope, l.verse_keys, s.id as source_id,
                   s.attribution_ar, s.attribution_en
            from content.loanword_links l join content.loanword_entries e on e.id = l.entry_id

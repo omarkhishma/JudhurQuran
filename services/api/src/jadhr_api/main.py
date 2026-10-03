@@ -27,6 +27,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from . import (
     accounts,
     analyse,
+    board,
     collections,
     concordance,
     content,
@@ -77,11 +78,14 @@ def dataset_release() -> tuple[str, str]:
 
 
 def cached(request: Request, payload: Any) -> Response:
-    """Content is immutable within a dataset release: strong ETag over release + URL, long cache."""
+    """Content is immutable within a dataset release but for what the editorial board puts in force beside it: strong
+    ETag over release + the board's state + URL, long cache."""
     version, release = dataset_release()
     etag = (
         '"'
-        + hashlib.sha256(f"{release}|{request.url.path}?{request.url.query}".encode()).hexdigest()[:32]
+        + hashlib.sha256(
+            f"{release}|{board.version()}|{request.url.path}?{request.url.query}".encode()
+        ).hexdigest()[:32]
         + '"'
     )
     headers = {

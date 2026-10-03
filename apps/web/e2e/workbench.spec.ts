@@ -24,6 +24,16 @@ function clean(emails: string[]) {
   execFileSync(psql, [DB, "-q", "-c", `delete from editorial.entries where author_id in (select id from accounts.users where email in (${list}));`], { stdio: "pipe" });
 }
 
+/**
+ * An approval expires the cached pages of the web the API is configured to tell (JADHR_WEB_REVALIDATE_URL); the web
+ * under test may be another, so a test that reads a page after an approval, or leaves one behind it, expires it too.
+ */
+async function expire(page: Page) {
+  const secret = process.env.E2E_REVALIDATE_SECRET;
+  const r = await page.request.post("/api/revalidate", { headers: secret ? { Authorization: `Bearer ${secret}` } : {} });
+  expect(r.status(), "start the web under test with JADHR_REVALIDATE_SECRET and pass the same value as E2E_REVALIDATE_SECRET").toBe(200);
+}
+
 type Person = { page: Page; h: Record<string, string>; email: string };
 
 async function person(browser: Browser, email: string, r?: string): Promise<Person> {
@@ -110,9 +120,10 @@ test("an editor writes from the sources and sends it to review; another approves
     await expect(b.page.getByRole("region", { name: "السّاري" })).toContainText(gloss);
     const page = (await (await b.page.request.get(`/api/v1/editorial/root_gloss/${encodeURIComponent(root.key)}`, { headers: b.h })).json()) as { in_force: { value: { en: string }; sources: { work: string }[] } };
     expect(page.in_force.value.en).toBe(gloss);
-    expect(page.in_force.sources.map((s) => s.work)).toEqual(["corpus"]);
+    expect(page.in_force.sources.map((s) => s.work)).toEqual(["qac-wbw"]);
   } finally {
     clean([a.email, b.email]);
+    await expire(a.page);
     await drop(a);
     await drop(b);
   }
@@ -144,6 +155,7 @@ test("verdicts on a book's rows go to review in a batch, and another editor appr
     expect(done.total).toBeGreaterThanOrEqual(2);
   } finally {
     clean([a.email, b.email]);
+    await expire(a.page);
     await drop(a);
     await drop(b);
   }
@@ -171,5 +183,47 @@ test("the workbench's pages pass axe in both themes: a worklist, a target with i
     }
   } finally {
     await drop(e);
+  }
+});
+
+test("what the board approves is shown beside the sources: a root's English gloss on its page, credited to the board, and a book's row marked reviewed (P3.0c)", async ({ browser, isMobile }) => {
+  test.skip(isMobile, "two accounts in desktop windows");
+  test.setTimeout(120_000);
+  const t = tag();
+  const a = await person(browser, `e2e-wb-e-${t}@example.org`, "editor");
+  const b = await person(browser, `e2e-wb-f-${t}@example.org`, "editor");
+  const approve = async (kind: string, target: string, value: unknown, sources: unknown[] = []) => {
+    const e = (await (await a.page.request.put(`/api/v1/editorial/${kind}/${encodeURIComponent(target)}`, { headers: a.h, data: { value, sources } })).json()) as { id: string };
+    await a.page.request.post(`/api/v1/editorial/entries/${e.id}/submit`, { headers: a.h });
+    const r = await b.page.request.post(`/api/v1/editorial/entries/${e.id}/decide`, { headers: b.h, data: { decision: "approve" } });
+    expect(r.status()).toBe(200);
+  };
+  try {
+    // a little-used root no other test opens, so its page is rendered afresh
+    const list = (await (await a.page.request.get("/api/v1/editorial/root_gloss?state=todo&offset=1300&limit=1", { headers: a.h })).json()) as { data: { key: string }[] };
+    const root = list.data[0].key;
+    await approve("root_gloss", root, { en: `a board gloss ${t}` }, [{ work: "lane", ref: "1:1" }]);
+    await expire(a.page);
+    const page = await (await browser.newContext()).newPage();
+    await page.goto(`/roots/${encodeURIComponent(root)}`);
+    await expect(page.getByText(`a board gloss ${t}`)).toBeVisible();
+    // credited to the board, and the cited work named by its title, not its id
+    await expect(page.getByText("المعنى بالإنجليزية من هيئة التحرير، عن معجم لين العربي الإنجليزي 1:1")).toBeVisible();
+    await page.context().close();
+    // a verdict on a sarf book's row reaches the pattern's page: the row marked, the source's words kept
+    const pat = (await (await a.page.request.get("/api/v1/patterns/fa3ala")).json()) as { classical: { rows: { id: string; text_ar: string }[] } };
+    if (pat.classical.rows.length) {
+      const row = pat.classical.rows[0];
+      await approve("verdict", `pattern_functions:${row.id}`, { verdict: "reviewed" });
+      const after = (await (await a.page.request.get("/api/v1/patterns/fa3ala")).json()) as { classical: { rows: { id: string; text_ar: string; review?: { verdict: string } }[] } };
+      const same = after.classical.rows.find((r) => r.id === row.id)!;
+      expect(same.review?.verdict).toBe("reviewed");
+      expect(same.text_ar).toBe(row.text_ar);
+    }
+  } finally {
+    clean([a.email, b.email]);
+    await expire(a.page);
+    await drop(a);
+    await drop(b);
   }
 });

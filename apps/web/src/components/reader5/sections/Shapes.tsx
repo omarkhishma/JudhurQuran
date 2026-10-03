@@ -6,12 +6,14 @@ import { useState } from "react";
 import { Term } from "@/components/terms/Term";
 import { Segmented } from "@/components/ui/Segmented";
 import { cnt, cnt2, formatNumber } from "@/lib/format";
+import { sourceLine } from "@/lib/reader/board";
 import { getJSON } from "@/lib/reader/api";
 import { useReader } from "@/lib/reader/store";
 import { FORM_TERM } from "@/lib/terms";
 import type { ClassicalRow, ClassicalSource, LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
 import { CreditLine } from "../CreditLine";
 import { PatternFunction, WordChip } from "./Family";
+import { ReviewMark, ReviewStatus } from "../BoardMark";
 
 // The closed list the root table checks against (RDR-227, 228, adapted): the ten derived-verb forms of
 // the sarf books — which of them a root takes in the Quran is worth knowing, and so is which it does not.
@@ -135,6 +137,7 @@ type PatternPayload = PatternInfo & {
 
 function PatternView({ slug, current, chapter }: { slug: string | null; current: string; chapter: number }) {
   const t = useTranslations("rd");
+  const tb = useTranslations("board");
   const locale = useLocale();
   const [scope, setScope] = useState<"all" | "surah">("all");
   const [all, setAll] = useState(false);
@@ -155,7 +158,15 @@ function PatternView({ slug, current, chapter }: { slug: string | null; current:
       </div>
       <p className="text-[12.5px] text-t2">
         <PatternFunction p={p} /> — {t("patternSpread", { ...cnt(p.lemma_count, locale), ...cnt2(p.occurrences, locale) })}
+        {p.function_board && <span className="block text-[11px] text-t3">{tb("function")}{p.function_board.sources.length ? tb("from", { works: sourceLine(p.function_board.sources, locale) }) : ""}</span>}
       </p>
+      {/* the board's own plain words on the pattern, said to be theirs (P3.0c) */}
+      {(locale === "ar" ? p.plain_ar : p.plain_en ?? p.plain_ar) && (
+        <p className="rounded-md bg-card-2 px-3 py-2 text-[13.5px] leading-relaxed text-t1">
+          {locale === "ar" ? p.plain_ar : p.plain_en ?? p.plain_ar}
+          <span className="block text-[11px] text-t3">{tb("plain")}</span>
+        </p>
+      )}
       {p.classical.rows.length > 0 && <Classical rows={p.classical.rows} sources={p.classical.sources} />}
       <Segmented
         label={t("patternScope")}
@@ -213,6 +224,7 @@ function Classical({ rows, sources }: { rows: ClassicalRow[]; sources: Classical
               {r.via !== "direct" && ` • ${t(r.via === "inflected" ? "classicalViaBase" : "classicalViaSuffix")}`}
               {r.match_confidence === "medium" && ` • ${t("classicalMatchedByExamples")}`}
             </p>
+            <ReviewMark review={r.review} />
             {r.commentary.length > 0 && (
               <details className="mt-1">
                 <summary className="cursor-pointer text-[12px] text-t2">{t("classicalCommentary", { ...cnt(r.commentary.length, locale), work: src.get(r.commentary[0].source_id)?.[locale === "ar" ? "title_ar" : "title_en"] ?? "" })}</summary>
@@ -227,7 +239,7 @@ function Classical({ rows, sources }: { rows: ClassicalRow[]; sources: Classical
           </li>
         ))}
       </ol>
-      <p className="text-[11px] text-t3">{t("classicalStatus")}</p>
+      <ReviewStatus items={rows} none={t("classicalStatus")} />
       <ul className="flex flex-col gap-0.5">
         {sources.map((s) => (
           <CreditLine key={s.id} s={s} />

@@ -61,6 +61,7 @@ def test_the_workbench_is_the_boards(board: dict[str, dict[str, str]]) -> None:
     r = client.get("/api/v1/editorial/worklists", headers=board["m"])
     assert r.status_code == 403 and r.json()["error"]["code"] == "not_board"
     assert client.put("/api/v1/editorial/root_gloss/علم", headers=board["m"], json=GLOSS).status_code == 403
+    assert client.get("/api/v1/editorial/works", headers=board["m"]).status_code == 403
     w = client.get("/api/v1/editorial/worklists", headers=board["a"]).json()
     kinds = {k["kind"]: k for k in w["kinds"]}
     with accounts.tx() as conn:
@@ -211,3 +212,85 @@ def test_verdicts_on_extracted_rows_in_batches(board: dict[str, dict[str, str]])
     ).json()
     assert {r["key"] for r in approved["data"]} >= {f"pattern_functions:{i}" for i in ids}
     assert client.get("/api/v1/editorial/verdict/pattern_functions:no-such-row", headers=a).status_code == 404
+
+
+def _approve(
+    board_: dict[str, dict[str, str]], kind: str, target: str, value: dict, sources: list | None = None
+) -> None:
+    a, b = board_["a"], board_["b"]
+    e = client.put(
+        f"/api/v1/editorial/{kind}/{target}", headers=a, json={"value": value, "sources": sources or []}
+    )
+    assert e.status_code == 200, e.text
+    client.post(f"/api/v1/editorial/entries/{e.json()['id']}/submit", headers=a)
+    r = client.post(
+        f"/api/v1/editorial/entries/{e.json()['id']}/decide", headers=b, json={"decision": "approve"}
+    )
+    assert r.json()["status"] == "approved", r.text
+
+
+def test_what_is_in_force_is_read_beside_the_content(board: dict[str, dict[str, str]]) -> None:
+    """P3.0c: the reader is served the board's root gloss, pattern function and plain words, sense list and glossary
+    body beside the sources, and its verdicts on the books' rows — a rejected row left out."""
+    src = [{"work": "lane", "ref": "5:2138"}]
+    held = client.get("/api/v1/words/ilm", params={"limit": 0}).headers["etag"]
+    _approve(board, "root_gloss", "علم", {"en": "knowing, knowledge"}, src)
+    # a copy a reader already holds is not answered "not modified" once the board has put something in force
+    fresh = client.get("/api/v1/words/ilm", params={"limit": 0}, headers={"If-None-Match": held})
+    assert fresh.status_code == 200 and fresh.headers["etag"] != held
+    word = client.get("/api/v1/words/ilm", params={"limit": 0}).json()
+    # the cited work by its title in the sources registry, so the reader names the book, not an id
+    lane = {**src[0], "title_ar": "معجم لين العربي الإنجليزي", "title_en": "An Arabic-English Lexicon"}
+    assert word["root"]["gloss_en"] == "knowing, knowledge" and word["root"]["gloss_board"]["sources"] == [
+        lane
+    ]
+    assert client.get("/api/v1/roots/علم").json()["gloss_en"] == "knowing, knowledge"
+    assert client.get("/api/v1/roots/علم/family").json()["root"]["gloss_en"] == "knowing, knowledge"
+    # a sense list in place of "not yet assembled", each sense with its sources
+    senses = {
+        "senses": [{"ar": "إدراك الشيء بحقيقته", "en": "", "sources": [{"work": "mufradat", "ref": "580"}]}]
+    }
+    _approve(board, "sense_list", "ilm", senses)
+    word = client.get("/api/v1/words/ilm", params={"limit": 0}).json()
+    assert word["senses_status"] == "linked" and word["senses"][0]["text_ar"] == "إدراك الشيء بحقيقته"
+    assert (
+        word["senses"][0]["sources"][0]["title_ar"] == "المفردات في غريب القرآن"
+        and word["senses_board"]["approved_at"]
+    )
+    # a pattern's function, quoted, and its plain explanation in the board's words
+    _approve(
+        board,
+        "pattern_function",
+        "fa3l",
+        {"ar": "مصدر الثلاثي", "en": "", "rows": []},
+        [{"work": "shafiya", "ref": "1/151"}],
+    )
+    _approve(board, "pattern_plain", "fa3l", {"ar": "", "en": "a verbal noun of a three-letter verb"})
+    pat = client.get("/api/v1/patterns/fa3l").json()
+    assert pat["function_ar"] == "مصدر الثلاثي" and pat["function_board"]["sources"][0]["work"] == "shafiya"
+    assert pat["plain_en"] == "a verbal noun of a three-letter verb" and pat["plain_board"]
+    # a verdict on a book's row: reviewed, corrected or rejected — a rejected row is left out
+    rows = pat["classical"]["rows"]
+    if len(rows) >= 2:
+        keep, drop = rows[0]["id"], rows[1]["id"]
+        _approve(board, "verdict", f"pattern_functions:{keep}", {"verdict": "reviewed"})
+        _approve(board, "verdict", f"pattern_functions:{drop}", {"verdict": "rejected", "note": "a heading"})
+        after = client.get("/api/v1/patterns/fa3l").json()["classical"]["rows"]
+        ids = [r["id"] for r in after]
+        assert keep in ids and drop not in ids
+        assert next(r for r in after if r["id"] == keep)["review"]["verdict"] == "reviewed"
+    # a work the registry does not know keeps its id alone; the editors are offered the ones it knows
+    _approve(board, "root_gloss", "علم", {"en": "knowing"}, [{"work": "no-such-work", "ref": "1"}])
+    word = client.get("/api/v1/words/ilm", params={"limit": 0}).json()
+    assert word["root"]["gloss_board"]["sources"] == [{"work": "no-such-work", "ref": "1"}]
+    works = {w["id"]: w for w in client.get("/api/v1/editorial/works", headers=board["a"]).json()["data"]}
+    assert (
+        works["lane"]["title_en"] == "An Arabic-English Lexicon"
+        and "kfgqpc-muyassar-gharib" in works
+        and "qac-wbw" in works
+    )
+    # the glossary's reviewed body
+    key = client.get("/api/v1/glossary").json()["terms"][0]["key"]
+    _approve(board, "glossary", key, {"body_ar": "شرح راجعته الهيئة", "body_en": ""})
+    term = next(t for t in client.get("/api/v1/glossary").json()["terms"] if t["key"] == key)
+    assert term["body_ar"] == "شرح راجعته الهيئة" and term["reviewed_at"]

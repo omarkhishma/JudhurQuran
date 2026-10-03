@@ -13,7 +13,7 @@ from typing import Any
 from jadhr_arabic import display_bare, scholarly
 from sqlalchemy import Connection
 
-from . import content
+from . import board, content
 from .db import one, rows, scalar
 
 
@@ -70,6 +70,9 @@ def _root_out(r: dict[str, Any]) -> dict[str, Any]:
         "gloss_en": r.get("gloss_en"),
         "gist_ar": r.get("gist_ar"),
         "gist_source": r.get("gist_source"),
+        # what the editorial board put in force on the root (P3.0c)
+        **({"gloss_board": r["gloss_board"]} if r.get("gloss_board") else {}),
+        **({"gist_board": r["gist_board"]} if r.get("gist_board") else {}),
         "occurrences": r["occurrences"],
         "verse_count": r["verse_count"],
         "surah_count": r["surah_count"],
@@ -315,6 +318,7 @@ def word_payload(
             {"id": root["id"]},
         )
         root |= extra or {}
+        board.root(conn, root)
     pattern = (
         one(conn, "select * from content.patterns where id = :id", {"id": lem["pattern_id"]})
         if lem["pattern_id"]
@@ -338,7 +342,14 @@ def word_payload(
         "select id, ordinal, text_ar, text_en, sources, status from content.senses where lemma_id = :l order by ordinal",
         {"l": lem["id"]},
     )
+    # the board's sense list, when it has put one in force (P3.0c)
+    by_board = board.senses(conn, lem["slug"])
+    if by_board:
+        senses = by_board[0]
     occurrence = _occurrence(conn, at, lem["id"]) if at else None
+    if occurrence and occurrence.get("meanings_here"):
+        occurrence["meanings_here"] = board.marked(conn, "gharib_meanings", occurrence["meanings_here"])
+    board.patterns(conn, [g["pattern"] for g in family])
     attest = _attestations(conn, lem["id"], limit)
     shapes = {
         "root_patterns": [g["pattern"] for g in family if g["pattern"]],
@@ -346,10 +357,15 @@ def word_payload(
         if lem["pattern_id"]
         else [],
     }
+    mufradat = content.lemma_mufradat(conn, lem["key"])
+    if mufradat:
+        mufradat["subentries"] = board.marked(conn, "mufradat_subentries", mufradat["subentries"])
+    pattern_out = _pattern_out(pattern) | {"method": lem["pattern_method"]} if pattern else None
+    board.patterns(conn, [pattern_out])
     return {
         "slug": lem["slug"],
         "lemma_id": lem["id"],
-        "mufradat": content.lemma_mufradat(conn, lem["key"]),
+        "mufradat": mufradat,
         "uri": f"lemma:{lem['slug']}",
         "ar": ar(content.lemma_display(lem["ar"]), lem["translit"]),
         "pos": {"tag": lem["pos"], "ar": lem["pos_ar"], "en": lem["pos_en"]},
@@ -360,15 +376,20 @@ def word_payload(
         "verse_count": lem["verse_count"],
         "audio_url": None,  # word audio: the occurrence's recitation slice is served by /recitations (D10)
         "root": _root_out(root) if root else None,
-        "pattern": _pattern_out(pattern) | {"method": lem["pattern_method"]} if pattern else None,
+        "pattern": pattern_out,
         "occurrence": occurrence,
-        "particles": content.particle_links(
-            conn, lem["slug"], occurrence["segments"] if occurrence else None
+        "particles": board.marked(
+            conn,
+            "particle_entries",
+            content.particle_links(conn, lem["slug"], occurrence["segments"] if occurrence else None),
         ),
         # what al-Suyūṭī reports about the word's being non-Arabic (P3.7a), verbatim
-        "loanwords": content.lemma_loanwords(conn, lem["id"]),
+        "loanwords": board.marked(
+            conn, "loanword_links", content.lemma_loanwords(conn, lem["id"]), key="link_id"
+        ),
         "senses": senses,
         "senses_status": "linked" if senses else "pending",
+        **({"senses_board": by_board[1]} if by_board else {}),
         "core_meaning": lex["core_meaning"],
         "family": family,
         "shapes": shapes,
@@ -428,7 +449,14 @@ def word_verses(
         "slug": slug,
         "total": int(total or 0),
         # each verse's own cursor, so a reader who takes part of a page goes on from the verse after it
-        "data": [{"verse_key": f"{v['surah']}:{v['ayah']}", "locations": list(v["locations"]), "cursor": str(v["verse_id"])} for v in found],
+        "data": [
+            {
+                "verse_key": f"{v['surah']}:{v['ayah']}",
+                "locations": list(v["locations"]),
+                "cursor": str(v["verse_id"]),
+            }
+            for v in found
+        ],
         "next_cursor": str(found[-1]["verse_id"]) if more and found else None,
         "surahs": surahs,
         "forms": forms,
@@ -524,7 +552,7 @@ def pattern_payload(conn: Connection, slug: str, limit: int = 200) -> dict[str, 
             order by l.occurrences desc, l.id limit :n""",
         {"p": p["id"], "n": limit},
     )
-    return _pattern_out(p) | {
+    out = _pattern_out(p) | {
         "members": [
             _lemma_out(x)
             | {"root": {"key": x["root_key"], "ar_spaced": x["root_spaced"]} if x["root_key"] else None}
@@ -532,6 +560,8 @@ def pattern_payload(conn: Connection, slug: str, limit: int = 200) -> dict[str, 
         ],
         "classical": pattern_classical(conn, slug),
     }
+    board.patterns(conn, [out])
+    return out
 
 
 _CLASSICAL_COLS = """id, source_id, kind, section, heading_ar, pattern_ar, form_number, match_method,
@@ -565,11 +595,25 @@ def pattern_classical(conn: Connection, slug: str) -> dict[str, Any]:
         if found
         else []
     )
+    # the board's verdict on each row, a rejected one left out (P3.0c)
+    found = board.marked(conn, "pattern_functions", found)
+    comments = board.marked(conn, "pattern_functions", comments)
     for r in found:
         r["commentary"] = [
             {
                 k: c[k]
-                for k in ("id", "source_id", "text_ar", "cue_ar", "locator", "page_vol", "page", "status")
+                for k in (
+                    "id",
+                    "source_id",
+                    "text_ar",
+                    "cue_ar",
+                    "locator",
+                    "page_vol",
+                    "page",
+                    "status",
+                    "review",
+                )
+                if k in c
             }
             for c in comments
             if r["id"] in c["comments_on"]
@@ -587,14 +631,16 @@ def pattern_classical(conn: Connection, slug: str) -> dict[str, Any]:
 
 
 def patterns_list(conn: Connection) -> list[dict[str, Any]]:
-    return [
+    out = [
         _pattern_out(p) for p in rows(conn, "select * from content.patterns order by occurrences desc, id")
     ]
+    board.patterns(conn, list(out))
+    return [p for p in out if p]
 
 
 def glossary(conn: Connection) -> dict[str, Any]:
     terms = rows(conn, "select * from content.glossary_terms order by sort_order")
-    return {"terms": terms}
+    return {"terms": board.glossary(conn, terms)}
 
 
 def texts(conn: Connection) -> list[dict[str, Any]]:
@@ -664,4 +710,6 @@ def root_family(conn: Connection, raw: str) -> dict[str, Any] | None:
     extra = one(
         conn, "select gloss_en, gist_ar, gist_source from content.roots where id = :id", {"id": r["id"]}
     )
-    return {"root": _root_out(r | (extra or {})), "family": _family(conn, r["id"])}
+    family = _family(conn, r["id"])
+    board.patterns(conn, [g["pattern"] for g in family])
+    return {"root": _root_out(board.root(conn, r | (extra or {})) or r), "family": family}

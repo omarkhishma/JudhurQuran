@@ -11,6 +11,7 @@ import { RootLexicon } from "@/components/lexicon/RootLexicon";
 import { RootMap } from "@/components/roots/RootMap";
 import { Icon } from "@/components/Icon";
 import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
+import { sourceLine } from "@/lib/reader/board";
 import { Term } from "@/components/terms/Term";
 import { localized } from "@/lib/seo";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
@@ -57,6 +58,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
   const { locale, root } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("roots");
+  const tb = await getTranslations("board");
   const tl = await getTranslations("lexicon");
   const tg = await getTranslations("graph");
   const [r, surahs, sources] = await Promise.all([
@@ -90,6 +92,16 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
           <h1 className="sr-only">{t("rootTitle", { root: r.spaced })}</h1>
           <p className="ar-classical px-3 text-[64px] leading-none text-root md:text-[80px]" lang="ar" aria-hidden="true">{r.spaced}</p>
           <p className="mt-3 text-[14px] text-t2" dir="ltr" lang="en">{r.translit}</p>
+          {/* the board's English gloss of the root, said to be the board's (P3.0c) */}
+          {r.gloss_en && (
+            <div className="mt-1">
+              <p className="text-[14px] text-t1" dir="ltr" lang="en">{r.gloss_en}</p>
+              <p className="text-[12px] text-t3">
+                {tb("gloss")}
+                {r.gloss_board?.sources.length ? tb("from", { works: sourceLine(r.gloss_board.sources, locale) }) : ""}
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <HearPlaylist root={r.key} />
@@ -125,10 +137,11 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
         <section className="mt-10" aria-labelledby="core-meaning">
           <h2 id="core-meaning" className="mb-2 text-[18px] font-semibold">{t("coreMeaning")}</h2>
           <blockquote className="card p-5">
-            <p className="ar-classical text-[22px] leading-[2] text-t1" lang="ar">{r.lexicon.core_meaning.text}</p>
+            <p className="ar-classical text-[22px] leading-[2] text-t1" lang="ar">{r.gist_board?.kept === "corrected" && r.gist_ar ? r.gist_ar : r.lexicon.core_meaning.text}</p>
             <footer className="mt-2 text-[12.5px] text-t3">
               {`${r.lexicon.core_meaning.title_ar} — ${r.lexicon.core_meaning.author_ar}`}
               {r.lexicon.core_meaning.page_ref ? ` • ${locale === "ar" ? toArabicDigits(r.lexicon.core_meaning.page_ref) : r.lexicon.core_meaning.page_ref}` : ""}
+              {r.gist_board && <span className="block">{tb(r.gist_board.kept === "corrected" ? "coreCorrected" : "coreKept")}</span>}
             </footer>
           </blockquote>
         </section>

@@ -49,6 +49,11 @@ def worklists(u: User) -> ORJSONResponse:
     return ok(editorial.worklists(u))
 
 
+@router.get("/works", summary="The works a source may name, with their titles")
+def works(u: User) -> ORJSONResponse:
+    return ok({"data": editorial.works(u)})
+
+
 @router.get("/awaiting", summary="Work in review that waits on this editor")
 def awaiting(u: User, limit: int = Query(100, ge=1, le=200)) -> ORJSONResponse:
     return ok(editorial.awaiting(u, limit))

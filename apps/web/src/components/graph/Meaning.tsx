@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { create } from "zustand";
 import { Icon } from "@/components/Icon";
+import { ReviewMark } from "@/components/reader5/BoardMark";
 import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { lemmaId, link, POS_AR, rootId } from "@/lib/graph/build";
@@ -12,8 +13,9 @@ import { useEntry } from "@/lib/graph/quote";
 import { KIND_COLOR, type GraphNode } from "@/lib/graph/types";
 import { DICT_KIND } from "@/lib/lexica";
 import { getJSON } from "@/lib/reader/api";
+import { sourceLine } from "@/lib/reader/board";
 import { usePrefs } from "@/lib/reader/store";
-import type { ClassicalRow, ClassicalSource, DictWork, WordPayload } from "@/lib/reader/types";
+import type { BoardSource, ClassicalRow, ClassicalSource, DictWork, WordPayload } from "@/lib/reader/types";
 import type { WorkSurah } from "@/lib/reader/useWorkSurah";
 import type { RootDetail, Verse } from "@/lib/types";
 import type { CanvasTools } from "./GraphCanvas";
@@ -62,6 +64,7 @@ const letterCount = (key: string) => [...key.replace(/\s+/g, "")].length;
 
 function RootMeaning({ tools, card, rootKey }: { tools: CanvasTools; card: GraphNode; rootKey: string }) {
   const t = useTranslations("graph");
+  const tb = useTranslations("board");
   const locale = useLocale();
   const q = useQuery({ queryKey: ["graph-root", rootKey], queryFn: () => getJSON<RootDetail & { usul?: string | null }>(`/roots/${encodeURIComponent(rootKey)}`), staleTime: 10 * 60_000 });
   // its words on the canvas (EDT-172): the word cards of this root on the map
@@ -77,7 +80,17 @@ function RootMeaning({ tools, card, rootKey }: { tools: CanvasTools; card: Graph
         <Failed />
       ) : (
         <>
-          <CoreIdea core={q.data.lexicon.core_meaning} usul={q.data.usul ?? card.data.usul ?? null} />
+          {/* the board's English gloss, said to be the board's and on what it rests (P3.0c) */}
+          {q.data.gloss_en && (
+            <div>
+              <p className="text-[13.5px] text-t1" dir="ltr" lang="en">{q.data.gloss_en}</p>
+              <p className="text-[11px] text-t3">
+                {tb("gloss")}
+                {q.data.gloss_board?.sources.length ? tb("from", { works: sourceLine(q.data.gloss_board.sources, locale) }) : ""}
+              </p>
+            </div>
+          )}
+          <CoreIdea core={q.data.lexicon.core_meaning} usul={q.data.usul ?? card.data.usul ?? null} board={q.data.gist_board ? { ...q.data.gist_board, text: q.data.gist_ar } : null} />
           <p className="text-[12.5px] text-t2">
             {t("inQuranCount", cnt(q.data.occurrences, locale))} {t("inVerses", cnt(q.data.verse_count, locale))} {t("inSurahsOf", cnt(q.data.surah_count, locale))} · {t("ofWords", cnt(q.data.lemma_count, locale))}
           </p>
@@ -90,14 +103,17 @@ function RootMeaning({ tools, card, rootKey }: { tools: CanvasTools; card: Graph
 }
 
 /** A root's core idea as Ibn Fāris words it, with his page — never our wording (L2; the design's "editorial summary"). */
-function CoreIdea({ core, usul }: { core: RootDetail["lexicon"]["core_meaning"]; usul: string | null }) {
+function CoreIdea({ core, usul, board }: { core: RootDetail["lexicon"]["core_meaning"]; usul: string | null; board: { kept: "source" | "corrected"; text?: string | null } | null }) {
   const t = useTranslations("graph");
+  const tb = useTranslations("board");
   const locale = useLocale();
   if (!core) return <p className="text-[12.5px] text-t3">{t("coreIdeaNone")}</p>;
+  // where the board corrected the cut, its cut of the same article is shown, and said to be its correction
+  const text = board?.kept === "corrected" && board.text ? board.text : core.text;
   return (
     <figure className="meaning-quote">
       <figcaption className="label-caps">{t("coreIdea")}</figcaption>
-      <blockquote className="ar-classical text-[16px] leading-[1.9] text-t1" lang="ar" dir="rtl">«{core.text}»</blockquote>
+      <blockquote className="ar-classical text-[16px] leading-[1.9] text-t1" lang="ar" dir="rtl">«{text}»</blockquote>
       <p className="text-[11.5px] text-t3">
         {core.author_ar}، {locale === "ar" ? core.title_ar : core.title_en}
         {core.page_ref && (
@@ -107,6 +123,7 @@ function CoreIdea({ core, usul }: { core: RootDetail["lexicon"]["core_meaning"];
           </>
         )}
       </p>
+      {board && <p className="text-[11px] text-t3">{tb(board.kept === "corrected" ? "coreCorrected" : "coreKept")}</p>}
       {(usul === "several" || usul === "unrelated") && <p className="usul-chip rounded-md bg-card-2 px-2 py-1 text-[11.5px] leading-relaxed text-t2">{t(usul === "unrelated" ? "usulUnrelatedCard" : "usulSeveralCard")}</p>}
     </figure>
   );
@@ -186,6 +203,7 @@ function RootRow({ tools, card, w }: { tools: CanvasTools; card: GraphNode; w: W
 /** A word's own meanings (QAN-17): its assembled sense list, else al-Mufradāt on it — never the root's line. */
 function WordMeanings({ w }: { w: WordPayload }) {
   const t = useTranslations("graph");
+  const tb = useTranslations("board");
   const locale = useLocale();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const subs = w.mufradat?.subentries ?? [];
@@ -200,11 +218,13 @@ function WordMeanings({ w }: { w: WordPayload }) {
               <span className="min-w-0">
                 {s.text_ar && <span className="block text-[14.5px] leading-[1.8] text-t1" lang="ar" dir="rtl">{s.text_ar}</span>}
                 {locale !== "ar" && s.text_en && <span className="block text-[13px] italic text-t2" lang="en" dir="ltr">{s.text_en}</span>}
+                {s.status === "board" && s.sources.length > 0 && <span className="block text-[11px] text-t3" dir="auto">{sourceLine(s.sources, locale)}</span>}
               </span>
             </li>
           ))}
         </ol>
       )}
+      {w.senses_board && <p className="text-[11px] text-t3">{tb("senses")}</p>}
       {subs.map((s) => (
         <figure key={s.id} className="meaning-quote">
           <figcaption className="text-[12px] font-medium text-t2">
@@ -226,6 +246,7 @@ function WordMeanings({ w }: { w: WordPayload }) {
               )}
             </span>
           </div>
+          <ReviewMark review={s.review} />
         </figure>
       ))}
       {w.senses.length === 0 && subs.length === 0 && <p className="text-[12.5px] leading-relaxed text-t3">{t("wordMeaningsPending")}</p>}
@@ -365,11 +386,25 @@ function DictEntryBlock({ tools, card, work, entry }: { tools: CanvasTools; card
   );
 }
 
-type PatternPayload = { slug: string; ar: { full: string; bare: string; translit: string }; pos_hint: string | null; function_ar: string | null; function_en: string | null; lemma_count: number; occurrences: number; classical: { rows: ClassicalRow[]; sources: ClassicalSource[] } };
+type PatternPayload = {
+  slug: string;
+  ar: { full: string; bare: string; translit: string };
+  pos_hint: string | null;
+  function_ar: string | null;
+  function_en: string | null;
+  function_board?: { approved_at: string | null; sources: BoardSource[] };
+  plain_ar: string | null;
+  plain_en: string | null;
+  plain_board?: { approved_at: string | null };
+  lemma_count: number;
+  occurrences: number;
+  classical: { rows: ClassicalRow[]; sources: ClassicalSource[] };
+};
 
 /** A pattern (وزن): what it is, how much of the Quran is on it, and what the sarf books state of it, verbatim. */
 function PatternMeaning({ card, slug }: { card: GraphNode; slug: string }) {
   const t = useTranslations("graph");
+  const tb = useTranslations("board");
   const locale = useLocale();
   const [all, setAll] = useState(false);
   const q = useQuery({ queryKey: ["graph-pattern", slug], queryFn: () => getJSON<PatternPayload>(`/patterns/${encodeURIComponent(slug)}`), staleTime: 10 * 60_000 });
@@ -385,7 +420,19 @@ function PatternMeaning({ card, slug }: { card: GraphNode; slug: string }) {
         <Failed />
       ) : (
         <>
-          {(locale === "ar" ? p.function_ar : p.function_en ?? p.function_ar) && <p className="text-[13.5px] leading-relaxed text-t1">{locale === "ar" ? p.function_ar : p.function_en ?? p.function_ar}</p>}
+          {(locale === "ar" ? p.function_ar : p.function_en ?? p.function_ar) && (
+            <p className="text-[13.5px] leading-relaxed text-t1">
+              {locale === "ar" ? p.function_ar : p.function_en ?? p.function_ar}
+              {p.function_board && <span className="block text-[11px] text-t3">{tb("function")}{p.function_board.sources.length ? tb("from", { works: sourceLine(p.function_board.sources, locale) }) : ""}</span>}
+            </p>
+          )}
+          {/* the board's own plain words on the pattern, said to be theirs (P3.0c) */}
+          {(locale === "ar" ? p.plain_ar : p.plain_en ?? p.plain_ar) && (
+            <p className="rounded-md bg-card-2 px-3 py-2 text-[13.5px] leading-relaxed text-t1">
+              {locale === "ar" ? p.plain_ar : p.plain_en ?? p.plain_ar}
+              <span className="block text-[11px] text-t3">{tb("plain")}</span>
+            </p>
+          )}
           <p className="text-[12.5px] text-t2">
             {t("patternWords", cnt(p.lemma_count, locale))}، {t("patternOcc", cnt(p.occurrences, locale))}
           </p>
@@ -399,6 +446,7 @@ function PatternMeaning({ card, slug }: { card: GraphNode; slug: string }) {
                     {r.heading_ar && <figcaption className="text-[12px] font-medium text-t2" lang="ar">{r.heading_ar}</figcaption>}
                     <blockquote className="ar-classical line-clamp-6 whitespace-pre-wrap text-[14.5px] leading-[1.9] text-t1" lang="ar" dir="rtl">{r.text_ar}</blockquote>
                     {s && <p className="text-[11.5px] text-t3">{locale === "ar" ? `${s.author_ar}، ${s.title_ar}` : `${s.author_en}, ${s.title_en}`}</p>}
+                    <ReviewMark review={r.review} />
                   </figure>
                 );
               })}

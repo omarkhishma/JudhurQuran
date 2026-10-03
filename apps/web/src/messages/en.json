@@ -1932,6 +1932,19 @@
     "graphKind_note": "Note",
     "graphKind_frame": "Group"
   },
+  "board": {
+    "reviewed": "Reviewed by the editorial board",
+    "corrected": "Corrected by the editorial board",
+    "all": "All reviewed by the editorial board; the sources' words stand as they are.",
+    "some": "The editorial board has reviewed {done} of {all}; the rest are not reviewed by an editor yet.",
+    "senses": "The editorial board's sense list, each sense with its sources.",
+    "gloss": "English gloss by the editorial board",
+    "from": ", from {works}",
+    "plain": "In the editorial board's words",
+    "function": "From the sarf books, approved by the editorial board",
+    "coreCorrected": "The editorial board corrected where this statement was cut from Maqāyīs.",
+    "coreKept": "Reviewed by the editorial board."
+  },
   "concordance": {
     "title": "Concordance",
     "view": "View",
@@ -2721,6 +2734,7 @@
     "addSense": "+ Sense",
     "sources": "Sources",
     "sourceWork": "Work",
+    "workUnknown": "A work the sources registry does not know: the reader will see its id.",
     "sourceRef": "Place",
     "sourceRemove": "Remove the source",
     "addSource": "+ Source",

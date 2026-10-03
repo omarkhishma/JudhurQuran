@@ -5982,6 +5982,18 @@ a.wotd-pill:hover {
   border-color: var(--good);
   color: var(--t1);
 }
+/* the editorial board's verdict on a row a book gave (P3.0c): beside the source's words, never over them */
+.board-mark {
+  margin-top: 6px;
+  padding-inline-start: 8px;
+  border-inline-start: 2px solid var(--good);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--t2);
+}
+.board-mark.is-corrected {
+  border-inline-start-color: var(--amber);
+}
 .workbench-box {
   display: flex;
   flex-direction: column;

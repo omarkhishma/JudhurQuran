@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { ApiError } from "@/lib/account/store";
-import { decideEntry, discardEntry, getEntry, saveEntry, submitEntry, withdrawEntry, type Entry, type EntryPage, type Kind, type Source } from "@/lib/editorial";
+import { decideEntry, discardEntry, getEntry, getWorks, saveEntry, submitEntry, withdrawEntry, type Entry, type EntryPage, type Kind, type Source } from "@/lib/editorial";
 import { cnt, formatNumber } from "@/lib/format";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -342,15 +342,30 @@ function SensesForm({ value, onValue }: { value: Value; onValue: (v: Value) => v
 /** The sources a piece of work rests on: a work and where in it, and the words quoted when it quotes. */
 function SourcesForm({ sources, onSources }: { sources: Source[]; onSources: (s: Source[]) => void }) {
   const t = useTranslations("workbench");
+  const locale = useLocale();
+  // the works the reader shows by title: a source named by one of these ids is cited by its title there
+  const works = useQuery({ queryKey: ["editorial-works"], queryFn: getWorks, staleTime: Infinity }).data?.data ?? [];
+  const title = (id: string) => {
+    const w = works.find((x) => x.id === id);
+    return w ? (locale === "ar" ? w.title_ar : w.title_en) : "";
+  };
   const put = (i: number, s: Partial<Source>) => onSources(sources.map((x, j) => (j === i ? { ...x, ...s } : x)));
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-[12px] text-t3">{t("sources")}</p>
+      <datalist id="editorial-works">
+        {works.map((w) => (
+          <option key={w.id} value={w.id}>{locale === "ar" ? w.title_ar : w.title_en}</option>
+        ))}
+      </datalist>
       {sources.map((s, i) => (
         <div key={i} className="flex flex-wrap items-center gap-1.5">
-          <input className="field-input w-28" value={s.work} onChange={(e) => put(i, { work: e.target.value })} aria-label={t("sourceWork")} placeholder={t("sourceWork")} dir="ltr" />
+          <input className="field-input w-36" list="editorial-works" value={s.work} onChange={(e) => put(i, { work: e.target.value })} aria-label={t("sourceWork")} placeholder={t("sourceWork")} dir="ltr" />
           <input className="field-input min-w-0 flex-1" value={s.ref} onChange={(e) => put(i, { ref: e.target.value })} aria-label={t("sourceRef")} placeholder={t("sourceRef")} dir="auto" />
           <button type="button" className="field-remove" onClick={() => onSources(sources.filter((_, j) => j !== i))} aria-label={t("sourceRemove")}>×</button>
+          <span className={"w-full text-[11.5px] " + (s.work && !title(s.work) ? "text-amber" : "text-t3")} dir="auto">
+            {s.work ? title(s.work) || t("workUnknown") : ""}
+          </span>
           {s.quote && <span className="w-full truncate text-[11.5px] text-t3" dir="auto">«{s.quote}»</span>}
         </div>
       ))}
@@ -398,7 +413,7 @@ function Candidates({ kind, page, canUse, onCite, onUse }: { kind: Kind; page: E
                   <span className="ar-classical text-[16px]" lang="ar">{w.ar}</span>
                   <span dir="ltr" lang="en">{w.gloss_en}</span>
                   <span className="mono text-[11px] text-t3">{formatNumber(w.occurrences, locale)}</span>
-                  {use(() => ({ en: w.gloss_en }), { work: "corpus", ref: w.slug, quote: w.gloss_en })}
+                  {use(() => ({ en: w.gloss_en }), { work: "qac-wbw", ref: w.slug, quote: w.gloss_en })}
                 </li>
               ))}
             </ul>
@@ -454,7 +469,7 @@ function Candidates({ kind, page, canUse, onCite, onUse }: { kind: Kind; page: E
                   <li key={i} className="flex flex-wrap items-baseline gap-2 text-[13.5px]" lang="ar">
                     <span className="text-word">{m.phrase_ar}</span>: {m.meaning_ar}
                     <span className="mono text-[11px] text-t3">{t("places", cnt(m.places, locale))}</span>
-                    {canUse && <button type="button" className="chip text-[11px]" onClick={() => addSense(m.meaning_ar, { work: "muyassar", ref, quote: m.meaning_ar })}>{t("useAsSense")}</button>}
+                    {canUse && <button type="button" className="chip text-[11px]" onClick={() => addSense(m.meaning_ar, { work: "kfgqpc-muyassar-gharib", ref, quote: m.meaning_ar })}>{t("useAsSense")}</button>}
                   </li>
                 );
               })}

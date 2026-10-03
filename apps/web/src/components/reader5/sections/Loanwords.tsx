@@ -1,5 +1,6 @@
 "use client";
 
+import { ReviewMark } from "../BoardMark";
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
@@ -51,6 +52,7 @@ export function LoanwordsBlock({ items }: { items: LoanwordEntry[] }) {
               {e.page != null && ` • ${t("loanPage", { page: formatNumber(e.page, locale) })}`}
               {e.confidence !== "exact" ? ` • ${t("loanLinkInferred")}` : ""}
             </p>
+            <ReviewMark review={e.review} />
           </article>
         );
       })}
