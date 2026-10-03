@@ -16,11 +16,18 @@ export type Seed =
   | { seed: "verse"; key: string }
   | { seed: "trail"; steps: TrailSeedStep[]; phrase?: string }
   /** a curated set (Explore): its words as cards, in no order (F12) — a trail is a path, a set is not */
-  | { seed: "set"; name: string; steps: TrailSeedStep[] };
+  | { seed: "set"; name: string; steps: TrailSeedStep[] }
+  /** a dictionary's article, quoted on a note linked to its root (RDR-239): named by its id, never carried */
+  | { seed: "quote"; entry: number }
+  /** a note of the reader's Notebook (NTB-22) — a free note, or a verse's (`v:{key}`) — named by its id: its words
+   * stay in this browser, which builds it */
+  | { seed: "note"; note: string };
 
 const LOCATION = /^\d{1,3}:\d{1,3}:\d{1,3}$/;
 const VERSE_KEY = /^\d{1,3}:\d{1,3}$/;
 const MAX_STEPS = 40;
+/** a Notebook note's id (lib/store/notebook) */
+const NOTE_ID = /^(n[a-z0-9]{1,20}|v:\d{1,3}:\d{1,3})$/;
 /** a phrase from the Analyser travels with its words as a sentence card (ANA-22) */
 const MAX_PHRASE = 600;
 
@@ -71,6 +78,10 @@ export function validSeed(x: unknown): Seed | null {
       const steps = validSteps(o.steps);
       return steps.length && str(o.name, 120) ? { seed: "set", name: o.name.trim(), steps } : null;
     }
+    case "quote":
+      return typeof o.entry === "number" && Number.isInteger(o.entry) && o.entry > 0 && o.entry < 2_000_000_000 ? { seed: "quote", entry: o.entry } : null;
+    case "note":
+      return str(o.note, 24) && NOTE_ID.test(o.note) ? { seed: "note", note: o.note } : null;
     default:
       return null;
   }

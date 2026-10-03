@@ -6,7 +6,10 @@ import type { WordPayload } from "@/lib/reader/types";
 import type { Verse } from "@/lib/types";
 import { buildRootGraph, lemmaId, link, POS_AR, rootId, verseId, type RootGraphPayload } from "./build";
 import { layout } from "./layout";
+import { notebookLoaded, useNotebook } from "@/lib/store/notebook";
+import { noteOn, useSaved } from "@/lib/store/saved";
 import { createGraph, loadGraph, saveGraph } from "./persist";
+import { loadEntry } from "./quote";
 import type { Seed, TrailSeedStep } from "./seedCodec";
 import type { GraphEdge, GraphKind, GraphNode, NodeKind } from "./types";
 
@@ -14,7 +17,7 @@ import type { GraphEdge, GraphKind, GraphNode, NodeKind } from "./types";
 export type SeedGraph = {
   kind: GraphKind;
   /** numbers stay numbers here, written in the reader's digits where the title is made (SeedImport) */
-  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle" | "phraseTitle" | "setTitle"; values: Record<string, string | number> };
+  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle" | "phraseTitle" | "setTitle" | "quoteTitle" | "noteTitle"; values: Record<string, string | number> };
   nodes: GraphNode[];
   edges: GraphEdge[];
 };
@@ -173,6 +176,68 @@ async function trailSeed(steps: TrailSeedStep[], phrase?: string, set?: string):
   return { kind: "free", title: { key: "trailTitle", values: { count: path.length } }, nodes: [...nodes.values()], edges: [...edges.values()] };
 }
 
+/** A quoted article: the note that quotes it, by its id, describing its root (RDR-239). */
+async function quoteSeed(entry: number): Promise<SeedGraph> {
+  const e = await loadEntry(entry);
+  const r = (await rootSummaries([e.root_key])).get(e.root_key);
+  const rid = rootId(e.root_key);
+  const qid = `quote:${entry}`;
+  return {
+    kind: "root",
+    title: { key: "quoteTitle", values: { work: e.title_ar, workEn: e.title_en, root: r?.spaced ?? spaced(e.root_key) } },
+    nodes: [card(qid, "note", { entry, focus: true }), card(rid, "root", { ar: r?.spaced ?? spaced(e.root_key), sub: r?.translit, count: r?.occurrences, rootKey: e.root_key })],
+    edges: [link(qid, rid, "describes")],
+  };
+}
+
+/** The Notebook note a seed names is not in this browser (another device, or deleted since). */
+export class NoteMissing extends Error {}
+
+/** The longest text a note card keeps (lib/graph/sanitize) */
+const MAX_NOTE = 20_000;
+
+/**
+ * A Notebook note (NTB-22): its title and body as the reader's note, read from this browser, describing what its
+ * @-mentions resolve to — its roots, words and verses as cards, each word with its root.
+ */
+async function noteSeed(id: string): Promise<SeedGraph> {
+  if (id.startsWith("v:")) {
+    // a verse's note: the note describing its verse
+    const key = id.slice(2);
+    const v = noteOn(useSaved.getState(), key);
+    if (!v?.text.trim()) throw new NoteMissing();
+    const nid = `note:nb-v-${key}`;
+    const text = v.text.trim().length > MAX_NOTE ? `${v.text.trim().slice(0, MAX_NOTE - 2)} …` : v.text.trim();
+    return {
+      kind: "free",
+      title: { key: "noteTitle", values: { title: text.split(/\s+/).slice(0, 4).join(" ") } },
+      nodes: [card(nid, "note", { text, focus: true }), verseCard(key, [])],
+      edges: [link(nid, verseId(key), "describes")],
+    };
+  }
+  if (!(await notebookLoaded())) throw new NoteMissing();
+  const n = useNotebook.getState().notes.find((x) => x.id === id);
+  if (!n) throw new NoteMissing();
+  const words = n.links.words ?? [];
+  const steps: TrailSeedStep[] = [
+    ...n.links.roots.map((k) => ({ kind: "root" as const, id: k })),
+    ...words.map((w) => ({ kind: "word" as const, id: w })),
+    ...n.links.verses.map((v) => ({ kind: "verse" as const, id: v })),
+  ];
+  const g = steps.length ? await trailSeed(steps, undefined, n.title || "note") : { nodes: [], edges: [] };
+  const nid = `note:nb-${id}`;
+  const whole = [n.title.trim(), n.body.trim()].filter(Boolean).join("\n\n");
+  const text = whole.length > MAX_NOTE ? `${whole.slice(0, MAX_NOTE - 2)} …` : whole;
+  const mentioned = new Set([...n.links.roots.map(rootId), ...words.map(lemmaId), ...n.links.verses.map(verseId)]);
+  const head = n.title.trim() || n.body.trim().split(/\s+/).slice(0, 4).join(" ");
+  return {
+    kind: "free",
+    title: { key: "noteTitle", values: { title: head.length > 60 ? `${head.slice(0, 60)}…` : head } },
+    nodes: [card(nid, "note", { text, focus: true }), ...g.nodes],
+    edges: [...g.nodes.filter((x) => mentioned.has(x.id)).map((x) => link(nid, x.id, "describes")), ...g.edges],
+  };
+}
+
 export function buildSeedGraph(seed: Seed): Promise<SeedGraph> {
   switch (seed.seed) {
     case "word":
@@ -185,16 +250,22 @@ export function buildSeedGraph(seed: Seed): Promise<SeedGraph> {
       return trailSeed(seed.steps, seed.phrase);
     case "set":
       return trailSeed(seed.steps, undefined, seed.name);
+    case "quote":
+      return quoteSeed(seed.entry);
+    case "note":
+      return noteSeed(seed.note);
   }
 }
 
 /** Counts per card kind with a few names each — the hand-off's "cards that will be created" (RDR-364). */
 export function seedRows(g: SeedGraph): { kind: NodeKind; n: number; detail: string }[] {
-  const order: NodeKind[] = ["root", "pattern", "lemma", "verse"];
+  const order: NodeKind[] = ["note", "root", "pattern", "lemma", "verse"];
+  // a note shows its first words; a quotation, the work it quotes
+  const noteName = (n: GraphNode) => (n.data.entry ? String(g.title.values.work ?? "") : (n.data.text ?? "").replace(/\s+/g, " ").slice(0, 48));
   return order
     .map((kind) => {
       const of = g.nodes.filter((n) => n.data.kind === kind);
-      const detail = of.slice(0, 8).map((n) => (kind === "verse" ? n.data.verse?.key ?? n.data.ar : n.data.ar)).join("  •  ");
+      const detail = of.slice(0, 8).map((n) => (kind === "verse" ? n.data.verse?.key ?? n.data.ar : kind === "note" ? noteName(n) : n.data.ar)).join("  •  ");
       return { kind, n: of.length, detail };
     })
     .filter((r) => r.n > 0);

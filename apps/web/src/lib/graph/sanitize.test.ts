@@ -45,6 +45,42 @@ describe("cleanGraph", () => {
     expect(out.skippedEdges).toBe(3);
   });
 
+  it("keeps a quotation only as its article's id, with no words of the map's own, and fields only in their kind's shape", () => {
+    const { nodes } = cleanGraph(
+      [
+        { id: "quote:7", position: { x: 0, y: 0 }, data: { kind: "note", entry: 7, text: "a forged quotation", phrase: true } },
+        { id: "root:x", position: { x: 0, y: 0 }, data: { kind: "root", entry: 7 } },
+        { id: "n", position: { x: 0, y: 0 }, data: { kind: "note", entry: "7", text: "mine" } },
+        {
+          id: "f",
+          position: { x: 0, y: 0 },
+          data: {
+            kind: "lemma",
+            fields: [
+              { id: "a", kind: "link", label: "l", value: "javascript:alert(1)" },
+              { id: "b", kind: "select", label: "s", value: "z", options: ["x", "y", "x"] },
+              { id: "c", kind: "tags", label: "t", value: [" a ", "a", 3, ""] },
+              { id: "d", kind: "image", label: "i", value: "../../secret", fileName: "x.png" },
+              { id: "e", kind: "date", label: "d", value: "2026-10-03" },
+              { id: "g", kind: "widget", label: "w", value: 1 },
+            ],
+          },
+        },
+      ],
+      [],
+    );
+    expect(nodes[0].data).toEqual({ kind: "note", entry: 7 });
+    expect(nodes[1].data).toEqual({ kind: "root" });
+    expect(nodes[2].data).toEqual({ kind: "note", text: "mine" });
+    expect(nodes[3].data.fields).toEqual([
+      { id: "a", kind: "link", label: "l", value: "" },
+      { id: "b", kind: "select", label: "s", value: "x", options: ["x", "y"] },
+      { id: "c", kind: "tags", label: "t", value: ["a"] },
+      { id: "d", kind: "image", label: "i", value: "" },
+      { id: "e", kind: "date", label: "d", value: "2026-10-03" },
+    ]);
+  });
+
   it("reads a title and a map type only in their own shape", () => {
     expect(cleanTitle("  My map ", "x")).toBe("My map");
     expect(cleanTitle(42, "x")).toBe("x");

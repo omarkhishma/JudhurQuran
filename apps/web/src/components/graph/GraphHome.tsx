@@ -1,17 +1,17 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { createGraph, deleteGraph } from "@/lib/graph/persist";
 import { useMyGraphs } from "@/lib/graph/useMyGraphs";
 import type { GraphKind } from "@/lib/graph/types";
 import { cnt, formatNumber } from "@/lib/format";
+import { MAX_MAP_IMPORT, restoreFiles, sweepFiles } from "@/lib/graph/files";
 import { upgrade } from "@/lib/graph/migrate";
 import { cleanKind, cleanTitle, type Cleaned } from "@/lib/graph/sanitize";
 import { useWhereSaved } from "@/lib/graph/whereSaved";
 
-const MAX_IMPORT = 5 * 1024 * 1024;
 
 export function GraphHome() {
   const t = useTranslations("graph");
@@ -23,6 +23,10 @@ export function GraphHome() {
   const [message, setMessage] = useState<{ text: string; id?: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const where = useWhereSaved();
+  // files no map holds any more, once a day has passed (lib/graph/files)
+  useEffect(() => {
+    void sweepFiles().catch(() => 0);
+  }, []);
 
   async function create(kind: GraphKind) {
     const title = kind === "topic" ? t("newTopic") : kind === "meaning" ? t("newMeaning") : t("newFree");
@@ -34,7 +38,7 @@ export function GraphHome() {
    * the type it was exported with comes back, and it is laid out afresh when first opened. */
   async function importFile(file: File) {
     setMessage(null);
-    if (file.size > MAX_IMPORT) return setMessage({ text: t("importTooLarge") });
+    if (file.size > MAX_MAP_IMPORT) return setMessage({ text: t("importTooLarge") });
     let raw: unknown;
     try {
       raw = JSON.parse(await file.text());
@@ -51,6 +55,7 @@ export function GraphHome() {
     } catch {
       return setMessage({ text: t("importOffline") });
     }
+    await restoreFiles(o.files, got.nodes);
     const id = await createGraph({ title: cleanTitle(o.title, t("untitled")), kind, nodes: got.nodes, edges: got.edges, pendingLayout: true });
     const skipped = got.skippedNodes + got.skippedEdges;
     setMessage({

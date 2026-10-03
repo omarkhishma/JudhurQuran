@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { createGraph, encodeShare, fileBase, GRAPHS_SYNCED_EVENT, loadGraph, saveGraphOver, storedAt } from "@/lib/graph/persist";
 import type { GraphDoc, GraphEdge, GraphNode } from "@/lib/graph/types";
 import { cnt, formatNumber } from "@/lib/format";
+import { MAX_MAP_IMPORT, restoreFiles } from "@/lib/graph/files";
 import { upgrade } from "@/lib/graph/migrate";
 import { cleanTitle } from "@/lib/graph/sanitize";
 import { translitOn, useGraphUi } from "@/lib/graph/uiPrefs";
@@ -202,6 +203,7 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
 
   /** A file read into this map (EDT-260): its cards in place of these, in one undoable step, its title kept. */
   async function importInto(file: File, tools: CanvasTools) {
+    if (file.size > MAX_MAP_IMPORT) return tools.toast(t("importTooLarge"));
     let raw: unknown;
     try {
       raw = JSON.parse(await file.text());
@@ -212,6 +214,7 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
     if (!Array.isArray(o.nodes)) return tools.toast(t("importNoNodes"));
     try {
       const got = await upgrade(o.version, doc.kind, o.nodes, o.edges);
+      await restoreFiles(o.files, got.nodes);
       const fileTitle = cleanTitle(o.title, "");
       if (fileTitle) {
         titleRef.current = fileTitle;

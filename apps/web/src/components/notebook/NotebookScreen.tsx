@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useDueCount } from "@/lib/review/due";
 import { useStepViews } from "@/components/reader5/trailSteps";
 import { ProposalForm } from "@/components/contrib/ProposalForm";
+import { HandoffDialog } from "@/components/reader5/GraphHandoff";
 import { Dialog } from "@/components/ui/Dialog";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link } from "@/i18n/navigation";
@@ -307,6 +308,7 @@ function NoteEditor({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
       <ProposeFromNote words={resolved.filter((r) => r.kind === "word" && r.slug)} body={x.body} />
       <div className="flex flex-wrap gap-2">
         <button type="button" className="btn" onClick={() => download(`${(x.title || "note").replace(/[\\/:*?"<>|]/g, "-")}.md`, toMarkdown(x, locale), "text/markdown")}>{t("export")}</button>
+        <ToMap id={x.id} empty={!x.title.trim() && !x.body.trim()} />
         <span className="flex-1" />
         {confirm ? (
           <>
@@ -319,6 +321,25 @@ function NoteEditor({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
         )}
       </div>
     </article>
+  );
+}
+
+/**
+ * A note as a description card on a map (NTB-22): a new map or one of the reader's, through the same hand-off as the
+ * reader's. The note travels by its id — its words stay in this browser — and describes what it mentions.
+ */
+function ToMap({ id, empty }: { id: string; empty: boolean }) {
+  const t = useTranslations("notebook");
+  const [open, setOpen] = useState(false);
+  const [said, setSaid] = useState("");
+  return (
+    <>
+      <button type="button" className="btn" disabled={empty} title={empty ? t("toMapEmpty") : t("toMapHint")} onClick={() => setOpen(true)}>
+        {t("toMap")}
+      </button>
+      {open && <HandoffDialog seed={{ seed: "note", note: id }} onClose={() => setOpen(false)} onToast={setSaid} />}
+      <span className="self-center text-[12px] text-t3" role="status">{said}</span>
+    </>
   );
 }
 
@@ -357,6 +378,7 @@ function VerseNoteEditor({ x, name, onDeleted }: { x: Item; name: (n: number) =>
       )}
       <div className="flex flex-wrap gap-2">
         <button type="button" className="btn" onClick={() => download(`note-${key.replace(":", "-")}.md`, toMarkdown({ ...x, body: draft, title: ref }, locale), "text/markdown")}>{t("export")}</button>
+        <ToMap id={`v:${key}`} empty={!draft.trim()} />
         <span className="flex-1" />
         {confirm ? (
           <>

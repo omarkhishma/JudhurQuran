@@ -9,6 +9,8 @@ const nodes = [
   card("lemma:ilm", { kind: "lemma", slug: "ilm", ar: "عِلْم", forms: [{ form: "العلم", count: 28 }] }),
   card("verse:1:2", { kind: "verse", verse: { key: "1:2" }, places: ["1:2:4"] }),
   card("note:x", { kind: "note", text: "ملاحظة عن الرحمة" }),
+  card("frame:a", { kind: "frame", title: "مجموعة العلم" }),
+  card("pattern:x", { kind: "pattern", ar: "فِعْل", fields: [{ id: "f", kind: "tags", label: "وسوم", value: ["مصدر"] }, { id: "g", kind: "image", label: "صورة", value: "0123456789abcdef01234567" }] }),
 ];
 const v12: VerseText = { key: "1:2", surah: 1, ayah: 2, surah_name_ar: "الفاتحة", surah_name_translit: "", tokens: [{ text: "ٱلْحَمْدُ" }, { text: "لِلَّهِ" }, { text: "رَبِّ" }, { text: "ٱلْعَٰلَمِينَ" }], words: [] };
 const verseOf = (k: string) => (k === "1:2" ? v12 : undefined);
@@ -28,5 +30,10 @@ describe("find a card on the map (EDT-035, QAN-15)", () => {
     expect(findCards(nodes, "ع ل م", verseOf)).toEqual(["root:علم"]);
     expect(findCards(nodes, "ʿ-L-M", verseOf)).toEqual(["root:علم"]);
     expect(findCards(nodes, "  ", verseOf)).toEqual([]);
+  });
+  it("finds what the reader wrote in a card's fields, and never a group (EDT-147)", () => {
+    expect(findCards(nodes, "مصدر", verseOf)).toEqual(["pattern:x"]);
+    expect(findCards(nodes, "0123456789", verseOf)).toEqual([]);
+    expect(findCards(nodes, "مجموعة", verseOf)).toEqual([]);
   });
 });

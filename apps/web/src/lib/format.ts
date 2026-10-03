@@ -3,6 +3,17 @@ export function formatNumber(n: number, locale: string): string {
   return new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US").format(n);
 }
 
+/** A number typed in Arabic-Indic, Persian or Latin digits, with an Arabic or Latin decimal point; NaN when it is
+ * not one. */
+export function readNumber(v: string): number {
+  const latin = v
+    .replace(/[\u0660-\u0669\u06f0-\u06f9]/g, (d) => String(d.charCodeAt(0) & 0xf))
+    .replace(/\u066b/g, ".")
+    .replace(/[\u066c,\s]/g, "")
+    .replace(/\u2212/g, "-");
+  return latin === "" ? NaN : Number(latin);
+}
+
 export function toArabicDigits(s: string | number): string {
   return String(s).replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]);
 }

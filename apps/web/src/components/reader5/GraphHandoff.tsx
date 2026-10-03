@@ -33,13 +33,17 @@ export function GraphHandoff() {
   return <HandoffDialog key={JSON.stringify(seed)} seed={seed} onClose={() => setHandoff(null)} />;
 }
 
-function HandoffDialog({ seed, onClose }: { seed: Seed; onClose: () => void }) {
+/** The dialog itself, for a page with its own messages (the Notebook, NTB-22): `onToast` says what was done there. */
+export function HandoffDialog({ seed, onClose, onToast }: { seed: Seed; onClose: () => void; onToast?: (text: string) => void }) {
   const t = useTranslations("rd");
   const tg = useTranslations("graph");
   const locale = useLocale();
-  const showToast = useReader((s) => s.showToast);
+  const readerToast = useReader((s) => s.showToast);
+  const showToast = onToast ?? readerToast;
   const [into, setInto] = useState<string>("");
-  const built = useQuery({ queryKey: ["seed-graph", JSON.stringify(seed)], queryFn: () => buildSeedGraph(seed), staleTime: 5 * 60_000 });
+  // a note is the reader's and may have changed since: read afresh each time; the rest is the dataset's
+  const mine = seed.seed === "note";
+  const built = useQuery({ queryKey: ["seed-graph", JSON.stringify(seed)], queryFn: () => buildSeedGraph(seed), staleTime: mine ? 0 : 5 * 60_000, gcTime: mine ? 0 : 5 * 60_000 });
   const graphs = useMyGraphs();
   const rows = built.data ? seedRows(built.data) : [];
 

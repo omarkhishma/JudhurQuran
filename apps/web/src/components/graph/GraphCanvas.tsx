@@ -24,15 +24,17 @@ import { useLocale, useTranslations } from "next-intl";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { link, verseId } from "@/lib/graph/build";
+import { bundleFiles } from "@/lib/graph/files";
+import { useEntryTitles } from "@/lib/graph/quote";
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
 import { allowedRels, checkLink, META, type Refusal } from "@/lib/graph/relations";
-import { KIND_COLOR, KIND_SIZE, type GraphEdge, type GraphKind, type GraphNode, type Rel } from "@/lib/graph/types";
+import { KIND_COLOR, KIND_SIZE, type Field, type GraphEdge, type GraphKind, type GraphNode, type Rel } from "@/lib/graph/types";
 import { useTheme } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { useGraphUi } from "@/lib/graph/uiPrefs";
 import { CanvasMenu, type MenuItem } from "./CanvasMenu";
-import { CardNode, FrameNode, GraphActionsContext, type GraphActions } from "./CardNode";
+import { CardNode, FrameActionsContext, FrameNode, GraphActionsContext, type FrameActions, type GraphActions } from "./CardNode";
 import { RelEdge, WireContextValue, type WireContext } from "./RelEdge";
 
 type Snapshot = { label: string; nodes: GraphNode[]; edges: GraphEdge[] };
@@ -44,6 +46,8 @@ const edgeTypes = { rel: RelEdge };
 export const MAP_ZOOM = 0.35;
 const GRID = 8;
 const snap = (v: number) => Math.round(v / GRID) * GRID;
+/** a frame stays behind every card, selected or not: xyflow lifts a selected node by 1000 */
+const FRAME_Z = -1001;
 
 /** A message on the canvas (EDT-071): with Undo when what it reports can be undone, then gone. */
 type Toast = { id: number; text: string; undo: boolean };
@@ -65,7 +69,7 @@ export type CanvasTools = {
   tidy: () => void;
   fit: () => void;
   exportPng: () => void;
-  exportJson: () => void;
+  exportJson: () => void | Promise<void>;
   /** a whole map read from a file, in place of this one's cards: one step, undone in one */
   importCards: (nodes: GraphNode[], edges: GraphEdge[], label: string) => void;
   /** cards added where the reader dropped them (a point in the page) or in the free space nearest the middle */
@@ -76,6 +80,15 @@ export type CanvasTools = {
   /** cards that match a search; the others are dimmed (EDT-039). Null: no search. */
   setMatches: (ids: string[] | null) => void;
   cardName: (id: string) => string;
+  /** a frame's name, changed as it is typed: not an undo step, saved (EDT-149) */
+  renameFrame: (id: string, title: string) => void;
+  frameMembers: (id: string) => string[];
+  selectIds: (ids: string[]) => void;
+  ungroup: () => void;
+  /** a field's label, renamed in the details (EDT-106) */
+  renameField: (id: string, field: string, label: string) => void;
+  editField: (id: string, field: string, value: Field["value"], fileName?: string) => void;
+  removeField: (id: string, field: string) => void;
 };
 
 const ToolsContext = createContext<CanvasTools | null>(null);
@@ -115,9 +128,11 @@ export type GraphCanvasProps = {
 export const DRAG_TYPE = "application/x-jadhr-card";
 
 /** A card as an undo label names it: its letters, word or verse, else its kind (handoff §4.3, EDT-230). */
-function nameOf(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "kindFrame") => string, locale: string): string {
+function nameOf(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "kindQuote" | "kindFrame") => string, locale: string, works: Map<number, string>): string {
   if (!n) return "";
   const d = n.data;
+  // a quotation by the work it quotes, once that is read
+  if (d.kind === "note" && d.entry) return works.get(d.entry) ?? t("kindQuote");
   if (d.kind === "note") return t(d.phrase ? "kindPhrase" : "kindNote");
   if (d.kind === "frame") return d.title || t("kindFrame");
   if (d.kind === "verse") return d.verse ? verseRef(d.verse.key, locale) : "";
@@ -134,6 +149,21 @@ function firstView(nodes: GraphNode[]): GraphNode[] {
 const sizeOf = (n: GraphNode) => ({ w: n.measured?.width ?? KIND_SIZE[n.data.kind].width, h: n.measured?.height ?? KIND_SIZE[n.data.kind].height });
 
 type Rect = { x: number; y: number; w: number; h: number };
+
+/** The cards lying wholly inside a frame, where they are now (EDT-146: membership is geometric, never stored). */
+function frameMembers(frameId: string, ns: GraphNode[]): string[] {
+  const f = ns.find((n) => n.id === frameId);
+  if (!f) return [];
+  const w = f.width ?? f.data.size?.w ?? 0;
+  const h = f.height ?? f.data.size?.h ?? 0;
+  return ns
+    .filter((n) => n.data.kind !== "frame" && n.id !== frameId)
+    .filter((n) => {
+      const s = sizeOf(n);
+      return n.position.x >= f.position.x && n.position.y >= f.position.y && n.position.x + s.w <= f.position.x + w && n.position.y + s.h <= f.position.y + h;
+    })
+    .map((n) => n.id);
+}
 /** The free place nearest a point for a card of this size, on the 8 px grid, never on top of another card. */
 function freeSpot(taken: Rect[], center: { x: number; y: number }, w: number, h: number, top = false): { x: number; y: number } {
   const free = (x: number, y: number) => !taken.some((r) => x < r.x + r.w + 24 && x + w + 24 > r.x && y < r.y + r.h + 24 && y + h + 24 > r.y);
@@ -228,7 +258,23 @@ function CanvasInner({
   const tidy = useCallback(
     async (label = t("tidy"), base?: { nodes: GraphNode[]; edges: GraphEdge[] }) => {
       const src = base ?? { nodes: rf.getNodes(), edges: rf.getEdges() };
-      const laid = await layout(src.nodes, src.edges);
+      // frames are laid out by their cards: each wraps, after the layout, the cards it held before (EDT-154)
+      const frames = src.nodes.filter((n) => n.data.kind === "frame");
+      const held = new Map(frames.map((f) => [f.id, frameMembers(f.id, src.nodes)]));
+      const cards = await layout(src.nodes.filter((n) => n.data.kind !== "frame"), src.edges);
+      const at = new Map(cards.map((n) => [n.id, n]));
+      const laid = [
+        ...frames.map((f) => {
+          const ms = (held.get(f.id) ?? []).map((id) => at.get(id)!).filter(Boolean);
+          if (!ms.length) return f;
+          const x = snap(Math.min(...ms.map((n) => n.position.x)) - 24);
+          const y = snap(Math.min(...ms.map((n) => n.position.y)) - 40);
+          const w = snap(Math.max(...ms.map((n) => n.position.x + sizeOf(n).w)) + 24 - x);
+          const h = snap(Math.max(...ms.map((n) => n.position.y + sizeOf(n).h)) + 24 - y);
+          return { ...f, position: { x, y }, width: w, height: h, data: { ...f.data, size: { w, h } } };
+        }),
+        ...cards,
+      ];
       // the cards glide to their places (EDT-009)
       setGliding(true);
       setTimeout(() => setGliding(false), 420);
@@ -274,6 +320,28 @@ function CanvasInner({
     setEdges(next.edges);
   }, [future, nodes, edges]);
 
+  // where a zoom step in flight is going (zoomTo below), so a step or a pan does not start from its middle
+  const aim = useRef<{ zoom: number; at: number } | null>(null);
+  /** A card placed where the view does not reach, brought into it by the least pan, at the same zoom: what the
+   * reader was looking at moves as little as it can. A zoom in flight finishes first. */
+  const reveal = useCallback(
+    function reveal(p: { x: number; y: number }, w: number, h: number) {
+      const wait = aim.current ? aim.current.at - Date.now() : 0;
+      if (wait > 0) return void setTimeout(() => reveal(p, w, h), wait + 20);
+      const box = wrapper.current?.getBoundingClientRect();
+      if (!box) return;
+      const { x, y, zoom } = rf.getViewport();
+      const m = 24 / zoom;
+      const tl = rf.screenToFlowPosition({ x: box.left, y: box.top });
+      const br = rf.screenToFlowPosition({ x: box.right, y: box.bottom });
+      const shift = (lo: number, hi: number, a: number, b: number) => (a < lo ? a - lo - m : b > hi ? Math.min(b - hi + m, a - lo - m) : 0);
+      const dx = shift(tl.x, br.x, p.x, p.x + w);
+      const dy = shift(tl.y, br.y, p.y, p.y + h);
+      if (dx || dy) void rf.setViewport({ x: x - dx * zoom, y: y - dy * zoom, zoom }, { duration: 250 });
+    },
+    [rf],
+  );
+
   const addCards = useCallback(
     (newNodes: GraphNode[], newEdges: GraphEdge[], label: string, at?: { x: number; y: number }) => {
       const ids = new Set(nodes.map((n) => n.id));
@@ -294,8 +362,10 @@ function CanvasInner({
       if (!fresh.length) return;
       const eids = new Set(edges.map((e) => e.id));
       commit(label, [...nodes, ...fresh], [...edges, ...newEdges.filter((e) => !eids.has(e.id))]);
+      // a card dropped stays where it was put; one placed by the editor is brought into view
+      if (!at) reveal(fresh[0].position, sizeOf(fresh[0]).w, sizeOf(fresh[0]).h);
     },
-    [nodes, edges, commit, rf],
+    [nodes, edges, commit, rf, reveal],
   );
 
   // A card's places, read when asked (F18: a failed read is said, never silent). The cards are added to the map as
@@ -320,7 +390,8 @@ function CanvasInner({
         for (const o of page.data) {
           const vid = verseId(o.verse_key);
           const had = byId.get(vid) ?? newNodes.find((n) => n.id === vid);
-          if (!had) newNodes.push({ id: vid, type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", verse: { key: o.verse_key }, places: [o.location] } });
+          // extracted cards start folded, as the design's startFolded has them (EDT-082)
+          if (!had) newNodes.push({ id: vid, type: "card", position: { x: 0, y: 0 }, data: { kind: "verse", verse: { key: o.verse_key }, places: [o.location], folded: true } });
           else if (!had.data.places?.includes(o.location)) {
             if (newNodes.includes(had)) had.data.places = [...(had.data.places ?? []), o.location];
             else marked.set(vid, [...(marked.get(vid) ?? had.data.places ?? []), o.location]);
@@ -360,24 +431,6 @@ function CanvasInner({
   // the zoom, for the pill and the map view (EDT-056, EDT-058)
   const zoom = useStore((s) => s.transform[2]);
   const mapView = zoom < MAP_ZOOM;
-  const actions: GraphActions = useMemo(
-    () => ({
-      editable,
-      translit,
-      mapView,
-      toggleFold: (id) => fold([id]),
-      setText: (id, text) =>
-        commit(
-          t("doEditNote"),
-          nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, text } } : n)),
-          edges,
-        ),
-      expand: (id) => void expand(id),
-      expanding,
-    }),
-    [editable, translit, mapView, fold, nodes, edges, commit, t, expand, expanding],
-  );
-
   // A deletion is one step: xyflow removes the wires and then the cards in two changes, which would each commit
   // from the same render and the last would bring the wires back (F2). Both are left to onDelete, which has them all.
   const onNodesChange = useCallback((changes: NodeChange<GraphNode>[]) => {
@@ -393,7 +446,8 @@ function CanvasInner({
       if (!editable) return;
       const ids = new Set(gone.map((n) => n.id));
       const eids = new Set(cut.map((e) => e.id));
-      const label = gone.length ? t("doDelete", cnt(gone.length, locale)) : t("doUnlink", cnt(cut.length, locale));
+      const cards = gone.filter((n) => n.data.kind !== "frame").length;
+      const label = cards ? t("doDelete", cnt(cards, locale)) : gone.length ? t("doDeleteGroups", cnt(gone.length, locale)) : t("doUnlink", cnt(cut.length, locale));
       commit(
         label,
         nodes.filter((n) => !ids.has(n.id)),
@@ -416,7 +470,9 @@ function CanvasInner({
     },
     [nodes, t, kind, toast],
   );
-  const cardName = useCallback((id: string) => nameOf(nodes.find((n) => n.id === id), t, locale), [nodes, t, locale]);
+  const entries = useMemo(() => [...new Set(nodes.flatMap((n) => (n.data.entry ? [n.data.entry] : [])))], [nodes]);
+  const works = useEntryTitles(entries, locale);
+  const cardName = useCallback((id: string) => nameOf(nodes.find((n) => n.id === id), t, locale, works), [nodes, t, locale, works]);
   const onConnect = useCallback(
     (c: Connection) => {
       if (!editable) return;
@@ -455,6 +511,7 @@ function CanvasInner({
 
   // Drag end is one undoable step.
   const dragStart = useRef<GraphNode[] | null>(null);
+  const carried = useRef(new Map<string, { from: { x: number; y: number }; frame: string; start: { x: number; y: number } }>());
 
   // the cards selected, in the order they were picked: a keyboard link runs from the first to the second
   const picked = useRef<string[]>([]);
@@ -465,7 +522,6 @@ function CanvasInner({
   }, [menu]);
 
   // a zoom step from where the last step was going, not from the middle of its animation
-  const aim = useRef<{ zoom: number; at: number } | null>(null);
   const zoomTo = useCallback(
     (z: number, duration = 150) => {
       const zoom = Math.min(2, Math.max(0.15, z));
@@ -513,10 +569,126 @@ function CanvasInner({
       const size = KIND_SIZE.note;
       const taken: Rect[] = live.current.nodes.map((x) => ({ x: x.position.x, y: x.position.y, ...sizeOf(x) }));
       const spot = freeSpot(taken, { x: n.position.x - size.width / 2 - 64, y: n.position.y + size.height / 2 }, size.width, size.height);
-      const note: GraphNode = { id: `note:${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`, type: "card", position: spot, data: { kind: "note", text: "" } };
-      commit(t("doAttachNote"), [...live.current.nodes, note], [...live.current.edges, link(id, note.id, "describes")]);
+      // open and selected, as the design adds it (EDT-122)
+      const note: GraphNode = { id: `note:${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`, type: "card", position: spot, data: { kind: "note", text: "" }, selected: true };
+      commit(t("doAttachNote"), [...live.current.nodes.map((x) => (x.selected ? { ...x, selected: false } : x)), note], [...live.current.edges, link(id, note.id, "describes")]);
+      reveal(spot, size.width, size.height);
+    },
+    [commit, t, reveal],
+  );
+
+  const membersOf = useCallback((frameId: string, ns: GraphNode[] = live.current.nodes) => frameMembers(frameId, ns), []);
+  /** A frame around the selected cards (EDT-141): their box with room for the bar, on the grid, then named in the
+   * details. */
+  const group = useCallback(() => {
+    const sel = live.current.nodes.filter((n) => n.selected && n.data.kind !== "frame");
+    if (sel.length < 2) return toast(t("groupNeedTwo"));
+    const xs = sel.map((n) => n.position.x);
+    const ys = sel.map((n) => n.position.y);
+    const x2 = sel.map((n) => n.position.x + sizeOf(n).w);
+    const y2 = sel.map((n) => n.position.y + sizeOf(n).h);
+    const x = snap(Math.min(...xs) - 24);
+    const y = snap(Math.min(...ys) - 44);
+    const box = { w: snap(Math.max(...x2) + 24 - x), h: snap(Math.max(...y2) + 24 - y) };
+    const frame: GraphNode = { id: `frame:${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`, type: "frame", position: { x, y }, data: { kind: "frame", title: "", size: box }, selected: true };
+    const label = t("doGroup", cnt(sel.length, locale));
+    commit(label, [frame, ...live.current.nodes.map((n) => (n.selected ? { ...n, selected: false } : n))], live.current.edges);
+    useGraphUi.getState().set({ detailsOpen: true });
+    toast(t("grouped", cnt(sel.length, locale)), true);
+  }, [commit, t, locale, toast]);
+  /** The selected frames released, their cards left where they are (EDT-142). */
+  const ungroup = useCallback(() => {
+    const frames = live.current.nodes.filter((n) => n.selected && n.data.kind === "frame");
+    if (!frames.length) return toast(t("ungroupNeedOne"));
+    const ids = new Set(frames.map((n) => n.id));
+    commit(t("doUngroup"), live.current.nodes.filter((n) => !ids.has(n.id)), live.current.edges);
+    toast(t("ungrouped"), true);
+  }, [commit, t, toast]);
+  /**
+   * Copies of the selected notes and frames, 24 px on, selected (EDT-188, HWF-46). A card of the dataset is one card
+   * of its key on a map (P8.1a), so it is not copied: the reader is told how many were left as they were.
+   */
+  const duplicate = useCallback(() => {
+    const sel = live.current.nodes.filter((n) => n.selected);
+    if (!sel.length) return;
+    const copyable = sel.filter((n) => n.data.kind === "note" || n.data.kind === "frame");
+    const kept = sel.length - copyable.length;
+    if (!copyable.length) return toast(t("duplicateNone"));
+    const copies: GraphNode[] = copyable.map((n) => {
+      const prefix = n.data.kind === "frame" ? "frame" : "note";
+      const data = { ...n.data, fields: n.data.fields?.map((f) => ({ ...f, id: crypto.randomUUID().replace(/-/g, "").slice(0, 12) })), focus: undefined };
+      return { id: `${prefix}:${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`, type: n.type, position: { x: snap(n.position.x + 24), y: snap(n.position.y + 24) }, data, selected: true };
+    });
+    commit(t("doDuplicate", cnt(copies.length, locale)), [...live.current.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)), ...copies], live.current.edges);
+    if (kept) toast(t("duplicateKept", cnt(kept, locale)));
+  }, [commit, t, locale, toast]);
+  const resizeFrame = useCallback(
+    (id: string, b: { x: number; y: number; w: number; h: number }) => {
+      const box = { x: snap(b.x), y: snap(b.y), w: Math.max(64, snap(b.w)), h: Math.max(64, snap(b.h)) };
+      commit(
+        t("doResizeGroup"),
+        live.current.nodes.map((n) => (n.id === id ? { ...n, position: { x: box.x, y: box.y }, width: box.w, height: box.h, data: { ...n.data, size: { w: box.w, h: box.h } } } : n)),
+        live.current.edges,
+      );
     },
     [commit, t],
+  );
+  const selectIds = useCallback((ids: string[]) => {
+    const set = new Set(ids);
+    setNodes((ns) => ns.map((n) => (n.selected === set.has(n.id) ? n : { ...n, selected: set.has(n.id) })));
+  }, []);
+  /** A card and its children that are not notes, selected (EDT-096's Focus). */
+  const focusCard = useCallback(
+    (id: string) => {
+      const ns = live.current.nodes;
+      const kids = live.current.edges.filter((e) => e.source === id).map((e) => e.target).filter((k) => ns.find((n) => n.id === k)?.data.kind !== "note");
+      selectIds([id, ...kids]);
+    },
+    [selectIds],
+  );
+  const updateFields = useCallback(
+    (id: string, label: string, change: (fields: Field[]) => Field[]) =>
+      commit(label, live.current.nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, fields: change(n.data.fields ?? []) } } : n)), live.current.edges),
+    [commit],
+  );
+  const actions: GraphActions = useMemo(
+    () => ({
+      editable,
+      translit,
+      mapView,
+      toggleFold: (id) => fold([id]),
+      setText: (id, text) =>
+        commit(
+          t("doEditNote"),
+          nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, text } } : n)),
+          edges,
+        ),
+      expand: (id) => void expand(id),
+      expanding,
+      // fields (EDT-104…107): a new one named for its kind, edited, renamed and removed, each a named step
+      addField: (id, kind) => {
+        const label = t(`field_${kind}`);
+        const field: Field = { id: crypto.randomUUID().replace(/-/g, "").slice(0, 12), kind, label, value: kind === "tags" ? [] : kind === "number" ? 0 : kind === "select" ? t("selectOne") : "", ...(kind === "select" ? { options: [t("selectOne"), t("selectTwo"), t("selectThree")] } : {}) };
+        updateFields(id, t("doAddField", { kind: label }), (fs) => [...fs, field]);
+      },
+      editField: (id, fid, value, fileName) => updateFields(id, t("doEditField"), (fs) => fs.map((f) => (f.id === fid ? { ...f, value, ...(fileName ? { fileName } : {}) } : f))),
+      removeField: (id, fid) => updateFields(id, t("doRemoveField"), (fs) => fs.filter((f) => f.id !== fid)),
+      attach: (id) => attachNote(id),
+      focusCard,
+      // a root's and a pattern's words on the map, a word's verses (EDT-101)
+      stats: (id) => {
+        const kind = nodes.find((n) => n.id === id)?.data.kind;
+        const child = kind === "lemma" ? "verse" : "lemma";
+        const out = edges.filter((e) => e.source === id && nodes.find((n) => n.id === e.target)?.data.kind === child);
+        return { children: out.length, links: edges.filter((e) => e.source === id || e.target === id).length };
+      },
+      toast: (text) => toast(text),
+    }),
+    [editable, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast],
+  );
+  const frameActions: FrameActions = useMemo(
+    () => ({ members: (id) => membersOf(id, nodes), resize: resizeFrame, selectInside: (id) => selectIds(membersOf(id)) }),
+    [membersOf, nodes, resizeFrame, selectIds],
   );
 
   // the canvas's keys (EDT-158…163, EDT-253, EDT-254, EDT-256): undo and redo; select all; fit, 100 %, zoom steps;
@@ -534,6 +706,13 @@ function CanvasInner({
         e.preventDefault();
         if (e.shiftKey) redo();
         else undo();
+      } else if (mod && k === "d" && editable && onCanvas) {
+        e.preventDefault();
+        duplicate();
+      } else if (mod && k === "g" && editable && onCanvas) {
+        e.preventDefault();
+        if (e.shiftKey) ungroup();
+        else group();
       } else if (mod && k === "a" && onCanvas) {
         e.preventDefault();
         setNodes((ns) => ns.map((n) => ({ ...n, selected: true })));
@@ -603,7 +782,7 @@ function CanvasInner({
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [undo, redo, tidy, fit, rf, onHelp, fold, select, editable, commit, t, ensureVisible, zoomBy, zoomTo, expand, linkPicked]);
+  }, [undo, redo, tidy, fit, rf, onHelp, fold, select, editable, commit, t, ensureVisible, zoomBy, zoomTo, expand, linkPicked, duplicate, group, ungroup]);
 
   const exportPng = useCallback(async () => {
     const viewport = wrapper.current?.querySelector<HTMLElement>(".react-flow__viewport");
@@ -624,8 +803,16 @@ function CanvasInner({
     toast(t("exportedCards", cnt(nodes.length, locale)));
   }, [rf, fileName, toast, t, nodes.length, locale]);
 
-  const exportJson = useCallback(() => {
-    const doc = { version: 2, title, kind, nodes: nodes.map(({ id, position, data }) => ({ id, position, data })), edges: edges.map(({ id, source, target, data }) => ({ id, source, target, data })) };
+  const exportJson = useCallback(async () => {
+    const doc = {
+      version: 2,
+      title,
+      kind,
+      nodes: nodes.map(({ id, position, data }) => ({ id, position, data })),
+      edges: edges.map(({ id, source, target, data }) => ({ id, source, target, data })),
+      // the files its fields hold, as this browser keeps them: they come back with the import (lib/graph/files)
+      files: await bundleFiles(nodes),
+    };
     download(URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: "application/json" })), `${fileName}.json`);
     toast(t("exportedCards", cnt(nodes.length, locale)));
   }, [title, kind, nodes, edges, fileName, toast, t, locale]);
@@ -672,6 +859,13 @@ function CanvasInner({
     toast,
     setMatches,
     cardName,
+    renameFrame: (id, title) => commit(t("doRenameGroup"), nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, title: title.slice(0, 200) } } : n)), edges),
+    frameMembers: (id) => frameMembers(id, nodes),
+    selectIds,
+    ungroup,
+    renameField: (id, fid, label) => updateFields(id, t("doRenameField"), (fs) => fs.map((f) => (f.id === fid ? { ...f, label } : f))),
+    editField: actions.editField,
+    removeField: actions.removeField,
   };
 
   const selectedEdge = editable ? edges.find((e) => e.selected) : undefined;
@@ -693,9 +887,15 @@ function CanvasInner({
   const shown = useMemo(
     () =>
       nodes.map((n) => {
-        const kindName = t(n.data.phrase ? "kindPhrase" : META[n.data.kind].label);
+        const kindName = t(n.data.phrase ? "kindPhrase" : n.data.entry ? "kindQuote" : META[n.data.kind].label);
         const ariaLabel = n.data.count != null ? t("cardLabelCount", { kind: kindName, name: cardName(n.id), n: formatNumber(n.data.count, locale) }) : t("cardLabel", { kind: kindName, name: cardName(n.id) });
-        const className = matchSet && n.data.kind !== "frame" ? (matchSet.has(n.id) ? "is-match" : "is-dim") : undefined;
+        if (n.data.kind === "frame") {
+          // a frame: its size, behind the cards, moved by its bar (EDT-143, EDT-144)
+          const w = n.width ?? n.data.size?.w ?? 420;
+          const h = n.height ?? n.data.size?.h ?? 280;
+          return { ...n, type: "frame", ariaLabel: t("frameLabel", { name: n.data.title || t("groupUntitled") }), width: w, height: h, zIndex: FRAME_Z, dragHandle: ".frame-bar" };
+        }
+        const className = matchSet ? (matchSet.has(n.id) ? "is-match" : "is-dim") : undefined;
         return { ...n, ariaLabel, ...(className ? { className } : {}) };
       }),
     [nodes, matchSet, t, cardName, locale],
@@ -729,10 +929,20 @@ function CanvasInner({
     if (!card) return [];
     const sel = nodes.filter((n) => n.selected);
     const many = sel.length > 1 ? sel : [card];
+    if (card.data.kind === "frame")
+      return [
+        { label: t("frameSelectInside"), run: () => selectIds(frameMembers(card.id, nodes)) },
+        { label: t("frameUngroup"), keys: "⇧⌘G", run: ungroup },
+        { label: t("doDeleteGroups", cnt(1, locale)), keys: "⌫", danger: true, run: () => onDelete({ nodes: [card], edges: [] }) },
+      ];
+    const cardsSel = many.filter((n) => n.data.kind !== "frame");
+    // the design's order (EDT-067): fold, extract, attach, duplicate, group, then the link and the deletion
     return [
       { label: t(card.data.folded ? "unfold" : "fold"), keys: "↵", run: () => fold(many.map((n) => n.id)) },
       ...(card.data.kind === "lemma" && card.data.slug && (!card.data.expanded || card.data.more?.remaining) ? [{ label: t("menuExtract"), keys: "E", run: () => void expand(card.id) }] : []),
-      ...(card.data.kind !== "note" && card.data.kind !== "frame" ? [{ label: t("menuAttachNote"), run: () => attachNote(card.id) }] : []),
+      ...(card.data.kind !== "note" ? [{ label: t("menuAttachNote"), run: () => attachNote(card.id) }] : []),
+      ...(cardsSel.some((n) => n.data.kind === "note") ? [{ label: t("menuDuplicate"), keys: "⌘D", run: duplicate }] : []),
+      ...(cardsSel.length > 1 ? [{ label: t("doGroup", cnt(cardsSel.length, locale)), keys: "⌘G", run: group }] : []),
       ...(sel.length === 2 ? [{ label: t("menuLinkTwo"), keys: "L", run: linkPicked }] : []),
       {
         label: t("doDelete", cnt(many.length, locale)),
@@ -746,6 +956,7 @@ function CanvasInner({
   return (
     <ToolsContext.Provider value={tools}>
     <WireContextValue.Provider value={wire}>
+    <FrameActionsContext.Provider value={frameActions}>
     <GraphActionsContext.Provider value={actions}>
       <div className="flex h-full min-h-0 flex-col">
         {header ?? (
@@ -878,10 +1089,32 @@ function CanvasInner({
                 if (inField(e.target) || (e.target as HTMLElement).closest("button, a")) return;
                 fold([n.id]);
               }}
-              onNodeDragStart={() => (dragStart.current = nodes)}
+              onNodeDragStart={(_, __, dragged) => {
+                dragStart.current = nodes;
+                // a frame carries the cards wholly inside it when the drag began (HWF-29), measured from where it was
+                // before the first step (xyflow reports the drag once it has already moved)
+                const before = new Map(nodes.map((n) => [n.id, n.position]));
+                carried.current = new Map(
+                  dragged
+                    .filter((n) => n.data.kind === "frame")
+                    .flatMap((f) => frameMembers(f.id, nodes).map((id) => [id, { from: before.get(id)!, frame: f.id, start: before.get(f.id) ?? f.position }] as const)),
+                );
+              }}
+              onNodeDrag={(_, __, dragged) => {
+                if (!carried.current.size) return;
+                const at = new Map(dragged.map((n) => [n.id, n.position]));
+                setNodes((ns) =>
+                  ns.map((n) => {
+                    const c = carried.current.get(n.id);
+                    const f = c && at.get(c.frame);
+                    return c && f ? { ...n, position: { x: c.from.x + f.x - c.start.x, y: c.from.y + f.y - c.start.y } } : n;
+                  }),
+                );
+              }}
               onNodeDragStop={(_, __, dragged) => {
                 const before = dragStart.current;
                 dragStart.current = null;
+                carried.current = new Map();
                 if (!before) return;
                 const was = new Map(before.map((n) => [n.id, n.position]));
                 const moved = dragged.filter((n) => {
@@ -964,6 +1197,7 @@ function CanvasInner({
         </div>
       </div>
     </GraphActionsContext.Provider>
+    </FrameActionsContext.Provider>
     </WireContextValue.Provider>
     </ToolsContext.Provider>
   );

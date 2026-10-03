@@ -134,6 +134,7 @@ function Article({ d, w }: { d: DictWork; w: WordPayload }) {
 function ArticleEntry({ e, lang, expanded, onToggle, onCopied }: { e: DictEntry; lang: string; expanded: boolean; onToggle: () => void; onCopied: () => void }) {
   const t = useTranslations("rd");
   const locale = useLocale();
+  const setHandoff = useReader((s) => s.setHandoff);
   const full = useQuery({ queryKey: ["lex-entry", e.id], queryFn: () => getJSON<{ body: string }>(`/lexicon/entries/${e.id}`), enabled: expanded, staleTime: Infinity });
   const text = expanded && full.data ? full.data.body : e.excerpt;
   const truncated = e.length > e.excerpt.length;
@@ -163,7 +164,11 @@ function ArticleEntry({ e, lang, expanded, onToggle, onCopied }: { e: DictEntry;
         )}
         {e.page_ref && <span>{e.page_ref}</span>}
         <span className="flex-1" />
-        <button type="button" className="hover:text-t1" onClick={copy} aria-label={t("copyEntry")} title={t("copyEntry")}>
+        {/* the article on a map, as a note that quotes it by its id, describing its root (RDR-239) */}
+        <button type="button" className="dict-act hover:text-t1" onClick={() => setHandoff({ seed: "quote", entry: e.id })} aria-label={t("entryToMap")} title={t("entryToMapTitle")}>
+          <Icon name="plus" size={12} />
+        </button>
+        <button type="button" className="dict-act hover:text-t1" onClick={copy} aria-label={t("copyEntry")} title={t("copyEntry")}>
           <Icon name="copy" size={12} />
         </button>
       </div>

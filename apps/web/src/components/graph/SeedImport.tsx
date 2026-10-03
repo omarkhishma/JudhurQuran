@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { REVIEW_BELOW } from "@/lib/analyse";
 import { cnt, formatNumber } from "@/lib/format";
-import { buildSeedGraph, saveSeedGraph } from "@/lib/graph/seed";
+import { buildSeedGraph, NoteMissing, saveSeedGraph } from "@/lib/graph/seed";
 import { decodeSeed, type Seed, type TrailSeedStep } from "@/lib/graph/seedCodec";
 import { getJSON } from "@/lib/reader/api";
 import type { WordPayload } from "@/lib/reader/types";
@@ -52,7 +52,7 @@ function Build({ seed, into }: { seed: Seed | null; into: string | null }) {
     <div className="mx-auto flex max-w-[560px] flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center">
       {!seed || job.isError ? (
         <>
-          <p className="text-[15px] text-t1" role="alert">{t(seed ? "seedFailed" : "seedUnreadable")}</p>
+          <p className="text-[15px] text-t1" role="alert">{t(!seed ? "seedUnreadable" : job.error instanceof NoteMissing ? "noteNotHere" : "seedFailed")}</p>
           <Link href="/graph" className="btn">{t("editorTitle")}</Link>
         </>
       ) : (

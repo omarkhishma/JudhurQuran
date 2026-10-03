@@ -1,6 +1,8 @@
 "use client";
 
+import { cleanStoredFile, FILE_PREFIX, getFile, restoreFile, type StoredFile } from "@/lib/graph/files";
 import { DOCS_EVENT, GRAPH_PREFIX } from "@/lib/graph/persist";
+import { FILE_ID } from "@/lib/graph/sanitize";
 import { TEXT_PREFIX } from "@/lib/library/texts";
 import { usePersonal, usePrefs } from "@/lib/reader/store";
 import { useAnalyseChoices } from "@/lib/store/analyseChoices";
@@ -19,7 +21,8 @@ import { deviceId } from "@/lib/sync/run";
  * only if the reader says so; nothing here is ever deleted by an import. Signed in, what is added then syncs as any
  * change does. A store saved by another version of the site is left out and named.
  */
-export type ImportPlan = { add: Partial<Record<StoreName, Change[]>>; differ: Partial<Record<StoreName, Change[]>>; same: number; refused: StoreName[] };
+/** `files`: the files the maps' fields hold (lib/graph/files) — kept when not already here, as a map's own import does */
+export type ImportPlan = { add: Partial<Record<StoreName, Change[]>>; differ: Partial<Record<StoreName, Change[]>>; same: number; refused: StoreName[]; files?: Record<string, StoredFile> };
 
 type Persisted = { getInitialState: () => unknown; persist: { getOptions: () => { version?: number } } };
 const STORES: { key: string; store: Persisted; names: StoreName[] }[] = [
@@ -85,6 +88,11 @@ export async function planImport(text: string): Promise<ImportPlan | null> {
     }
     if (theirs.size) take(name, theirs, await all[name].read());
   }
+  for (const [k, v] of Object.entries(documents)) {
+    const id = k.slice(FILE_PREFIX.length);
+    const f = k.startsWith(FILE_PREFIX) && FILE_ID.test(id) ? cleanStoredFile(v) : null;
+    if (f) (plan.files ??= {})[id] = f;
+  }
   return plan;
 }
 
@@ -100,6 +108,8 @@ export async function applyImport(plan: ImportPlan, takeTheirs: boolean): Promis
     const changes = [...(plan.add[name] ?? []), ...(takeTheirs ? (plan.differ[name] ?? []) : [])];
     if (changes.length) await all[name].apply(changes);
   }
+  // a file's id names its content: one already here is the same file
+  for (const [id, f] of Object.entries(plan.files ?? {})) if (!(await getFile(id))) await restoreFile(id, f);
   // maps and texts are written without a store to watch: sync and the lists hear of them here
   window.dispatchEvent(new Event(DOCS_EVENT));
   return { added: count(plan.add), replaced: takeTheirs ? count(plan.differ) : 0 };

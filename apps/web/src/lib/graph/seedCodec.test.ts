@@ -26,4 +26,13 @@ describe("seeds", () => {
     expect(validSeed({ seed: "set", steps: [{ kind: "word", id: "alim" }] })).toBeNull();
     expect(validSeed({ seed: "set", name: "x", steps: [] })).toBeNull();
   });
+
+  it("name a quoted article and a Notebook note by id, never by their words (RDR-239, NTB-22)", () => {
+    expect(validSeed({ seed: "quote", entry: 7000514, text: "علم: عَلِمَ" })).toEqual({ seed: "quote", entry: 7000514 });
+    expect(validSeed({ seed: "quote", entry: "7000514" })).toBeNull();
+    expect(validSeed({ seed: "quote", entry: 1.5 })).toBeNull();
+    expect(validSeed({ seed: "note", note: "nmg2x1k0", text: "a private thought" })).toEqual({ seed: "note", note: "nmg2x1k0" });
+    expect(validSeed({ seed: "note", note: "../graph" })).toBeNull();
+    expect(decodeSeed(encodeSeed({ seed: "quote", entry: 42 }))).toEqual({ seed: "quote", entry: 42 });
+  });
 });

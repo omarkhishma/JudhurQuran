@@ -1,4 +1,4 @@
-import type { EdgeData, GraphDoc, GraphEdge, GraphKind, GraphNode, GraphNodeData, NodeKind, Rel } from "./types";
+import { FIELD_KINDS, type EdgeData, type Field, type FieldKind, type GraphDoc, type GraphEdge, type GraphKind, type GraphNode, type GraphNodeData, type NodeKind, type Rel } from "./types";
 
 /**
  * A map as this app writes it (document version 2), from anything that claims to be one: a share link, an
@@ -57,6 +57,12 @@ function cleanData(raw: unknown): GraphNodeData | null {
   }
   put("text", str(d.text, 20_000));
   put("phrase", bool(d.phrase));
+  // only a note quotes, and only by the article's id
+  if (kind === "note") put("entry", int(d.entry, 1, 2_000_000_000));
+  if (Array.isArray(d.fields)) {
+    const fields = d.fields.slice(0, 40).map(cleanField).filter((f): f is Field => !!f);
+    if (fields.length) out.fields = fields;
+  }
   put("title", str(d.title, 200));
   const size = d.size as Record<string, unknown> | undefined;
   if (size && int(size.w, 40, 20_000) !== undefined && int(size.h, 40, 20_000) !== undefined) out.size = { w: size.w as number, h: size.h as number };
@@ -73,7 +79,57 @@ function cleanData(raw: unknown): GraphNodeData | null {
   const r = d.reading as Record<string, unknown> | undefined;
   const c = r ? conf(r.conf) : undefined;
   if (c !== undefined) out.reading = { conf: c };
+  // a quotation's words are the source's, read when it is drawn: no text of a map's own rides on it (L2)
+  if (out.entry) {
+    delete out.text;
+    delete out.phrase;
+  }
   return out;
+}
+
+export const FILE_ID = /^[a-f0-9]{24,40}$/;
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A field kept only in its kind's own shape: a link only to a web address, a date only as a date, a file only
+ * by the id of a file kept in this browser. */
+function cleanField(raw: unknown): Field | null {
+  const f = (raw && typeof raw === "object" ? raw : null) as Record<string, unknown> | null;
+  if (!f) return null;
+  const id = str(f.id, 40);
+  const kind = f.kind as FieldKind;
+  const label = str(f.label, 80);
+  if (!id || !FIELD_KINDS.includes(kind) || label === undefined) return null;
+  const v = f.value;
+  let value: Field["value"] | undefined;
+  let options: string[] | undefined;
+  switch (kind) {
+    case "text":
+      value = str(v, 500) ?? "";
+      break;
+    case "notes":
+      value = str(v, 20_000) ?? "";
+      break;
+    case "number":
+      value = typeof v === "number" && Number.isFinite(v) ? v : 0;
+      break;
+    case "select":
+      options = Array.isArray(f.options) ? [...new Set(f.options.filter((o): o is string => typeof o === "string" && o.length > 0 && o.length <= 60))].slice(0, 20) : [];
+      value = typeof v === "string" && options.includes(v) ? v : (options[0] ?? "");
+      break;
+    case "tags":
+      value = Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === "string" && x.trim().length > 0 && x.length <= 60).map((x) => x.trim()))].slice(0, 30) : [];
+      break;
+    case "link":
+      value = typeof v === "string" && /^https?:\/\/[^\s]{1,490}$/.test(v) ? v : "";
+      break;
+    case "date":
+      value = typeof v === "string" && DATE.test(v) ? v : "";
+      break;
+    default:
+      value = typeof v === "string" && FILE_ID.test(v) ? v : "";
+  }
+  const fileName = (kind === "audio" || kind === "image" || kind === "file") && value ? str(f.fileName, 200) : undefined;
+  return { id, kind, label, value, ...(options ? { options } : {}), ...(fileName ? { fileName } : {}) };
 }
 
 function cleanEdgeData(raw: unknown, legacyLabel: unknown): EdgeData {

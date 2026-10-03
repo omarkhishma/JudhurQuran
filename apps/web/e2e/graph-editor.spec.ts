@@ -110,6 +110,7 @@ const seedParam = (seed: object) => Buffer.from(JSON.stringify(seed), "utf8").to
 async function addNote(page: Page, text: string) {
   // at 100 %, so the note's field is not hidden by the map view
   await page.locator(".zoom-pill-pct").click();
+  await expect(page.locator(".zoom-pill-pct")).toContainText("١٠٠");
   const boxes = page.getByRole("textbox", { name: "ملاحظة" });
   const n = await boxes.count();
   await page.locator(".type-tile").filter({ hasText: "ملاحظة" }).click();
@@ -117,6 +118,9 @@ async function addNote(page: Page, text: string) {
   const box = boxes.nth(n);
   await box.fill(text);
   await box.blur();
+  // brought into view if it was placed beyond it: wait for the view to settle
+  await expect(box).toBeInViewport();
+  await page.waitForTimeout(300);
 }
 
 test("a map reopened by a link in the same tab shows the work done since, and opening it writes nothing (F1)", async ({ page, isMobile }) => {
@@ -302,6 +306,9 @@ test("a link takes a relation its map allows: chosen, changed and named, and the
   const sabr = (await api<{ results: { lemmas: { slug: string }[] } }>(page, `/search?q=${encodeURIComponent("صبر")}&limit=6`)).results.lemmas[0].slug;
   const other = page.locator(`.react-flow__node[data-id="lemma:${sabr}"]`);
   await expect(other).toHaveCount(1);
+  // a card placed beyond the view is brought into it: the pan settles before the drag
+  await expect(other).toBeInViewport();
+  await page.waitForTimeout(400);
   await drag(page, page.locator('.react-flow__node[data-id="lemma:alamin"] .react-flow__handle-left'), other.locator(".react-flow__handle-right"));
   await expect(page.locator(".graph-toast").filter({ hasText: "لا تُربط الكلمة بالكلمة في خريطة الجذر — جرّب ملاحظة." })).toBeVisible();
 });
@@ -868,7 +875,7 @@ test("menus on the canvas and on a card, a wire's pill, and the keyboard: steps 
   await page.keyboard.press("Escape");
   const v0 = await viewport(page);
   await page.keyboard.press("ArrowDown");
-  await expect.poll(async () => (await viewport(page)).y).toBe(v0.y - 56);
+  await expect.poll(async () => Math.round((await viewport(page)).y - v0.y)).toBe(-56);
   const v1 = await viewport(page);
   const pb2 = (await page.locator(".react-flow__pane").boundingBox())!;
   await page.mouse.move(pb2.x + 60, pb2.y + 60);
@@ -929,4 +936,355 @@ test("every card and wire is named for a screen reader, in the interface's langu
   // the dark canvas is the design's --canvas, not xyflow's own #141414
   const bg = await page.locator(".react-flow").evaluate((el) => getComputedStyle(el).backgroundColor);
   expect(bg).toBe("rgb(15, 15, 18)");
+});
+
+// ─── P8.1-C: the cards' anatomy and fields, groups, duplicate, and the notes that reach a map ───
+
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+const returning = (page: Page) => page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+const fieldsOf = async (page: Page, id: string, card: string) => ((await storedGraph(page, id))!.nodes.find((n) => n.id === card)!.data.fields ?? []) as { id: string; kind: string; label: string; value: unknown; fileName?: string; options?: string[] }[];
+
+test("a card's fields: ten kinds from its menu, edited in place — kept on Enter, dropped by Escape — removed, renamed in the details, an image kept in this browser and carried by the map's file (P8.1-C, EDT-092…109, EDT-219…222, EDT-266, HWF-57)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the card's fields are edited the same way on a phone; the desktop's canvas is enough");
+  await returning(page);
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  await page.locator(".zoom-pill-pct").click();
+  const undo = page.locator(".editor-header").getByRole("button", { name: "تراجع", exact: true });
+  const card = page.locator('.react-flow__node[data-id="lemma:alamin"]');
+  const fields = card.locator(".card-fields");
+  await expect(card.locator(".graph-card")).toHaveClass(/is-open/);
+  await expect(fields).toContainText("لا حقول بعد.");
+
+  // the menu holds the ten kinds, in the design's order (EDT-092, EDT-102)
+  const add = async (kind: string) => {
+    await fields.getByRole("button", { name: "+ إضافة" }).dispatchEvent("click");
+    const menu = fields.getByRole("menu");
+    await expect(menu.getByRole("menuitem")).toHaveText(["نص قصير", "ملاحظات", "رقم", "اختيار", "وسوم", "صوت", "صورة", "ملف", "رابط", "تاريخ"]);
+    await menu.getByRole("menuitem", { name: kind, exact: true }).dispatchEvent("click");
+    await expect(menu).toHaveCount(0);
+  };
+  await add("نص قصير");
+  await expect(undo).toHaveAttribute("title", "تراجع: إضافة حقل: نص قصير");
+  const text = card.getByRole("textbox", { name: "نص قصير" });
+  // Escape drops a draft, Enter keeps it (EDT-109)
+  await text.fill("مسودة");
+  await text.press("Escape");
+  await expect(text).toHaveValue("");
+  await text.fill("مطلع الفاتحة");
+  await text.press("Enter");
+  await expect.poll(async () => (await fieldsOf(page, id, "lemma:alamin"))[0], { timeout: 10_000 }).toMatchObject({ kind: "text", label: "نص قصير", value: "مطلع الفاتحة" });
+  await expect(undo).toHaveAttribute("title", "تراجع: تعديل حقل");
+  // a double-click in a field edits the field, it does not fold the card (HWF-57)
+  await text.dblclick();
+  await expect(card.locator(".graph-card")).toHaveClass(/is-open/);
+
+  // a number in the interface's digits, read back from either
+  await add("رقم");
+  const num = card.getByRole("textbox", { name: "رقم" });
+  await expect(num).toHaveValue("٠");
+  await num.fill("١٢٫٥");
+  await num.press("Enter");
+  await expect.poll(async () => (await fieldsOf(page, id, "lemma:alamin"))[1], { timeout: 10_000 }).toMatchObject({ kind: "number", value: 12.5 });
+  await expect(num).toHaveValue("١٢٫٥");
+  // tags as chips: Enter adds one, a repeat is not added, × removes one
+  await add("وسوم");
+  const tag = card.getByRole("textbox", { name: "إضافة وسم إلى «وسوم»" });
+  for (const x of ["حمد", "ربوبية", "حمد"]) {
+    await tag.fill(x);
+    await tag.press("Enter");
+  }
+  await expect.poll(async () => (await fieldsOf(page, id, "lemma:alamin")).find((f) => f.kind === "tags")?.value, { timeout: 10_000 }).toEqual(["حمد", "ربوبية"]);
+  await card.getByRole("button", { name: "إزالة الوسم «حمد»" }).dispatchEvent("click");
+  await expect.poll(async () => (await fieldsOf(page, id, "lemma:alamin")).find((f) => f.kind === "tags")?.value, { timeout: 10_000 }).toEqual(["ربوبية"]);
+  // a select starts on its first option; a link takes only a web address
+  await add("اختيار");
+  await expect(card.getByRole("combobox", { name: "اختيار" })).toHaveValue("الأول");
+  await add("رابط");
+  const url = card.getByRole("textbox", { name: "رابط" });
+  await url.fill("javascript:alert(1)");
+  await url.press("Enter");
+  await expect(page.locator(".graph-toast")).toContainText("الرابط يبدأ بـ https:// أو http://");
+  await expect.poll(async () => (await fieldsOf(page, id, "lemma:alamin")).find((f) => f.kind === "link")?.value, { timeout: 10_000 }).toBe("");
+  // an image, kept in this browser, its name beside it (EDT-105)
+  await add("صورة");
+  await card.locator('.card-fields input[type="file"]').setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: PNG });
+  await expect(card.locator(".card-fields img")).toHaveAttribute("alt", "dot.png");
+  await expect.poll(async () => (await fieldsOf(page, id, "lemma:alamin")).find((f) => f.kind === "image")?.fileName, { timeout: 10_000 }).toBe("dot.png");
+  const image = (await fieldsOf(page, id, "lemma:alamin")).find((f) => f.kind === "image")!;
+  expect(image).toMatchObject({ kind: "image", label: "صورة", fileName: "dot.png" });
+  expect(image.value).toMatch(/^[a-f0-9]{32}$/);
+
+  // removed with ×, one named step (EDT-107)
+  await card.getByRole("button", { name: "إزالة الحقل «اختيار»" }).dispatchEvent("click");
+  await expect(undo).toHaveAttribute("title", "تراجع: إزالة حقل");
+  await expect.poll(async () => (await fieldsOf(page, id, "lemma:alamin")).map((f) => f.kind)).toEqual(["text", "number", "tags", "link", "image"]);
+  // a label is renamed in the details only (EDT-093, EDT-106)
+  await expect(card.getByRole("textbox", { name: "اسم الحقل" })).toHaveCount(0);
+  await card.click({ position: { x: 40, y: 14 } });
+  const details = page.getByRole("complementary", { name: "التفاصيل" });
+  if (!(await details.isVisible())) await page.locator(".editor-header").getByRole("button", { name: "التفاصيل" }).click();
+  const label = details.getByRole("textbox", { name: "اسم الحقل" }).first();
+  await label.fill("مطلع");
+  await label.press("Enter");
+  await expect(undo).toHaveAttribute("title", "تراجع: تسمية حقل");
+  await expect.poll(async () => (await fieldsOf(page, id, "lemma:alamin"))[0]?.label, { timeout: 10_000 }).toBe("مطلع");
+
+  // the map's file carries the image it holds, and an import restores it in another browser
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "ملف JSON" }).click()]);
+  const exported = JSON.parse(await (await download.createReadStream()).toArray().then((b) => Buffer.concat(b).toString("utf8"))) as { nodes: Card[]; files: Record<string, { name: string; url: string }> };
+  expect(Object.keys(exported.files)).toEqual([image.value]);
+  expect(exported.files[image.value as string]).toMatchObject({ name: "dot.png", url: `data:image/png;base64,${PNG.toString("base64")}` });
+  await page.reload();
+  await expect(page.locator('.react-flow__node[data-id="lemma:alamin"] .card-fields img')).toBeVisible();
+
+  const other = await page.context().browser()!.newContext();
+  const fresh = await other.newPage();
+  await returning(fresh);
+  await fresh.goto("/graph");
+  await fresh.locator('input[type="file"]').setInputFiles({ name: "map.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(exported)) });
+  await fresh.getByRole("main").getByRole("status").getByRole("link", { name: "افتحها" }).click();
+  await expect(fresh.locator('.react-flow__node[data-id="lemma:alamin"] .card-fields img')).toHaveAttribute("src", /^data:image\/png;base64,/);
+  // a map shared without its file says the file stayed behind
+  await fresh.evaluate((key) => new Promise((res) => { const o = indexedDB.open("keyval-store"); o.onsuccess = () => { o.result.transaction("keyval", "readwrite").objectStore("keyval").delete(key).onsuccess = res; }; }), `jadhr-graph-file:${image.value}`);
+  await fresh.reload();
+  await expect(fresh.locator('.react-flow__node[data-id="lemma:alamin"] .card-fields')).toContainText("الملف «dot.png» ليس في هذا المتصفح");
+  await other.close();
+});
+
+test("groups: ⌘G frames the selection with room for its bar, named in the details in one step; its bar carries the cards inside, its handles resize it on the grid; ⇧⌘G releases it and undo brings it back (P8.1-C, EDT-140…149, EDT-154, EDT-189, EDT-228, EDT-231, EDT-232, EDT-246, HWF-29)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "groups are made with the desktop's keys and pointer");
+  await returning(page);
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "verse", key: "1:2" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  const undo = page.locator(".editor-header").getByRole("button", { name: "تراجع", exact: true });
+  const toast = page.locator(".graph-toast").last();
+  const cards = (await storedGraph(page, id))!.nodes.length;
+
+  // one card is not a group
+  await page.locator('.react-flow__node[data-id="verse:1:2"]').click({ position: { x: 40, y: 14 } });
+  await page.keyboard.press("Meta+g");
+  await expect(toast).toContainText("حدّد بطاقتين أو أكثر لتجمعهما.");
+  await page.keyboard.press("Meta+a");
+  await page.keyboard.press("Meta+g");
+  await expect(toast).toContainText(`${arCount(cards, { one: "جُمعت بطاقة", two: "جُمعت بطاقتان", few: "جُمعت # بطاقات", many: "جُمعت # بطاقة", other: "جُمعت # بطاقة" })} — سمّ المجموعة في التفاصيل`);
+  await expect(undo).toHaveAttribute("title", `تراجع: ${arCount(cards, { one: "تجميع بطاقة", two: "تجميع بطاقتين", few: "تجميع # بطاقات", many: "تجميع # بطاقة", other: "تجميع # بطاقة" })}`);
+  const frame = page.locator(".react-flow__node-frame");
+  await expect(frame).toHaveCount(1);
+  await expect(frame).toHaveClass(/selected/);
+  await expect(frame.locator(".frame-bar")).toContainText("مجموعة بلا اسم");
+  await expect(frame).toHaveAttribute("aria-label", "مجموعة: مجموعة بلا اسم");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.some((n) => n.data.kind === "frame"), { timeout: 10_000 }).toBe(true);
+  const f = (await storedGraph(page, id))!.nodes.find((n) => n.data.kind === "frame")!;
+  expect(f.id).toMatch(/^frame:/);
+  expect([Math.abs(f.position.x % 8), Math.abs(f.position.y % 8)]).toEqual([0, 0]);
+  // every card lies inside it, with room for the bar above them
+  const fb = (await frame.boundingBox())!;
+  for (const box of await page.locator(".react-flow__node-card").evaluateAll((xs) => xs.map((x) => x.getBoundingClientRect().toJSON() as DOMRect))) {
+    expect(box.left).toBeGreaterThan(fb.x);
+    expect(box.right).toBeLessThan(fb.x + fb.width);
+    expect(box.top).toBeGreaterThan(fb.y + 26);
+    expect(box.bottom).toBeLessThan(fb.y + fb.height);
+  }
+
+  // named in the details: Escape leaves it, Enter keeps it as one step (EDT-149)
+  const details = page.getByRole("complementary", { name: "التفاصيل" });
+  await expect(details.getByText(arCount(cards, { one: "بطاقة واحدة داخلها", two: "بطاقتان داخلها", few: "# بطاقات داخلها", many: "# بطاقة داخلها", other: "# بطاقة داخلها" }))).toBeVisible();
+  const name = details.getByRole("textbox", { name: "اسم المجموعة" });
+  await name.fill("مسودة");
+  await name.press("Escape");
+  await expect(name).toHaveValue("");
+  await name.fill("كلمات الآية");
+  await name.press("Enter");
+  await expect(undo).toHaveAttribute("title", "تراجع: تسمية المجموعة");
+  await expect(frame.locator(".frame-bar")).toContainText("كلمات الآية");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === f.id)!.data.title).toBe("كلمات الآية");
+  // a group is not a card: the library's find does not find it (EDT-147)
+  const find = page.getByRole("searchbox", { name: "ابحث عن بطاقة في الخريطة" });
+  await find.fill("كلمات الآية");
+  await expect(page.locator(".react-flow__node.is-match")).toHaveCount(0);
+  await find.fill("");
+
+  // its bar carries every card inside by the same distance (EDT-144, HWF-29)
+  await page.getByRole("button", { name: "ملاءمة" }).click();
+  await page.waitForTimeout(400);
+  const before = (await storedGraph(page, id))!.nodes;
+  const bar = (await frame.locator(".frame-bar").boundingBox())!;
+  await page.mouse.move(bar.x + bar.width / 2, bar.y + bar.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bar.x + bar.width / 2 - 100, bar.y + bar.height / 2 + 60, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === f.id)!.position).not.toEqual(f.position);
+  const after = (await storedGraph(page, id))!.nodes;
+  const moved = (n: Card) => {
+    const was = before.find((b) => b.id === n.id)!.position;
+    return [n.position.x - was.x, n.position.y - was.y];
+  };
+  const by = moved(after.find((n) => n.id === f.id)!);
+  expect(by[0]).toBeLessThan(0);
+  for (const n of after) expect(moved(n), n.id).toEqual(by);
+
+  // its handles resize it on the 8 px grid, one named step (EDT-145, EDT-228); the whole group in view first
+  await page.getByRole("button", { name: "ملاءمة" }).click();
+  await page.waitForTimeout(400);
+  await frame.locator(".frame-bar").click();
+  // the top corner on the library's side: the zoom pill sits over the bottom one, the details over the other side
+  const handle = page.locator(".frame-resize-handle.top.right");
+  const hb = (await handle.boundingBox())!;
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+  await page.mouse.down();
+  // outward, so the bar stays above the cards it holds
+  await page.mouse.move(hb.x + 48, hb.y - 32, { steps: 5 });
+  await page.mouse.up();
+  await expect(undo).toHaveAttribute("title", "تراجع: تغيير حجم المجموعة");
+  const sizeOf = async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === f.id)!.data.size as { w: number; h: number };
+  await expect.poll(async () => (await sizeOf()).w, { timeout: 10_000 }).toBeGreaterThan((f.data.size as { w: number }).w);
+  const size = await sizeOf();
+  expect([size.w % 8, size.h % 8]).toEqual([0, 0]);
+
+  // released with ⇧⌘G — the cards stay — and brought back whole by undo (EDT-142, EDT-232)
+  await page.keyboard.press("Meta+Shift+g");
+  await expect(toast).toContainText("فُكّت المجموعة");
+  await expect(frame).toHaveCount(0);
+  await expect(page.locator(".react-flow__node-card")).toHaveCount(cards);
+  await page.keyboard.press("Meta+z");
+  await expect(frame).toHaveCount(1);
+  await expect(frame.locator(".frame-bar")).toContainText("كلمات الآية");
+  // a group deleted alone is a group, not a card (EDT-189)
+  await frame.locator(".frame-bar").click();
+  await page.keyboard.press("Backspace");
+  await expect(undo).toHaveAttribute("title", "تراجع: حذف مجموعة");
+  await expect(page.locator(".react-flow__node-card")).toHaveCount(cards);
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Meta+Shift+g");
+  await expect(toast).toContainText("حدّد مجموعة لتفكّها.");
+});
+
+test("duplicate copies notes, never a card of the data; a card's actions attach a note and select its branch; its stats count what it holds (P8.1-C, EDT-096, EDT-101, EDT-122, EDT-186, EDT-188, EDT-226, HWF-46)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "⌘D is the desktop's");
+  await returning(page);
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "word", slug: "alamin", at: "1:2:4" })}`);
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  await page.addStyleTag({ content: ".react-flow__minimap, .react-flow__minimap * { visibility: hidden !important; pointer-events: none !important; }" });
+  await page.locator(".zoom-pill-pct").click();
+  const undo = page.locator(".editor-header").getByRole("button", { name: "تراجع", exact: true });
+  const lemma = page.locator('.react-flow__node[data-id="lemma:alamin"]');
+  // its place in the map: its verses on it, and its links (EDT-101)
+  const doc = (await storedGraph(page, id))!;
+  const verses = doc.edges.filter((e) => e.source === "lemma:alamin" && e.target.startsWith("verse:")).length;
+  const links = doc.edges.filter((e) => e.source === "lemma:alamin" || e.target === "lemma:alamin").length;
+  await expect(lemma.locator(".card-stats")).toHaveText(
+    arCount(verses, { one: "آية على الخريطة", two: "آيتان على الخريطة", few: "# آيات على الخريطة", many: "# آية على الخريطة", other: "# آية على الخريطة" }) +
+      arCount(links, { one: "صلة واحدة", two: "صلتان", few: "# صلات", many: "# صلة", other: "# صلة" }),
+  );
+
+  // "+ Note" attaches a note to it, linked as describing it (EDT-096, EDT-122)
+  await lemma.getByRole("button", { name: "+ ملاحظة" }).dispatchEvent("click");
+  await expect(undo).toHaveAttribute("title", "تراجع: إرفاق ملاحظة");
+  await expect.poll(async () => (await storedGraph(page, id))!.edges.find((e) => e.source === "lemma:alamin" && e.target.startsWith("note:"))?.data, { timeout: 10_000 }).toEqual({ rel: "describes" });
+  const noteId = (await storedGraph(page, id))!.edges.find((e) => e.source === "lemma:alamin" && e.target.startsWith("note:"))!.target;
+  const note = page.locator(`.react-flow__node[data-id="${noteId}"]`);
+  await note.getByRole("textbox", { name: "ملاحظة" }).fill("مطلع السورة");
+  await note.getByRole("textbox", { name: "ملاحظة" }).blur();
+  // "Focus" selects the card and what branches from it, not its notes (EDT-096)
+  await lemma.getByRole("button", { name: "تركيز" }).dispatchEvent("click");
+  const branch = doc.edges.filter((e) => e.source === "lemma:alamin").map((e) => e.target);
+  await expect.poll(async () => (await page.locator(".react-flow__node.selected").evaluateAll((xs) => xs.map((x) => x.getAttribute("data-id")))).sort()).toEqual(["lemma:alamin", ...branch].sort());
+
+  // ⌘D copies the note beside itself, a new card with its words, one named step (EDT-188, EDT-226)
+  await page.keyboard.press("Escape");
+  await note.click({ position: { x: 40, y: 14 } });
+  await page.keyboard.press("Meta+d");
+  await expect(undo).toHaveAttribute("title", "تراجع: نسخ بطاقة");
+  await expect.poll(async () => (await storedGraph(page, id))!.nodes.filter((n) => n.data.kind === "note").length).toBe(2);
+  const notes = (await storedGraph(page, id))!.nodes.filter((n) => n.data.kind === "note");
+  const copy = notes.find((n) => n.id !== noteId)!;
+  const orig = notes.find((n) => n.id === noteId)!;
+  expect(copy.data.text).toBe("مطلع السورة");
+  expect([copy.position.x - orig.position.x, copy.position.y - orig.position.y]).toEqual([24, 24]);
+  // a note's menu offers Duplicate (a word's does not: the P8.1-B test reads its whole menu)
+  await page.locator(`.react-flow__node[data-id="${copy.id}"]`).click({ button: "right", position: { x: 40, y: 14 } });
+  await expect(page.getByRole("menu", { name: "قائمة البطاقة" }).getByRole("menuitem")).toHaveText(["طيّ البطاقة↵", "نسخ⌘D", "حذف بطاقة⌫"]);
+  await page.keyboard.press("Escape");
+  // a card of the data is on a map once: it is not copied, and the reader is told (HWF-46)
+  await page.keyboard.press("Escape");
+  // the copy may lie over the word: it is picked by the library's find
+  const find = page.getByRole("searchbox", { name: "ابحث عن بطاقة في الخريطة" });
+  await find.fill("العالمين");
+  await find.press("Enter");
+  await expect(page.locator('.react-flow__node[data-id="lemma:alamin"].selected')).toHaveCount(1);
+  await find.press("Escape");
+  await page.locator('.react-flow__node[data-id="lemma:alamin"]').focus();
+  await page.keyboard.press("Meta+d");
+  await expect(page.locator(".graph-toast").last()).toContainText("بطاقة البيانات واحدة في الخريطة؛ تُنسخ الملاحظات والمجموعات وحدها.");
+  expect((await storedGraph(page, id))!.nodes.filter((n) => n.id.startsWith("lemma:")).length).toBe(doc.nodes.filter((n) => n.id.startsWith("lemma:")).length);
+});
+
+test("a Notebook note reaches a map by its id, describing what it mentions; a dictionary's article is quoted by its id with its credit, its words read from the dataset and never stored (P8.1-C, NTB-22, RDR-239, EDT-292, HWF-52, D22)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the hand-off is the same dialog on a phone");
+  await returning(page);
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "jadhr-notebook",
+      JSON.stringify({ state: { notes: [{ id: "n1", title: "عن آية الكرسي", body: "١٠٠٪ من @2:255 نور", tags: [], created: 1, updated: 2, links: { roots: [], verses: ["2:255"], words: [] } }] }, version: 1 }),
+    ),
+  );
+  await page.goto("/notebook?note=n1");
+  await page.locator(".notebook-editor").waitFor();
+  await page.getByRole("button", { name: "← بطاقة وصف" }).click();
+  const dialog = page.getByRole("dialog", { name: "سلّمه إلى محرر الخرائط" });
+  await expect(dialog).toContainText("تصير ملاحظتك بطاقة وصف");
+  await expect(dialog.locator(".handoff-rows li").first()).toContainText("ملاحظة");
+  // the note travels by its id: its words never enter the address (HWF-52's "%" is no longer a hazard)
+  const href = (await dialog.getByRole("link", { name: "افتح محرر الخرائط" }).getAttribute("href"))!;
+  expect(JSON.parse(Buffer.from(new URL(href, "http://x").searchParams.get("s")!, "base64url").toString("utf8"))).toEqual({ seed: "note", note: "n1" });
+  await dialog.getByRole("link", { name: "افتح محرر الخرائط" }).click();
+  const id = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, id))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  const doc = (await storedGraph(page, id))!;
+  expect(doc.title).toBe("ملاحظة: عن آية الكرسي");
+  expect(doc.nodes.find((n) => n.id === "note:nb-n1")!.data).toEqual({ kind: "note", text: "عن آية الكرسي\n\n١٠٠٪ من @2:255 نور", focus: true });
+  expect(doc.edges.map((e) => [e.source, e.target, e.data?.rel])).toContainEqual(["note:nb-n1", "verse:2:255", "describes"]);
+  // a note not in this browser says so
+  await page.goto(`/graph/seed?s=${seedParam({ seed: "note", note: "nmissing" })}`);
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText("هذه الملاحظة ليست في هذا المتصفح: الملاحظات تبقى في المتصفح الذي كُتبت فيه، وفي حسابك إن كنت قد دخلت إليه.");
+
+  // the reader's dictionary: «+» on an article (RDR-239)
+  await page.addInitScript(() =>
+    localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { layerOpen: { senses: false, family: false, patterns: false, lexica: true, timeline: false, usage: false } }, version: 2 })),
+  );
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  const article = page.locator('[data-section="lexica"] .dict-article').first();
+  const work = await article.getAttribute("data-dict");
+  const w = await api<{ dict_articles: { id: string; entries: { id: number }[] }[] }>(page, "/words/ilm?limit=0&at=20:114:17");
+  const entry = w.dict_articles.find((d) => d.id === work)!.entries[0].id;
+  const e = await api<{ body: string; title_ar: string; author_ar: string; root_key: string }>(page, `/lexicon/entries/${entry}`);
+  await article.getByRole("button", { name: "أضف إلى خريطة" }).first().click();
+  const handoff = page.getByRole("dialog", { name: "سلّمه إلى محرر الخرائط" });
+  await expect(handoff).toContainText("لا يُحفظ نصها في الخريطة");
+  await expect(handoff.locator(".handoff-rows")).toContainText(e.title_ar);
+  await handoff.getByRole("link", { name: "افتح محرر الخرائط" }).click();
+  const qid = await editorId(page);
+  await expect.poll(async () => (await storedGraph(page, qid))?.pendingLayout ?? true, { timeout: 15_000 }).toBe(false);
+  const q = (await storedGraph(page, qid))!;
+  expect(q.nodes.find((n) => n.id === `quote:${entry}`)!.data).toEqual({ kind: "note", entry, focus: true });
+  expect(q.edges.map((x) => [x.source, x.target, x.data?.rel])).toEqual([[`quote:${entry}`, `root:${e.root_key}`, "describes"]]);
+  expect(JSON.stringify(q)).not.toContain(e.body.slice(0, 24));
+  // drawn from the dataset: the article's opening words in «», and its credit
+  const card = page.locator(`.react-flow__node[data-id="quote:${entry}"]`);
+  await expect(card).toHaveAttribute("aria-label", `اقتباس: ${e.title_ar}`);
+  const quoted = (await card.locator("blockquote").innerText()).replace(/^«|»$/g, "").replace(/\s*…$/, "").trim();
+  expect(e.body.replace(/\s+/g, " ").startsWith(quoted.replace(/\s+/g, " "))).toBe(true);
+  await expect(card.locator("figcaption")).toContainText(`${e.title_ar} — ${e.author_ar}`);
+  // the whole article in the details, with the work's credit
+  await card.click({ position: { x: 40, y: 14 } });
+  const details = page.getByRole("complementary", { name: "التفاصيل" });
+  if (!(await details.isVisible())) await page.locator(".editor-header").getByRole("button", { name: "التفاصيل" }).click();
+  await expect(details.locator(".quote-full")).toHaveText(e.body);
+  await expect(details).toContainText("للعرض فقط");
 });

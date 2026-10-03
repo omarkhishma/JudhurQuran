@@ -13,6 +13,15 @@ export type NodeKind = "root" | "pattern" | "lemma" | "verse" | "note" | "frame"
  * law L1). The words to mark in it are the card's `places`. */
 export type VerseExcerpt = { key: string };
 
+/** The ten kinds of field a reader can add to a card (EDT-102): their own words, numbers, choices, tags, files,
+ * links and dates — never the dataset's, which the card shows from the source. */
+export type FieldKind = "text" | "notes" | "number" | "select" | "tags" | "audio" | "image" | "file" | "link" | "date";
+export const FIELD_KINDS: FieldKind[] = ["text", "notes", "number", "select", "tags", "audio", "image", "file", "link", "date"];
+
+/** A field (EDT-266): an audio, image or file field's value is the id of the file kept in this browser
+ * (lib/graph/files), its name beside it. */
+export type Field = { id: string; kind: FieldKind; label: string; value: string | number | string[]; options?: string[]; fileName?: string };
+
 export type GraphNodeData = {
   kind: NodeKind;
   ar?: string; // the Arabic headline: root letters, a pattern, a lemma (never a verse's words)
@@ -28,8 +37,14 @@ export type GraphNodeData = {
   first?: string;
   verse?: VerseExcerpt; // a verse card
   places?: string[]; // a verse card: the words marked in it (`s:a:w`)
-  text?: string; // a note: the reader's own text
+  text?: string; // a note: the reader's own text, or a quotation
   phrase?: boolean; // a note that is a phrase the reader analysed (ANA-22)
+  /** a note that quotes a dictionary's article (RDR-239): the article's id. Its words and its credit are read from the
+   * dataset when the card is drawn (lib/graph/quote), never kept in the map — the dictionaries are display-only (D22),
+   * and a quotation is shown verbatim or not at all (law L2). */
+  entry?: number;
+  /** the reader's own fields on the card (EDT-092…109) */
+  fields?: Field[];
   title?: string; // a frame
   size?: { w: number; h: number }; // a frame
   folded?: boolean;
@@ -100,12 +115,13 @@ export const KIND_COLOR: Record<NodeKind, string> = {
   frame: "var(--t3)",
 };
 
-/** Estimated card sizes for the first layout pass (re-run with measured sizes after render). */
+/** Estimated sizes of an open card (344 px wide, EDT-083) for the first layout pass and for placing a new card;
+ * the layout is run again with the measured sizes after render. */
 export const KIND_SIZE: Record<NodeKind, { width: number; height: number }> = {
-  root: { width: 220, height: 150 },
-  pattern: { width: 220, height: 120 },
-  lemma: { width: 270, height: 200 },
-  verse: { width: 320, height: 150 },
-  note: { width: 250, height: 120 },
+  root: { width: 344, height: 250 },
+  pattern: { width: 344, height: 220 },
+  lemma: { width: 344, height: 360 },
+  verse: { width: 344, height: 280 },
+  note: { width: 344, height: 230 },
   frame: { width: 420, height: 280 },
 };

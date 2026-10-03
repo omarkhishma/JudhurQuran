@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { followSignInLink } from "./helpers";
+import { api, followSignInLink } from "./helpers";
 
 const PAGES = ["/", "/quran", "/quran/1", "/quran/2/255", "/word/2:255:23", `/roots/${encodeURIComponent("علم")}`, "/search?q=%D8%B5%D8%A8%D8%B1", "/concordance", "/concordance?view=dist", "/about", "/sources", "/saved", "/en", "/en/word/1:1:1", "/analyse", "/analyse?q=2%3A255&view=interlinear", "/library", "/library/text/missing", "/explore", "/notebook", "/data", "/review/guidelines"];
 
@@ -153,6 +153,27 @@ for (const theme of ["light", "dark"] as const)
         await expect(page).toHaveURL(/\/graph\/edit\//, { timeout: 30_000 });
         await page.locator('.react-flow__node[data-id="verse:1:2"]').click({ position: { x: 60, y: 14 } });
         await page.locator(".react-flow__edge").first().focus();
+      },
+    ],
+    [
+      "the editor: a quotation, a card's fields, a group selected",
+      async (page: Page) => {
+        const w = await api<{ dict_articles: { entries: { id: number }[] }[] }>(page, "/words/ilm?limit=0");
+        await page.goto(`/graph/seed?s=${seedOf({ seed: "quote", entry: w.dict_articles[0].entries[0].id })}`);
+        await expect(page).toHaveURL(/\/graph\/edit\//, { timeout: 30_000 });
+        await page.locator(".graph-card blockquote").first().waitFor();
+        const root = page.locator('.react-flow__node[data-id="root:علم"]');
+        for (const kind of ["نص قصير", "وسوم", "رقم", "اختيار", "رابط", "تاريخ", "صورة"]) {
+          await root.locator(".card-fields").getByRole("button", { name: "+ إضافة" }).dispatchEvent("click");
+          await root.getByRole("menuitem", { name: kind, exact: true }).dispatchEvent("click");
+        }
+        await root.getByRole("textbox", { name: "إضافة وسم إلى «وسوم»" }).fill("علم");
+        await root.getByRole("textbox", { name: "إضافة وسم إلى «وسوم»" }).press("Enter");
+        await page.keyboard.press("Escape");
+        await page.locator(".react-flow__pane").click({ position: { x: 20, y: 20 } });
+        await page.keyboard.press("Meta+a");
+        await page.keyboard.press("Meta+g");
+        await page.locator(".react-flow__node-frame.selected").waitFor();
       },
     ],
     [
