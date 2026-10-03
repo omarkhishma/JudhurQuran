@@ -1053,3 +1053,7 @@ P8.1a closed its 13 items, each now `done`: EDT-072, EDT-073, EDT-078, EDT-127, 
 ## 9. After P8.1-A (2026-10-03)
 
 P8.1-A closed 36 of its 43 items: EDT-001, 002, 009, 011, 013, 020, 022, 024, 032–045, 047, 063 (the unknown slug's 404 is P8.5's), 071, 237, 242, 247, 249, 309, HWF-26, 34, 40, QAN-12, 15, 22. Part-built, the rest named where it lands: EDT-004 (map-view zoom, P8.1-B), EDT-070 (right-click "New…", P8.1-B; "+ Description", P8.1-C), EDT-250, 251, 252, 253, 254 (the help lists the keys that work; the rest join as P8.1-B and P8.1-C build them). Counts after P8.1-A: 431 items — 105 done, 72 adapted, 6 bug-fixed, 4 n/a, 243 open (7 of them part-built), 1 waiting. Commits `1b48009`, `44d9c51`.
+
+## 10. After P8.1-B (2026-10-03)
+
+P8.1-B closed its 34 items: EDT-051, 056, 058, 059, 060, 061, 062, 064, 065, 066, 067, 068 (the frame's menu items wait for frames, P8.1-C; the menu itself is built), 069, 131, 132, 134, 158, 159, 160, 161, 162, 163, 233, 256, 307, 308, HWF-02, 03, 04, 12, 36, 37, 54, QAN-20; F14 (desktop) and F15 are fixed. It also finished four of P8.1-A's part-built items: EDT-004, 252, 253, 254. Still part-built: EDT-070 ("+ Description" on the card and in the sidebar), EDT-250 and 251 (duplicate and groups), all with P8.1-C. Counts after P8.1-B: 431 items — 143 done, 72 adapted, 6 bug-fixed, 4 n/a, 205 open (3 of them part-built), 1 waiting.
