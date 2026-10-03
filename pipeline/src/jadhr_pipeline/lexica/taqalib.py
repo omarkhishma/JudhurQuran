@@ -567,6 +567,8 @@ def split_taqalib(
         if not hm or group is None:
             return None
         after = strip_marks(text[hm.end() :]).strip().lstrip("( ")
+        if re.match(r"[\u0660-\u06690-9]", after):
+            return None  # a verse reference at a line start, "(الْبَقَرَة: ٢٣٩) ."
         raw_tokens = [x for x in re.split(r"[\s\u060c,\-_()]+", hm.group(1)) if x.strip()]
         # spaced letters are one word: "عزو، ع ز ي:", "ك ود:"
         merged: list[str] = []

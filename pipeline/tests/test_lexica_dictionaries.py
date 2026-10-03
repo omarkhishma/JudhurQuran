@@ -21,7 +21,7 @@ from jadhr_arabic import strip_marks
 from jadhr_pipeline.lexica import build_lexica, work_articles
 from jadhr_pipeline.lexica.oracle import boundary_precision, read_oracle
 from jadhr_pipeline.lexica.quranidx import QuranPairs, qtokens
-from jadhr_pipeline.lexica.shamela import Counters
+from jadhr_pipeline.lexica.shamela import Counters, load_pages
 from jadhr_pipeline.lexica.taqalib import apply_supplements
 
 REPO = Path(__file__).resolve().parents[2]
@@ -60,7 +60,7 @@ EXPECTED = {
     "taj": (11891, 1620, 14, 1, 1617, 1628),
     "qamus": (10389, 1616, 23, 1, 1613, 1629),
     "ayn": (5813, 1422, 208, 0, 1420, 1597),
-    "tahdhib": (7216, 1334, 352, 0, 1312, 1582),
+    "tahdhib": (7223, 1336, 352, 0, 1314, 1584),
 }
 # The research's expected size of each work (docs/research/06 Part 6, 02 §3). For al-ʿAyn and Tahdhīb
 # the research counts groups, not articles (al-ʿAyn: 1,500 of its 1,802 TOC rows are group titles with
@@ -266,6 +266,30 @@ def test_qamus_bullets_all_accounted_for_and_aligned(built: tuple) -> None:
     )
 
 
+# --- reading order ----------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("folder", "part", "page"), [("2502", "2", 313), ("2503", "1", 56), ("2503", "1", 219)]
+)
+def test_pages_are_read_in_page_order(folder: str, part: str, page: int) -> None:
+    """The dataset's sequence_num misplaces three pages (Tāj 2/313 → 9, Tahdhīb 1/56 → 205, 1/219 →
+    1764); reading by the Shamela page number puts each between its neighbours."""
+    rows = [
+        json.loads(line) for line in (RAW / "lexica/hf-authenticilm-shamela4" / folder / "pages.jsonl").open()
+    ]
+    (bad,) = [r for r in rows if str(r["part"]) == part and r["page_num"] == page]
+    assert abs(bad["sequence_num"] - bad["shamela_page_id"]) > 100  # known positive: the misplaced number
+    pages = load_pages(RAW / "lexica/hf-authenticilm-shamela4" / folder)
+    i = next(k for k, pg in enumerate(pages) if pg.part == part and pg.page_num == page)
+    assert (pages[i - 1].part, pages[i - 1].page_num, pages[i + 1].part, pages[i + 1].page_num) == (
+        part,
+        page - 1,
+        part,
+        page + 1,
+    )
+
+
 # --- al-ʿAyn and Tahdhīb: the permutation lists are the checklist ---------------------------------
 
 # work: (what the research counted, at least that many; listed permutations never found as a header,
@@ -344,11 +368,11 @@ ORACLE = {
     "qamus": ("0817MajdDinFiruzabadi.QamusMuhit.Shamela0007283-ara1", "bullet", False, 0.98),
     # Every miss of these samples was read by hand (docs/research/02 §10.7); all are the oracle's.
     # al-ʿAyn: JK runs the next heading into the line ("…الجبل نفذ نفذ الشيء", "…تنانير نتر النتر"),
-    # so نفد and نتر have no JK heading; after فنطليس JK's colophon is text, not a break. Tahdhīb: JK's
-    # "# قد :" and "# فلسط : فلسطين…" (a speech word; a four-letter ف word with no narrator after it)
-    # do not read as headings.
-    "ayn": ("0170KhalilFarahidi.Cayn.JK000930-ara1", "alone", True, 0.94),
-    "tahdhib": ("0370AbuMansurAzhari.TahdhibLugha.JK007040-ara1", "colon", True, 0.96),
+    # so نفد and نتر have no JK heading. Tahdhīb: JK has no heading خبج; after كدش it runs the group
+    # line "ك ش ت ك ش ظ ك ش ذ أهملت وجوهه" into the text, so there is no break; the two typings
+    # differ at the end of فرسن.
+    "ayn": ("0170KhalilFarahidi.Cayn.JK000930-ara1", "alone", True, 0.96),
+    "tahdhib": ("0370AbuMansurAzhari.TahdhibLugha.JK007040-ara1", "colon", True, 0.94),
 }
 
 

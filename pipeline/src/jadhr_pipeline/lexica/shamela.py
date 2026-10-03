@@ -84,7 +84,10 @@ class TocEntry:
 
 def load_pages(book_dir: Path) -> list[Page]:
     rows = [json.loads(line) for line in (book_dir / "pages.jsonl").open(encoding="utf-8")]
-    rows.sort(key=lambda r: (r["sequence_num"], r["page_id"]))
+    # Reading order is the Shamela page number. The dataset's sequence_num is wrong for three pages
+    # (Tāj 2/313 has 9, Tahdhīb 1/56 has 205 and 1/219 has 1764), which moved them into other volumes;
+    # page_id and shamela_page_id agree with each other and with sequence_num everywhere else.
+    rows.sort(key=lambda r: (int(r["shamela_page_id"]), r["page_id"]))
     return [
         Page(
             shamela_page_id=int(r["shamela_page_id"]),
