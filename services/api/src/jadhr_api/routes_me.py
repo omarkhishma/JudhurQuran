@@ -23,7 +23,14 @@ def ok(payload: Any, status: int = 200) -> ORJSONResponse:
 
 @router.get("/auth/providers", summary="How a reader can sign in here (only what is configured)")
 def providers() -> ORJSONResponse:
-    return ok({"email": accounts.email_enabled(), **oidc.configured()})
+    # how long a sign-in link works, so the page says the period the server keeps (never a number of its own)
+    return ok(
+        {
+            "email": accounts.email_enabled(),
+            **oidc.configured(),
+            "link_minutes": get_settings().login_token_minutes,
+        }
+    )
 
 
 class _EmailLink(BaseModel):

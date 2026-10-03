@@ -187,7 +187,8 @@ def mail_allowed(ip: str) -> bool:
         if len(q) >= get_settings().mail_per_ip_per_hour:
             return False
         q.append(now)
-        for k in [k for k, v in _mail_by_ip.items() if not v]:
+        # an address is kept only while it counts towards the hour (F1)
+        for k in [k for k, v in _mail_by_ip.items() if not v or now - v[-1] > 3600]:
             del _mail_by_ip[k]
         return True
 

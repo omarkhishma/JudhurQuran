@@ -2,7 +2,7 @@
 
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useDueCount } from "@/components/reader5/ReviewDeck";
 import { useStepViews } from "@/components/reader5/trailSteps";
 import { ProposalForm } from "@/components/contrib/ProposalForm";
@@ -35,6 +35,25 @@ const download = (name: string, text: string, type: string) => {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
+const NOTE_ID = /^[\w:.-]{1,60}$/;
+
+/** The note named in the address's fragment (#note=…), if any. */
+function noteFromHash(): string | null {
+  if (typeof window === "undefined") return null;
+  const id = decodeURIComponent(new URLSearchParams(window.location.hash.slice(1)).get("note") ?? "");
+  return NOTE_ID.test(id) ? id : null;
+}
+
+const subscribeHash = (cb: () => void) => {
+  window.addEventListener("hashchange", cb);
+  return () => window.removeEventListener("hashchange", cb);
+};
+
+/** The Notebook's address for a tab and an open note: the note in the fragment, never in the query. */
+export function noteAddress(tab: "notes" | "journal", note: string | null, path = typeof window === "undefined" ? "" : window.location.pathname): string {
+  return `${path}${tab === "journal" ? "?tab=journal" : ""}${note && tab === "notes" ? `#note=${encodeURIComponent(note)}` : ""}`;
+}
+
 /**
  * The Notebook (06 §6.4, inventory NTB-01…54 with the Quran notes NTB-Q01…Q10): the reader's notes — free notes,
  * notes on a verse, saved trails — searched with Arabic folded, grouped into real sections by root, sūra or tag,
@@ -51,7 +70,19 @@ export function NotebookScreen({ initialTab, initialNote }: { initialTab: "notes
   const unreadable = useNotebookUnreadable();
   const items = useItems();
   const [tab, setTab] = useState(initialTab);
+  // the open note is in the address's fragment, which the browser never sends (audit 11 F9): a verse written on stays
+  // in the browser even when the page is reloaded or the link followed (an older ?note= link is read once, then moved)
+  // (a link followed inside the site sets the fragment as this page mounts, after its first render)
+  const hashNote = useSyncExternalStore(subscribeHash, noteFromHash, () => null);
   const [selected, setSelected] = useState<string | null>(initialNote);
+  const [seenHash, setSeenHash] = useState<string | null>(null);
+  if (hashNote !== seenHash) {
+    setSeenHash(hashNote);
+    if (hashNote) setSelected(hashNote);
+  }
+  useEffect(() => {
+    if (initialNote) window.history.replaceState(null, "", noteAddress(initialTab, initialNote));
+  }, [initialTab, initialNote]);
   const create = useNotebook((s) => s.create);
   const current = client ? (items.find((x) => x.id === selected) ?? null) : null;
 
@@ -60,12 +91,9 @@ export function NotebookScreen({ initialTab, initialNote }: { initialTab: "notes
     const nt = next.note === undefined ? selected : next.note;
     setTab(tb);
     setSelected(nt);
-    const qs = new URLSearchParams();
-    if (tb === "journal") qs.set("tab", "journal");
-    if (nt && tb === "notes") qs.set("note", nt);
     // the address follows (Back and a shared link work) without asking the server: which note is open, and so
-    // which verse the reader wrote on, stays in the browser (P5.6)
-    window.history.replaceState(null, "", `${window.location.pathname}${qs.size ? `?${qs}` : ""}`);
+    // which verse the reader wrote on, stays in the browser (P5.6, F9)
+    window.history.replaceState(null, "", noteAddress(tb, nt));
   }
 
   return (

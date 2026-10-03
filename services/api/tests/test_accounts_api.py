@@ -44,7 +44,12 @@ def sign_in(addr: str) -> dict[str, str]:
 
 
 def test_a_link_works_once_and_the_answer_never_tells_who_has_an_account(email: str) -> None:
-    assert client.get("/api/v1/auth/providers").json() == {"email": True, "google": False, "apple": False}
+    assert client.get("/api/v1/auth/providers").json() == {
+        "email": True,
+        "google": False,
+        "apple": False,
+        "link_minutes": get_settings().login_token_minutes,
+    }
     token = link_for(email)
     first = client.post("/api/v1/auth/verify", json={"token": token})
     assert (
@@ -579,6 +584,23 @@ def test_requests_are_bounded_per_body_per_account_and_sign_in_mail_per_sender(
             "delete from accounts.login_tokens where email in (:a, :b) returning email",
             {"a": f"a{email}", "b": f"b{email}"},
         )
+
+
+def test_addresses_are_forgotten_once_they_no_longer_count() -> None:
+    """The limiters keep an address only while it counts: a minute for requests, an hour for sign-in mail (F1)."""
+    from collections import deque
+
+    from jadhr_api import main
+
+    now = time.monotonic()
+    main._hits["203.0.113.9"].append(now - 120)
+    main._swept[0] = 0.0
+    assert client.get("/healthz").status_code == 200
+    assert "203.0.113.9" not in main._hits
+    accounts._mail_by_ip["203.0.113.8"] = deque([now - 4000])
+    assert accounts.mail_allowed("198.51.100.99")
+    assert "203.0.113.8" not in accounts._mail_by_ip
+    accounts._mail_by_ip.clear()
 
 
 def test_a_deleted_account_is_remembered_by_its_id_only_so_a_restore_can_delete_it_again(email: str) -> None:

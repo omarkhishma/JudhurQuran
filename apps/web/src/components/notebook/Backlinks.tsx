@@ -24,7 +24,7 @@ export function Backlinks({ root, slug, verse, className = "" }: { root?: string
       <ul className="flex flex-col gap-1">
         {hits.map((n) => (
           <li key={n.id}>
-            <Link href={`/notebook?note=${n.id}`} prefetch={false} className="backlink" dir="auto">
+            <Link href={`/notebook#note=${n.id}`} prefetch={false} className="backlink" dir="auto">
               <span className="truncate font-medium">{n.title || n.body.split("\n")[0].slice(0, 80) || t("untitled")}</span>
             </Link>
           </li>

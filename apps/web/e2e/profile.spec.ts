@@ -70,7 +70,7 @@ test("signed out: the local reader, what they have, their records in tabs linkin
   const rows = page.locator(".profile-row");
   await expect(rows.first()).toContainText("مسودة على هذا الجهاز");
   await expect(rows.first()).toHaveAttribute("href", "/read?w=ilm");
-  for (const [tab, href] of [["محفوظاتي", "/read?w=ilm"], ["ملاحظاتي", "/notebook?note=n1"], ["خرائطي", "/graph/edit/g1"], ["مكتبتي", "/library/text/t1"], ["سجلّي", "/notebook?tab=journal"]] as const) {
+  for (const [tab, href] of [["محفوظاتي", "/read?w=ilm"], ["ملاحظاتي", "/notebook#note=n1"], ["خرائطي", "/graph/edit/g1"], ["مكتبتي", "/library/text/t1"], ["سجلّي", "/notebook?tab=journal"]] as const) {
     await page.getByRole("button", { name: tab, exact: true }).click();
     await expect(rows.first()).toHaveAttribute("href", href);
   }

@@ -7,7 +7,7 @@ import { type Account, authFetch, deviceName, useAccount } from "./store";
  * Signing in and out (PLAN P6.1, D3): a link by e-mail, or Google and Apple where configured. Nothing here sets a
  * cookie: the session the API returns is kept with the account (lib/account/store) and sent as a bearer header.
  */
-export type Providers = { email: boolean; google: boolean; apple: boolean };
+export type Providers = { email: boolean; google: boolean; apple: boolean; link_minutes?: number };
 export type Provider = "google" | "apple";
 
 export async function getProviders(): Promise<Providers> {

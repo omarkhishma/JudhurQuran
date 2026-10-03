@@ -808,6 +808,16 @@ def search_private(body: _SearchAsk) -> Response:
 # ─── rate limiting (per client IP, sliding minute) ─────────────────────────
 
 _hits: dict[str, deque[float]] = defaultdict(deque)
+_swept = [0.0]
+
+
+def _forget_idle(now: float) -> None:
+    """An address is kept only while it counts: a minute after its last request it is gone (audit 11 F1)."""
+    if now - _swept[0] < 60:
+        return
+    _swept[0] = now
+    for k in [k for k, q in _hits.items() if not q or now - q[-1] > 60]:
+        del _hits[k]
 
 
 @asynccontextmanager
@@ -873,6 +883,7 @@ def create_app() -> FastAPI:
             request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")
         ).split(",")[0]
         now = time.monotonic()
+        _forget_idle(now)
         q = _hits[ip]
         while q and now - q[0] > 60:
             q.popleft()

@@ -323,8 +323,8 @@ function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
     if (tab === "notes") {
       if (!ready) return null;
       return [
-        ...notes.map((n) => ({ id: n.id, dot: "var(--c-desc)", ar: null, text: n.title || n.body.split("\n")[0].slice(0, 90) || t("untitled"), when: date(n.updated), href: `/notebook?note=${n.id}`, at: n.updated })),
-        ...Object.values(verseNotes).map((n) => ({ id: `v:${n.verse}`, dot: "var(--c-sentence)", ar: null, text: `${t("verseNote", { ref: verseRef(n.verse, locale) })} • ${n.text.slice(0, 80)}`, when: date(n.at), href: `/notebook?note=v:${n.verse}`, at: n.at })),
+        ...notes.map((n) => ({ id: n.id, dot: "var(--c-desc)", ar: null, text: n.title || n.body.split("\n")[0].slice(0, 90) || t("untitled"), when: date(n.updated), href: `/notebook#note=${n.id}`, at: n.updated })),
+        ...Object.values(verseNotes).map((n) => ({ id: `v:${n.verse}`, dot: "var(--c-sentence)", ar: null, text: `${t("verseNote", { ref: verseRef(n.verse, locale) })} • ${n.text.slice(0, 80)}`, when: date(n.at), href: `/notebook#note=v:${n.verse}`, at: n.at })),
       ]
         .sort((a, b) => b.at - a.at)
         .map((r) => ({ id: r.id, dot: r.dot, ar: r.ar, text: r.text, when: r.when, href: r.href }));

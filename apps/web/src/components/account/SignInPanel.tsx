@@ -5,11 +5,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { getProviders, type Provider, requestLink, startOidc } from "@/lib/account/actions";
-import { cnt } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import { useNotebook } from "@/lib/store/notebook";
 import { useSaved } from "@/lib/store/saved";
-
-const LINK_MINUTES = 15;
 
 /**
  * Signing in (HUB-29…36 with HUB-F02, PRF-Q02, D3): asked for, never a wall. It says what this browser holds, that
@@ -58,7 +56,7 @@ export function SignInPanel({ returnTo, onClose, headingId }: { returnTo: string
       ) : state === "sent" ? (
         <div className="signin-sent" role="status">
           <p className="text-[14px] font-medium">{t("sentTo", { email: email.trim() })}</p>
-          <p className="text-[13px] leading-relaxed text-t2">{t("sent", { minutes: LINK_MINUTES })}</p>
+          <p className="text-[13px] leading-relaxed text-t2">{t("sent", { minutes: formatNumber(p?.link_minutes ?? 15, locale) })}</p>
           <button type="button" className="btn min-h-[40px] self-start" onClick={() => setState("idle")}>
             {t("otherAddress")}
           </button>

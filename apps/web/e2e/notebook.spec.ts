@@ -22,7 +22,8 @@ test("a new note: title, tags without duplicates, and @-mentions that link a ver
   await prime(page);
   await page.goto("/notebook");
   await page.getByRole("button", { name: "+ ملاحظة جديدة" }).click();
-  await expect(page).toHaveURL(/\/notebook\?note=n/);
+  // the open note is named after the #, which never reaches the server (F9)
+  await expect(page).toHaveURL(/\/notebook#note=n/);
   await editor(page).getByRole("textbox", { name: "عنوان الملاحظة" }).fill("عن العلم");
   const tag = editor(page).getByRole("textbox", { name: "أضف وسمًا" });
   for (const v of ["درس", "درس"]) {
@@ -37,7 +38,7 @@ test("a new note: title, tags without duplicates, and @-mentions that link a ver
   await expect(linked.locator('a[href^="/read?w="]')).toBeVisible();
   await expect(linked.locator('a[href="/sources"]')).toContainText("لسان العرب");
   // kept in the browser, and grouped under the root its mention names (NTB-Q06); the list on its own URL
-  // (a phone shows the list or the note, and ?note= is the note)
+  // (a phone shows the list or the note, and #note= is the note)
   await page.goto("/notebook");
   await expect(page.locator(".notebook-row").first()).toContainText("عن العلم");
   await page.getByRole("button", { name: "بالجذر" }).click();

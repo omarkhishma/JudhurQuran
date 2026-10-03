@@ -98,7 +98,12 @@ test("what a device holds joins the account on sign-in, and a second device gets
     prefs: { state: { size: 1.2 }, version: 2 },
     audio: { state: { reciter: "husary", follow: false, speed: 0.75, repeat: true }, version: 0 },
     "analyse-choices": { state: { choices: { "علم|0": 1 } }, version: 1 },
-    personal: { wordStates: { Eilom: "known" }, sessions: [{ day: "2026-10-01", text: "quran", words: ["Eilom"], roots: ["علم"], verses: ["2:255"], lookups: 4 }] },
+    personal: {
+      wordStates: { Eilom: "known" },
+      sessions: [{ day: "2026-10-01", text: "quran", words: ["Eilom"], roots: ["علم"], verses: ["2:255"], lookups: 4 }],
+      rootsMet: { علم: T },
+      context: { word: "Eilom", wordAr: "عِلْم", root: "علم", verse: "2:255", ts: T },
+    },
   });
   await docs(a, {
     "jadhr-notebook": { state: { notes: [NOTE] }, version: 1 },
@@ -106,6 +111,8 @@ test("what a device holds joins the account on sign-in, and a second device gets
     "jadhr-graph:g1": { version: 1, id: "g1", title: "خريطة العلم", kind: "root", createdAt: T, updatedAt: T, nodes: [], edges: [] },
     "jadhr-texts-index": [{ id: "t1", title: "نصّي", words: 2, lemmas: ["ilm"], review: 0, unknown: 0, createdAt: T, updatedAt: T }],
     "jadhr-text:t1": { id: "t1", title: "نصّي", text: "العلم نور", passages: ["العلم نور"], words: 2, lemmas: ["ilm"], review: 0, unknown: 0, createdAt: T, updatedAt: T },
+    // a map its index lost (two writes racing): found by its own key, so never taken for deleted (F12)
+    "jadhr-graph:g2": { version: 1, id: "g2", title: "خريطة الصبر", kind: "root", createdAt: T, updatedAt: T, nodes: [], edges: [] },
   });
   await a.goto("/");
   await a.reload(); // the documents seeded into IndexedDB are written by now
@@ -116,9 +123,11 @@ test("what a device holds joins the account on sign-in, and a second device gets
   await signIn(a, email, "sheet");
   await expect(a).toHaveURL(/\/$/);
 
-  const want = ["saved/b:lemma:Eilom", "saved/n:quran:2:255", "notebook/n:n1", "review/c:علم", "prefs/size", "audio/speed", "audio/reciter", "analyse/علم|0", "personal/w:Eilom", "graphs/g:g1", "texts/x:t1"];
+  const want = ["saved/b:lemma:Eilom", "saved/n:quran:2:255", "notebook/n:n1", "review/c:علم", "prefs/size", "audio/speed", "audio/reciter", "analyse/علم|0", "personal/w:Eilom", "graphs/g:g1", "graphs/g:g2", "texts/x:t1"];
   await expect.poll(async () => (await records(a)).map((r) => `${r.store}/${r.key}`)).toEqual(expect.arrayContaining(want));
   expect((await records(a)).filter((r) => r.store === "journal"), "the journal syncs only when turned on").toEqual([]);
+  // nor do the roots met and the last place looked up, which are the journal too (F3)
+  expect((await records(a)).filter((r) => r.key.startsWith("rm:") || r.key === "ctx" || r.key === "cc")).toEqual([]);
 
   const b = await device(browser, null);
   await b.goto("/");
@@ -138,9 +147,11 @@ test("what a device holds joins the account on sign-in, and a second device gets
   // the journal once the reader turns it on: A's day reaches B as A's
   await a.request.patch("/api/v1/me", { headers: await bearer(a), data: { settings: { sync_journal: true } } });
   await a.reload();
-  await expect.poll(async () => (await records(a)).filter((r) => r.store === "journal").length).toBe(1);
+  await expect.poll(async () => (await records(a)).filter((r) => r.store === "journal").map((r) => (r.key.startsWith("s:") ? "s:" : r.key)).sort()).toEqual(["ctx", "rm:علم", "s:"]);
   await b.reload();
   await expect.poll(async () => ((await local(b, "jadhr-personal")).sessions ?? []).map((x: { day: string; lookups: number; device?: string }) => [x.day, x.lookups, !!x.device])).toEqual([["2026-10-01", 4, true]]);
+  expect((await local(b, "jadhr-personal")).rootsMet).toEqual({ علم: T });
+  expect((await local(b, "jadhr-personal")).context?.wordAr).toBe("عِلْم");
   // and the second device shows it where the reader looks
   await b.goto("/notebook");
   await expect(b.locator(".notebook-row").first()).toContainText("عن العلم");

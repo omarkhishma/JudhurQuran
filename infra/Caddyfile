@@ -38,12 +38,14 @@
 	}
 
 	# What the privacy page says (P6.5, audit 11 F1): the page asked for without its query string (no sign-in
-	# token, no search), the address shortened, no headers; kept seven days, then gone.
+	# token, no search), the address shortened, no headers; kept seven days, then gone — a new file each day (or
+	# each 50 MiB), and a rolled file kept six days, so no line is older than seven.
 	log {
 		output file /data/access.log {
 			roll_size 50MiB
+			roll_interval 24h
 			roll_keep 20
-			roll_keep_for 168h
+			roll_keep_for 144h
 		}
 		format filter {
 			wrap json

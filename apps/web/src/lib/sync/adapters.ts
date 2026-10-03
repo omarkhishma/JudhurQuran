@@ -50,7 +50,7 @@ const saved: Adapter = {
     }),
 };
 
-// ─── personal: word states, positions, proposals, trails kept, links, topics, furthest verses, where I was ───
+// ─── personal: word states, positions, proposals, trails kept, links, topics, furthest verses ───
 
 const FLAGS = ["onboarded", "visited", "hubPromptHidden"] as const;
 
@@ -66,11 +66,8 @@ const personal: Adapter = {
       ...s.topics.map((t): [string, unknown, number] => [`tp:${t.id}`, t, t.ts]),
       ...Object.entries(s.verseTopics).map(([k, v]): [string, unknown] => [`vt:${k}`, v]),
       ...Object.entries(s.read).map(([k, v]): [string, unknown] => [`r:${k}`, v]),
-      ...Object.entries(s.rootsMet ?? {}).map(([k, v]): [string, unknown] => [`rm:${k}`, v]),
       ...FLAGS.filter((f) => s[f]).map((f): [string, unknown] => [`f:${f}`, true]),
     ];
-    if (s.context) out.push(["ctx", s.context, s.context.ts]);
-    if (s.contextClearedAt) out.push(["cc", s.contextClearedAt, s.contextClearedAt]);
     return entries(out);
   },
   apply: (changes) =>
@@ -80,7 +77,6 @@ const personal: Adapter = {
       const links = { ...s.links };
       const verseTopics = { ...s.verseTopics };
       const read = { ...s.read };
-      const rootsMet = { ...s.rootsMet };
       const proposals = new Map(s.proposals.map((p) => [p.id, p]));
       const savedTrails = new Map(s.savedTrails.map((t) => [t.id, t]));
       const topics = new Map(s.topics.map((t) => [t.id, t]));
@@ -94,23 +90,17 @@ const personal: Adapter = {
         else m.set(k, c.value as T);
       };
       for (const c of changes) {
-        if (c.key === "ctx") next.context = c.deleted ? null : (c.value as typeof s.context);
-        else if (c.key === "cc") next.contextClearedAt = c.deleted ? 0 : Math.max(s.contextClearedAt, c.value as number);
-        else {
-          const [kind, k] = split(c.key);
-          if (kind === "w") put(wordStates, k, c);
-          else if (kind === "p") put(progress, k, c);
-          else if (kind === "l") put(links, k, c);
-          else if (kind === "vt") put(verseTopics, k, c);
-          // the furthest verse read only moves forward, whichever device read further (RDR-071)
-          else if (kind === "r") read[k] = c.deleted ? (read[k] ?? 0) : Math.max(read[k] ?? 0, c.value as number);
-          // a root met on any device was met: the earliest time stands
-          else if (kind === "rm" && !c.deleted) rootsMet[k] = Math.min(rootsMet[k] ?? Infinity, c.value as number);
-          else if (kind === "pr") putList(proposals, k, c);
-          else if (kind === "t") putList(savedTrails, k, c);
-          else if (kind === "tp") putList(topics, k, c);
-          else if (kind === "f" && (FLAGS as readonly string[]).includes(k) && !c.deleted) next[k as (typeof FLAGS)[number]] = true;
-        }
+        const [kind, k] = split(c.key);
+        if (kind === "w") put(wordStates, k, c);
+        else if (kind === "p") put(progress, k, c);
+        else if (kind === "l") put(links, k, c);
+        else if (kind === "vt") put(verseTopics, k, c);
+        // the furthest verse read only moves forward, whichever device read further (RDR-071)
+        else if (kind === "r") read[k] = c.deleted ? (read[k] ?? 0) : Math.max(read[k] ?? 0, c.value as number);
+        else if (kind === "pr") putList(proposals, k, c);
+        else if (kind === "t") putList(savedTrails, k, c);
+        else if (kind === "tp") putList(topics, k, c);
+        else if (kind === "f" && (FLAGS as readonly string[]).includes(k) && !c.deleted) next[k as (typeof FLAGS)[number]] = true;
       }
       return {
         ...next,
@@ -119,7 +109,6 @@ const personal: Adapter = {
         links,
         verseTopics,
         read,
-        rootsMet,
         proposals: [...proposals.values()].sort((a, b) => a.ts - b.ts),
         savedTrails: [...savedTrails.values()].sort((a, b) => a.ts - b.ts),
         topics: [...topics.values()].sort((a, b) => a.ts - b.ts),
@@ -127,30 +116,43 @@ const personal: Adapter = {
     }),
 };
 
-// ─── journal: one record per day, text and device (synced only when the reader turns that on, NTB-Q02) ───
+// ─── journal: what the reader looked up — a record per day, text and device, every root met with when, and the
+// last place looked up — synced only when the reader turns that on (NTB-Q02, audit 11 F3) ───
 
 const journal = (device: string): Adapter => ({
-  read: () =>
-    entries(
-      usePersonal.getState().sessions.map((x): [string, unknown] => {
+  read: () => {
+    const s = usePersonal.getState();
+    const out: [string, unknown, number?][] = [
+      ...s.sessions.map((x): [string, unknown] => {
         const { device: from, ...session } = x;
         return [`s:${x.day}:${x.text}:${from ?? device}`, session];
       }),
-    ),
+      ...Object.entries(s.rootsMet ?? {}).map(([k, v]): [string, unknown] => [`rm:${k}`, v]),
+    ];
+    if (s.context) out.push(["ctx", s.context, s.context.ts]);
+    if (s.contextClearedAt) out.push(["cc", s.contextClearedAt, s.contextClearedAt]);
+    return entries(out);
+  },
   apply: (changes) =>
     usePersonal.setState((s) => {
       const keyOf = (x: Session) => `s:${x.day}:${x.text}:${x.device ?? device}`;
       const by = new Map(s.sessions.map((x) => [keyOf(x), x]));
+      const rootsMet = { ...s.rootsMet };
+      const next: Partial<typeof s> = {};
       for (const c of changes) {
-        if (c.deleted) {
-          by.delete(c.key);
-          continue;
+        if (c.key === "ctx") next.context = c.deleted ? null : (c.value as typeof s.context);
+        else if (c.key === "cc") next.contextClearedAt = c.deleted ? 0 : Math.max(s.contextClearedAt, c.value as number);
+        // a root met on any device was met: the earliest time stands
+        else if (c.key.startsWith("rm:")) {
+          if (!c.deleted) rootsMet[c.key.slice(3)] = Math.min(rootsMet[c.key.slice(3)] ?? Infinity, c.value as number);
+        } else if (c.deleted) by.delete(c.key);
+        else {
+          const from = c.key.slice(c.key.lastIndexOf(":") + 1);
+          // this device's own sessions, synced before a sign-out, come back as its own
+          by.set(c.key, from === device ? { ...(c.value as Session), device: undefined } : { ...(c.value as Session), device: from });
         }
-        const from = c.key.slice(c.key.lastIndexOf(":") + 1);
-        // this device's own sessions, synced before a sign-out, come back as its own
-        by.set(c.key, from === device ? { ...(c.value as Session), device: undefined } : { ...(c.value as Session), device: from });
       }
-      return { sessions: [...by.values()].sort((a, b) => a.day.localeCompare(b.day)) };
+      return { ...next, rootsMet, sessions: [...by.values()].sort((a, b) => a.day.localeCompare(b.day)) };
     }),
 });
 
