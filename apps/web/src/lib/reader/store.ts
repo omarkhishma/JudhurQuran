@@ -134,7 +134,12 @@ export const useReader = create<ReaderState>((set, get) => ({
   },
   showToast: (text) => set({ toast: { text, id: Date.now() } }),
   jumpTo: (scrollTo) => {
-    if (scrollTo) usePrefs.getState().openLayer(scrollTo);
+    if (scrollTo) {
+      const p = usePrefs.getState();
+      // in tabs mode the jump selects that tab and keeps it once the jump is done (RDR-209, 589)
+      if (p.panelTabs) p.set({ layerOpen: { senses: false, family: false, patterns: false, lexica: false, timeline: false, usage: false, [scrollTo]: true } });
+      else p.openLayer(scrollTo);
+    }
     set({ scrollTo });
   },
   closeEntry: () => set({ selection: null, verse: null, mode: "empty" }),

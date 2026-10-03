@@ -1292,6 +1292,10 @@ textarea.field {
   padding: 0 10px;
   min-height: 44px;
 }
+.tab-count {
+  font-size: 10.5px;
+  color: var(--t3);
+}
 .type-chip {
   --chip: var(--c-desc);
   display: inline-flex;

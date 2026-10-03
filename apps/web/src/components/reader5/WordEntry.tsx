@@ -250,7 +250,19 @@ function Sections({ w, chapter }: { w: WordPayload; chapter: ChapterInfo }) {
     timeline: <CenturiesSection w={w} />,
     usage: <InQuranSection w={w} chapter={chapter} />,
   };
-  if (tabs) return <Tabs w={w} meta={meta} bodies={bodies} initial={tab} />;
+  // the count on each tab (RDR-201): senses (or sourced lines until senses are assembled), words on the root,
+  // patterns, dictionaries shown, sources across the centuries, places in the Quran
+  const sourced =
+    (w.occurrence?.meanings_here.length ?? 0) + (w.occurrence?.glosses.length ?? 0) + (w.core_meaning ? 1 : 0) + (w.mufradat?.subentries.length ?? 0) + w.particles.length;
+  const counts: Record<SectionId, number> = {
+    senses: w.senses.length || sourced,
+    family: w.family.reduce((a, g) => a + g.members.length, 0),
+    patterns: w.shapes.root_patterns.length,
+    lexica: shownDicts,
+    timeline: w.timeline.dictionaries.filter((d) => d.has_article && !dictOff[d.id]).length + w.timeline.corpora.filter((c) => c.attests).length,
+    usage: w.attestations.total,
+  };
+  if (tabs) return <Tabs w={w} meta={meta} counts={counts} bodies={bodies} initial={tab} />;
   return (
     <div className="flex flex-col gap-2">
       {SECTION_ORDER.map((id) => (
@@ -269,8 +281,21 @@ function Sections({ w, chapter }: { w: WordPayload; chapter: ChapterInfo }) {
   );
 }
 
-function Tabs({ w, meta, bodies, initial }: { w: WordPayload; meta: Record<SectionId, string>; bodies: Record<SectionId, React.ReactNode>; initial: SectionId | null }) {
+function Tabs({
+  w,
+  meta,
+  counts,
+  bodies,
+  initial,
+}: {
+  w: WordPayload;
+  meta: Record<SectionId, string>;
+  counts: Record<SectionId, number>;
+  bodies: Record<SectionId, React.ReactNode>;
+  initial: SectionId | null;
+}) {
   const t = useTranslations("rd");
+  const locale = useLocale();
   const layerOpen = usePrefs((s) => s.layerOpen);
   const firstOpen = SECTION_ORDER.find((s) => layerOpen[s]) ?? "senses";
   const active = initial ?? firstOpen;
@@ -303,6 +328,7 @@ function Tabs({ w, meta, bodies, initial }: { w: WordPayload; meta: Record<Secti
             }}
           >
             {t(SECTION_LABEL[id])}
+            <span className="tab-count mono">{formatNumber(counts[id], locale)}</span>
           </button>
         ))}
       </div>

@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { api, arCount, expectNoHorizontalScroll } from "./helpers";
+import { api, ar, arCount, expectNoHorizontalScroll } from "./helpers";
 
 /**
  * Reader v5 (PLAN P2, design 03): journey A and a regression test for each prototype bug that applies
@@ -102,6 +102,28 @@ test("links into a folded section open and scroll to it (RDR-527/589)", async ({
   await p.locator(".root-chip").click();
   await expect(family.locator(".layer-head")).toHaveAttribute("aria-expanded", "true");
   await expect(family.locator(".layer-head")).toBeInViewport();
+});
+
+test("tabs mode: a jump selects its tab and keeps it; every tab carries its count (RDR-201, 209, 589)", async ({ page }) => {
+  await returning(page);
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "jadhr-prefs",
+      JSON.stringify({ state: { panelTabs: true, layerOpen: { senses: true, family: false, patterns: false, lexica: false, timeline: false, usage: false } }, version: 2 }),
+    ),
+  );
+  const w = await api<{ family: { members: unknown[] }[]; attestations: { total: number } }>(page, "/words/ilm?limit=0&at=20:114:17");
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  const p = panel(page);
+  const familyTab = p.getByRole("tab", { name: /^أسرة الجذر/ });
+  await expect(p.getByRole("tab").first()).toHaveAttribute("aria-selected", "true");
+  await p.locator(".root-chip").click();
+  await expect(familyTab).toHaveAttribute("aria-selected", "true");
+  // still selected well after the jump has been handled (it fell back after ~80 ms before)
+  await page.waitForTimeout(600);
+  await expect(familyTab).toHaveAttribute("aria-selected", "true");
+  await expect(familyTab.locator(".tab-count")).toHaveText(ar(w.family.reduce((a, g) => a + g.members.length, 0)));
+  await expect(p.getByRole("tab").last().locator(".tab-count")).toHaveText(ar(w.attestations.total));
 });
 
 test("folding the last open layer keeps Meanings open (RDR-577)", async ({ page }) => {
