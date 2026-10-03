@@ -11,7 +11,9 @@ export type Seed =
   | { seed: "word"; slug: string; at?: string | null }
   | { seed: "root"; root: string }
   | { seed: "verse"; key: string }
-  | { seed: "trail"; steps: TrailSeedStep[]; phrase?: string };
+  | { seed: "trail"; steps: TrailSeedStep[]; phrase?: string }
+  /** a curated set (Explore): its words as cards, in no order (F12) — a trail is a path, a set is not */
+  | { seed: "set"; name: string; steps: TrailSeedStep[] };
 
 const LOCATION = /^\d{1,3}:\d{1,3}:\d{1,3}$/;
 const VERSE_KEY = /^\d{1,3}:\d{1,3}$/;
@@ -31,6 +33,17 @@ export function encodeSeed(seed: Seed): string {
 
 const str = (x: unknown, max = 80): x is string => typeof x === "string" && x.length > 0 && x.length <= max;
 
+function validSteps(x: unknown): TrailSeedStep[] {
+  if (!Array.isArray(x)) return [];
+  const steps: TrailSeedStep[] = [];
+  for (const s of x.slice(0, MAX_STEPS)) {
+    const st = s as Record<string, unknown>;
+    if ((st?.kind === "word" || st?.kind === "root") && str(st.id)) steps.push({ kind: st.kind, id: st.id });
+    else if (st?.kind === "verse" && str(st.id, 8) && VERSE_KEY.test(st.id)) steps.push({ kind: "verse", id: st.id });
+  }
+  return steps;
+}
+
 /** A seed only if every field has the expected shape; anything else is ignored, never trusted. */
 export function validSeed(x: unknown): Seed | null {
   if (!x || typeof x !== "object") return null;
@@ -44,15 +57,13 @@ export function validSeed(x: unknown): Seed | null {
     case "verse":
       return str(o.key, 8) && VERSE_KEY.test(o.key) ? { seed: "verse", key: o.key } : null;
     case "trail": {
-      if (!Array.isArray(o.steps)) return null;
-      const steps: TrailSeedStep[] = [];
-      for (const s of o.steps.slice(0, MAX_STEPS)) {
-        const st = s as Record<string, unknown>;
-        if ((st?.kind === "word" || st?.kind === "root") && str(st.id)) steps.push({ kind: st.kind, id: st.id });
-        else if (st?.kind === "verse" && str(st.id, 8) && VERSE_KEY.test(st.id)) steps.push({ kind: "verse", id: st.id });
-      }
+      const steps = validSteps(o.steps);
       const phrase = str(o.phrase, MAX_PHRASE) ? o.phrase.trim() : "";
       return steps.length ? { seed: "trail", steps, ...(phrase ? { phrase } : {}) } : null;
+    }
+    case "set": {
+      const steps = validSteps(o.steps);
+      return steps.length && str(o.name, 120) ? { seed: "set", name: o.name.trim(), steps } : null;
     }
     default:
       return null;

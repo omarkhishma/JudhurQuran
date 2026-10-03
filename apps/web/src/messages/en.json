@@ -757,7 +757,8 @@
     "importTooLarge": "The file is too large to import (the limit is 5 MB).",
     "openImported": "Open it",
     "formsFailed": "This word's forms could not be loaded just now; try again.",
-    "versesFailed": "The occurrences could not be loaded just now; try again."
+    "versesFailed": "The occurrences could not be loaded just now; try again.",
+    "setTitle": "Set: {name}"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",
@@ -1488,7 +1489,8 @@
     "account": "My account",
     "omniWordAt": "word {n} of the verse • {name}",
     "prefDue": "Count the roots due for review",
-    "prefDueHint": "On the home page and in the browser tab's title — no reminders, no streaks."
+    "prefDueHint": "On the home page and in the browser tab's title — no reminders, no streaks.",
+    "handoffSub_set": "The set's words become cards, each with its root, in no order and with no numbered links."
   },
   "concordance": {
     "title": "Concordance",

@@ -288,7 +288,7 @@ function SetView({ id, initial, loading = false }: { id: string; initial: SetDet
     );
   const ar = locale === "ar";
   const intro = (ar ? s.intro_ar : s.intro_en).replace("{coverage}", pct(s.coverage, locale));
-  const seed = encodeSeed({ seed: "trail", steps: s.items.map((x) => ({ kind: "word" as const, id: x.slug })) });
+  const seed = encodeSeed({ seed: "set", name: ar ? s.title_ar : s.title_en, steps: s.items.map((x) => ({ kind: "word" as const, id: x.slug })) });
   return (
     <div className="set-view">
       <div className="flex min-w-0 flex-col gap-3">

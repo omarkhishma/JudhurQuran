@@ -13,7 +13,7 @@ import type { GraphEdge, GraphKind, GraphNode, NodeKind, VerseExcerpt } from "./
 export type SeedGraph = {
   kind: GraphKind;
   /** numbers stay numbers here, written in the reader's digits where the title is made (SeedImport) */
-  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle" | "phraseTitle"; values: Record<string, string | number> };
+  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle" | "phraseTitle" | "setTitle"; values: Record<string, string | number> };
   nodes: GraphNode[];
   edges: GraphEdge[];
 };
@@ -99,7 +99,7 @@ async function verseSeed(key: string): Promise<SeedGraph> {
  * A trail seed: each step as a card in the order it was taken, numbered along the way; words keep their roots.
  * With a phrase (the Analyser's, ANA-22), the phrase is a sentence card holding its words instead of a path.
  */
-async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[], phrase?: string): Promise<SeedGraph> {
+async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[], phrase?: string, set?: string): Promise<SeedGraph> {
   const seen = new Set<string>();
   const unique = steps.filter((s) => !seen.has(`${s.kind}:${s.id}`) && seen.add(`${s.kind}:${s.id}`));
   const words = await Promise.all(unique.map((s) => (s.kind === "word" ? getJSON<WordPayload>(`/words/${encodeURIComponent(s.id)}?limit=0`).catch(() => null) : null)));
@@ -143,6 +143,8 @@ async function trailSeed(steps: { kind: "word" | "verse" | "root"; id: string }[
     const head = phrase.split(/\s+/).slice(0, 4).join(" ");
     return { kind: "free", title: { key: "phraseTitle", values: { phrase: phrase.split(/\s+/).length > 4 ? `${head}…` : head } }, nodes: [...nodes.values()], edges: [...edges.values()] };
   }
+  // a set is not a path: its cards stand together, with no numbered links (F12)
+  if (set) return { kind: "free", title: { key: "setTitle", values: { name: set } }, nodes: [...nodes.values()], edges: [...edges.values()] };
   for (let i = 1; i < path.length; i++) {
     const e = link(path[i - 1], path[i], String(i));
     if (path[i - 1] !== path[i] && !edges.has(e.id)) edges.set(e.id, e);
@@ -160,6 +162,8 @@ export function buildSeedGraph(seed: Seed): Promise<SeedGraph> {
       return verseSeed(seed.key);
     case "trail":
       return trailSeed(seed.steps, seed.phrase);
+    case "set":
+      return trailSeed(seed.steps, undefined, seed.name);
   }
 }
 

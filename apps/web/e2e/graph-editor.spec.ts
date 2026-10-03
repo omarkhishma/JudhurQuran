@@ -398,3 +398,17 @@ test("in the editor a lemma's further forms open from the root's data, and a fai
   await word.getByRole("button", { name: /^المواضع/ }).dispatchEvent("click");
   await expect.poll(async () => (await storedGraph(page, id))!.nodes.filter((n) => n.data.kind === "verse").length, { timeout: 10_000 }).toBeGreaterThan(verses);
 });
+
+test("Explore's set becomes a map of its words, titled by the set, with no numbered path (F12)", async ({ page }) => {
+  const set = await api<{ title_ar: string; items: { slug: string; root: { key: string } | null }[] }>(page, "/collections/doers");
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto("/explore?set=doers");
+  await page.getByRole("link", { name: "اعرضها خريطة" }).click();
+  const id = await editorId(page);
+  await expect(page.getByRole("textbox", { name: "إعادة التسمية" })).toHaveValue(`مجموعة: ${set.title_ar}`);
+  const doc = (await storedGraph(page, id))!;
+  expect(doc.edges.filter((e) => e.label || e.data?.label), "no numbered links").toEqual([]);
+  expect(doc.nodes.filter((n) => n.data.kind === "lemma")).toHaveLength(new Set(set.items.map((x) => x.slug)).size);
+  // each word with a root is joined to it, and nothing else is joined
+  for (const e of doc.edges) expect(e.source.startsWith("root:") && e.target.startsWith("lemma:"), e.id).toBe(true);
+});
