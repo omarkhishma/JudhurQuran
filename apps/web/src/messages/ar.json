@@ -1285,7 +1285,11 @@
     "orderMushaf": "المصحف",
     "orderRevelation": "النزول",
     "inSurahs": "{count, plural, =0 {في لا سورة} one {في سورة واحدة} two {في سورتين} few {في {n} سور} many {في {n} سورة} other {في {n} سورة}} من ١١٤",
-    "byFormNote": "انقر صيغة لترى سياقاتها وحدها."
+    "byFormNote": "انقر صيغة لترى سياقاتها وحدها.",
+    "rangeTo": "إلى",
+    "rangeNone": "وحدها",
+    "surahTo": "إلى سورة",
+    "juzTo": "إلى الجزء"
   },
   "analyse": {
     "pageTitle": "المحلّل",

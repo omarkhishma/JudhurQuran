@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link } from "@/i18n/navigation";
 import { useAfterMount } from "@/lib/client";
-import { cnt, cnt2, formatNumber } from "@/lib/format";
+import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { usePersonal, usePrefs } from "@/lib/reader/store";
 import { type ConcordancePage, concordanceQuery, DEFAULT_ROOT, type Filters } from "@/lib/concordance";
@@ -20,7 +20,7 @@ type Dist = {
 };
 type RootRow = { key: string; spaced: string; translit: string; occurrences: number };
 
-const CLEARED = { lemma: "", pattern: "", surah: "", juz: "", pos: "", form: "", near: "" };
+const CLEARED = { lemma: "", pattern: "", surah: "", surah_to: "", juz: "", juz_to: "", pos: "", form: "", near: "" };
 
 const SEED_ROOTS = ["علم", "رحم", "كتب", "قرأ", "صبر", "هدي", "ذكر", "نور"];
 // The chapters of a root index in the order of the Arabic dictionaries; the hamza chapter is shown as أ.
@@ -97,7 +97,7 @@ export function ConcordanceScreen({ initial, initialPage, initialTr }: { initial
     getNextPageParam: (last) => last.next_offset ?? undefined,
     initialData: key === initialKey && initialPage ? { pages: [initialPage], pageParams: [0] } : undefined,
   });
-  const distQs = concordanceQuery(root, { ...f, surah: "" }).toString();
+  const distQs = concordanceQuery(root, { ...f, surah: "", surah_to: "" }).toString();
   const dist = useQuery({
     queryKey: ["concordance-dist", distQs],
     queryFn: () => getJSON<Dist>(`/concordance/distribution?${distQs}`),
@@ -190,22 +190,49 @@ export function ConcordanceScreen({ initial, initialPage, initialTr }: { initial
             />
             <label className="conc-select">
               <span>{t("surah")}</span>
-              <select value={f.surah} onChange={(e) => set({ surah: e.target.value })}>
+              <select value={f.surah} onChange={(e) => set({ surah: e.target.value, surah_to: "" })}>
                 <option value="">{t("allSurahs")}</option>
                 {first.facets.surahs.map((s) => (
                   <option key={s.surah} value={s.surah}>{`${formatNumber(s.surah, locale)}. ${locale === "ar" ? s.name_ar : s.name_translit} (${formatNumber(s.n, locale)})`}</option>
                 ))}
               </select>
             </label>
+            {/* a range of sūras: the end, from the sūras after the start where the root occurs (CON-Q03) */}
+            {f.surah && (
+              <label className="conc-select">
+                <span>{t("rangeTo")}</span>
+                <select value={f.surah_to} onChange={(e) => set({ surah_to: e.target.value })} aria-label={t("surahTo")}>
+                  <option value="">{t("rangeNone")}</option>
+                  {first.facets.surahs
+                    .filter((s) => s.surah > Number(f.surah))
+                    .map((s) => (
+                      <option key={s.surah} value={s.surah}>{`${formatNumber(s.surah, locale)}. ${locale === "ar" ? s.name_ar : s.name_translit}`}</option>
+                    ))}
+                </select>
+              </label>
+            )}
             <label className="conc-select">
               <span>{t("juz")}</span>
-              <select value={f.juz} onChange={(e) => set({ juz: e.target.value })}>
+              <select value={f.juz} onChange={(e) => set({ juz: e.target.value, juz_to: "" })}>
                 <option value="">{t("allJuz")}</option>
                 {first.facets.juz.map((j) => (
                   <option key={j.juz} value={j.juz}>{`${formatNumber(j.juz, locale)} (${formatNumber(j.n, locale)})`}</option>
                 ))}
               </select>
             </label>
+            {f.juz && (
+              <label className="conc-select">
+                <span>{t("rangeTo")}</span>
+                <select value={f.juz_to} onChange={(e) => set({ juz_to: e.target.value })} aria-label={t("juzTo")}>
+                  <option value="">{t("rangeNone")}</option>
+                  {first.facets.juz
+                    .filter((j) => j.juz > Number(f.juz))
+                    .map((j) => (
+                      <option key={j.juz} value={j.juz}>{formatNumber(j.juz, locale)}</option>
+                    ))}
+                </select>
+              </label>
+            )}
           </div>
           <ChipRow
             label={t("pos")}
@@ -273,7 +300,7 @@ export function ConcordanceScreen({ initial, initialPage, initialTr }: { initial
                   data-loc={x.location}
                 >
                   <span className="conc-src">
-                    <span className="mono" dir="ltr">{x.verse_key}</span>
+                    <span className="mono" dir="ltr">{verseRef(x.verse_key, locale)}</span>
                     <span className="truncate text-t3" lang={locale === "ar" ? "ar" : "en"}>{locale === "ar" ? x.surah_name_ar : x.surah_name_translit}</span>
                   </span>
                   <span className="conc-pre quran" lang="ar"><bdi>{x.left || "—"}</bdi></span>

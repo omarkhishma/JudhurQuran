@@ -246,3 +246,20 @@ test("concordance (English): each line's tooltip is its verse in the reader's tr
   await expect(page.locator(".conc-kwic")).toContainText(`Line tooltips from ${c.translation!.title_en}`);
 });
 
+
+test("concordance: a range of sūras and of juzʾ narrows the lines to exactly their parts, kept in the URL (CON-Q03)", async ({ page }) => {
+  const range = await api<Page_>(page, `/concordance?root=${ILM}&surah=2&surah_to=4&limit=1`);
+  const parts = await Promise.all([2, 3, 4].map((s) => api<Page_>(page, `/concordance?root=${ILM}&surah=${s}&limit=1`)));
+  expect(range.total).toBe(parts.reduce((a, p) => a + p.total, 0));
+  await page.goto("/concordance");
+  await page.getByLabel(/^السورة/).selectOption("2");
+  await page.getByLabel("إلى سورة").selectOption("4");
+  await expect(page).toHaveURL(/surah=2&surah_to=4|surah_to=4.*surah=2/);
+  await expect(page.locator(".conc-filters .mono")).toContainText(hits(range.total));
+  // line keys in the Arabic UI are Arabic-Indic (SHL-Q05)
+  await expect(rows(page).first().locator(".conc-src .mono")).toHaveText(/^[٠-٩]+:[٠-٩]+$/);
+  const juz = await api<Page_>(page, `/concordance?root=${ILM}&juz=1&juz_to=3&limit=1`);
+  await page.goto(`/concordance?root=${ILM}&juz=1&juz_to=3`);
+  await expect(page.getByLabel("إلى الجزء")).toHaveValue("3");
+  await expect(page.locator(".conc-filters .mono")).toContainText(hits(juz.total));
+});

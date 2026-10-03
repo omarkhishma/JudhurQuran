@@ -28,7 +28,7 @@ _FUNCTION_TAGS = {
 }  # fmt: skip
 
 
-FILTERS = ("lemma", "pattern", "surah", "place", "juz", "pos", "form", "near")
+FILTERS = ("lemma", "pattern", "surah", "surah_to", "place", "juz", "juz_to", "pos", "form", "near")
 
 
 def _hits(conn: Connection, root_id: int, f: dict[str, Any]) -> list[dict[str, Any]]:
@@ -39,8 +39,6 @@ def _hits(conn: Connection, root_id: int, f: dict[str, Any]) -> list[dict[str, A
     simple = {
         "lemma": "l.slug = :lemma",
         "pattern": "p.slug = :pattern",
-        "surah": "w.surah = :surah",
-        "juz": "v.juz = :juz",
         "pos": "w.pos = :pos",
         "form": "w.text_imlaei = :form",
     }
@@ -48,6 +46,12 @@ def _hits(conn: Connection, root_id: int, f: dict[str, Any]) -> list[dict[str, A
         if f.get(k):
             cond.append(sql)
             params[k] = f[k]
+    # a sūra or a juzʾ, or a range of them when an end is given (CON-Q03)
+    for k, col in (("surah", "w.surah"), ("juz", "v.juz")):
+        if f.get(k):
+            lo, hi = sorted((int(f[k]), int(f.get(f"{k}_to") or f[k])))
+            cond.append(f"{col} between :{k} and :{k}_to")
+            params[k], params[f"{k}_to"] = lo, hi
     if f.get("place") in ("meccan", "medinan"):
         cond.append("s.revelation_place = :place")
         params["place"] = f["place"]
@@ -63,7 +67,7 @@ def _hits(conn: Connection, root_id: int, f: dict[str, Any]) -> list[dict[str, A
         f"""select w.id, w.location, w.surah, w.ayah, w.position, w.verse_id, w.token_from, w.token_to,
                    w.text_uthmani as surface, w.text_imlaei as form, w.pos, l.slug as lemma_slug, l.ar as lemma_ar,
                    p.slug as pattern_slug, p.ar as pattern_ar, s.name_ar as surah_name_ar,
-                   s.name_translit as surah_name_translit, s.revelation_place, v.juz
+                   s.name_translit as surah_name_translit, s.revelation_place, v.juz, w.features
             from content.words w
             join content.surahs s on s.number = w.surah
             join content.verses v on v.id = w.verse_id
@@ -169,6 +173,7 @@ def concordance(
     offset: int = 0,
     limit: int = 50,
     translation: str | None = None,
+    features: bool = False,
     **filters: Any,
 ) -> dict[str, Any] | None:
     r = resolve_root(conn, root_raw)
@@ -192,7 +197,7 @@ def concordance(
         "total": total,
         "offset": offset,
         "translation": work,
-        "data": [_row(h) for h in page],
+        "data": [_row(h) | ({"features": h["features"]} if features else {}) for h in page],
         "next_offset": offset + limit if offset + limit < total else None,
     }
 
@@ -299,19 +304,36 @@ CSV_COLUMNS = (
     "surah", "ayah", "position", "location", "surah_name", "surface", "lemma", "root", "pattern", "pos",
     "preceding", "keyword", "following",
 )  # fmt: skip
+# the stored morphology of each hit (CON-Q08), as the corpus's English labels; the verb form as its numeral
+FEATURE_COLUMNS = (
+    "verb_form", "derivation", "aspect", "voice", "mood", "person", "gender", "number", "case", "definite", "special",
+)  # fmt: skip
+
+
+def _feature(features: dict[str, Any], name: str) -> str:
+    v = features.get(name)
+    if name == "verb_form":
+        return v["roman"] if isinstance(v, dict) else ""
+    if name == "definite":
+        return "indefinite" if features.get("indefinite") is True else ""
+    return v.get("en", "") if isinstance(v, dict) else ""
 
 
 def concordance_csv(conn: Connection, root_raw: str, **filters: Any) -> tuple[str, str] | None:
     """Every line under the current filters and sort as CSV with a UTF-8 BOM, so spreadsheet programs
     read the Arabic (CON-26/27, CON-Q08); the filename is the root key in ASCII."""
-    out = concordance(conn, root_raw, offset=0, limit=10**6, **filters)
+    out = concordance(conn, root_raw, offset=0, limit=10**6, features=True, **filters)
     if out is None:
         return None
     buf = io.StringIO()
     w = csv.writer(buf, quoting=csv.QUOTE_ALL, lineterminator="\r\n")
     tr = out["translation"]
     # the translation column names its work, so the text never travels without its credit
-    w.writerow(CSV_COLUMNS + ((f"translation: {tr['title_en']} ({tr['author_en']})",) if tr else ()))
+    w.writerow(
+        CSV_COLUMNS
+        + FEATURE_COLUMNS
+        + ((f"translation: {tr['title_en']} ({tr['author_en']})",) if tr else ())
+    )
     for x in out["data"]:
         w.writerow(
             [
@@ -329,6 +351,7 @@ def concordance_csv(conn: Connection, root_raw: str, **filters: Any) -> tuple[st
                 x["keyword"],
                 x["right"],
             ]
+            + [_feature(x["features"], c) for c in FEATURE_COLUMNS]
             + ([x["translation"] or ""] if tr else [])
         )
     ascii_tr = unicodedata.normalize("NFKD", out["root"]["translit"].replace("ʿ", "3").replace("ʾ", "2"))

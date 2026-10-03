@@ -162,3 +162,44 @@ def test_csv_names_the_translation_and_gives_the_root() -> None:
     assert table[0][7] == "root" and {row[7] for row in table[1:]} == {"علم"}
     assert all(row[-1] for row in table[1:])
     assert len(table) - 1 == get("/api/v1/concordance", root="علم", place="medinan", limit=1)["total"]
+
+
+def test_a_range_of_suras_or_juz_holds_exactly_the_lines_of_its_parts() -> None:
+    """CON-Q03: surah..surah_to and juz..juz_to; an end before the start is the same range."""
+    total = lambda **f: get("/api/v1/concordance", root="علم", limit=1, **f)["total"]  # noqa: E731
+    assert total(surah=2, surah_to=4) == sum(total(surah=s) for s in (2, 3, 4)) > 0
+    assert total(surah=4, surah_to=2) == total(surah=2, surah_to=4)
+    assert total(juz=1, juz_to=3) == sum(total(juz=j) for j in (1, 2, 3)) > 0
+    lines = get("/api/v1/concordance", root="علم", limit=500, surah=2, surah_to=4)["data"]
+    assert {x["surah"] for x in lines} <= {2, 3, 4}
+
+
+def test_csv_carries_each_lines_morphology() -> None:
+    """CON-Q08: the stored features as columns, read against the word's own morphology."""
+    import csv
+    import io
+
+    r = client.get("/api/v1/concordance.csv", params={"root": "علم", "surah": 2})
+    rows = list(csv.DictReader(io.StringIO(r.text.lstrip("﻿"))))
+    for col in (
+        "verb_form",
+        "derivation",
+        "aspect",
+        "voice",
+        "mood",
+        "person",
+        "gender",
+        "number",
+        "case",
+        "definite",
+    ):
+        assert col in rows[0], col
+    for row in rows[:40]:
+        f = get(
+            "/api/v1/words/" + get(f"/api/v1/locations/{row['location']}/word")["slug"],
+            at=row["location"],
+            limit=0,
+        )
+        feats = f["occurrence"]["features"]
+        for col in ("aspect", "gender", "number", "case", "person"):
+            assert row[col] == (feats.get(col) or {}).get("en", ""), (row["location"], col)

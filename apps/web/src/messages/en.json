@@ -1285,7 +1285,11 @@
     "orderMushaf": "Mushaf",
     "orderRevelation": "Revelation",
     "inSurahs": "{count, plural, one {in # sūra} other {in {n} sūras}} of 114",
-    "byFormNote": "Click a form to see its lines alone."
+    "byFormNote": "Click a form to see its lines alone.",
+    "rangeTo": "to",
+    "rangeNone": "only",
+    "surahTo": "to sūra",
+    "juzTo": "to juzʾ"
   },
   "analyse": {
     "pageTitle": "Analyser",

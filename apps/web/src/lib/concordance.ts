@@ -45,8 +45,11 @@ export type Filters = {
   lemma: string;
   pattern: string;
   surah: string;
+  /** the last sūra of a range (CON-Q03); empty for one sūra */
+  surah_to: string;
   place: string;
   juz: string;
+  juz_to: string;
   pos: string;
   form: string;
   near: string;
@@ -54,7 +57,7 @@ export type Filters = {
   view: string;
 };
 
-const FILTER_KEYS = ["lemma", "pattern", "surah", "place", "juz", "pos", "form", "near"] as const;
+const FILTER_KEYS = ["lemma", "pattern", "surah", "surah_to", "place", "juz", "juz_to", "pos", "form", "near"] as const;
 
 export const DEFAULT_ROOT = "علم";
 
