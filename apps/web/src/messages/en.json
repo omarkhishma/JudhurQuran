@@ -90,7 +90,7 @@
     "promptTitle": "On this device: {saved} and {notes}",
     "promptSaved": "{count, plural, =0 {nothing saved} one {one saved item} other {{n} saved items}}",
     "promptNotes": "{count, plural, =0 {no notes} one {one note} other {{n} notes}}",
-    "promptBody": "Your reading, stars and notes are kept in this browser only and never sent to any server. An account, when it comes, will sync them across your devices and let you propose edits to the lexicon; reading, search and maps never need one.",
+    "promptBody": "Your reading, stars and notes live in this browser, and the server keeps none of them. Some words from them are sent to fetch a page — the roots of the words you review, say — and are not kept. Sign in if you like, to have them on all your devices; reading, lookups and maps never need an account.",
     "promptExport": "Export my data",
     "promptDismiss": "Not now",
     "promptNoTracking": "No tracking, no ads",
@@ -178,7 +178,8 @@
     },
     "nameGloss": "jadhr, “root”",
     "searchTry": "Try:",
-    "searchExamples": "عِلْم | k-t-b | 2:255 | البقرة 255"
+    "searchExamples": "عِلْم | k-t-b | 2:255 | البقرة 255",
+    "promptSignIn": "Sign in to sync"
   },
   "explore": {
     "title": "Explore",
@@ -1602,5 +1603,44 @@
     "pageNumber": "Page number (1–604)",
     "go": "Go",
     "entryFailed": "That place could not be reached."
+  },
+  "account": {
+    "signIn": "Sign in",
+    "titleEmpty": "Sign in to keep your reading on all your devices",
+    "titleData": "On this device: {saved} and {notes}",
+    "saved": "{count, plural, =0 {nothing saved} one {one saved item} other {{n} saved items}}",
+    "notes": "{count, plural, =0 {no notes} one {one note} other {{n} notes}}",
+    "body": "Your reading, stars and notes live in this browser. With an account they stay with you on every device, and your proposals to the lexicon are credited to your name. Reading, lookups and maps never need an account.",
+    "bring": "What is on this device joins your account when you sign in, and nothing is lost: where two versions differ the newer is kept, and the other is kept for thirty days for you to restore.",
+    "emailLabel": "Your e-mail address",
+    "send": "Send me a sign-in link",
+    "sending": "Sending…",
+    "sentTo": "Sent to {email}",
+    "sent": "If the address is right, a sign-in link is waiting there. It works once, for {minutes} minutes. Open it in this browser to bring what is here along.",
+    "otherAddress": "Use another address",
+    "emailInvalid": "Check the e-mail address.",
+    "unavailable": "Signing in is not available here yet. Everything works without it, and you can export what is on this device whenever you like.",
+    "failed": "That did not work just now. Try again in a moment.",
+    "or": "or",
+    "google": "Google",
+    "apple": "Apple",
+    "continue": {
+      "google": "Continue with Google",
+      "apple": "Continue with Apple"
+    },
+    "redirecting": "Taking you to {provider}…",
+    "finishing": "Finishing signing in with {provider}…",
+    "providerFailed": "Signing in with {provider} did not complete.",
+    "exportInstead": "Export my data instead",
+    "noTracking": "No tracking, no ads",
+    "notNow": "Not now",
+    "close": "Close",
+    "accountOf": "My account: {name}",
+    "signedInAs": "You are signed in as {email}",
+    "myAccount": "My account",
+    "verifying": "Signing you in…",
+    "verifyFailed": "This link has expired or was already used.",
+    "verifyMissing": "This page opens from the sign-in link sent to your e-mail.",
+    "askAgain": "Ask for a new link"
   }
 }

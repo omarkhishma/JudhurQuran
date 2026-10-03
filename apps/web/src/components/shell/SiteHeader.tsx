@@ -6,6 +6,7 @@ import { MobileMenu } from "./MobileMenu";
 import { ThemeToggle } from "./ThemeToggle";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { SearchLauncher } from "@/components/search/SearchLauncher";
+import { AccountButton } from "@/components/account/AccountButton";
 
 export async function SiteHeader() {
   const t = await getTranslations("common");
@@ -23,6 +24,7 @@ export async function SiteHeader() {
             <LanguageSwitch />
           </Suspense>
           <ThemeToggle />
+          <AccountButton />
           <MobileMenu />
         </div>
       </div>

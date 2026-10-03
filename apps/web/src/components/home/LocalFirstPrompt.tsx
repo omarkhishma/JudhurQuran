@@ -1,16 +1,20 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useState } from "react";
+import { SignInSheet } from "@/components/account/AccountButton";
+import { useAccount } from "@/lib/account/store";
 import { useIsClient } from "@/lib/client";
 import { cnt } from "@/lib/format";
 import { exportLocalData } from "@/lib/localData";
 import { usePersonal } from "@/lib/reader/store";
+import { useNotebook } from "@/lib/store/notebook";
 import { useSaved } from "@/lib/store/saved";
 
 /**
  * The local-first note (06 §6.1 item 5, HUB-29…35, 48, Q07): on the page, never a modal or a wall, and
  * dismissible. It says what this browser holds, that everything works without an account, and offers the
- * export now. There is no sign-in button until accounts exist (P6): a button that only pretends is not offered.
+ * export and signing in (P6). Signed in, it has nothing left to say.
  */
 export function LocalFirstPrompt() {
   const t = useTranslations("hub");
@@ -19,8 +23,11 @@ export function LocalFirstPrompt() {
   const hidden = usePersonal((s) => s.hubPromptHidden);
   const hide = usePersonal((s) => s.hideHubPrompt);
   const saved = useSaved((s) => s.bookmarks.length);
-  const notes = useSaved((s) => Object.keys(s.notes).length);
-  if (!client || hidden) return null;
+  // notes on verses and the Notebook's own notes (HUB-30)
+  const notes = useSaved((s) => Object.keys(s.notes).length) + useNotebook((s) => s.notes.length);
+  const signedIn = useAccount((s) => !!s.session);
+  const [signIn, setSignIn] = useState<string | null>(null);
+  if (!client || hidden || signedIn) return null;
   const any = saved + notes > 0;
   return (
     <section className="hub-prompt" aria-labelledby="hub-prompt-title">
@@ -29,6 +36,9 @@ export function LocalFirstPrompt() {
       </h2>
       <p className="text-[13.5px] leading-relaxed text-t2">{t("promptBody")}</p>
       <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className="btn btn-primary min-h-[40px]" onClick={() => setSignIn("/")}>
+          {t("promptSignIn")}
+        </button>
         <button type="button" className="btn min-h-[40px]" onClick={() => void exportLocalData()}>
           {t("promptExport")}
         </button>
@@ -38,6 +48,7 @@ export function LocalFirstPrompt() {
           {t("promptDismiss")}
         </button>
       </div>
+      <SignInSheet returnTo={signIn} onClose={() => setSignIn(null)} />
     </section>
   );
 }

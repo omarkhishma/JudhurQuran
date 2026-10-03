@@ -24,7 +24,8 @@ export function Dialog({
   label: string;
   children: React.ReactNode;
   width?: number;
-  align?: "center" | "top";
+  /** "bottom": a sheet risen from the foot of the screen (the hub's sign-in, HUB-29) */
+  align?: "center" | "top" | "bottom";
   className?: string;
 }) {
   const box = useRef<HTMLDivElement>(null);
@@ -64,7 +65,7 @@ export function Dialog({
   if (!open || typeof document === "undefined") return null;
   return createPortal(
     <div
-      className={"fixed inset-0 z-[95] flex justify-center bg-[rgba(10,10,16,.4)] p-3 animate-fade " + (align === "top" ? "items-start pt-[70px]" : "items-center")}
+      className={"fixed inset-0 z-[95] flex justify-center bg-[rgba(10,10,16,.4)] p-3 animate-fade " + (align === "top" ? "items-start pt-[70px]" : align === "bottom" ? "items-end sm:p-7" : "items-center")}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
