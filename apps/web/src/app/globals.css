@@ -4297,8 +4297,6 @@ a.wotd-pill:hover {
 }
 @media (max-width: 899px) {
   .account-signin {
-    width: 32px;
-    height: 30px;
     padding: 0;
     justify-content: center;
   }
@@ -4405,6 +4403,42 @@ a.wotd-pill:hover {
 @media (prefers-reduced-motion: reduce) {
   .auth-spinner {
     animation: none;
+  }
+}
+
+/* ─── Touch targets on phones (02 §2.6, L7; P5.6 from audit 10): every control at least 40 px, 44 in overlays ─── */
+@media (max-width: 899px) {
+  .hub-try,
+  .hub-chip,
+  .hub-context-clear,
+  .wotd-pill,
+  .root-chip,
+  .notebook-editor .chip,
+  .tag-input {
+    min-height: 40px;
+  }
+  .hub-context-clear {
+    display: inline-flex;
+    align-items: center;
+  }
+  /* the tag's remove button keeps its look; its touch area grows to 40 px around it */
+  .tag-pill button {
+    position: relative;
+  }
+  .tag-pill button::after {
+    content: "";
+    position: absolute;
+    inset: -9px;
+  }
+  .account-signin,
+  .account-slot {
+    width: 40px;
+    height: 40px;
+  }
+  .account-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
   }
 }
 

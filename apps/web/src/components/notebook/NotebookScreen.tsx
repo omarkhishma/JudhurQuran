@@ -427,12 +427,12 @@ function LinkedChips({ resolved }: { resolved: Resolved[] }) {
           {resolved.map((r) => (
             <li key={`${r.mention.kind}:${r.mention.raw}`}>
               {r.href ? (
-                <Link href={r.href} prefetch={false} className="chip min-h-[32px]" data-kind={r.kind}>
+                <Link href={r.href} prefetch={false} className="chip min-h-[32px] max-[899px]:min-h-[40px]" data-kind={r.kind}>
                   <span className="dot" style={{ background: colour[r.kind] }} aria-hidden="true" />
                   <span className={r.kind === "root" || r.kind === "word" ? "ar-classical text-[16px]" : ""} dir="auto">{r.label}</span>
                 </Link>
               ) : (
-                <span className="chip min-h-[32px] text-t3" data-kind="none">{r.kind === "none" ? t("unresolved", { raw: r.mention.raw }) : r.label}</span>
+                <span className="chip min-h-[32px] text-t3 max-[899px]:min-h-[40px]" data-kind="none">{r.kind === "none" ? t("unresolved", { raw: r.mention.raw }) : r.label}</span>
               )}
             </li>
           ))}
