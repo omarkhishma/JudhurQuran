@@ -2318,3 +2318,315 @@ button.type-chip:hover {
   }
 }
 }
+
+@layer components {
+/* ─── Concordance (design 05 §5.3) ────────────────────────────────────────── */
+.conc-screen {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.conc-top,
+.conc-filters,
+.conc-subbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.conc-filters {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+/* one column of filter rows; a wrapping column would size each row to its content and overflow */
+.conc-subbar {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.conc-subrow,
+.conc-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+/* label, then the chips; a wrapped line starts under the first chip */
+.conc-chips {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+}
+.conc-head-pre,
+.conc-head-fol {
+  display: flex;
+  gap: 4px;
+}
+/* the labels sit against the keyword column, the arrows point away from it */
+.conc-head-pre {
+  justify-content: flex-end;
+}
+.conc-index {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.conc-letters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.conc-letter {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-family: var(--font-classical);
+  font-size: 18px;
+  color: var(--t2);
+}
+.conc-letter:hover {
+  background: var(--card-2);
+}
+.conc-letter.is-on {
+  background: color-mix(in srgb, var(--c-root) 14%, var(--card));
+  color: var(--t1);
+}
+.conc-index-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.conc-index-root {
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.conc-index-root:hover,
+.conc-index-root.is-on {
+  border-color: var(--c-root);
+}
+.root-pill {
+  font-family: var(--font-classical);
+  font-size: 17px;
+  padding: 0 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--t1);
+}
+.root-pill.is-on {
+  border-color: var(--c-root);
+  color: color-mix(in srgb, var(--c-root) 85%, var(--t1));
+  background: color-mix(in srgb, var(--c-root) 10%, var(--card));
+}
+.conc-root-input {
+  width: 110px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  font-family: var(--font-classical);
+  font-size: 16px;
+}
+.conc-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--t3);
+}
+.conc-select select {
+  max-width: 220px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--t1);
+  font-size: 12.5px;
+}
+/* One grid for every line: the keyword column is as wide as the widest keyword and both contexts share
+   the rest, so the keywords stand on one axis down the page (CON-10). */
+.conc-kwic {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 2px;
+  font-size: 18px;
+}
+.conc-kwic > * {
+  grid-column: 1 / -1;
+}
+.conc-head,
+.conc-lines,
+.conc-lines > li,
+.conc-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+.conc-lines {
+  row-gap: 2px;
+}
+.conc-row,
+.conc-head {
+  align-items: baseline;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: var(--t2);
+}
+.conc-row:hover {
+  background: var(--card-2);
+}
+.conc-head {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--t3);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+:lang(ar) .conc-head {
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  letter-spacing: 0;
+}
+.conc-src {
+  display: flex;
+  gap: 6px;
+  font-size: 11.5px;
+  min-width: 0;
+}
+.conc-pre,
+.conc-fol {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 2;
+}
+/* the preceding words hug the keyword and lose their far end first (CON-11) */
+.conc-pre {
+  direction: ltr;
+  text-align: left;
+}
+.conc-key {
+  color: var(--c-word);
+  font-weight: 700;
+  white-space: nowrap;
+  text-align: center;
+}
+.conc-roots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.conc-dist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 12px;
+}
+.conc-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  min-width: 0;
+}
+.dist-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 26px;
+  padding: 1px 4px;
+  border-radius: 6px;
+  color: var(--t1);
+}
+.dist-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.dist-row:hover {
+  background: var(--card-2);
+}
+.dist-row.is-on {
+  background: var(--word-wash);
+}
+.dist-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--card-2);
+  overflow: hidden;
+}
+.dist-track > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+}
+@media (max-width: 899px) {
+  .conc-kwic {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    column-gap: 6px;
+  }
+  .conc-src {
+    grid-column: 1 / -1;
+  }
+  .conc-head {
+    display: none;
+  }
+  /* the sample roots and the filter chips scroll in one line instead of taking three */
+  .conc-chips {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .conc-chip-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-block: 2px;
+  }
+  .conc-chip-list > * {
+    flex: none;
+  }
+  .conc-roots {
+    flex: 1 1 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-block: 2px;
+  }
+  .conc-roots > * {
+    flex: none;
+  }
+}
+}

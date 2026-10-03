@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const PAGES = ["/", "/quran", "/quran/1", "/quran/2/255", "/word/2:255:23", `/roots/${encodeURIComponent("علم")}`, "/search?q=%D8%B5%D8%A8%D8%B1", "/about", "/sources", "/saved", "/en", "/en/word/1:1:1"];
+const PAGES = ["/", "/quran", "/quran/1", "/quran/2/255", "/word/2:255:23", `/roots/${encodeURIComponent("علم")}`, "/search?q=%D8%B5%D8%A8%D8%B1", "/concordance", "/concordance?view=dist", "/about", "/sources", "/saved", "/en", "/en/word/1:1:1"];
 
 for (const path of PAGES) {
   test(`axe: ${decodeURIComponent(path)}`, async ({ page }) => {
@@ -17,7 +17,7 @@ for (const path of PAGES) {
 }
 
 // Dark theme: its own tokens, checked on the pages that use the most colours.
-for (const path of ["/quran/2/255", "/word/2:255:23", `/roots/${encodeURIComponent("علم")}`, "/search?q=%D8%B5%D8%A8%D8%B1", "/en"]) {
+for (const path of ["/quran/2/255", "/word/2:255:23", `/roots/${encodeURIComponent("علم")}`, "/search?q=%D8%B5%D8%A8%D8%B1", "/concordance?view=dist", "/en"]) {
   test(`axe dark: ${decodeURIComponent(path)}`, async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem("jadhr-theme", "dark"));
     await page.goto(path);

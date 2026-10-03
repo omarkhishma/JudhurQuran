@@ -15,6 +15,8 @@
 
 - [2026-10-03] **The bulk release is built with correct labels but held for the owner (publication_hold in MANIFEST): corpus-derived files wait on D19/D2, the KFGQPC Unicode data on confirmation from the Complex; data from an unlicensed repository (qac-v2) is left out.** — Research 07: the release paraphrased the corpus notice, called the corpus's Tanzil 1.0.2 text KFGQPC's, and cited a licence the qac-v2 data does not carry.
 
+- [2026-10-03] **Concordance: mushaf order is the default and every filter lives in the URL; collocates and forms filter the lines instead of leaving the screen.** — CON-Q01 (Quran-first order), CON-30 (shareable state), CON-Q05/CON-24 (a collocate or a form opens its own lines). English line tooltips show the verse in the reader's translation with the work credited under the lines; the CSV translation column names its work in the header, so the text never travels without its credit.
+
 ### Architecture
 - [2026-10-02] **Next.js 16 App Router + React 19 + TypeScript for the web.** — SSR is required for verse/root/word pages (Arabic SEO is the clearest market gap per research 04), and the reader/editor are client-heavy.
 - [2026-10-02] **Previous caching model (fetch revalidate + tags), not Cache Components; a release expires the `dataset` tag.** — Stable with next-intl's static rendering; content is immutable per release. The loader POSTs to the web's `/api/revalidate` (bearer `JADHR_REVALIDATE_SECRET` in production) which calls `revalidateTag("dataset", { expire: 0 })` — not stale-while-revalidate, because a release can change payload shape and stale pages then crash. API ETags hash `version@loaded_at`, re-read every 30 s, so a corrected rebuild of the same version never answers 304 with old content. A CDN in front must be purged on release (runbook).
@@ -47,6 +49,10 @@
 - [2026-10-03] **al-Furūq is read from OpenITI's `Shamela0010414` version, not the `JK006960` the metadata flags primary.** — The same typing of the same edition (identical slips), but it carries the edition card (editor Muḥammad Ibrāhīm Salīm; JK006960 has none, author death «9999»), page markers that follow shamela.ws book 10414, a few corrections and no stray conversion marks. JK006960 stays pinned as a cross-check.
 
 ## Lessons
+
+- [2026-10-03] A column flex container must not wrap: with `flex-wrap: wrap` each column line takes its content's width, so the concordance's chip rows grew to 1,140 px inside a 380 px bar and the phone's layout viewport widened to 1,167 px — every tap in the e2e run missed. The no-horizontal-scroll check caught it; keep it in every screen's phone test.
+- [2026-10-03] Nothing a server component calls may be exported from a `"use client"` module: the server receives a reference, the build passes, and the page fails with a 500 at request time. Shared helpers and types go in `lib/`.
+- [2026-10-03] KWIC columns line up only when every row shares one grid: separate grids per row size the keyword column per row. One grid with `subgrid` rows puts the keywords on one axis; the rows stay a list of links, because `role="row"` is not allowed on a link.
 
 - [2026-10-03] Run the e2e suite against the production build, not the dev server: dev recompiles on file changes and served error pages mid-run that looked like product bugs; against `next start` the same suite ran green in a quarter of the time.
 - [2026-10-03] A per-IP rate limit behind a server that renders pages counts every visitor as the web host: server renders now carry a shared internal token (JADHR_INTERNAL_TOKEN). Tests share one IP too — the e2e API runs with a higher limit.
