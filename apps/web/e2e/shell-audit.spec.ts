@@ -17,7 +17,8 @@ test("the shared nav offers Ask, the plain way in (SHL-32)", async ({ page, isMo
 
 test("the site omnibox offers patterns, each leading to its words (SHL-Q07)", async ({ page }) => {
   await page.goto("/library");
-  await page.keyboard.press("ControlOrMeta+k");
+  // the header's search button opens the omnibox at every width (⌘K is a desktop affordance)
+  await page.locator("header").getByRole("button", { name: "بحث" }).click();
   const box = page.getByRole("dialog", { name: "البحث في القرآن الكريم" });
   await box.getByRole("combobox").or(box.getByRole("textbox")).first().fill("فاعل");
   const row = box.getByRole("option").filter({ hasText: "فَاعِل" }).filter({ hasText: "وزن" }).first();
