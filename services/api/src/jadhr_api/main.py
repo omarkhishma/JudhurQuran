@@ -19,7 +19,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import concordance, content, knowledge, lexicon
+from . import analyse, concordance, content, knowledge, lexicon
 from .db import connect
 from .search import search as run_search
 from .settings import get_settings
@@ -537,6 +537,12 @@ def root_graph(request: Request, root: str) -> Response:
         if g is None:
             raise not_found("root")
         return cached(request, g)
+
+
+@router.get("/analyse", summary="A phrase word by word: corpus analysis for Quranic text, ranked candidates otherwise")
+def analyse_phrase(request: Request, q: str = Query("", max_length=600)) -> Response:
+    with connect() as conn:
+        return cached(request, analyse.analyse(conn, q))
 
 
 @router.get(
