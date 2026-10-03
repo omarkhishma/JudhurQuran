@@ -5,10 +5,13 @@ Run: ``uv run uvicorn jadhr_api.main:app --port 8000``  ·  Docs: ``/api/v1/docs
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import re
 import time
 from collections import defaultdict, deque
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager, suppress
 from datetime import date, datetime, timedelta
 from typing import Annotated, Any
 
@@ -21,7 +24,18 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import analyse, collections, concordance, content, daily, knowledge, lexicon, review
+from . import (
+    accounts,
+    analyse,
+    collections,
+    concordance,
+    content,
+    daily,
+    knowledge,
+    lexicon,
+    review,
+    routes_me,
+)
 from .db import connect
 from .search import search as run_search
 from .settings import get_settings
@@ -729,6 +743,25 @@ def search(
 _hits: dict[str, deque[float]] = defaultdict(deque)
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Expired sign-in tokens and sessions, replaced versions past 30 days and lookups past their retention are
+    removed at start and then daily — what the privacy page promises (P6.1)."""
+
+    async def daily_purge() -> None:
+        while True:
+            # an account schema not yet migrated must not stop the content API
+            with suppress(Exception):
+                await asyncio.to_thread(accounts.purge)
+            await asyncio.sleep(86_400)
+
+    task = asyncio.create_task(daily_purge())
+    try:
+        yield
+    finally:
+        task.cancel()
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
@@ -743,6 +776,7 @@ def create_app() -> FastAPI:
         openapi_url=f"{API_PREFIX}/openapi.json",
         redoc_url=None,
         default_response_class=ORJSONResponse,
+        lifespan=lifespan,
     )
     app.add_middleware(GZipMiddleware, minimum_size=1024)
     app.add_middleware(
@@ -779,9 +813,16 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(_: Request, exc: StarletteHTTPException) -> ORJSONResponse:
-        code = {400: "bad_request", 404: "not_found", 405: "bad_request", 429: "rate_limited"}.get(
-            exc.status_code, "server_error"
-        )
+        code = {
+            400: "bad_request",
+            401: "unauthorized",
+            403: "forbidden",
+            404: "not_found",
+            405: "bad_request",
+            413: "too_large",
+            429: "rate_limited",
+            503: "unavailable",
+        }.get(exc.status_code, "server_error")
         return error(exc.status_code, code, str(exc.detail))
 
     @app.exception_handler(RequestValidationError)
@@ -796,6 +837,7 @@ def create_app() -> FastAPI:
             return {"status": "ok", "dataset": content.dataset(conn)["version"]}
 
     app.include_router(router)
+    app.include_router(routes_me.router)
     return app
 
 

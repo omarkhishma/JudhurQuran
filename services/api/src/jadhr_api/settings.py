@@ -26,6 +26,31 @@ class Settings(BaseSettings):
     search_url: str | None = "http://localhost:9201"
     search_timeout: float = 3.0
 
+    # ─── Accounts and sync (P6, D3) ────────────────────────────────────────────
+    # where the web app lives, for the links in sign-in e-mails
+    public_web_url: str = "http://localhost:3210"
+    # "dev" keeps messages in memory and lets a development server read them back (never in production);
+    # "smtp" sends them; "none" sends nothing (accounts by e-mail are then off)
+    mail_backend: str = "dev"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    mail_from: str = "Jadhr <no-reply@localhost>"
+    # 32 bytes, base64: encrypts synced records at rest. Required in production; development derives one.
+    data_key: str | None = None
+    session_days: int = 90
+    login_token_minutes: int = 15
+    history_days: int = 30
+    lookup_retention_days: int = 365
+    # sign-in with Google and Apple appears only when these are set (no button that only pretends)
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    apple_client_id: str | None = None
+    apple_team_id: str | None = None
+    apple_key_id: str | None = None
+    apple_private_key: str | None = None
+
 
 @lru_cache
 def get_settings() -> Settings:
