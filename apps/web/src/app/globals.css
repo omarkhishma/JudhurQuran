@@ -4571,3 +4571,173 @@ a.wotd-pill:hover {
   align-items: flex-end;
   gap: 2px;
 }
+
+/* ─── Profile (P6.3, inventory PRF) ──────────────────────────────────────────── */
+.profile-screen {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  /* the rail's second row takes what the main column's height leaves, so the data controls sit under the counts */
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "id main" "data main";
+  align-items: start;
+  gap: 16px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+.profile-id {
+  grid-area: id;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.profile-main {
+  grid-area: main;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+.profile-data {
+  grid-area: data;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 899px) {
+  /* a phone shows who and what first, then the tabs, then the data controls — never pushed out of reach */
+  .profile-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: "id" "main" "data";
+  }
+}
+.profile-avatar {
+  display: inline-flex;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--c-root);
+  color: var(--card);
+  font-size: 26px;
+  font-weight: 600;
+}
+.profile-callout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--t2);
+}
+.profile-counts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.profile-counts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.profile-counts dt {
+  color: var(--t2);
+}
+.profile-counts dd {
+  color: var(--t1);
+  font-weight: 600;
+}
+.profile-status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 12.5px;
+  color: var(--t2);
+}
+.profile-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--card-3);
+  scrollbar-width: none;
+}
+.profile-tabs .seg {
+  flex: none;
+}
+.profile-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.profile-row {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.profile-row:hover {
+  border-color: var(--ring);
+}
+.profile-empty {
+  padding: 20px 4px;
+  font-size: 13.5px;
+  color: var(--t2);
+}
+.profile-credit {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--card-2);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--t2);
+}
+.account-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+.account-choice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-height: 44px;
+  cursor: pointer;
+}
+.account-choice input {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  flex: none;
+  accent-color: var(--c-word);
+}
+.account-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.account-row:last-child {
+  border-bottom: 0;
+}

@@ -25,7 +25,7 @@ export const DESTINATIONS: Destination[] = [
   { key: "reviewQueue", href: "/review", phase: "P7" },
   { key: "classroom", href: "/classroom", phase: "P9" },
   { key: "published", href: null, phase: "P8" },
-  { key: "profile", href: "/me", phase: "P6" },
+  { key: "profile", href: "/me" },
   { key: "api", href: "/developers" },
   { key: "sources", href: "/sources" },
 ];

@@ -52,6 +52,10 @@ const STATES: { name: string; path: string; act?: (page: Page) => Promise<void> 
   { name: "the review overlay", path: "/quran/1?mode=review", act: async (page) => void (await page.locator(".review-card").waitFor()) },
   { name: "the journal", path: "/notebook?tab=journal" },
   { name: "an open note", path: "/notebook?note=n1", act: async (page) => void (await page.locator(".notebook-editor").waitFor()) },
+  { name: "the profile", path: "/me", act: async (page) => void (await page.locator(".profile-counts").waitFor()) },
+  { name: "the profile's account tab, signed out", path: "/me?tab=account", act: async (page) => void (await page.getByLabel("بريدك الإلكتروني").waitFor()) },
+  { name: "the sign-in page", path: "/signin" },
+  { name: "the privacy page", path: "/privacy" },
   {
     name: "the sign-in sheet",
     path: "/explore",

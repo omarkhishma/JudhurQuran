@@ -1,0 +1,311 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+import { SignInPanel } from "@/components/account/SignInPanel";
+import { usePathname } from "@/i18n/navigation";
+import { signOutHere } from "@/lib/account/actions";
+import { type Account, ApiError, authFetch, useAccount } from "@/lib/account/store";
+import { runSync } from "@/lib/sync/run";
+
+export type Me = Account & { created_at: string; devices: { id: string; device: string | null; created_at: string; last_seen_at: string; current: boolean }[]; records: number };
+type Version = { id: number; store: string; key: string; value: unknown; deleted: boolean; updated_at: number; replaced_at: number };
+
+const errorText = (e: unknown) => (e instanceof ApiError ? e.detail : e instanceof Error ? e.message : String(e));
+
+/**
+ * The account (PRF-14, Q02, Q04; NTB-Q02; P6.1): the name contributions are credited to, with affiliation and ORCID
+ * for scholars and nothing public by default; the two choices that send more than sync needs, each off until
+ * turned on and saying what it keeps and for how long; the devices signed in; the versions sync replaced, kept 30
+ * days and restorable; signing out, with or without this device's data; deleting the account in two steps.
+ * Signed out, the sign-in panel.
+ */
+export function AccountPanel({ me, onChanged }: { me: Me | null; onChanged: () => void }) {
+  const user = useAccount((s) => s.user);
+  const pathname = usePathname();
+  const t = useTranslations("me");
+  if (!user)
+    return (
+      <div className="flex flex-col gap-3">
+        {/* the account just deleted says so here, where the reader is left */}
+        {new URLSearchParams(window.location.search).has("account-deleted") && (
+          <p className="text-[13px] text-good" role="status">
+            {t("deleted")}
+          </p>
+        )}
+        <SignInPanel returnTo={`${pathname}?tab=account`} />
+      </div>
+    );
+  return (
+    <div className="flex flex-col gap-4">
+      <ProfileForm />
+      <Choices onChanged={onChanged} />
+      <Devices me={me} onChanged={onChanged} />
+      <History />
+      <SignOut />
+      <DeleteAccount />
+    </div>
+  );
+}
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="account-card" aria-label={title}>
+      <h2 className="text-[15px] font-semibold">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function ProfileForm() {
+  const t = useTranslations("me");
+  const user = useAccount((s) => s.user)!;
+  const setUser = useAccount((s) => s.setUser);
+  const [f, setF] = useState({ display_name: user.display_name ?? "", affiliation: user.affiliation ?? "", orcid: user.orcid ?? "" });
+  const [said, setSaid] = useState<{ ok: boolean; text: string } | null>(null);
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      const out = await authFetch<Me>("/me", { method: "PATCH", body: JSON.stringify(f) });
+      setUser({ id: out.id, email: out.email, display_name: out.display_name, affiliation: out.affiliation, orcid: out.orcid, role: out.role, settings: out.settings });
+      setSaid({ ok: true, text: t("saved") });
+    } catch (err) {
+      setSaid({ ok: false, text: t("saveFailed", { error: errorText(err) }) });
+    }
+  }
+  const field = (k: keyof typeof f, label: string, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <label className="flex flex-col gap-1 text-[13px]">
+      <span className="font-medium">{label}</span>
+      <input className="field min-h-[44px]" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} dir="auto" {...extra} />
+    </label>
+  );
+  return (
+    <Card title={t("accountTitle")}>
+      <form className="flex flex-col gap-3" onSubmit={save}>
+        <p className="text-[12.5px] text-t3" dir="ltr">
+          {user.email}
+        </p>
+        {field("display_name", t("displayName"), { maxLength: 120, autoComplete: "name" })}
+        {field("affiliation", t("affiliation"), { maxLength: 120, autoComplete: "organization" })}
+        {field("orcid", t("orcid"), { maxLength: 19, placeholder: "0000-0000-0000-0000", inputMode: "numeric" })}
+        <p className="text-[12px] text-t3">{t("noPublic")}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="submit" className="btn btn-primary min-h-[40px]">
+            {t("save")}
+          </button>
+          {said && (
+            <span className={"text-[12.5px] " + (said.ok ? "text-good" : "text-bad")} role={said.ok ? "status" : "alert"}>
+              {said.text}
+            </span>
+          )}
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+/** NTB-Q02 and P6.1: each choice off until the reader turns it on, saying what it keeps and for how long. */
+function Choices({ onChanged }: { onChanged: () => void }) {
+  const t = useTranslations("me");
+  const user = useAccount((s) => s.user)!;
+  const setUser = useAccount((s) => s.setUser);
+  // the choice shows at once, and goes back if the server does not take it
+  const [pending, setPending] = useState<Partial<Record<"sync_journal" | "share_lookups", boolean>>>({});
+  const [error, setError] = useState<string | null>(null);
+  async function set(k: "sync_journal" | "share_lookups", v: boolean) {
+    setPending((p) => ({ ...p, [k]: v }));
+    setError(null);
+    try {
+      const out = await authFetch<Me>("/me", { method: "PATCH", body: JSON.stringify({ settings: { [k]: v } }) });
+      setUser({ ...user, settings: out.settings });
+      onChanged();
+      void runSync(); // the journal goes up (or stops) at once
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setPending((p) => {
+        const next = { ...p };
+        delete next[k];
+        return next;
+      });
+    }
+  }
+  const toggle = (k: "sync_journal" | "share_lookups", label: string, help: string) => (
+    <label className="account-choice">
+      <input type="checkbox" checked={pending[k] ?? !!user.settings?.[k]} disabled={k in pending} onChange={(e) => void set(k, e.target.checked)} />
+      <span className="flex flex-col gap-1">
+        <span className="text-[13.5px] font-medium">{label}</span>
+        <span className="text-[12.5px] leading-relaxed text-t2">{help}</span>
+      </span>
+    </label>
+  );
+  return (
+    <Card title={t("syncTitle")}>
+      {toggle("sync_journal", t("syncJournal"), t("syncJournalHelp"))}
+      {toggle("share_lookups", t("shareLookups"), t("shareLookupsHelp"))}
+      {error && (
+        <p className="text-[12.5px] text-bad" role="alert">
+          {t("saveFailed", { error })}
+        </p>
+      )}
+    </Card>
+  );
+}
+
+function Devices({ me, onChanged }: { me: Me | null; onChanged: () => void }) {
+  const t = useTranslations("me");
+  const locale = useLocale();
+  const when = (s: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }).format(new Date(s));
+  if (!me) return null;
+  return (
+    <Card title={t("devices")}>
+      <ul className="flex flex-col gap-1.5">
+        {me.devices.map((d) => (
+          <li key={d.id} className="account-row">
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-[13.5px]" dir="ltr">
+                {d.device || t("unknownDevice")}
+              </span>
+              <span className="text-[11.5px] text-t3">{d.current ? t("thisDevice") : t("lastSeen", { when: when(d.last_seen_at) })}</span>
+            </span>
+            {!d.current && (
+              <button type="button" className="btn min-h-[40px]" onClick={() => void authFetch(`/me/sessions/${d.id}`, { method: "DELETE" }).then(onChanged)}>
+                {t("signOutDevice")}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+/** PRF-33: what sync replaced, kept thirty days, each restorable — a merge never destroys anything. */
+function History() {
+  const t = useTranslations("me");
+  const locale = useLocale();
+  const session = useAccount((s) => s.session);
+  const q = useQuery({ queryKey: ["me-history", session], queryFn: () => authFetch<{ data: Version[] }>("/me/history"), staleTime: 10_000 });
+  const [restored, setRestored] = useState<number | null>(null);
+  const when = (ms: number) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long", hour: "numeric", minute: "2-digit" }).format(new Date(ms));
+  async function restore(id: number) {
+    await authFetch(`/me/history/${id}/restore`, { method: "POST" });
+    setRestored(id);
+    await runSync();
+    void q.refetch();
+  }
+  const list = q.data?.data ?? [];
+  return (
+    <Card title={t("history")}>
+      {restored !== null && (
+        <p className="text-[12.5px] text-good" role="status">
+          {t("restored")}
+        </p>
+      )}
+      {q.isLoading ? (
+        <div className="h-16 animate-pulse rounded-lg bg-card-2" aria-hidden="true" />
+      ) : list.length === 0 ? (
+        <p className="text-[12.5px] text-t3">{t("historyEmpty")}</p>
+      ) : (
+        <ul className="flex max-h-[360px] flex-col gap-1.5 overflow-y-auto">
+          {list.slice(0, 100).map((v) => (
+            <li key={v.id} className="account-row">
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[13px]" dir="auto">
+                  {t("store." + v.store)} • {v.deleted ? t("aDeletion") : preview(v)}
+                </span>
+                <span className="text-[11.5px] text-t3">{t("replacedAt", { when: when(v.replaced_at) })}</span>
+              </span>
+              <button type="button" className="btn min-h-[40px]" onClick={() => void restore(v.id)}>
+                {t("restore")}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+/** A replaced version, named by what the reader would recognise in it. */
+function preview(v: Version): string {
+  const x = v.value as Record<string, unknown> | string | number | boolean | null;
+  if (x && typeof x === "object") {
+    for (const k of ["label", "title", "text", "body", "root"]) if (typeof x[k] === "string" && x[k]) return String(x[k]).slice(0, 80);
+  }
+  if (typeof x === "string" || typeof x === "number" || typeof x === "boolean") return `${v.key.replace(/^[a-z]+:/, "")} — ${String(x)}`;
+  return v.key;
+}
+
+function SignOut() {
+  const t = useTranslations("me");
+  return (
+    <Card title={t("signOutTitle")}>
+      <p className="text-[12.5px] text-t2">{t("signOutHelp")}</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className="btn min-h-[40px]" onClick={() => void signOutHere(false)}>
+          {t("signOut")}
+        </button>
+        <button type="button" className="btn min-h-[40px] text-bad" onClick={() => void signOutHere(true)}>
+          {t("signOutRemove")}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+/** PRF-14: two steps — a confirmation token valid ten minutes, then the deletion of everything the account holds. */
+function DeleteAccount() {
+  const t = useTranslations("me");
+  const [token, setToken] = useState<string | null>(null);
+  const [state, setState] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => {
+    if (!token) return;
+    const id = setTimeout(() => setToken(null), 10 * 60_000);
+    return () => clearTimeout(id);
+  }, [token]);
+  async function ask() {
+    try {
+      setToken((await authFetch<{ confirm: string }>("/me/delete", { method: "POST" })).confirm);
+    } catch (err) {
+      setState({ ok: false, text: t("deleteFailed", { error: errorText(err) }) });
+    }
+  }
+  async function confirm() {
+    try {
+      await authFetch("/me/delete/confirm", { method: "POST", body: JSON.stringify({ confirm: token }) });
+      window.history.replaceState(null, "", `${window.location.pathname}?tab=account&account-deleted=1`);
+      useAccount.getState().signOut();
+    } catch (err) {
+      setToken(null);
+      setState({ ok: false, text: t("deleteFailed", { error: errorText(err) }) });
+    }
+  }
+  return (
+    <Card title={t("deleteTitle")}>
+      <p className="text-[12.5px] leading-relaxed text-t2">{t("deleteHelp")}</p>
+      <div className="flex flex-wrap gap-2">
+        {token ? (
+          <>
+            <button type="button" className="btn btn-danger min-h-[40px]" onClick={() => void confirm()}>
+              {t("deleteConfirm")}
+            </button>
+            <button type="button" className="btn min-h-[40px]" onClick={() => setToken(null)}>
+              {t("deleteCancel")}
+            </button>
+          </>
+        ) : (
+          <button type="button" className="btn min-h-[40px] text-bad" onClick={() => void ask()}>
+            {t("deleteAsk")}
+          </button>
+        )}
+      </div>
+      {state && (
+        <p className={"text-[12.5px] " + (state.ok ? "text-good" : "text-bad")} role={state.ok ? "status" : "alert"}>
+          {state.text}
+        </p>
+      )}
+    </Card>
+  );
+}

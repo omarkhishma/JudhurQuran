@@ -1,0 +1,337 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { initial, SignInSheet } from "@/components/account/AccountButton";
+import { Link, usePathname } from "@/i18n/navigation";
+import { authFetch, useAccount } from "@/lib/account/store";
+import { useIsClient } from "@/lib/client";
+import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
+import { listGraphs } from "@/lib/graph/persist";
+import { listTexts, loadText } from "@/lib/library/texts";
+import { deleteLocalData, exportLocalData } from "@/lib/localData";
+import { TABS, type Tab } from "@/lib/profile";
+import { mergeSessions, usePersonal } from "@/lib/reader/store";
+import { useNotebook, useNotebookReady } from "@/lib/store/notebook";
+import { useReview } from "@/lib/store/review";
+import { useSaved } from "@/lib/store/saved";
+import { runSync, useSyncStatus } from "@/lib/sync/run";
+import { AccountPanel, type Me } from "./AccountPanel";
+
+
+const download = (name: string, data: unknown) => {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000); // PRF-13: the blob is let go
+};
+
+/**
+ * The Profile (06 §6.7, inventory PRF-01…35 with PRF-Q01…Q07): who the reader is here — a local reader, or an
+ * account with its name, affiliation, ORCID and role — what they have, their own records in tabs that link back
+ * to where each was made, and their data as a first-class part of the screen: export everything, export the
+ * account's copy, download the texts, delete this device's data in two clicks, and, in the Account tab, the
+ * settings, devices, replaced versions, signing out and deleting the account. Nothing is public by default.
+ */
+export function ProfileScreen({ initialTab }: { initialTab: Tab }) {
+  const t = useTranslations("me");
+  const client = useIsClient();
+  const user = useAccount((s) => s.user);
+  const session = useAccount((s) => s.session);
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const me = useQuery({ queryKey: ["me", session], queryFn: () => authFetch<Me>("/me"), enabled: client && !!session, staleTime: 30_000 });
+  const strip = useRef<HTMLDivElement>(null);
+  // on a phone the strip scrolls sideways: the open tab is brought into view, as the shared nav does
+  useEffect(() => {
+    strip.current?.querySelector<HTMLElement>("[aria-pressed=true]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [tab]);
+
+  function go(next: Tab) {
+    setTab(next);
+    // the tab is in the address (PRF-02), without asking the server
+    window.history.replaceState(null, "", `${window.location.pathname}${next === "contributions" ? "" : `?tab=${next}`}`);
+  }
+
+  const signedIn = client && !!user;
+  return (
+    <div className="profile-screen">
+      <aside className="profile-id" aria-label={t("counts")}>
+        <Identity signedIn={signedIn} me={me.data} />
+        <Counts />
+      </aside>
+      <div className="profile-main">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-[22px] font-semibold">{t("tab." + tab)}</h1>
+          <span className="flex-1" />
+          <SyncLine signedIn={signedIn} devices={me.data?.devices.length ?? null} />
+        </div>
+        <div ref={strip} className="profile-tabs" role="group" aria-label={t("tabs")}>
+          {TABS.map((x) => (
+            <button key={x} type="button" className="seg" aria-pressed={tab === x} onClick={() => go(x)}>
+              {t("tab." + x)}
+            </button>
+          ))}
+        </div>
+        {client && (tab === "account" ? <AccountPanel me={me.data ?? null} onChanged={() => void me.refetch()} /> : <TabList tab={tab} />)}
+        {tab !== "account" && <p className="profile-credit">{t("credit")}</p>}
+      </div>
+      <section className="profile-data" aria-labelledby="your-data">
+        <h2 id="your-data" className="label-caps">{t("yourData")}</h2>
+        <DataControls signedIn={signedIn} />
+      </section>
+    </div>
+  );
+}
+
+function Identity({ signedIn, me }: { signedIn: boolean; me: Me | undefined }) {
+  const t = useTranslations("me");
+  const user = useAccount((s) => s.user);
+  const pathname = usePathname();
+  const [signIn, setSignIn] = useState<string | null>(null);
+  if (!signedIn || !user)
+    return (
+      <div className="flex flex-col gap-3">
+        <span className="profile-avatar" aria-hidden="true" />
+        <div>
+          <p className="text-[17px] font-semibold">{t("localName")}</p>
+          <p className="text-[13px] text-t3">{t("notSignedIn")}</p>
+        </div>
+        <div className="profile-callout">
+          <p>{t("localCallout")}</p>
+          <button type="button" className="btn btn-primary min-h-[40px] self-start" onClick={() => setSignIn(pathname)}>
+            {t("signIn")}
+          </button>
+        </div>
+        <SignInSheet returnTo={signIn} onClose={() => setSignIn(null)} />
+      </div>
+    );
+  const name = user.display_name || user.email;
+  return (
+    <div className="flex flex-col gap-3">
+      <span className="profile-avatar is-account" aria-hidden="true">
+        {initial(user.display_name, user.email)}
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-[17px] font-semibold" dir="auto">{name}</p>
+        <p className="truncate text-[13px] text-t3" dir="auto">{user.affiliation || user.email}</p>
+        {user.orcid && (
+          <p className="mono text-[11px] text-t3" dir="ltr">
+            ORCID {user.orcid}
+          </p>
+        )}
+        <p className="mt-1 text-[11.5px] text-t3">{t("role." + ((me?.role ?? user.role) as "member"))}</p>
+      </div>
+    </div>
+  );
+}
+
+function Counts() {
+  const t = useTranslations("me");
+  const locale = useLocale();
+  const client = useIsClient();
+  const ready = useNotebookReady();
+  const proposals = usePersonal((s) => s.proposals.length);
+  const stars = useSaved((s) => s.bookmarks.length);
+  const verseNotes = useSaved((s) => Object.keys(s.notes).length);
+  const notes = useNotebook((s) => s.notes.length);
+  const cards = useReview((s) => Object.keys(s.cards).length);
+  const graphs = useQuery({ queryKey: ["my-graphs"], queryFn: listGraphs, enabled: client });
+  const texts = useQuery({ queryKey: ["user-texts"], queryFn: listTexts, enabled: client });
+  const n = (x: number | undefined) => (client && x !== undefined ? formatNumber(x, locale) : "–");
+  const rows: [string, string][] = [
+    // merged contributions come with the review queue (P7): until then none can be, and the count says so
+    [t("merged"), n(0)],
+    [t("pending"), n(proposals)],
+    [t("graphs"), n(graphs.data?.length)],
+    [t("texts"), n(texts.data?.length)],
+    [t("notes"), ready ? n(notes + verseNotes) : "–"],
+    [t("stars"), n(stars)],
+    [t("cards"), n(cards)],
+  ];
+  return (
+    <dl className="profile-counts">
+      {rows.map(([k, v]) => (
+        <div key={k}>
+          <dt>{k}</dt>
+          <dd className="mono">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/** PRF-04: green when synced (with the true number of devices, PRF-05), amber when only on this device. */
+function SyncLine({ signedIn, devices }: { signedIn: boolean; devices: number | null }) {
+  const t = useTranslations("me");
+  const locale = useLocale();
+  const s = useSyncStatus();
+  const when = (ms: number) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { hour: "numeric", minute: "2-digit" }).format(new Date(ms));
+  if (!signedIn)
+    return (
+      <span className="profile-status">
+        <span className="dot" style={{ background: "var(--amber)" }} aria-hidden="true" />
+        {t("statusLocal")}
+      </span>
+    );
+  const text =
+    s.state === "syncing"
+      ? t("statusSyncing")
+      : s.state === "offline"
+        ? t("statusOffline")
+        : s.state === "error"
+          ? t("statusError", { error: s.error ?? "" })
+          : devices !== null
+            ? t("statusSynced", cnt(devices, locale))
+            : t("statusSyncing");
+  return (
+    <span className="profile-status" role="status">
+      <span className="dot" style={{ background: s.state === "idle" ? "var(--good)" : s.state === "syncing" ? "var(--c-word)" : "var(--amber)" }} aria-hidden="true" />
+      <span>{text}</span>
+      {s.last && s.state === "idle" && <span className="text-t3">{t("lastSync", { when: when(s.last) })}</span>}
+      {s.tooLarge.length > 0 && <span className="text-amber">{t("tooLarge", cnt(s.tooLarge.length, locale))}</span>}
+      <button type="button" className="btn min-h-[36px]" onClick={() => void runSync()} disabled={s.state === "syncing"}>
+        {t("syncNow")}
+      </button>
+    </span>
+  );
+}
+
+/** PRF-09…14, Q03: everything this site keeps, exported or deleted, and the account's copy too. */
+function DataControls({ signedIn }: { signedIn: boolean }) {
+  const t = useTranslations("me");
+  const [said, setSaid] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState(false);
+  useEffect(() => {
+    if (!confirm) return;
+    const id = setTimeout(() => setConfirm(false), 3000); // PRF-12: the second click within three seconds
+    return () => clearTimeout(id);
+  }, [confirm]);
+  const done = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("deleted");
+
+  async function exportTexts() {
+    const metas = await listTexts();
+    const texts = (await Promise.all(metas.map((m) => loadText(m.id)))).filter(Boolean);
+    download(`jadhr-texts-${new Date().toISOString().slice(0, 10)}.json`, { format: "jadhr-texts-1", texts });
+    setSaid(t("exported"));
+  }
+  async function exportAccount() {
+    try {
+      download(`jadhr-account-${new Date().toISOString().slice(0, 10)}.json`, await authFetch("/me/export"));
+      setSaid(t("exported"));
+    } catch {
+      setSaid(t("exportFailed"));
+    }
+  }
+  async function deleteAll() {
+    if (!confirm) return setConfirm(true);
+    await deleteLocalData(); // signed in, this device leaves the account first
+    window.location.replace(`${window.location.pathname}?deleted=1`);
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <button type="button" className="btn min-h-[40px] justify-start" onClick={() => void exportLocalData().then(() => setSaid(t("exported")))}>
+        {t("exportAll")}
+      </button>
+      {signedIn && (
+        <button type="button" className="btn min-h-[40px] justify-start" onClick={() => void exportAccount()}>
+          {t("exportAccount")}
+        </button>
+      )}
+      <button type="button" className="btn min-h-[40px] justify-start" onClick={() => void exportTexts()}>
+        {t("exportTexts")}
+      </button>
+      <button type="button" className={"btn min-h-[40px] justify-start " + (confirm ? "border-bad text-bad" : "text-bad")} onClick={() => void deleteAll()}>
+        {confirm ? t("deleteLocalConfirm") : t("deleteLocal")}
+      </button>
+      {signedIn && <p className="text-[11.5px] text-t3">{t("deleteLocalSigned")}</p>}
+      {(said || done) && (
+        <p className="text-[12.5px] text-good" role="status">
+          {said ?? t("deletedLocal")}
+        </p>
+      )}
+    </div>
+  );
+}
+
+type Row = { id: string; dot: string; ar: string | null; text: string; when: string; href: string };
+
+/** PRF-15…28: the reader's own records, each linking back to where it was made, with copy naming what fills an empty tab. */
+function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
+  const t = useTranslations("me");
+  const locale = useLocale();
+  const ready = useNotebookReady();
+  const proposals = usePersonal((s) => s.proposals);
+  const sessions = usePersonal((s) => s.sessions);
+  const bookmarks = useSaved((s) => s.bookmarks);
+  const verseNotes = useSaved((s) => s.notes);
+  const notes = useNotebook((s) => s.notes);
+  const graphs = useQuery({ queryKey: ["my-graphs"], queryFn: listGraphs, enabled: tab === "graphs" });
+  const texts = useQuery({ queryKey: ["user-texts"], queryFn: listTexts, enabled: tab === "library" });
+  const date = (ms: number) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date(ms));
+  const day = (d: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${d}T12:00:00`));
+
+  const rows: Row[] | null = useMemo(() => {
+    if (tab === "contributions")
+      return [...proposals]
+        .sort((a, b) => b.ts - a.ts)
+        .map((p) => ({ id: p.id, dot: "var(--amber)", ar: p.label, text: `${t("kind." + p.kind)} • ${p.text.slice(0, 90)}`, when: t("draft", { date: date(p.ts) }), href: `/read?w=${encodeURIComponent(p.slug)}` }));
+    if (tab === "bookmarks")
+      return [...bookmarks]
+        .sort((a, b) => b.at - a.at)
+        .map((b) => ({
+          id: `${b.kind}:${b.key}`,
+          dot: b.kind === "root" ? "var(--c-root)" : b.kind === "verse" ? "var(--c-sentence)" : "var(--c-word)",
+          ar: b.label,
+          text: t("bookmarkKind." + b.kind) + (b.kind === "verse" || b.kind === "word" ? ` • ${verseRef(b.key.split(":").slice(0, 2).join(":"), locale)}` : ""),
+          when: date(b.at),
+          href: b.kind === "root" ? `/roots/${encodeURIComponent(b.key)}` : b.kind === "verse" ? `/quran/${b.key.replace(":", "/")}` : b.kind === "word" ? `/word/${b.key}` : `/read?w=${encodeURIComponent(b.key)}`,
+        }));
+    if (tab === "notes") {
+      if (!ready) return null;
+      return [
+        ...notes.map((n) => ({ id: n.id, dot: "var(--c-desc)", ar: null, text: n.title || n.body.split("\n")[0].slice(0, 90) || t("untitled"), when: date(n.updated), href: `/notebook?note=${n.id}`, at: n.updated })),
+        ...Object.values(verseNotes).map((n) => ({ id: `v:${n.verse}`, dot: "var(--c-sentence)", ar: null, text: `${t("verseNote", { ref: verseRef(n.verse, locale) })} • ${n.text.slice(0, 80)}`, when: date(n.at), href: `/notebook?note=v:${n.verse}`, at: n.at })),
+      ]
+        .sort((a, b) => b.at - a.at)
+        .map((r) => ({ id: r.id, dot: r.dot, ar: r.ar, text: r.text, when: r.when, href: r.href }));
+    }
+    if (tab === "graphs")
+      return graphs.data
+        ? graphs.data.map((g) => ({ id: g.id, dot: "var(--c-form)", ar: null, text: `${g.title} • ${t("cardsCount", cnt(g.nodeCount, locale))}`, when: date(g.updatedAt), href: `/graph/edit/${g.id}` }))
+        : null;
+    if (tab === "library")
+      return texts.data
+        ? texts.data.map((x) => ({ id: x.id, dot: "var(--c-sentence)", ar: x.title, text: `${t("wordsCount", cnt(x.words, locale))} • ${t("entriesCount", cnt2(x.lemmas.length, locale))}`, when: date(x.updatedAt), href: `/library/text/${x.id}` }))
+        : null;
+    // journal: a day read on several devices is one day (P6)
+    return mergeSessions(sessions)
+      .sort((a, b) => b.day.localeCompare(a.day))
+      .map((s) => ({ id: `${s.day}:${s.text}`, dot: "var(--c-root)", ar: s.roots.slice(0, 3).join(" • ") || null, text: `${s.text === "quran" ? t("quran") : s.text} • ${t("lookupsCount", cnt(s.lookups, locale))}`, when: day(s.day), href: "/notebook?tab=journal" }));
+  }, [tab, proposals, bookmarks, notes, verseNotes, graphs.data, texts.data, sessions, ready, t, locale]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!rows) return <div className="h-24 animate-pulse rounded-xl bg-card-2" aria-hidden="true" />;
+  if (!rows.length) return <p className="profile-empty">{t("empty." + tab)}</p>;
+  return (
+    <ul className="profile-rows">
+      {rows.map((r) => (
+        <li key={r.id}>
+          <Link href={r.href} prefetch={false} className="profile-row">
+            <span className="dot" style={{ background: r.dot }} aria-hidden="true" />
+            {r.ar && (
+              <span className="ar-classical min-w-[70px] text-[20px] leading-tight" lang="ar" dir="rtl">
+                {r.ar}
+              </span>
+            )}
+            <span className="min-w-0 flex-1 truncate text-[13px]" dir="auto">
+              {r.text}
+            </span>
+            <span className="shrink-0 text-[11.5px] text-t3">{r.when}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}

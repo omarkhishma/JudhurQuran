@@ -328,6 +328,10 @@ function MoreMenu({
       <Link href="/library" role="menuitem" onClick={() => onClose()}>
         {t("library")} <span aria-hidden="true" className="rtl:-scale-x-100 inline-block">→</span>
       </Link>
+      {/* the account, from the reader as from every page (P6): signed in or not, the Profile holds it */}
+      <Link href="/me" role="menuitem" onClick={() => onClose()}>
+        {t("account")}
+      </Link>
     </div>
   );
 }
