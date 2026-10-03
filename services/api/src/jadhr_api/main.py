@@ -343,6 +343,23 @@ def word(
         return cached(request, payload)
 
 
+@router.get("/words/{slug}/verses", summary="A lemma's verses, paged by verse, each with every place it takes there")
+def word_verses(
+    request: Request,
+    slug: str,
+    form: str | None = Query(None, max_length=60, description="only one written form (mushaf spelling)"),
+    surah: int | None = Query(None, ge=1, le=114, description="only within one sūra"),
+    limit: int = Query(10, ge=1, le=50),
+    cursor: str | None = Query(None, max_length=12, description="the last verse of the page before"),
+) -> Response:
+    after = int(cursor) if cursor and cursor.isdigit() else 0
+    with connect() as conn:
+        out = lexicon.word_verses(conn, slug, after, limit, form, surah)
+        if out is None:
+            raise not_found("word")
+        return cached(request, out)
+
+
 @router.get("/words/{slug}/attestations", summary="Every occurrence of a lemma as KWIC rows, paged")
 def word_attestations(
     request: Request,

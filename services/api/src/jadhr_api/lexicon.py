@@ -379,6 +379,62 @@ def word_payload(
     }
 
 
+def word_verses(
+    conn: Connection, slug: str, after: int, limit: int, form: str | None = None, surah: int | None = None
+) -> dict[str, Any] | None:
+    """A lemma's verses, paged by verse in mushaf order, each with every place the lemma takes in it — what a word
+    card on a map extracts, «10 of 105 verses» at a time (P8.2, QAN-06) — optionally within one sūra or one written
+    form, with the sūras and forms it occurs in for the reader to choose from."""
+    lem = lemma_by_slug(conn, slug)
+    if lem is None:
+        return None
+    params: dict[str, Any] = {"l": lem["id"], "after": after, "n": limit + 1}
+    cond = "w.lemma_id = :l"
+    if form:
+        cond += " and w.text_uthmani = :form"
+        params["form"] = form
+    if surah:
+        cond += " and w.surah = :s"
+        params["s"] = surah
+    found = rows(
+        conn,
+        f"""select w.verse_id, min(w.surah) as surah, min(w.ayah) as ayah,
+                   array_agg(w.location order by w.id) as locations
+            from content.words w where {cond} and w.verse_id > :after
+            group by w.verse_id order by w.verse_id limit :n""",
+        params,
+    )
+    more = len(found) > limit
+    found = found[:limit]
+    total = scalar(
+        conn,
+        f"select count(distinct w.verse_id) from content.words w where {cond}",
+        {k: v for k, v in params.items() if k not in ("after", "n")},
+    )
+    surahs = rows(
+        conn,
+        """select w.surah, s.name_ar, s.name_translit, count(distinct w.verse_id)::int as verses
+           from content.words w join content.surahs s on s.number = w.surah
+           where w.lemma_id = :l group by w.surah, s.name_ar, s.name_translit order by w.surah""",
+        {"l": lem["id"]},
+    )
+    forms = rows(
+        conn,
+        """select w.text_uthmani as form, count(distinct w.verse_id)::int as verses
+           from content.words w where w.lemma_id = :l group by w.text_uthmani order by verses desc, form""",
+        {"l": lem["id"]},
+    )
+    return {
+        "slug": slug,
+        "total": int(total or 0),
+        # each verse's own cursor, so a reader who takes part of a page goes on from the verse after it
+        "data": [{"verse_key": f"{v['surah']}:{v['ayah']}", "locations": list(v["locations"]), "cursor": str(v["verse_id"])} for v in found],
+        "next_cursor": str(found[-1]["verse_id"]) if more and found else None,
+        "surahs": surahs,
+        "forms": forms,
+    }
+
+
 def word_attestations(
     conn: Connection,
     slug: str,

@@ -257,6 +257,54 @@ def test_roots_by_key_count_their_patterns_and_words() -> None:
     assert by["رحم"]["pattern_count"] >= 1
 
 
+def test_root_graph_groups_its_words_by_pattern() -> None:
+    """P8.2 (QAN-04): the root graph carries the patterns between the root and its words, each with the root's words
+    on it, and every word names its pattern; the words on a pattern add up to its occurrences in this root."""
+    g = get("/api/v1/roots/علم/graph")
+    slugs = {x["slug"] for x in g["lemmas"]}
+    on = [s for p in g["patterns"] for s in p["lemmas"]]
+    assert set(on) <= slugs and len(on) == len(set(on))
+    for lem in g["lemmas"]:
+        if lem["pattern_slug"]:
+            assert lem["slug"] in next(p for p in g["patterns"] if p["slug"] == lem["pattern_slug"])["lemmas"]
+    occ = {x["slug"]: x["occurrences"] for x in g["lemmas"]}
+    for p in g["patterns"]:
+        assert p["occurrences"] == sum(occ[s] for s in p["lemmas"])
+    assert [p["occurrences"] for p in g["patterns"]] == sorted((p["occurrences"] for p in g["patterns"]), reverse=True)
+
+
+def test_word_verses_page_by_verse_with_every_place() -> None:
+    """P8.2 (QAN-06): a word's verses come a page at a time, each verse once with every place the word takes in it;
+    the pages cover the total; a sūra or a written form narrows them, and the choices are counted."""
+    w = get("/api/v1/words/ilm", limit=0)
+    seen: list[str] = []
+    places: list[str] = []
+    cursor = None
+    while True:
+        d = get("/api/v1/words/ilm/verses", limit=7, **({"cursor": cursor} if cursor else {}))
+        seen += [v["verse_key"] for v in d["data"]]
+        places += [p for v in d["data"] for p in v["locations"]]
+        for v in d["data"]:
+            assert all(p.startswith(v["verse_key"] + ":") for p in v["locations"])
+        # a page taken in part goes on from the verse after the last one taken
+        if len(d["data"]) > 2:
+            rest = get("/api/v1/words/ilm/verses", limit=1, cursor=d["data"][1]["cursor"])
+            assert rest["data"][0]["verse_key"] == d["data"][2]["verse_key"]
+        cursor = d["next_cursor"]
+        if not cursor:
+            break
+    assert len(seen) == len(set(seen)) == d["total"] == w["verse_count"]
+    assert len(places) == w["corpus_freq"]
+    assert sum(s["verses"] for s in d["surahs"]) >= d["total"]
+    one = d["surahs"][0]
+    narrowed = get("/api/v1/words/ilm/verses", surah=one["surah"], limit=50)
+    assert narrowed["total"] == one["verses"] and all(v["verse_key"].startswith(f"{one['surah']}:") for v in narrowed["data"])
+    form = d["forms"][0]
+    by_form = get("/api/v1/words/ilm/verses", form=form["form"], limit=50)
+    assert by_form["total"] == form["verses"]
+    assert client.get("/api/v1/words/no-such-word/verses").status_code == 404
+
+
 def test_search_word_locations() -> None:
     """A word's place, as the reader's addresses and the citations write it, finds its verse; a place with no word
     finds nothing."""

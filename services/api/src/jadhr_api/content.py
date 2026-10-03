@@ -738,8 +738,36 @@ def root_graph(conn: Connection, raw: str) -> dict[str, Any] | None:
         )
     for lem in lemmas:
         lem["forms"] = by_lemma.get(lem["id"], [])
+    # the patterns between the root and its words (P8.2, QAN-04): each with the root's words on it, the most used first
+    on = rows(
+        conn,
+        """select l.id as lemma_id, l.slug as lemma_slug, l.occurrences, p.slug, p.ar, p.translit, p.form_number,
+                  p.function_ar, p.function_en
+           from content.lemmas l join content.patterns p on p.id = l.pattern_id
+           where l.root_id = :r order by l.occurrences desc, l.id""",
+        {"r": r["id"]},
+    )
+    patterns: dict[str, dict[str, Any]] = {}
+    for x in on:
+        pat = patterns.setdefault(
+            x["slug"],
+            {
+                "slug": x["slug"],
+                "ar": {"full": x["ar"], "translit": x["translit"]},
+                "form_number": x["form_number"],
+                "function_ar": x["function_ar"],
+                "function_en": x["function_en"],
+                "lemmas": [],
+                "occurrences": 0,
+            },
+        )
+        pat["lemmas"].append(x["lemma_slug"])
+        pat["occurrences"] += x["occurrences"]
+    of = {x["lemma_id"]: x["slug"] for x in on}
+    for lem in lemmas:
+        lem["pattern_slug"] = of.get(lem["id"])
     r.pop("id")
-    return {"root": r, "lemmas": lemmas}
+    return {"root": r, "lemmas": lemmas, "patterns": sorted(patterns.values(), key=lambda p: -p["occurrences"])}
 
 
 # ─── lexica ─────────────────────────────────────────────────────────────────
