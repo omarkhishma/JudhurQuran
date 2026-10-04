@@ -329,6 +329,8 @@ The design's panel stands on content that the prototype faked: every sense list,
 - P10.2 Public API with keys, its own rate limits, provenance in every response; playground with timing; endpoint docs in Arabic and English.
 - P10.3 Data page: downloads, statistics, changelog (live, re-read on focus), citation formats, sources and licenses per layer.
 - P10.4 Exit ◆: a citation copied from the site resolves to an immutable artefact.
+- Baseline 2026-10-04 (research 18, at 8925ae3): 67 items — 9 done, 1 not ours, 16 partial, 41 open. Publication stays held for the owner (D19, D2) and a DOI needs the owner's Zenodo account (D14); neither stops the build: held files are listed with their reason and not served, and a release is cited by its own immutable address until a DOI exists. Build order:
+  - P10.1a Formats (TEI Lex-0, LMF per research 19, the morphology token table, RFC 4180 CSV) · P10.1b Releases (an immutable record, served by version and file with their hashes) · P10.2a The public API (`/api/v1/public/…` with the provenance envelope, by product) · P10.2b Keys and limits · P10.3a The Dataset tab · P10.3b The playground · P10.3c The developer docs · P10.4 Exit.
 
 ### P11 · The ecosystem — dictionary, hadith, books 🔒 D8, D9
 - P11.1 Arabic dictionary as its own surface: every root and word in the nine lexica (not only Quranic ones), entry pages, index browsing, Quran attestations as one layer among many.
