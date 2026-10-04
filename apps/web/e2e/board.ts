@@ -41,8 +41,9 @@ export async function expire(page: Page) {
 
 export type Person = { page: Page; h: Record<string, string>; email: string };
 
-export async function person(browser: Browser, email: string, r?: string): Promise<Person> {
-  const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+/** A reader signed in through the development outbox, in a desktop window unless `window` says otherwise (a phone). */
+export async function person(browser: Browser, email: string, r?: string, window: Parameters<Browser["newContext"]>[0] = { viewport: { width: 1440, height: 900 } }): Promise<Person> {
+  const page = await (await browser.newContext(window)).newPage();
   await page.addInitScript(() => {
     if (sessionStorage.getItem("e2e-seeded")) return;
     sessionStorage.setItem("e2e-seeded", "1");
