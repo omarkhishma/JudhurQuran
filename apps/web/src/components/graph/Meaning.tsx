@@ -20,7 +20,7 @@ import type { WorkSurah } from "@/lib/reader/useWorkSurah";
 import type { RootDetail, Verse } from "@/lib/types";
 import type { CanvasTools } from "./GraphCanvas";
 import { RootRelationsList } from "./Relations";
-import { TopicMeaning, VerseTopicsList } from "./Topics";
+import { EntityMeaning, TopicMeaning, VerseTopicsList } from "./Topics";
 
 /**
  * The Meaning tab (EDT-170…181, QAN-17, QAN-18): what a card stands for, every line from a cited source and shown
@@ -38,6 +38,7 @@ export function Meaning({ tools, card }: { tools: CanvasTools; card: GraphNode }
   if (d.kind === "verse" && d.verse) return <VerseMeaning tools={tools} card={card} verseKey={d.verse.key} />;
   if (d.kind === "note" && d.entry) return <QuoteMeaning entry={d.entry} />;
   if (d.kind === "note" && card.id.startsWith("topic:")) return <TopicMeaning tools={tools} card={card} />;
+  if (d.kind === "note" && card.id.startsWith("entity:")) return <EntityMeaning tools={tools} card={card} />;
   return <NoteMeaning card={card} tools={tools} />;
 }
 

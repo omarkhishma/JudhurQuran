@@ -23,12 +23,15 @@ export type Seed =
    * stay in this browser, which builds it */
   | { seed: "note"; note: string }
   /** a topic (P8.3): its heading card, its first verses and its sub-topics, read from the dataset by its id */
-  | { seed: "topic"; topic: string };
+  | { seed: "topic"; topic: string }
+  /** a proper name of the Quran (P8.3b): its heading card and the first verses it is named in, by its id */
+  | { seed: "entity"; entity: number };
 
 const LOCATION = /^\d{1,3}:\d{1,3}:\d{1,3}$/;
 const VERSE_KEY = /^\d{1,3}:\d{1,3}$/;
-/** a topic's id as the dataset makes it (Quranpedia's: `qp:{n}`) */
-const TOPIC_ID = /^qp:\d{1,7}$/;
+/** a topic's id as the dataset or the editorial board makes it: Quranpedia's `qp:{n}`, an adopted La Beaume chapter
+ * `lb:{n}`, a topic of the board's own `board:{id}` (P8.3b) */
+const TOPIC_ID = /^(qp:\d{1,7}|lb:\d{1,2}|board:[a-z0-9]{6,16})$/;
 const MAX_STEPS = 40;
 /** a Notebook note's id (lib/store/notebook) */
 const NOTE_ID = /^(n[a-z0-9]{1,20}|v:\d{1,3}:\d{1,3})$/;
@@ -88,6 +91,8 @@ export function validSeed(x: unknown): Seed | null {
       return str(o.note, 24) && NOTE_ID.test(o.note) ? { seed: "note", note: o.note } : null;
     case "topic":
       return str(o.topic, 24) && TOPIC_ID.test(o.topic) ? { seed: "topic", topic: o.topic } : null;
+    case "entity":
+      return typeof o.entity === "number" && Number.isInteger(o.entity) && o.entity > 0 && o.entity < 1_000_000 ? { seed: "entity", entity: o.entity } : null;
     default:
       return null;
   }

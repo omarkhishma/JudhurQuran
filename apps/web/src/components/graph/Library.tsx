@@ -16,7 +16,7 @@ import type { VerseText } from "@/lib/graph/verseText";
 import type { SearchResult } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
 import { DRAG_TYPE, useCanvasTools, type CanvasTools } from "./GraphCanvas";
-import { TopicSearch } from "./Topics";
+import { EntitySearch, MyTopics, TopicSearch } from "./Topics";
 
 /** The kinds a reader can begin a card from (frames come with P8.1-C). */
 const TILE_KINDS: NodeKind[] = ["root", "pattern", "lemma", "verse", "note"];
@@ -131,7 +131,13 @@ export function Library({ kind, onPick, pendingDrop, setPendingDrop, onHelp }: {
         at={pendingDrop}
         translit={translit}
       />
-      {tools.topicLinks && <TopicSearch tools={tools} />}
+      {tools.topicLinks && (
+        <>
+          <TopicSearch tools={tools} />
+          <EntitySearch tools={tools} />
+          <MyTopics tools={tools} />
+        </>
+      )}
       <MapRoots tools={tools} translit={translit} />
       <footer className="library-foot">
         <Switch checked={translit} onChange={(v) => setUi({ translit: v })} label={t("translitPref")} hint={t("translitHint")} />

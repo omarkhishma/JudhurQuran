@@ -5,6 +5,7 @@ import { getJSON } from "@/lib/reader/api";
 import type { WordPayload } from "@/lib/reader/types";
 import type { Verse } from "@/lib/types";
 import { buildRootGraph, lemmaId, link, POS_AR, rootId, verseId, type RootGraphPayload } from "./build";
+import { entityCard, type EntityPage } from "./entities";
 import { layout } from "./layout";
 import { notebookLoaded, useNotebook } from "@/lib/store/notebook";
 import { noteOn, useSaved } from "@/lib/store/saved";
@@ -243,9 +244,9 @@ async function noteSeed(id: string): Promise<SeedGraph> {
  * sub-topics' cards under it — a topic map, laid out once and the reader's to extend. */
 async function topicSeed(id: string, locale: string): Promise<SeedGraph> {
   const p = await getJSON<TopicPage>(`/topics/${encodeURIComponent(id)}?limit=10`);
-  const credit = Object.values(p.sources)[0];
-  const head = { ...topicCard(p, credit, locale), data: { ...topicCard(p, credit, locale).data, focus: true, cursor: `t:${p.data.length}` } };
-  const subs = p.subtopics.slice(0, 12).map((s) => topicCard(s, credit, locale));
+  const card = topicCard(p, p.sources, locale);
+  const head = { ...card, data: { ...card.data, focus: true, cursor: `t:${p.data.length}` } };
+  const subs = p.subtopics.slice(0, 12).map((s) => topicCard(s, p.sources, locale));
   const verses = topicVerses(head.id, p.data.map((v) => v.verse_key), [head], []);
   return {
     kind: "topic",
@@ -253,6 +254,16 @@ async function topicSeed(id: string, locale: string): Promise<SeedGraph> {
     nodes: [head, ...subs, ...verses.nodes],
     edges: [...subs.map((s) => subtopicLink(s.id, topicCardId(p.id))), ...verses.edges],
   };
+}
+
+/** A proper name (P8.3b): its heading card with the corpus's credit, and the first ten verses it is named in gathered
+ * under it. */
+async function entitySeed(id: number, locale: string): Promise<SeedGraph> {
+  const e = await getJSON<EntityPage>(`/entities/${id}?limit=10`);
+  const card = entityCard(e, locale);
+  const head = { ...card, data: { ...card.data, focus: true, cursor: `t:${e.data.length}` } };
+  const verses = topicVerses(head.id, e.data.map((v) => v.verse_key), [head], []);
+  return { kind: "topic", title: { key: "topicTitle", values: { name: e.name } }, nodes: [head, ...verses.nodes], edges: verses.edges };
 }
 
 export function buildSeedGraph(seed: Seed, locale = "ar"): Promise<SeedGraph> {
@@ -273,6 +284,8 @@ export function buildSeedGraph(seed: Seed, locale = "ar"): Promise<SeedGraph> {
       return noteSeed(seed.note);
     case "topic":
       return topicSeed(seed.topic, locale);
+    case "entity":
+      return entitySeed(seed.entity, locale);
   }
 }
 

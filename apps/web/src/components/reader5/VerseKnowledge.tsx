@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber } from "@/lib/format";
 import { encodeSeed } from "@/lib/graph/seedCodec";
-import { creditLine, type VerseTopics } from "@/lib/graph/topics";
+import { creditLine, QURANPEDIA, type VerseTopics } from "@/lib/graph/topics";
 import { getJSON } from "@/lib/reader/api";
 import type { EditorNote, KnowledgeSource, VerseKnowledge as VK } from "@/lib/reader/types";
 
@@ -214,6 +214,9 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
                 <a href={`https://www.wikidata.org/wiki/${e.wikidata_id}`} target="_blank" rel="noreferrer" className="text-[11px] text-word hover:underline">
                   {t("onWikidata")}
                 </a>
+                <Link href={`/graph/seed?s=${encodeSeed({ seed: "entity", entity: e.id })}`} className="text-[11px] text-word hover:underline">
+                  {t("entityMap")}
+                </Link>
               </li>
             ))}
           </ul>
@@ -227,14 +230,16 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
   );
 }
 
-/** The topics a verse is gathered under (P8.3): Quranpedia's, each with the topic above it, credited with the version
- * of its data, and opened as a topic map; said when the index has none — it barely goes past sūra 39. */
+/** The topics a verse is gathered under (P8.3, P8.3b): the taxonomy in force — Quranpedia's, with the editorial
+ * board's names and the verses it placed after QSAC's suggestions, each said to be what it is — each with the topic
+ * above it, every source credited (Quranpedia with the version of its data), and opened as a topic map; said when
+ * there is none — Quranpedia's index barely goes past sūra 39. */
 function TopicsLayer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const q = useQuery({ queryKey: ["verse-topics", verseKey], queryFn: () => getJSON<VerseTopics>(`/verses/${verseKey}/topics`), staleTime: 10 * 60_000 });
   if (!q.data) return null;
-  const credit = Object.values(q.data.sources)[0];
+  const sources = Object.entries(q.data.sources).sort(([a], [b]) => (a === QURANPEDIA ? -1 : b === QURANPEDIA ? 1 : a.localeCompare(b)));
   return (
     <VerseLayer title={t("secTopics")} meta={q.data.data.length ? formatNumber(q.data.data.length, locale) : undefined} defaultOpen={false}>
       {q.data.data.length === 0 ? (
@@ -245,6 +250,7 @@ function TopicsLayer({ verseKey }: { verseKey: string }) {
             <li key={x.id} className="flex flex-wrap items-baseline gap-x-2">
               <span className="text-[14px] text-t1" lang="ar">{x.name}</span>
               {x.parent_name && <span className="text-[11.5px] text-t3" lang="ar">{x.parent_name}</span>}
+              {(x.via === "qsac" || x.board?.named) && <span className="text-[11px] text-t3">{t(x.via === "qsac" ? "topicBoardPlaced" : "topicBoardNamed")}</span>}
               <Link href={`/graph/seed?s=${encodeSeed({ seed: "topic", topic: x.id })}`} className="text-[11.5px] text-word hover:underline">
                 {t("topicMap")}
               </Link>
@@ -252,11 +258,11 @@ function TopicsLayer({ verseKey }: { verseKey: string }) {
           ))}
         </ul>
       )}
-      {credit && (
-        <p className="text-[11px] text-t3">
-          <a href={credit.url} target="_blank" rel="noreferrer" className="hover:underline">{creditLine(credit, locale)}</a>
+      {sources.map(([id, c]) => (
+        <p key={id} className="text-[11px] text-t3">
+          <a href={c.url} target="_blank" rel="noreferrer" className="hover:underline">{id === QURANPEDIA ? creditLine(c, locale) : locale === "ar" ? c.attribution_ar : c.attribution_en}</a>
         </p>
-      )}
+      ))}
     </VerseLayer>
   );
 }

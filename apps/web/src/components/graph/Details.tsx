@@ -52,7 +52,7 @@ export function Details({ title }: { title: string }) {
   const shown: Tab = frame && tab === "meaning" ? "settings" : tabs.includes(tab) ? tab : "meaning";
   const kindName = (n: GraphNode) => {
     const h = n.data.kind === "note" ? sourceHeading(n.id) : null;
-    return t(h === "topic" ? "kindTopic" : h === "field" ? "kindField" : n.data.phrase ? "kindPhrase" : n.data.entry ? "kindQuote" : META[n.data.kind].label);
+    return t(h === "topic" ? "kindTopic" : h === "field" ? "kindField" : h === "entity" ? "kindEntity" : n.data.phrase ? "kindPhrase" : n.data.entry ? "kindQuote" : META[n.data.kind].label);
   };
   const head = frame
     ? t("detailsHeadGroup", { label: frame.data.title || t("groupUntitled") })

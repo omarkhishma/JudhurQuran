@@ -28,7 +28,8 @@ import { fromPattern, fromRoot, fromVerses, linkVerse, versePlan, versesOf, type
 import { bundleFiles } from "@/lib/graph/files";
 import { endsOf, fieldMember, fromRelations, fromShared, relationLink, rootCardOf, type RelationEdge, type RootRelations } from "@/lib/graph/meaning";
 import { useEntryTitles } from "@/lib/graph/quote";
-import { topicCard, topicOf, topicVerses, type TopicCredit, type TopicPage, type TopicRow } from "@/lib/graph/topics";
+import { entityCard, type EntityRow } from "@/lib/graph/entities";
+import { headingVersesPath, sourceHeading, topicCard, topicVerses, type TopicCredit, type TopicRow } from "@/lib/graph/topics";
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
 import { allowedRels, checkLink, META, type Refusal } from "@/lib/graph/relations";
@@ -127,9 +128,15 @@ export type CanvasTools = {
   addShared: (edgeId: string) => void;
   /** a root put in a field: the field's one card on the map, and the root's link to it (P8.4c) */
   addFieldMember: (e: RelationEdge, beside: string, reviewed: boolean) => void;
-  /** a topic's heading card (P8.3), linked part-of-topic to a card on the map when `link` names the two ends */
-  addTopic: (t: Pick<TopicRow, "id" | "name" | "verses">, credit: TopicCredit | undefined, link?: { from: string; to: string }) => void;
-  /** the next ten verses a topic gathers, under its card (P8.3) */
+  /** a topic's heading card (P8.3), named as the taxonomy in force names it and credited, linked part-of-topic to a
+   * card on the map when `link` names the two ends */
+  addTopic: (t: Pick<TopicRow, "id" | "name" | "verses" | "source_id" | "board" | "after">, sources: Record<string, TopicCredit>, link?: { from: string; to: string }) => void;
+  /** a proper name's heading card (P8.3b), linked like a topic's */
+  addEntity: (e: Pick<EntityRow, "id" | "name" | "verses">, link?: { from: string; to: string }) => void;
+  /** one of the reader's own topics as their note, its verses gathered under it — beside the sources' topics, never
+   * one of them (P8.3b); with `verse`, only that verse linked under it */
+  addMyTopic: (tp: { id: string; label: string }, keys: string[], verse?: string) => void;
+  /** the next ten verses a topic or a proper name gathers, under its card (P8.3) */
   addTopicVerses: (cardId: string) => void;
   /** whether this map's type gathers cards under a topic (P8.3) */
   topicLinks: boolean;
@@ -180,7 +187,9 @@ function nameOf(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "ki
   if (!n) return "";
   const d = n.data;
   // a topic's or a field's heading by its name, the first line of its card
-  if (d.kind === "note" && (n.id.startsWith("topic:") || n.id.startsWith("field:"))) return (d.text ?? "").split("\n")[0];
+  if (d.kind === "note" && sourceHeading(n.id)) return (d.text ?? "").split("\n")[0];
+  // one of the reader's own topics by its name
+  if (d.kind === "note" && n.id.startsWith("note:mytopic-")) return (d.text ?? "").split("\n")[0] || t("kindNote");
   // a quotation by the work it quotes, once that is read
   if (d.kind === "note" && d.entry) return works.get(d.entry) ?? t("kindQuote");
   if (d.kind === "note") return t(d.phrase ? "kindPhrase" : "kindNote");
@@ -612,17 +621,17 @@ function CanvasInner({
     },
     [expanding, tidy, t, locale, toast],
   );
-  // Topic maps (P8.3, QAN-09): a topic's verses ten at a time in the mushaf's order, gathered under its card; the
-  // card keeps where the next page starts
+  // Topic maps (P8.3, QAN-09): a topic's or a proper name's verses ten at a time in the mushaf's order, gathered under
+  // its card; the card keeps where the next page starts
   const addTopicVerses = useCallback(
     async (cardId: string) => {
       const node = live.current.nodes.find((n) => n.id === cardId);
-      const tid = topicOf(cardId);
-      if (!node || !tid || expanding) return;
+      const path = headingVersesPath(cardId);
+      if (!node || !path || expanding) return;
       setExpanding(cardId);
       try {
         const offset = Number((node.data.cursor ?? "t:0").replace(/^t:/, "")) || 0;
-        const page = await getJSON<TopicPage>(`/topics/${encodeURIComponent(tid)}?limit=10&offset=${offset}`);
+        const page = await getJSON<{ total: number; data: { verse_key: string }[] }>(`${path}?limit=10&offset=${offset}`);
         const { nodes: now, edges: wires } = live.current;
         const out = topicVerses(cardId, page.data.map((v) => v.verse_key), now, wires);
         const next = offset + page.data.length;
@@ -1188,12 +1197,27 @@ function CanvasInner({
     meaningLinks: allowedRels(kind, "root", "root").includes("near-in-meaning"),
     addRelation: (e, beside, reviewed) => void addRelation(e, beside, reviewed),
     addShared: (id) => void addShared(id),
-    addTopic: (tp, credit, ends) => {
-      const c = topicCard(tp, credit, locale);
+    addTopic: (tp, sources, ends) => {
+      const c = topicCard(tp, sources, locale);
       const label = t("doAddTopic", { name: tp.name });
       if (!ends) return addCards([c], [], label);
       const beside = ends.from === c.id ? ends.to : ends.from;
       addLinked(c, link(ends.from, ends.to, "part-of-topic"), beside, label);
+    },
+    addEntity: (e, ends) => {
+      const c = entityCard(e, locale);
+      const label = t("doAddEntity", { name: e.name });
+      if (!ends) return addCards([c], [], label);
+      const beside = ends.from === c.id ? ends.to : ends.from;
+      addLinked(c, link(ends.from, ends.to, "part-of-topic"), beside, label);
+    },
+    addMyTopic: (tp, keys, verse) => {
+      const id = `note:mytopic-${tp.id}`;
+      const on = nodes.find((n) => n.id === id);
+      const card: GraphNode = on ?? { id, type: "card", position: { x: 0, y: 0 }, data: { kind: "note", text: tp.label } };
+      if (verse) return addLinked(card, link(verseId(verse), id, "part-of-topic"), verseId(verse), t("doAddMyTopic", { name: tp.label }));
+      const out = topicVerses(id, keys, on ? nodes : [...nodes, card], edges);
+      void tidy(t("doAddMyTopic", { name: tp.label }), { nodes: [...nodes, ...(on ? [] : [card]), ...out.nodes], edges: [...edges, ...out.edges] }, [id, ...out.nodes.map((n) => n.id)]);
     },
     addTopicVerses: (id) => void addTopicVerses(id),
     topicLinks: allowedRels(kind, "verse", "note").includes("part-of-topic"),
@@ -1223,7 +1247,8 @@ function CanvasInner({
   const shown = useMemo(
     () =>
       nodes.map((n) => {
-        const kindName = t(n.data.phrase ? "kindPhrase" : n.data.entry ? "kindQuote" : META[n.data.kind].label);
+        const h = n.data.kind === "note" ? sourceHeading(n.id) : null;
+        const kindName = t(h === "topic" ? "kindTopic" : h === "field" ? "kindField" : h === "entity" ? "kindEntity" : n.data.phrase ? "kindPhrase" : n.data.entry ? "kindQuote" : META[n.data.kind].label);
         const ariaLabel = n.data.count != null ? t("cardLabelCount", { kind: kindName, name: cardName(n.id), n: formatNumber(n.data.count, locale) }) : t("cardLabel", { kind: kindName, name: cardName(n.id) });
         if (n.data.kind === "frame") {
           // a frame: its size, behind the cards, moved by its bar (EDT-143, EDT-144)
