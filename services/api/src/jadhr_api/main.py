@@ -56,6 +56,7 @@ from . import (
 )
 from . import catalogue as catalogue_api
 from . import texts as texts_api
+from .clients import client_key
 from .db import connect, one, rows
 from .refusal import Refusal
 from .responses import ORJSONResponse

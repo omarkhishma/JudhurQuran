@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from pydantic import BaseModel, Field
 
 from . import accounts, apikeys, classroom, contrib, oidc, published, shared_maps, sync
+from .clients import client_key
 from .responses import ORJSONResponse
 from .settings import get_settings
 
@@ -50,10 +51,7 @@ def email_link(body: _EmailLink, request: Request) -> ORJSONResponse:
         raise HTTPException(status_code=503, detail="Sign-in by e-mail is not available here yet.")
     if not re.match(accounts.EMAIL_RE, body.email.strip()):
         raise HTTPException(status_code=422, detail="Check the e-mail address.")
-    ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(
-        ","
-    )[0]
-    if not accounts.mail_allowed(ip.strip()):
+    if not accounts.mail_allowed(client_key(request)):
         raise HTTPException(status_code=429, detail="Too many sign-in links from here; try again later.")
     accounts.request_link(body.email, body.return_to, body.locale, body.browser)
     return ok({"sent": True}, 202)

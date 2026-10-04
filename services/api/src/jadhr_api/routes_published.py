@@ -10,6 +10,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from . import accounts, published
+from .clients import client_key
 from .responses import ORJSONResponse
 
 router = APIRouter(prefix="/api/v1")
@@ -24,9 +25,7 @@ def ok(payload: Any, status: int = 200) -> ORJSONResponse:
 
 
 def _address(request: Request) -> str:
-    return (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(
-        ","
-    )[0]
+    return client_key(request)
 
 
 class _Origin(BaseModel):
