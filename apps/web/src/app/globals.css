@@ -10,7 +10,8 @@
   font-display: swap;
 }
 
-/* ─── Design tokens (handoff 02-design-tokens, verbatim values) ───────────── */
+/* ─── Design tokens (handoff 02-design-tokens; seven colours darkened and a dark amber added for AA on every surface,
+   docs/DESIGN-SYSTEM.md §1, checked by src/lib/tokens.test.ts) ───────────── */
 :root {
   --canvas: #eeeef1;
   --card: #ffffff;
@@ -1096,6 +1097,8 @@ textarea.field {
   bottom: 0;
   z-index: 36;
   height: min(52%, 460px);
+  /* half to full and back: the one longer movement of the handoff (§2.4, ~220 ms) */
+  transition: height 0.22s ease-out;
   display: flex;
   flex-direction: column;
   background: var(--panel);

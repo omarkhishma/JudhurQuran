@@ -249,6 +249,8 @@ test("phone: the sheet opens at half height, under the header, and grows to full
   const sheet = page.locator(".reader-sheet");
   await expect(sheet).toHaveAttribute("data-sheet", "half");
   const header = await page.locator(".reader-header").boundingBox();
+  // the height moves, as the handoff's one longer animation (§2.4)
+  expect(await sheet.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe("0.22s");
   await sheet.locator(".sheet-grabber").click();
   await expect(sheet).toHaveAttribute("data-sheet", "full");
   await page.waitForTimeout(300);
