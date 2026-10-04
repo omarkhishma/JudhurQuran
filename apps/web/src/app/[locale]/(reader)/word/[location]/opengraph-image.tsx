@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { bare, OG_COLORS, OG_SIZE, ogCard } from "@/lib/og";
@@ -9,7 +10,10 @@ export const alt = "كلمة من القرآن الكريم: معناها وجذ
 
 export default async function Image({ params }: { params: Promise<{ locale: string; location: string }> }) {
   const { locale, location } = await params;
-  const w = await api<WordDetail>(`/words/${decodeURIComponent(location)}`);
+  // a word's place and nothing else goes into the API's address, as the page checks it (security review I4)
+  const loc = decodeURIComponent(location);
+  if (!/^\d{1,3}:\d{1,3}:\d{1,3}$/.test(loc)) notFound();
+  const w = await api<WordDetail>(`/words/${loc}`);
   const ar = locale === "ar";
   const where = ar
     ? `سورة ${w.verse.surah_name_ar} • الآية ${formatNumber(w.ayah, locale)}`
