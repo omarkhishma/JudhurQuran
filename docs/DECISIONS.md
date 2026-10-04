@@ -264,6 +264,7 @@
 
 ## Lessons
 
+- [2026-10-04] A new file written with a shell redirect (`cat > e2e/digits.spec.ts`) replaced an existing spec of the same name — its fourteen tests of the language's digits gone until the commit's status line said `M`, not `A`. Before writing a new file by shell, test that the name is free (`test -e`), and read a commit's status letters before committing.
 - [2026-10-03] xyflow answers Enter, Space and Escape on a focused card by selecting it when it is not selected: after our Escape cleared the selection, its own handler — run later in the same keydown, after React had applied ours — selected the card again. Keys the editor owns are taken in the capture phase and stopped there; Enter is left to xyflow only for a focused card not yet selected.
 - [2026-10-03] Playwright's "Desktop Chrome" device reports Windows, so xyflow expects Ctrl to add to a selection, while on a Mac Ctrl-click opens the context menu; ⇧-click, which the design asks for anyway, works the same everywhere.
 - [2026-10-03] A zoom step taken from `getZoom()` during the previous step's animation multiplies a value in flight (reset to 100 % then + read 188 %); step from where the last step was going.

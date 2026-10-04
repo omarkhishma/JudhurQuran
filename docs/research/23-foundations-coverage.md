@@ -154,7 +154,7 @@ Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next ste
 | SHL-Q02 | done | Logical properties; the few physical ones deliberate (KWIC columns, canvas corners) |
 | SHL-Q03 | done | المعجم · الحديث · الكتب in the nav |
 | SHL-Q04 | done | Fonts per script |
-| SHL-Q05 | done | By the language, ١٢٣ or 123 on every page: kept in the browser, set before paint, drawn by digit faces first in each font stack, the text unchanged (W/lib/digits.ts, W/components/ui/DigitsPref.tsx in the profile and the reader's preferences; DECISIONS); reference parsers accept both (search, the verse drawer, the page jump); E/digits.spec.ts compares the drawn shapes |
+| SHL-Q05 | done | By the language, ١٢٣ or 123 on every page: kept in the browser, set before paint, drawn by digit faces first in each font stack, the text unchanged (W/lib/digits.ts, W/components/ui/DigitsPref.tsx in the profile and the reader's preferences; DECISIONS); reference parsers accept both (search, the verse drawer, the page jump); E/digits-preference.spec.ts compares the drawn shapes; E/digits.spec.ts keeps the language's digits on every surface |
 | SHL-Q06 | done | The toggle and one theme key before paint; the embed from its address |
 | SHL-Q07 | done | The header omnibox adds the dictionary's roots, the hadith, the books' paragraphs and the reader's own texts (8e311ad; E/omnibox.spec.ts) |
 | SHL-Q08 | done | The header's parts |
