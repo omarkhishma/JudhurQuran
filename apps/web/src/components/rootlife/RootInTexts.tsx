@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { cnt } from "@/lib/format";
 import { refText } from "@/lib/hadith";
 import { type RootHit, type RootInTexts as Data, hitHref, rootTextsHref } from "@/lib/rootlife";
+import { RootInMyTexts } from "./RootInMyTexts";
 
 /** One passage holding the root: its words around the root's word, the word marked; where it stands. */
 export function KwicRow({ h }: { h: RootHit }) {
@@ -55,6 +56,7 @@ export function RootInTexts({ data }: { data: Data }) {
       <section className="mt-8" aria-labelledby="texts-h">
         <h2 id="texts-h" className="mb-2 text-[17px] font-semibold">{t("title")}</h2>
         <p className="text-[14px] text-t2">{t("none")}</p>
+        <RootInMyTexts dictKey={key} limit={3} />
       </section>
     );
   }
@@ -103,6 +105,7 @@ export function RootInTexts({ data }: { data: Data }) {
       <p className="mt-3">
         <Link href={rootTextsHref(key)} className="btn">{t("all", cnt((h?.sure ?? 0) + (b?.sure ?? 0), locale))}</Link>
       </p>
+      <RootInMyTexts dictKey={key} limit={3} />
     </section>
   );
 }

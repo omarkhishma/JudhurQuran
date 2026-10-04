@@ -231,3 +231,26 @@ test("the last book read resumes from the shelf, and each hadith collection and 
   await page.goto("/library");
   await expect(page.getByRole("region", { name: "تابع" }).getByRole("link")).toHaveAttribute("href", "/hadith/bukhari/7");
 });
+
+test("a root in the reader's own texts: found in this browser beside the hadith and the books, the sure apart from the possible, each place leading to its passage (P4.4)", async ({ page }) => {
+  const passages = ["إن العلم نور والعالم يعلم ما لا يعلمه الجاهل", "والكتاب مفتوح لمن طلب العلم بالتعلم"];
+  // what the shared rules read in it, asked as the page asks
+  const tokens = passages.flatMap((p) => p.split(" "));
+  const read = (await (await page.request.post("/api/v1/analyse/tokens", { data: { tokens } })).json()) as { token_keys: string[]; forms: Record<string, { kind: string; dict_root: string | null }> };
+  const rs = read.token_keys.map((k) => read.forms[k]).filter((r) => r && r.kind !== "particle" && r.dict_root === "علم");
+  const sure = rs.filter((r) => r.kind === "form" || r.kind === "clitic").length;
+  expect(sure).toBeGreaterThan(1);
+  await page.goto("/library");
+  await putText(page, { id: "rt1", title: "نص الجذر", text: "", passages, words: tokens.length, lemmas: [], review: 0, unknown: 0, createdAt: 1, updatedAt: 1 });
+  await page.goto(`/dictionary/${encodeURIComponent("علم")}/texts`);
+  const mine = page.getByTestId("root-in-my-texts");
+  await expect(mine.getByRole("heading", { name: "في نصوصك" })).toBeVisible();
+  await expect(mine.getByRole("listitem")).toHaveCount(rs.length);
+  await expect(mine.locator(".state-chip")).toHaveCount(rs.length - sure);
+  await expect(mine.getByRole("link").first()).toHaveAttribute("href", "/library/text/rt1#p1");
+  // the root's page shows the first three and the way to all of them
+  await page.goto(`/roots/${encodeURIComponent("علم")}`);
+  const summary = page.getByTestId("root-in-my-texts");
+  await expect(summary.getByRole("listitem")).toHaveCount(Math.min(3, rs.length));
+  if (rs.length > 3) await expect(summary.getByRole("link", { name: /كل مواضعه في نصوصك/ })).toHaveAttribute("href", `/dictionary/${encodeURIComponent("علم")}/texts#mine-h`);
+});

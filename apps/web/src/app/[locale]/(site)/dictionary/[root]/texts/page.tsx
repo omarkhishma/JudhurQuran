@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { RootInMyTexts } from "@/components/rootlife/RootInMyTexts";
 import { KwicRow } from "@/components/rootlife/RootInTexts";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 import { Link } from "@/i18n/navigation";
@@ -116,6 +117,8 @@ export default async function RootTextsPage({ params, searchParams }: PageProps<
         {pages > 1 && <span className="text-[12.5px] text-t3">{t("pageOf", { page: formatNumber(q.page, locale), pages: formatNumber(pages, locale) })}</span>}
         {q.page < pages && <Link href={rootTextsHref(key, { ...q, page: q.page + 1 })} className="btn">{t("nextPage")}</Link>}
       </nav>
+      {/* the reader's own texts, read in this browser (P4.4) */}
+      <RootInMyTexts dictKey={key} />
     </div>
   );
 }

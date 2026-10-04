@@ -3976,6 +3976,12 @@
     "found": "{count, plural, one {# passage} other {{n} passages}}",
     "prevPage": "Previous page",
     "nextPage": "Next page",
-    "pageOf": "Page {page} of {pages}"
+    "pageOf": "Page {page} of {pages}",
+    "mineTitle": "In your texts",
+    "mineLead": "The root's places in the texts you added to your library, read in this browser as you read them, and never kept on the server.",
+    "mineReading": "Reading your texts…",
+    "mineNone": "This root is not in your texts.",
+    "whereMine": "{title}, passage {n}",
+    "mineAll": "{count, plural, one {Its place in your texts} other {All its places in your texts ({n})}}"
   }
 }
