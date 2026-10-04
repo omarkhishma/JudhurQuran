@@ -2548,8 +2548,8 @@
     "delete": "Delete",
     "deleteConfirm": "The text is deleted from this browser for good. Delete it?",
     "privateNote": "in this browser only",
-    "legendHit": "a Quranic word: opens its entry",
-    "legendReview": "to review: opens in the Analyser",
+    "legendHit": "found in the Quran",
+    "legendReview": "an unsure reading: to review",
     "legendNone": "not found",
     "resumeText": "Continue at passage {n} of {of}",
     "passageOf": "Passage {n} of {of}",
@@ -2606,7 +2606,9 @@
     "pdfPick": "Choose a PDF",
     "pdfAnother": "Choose another file",
     "continueHadith": "Hadith {ref}",
-    "continueBook": "Where you stopped"
+    "continueBook": "Where you stopped",
+    "wordHint": "Choose a word of your text to see its root and its reading.",
+    "reviewInAnalyser": "Review its reading in the Analyser"
   },
   "account": {
     "signIn": "Sign in",

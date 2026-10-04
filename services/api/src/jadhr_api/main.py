@@ -950,6 +950,22 @@ def analyse_tokens(body: _Tokens) -> Response:
         return ORJSONResponse(analyse.analyse_many(conn, body.tokens), headers={"Cache-Control": "no-store"})
 
 
+class _Form(BaseModel):
+    token: str = Field(min_length=1, max_length=80)
+
+
+@router.post(
+    "/analyse/form", summary="One word of the reader's own text, every reading of it (not stored, not cached)"
+)
+def analyse_form(body: _Form) -> Response:
+    # a word of the reader's text is theirs: in a body, answered no-store (the privacy page says so)
+    with connect() as conn:
+        f = analyse.analyse_form(conn, body.token)
+        if f is None:
+            raise not_found("word")
+        return ORJSONResponse(f, headers={"Cache-Control": "no-store"})
+
+
 class _Known(BaseModel):
     lemmas: list[Annotated[str, Field(max_length=80)]] = Field(max_length=10000)
 

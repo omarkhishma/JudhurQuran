@@ -388,6 +388,37 @@ def analyse(conn: Connection, text: str) -> dict[str, Any]:
 MAX_BATCH_FORMS = 3000
 
 
+def analyse_form(conn: Connection, token: str) -> dict[str, Any] | None:
+    """One word of the reader's own text in full, as a word of a hadith or a book is read (P11.3: the reader's texts in
+    the same reader with the word panel): every reading the shared rules allow, named, with how sure. Nothing is
+    stored."""
+    from .texts import shape_forms
+
+    k = _key(token)
+    if not k:
+        return None
+    a = shared.analyse(vocabulary(conn), k)
+    raw = {
+        "id": 0,
+        "norm": k,
+        "kind": a.kind,
+        "confidence": round(a.confidence, 2),
+        "clitics": list(a.clitics),
+        "readings": [
+            {
+                "lemma_id": r.lemma_id,
+                "root": r.root,
+                "dict_root": r.dict_root,
+                "pattern": r.pattern,
+                "pos": r.pos,
+                "confidence": round(r.confidence, 2),
+            }
+            for r in a.readings
+        ],
+    }
+    return shape_forms(conn, [raw])[0]
+
+
 def analyse_many(conn: Connection, tokens: list[str]) -> dict[str, Any]:
     """The reader's own text (the Library's add-a-text, LIB-29…33): every distinct written form once, compact,
     read by the shared rules in memory — the same function the build read the hadith and the books with, so a word

@@ -23,6 +23,7 @@ export function WordPanel({
   ref,
   hint,
   place,
+  children,
 }: {
   word: string | null;
   form: Form | null;
@@ -31,6 +32,8 @@ export function WordPanel({
   hint?: string;
   /** the hadith or the book paragraph the word is read in (SHL-Q09): the hub's strip leads back to it */
   place?: { href: string; label: string } | null;
+  /** what the page adds for this word: the Analyser, for a word of the reader's text read by a rule */
+  children?: React.ReactNode;
 }) {
   const t = useTranslations("hadith");
   const locale = useLocale();
@@ -72,6 +75,7 @@ export function WordPanel({
                 {first?.dict_root && <Link href={dictHref(first.dict_root)} className="btn">{t("rootInDictionary")}</Link>}
                 {first?.lemma && <Link href={`/read?w=${encodeURIComponent(first.lemma.slug)}`} className="btn">{t("lemmaInQuran")}</Link>}
               </p>
+              {children}
               {form.readings.length > 1 && (
                 <div className="flex flex-col gap-1.5">
                   <p className="text-[12.5px] text-t3">{t("otherReadings")}</p>

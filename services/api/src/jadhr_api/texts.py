@@ -235,6 +235,13 @@ def _forms(conn: Connection, ids: list[int]) -> dict[int, dict[str, Any]]:
         "select id, norm, kind, confidence, clitics, readings from content.text_forms where id = any(:ids)",
         {"ids": sorted({i for i in ids if i})},
     )
+    return shape_forms(conn, found)
+
+
+def shape_forms(conn: Connection, found: list[dict[str, Any]]) -> dict[Any, dict[str, Any]]:
+    """Forms as the build stores them (``text_forms``: the shared rules' readings by lemma id, root and pattern) in the
+    shape the word panel reads: each reading's lemma and pattern named, how sure, whether the Quran attests it. Keyed by
+    each form's ``id``. The reader's own text is read into the same shape (``analyse.analyse_form``)."""
     lemma_ids = {r["lemma_id"] for f in found for r in f["readings"] if r.get("lemma_id")}
     lemmas = {
         x["id"]: x

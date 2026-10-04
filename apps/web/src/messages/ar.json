@@ -2548,8 +2548,8 @@
     "delete": "احذف",
     "deleteConfirm": "يُحذف النص من هذا المتصفح نهائيًا. أتحذفه؟",
     "privateNote": "في هذا المتصفح وحده",
-    "legendHit": "كلمة في القرآن: تفتح مدخلها",
-    "legendReview": "للمراجعة: تفتح في المحلّل",
+    "legendHit": "وُجدت في القرآن",
+    "legendReview": "قراءة غير مؤكدة: للمراجعة",
     "legendNone": "لم تُوجد",
     "resumeText": "تابع من المقطع {n} من {of}",
     "passageOf": "المقطع {n} من {of}",
@@ -2606,7 +2606,9 @@
     "pdfPick": "اختر ملف PDF",
     "pdfAnother": "اختر ملفًا آخر",
     "continueHadith": "الحديث {ref}",
-    "continueBook": "حيث وقفت"
+    "continueBook": "حيث وقفت",
+    "wordHint": "انقر كلمة من نصك لترى جذرها وقراءتها.",
+    "reviewInAnalyser": "راجع قراءتها في المحلّل"
   },
   "account": {
     "signIn": "دخول",

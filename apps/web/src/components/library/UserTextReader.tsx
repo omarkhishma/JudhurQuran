@@ -2,21 +2,32 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { Fragment, type MouseEvent, useEffect, useRef, useState } from "react";
+import { WordPanel } from "@/components/text/WordPanel";
 import { MarksToggle } from "@/components/ui/MarksToggle";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
 import { formatNumber } from "@/lib/format";
+import type { Form } from "@/lib/hadith";
 import { deleteText, loadText, rootShown, saveText, userUri } from "@/lib/library/texts";
 import { words } from "@/lib/library/segment";
 import { useMarks } from "@/lib/reader/marks";
 import { usePersonal } from "@/lib/reader/store";
 import { isReview, readWords } from "./AddTextSheet";
 
+/** One word of the reader's text, every reading the shared rules allow — asked in a body, kept nowhere (P11.3). */
+async function readForm(token: string): Promise<Form> {
+  const res = await fetch("/api/v1/analyse/form", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
+  if (!res.ok) throw new Error(String(res.status));
+  return (await res.json()) as Form;
+}
+
 /**
- * One of the reader's own texts (P4.4, LIB-36): passage by passage, every word read against the Quran — a word
- * the Quran attests opens its entry, one to review opens in the Analyser, one not found stays plain. Rename and
- * delete (LIB-16). The full multi-text reader (rail, panel, trail) comes with the other texts in P11.
+ * One of the reader's own texts (P4.4, LIB-36; P11.3: in the same reader as the hadith and the books): passage by
+ * passage, every word read against the Quran and marked as found, to review or not found; a word chosen opens its
+ * reading in the panel beside the text — its root in the Quran and in the dictionary, the Quran's word, the other
+ * readings, the Analyser for one to review — and the hub's strip leads back to the passage (SHL-Q09). Rename and
+ * delete (LIB-16).
  */
 export function UserTextReader({ id }: { id: string }) {
   const t = useTranslations("library");
@@ -34,6 +45,10 @@ export function UserTextReader({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [confirm, setConfirm] = useState(false);
+  const [selected, setSelected] = useState<{ p: number; w: number } | null>(null);
+  const panel = useRef<HTMLElement>(null);
+  const chosen = selected ? (tokens[selected.p]?.[selected.w] ?? null) : null;
+  const form = useQuery({ queryKey: ["user-form", chosen?.word], queryFn: () => readForm(chosen!.word), enabled: !!chosen, staleTime: Infinity });
   const position = usePersonal((s) => s.progress[userUri(id)]);
   const setProgress = usePersonal((s) => s.setProgress);
   const ready = !!doc.data;
@@ -71,6 +86,24 @@ export function UserTextReader({ id }: { id: string }) {
       window.removeEventListener("scroll", onScroll);
     };
   }, [ready, id, setProgress]);
+
+  // Esc closes the panel and gives the focus back to the word
+  useEffect(() => {
+    if (selected === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      document.querySelector<HTMLButtonElement>(`.user-text button[data-p="${selected.p}"][data-w="${selected.w}"]`)?.focus();
+      setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
+  const onClick = (e: MouseEvent) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>("button[data-w]");
+    if (!b) return;
+    setSelected({ p: Number(b.dataset.p), w: Number(b.dataset.w) });
+    requestAnimationFrame(() => panel.current?.focus());
+  };
 
   if (!client || doc.isLoading) return <div className="m-6 h-40 animate-pulse rounded-xl bg-card-2" role="status" aria-label={t("loading")} />;
   if (!doc.data)
@@ -160,20 +193,43 @@ export function UserTextReader({ id }: { id: string }) {
         <span className="pv-word is-none">{t("legendNone")}</span>
       </div>
       {read.isError && <p className="text-[12.5px] text-bad" role="alert">{t("previewFailed")}</p>}
-      {tokens.map((ws, pi) => (
-        <p key={pi} id={`p${pi + 1}`} className="user-passage" dir="rtl" lang="ar">
-          {ws.map((w) => {
-            // one index per word, taken before anything reads it: pending words had all shared key 0
-            const k = i++;
-            const r = read.data?.[k]?.r;
-            const word = `${shown(w.surface)} `;
-            if (!read.data) return <span key={k} className="pv-word is-pending">{word}</span>;
-            if (isReview(r)) return <Link key={k} href={`/analyse?q=${encodeURIComponent(w.word)}`} className="pv-word is-review" title={t("tipReview", { root: rootShown(r) ?? "—", c: fmtC(r?.confidence ?? 0) })}>{word}</Link>;
-            if (r && r.kind !== "none" && r.lemma) return <Link key={k} href={`/read?w=${encodeURIComponent(r.lemma)}`} className="pv-word is-hit" title={r.kind === "particle" ? t("tipParticle") : `${r.root_spaced ?? ""}${r.gloss_en ? ` — ${r.gloss_en}` : ""}`}>{word}</Link>;
-            return <span key={k} className="pv-word is-none" title={t("tipNone")}>{word}</span>;
-          })}
-        </p>
-      ))}
+      <div className="hadith-reader">
+        <div className="flex min-w-0 flex-col gap-2" onClick={onClick}>
+          {tokens.map((ws, pi) => (
+            <p key={pi} id={`p${pi + 1}`} className="user-passage" dir="rtl" lang="ar">
+              {ws.map((w, wi) => {
+                // one index per word, taken before anything reads it: pending words had all shared key 0
+                const k = i++;
+                const r = read.data?.[k]?.r;
+                const cls = !read.data ? "is-pending" : isReview(r) ? "is-review" : r && r.kind !== "none" && r.lemma ? "is-hit" : "is-none";
+                const tip = !read.data ? undefined : isReview(r) ? t("tipReview", { root: rootShown(r) ?? "—", c: fmtC(r?.confidence ?? 0) }) : cls === "is-hit" ? (r!.kind === "particle" ? t("tipParticle") : `${r!.root_spaced ?? ""}${r!.gloss_en ? ` — ${r!.gloss_en}` : ""}`) : t("tipNone");
+                const on = selected?.p === pi && selected.w === wi;
+                return (
+                  <Fragment key={k}>
+                    <button type="button" className={`pv-word ${cls}${on ? " is-selected" : ""}`} data-p={pi} data-w={wi} aria-pressed={on} title={tip}>
+                      {shown(w.surface)}
+                    </button>{" "}
+                  </Fragment>
+                );
+              })}
+            </p>
+          ))}
+        </div>
+        <WordPanel
+          ref={panel}
+          word={chosen ? shown(chosen.surface) : null}
+          form={form.data ?? null}
+          onClose={() => setSelected(null)}
+          hint={t("wordHint")}
+          place={selected ? { href: `/library/text/${id}#p${selected.p + 1}`, label: d.title } : null}
+        >
+          {chosen && form.data && ["clitic", "pattern", "pattern-dict", "weak", "weak-dict"].includes(form.data.kind) && (
+            <Link href={`/analyse?q=${encodeURIComponent(chosen.word)}`} className="btn self-start">
+              {t("reviewInAnalyser")}
+            </Link>
+          )}
+        </WordPanel>
+      </div>
     </article>
   );
 }

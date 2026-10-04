@@ -50,7 +50,20 @@ test("adding a text: a live preview read against the Quran, saved privately, rea
   await mine.click();
   await expect(page.getByRole("heading", { name: "نص للتجربة" })).toBeVisible();
   await expect(page.locator(".user-passage")).toHaveCount(2);
-  await expect(page.locator(".user-passage a.pv-word.is-hit", { hasText: "العلم" })).toHaveAttribute("href", /\/read\?w=ilm$/);
+  // a word opens its reading beside the text, as a word of a hadith or a book does (P11.3): the Quran's word, its root
+  const panel = page.getByRole("complementary", { name: "الكلمة" });
+  await page.locator(".user-passage button.pv-word.is-hit", { hasText: "العلم" }).click();
+  await expect(panel.getByRole("link", { name: "الكلمة في القرآن" })).toHaveAttribute("href", /\/read\?w=ilm$/);
+  await expect(panel.getByRole("link", { name: "الجذر في المعجم" })).toHaveAttribute("href", `/dictionary/${encodeURIComponent("علم")}`);
+  // and it is the reader's last lookup, its place this passage of this text (SHL-Q09)
+  const textId = page.url().split("/library/text/")[1];
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state?.context?.place)).toEqual({ href: `/library/text/${textId}#p1`, label: "نص للتجربة" });
+  // a word read by a rule is reviewed in the Analyser, from the panel
+  await page.locator(".user-passage button.pv-word.is-review", { hasText: "بالتعلم" }).click();
+  await expect(panel.getByRole("link", { name: "راجع قراءتها في المحلّل" })).toHaveAttribute("href", `/analyse?q=${encodeURIComponent("بالتعلم")}`);
+  // Esc closes it and gives the focus back to the word
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".user-passage button.pv-word.is-review", { hasText: "بالتعلم" })).toBeFocused();
   await page.getByRole("button", { name: "غيّر العنوان" }).click();
   await page.getByRole("textbox", { name: "عنوان النص" }).fill("عنوان آخر");
   await page.getByRole("button", { name: "احفظ العنوان" }).click();
