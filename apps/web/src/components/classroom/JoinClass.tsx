@@ -4,10 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { ApiError, useAccount } from "@/lib/account/store";
+import { useAccount } from "@/lib/account/store";
 import { joinClass, previewJoin } from "@/lib/classroom";
 import { useIsClient } from "@/lib/client";
-import { ConsentText } from "./shared";
+import { ConsentText, useClassError } from "./shared";
 
 /**
  * Joining a class by its link (P9.1, CLS-Q02): the class and its instructor, then exactly what the instructor will
@@ -16,6 +16,7 @@ import { ConsentText } from "./shared";
  */
 export function JoinClass({ code }: { code: string }) {
   const t = useTranslations("classroom");
+  const fail = useClassError();
   const client = useIsClient();
   const session = useAccount((s) => s.session);
   const router = useRouter();
@@ -53,7 +54,7 @@ export function JoinClass({ code }: { code: string }) {
               const c = await joinClass(code, q.data.consent_version, detail && !q.data.class.minors);
               router.push(`/classroom/${c.id}`);
             } catch (err) {
-              setSaid(err instanceof ApiError ? err.message : t("failed"));
+              setSaid(fail(err));
               setBusy(false);
             }
           }}

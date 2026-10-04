@@ -3226,6 +3226,31 @@
     "mineCount": "Count",
     "mineMinutes": "Minutes read in its verses: {n}",
     "mineOpened": "opened {day}",
-    "mineChoices": "Your choices in this class"
+    "mineChoices": "Your choices in this class",
+    "err": {
+      "not_instructor": "This is for the instructor only.",
+      "not_member": "This is for the class's members.",
+      "instructor_edits": "The instructor edits the map itself rather than proposing.",
+      "class_only": "This is a class's map: its members read it, signed in.",
+      "not_found": "This is no longer here.",
+      "already": "This word is in the lesson notes already.",
+      "closed": "The lesson is closed now.",
+      "decided": "This proposal was decided already.",
+      "has_map": "The lesson has its map already.",
+      "no_map": "The lesson has no map yet.",
+      "own_class": "You teach this class.",
+      "taken": "This map is another lesson's.",
+      "too_large": "The proposal is too large: forty cards and eighty links at most.",
+      "bad_ranges": "Check the verses: one to ten ranges, three hundred verses at most.",
+      "bad_roots": "Thirty roots at most.",
+      "bad_due": "A due date is a day of the calendar.",
+      "consent": "Read what the instructor will see, and agree to it, to join.",
+      "empty": "Write something first.",
+      "too_long": "The text is longer than allowed.",
+      "nothing_new": "Everything in your proposal is on the map already.",
+      "too_many_notes": "The lesson has a hundred notes.",
+      "too_many_proposals": "You have twenty proposals waiting for the instructor; wait until some are decided.",
+      "bad_proposal": "The proposal cannot be taken in this shape."
+    }
   }
 }

@@ -48,6 +48,17 @@ test("a class made, joined by consent, given a lesson that travels as a file, an
     // the instructor adds a lesson: al-Fātiḥa 1–7 and a root
     await teacher.page.reload();
     await expect(teacher.page.getByText("طالب واحد")).toBeVisible();
+    // a refusal is said in the reader's language, never the API's English: al-Baqara whole and Āl ʿImrān whole are
+    // more verses than a lesson holds
+    await teacher.page.getByRole("textbox", { name: "عنوان الدرس" }).fill("أكثر مما يحمل درس");
+    await teacher.page.getByRole("combobox", { name: "السورة" }).selectOption("2");
+    await teacher.page.getByRole("button", { name: "+ مقطع آخر" }).click();
+    await teacher.page.getByRole("combobox", { name: "السورة" }).nth(1).selectOption("3");
+    await teacher.page.getByRole("button", { name: "أضف الدرس" }).click();
+    await expect(teacher.page.getByRole("status").filter({ hasText: "راجع الآيات: من مقطع إلى عشرة، وثلاثمئة آية على الأكثر." })).toBeVisible();
+    await expect(teacher.page.getByText(/three hundred|422/)).toHaveCount(0);
+    await teacher.page.getByRole("button", { name: "احذف هذا المقطع" }).nth(1).click();
+    await teacher.page.getByRole("combobox", { name: "السورة" }).selectOption("1");
     await teacher.page.getByRole("textbox", { name: "عنوان الدرس" }).fill("الحمد في الفاتحة");
     await teacher.page.getByRole("textbox", { name: "الجذور (اختياري)" }).fill("ح م د");
     await teacher.page.getByRole("button", { name: "أضف الدرس" }).click();

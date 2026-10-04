@@ -4,12 +4,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { ApiError, useAccount } from "@/lib/account/store";
+import { useAccount } from "@/lib/account/store";
 import { addLesson, deleteClass, deleteLesson, getClass, getPack, leaveClass, newCode, rangesLine, removeMember, setDetail, updateClass, type ClassOut, type LessonOut, type Range } from "@/lib/classroom";
 import { useIsClient } from "@/lib/client";
 import { setFinished } from "@/lib/classroomSignals";
 import { cnt } from "@/lib/format";
-import { ConsentText, useFmt, useSurahNames, useSurahs } from "./shared";
+import { ConsentText, useClassError, useFmt, useSurahNames, useSurahs } from "./shared";
 
 const FLOOR = 5;
 // a due date is the end of its day in UTC: read in UTC, it is the day the instructor chose wherever the reader is
@@ -200,6 +200,7 @@ function LessonRow({ lesson, teach }: { lesson: LessonOut; teach: boolean }) {
  * against the mushaf and each root against the corpus, and says what it refused. */
 function LessonBuilder({ classId }: { classId: string }) {
   const t = useTranslations("classroom");
+  const fail = useClassError();
   const qc = useQueryClient();
   const surahs = useSurahs().data?.data ?? [];
   const fmt = useFmt();
@@ -239,7 +240,7 @@ function LessonBuilder({ classId }: { classId: string }) {
           setSaid(t("lessonAdded"));
           await qc.invalidateQueries({ queryKey: ["class", classId] });
         } catch (err) {
-          setSaid(err instanceof ApiError ? err.message : t("failed"));
+          setSaid(fail(err));
         } finally {
           setBusy(false);
         }
@@ -340,6 +341,7 @@ function Roster({ c }: { c: ClassOut }) {
 /** A member's own: their choice to show their detail (theirs to change), what the instructor sees, and leaving. */
 function MySettings({ c }: { c: ClassOut }) {
   const t = useTranslations("classroom");
+  const fail = useClassError();
   const qc = useQueryClient();
   const router = useRouter();
   const [asked, setAsked] = useState(false);
@@ -364,7 +366,7 @@ function MySettings({ c }: { c: ClassOut }) {
                 void qc.invalidateQueries({ queryKey: ["class", c.id] });
               } catch (err) {
                 setDetailOn(!on);
-                setSaid(err instanceof ApiError ? err.message : t("failed"));
+                setSaid(fail(err));
               }
             }}
           />
@@ -405,6 +407,7 @@ function MySettings({ c }: { c: ClassOut }) {
 /** The class's own settings: its name, for minors, archived (no new lessons, no joining), deleted with all it held. */
 function ClassSettings({ c }: { c: ClassOut }) {
   const t = useTranslations("classroom");
+  const fail = useClassError();
   const qc = useQueryClient();
   const router = useRouter();
   const [name, setName] = useState(c.name);
@@ -416,7 +419,7 @@ function ClassSettings({ c }: { c: ClassOut }) {
       await qc.invalidateQueries({ queryKey: ["class", c.id] });
       setSaid(done);
     } catch (err) {
-      setSaid(err instanceof ApiError ? err.message : t("failed"));
+      setSaid(fail(err));
     }
   };
   return (

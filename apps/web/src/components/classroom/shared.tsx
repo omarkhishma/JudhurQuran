@@ -2,6 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
+import { errorKind } from "@/lib/account/errors";
+import { ApiError } from "@/lib/account/store";
 import { formatNumber, verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 
@@ -79,4 +81,21 @@ export function NoteLine({ n, word }: { n: NoteLike; word?: string }) {
       {n.text && <span dir="auto">{n.text}</span>}
     </span>
   );
+}
+
+const REFUSALS = ["not_instructor", "not_member", "instructor_edits", "class_only", "not_found", "already", "closed", "decided", "has_map", "no_map", "own_class", "taken", "too_large", "bad_ranges", "bad_roots", "bad_due", "consent", "empty", "too_long", "nothing_new", "too_many_notes", "too_many_proposals", "bad_proposal"] as const;
+type Refused = (typeof REFUSALS)[number];
+
+/** What went wrong in the classroom, as the reader is told it: the API's reason in the reader's language, else the
+ * account's plain words (offline, signed out, busy) — never the API's English (audit 11 F21). */
+export function useClassError() {
+  const t = useTranslations("classroom");
+  const ta = useTranslations("account");
+  return (e: unknown): string => {
+    if (e instanceof ApiError && e.code) {
+      const key = e.code === "too_many" ? (e.status === 429 ? "too_many_proposals" : "too_many_notes") : e.code;
+      if ((REFUSALS as readonly string[]).includes(key)) return t(`err.${key as Refused}`);
+    }
+    return ta(`err.${errorKind(e)}`);
+  };
 }

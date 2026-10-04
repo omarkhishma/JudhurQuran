@@ -4,11 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { ApiError, useAccount } from "@/lib/account/store";
+import { useAccount } from "@/lib/account/store";
 import { createClass, getClasses, rangesLine, readPack, type ClassOut, type LessonPack } from "@/lib/classroom";
 import { useIsClient } from "@/lib/client";
 import { cnt } from "@/lib/format";
-import { NoteLine, useFmt, useSurahNames } from "./shared";
+import { NoteLine, useClassError, useFmt, useSurahNames } from "./shared";
 
 /**
  * The classroom's home (P9.1, CLS-01, 02, Q01, Q07): the classes this reader teaches and those they joined, a new
@@ -82,6 +82,7 @@ function ClassList({ items }: { items: ClassOut[] }) {
 /** A new class: its name, and whether it is for minors (then no one's detail is ever shown). */
 function NewClass() {
   const t = useTranslations("classroom");
+  const fail = useClassError();
   const router = useRouter();
   const [name, setName] = useState("");
   const [minors, setMinors] = useState(false);
@@ -99,7 +100,7 @@ function NewClass() {
           const c = await createClass(name.trim(), minors);
           router.push(`/classroom/${c.id}`);
         } catch (err) {
-          setSaid(err instanceof ApiError ? err.message : t("failed"));
+          setSaid(fail(err));
           setBusy(false);
         }
       }}

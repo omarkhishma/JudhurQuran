@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { Fragment, useState, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
-import { ApiError, useAccount } from "@/lib/account/store";
+import { useAccount } from "@/lib/account/store";
 import { addNote, editNote, getHeat, getLesson, getMatrix, getMine, getNotes, getPack, lessonKeys, rangesLine, removeNote, sendNudge, type Cell, type Heat, type Layer, type LessonOut, type LessonNote } from "@/lib/classroom";
 import { setFinished } from "@/lib/classroomSignals";
 import { useIsClient } from "@/lib/client";
@@ -12,7 +12,7 @@ import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { SAJDA, splitFurniture } from "@/lib/reader/verseText";
 import type { Verse, WordLite } from "@/lib/types";
-import { NoteLine, useFmt, useSurahNames } from "./shared";
+import { NoteLine, useClassError, useFmt, useSurahNames } from "./shared";
 
 const LAYERS: Layer[] = ["lookup", "note", "confirm", "struggle"];
 // the matrix is by root, and a note is written on a verse, not a word: it has no root to sit under
@@ -256,6 +256,7 @@ function HeatVerse({ v, heat, layer, focus, onFocus, children }: { v: Verse; hea
 /** A word's card (CLS-13…15): the class's numbers for each kind, its lemma and root, and a place in the lesson notes. */
 function FocusCard({ lessonId, word, heat, onClose }: { lessonId: string; word: WordLite; heat: Heat; onClose: () => void }) {
   const t = useTranslations("classroom");
+  const fail = useClassError();
   const locale = useLocale();
   const qc = useQueryClient();
   const say = useCellText();
@@ -305,7 +306,7 @@ function FocusCard({ lessonId, word, heat, onClose }: { lessonId: string; word: 
               await qc.invalidateQueries({ queryKey: ["lesson-notes", lessonId] });
               setSaid(t("addedToNotes"));
             } catch (e) {
-              setSaid(e instanceof ApiError ? e.message : t("failed"));
+              setSaid(fail(e));
             }
           }}
         >
@@ -321,6 +322,7 @@ function FocusCard({ lessonId, word, heat, onClose }: { lessonId: string; word: 
  * privately — a notice on their own page, named here only by their choice. */
 function ClassPanel({ lessonId, heat, open }: { lessonId: string; heat: Heat; open: boolean }) {
   const t = useTranslations("classroom");
+  const fail = useClassError();
   const locale = useLocale();
   const qc = useQueryClient();
   const [said, setSaid] = useState("");
@@ -388,7 +390,7 @@ function ClassPanel({ lessonId, heat, open }: { lessonId: string; heat: Heat; op
                 setSaid(t("nudgeSent", cnt(r.sent, locale)));
                 await qc.invalidateQueries({ queryKey: ["heat", lessonId] });
               } catch (e) {
-                setSaid(e instanceof ApiError ? e.message : t("failed"));
+                setSaid(fail(e));
               } finally {
                 setBusy(false);
               }
@@ -418,6 +420,7 @@ function Tile({ label, value }: { label: string; value: string }) {
  * file, so the class reads them too. */
 function LessonNotes({ lesson, words }: { lesson: LessonOut; words: Map<string, WordLite> }) {
   const t = useTranslations("classroom");
+  const fail = useClassError();
   const locale = useLocale();
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["lesson-notes", lesson.id], queryFn: () => getNotes(lesson.id) });
@@ -431,7 +434,7 @@ function LessonNotes({ lesson, words }: { lesson: LessonOut; words: Map<string, 
       setSaid(done ?? "");
       return true;
     } catch (e) {
-      setSaid(e instanceof ApiError ? e.message : t("failed"));
+      setSaid(fail(e));
       return false;
     }
   };
@@ -571,6 +574,7 @@ function MatrixView({ lesson, layer, verses, heat }: { lesson: LessonOut; layer:
  * and what their own reader sent — a member may always see what is kept of them. */
 function LearnLesson({ lesson }: { lesson: LessonOut }) {
   const t = useTranslations("classroom");
+  const fail = useClassError();
   const locale = useLocale();
   const qc = useQueryClient();
   const names = useSurahNames();
@@ -600,7 +604,7 @@ function LearnLesson({ lesson }: { lesson: LessonOut }) {
                 await qc.invalidateQueries({ queryKey: ["lesson", lesson.id] });
                 setSaid(t(done ? "unfinishedSaid" : "finishedSaid"));
               } catch (e) {
-                setSaid(e instanceof ApiError ? e.message : t("failed"));
+                setSaid(fail(e));
               }
             }}
           >
