@@ -30,3 +30,6 @@ export type DictLetter = { letter: string; roots: number; quranic: number };
 
 /** A root's address on the dictionary: its key (the hamza written ء), never a guess at a spelling. */
 export const dictHref = (key: string) => `/dictionary/${encodeURIComponent(key)}`;
+const FOLD: Record<string, string> = { "أ": "ء", "إ": "ء", "آ": "ء", "ؤ": "ء", "ئ": "ء", "ٱ": "ء", "ى": "ي", "ة": "ه" };
+/** The dictionary page of a Quranic root (its key أخذ is the dictionary's ءخذ). */
+export const dictHrefOfQuranRoot = (key: string) => dictHref([...key].map((c) => FOLD[c] ?? c).join(""));

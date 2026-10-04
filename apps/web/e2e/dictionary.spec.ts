@@ -87,3 +87,20 @@ test("a heading the evidence could not settle says so and names what it may be (
   await expect(page.getByRole("link", { name: "سير" }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: "سور" }).first()).toBeVisible();
 });
+
+test("the Quran's pages lead to the dictionary: a root's page and a word's dictionaries (P11.1)", async ({ page }) => {
+  await page.goto(`/roots/${enc("أخذ")}`);
+  const link = page.getByRole("link", { name: "كل مواد هذا الجذر في المعجم" });
+  await expect(link).toHaveAttribute("href", `/dictionary/${enc("ءخذ")}`);
+  await link.click();
+  await expect(page).toHaveURL(new RegExp(`/dictionary/${enc("ءخذ")}$`));
+  await expect(page.getByRole("tablist", { name: "المعاجم" }).getByRole("tab").first()).toBeVisible();
+  // the reader's word panel, its dictionaries section open
+  await page.addInitScript(() => {
+    localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 }));
+    localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { layerOpen: { senses: false, family: false, patterns: false, lexica: true, timeline: false, usage: false } }, version: 2 }));
+  });
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  const lex = page.locator('[data-section="lexica"]').first();
+  await expect(lex.getByRole("link", { name: "افتحه في المعجم" })).toHaveAttribute("href", `/dictionary/${enc("علم")}`);
+});

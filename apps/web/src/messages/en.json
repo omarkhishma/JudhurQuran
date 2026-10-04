@@ -1435,7 +1435,8 @@
     "noLexicon": "No article for this root in the available dictionaries yet.",
     "by": "{author} (d. {death} AH)",
     "openInRoot": "Everything the dictionaries say about this root",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "inDictionary": "Every article on this root, in the dictionary"
   },
   "saved": {
     "title": "Saved",
@@ -2175,7 +2176,8 @@
     "lessonFinishedButton": "Finished ✓",
     "lessonFinished": "You told the instructor you finished the lesson.",
     "lessonUnfinished": "The lesson is no longer marked finished.",
-    "lessonFailed": "That could not be done just now."
+    "lessonFailed": "That could not be done just now.",
+    "openInDictionary": "Open in the dictionary"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

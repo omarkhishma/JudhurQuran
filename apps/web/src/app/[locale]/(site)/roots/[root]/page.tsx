@@ -14,6 +14,7 @@ import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { sourceLine } from "@/lib/reader/board";
 import { Term } from "@/components/terms/Term";
 import { localized } from "@/lib/seo";
+import { dictHrefOfQuranRoot } from "@/lib/dictionary";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 
 export const revalidate = 86400;
@@ -220,6 +221,10 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
         <h2 id="lexicon-h" className="text-[18px] font-semibold"><Term id="lexicon">{tl("inLexicons")}</Term></h2>
         <p className="mb-3 max-w-[80ch] text-[13.5px] text-t2">{tl("lexiconsLead")}</p>
         <RootLexicon lexicon={r.lexicon} />
+        {/* the root in the dictionary: every lexicon's article, the Quran one layer among many (P11.1) */}
+        <p className="mt-3 text-[13px]">
+          <Link href={dictHrefOfQuranRoot(r.key)} className="underline underline-offset-2">{tl("inDictionary")}</Link>
+        </p>
       </section>
 
       <section className="mt-10" aria-labelledby="dist">

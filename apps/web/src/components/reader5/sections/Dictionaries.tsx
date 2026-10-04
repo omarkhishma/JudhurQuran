@@ -11,6 +11,8 @@ import { getJSON } from "@/lib/reader/api";
 import { usePrefs, useReader } from "@/lib/reader/store";
 import type { DictEntry, DictWork, WordPayload } from "@/lib/reader/types";
 import { DICT_KIND } from "@/lib/lexica";
+import { Link } from "@/i18n/navigation";
+import { dictHrefOfQuranRoot } from "@/lib/dictionary";
 
 export { DICT_KIND } from "@/lib/lexica";
 const KINDS = ["all", "earliest", "general", "root", "interpretive", "english"] as const;
@@ -62,7 +64,11 @@ export function DictionariesSection({ w }: { w: WordPayload }) {
               </button>
             ))}
           </div>
-          <p className="text-[11.5px] text-t3">{t.rich("byDeathDate", { term: (c) => <Term id="lexicon">{c}</Term> })}</p>
+          <p className="flex flex-wrap justify-between gap-x-3 text-[11.5px] text-t3">
+            <span>{t.rich("byDeathDate", { term: (c) => <Term id="lexicon">{c}</Term> })}</span>
+            {/* the root's page in the dictionary, every lexicon's article in full (P11.1) */}
+            <Link href={dictHrefOfQuranRoot(w.root.key)} className="underline underline-offset-2">{t("openInDictionary")}</Link>
+          </p>
           {listed.length === 0 && <p className="text-[12.5px] text-t3">{t("noArticlesOfKind")}</p>}
           {listed.map((d) => (
             <Article key={d.id} d={d} w={w} />

@@ -1435,7 +1435,8 @@
     "noLexicon": "لا توجد مادة لهذا الجذر في المعاجم المتاحة بعد.",
     "by": "{author} (ت {death}هـ)",
     "openInRoot": "كل ما في المعاجم عن هذا الجذر",
-    "loading": "جارٍ التحميل…"
+    "loading": "جارٍ التحميل…",
+    "inDictionary": "كل مواد هذا الجذر في المعجم"
   },
   "saved": {
     "title": "محفوظاتي",
@@ -2175,7 +2176,8 @@
     "lessonFinishedButton": "أتممته ✓",
     "lessonFinished": "قلت للمعلم إنك أتممت الدرس.",
     "lessonUnfinished": "لم يعد الدرس متمما.",
-    "lessonFailed": "تعذر ذلك الآن."
+    "lessonFailed": "تعذر ذلك الآن.",
+    "openInDictionary": "افتحه في المعجم"
   },
   "board": {
     "reviewed": "راجعته هيئة التحرير",
