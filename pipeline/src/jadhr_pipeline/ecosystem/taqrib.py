@@ -93,6 +93,11 @@ RANKS: list[tuple[tuple[str, ...], int]] = sorted(
             ("من كبار الصحابة", 1),
             ("من صغار الصحابة", 1),
             ("من الصحابة", 1),
+            ("الصحابي", 1),
+            ("الصحابية", 1),
+            # a caliph and a Mother of the Believers are Companions, as he calls them
+            ("أمير المؤمنين", 1),
+            ("أم المؤمنين", 1),
             ("ثقة ثقة", 2),
             ("ثقة حافظ", 2),
             ("ثقة ثبت", 2),
@@ -232,10 +237,20 @@ def _death(norm_words: list[str], tabaqa: int | None) -> tuple[int | None, str |
     """The year after «مات سنة», by Ibn Ḥajar's rule; and where the phrase starts (word index)."""
     for i in range(len(norm_words) - 1):
         verb = norm_words[i][1:] if norm_words[i][:1] in ("و", "ف") else norm_words[i]
-        if verb in ("مات", "ماتت", "قتل", "قتلت", "استشهد") and norm_words[i + 1] in ("سنه", "سنة"):
-            n, full = _number(norm_words[i + 2 : i + 7])
+        # «مات سنة …», «استشهد في ذي الحجة سنة …», «مات في رجب سنة …»
+        at = next((k for k in range(i + 1, min(i + 6, len(norm_words))) if norm_words[k] == "سنه"), None)
+        if verb in ("مات", "ماتت", "قتل", "قتلت", "استشهد") and at is not None:
+            n, full = _number(norm_words[at + 1 : at + 6])
             if n is None:
                 return None, None, i
+            if n < 10 and not full:
+                # «سنة سبع وقيل سنة ثمان وقيل تسع وخمسين»: the tens the alternatives end on are the first's too
+                after = norm_words[at + 2 : at + 14]
+                if any(w in ("وقيل", "قيل", "او") for w in after[:3]):
+                    tens = next(
+                        (_TENS[w.removeprefix("و")] for w in after if w.removeprefix("و") in _TENS), 0
+                    )
+                    n += tens
             if full:
                 return n, "written", i
             if tabaqa is None:
@@ -286,8 +301,14 @@ def _entry(number: int | None, kind: str, text: str) -> Entry:
     tabaqa_rule = None
     t_at = None
     for i in range(len(norm) - 1):
-        # «من العاشرة», «من الثانية عشرة», «من كبار التاسعة», «من صغار الثالثة»
-        k = i + 2 if norm[i + 1] in ("كبار", "صغار", "اوساط", "اواسط") else i + 1
+        # «من العاشرة», «من الثانية عشرة», «من كبار التاسعة», «من صغار الثالثة», «من رؤوس الطبقة الثامنة»
+        k = i + 1
+        while (
+            k < len(norm)
+            and k - i <= 3
+            and norm[k] in ("كبار", "صغار", "اوساط", "اواسط", "رووس", "روس", "الطبقه")
+        ):
+            k += 1
         if norm[i] == "من" and k < len(norm) and norm[k] in ORDINALS:
             tabaqa = 12 if " ".join(norm[k : k + 2]) == "الثانيه عشره" else ORDINALS[norm[k]]
             if norm[k] == "الحاديه":
