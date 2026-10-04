@@ -27,7 +27,8 @@ from .settings import get_settings
 
 REPO = Path(__file__).resolve().parents[4]
 VERSION = re.compile(r"^\d{4}\.\d{1,2}\.\d{1,3}$")
-FILE = re.compile(r"^[a-z0-9_]+\.(jsonl|csv|xml|txt)$")
+# a table and its format: roots.csv, lexicon_lane.tei.xml — never a path
+FILE = re.compile(r"^[a-z0-9_]+\.(jsonl|csv|txt|(tei\.|lmf\.)?xml)$")
 TYPES = {
     "jsonl": "application/x-ndjson; charset=utf-8",
     "csv": "text/csv; charset=utf-8; header=present",

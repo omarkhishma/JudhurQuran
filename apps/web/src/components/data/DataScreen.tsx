@@ -131,8 +131,11 @@ function ReleaseRow({ version }: { version: string }) {
   return q.data ? <ReleaseCard r={q.data} latest={false} /> : <span className="block h-16 animate-pulse rounded-xl bg-card-2" aria-hidden="true" />;
 }
 
-const FORMAT_ORDER = ["jsonl", "csv", "xml", "txt"];
-const TABLES = ["verses", "words", "lemmas", "roots", "segments", "lexicon"] as const;
+const FORMAT_ORDER = ["jsonl", "csv", "tei", "lmf", "xml", "txt"];
+/** A format's name as its readers know it (research 19): TEI Lex-0 for dictionaries, LMF (ISO 24613-4) for NLP. */
+const FORMAT_LABEL: Record<string, string> = { jsonl: "JSONL", csv: "CSV", tei: "TEI Lex-0", lmf: "LMF", xml: "XML", txt: "TXT" };
+const formatLabel = (f: string | null) => FORMAT_LABEL[f ?? ""] ?? (f ?? "").toUpperCase();
+const TABLES = ["verses", "words", "lemmas", "roots", "segments", "lexicon_quran", "lexicon_lane"] as const;
 type Table = (typeof TABLES)[number];
 
 /** A release (DAT-07…13): its files by format, each with its size and sha256 — downloadable once published and not
@@ -171,11 +174,11 @@ function ReleaseCard({ r, latest }: { r: Release; latest: boolean }) {
                 .map((f) =>
                   f.available ? (
                     <a key={f.path} href={f.url} className="btn text-[12.5px]" download title={`sha256 ${f.sha256}`}>
-                      {(f.format ?? "").toUpperCase()} · {size(f.bytes, locale)}
+                      <bdi>{formatLabel(f.format)}</bdi> · {size(f.bytes, locale)}
                     </a>
                   ) : (
                     <span key={f.path} className="format-chip" title={`sha256 ${f.sha256}`}>
-                      {(f.format ?? "").toUpperCase()} · {size(f.bytes, locale)}
+                      <bdi>{formatLabel(f.format)}</bdi> · {size(f.bytes, locale)}
                     </span>
                   ),
                 )}

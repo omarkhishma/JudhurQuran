@@ -36,6 +36,7 @@ Read `docs/PLAN.md` (status) and `docs/DECISIONS.md` (decisions + lessons) befor
 | Load it (+ expire web cache) | `uv run python -m jadhr_api.loader data/build/2026.10.0 data/sources.yaml` |
 | Expire web cache only (after API changes) | `uv run python -m jadhr_api.loader --revalidate` |
 | Validation report / release (built once; `--force` before it is recorded) | `uv run python -m jadhr_pipeline.validation` · `uv run python -m jadhr_pipeline.release` |
+| Jing for the release's TEI Lex-0 check (once; needs Java) | `uv run python -m jadhr_pipeline.lexicon_xml fetch-jing` |
 | Record a built release (once; publishing it is the owner's go) | `uv run python -m jadhr_api.releases record data/release/2026.10.0` · `… publish 2026.10.0` · `… doi 2026.10.0 <doi>` |
 | Python tests (strict, with data) | `JADHR_REQUIRE_DATA=1 uv run pytest packages/arabic-py pipeline services/api -q` |
 | Web checks | `pnpm lint && pnpm typecheck && pnpm build` |

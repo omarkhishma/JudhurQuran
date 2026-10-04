@@ -22,8 +22,12 @@ client = TestClient(app)
 
 
 def _write(folder: Path, version: str) -> dict:
-    """A small release: two files, one under a hold."""
-    files = {"roots.csv": "key,spaced\r\nعلم,ع ل م\r\n", "words.jsonl": '{"location": "1:1:1"}\n'}
+    """A small release: three files, one under a hold."""
+    files = {
+        "roots.csv": "key,spaced\r\nعلم,ع ل م\r\n",
+        "words.jsonl": '{"location": "1:1:1"}\n',
+        "lexicon_lane.tei.xml": '<?xml version="1.0" encoding="UTF-8"?>\n<TEI xmlns="http://www.tei-c.org/ns/1.0"/>\n',
+    }
     out = []
     for path, body in files.items():
         data = body.encode("utf-8")
@@ -32,7 +36,7 @@ def _write(folder: Path, version: str) -> dict:
             {
                 "path": path,
                 "table": path.split(".")[0],
-                "format": path.split(".")[1],
+                "format": path.split(".")[1],  # tei for lexicon_lane.tei.xml
                 "held": "qac" if path.startswith("words") else None,
                 "rows": 1,
                 "bytes": len(data),
@@ -88,11 +92,12 @@ def test_a_release_is_recorded_once_read_by_anyone_and_its_files_served_once_pub
     }  # the same manifest again: nothing
     listed = client.get("/api/v1/releases").json()["data"]
     mine = next(r for r in listed if r["version"] == version)
-    assert mine["counts"] == {"files": 2, "available": 0, "held": 1} and mine["published_at"] is None
+    assert mine["counts"] == {"files": 3, "available": 0, "held": 1} and mine["published_at"] is None
     one = client.get(f"/api/v1/releases/{version}").json()
     assert [(f["path"], f["held"], f["available"]) for f in one["files"]] == [
         ("roots.csv", None, False),
         ("words.jsonl", "qac", False),
+        ("lexicon_lane.tei.xml", None, False),
     ]
     assert one["publication_hold"][0]["decision"] == "D19" and one["doi"] is None
     # the manifest, byte for byte, with the hash the record keeps
@@ -109,6 +114,12 @@ def test_a_release_is_recorded_once_read_by_anyone_and_its_files_served_once_pub
     assert r.status_code == 200 and r.content == (folder / "roots.csv").read_bytes()
     assert r.headers["x-content-sha256"] == hashlib.sha256(r.content).hexdigest()
     assert "immutable" in r.headers["cache-control"] and r.headers["content-type"].startswith("text/csv")
+    # the lexicon as XML (TEI Lex-0, LMF): served as XML under its two-part name
+    x = client.get(f"/api/v1/releases/{version}/files/lexicon_lane.tei.xml")
+    assert x.status_code == 200 and x.content == (folder / "lexicon_lane.tei.xml").read_bytes()
+    assert x.headers["content-type"].startswith("application/xml")
+    assert f"jadhr-{version}-lexicon_lane.tei.xml" in x.headers["content-disposition"]
+    assert client.get(f"/api/v1/releases/{version}/files/lexicon_lane.x.xml").status_code == 404
     held = client.get(f"/api/v1/releases/{version}/files/words.jsonl")
     assert held.status_code == 403 and held.json()["error"]["code"] == "held"
     # nothing outside the manifest, nothing outside the folder

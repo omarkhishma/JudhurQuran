@@ -1,4 +1,5 @@
-"""Release artefacts: the redistributable part of a built dataset, as JSON Lines + CSV with a manifest.
+"""Release artefacts: the redistributable part of a built dataset, as JSON Lines and CSV, the lexicon also as TEI Lex-0
+and LMF (lexicon_xml.py), with a manifest.
 
     uv run python -m jadhr_pipeline.release            # data/build/<version> → data/release/<version>
 
@@ -21,6 +22,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
+from . import lexicon_xml
 
 REPO = Path(__file__).resolve().parents[3]
 
@@ -72,15 +75,17 @@ TANZIL_META_NOTICE = (
 FORMAT_NOTES = {
     "jsonl": "JSON Lines: one record per line, UTF-8.",
     "csv": "RFC 4180: comma-separated, CRLF between records, a header row; a field with a comma, a quote or a line break quoted and its quotes doubled; UTF-8 without a byte-order mark. Nested values (segments, features) are JSON in their field.",
-    "unicode": "Every field is NFC except the texts carried from their sources exactly as they are: text_qpc (KFGQPC), text_uthmani and the segment forms (the corpus's Tanzil copy, also inside words' segments) and the lemma forms (lemmas.ar, words.lemma). Normalising them would reorder their combining marks, and the Quranic text is never altered.",
+    "unicode": "Every field is NFC except the texts carried from their sources exactly as they are: text_qpc (KFGQPC), text_uthmani and the segment forms (the corpus's Tanzil copy, also inside words' segments) and the lemma forms (lemmas.ar, words.lemma), and Lane's headword and body as converted from Perseus's transliteration. Normalising them would reorder their combining marks, and the Quranic text is never altered. The XML files carry the same characters as the JSON Lines files.",
+    "tei": "TEI Lex-0 0.9.5 (https://lex-0.org), UTF-8, validated against its schema when the release is built. lexicon_quran: each root a word family (entry type=wordFamily) holding its lemmas (type=mainEntry) with their pattern (form type=scheme, resp=#jadhr) and grammar; a lemma without a root an entry of its own. lexicon_lane: each of Lane's root articles a word family with its text as one sense.",
+    "lmf": "LMF in its ISO 24613-4 TEI serialisation (teiCorpus type=lexicalResource holding one TEI type=lexicon), UTF-8, validated against its schema when the release is built. lexicon_quran: one entry per lemma, its root a form typed root, every word form the Quran attests (form type=inflected) with its inflection and its count (n). lexicon_lane: one entry per root article, its text one sense.",
     "keys": "A word is keyed surah:ayah:word, a segment surah:ayah:word:segment, a verse surah:ayah, a root by its letters.",
 }
 
 PUBLICATION_HOLD = [
     {
         "id": "qac",
-        "tables": ["words", "segments", "lemmas", "roots"],
-        "data": "words, lemmas and roots files (data derived from the Quranic Arabic Corpus)",
+        "tables": ["words", "segments", "lemmas", "roots", "lexicon_quran"],
+        "data": "words, segments, lemmas and roots files and the Quranic lexicon (data derived from the Quranic Arabic Corpus)",
         "why": "the corpus permits verbatim copies only, its FAQ speaks of non-commercial use, and the text column is CC BY-ND",
         "decision": "D19 (ask the corpus maintainers) and D2",
     },
@@ -108,7 +113,7 @@ EXCLUDED = [
     },
     {
         "data": "classical lexica (Kitab al-Ayn, Tahdhib al-Lugha, al-Sihah, Maqayis, al-Mufradat with its sub-entries and senses, Lisan al-Arab, al-Qamus al-Muhit, Taj al-Arus, Ibn Qutaybah)",
-        "reason": "the digital text is display-only (research 02); Lane's Lexicon (CC BY-SA) is available from Perseus",
+        "reason": "the digital text is display-only (research 02); Lane's Lexicon (CC BY-SA 3.0 US) is in this release as lexicon_lane",
     },
     {
         "data": "al-Muyassar fi Gharib al-Qur'an (KFGQPC) meanings per word",
@@ -172,6 +177,10 @@ def build_release(version: str, out: Path | None = None, force: bool = False) ->
     lemmas = {x["id"]: x for x in _jsonl(src / "lemmas.jsonl")}
     verses = _jsonl(src / "verses.jsonl")
     words = _jsonl(src / "words.jsonl")
+    lane_work = next(w for w in _jsonl(src / "lexicon_works.jsonl") if w["id"] == "lane")
+    lane_rows = lexicon_xml.lane_rows(
+        [x for x in _jsonl(src / "lexicon_entries.jsonl") if x["work_id"] == "lane"]
+    )
 
     verse_rows = [
         {
@@ -254,12 +263,18 @@ def build_release(version: str, out: Path | None = None, force: bool = False) ->
         for r in roots.values()
     ]
 
+    lane_notice = (
+        f"{lane_work['attribution_en']} Perseus's availability statement is reproduced in MANIFEST.json and in the "
+        "XML files' headers. root: this project's match of the article to a root of the Quran, given only where the "
+        "site shows it (CC BY-SA 4.0); perseus: the article in Perseus's files."
+    )
     tables: list[tuple[str, list[dict[str, Any]], list[str], str]] = [
         ("verses", verse_rows, list(verse_rows[0]), f"{TEXT_NOTICE} {TANZIL_META_NOTICE}"),
         ("words", word_rows, list(word_rows[0]), f"{TANZIL_CORPUS_TEXT_NOTICE} {QAC_NOTICE}"),
         ("segments", segment_rows, list(segment_rows[0]), f"{TANZIL_CORPUS_TEXT_NOTICE} {QAC_NOTICE}"),
         ("lemmas", lemma_rows, list(lemma_rows[0]), f"{QAC_NOTICE} Patterns (wazn): derived by this project, see docs/DECISIONS.md."),
         ("roots", root_rows, list(root_rows[0]), QAC_NOTICE),
+        (lexicon_xml.LANE, lane_rows, list(lane_rows[0]), lane_notice),
     ]  # fmt: skip
     held = {t: h["id"] for h in PUBLICATION_HOLD for t in h["tables"]}
     files = []
@@ -282,6 +297,37 @@ def build_release(version: str, out: Path | None = None, force: bool = False) ->
                     "notice": notice,
                 }
             )
+    # the lexicon as TEI Lex-0 and LMF: each file checked against its schema and the release before it is written
+    xml_notice = {
+        (lexicon_xml.QURAN, "tei"): f"{QAC_NOTICE} Patterns (wazn): derived by this project (CC BY-SA 4.0).",
+        (
+            lexicon_xml.QURAN,
+            "lmf",
+        ): f"{TANZIL_CORPUS_TEXT_NOTICE.replace('words.text_uthmani and segments[].text', 'The word forms')} {QAC_NOTICE} Patterns (wazn): derived by this project (CC BY-SA 4.0).",
+        (lexicon_xml.LANE, "tei"): lane_notice,
+        (lexicon_xml.LANE, "lmf"): lane_notice,
+    }
+    for x in lexicon_xml.build(
+        lemmas=list(lemmas.values()),
+        roots=list(roots.values()),
+        words=words,
+        lane=lane_rows,
+        lane_work=lane_work,
+        version=version,
+    ):
+        (out / x["path"]).write_bytes(x["data"])
+        files.append(
+            {
+                "path": x["path"],
+                "table": x["table"],
+                "format": x["format"],
+                "held": held.get(x["table"]),
+                "rows": x["rows"],
+                "bytes": len(x["data"]),
+                "sha256": hashlib.sha256(x["data"]).hexdigest(),
+                "notice": xml_notice[(x["table"], x["format"])],
+            }
+        )
     manifest = {
         "dataset": "jadhr-quran",
         "version": version,
@@ -292,8 +338,18 @@ def build_release(version: str, out: Path | None = None, force: bool = False) ->
         "sources": [
             {k: sources[s][k] for k in ("id", "title_en", "url", "license", "attribution_en")}
             for s in ("qpc-hafs", "qac", "tanzil-uthmani")
+        ]
+        + [
+            {
+                "id": "lane",
+                "title_en": f"{lane_work['author_en']}, {lane_work['title_en']}",
+                "url": lane_work["source_url"],
+                "license": lane_work["license"],
+                "attribution_en": lane_work["attribution_en"],
+            }
         ],
-        "copyright_notices": {"qac": QAC_COPYRIGHT},
+        # Perseus: "You leave this availability statement intact" — as its header writes it
+        "copyright_notices": {"qac": QAC_COPYRIGHT, "perseus": lexicon_xml.perseus_xml()},
         "publication_hold": PUBLICATION_HOLD,
         "excluded": EXCLUDED,
         "format_notes": FORMAT_NOTES,
