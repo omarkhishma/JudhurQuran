@@ -8,13 +8,13 @@ Audited 2026-10-04 against commit `0e7d424`, then updated at `8032395` for the r
 
 | Scope | Rows | done | adapted | bug-fixed | n/a | open | waiting |
 |---|---|---|---|---|---|---|---|
-| P1 clauses | 68 | 56 | 6 | 0 | 0 | 2 | 4 |
+| P1 clauses | 68 | 57 | 7 | 0 | 0 | 0 | 4 |
 | SHL items | 78 | 49 | 16 | 6 | 5 | 2 | 0 |
-| **Total** | **146** | **105** | **22** | **6** | **5** | **4** | **4** |
+| **Total** | **146** | **106** | **23** | **6** | **5** | **2** | **4** |
 
 Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next steps seeded by word and dataset version (P1.3), the basmala strip tested (P1.8, and with it P1.9's "P1.8 closed"), the header omnibox's `dir="auto"` (SHL-F08); the dead "being built" frame and a false "coming soon" line removed. Built alongside: D7's vowel-marks switch (1875674), which report 3 found missing.
 
-**Open (4):** P1.3 the `{full, bare, translit}` envelope on the remaining Arabic fields; P1.5 the design-system audit as a document; SHL-Q05 and SHL-Q10 a digits preference. Closed since the audit: P1.3a (918d5bb), P1.9's sweep, SHL-Q07 (8e311ad), SHL-Q09 (df469d3), P1.7a's `dict:` and `user:` identifiers (248334c, 665ff16), P1.3 `?in_text=`.
+**Open (2):** SHL-Q05 and SHL-Q10 a digits preference. Closed since the audit: P1.3a (918d5bb), P1.9's sweep, SHL-Q07 (8e311ad), SHL-Q09 (df469d3), P1.7a's `dict:` and `user:` identifiers (248334c, 665ff16), P1.3 `?in_text=`, P1.5's document (b7953fd), P1.3's envelope (adapted, DECISIONS).
 
 **Waiting on the owner (4):** the phone layouts were not shown before they were built, except the editor's (P1.7: offered now for review after the fact, screenshots at 390 px in every phase's audit); the phone editor (P8.6a); the lexica's legal basis (D22); research 07's findings (D2, D19, D22).
 
@@ -37,7 +37,7 @@ Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next ste
 | P1.2 root English gloss and Arabic core idea | done | gist_ar on 1,485 of 1,642 roots; gloss_en from the board only |
 | P1.2 per-passage difficulty | adapted | A lexical level per verse and sūra (M/0014); DECISIONS 2026-10-03 "Verse difficulty (P3.6) is a lexical profile" |
 | P1.2 migrations and loaders | done | M/0007…0043; A/loader.py |
-| P1.3 API envelope {full, bare, translit} | open | `lexicon.ar()` covers the lemma, its pattern, the occurrence's surface, family members and patterns; sūra names, articles' headwords, concordance lines, Analyser tokens, the texts' payloads and the public API go out as plain strings (report 3) |
+| P1.3 API envelope {full, bare, translit} | adapted | `lexicon.ar()` on every Quranic lexical unit (the lemma, its pattern, the occurrence's surface, family members and patterns); running text verbatim as one string, sūra names and roots with their own transliteration fields; `bare` is the shared spec's `displayBare` in both languages (DECISIONS 2026-10-04 "The `{full, bare, translit}` envelope…") |
 | P1.3 word payload v2 with every panel section | done | One request (A/lexicon.py word_payload); T/test_lexicon_api.py |
 | P1.3 `?in_text=` | done | `/words/{slug}?in_text=<text>` and `/texts/{text}/words/{slug}` (A/rootlife.py lemma_in_text): the word's sure places in a collection or a book, in its order, with siblings from the texts that hold it when it has none; the panel's "In this text" beside a hadith, a book paragraph and the reader's own text (T/test_lemma_in_text_api.py, E/in-this-text.spec.ts, E/library.spec.ts) |
 | P1.3 next steps seeded by word + dataset version | done | A/lexicon.py `_next_steps` (1d1cab6) |
@@ -51,8 +51,8 @@ Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next ste
 | P1.4 the Arabic analyser follows the spec | done | A/searchindex.py |
 | P1.4 falls back to Postgres | done | A/search.py |
 | P1.4 ten assertions | done | T/test_search_engine.py |
-| P1.5 the design-system audit itself | open | No document records it; the code holds the pieces below |
-| P1.5 tokens reconciled with contrast fixes | adapted | Five colours darker than design 02 and a dark amber, for AA (L7); W/app/globals.css:13 still calls them "verbatim values" |
+| P1.5 the design-system audit itself | done | docs/DESIGN-SYSTEM.md (b7953fd): tokens against the handoff with each change's reason, contrast computed from the tokens, type, recipes, motion, breakpoints, the accessibility floor; the floor a test (W/lib/tokens.test.ts) |
+| P1.5 tokens reconciled with contrast fixes | adapted | Seven colours darker than design 02 and a dark amber, for AA on every surface (docs/DESIGN-SYSTEM.md §1; the comment in globals.css corrected) |
 | P1.5 type roles | done | W/lib/fonts.ts; globals.css |
 | P1.5 component recipes | done | globals.css |
 | P1.5 motion | done | globals.css, reduced motion |
