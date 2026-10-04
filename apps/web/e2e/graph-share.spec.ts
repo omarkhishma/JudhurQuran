@@ -135,6 +135,9 @@ test("a map shared for comments: its link, the owner's saves following it, comme
     expect(rev).toBeGreaterThan(first.revision);
     await expect.poll(async () => (await storedGraph(o.page, id))?.shared?.revision, { timeout: 10_000 }).toBe(rev);
 
+    // the owner turns to the card's meaning: the comments are not in front of them while the reader writes
+    await details.getByRole("tab", { name: "المعنى" }).click();
+
     // the reader: read-only, the owner named, Meaning and Comments only
     await r.page.goto(`/graph/shared/${gid}`);
     await expect(r.page.locator(".editor-header")).toContainText(`شاركها ${o.name}`);

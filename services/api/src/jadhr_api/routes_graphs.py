@@ -86,11 +86,16 @@ def revision(u: User, graph_id: GraphId, revision: int) -> ORJSONResponse:
     return ok(shared_maps.revision(u, graph_id, revision))
 
 
-@router.get(
-    "/graphs/{graph_id}/comments", summary="A map's comments and who may be mentioned; marks them read"
-)
+@router.get("/graphs/{graph_id}/comments", summary="A map's comments and who may be mentioned")
 def comments(u: User, graph_id: GraphId) -> ORJSONResponse:
     return ok(shared_maps.comments(u, graph_id))
+
+
+@router.post(
+    "/graphs/{graph_id}/read", summary="The reader has the map's comments in front of them: marked read"
+)
+def mark_read(u: User, graph_id: GraphId) -> ORJSONResponse:
+    return ok(shared_maps.mark_read(u, graph_id))
 
 
 @router.post(

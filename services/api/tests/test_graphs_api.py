@@ -182,6 +182,10 @@ def test_comments_anchor_reply_resolve_and_mention(people: dict[str, dict[str, s
     # mentionable: those who have spoken and have a name, never the reader themself
     names = {p["name"] for p in page["people"]}
     assert all(x and not x.startswith("r-") for x in names) and any(x.startswith("o-") for x in names)
+    # fetching them is not reading them (a window keeping them for its card markers); shown, they are read
+    mine = {m["id"]: m for m in client.get("/api/v1/graphs", headers=r).json()["data"]}
+    assert mine[g["id"]]["unread"] == 2
+    assert client.post(f"/api/v1/graphs/{g['id']}/read", headers=r).json() == {"read": True}
     mine = {m["id"]: m for m in client.get("/api/v1/graphs", headers=r).json()["data"]}
     assert mine[g["id"]]["unread"] == 0 and mine[g["id"]]["mentions"] == 0
     owner_list = {m["id"]: m for m in client.get("/api/v1/graphs", headers=o).json()["data"]}

@@ -11,7 +11,7 @@ import { setLocalStorage, useLocalStorage } from "@/lib/client";
 import { cnt, verseRef } from "@/lib/format";
 import { upgrade } from "@/lib/graph/migrate";
 import { createGraph, deleteGraph, loadGraph, markShared, storedAt } from "@/lib/graph/persist";
-import { readShared, shareMap } from "@/lib/graph/shared";
+import { markCommentsRead, readShared, shareMap } from "@/lib/graph/shared";
 import { rootCards } from "@/lib/graph/seed";
 import { sourceHeading } from "@/lib/graph/topics";
 import type { GraphEdge, GraphNode } from "@/lib/graph/types";
@@ -365,6 +365,11 @@ function Activity({ lesson, gid }: { lesson: LessonOut; gid: string }) {
     refetchOnWindowFocus: true,
   });
   const items = q.data?.pages.flatMap((p) => p.data) ?? [];
+  // the feed shows the map's comments: shown, they are read
+  const said = items.filter((x) => x.kind === "commented").length;
+  useEffect(() => {
+    if (said > 0) void markCommentsRead(gid).catch(() => {});
+  }, [gid, said]);
   return (
     <div className="flex flex-col gap-3">
       <Composer gid={gid} people={comments.data?.people ?? []} hint={t("feedCommentHint")} onSent={() => void qc.invalidateQueries({ queryKey: ["activity", lesson.id] })} />

@@ -79,6 +79,9 @@ export const sharedRevision = (id: string, rev: number) =>
   authFetch<{ revision: number; title: string; doc: SharedDoc["doc"]; doc_version: number; cards: number; saved_at: string }>(`/graphs/${id}/revisions/${rev}`);
 
 export const getComments = (id: string) => authFetch<CommentsPage>(`/graphs/${id}/comments`);
+/** The reader has the comments in front of them: what came before is no longer new to them. Fetching the comments is
+ * not reading them (a window keeps them for its card markers). */
+export const markCommentsRead = (id: string) => authFetch<{ read: true }>(`/graphs/${id}/read`, { method: "POST" });
 export const postComment = (id: string, c: { body: string; node_id?: string | null; anchor?: string; parent_id?: string | null; mentions?: string[] }) =>
   authFetch<Comment>(`/graphs/${id}/comments`, { method: "POST", body: JSON.stringify(c) });
 export const resolveComment = (id: string, resolved: boolean) => authFetch<Comment>(`/comments/${id}`, { method: "PATCH", body: JSON.stringify({ resolved }) });

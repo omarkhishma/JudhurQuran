@@ -374,7 +374,8 @@ def _comment_out(
 
 def comments(u: dict[str, Any], gid: str) -> dict[str, Any]:
     """A map's comments for a signed-in reader, oldest first (the screen orders them), with the people who may be
-    mentioned; reading them marks them read."""
+    mentioned. Reading them here does not mark them read: a window that keeps them for its card markers is not the
+    reader reading them — `mark_read` is, when the comments are shown."""
     with tx() as conn:
         g = _graph(conn, _uuid(gid))
         classroom.map_gate(conn, g["id"], u)
@@ -392,13 +393,6 @@ def comments(u: dict[str, Any], gid: str) -> dict[str, Any]:
                     {"ids": list(extra)},
                 )
             }
-        conn.execute(
-            text(
-                """insert into graphs.reads (graph_id, user_id) values (:g, :u)
-                   on conflict (graph_id, user_id) do update set read_at = now()"""
-            ),
-            {"g": g["id"], "u": u["id"]},
-        )
         people = _people(conn, g)
     return {
         "data": [_comment_out(c, g, u, names) for c in rows],
@@ -406,6 +400,21 @@ def comments(u: dict[str, Any], gid: str) -> dict[str, Any]:
         "people": [{"id": k, "name": v} for k, v in people.items() if v and k != str(u["id"])],
         "owner": g["owner_id"] == u["id"],
     }
+
+
+def mark_read(u: dict[str, Any], gid: str) -> dict[str, Any]:
+    """The reader has the map's comments in front of them: what came before is no longer new to them."""
+    with tx() as conn:
+        g = _graph(conn, _uuid(gid))
+        classroom.map_gate(conn, g["id"], u)
+        conn.execute(
+            text(
+                """insert into graphs.reads (graph_id, user_id) values (:g, :u)
+                   on conflict (graph_id, user_id) do update set read_at = now()"""
+            ),
+            {"g": g["id"], "u": u["id"]},
+        )
+    return {"read": True}
 
 
 def comment(

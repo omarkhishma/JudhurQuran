@@ -12,7 +12,7 @@ import { useAccount } from "@/lib/account/store";
 import { cnt, formatNumber } from "@/lib/format";
 import { foldQuery as fold } from "@/lib/graph/find";
 import { META } from "@/lib/graph/relations";
-import { deleteComment, getComments, postComment, resolveComment, type Comment, type Person } from "@/lib/graph/shared";
+import { deleteComment, getComments, markCommentsRead, postComment, resolveComment, type Comment, type Person } from "@/lib/graph/shared";
 import { KIND_COLOR, type GraphNode } from "@/lib/graph/types";
 import type { CanvasTools } from "./GraphCanvas";
 
@@ -110,6 +110,11 @@ function Threads({ gid, tools }: { gid: string; tools: CanvasTools }) {
   const t = useTranslations("graph");
   const locale = useLocale();
   const q = useMapComments(gid);
+  // shown, they are read — and again when a new one arrives while they are shown
+  const seen = q.data?.data.length ?? -1;
+  useEffect(() => {
+    if (seen >= 0) void markCommentsRead(gid).catch(() => {});
+  }, [gid, seen]);
   const one = tools.selected.length === 1 ? tools.selected[0] : null;
   const [all, setAll] = useState(false);
   const [resolved, setResolved] = useState(false);
