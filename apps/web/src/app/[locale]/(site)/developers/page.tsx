@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { Prose } from "@/components/prose/Prose";
+import { Link } from "@/i18n/navigation";
+import { api } from "@/lib/api";
+import { formatNumber } from "@/lib/format";
 import { localized } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/developers">): Promise<Metadata> {
@@ -8,66 +11,219 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/develope
   return { title: locale === "ar" ? "واجهة برمجية للمطوّرين" : "API for developers", alternates: localized(locale, "/developers") };
 }
 
-const ENDPOINTS: [string, string, string][] = [
-  ["/api/v1/meta", "إصدار البيانات وعدّاداتها ومصادرها", "Dataset version, counts and sources"],
-  ["/api/v1/surahs", "السور الـ١١٤", "The 114 surahs"],
-  ["/api/v1/surahs/{n}?translation=saheeh", "سورة بآياتها وكلماتها", "A surah with its verses, tokens and words"],
-  ["/api/v1/verses/{s}:{a}", "آية بتحليل كلماتها كاملًا", "A verse with full word morphology"],
-  ["/api/v1/words/{s}:{a}:{w}", "كل ما يخص كلمة: الصرف والصيغة والجذر ومعانيه", "Everything about one word"],
-  ["/api/v1/roots?l1=&l2=&l3=", "الجذور (مع البحث بحروف الجذر)", "Roots, filterable by letter position"],
-  ["/api/v1/roots/{root}", "جذر: عائلته وتوزيعه ومواده في المعاجم", "A root: family, distribution, dictionary articles"],
-  ["/api/v1/roots/{root}/occurrences", "فهرس السياقات (KWIC) للجذر", "KWIC concordance for a root"],
-  ["/api/v1/roots/{root}/graph", "وثيقة خريطة الجذر", "Root-family graph document"],
-  ["/api/v1/search?q=", "البحث الموحد", "Unified search"],
-  ["/api/v1/word-of-the-day?date=YYYY-MM-DD", "كلمة اليوم (اليوم بتوقيت مكة)، هي نفسها عند الجميع", "The word of the day (the day in Mecca), the same for everyone"],
-  ["/api/v1/works • /verses/{key}/commentary", "التفاسير والترجمات", "Tafsir and translations"],
-  ["/api/v1/lexicon/works • /lexicon/entries/{id}", "المعاجم (للعرض فقط)", "Dictionaries (display only)"],
+type Index = { data: { endpoints: { method: string; path: string }[]; limits: { per_minute_without_key: number; per_minute_with_key: number } } };
+
+// what each public endpoint takes and gives, in both languages (P10.3c)
+const ENDPOINTS: { path: string; params: string; ar: string; en: string }[] = [
+  { path: "/api/v1/public", params: "", ar: "فهرس الواجهة: منتجاتها ونقاطها وحدودها كما يحفظها الخادم.", en: "The API's index: its products, endpoints and limits as the server holds them." },
+  { path: "/api/v1/public/quran/lookup", params: "q, limit ≤ 20", ar: "مطابقات مصنفة لأي طلب: كلمة بالتشكيل أو بدونه، جذر، وزن، آية.", en: "Typed matches for any query: a word with or without vowels, a root, a pattern, a verse." },
+  { path: "/api/v1/public/quran/roots/{root}", params: "علم · ع ل م · ʿ-l-m", ar: "جذر: مداخله بأوزانها وطريقة استخراج كل وزن، وتوزيعه في السور.", en: "A root: its lemmas with their patterns and how each was derived, its distribution." },
+  { path: "/api/v1/public/quran/words/{location}", params: "2:255:3", ar: "كلمة بموضعها: رسمها، وصرفها وأجزاؤها، ومدخلها وجذرها.", en: "A word by its place: its form, morphology and segments, its lemma and root." },
+  { path: "/api/v1/public/quran/verses/{key}", params: "2:255", ar: "آية: نصها كما في المصحف، وكلماتها.", en: "A verse: its text as the mushaf writes it, and its words." },
+  { path: "/api/v1/public/quran/patterns/{slug}", params: "fa3l, limit ≤ 500", ar: "وزن ومداخله عبر الجذور.", en: "A pattern and its lemmas across roots." },
+  { path: "/api/v1/public/quran/concordance", params: "root, limit ≤ 100, cursor", ar: "مواضع الجذر في سياقها، صفحة بعد صفحة (next_cursor).", en: "A root's lines in context, a page at a time (next_cursor)." },
+  { path: "/api/v1/public/releases", params: "", ar: "إصدارات البيانات المسجلة.", en: "The recorded dataset releases." },
 ];
 
+const RELEASES: { path: string; ar: string; en: string }[] = [
+  { path: "/api/v1/releases/{version}", ar: "الإصدار: ملفاته ببصماتها (sha256) وصيغها وما حجب منها ولماذا، ومصادره وتراخيصها.", en: "A release: its files with their sha256, formats and holds, its sources and licences." },
+  { path: "/api/v1/releases/{version}/manifest", ar: "بيان الإصدار كما بني، حرفا بحرف، وبصمته في الترويسة X-Content-SHA256.", en: "The release's manifest byte for byte, its hash in X-Content-SHA256." },
+  { path: "/api/v1/releases/{version}/files/{path}", ar: "ملف من الإصدار: بعد نشره، وإن لم يحجب؛ وبصمته في الترويسة نفسها.", en: "A release's file: once published and when not held; its hash in the same header." },
+];
+
+const ERRORS: [string, string, string][] = [
+  ["not_found", "لا شيء بهذا المعرف.", "Nothing with that identifier."],
+  ["invalid_key", "المفتاح غير صالح: ملغى أو لم يصدر.", "The key is not valid: revoked, or never issued."],
+  ["rate_limited", "تجاوزت الحد في الدقيقة؛ انتظر ما في Retry-After.", "Over the limit for this minute; wait as long as Retry-After says."],
+  ["unpublished", "الإصدار لم ينشر بعد.", "The release is not published yet."],
+  ["held", "الملف محجوز حتى يقرر صاحب المشروع، والسبب في الرسالة.", "The file is held until the project's owner decides; the reason is in the message."],
+];
+
+/** An identifier — a path, a header, a key — isolated from the sentence around it, whatever its direction. */
+const C = ({ children }: { children: React.ReactNode }) => <code dir="ltr">{children}</code>;
+
+/**
+ * The developers' guide (P10.3c; DAT-37, 46…48, Q02, Q07): the public API — its envelope, endpoints, releases, limits,
+ * keys, errors and terms — in Arabic and English, its limits read from the API itself.
+ */
 export default async function DevelopersPage({ params }: PageProps<"/[locale]/developers">) {
   const { locale } = await params;
   setRequestLocale(locale);
   const ar = locale === "ar";
+  const index = await api<Index>("/public", { revalidate: 3600 });
+  const n = (x: number) => formatNumber(x, locale);
+  const lim = index.data.limits;
   return (
     <Prose>
       <h1>{ar ? "واجهة برمجية للمطوّرين" : "API for developers"}</h1>
       <p className="lead">
         {ar
-          ? "كل ما في الموقع متاح عبر واجهة برمجية للقراءة فقط، بصيغة JSON، مرتبطة بإصدار محدد للبيانات، ومعها مصدر كل معلومة وترخيصها."
-          : "Everything on the site is available through a read-only JSON API, tied to a specific dataset version, with the source and license of every piece of data."}
+          ? "واجهة جذر العامة للقراءة فقط، بصيغة JSON. كل جواب يحمل معه إصدار البيانات ومصدر كل طبقة فيه وترخيصها، فلا يضيع المصدر في الطريق."
+          : "Jadhr's public API is read-only JSON. Every answer carries the dataset's version and the source and licence of every layer in it, so the provenance is never lost on the way."}
       </p>
       <p>
+        {ar ? "جربها في " : "Try it in "}
+        <Link href="/data?tab=api">{ar ? "مختبر الواجهة البرمجية" : "the API playground"}</Link>
+        {ar ? "، أو اقرأ " : ", or read "}
         {/* Served by the API service through the /api/v1 rewrite, not a Next.js page. */}
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href="/api/v1/docs">{ar ? "التوثيق التفاعلي (OpenAPI)" : "Interactive documentation (OpenAPI)"}</a>
+        <a href="/api/v1/docs">{ar ? "التوثيق التفاعلي" : "the interactive documentation"}</a>
+        {ar ? " ومواصفة " : " and the "}
+        <a href="/api/v1/openapi.json" dir="ltr">
+          OpenAPI
+        </a>
+        {ar ? "." : " document."}
       </p>
-      <h2>{ar ? "نقاط الوصول" : "Endpoints"}</h2>
-      <div className="overflow-x-auto">
-        <table className="w-full text-[13.5px]">
-          <tbody>
-            {ENDPOINTS.map(([path, a, e]) => (
-              <tr key={path} className="border-t border-line">
-                <td className="mono py-2 pe-4 align-top text-[12.5px]" dir="ltr">{path}</td>
-                <td className="py-2 align-top text-t2">{ar ? a : e}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <h2>{ar ? "مثال" : "Example"}</h2>
-      <pre className="mono overflow-x-auto rounded-xl bg-card p-4 text-[12.5px] leading-relaxed" dir="ltr">{`curl https://<domain>/api/v1/words/2:255:23
+
+      <h2>{ar ? "الجواب ومصدره" : "An answer and its provenance"}</h2>
+      {ar ? (
+        <p>
+          كل جواب من <C>/api/v1/public</C> فيه مفتاحان: <C>data</C> وفيها البيانات، و<C>meta</C> وفيها اسم المجموعة وإصدارها، والإصدار المسجل الذي يستشهد به حين يوجد، وطبقات الجواب طبقة طبقة: ما هي، ومن أي مصدر، وبأي ترخيص، وكيف ينسب.
+        </p>
+      ) : (
+        <p>
+          Every answer from <C>/api/v1/public</C> has two keys: <C>data</C>, the data; and <C>meta</C> — the dataset&apos;s name and version, the recorded release a citation names once there is one, and the answer&apos;s layers one by one: what each is, its source, its licence and how to credit it.
+        </p>
+      )}
+      {/* a scrolling example is reached by keyboard too */}
+      <pre className="mono overflow-x-auto rounded-xl bg-card p-4 text-[12.5px] leading-relaxed" dir="ltr" tabIndex={0} aria-label={ar ? "مثال" : "Example"}>{`curl -s https://<domain>/api/v1/public/quran/roots/علم
 {
-  "location": "2:255:23", "text_imlaei": "يشفع",
-  "root": { "key": "شفع", "spaced": "ش ف ع", "occurrences": 31, ... },
-  "root_meaning": { "core": { "text": "الشين والفاء والعين أصلٌ صحيح يدلُّ على مقارنَة الشيئين.", "title_ar": "معجم مقاييس اللغة", ... } },
-  ...
+  "meta": {
+    "dataset": "jadhr-quran",
+    "dataset_version": "2026.10.0",
+    "release": { "version": "2026.10.0", "manifest_sha256": "…", "published": false, "doi": null },
+    "layers": [
+      { "layer": "morphology", "source": "qac", "license": "GNU General Public License with the corpus terms of use …", "attribution": "…" },
+      { "layer": "patterns", "source": "jadhr", "license": "CC BY-SA 4.0 (D14)", "attribution": "Jadhr (jadhr.org) …" }
+    ],
+    "generated_at": "…",
+    "docs": "https://jadhr.org/developers"
+  },
+  "data": { "key": "علم", "spaced": "ع ل م", "occurrences": 854, "lemmas": [ { "slug": "ilm", "pattern": "فِعْل", "pattern_method": "…" } ], … }
 }`}</pre>
+
+      <h2>{ar ? "النقاط" : "Endpoints"}</h2>
+      {ar ? (
+        <p>
+          كلها <C>GET</C>، وأسماؤها تحت المنتج: <C>quran</C> اليوم، والمعجم والحديث والكتب بأسمائها حين تأتي.
+        </p>
+      ) : (
+        <p>
+          All are <C>GET</C>, named under their product: <C>quran</C> today; the dictionary, hadith and books under their own names when they come.
+        </p>
+      )}
+      {/* each endpoint on its own lines — the path, what it takes, what it gives — at every width */}
+      <dl className="not-prose flex flex-col divide-y divide-line">
+        {ENDPOINTS.map((e) => (
+          <div key={e.path} className="flex flex-col gap-0.5 py-2.5">
+            <dt className="mono break-all text-[12.5px] text-t1" dir="ltr">
+              {e.path}
+            </dt>
+            {e.params && (
+              <dd className="mono text-[12px] text-t3" dir="ltr">
+                {e.params}
+              </dd>
+            )}
+            <dd className="text-[13.5px] leading-relaxed text-t2">{ar ? e.ar : e.en}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <h2>{ar ? "الإصدارات" : "Releases"}</h2>
+      <p>
+        {ar
+          ? "الإصدار يبنى مرة ويسجل مرة ولا يتغير: البيان يحفظ كما بني ببصمة كل ملف، والإصدار نفسه يعاد ما دام الموقع. يستشهد بالإصدار بعنوانه أو بمعرفه الرقمي (DOI) حين يصدر — انظر «استشهد بالبيانات» في صفحة "
+          : "A release is built once, recorded once and never changes: its manifest is kept as built with every file's hash, and the same release is returned for as long as the site stands. Cite it by its address, or by its DOI once minted — see “Cite the dataset” on "}
+        <Link href="/data">{ar ? "البيانات" : "the data page"}</Link>.
+      </p>
+      <dl className="not-prose flex flex-col divide-y divide-line">
+        {RELEASES.map((r) => (
+          <div key={r.path} className="flex flex-col gap-0.5 py-2.5">
+            <dt className="mono break-all text-[12.5px] text-t1" dir="ltr">
+              {r.path}
+            </dt>
+            <dd className="text-[13.5px] leading-relaxed text-t2">{ar ? r.ar : r.en}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <h2>{ar ? "الحدود والمفاتيح" : "Limits and keys"}</h2>
+      <ul>
+        <li>
+          {ar
+            ? `بلا مفتاح: ${n(lim.per_minute_without_key)} طلبا في الدقيقة لكل عنوان. بمفتاح: ${n(lim.per_minute_with_key)} طلب في الدقيقة للمفتاح.`
+            : `Without a key: ${n(lim.per_minute_without_key)} requests a minute per address. With a key: ${n(lim.per_minute_with_key)} a minute per key.`}
+        </li>
+        {ar ? (
+          <li>
+            كل جواب يقول حده في الترويسات <C>RateLimit-Limit</C> و<C>RateLimit-Remaining</C> و<C>RateLimit-Reset</C>، وجواب <C>429</C> يقول متى تعود في <C>Retry-After</C>.
+          </li>
+        ) : (
+          <li>
+            Every answer states its limit in <C>RateLimit-Limit</C>, <C>RateLimit-Remaining</C> and <C>RateLimit-Reset</C>; a <C>429</C> says when to come back in <C>Retry-After</C>.
+          </li>
+        )}
+        <li>
+          {ar ? "المفتاح تنشئه من " : "Make a key on "}
+          <Link href="/me?tab=account">{ar ? "حسابك" : "your account"}</Link>
+          {ar ? (
+            <>
+              ، وترسله في الترويسة <C>X-API-Key</C> (أو <C>Authorization: Bearer</C>). يظهر مرة واحدة ولا يحفظه الخادم؛ ضعه في برنامج على خادم، لا في صفحة يراها الناس.
+            </>
+          ) : (
+            <>
+              {" "}and send it in the <C>X-API-Key</C> header (or <C>Authorization: Bearer</C>). It is shown once and the server does not keep it; put it in a program on a server, not in a page people can see.
+            </>
+          )}
+        </li>
+        {ar ? (
+          <li>
+            القراءة بلا مفتاح متاحة من صفحات أي موقع (<C>CORS</C>)، والأجوبة قابلة للتخزين المؤقت (<C>ETag</C>).
+          </li>
+        ) : (
+          <li>
+            Reading without a key is open to any site&apos;s pages (<C>CORS</C>), and answers are cacheable (<C>ETag</C>).
+          </li>
+        )}
+      </ul>
+
+      <h2>{ar ? "الأخطاء" : "Errors"}</h2>
+      <p>{ar ? "الخطأ جواب بهذا الشكل، والرمز ثابت يمكن البناء عليه:" : "An error is an answer of this form, its code stable enough to build on:"}</p>
+      <pre className="mono overflow-x-auto rounded-xl bg-card p-4 text-[12.5px]" dir="ltr" tabIndex={0} aria-label={ar ? "شكل الخطأ" : "The error's form"}>{`{ "error": { "code": "not_found", "message": "No root with that identifier." } }`}</pre>
+      <dl className="not-prose flex flex-col divide-y divide-line">
+        {ERRORS.map(([code, a, e]) => (
+          <div key={code} className="flex flex-col gap-0.5 py-2">
+            <dt className="mono text-[12.5px] text-t1" dir="ltr">
+              {code}
+            </dt>
+            <dd className="text-[13.5px] text-t2">{ar ? a : e}</dd>
+          </div>
+        ))}
+      </dl>
+
       <h2>{ar ? "الشروط" : "Terms"}</h2>
       <ul>
-        <li>{ar ? "اذكر المصدر لكل بيانات تستعملها كما تذكره نقطة /api/v1/sources، فلكل مصدر شروطه." : "Credit each source as listed by /api/v1/sources; each has its own terms."}</li>
-        <li>{ar ? "النص القرآني يُعرض كما هو دون أي تعديل." : "The Quranic text must be shown unaltered."}</li>
-        <li>{ar ? "نصوص المعاجم العربية للعرض فقط ولا يجوز جمعها أو إعادة توزيعها بالجملة." : "Arabic dictionary texts are display-only and may not be harvested or redistributed in bulk."}</li>
-        <li>{ar ? "الحدّ: ٦٠٠ طلب في الدقيقة لكل عنوان؛ والاستجابات قابلة للتخزين المؤقت (ETag)." : "Limit: 600 requests per minute per address; responses are cacheable (ETag)."}</li>
+        {ar ? (
+          <li>
+            انسب كل طبقة تستعملها كما في <C>meta.layers</C> من الجواب نفسه، فلكل مصدر شروطه.
+          </li>
+        ) : (
+          <li>
+            Credit every layer you use as <C>meta.layers</C> in the answer says; each source has its own terms.
+          </li>
+        )}
+        <li>{ar ? "النص القرآني يعرض كما هو، دون أي تعديل." : "The Quranic text is shown as it is, unaltered."}</li>
+        <li>{ar ? "طبقاتنا المشتقة (الأوزان ومحاذاة الطبقات) بترخيص CC BY-SA 4.0." : "Our derived layers (patterns, the alignment of layers) are CC BY-SA 4.0."}</li>
+        <li>{ar ? "نصوص المعاجم والتراجم الكلمية لا تقدمها الواجهة العامة: هي للعرض في الموقع وحده." : "Dictionary texts and word-by-word glosses are not served by the public API: they are for display on the site only."}</li>
+        {ar ? (
+          <li>
+            واجهة الموقع نفسه (بقية <C>/api/v1</C>) يقرؤها الموقع، وقد تتغير أشكالها؛ فابن على <C>/api/v1/public</C>.
+          </li>
+        ) : (
+          <li>
+            The site&apos;s own API (the rest of <C>/api/v1</C>) is read by the site, and its shapes may change; build on <C>/api/v1/public</C>.
+          </li>
+        )}
       </ul>
     </Prose>
   );

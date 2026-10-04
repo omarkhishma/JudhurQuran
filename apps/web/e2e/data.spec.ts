@@ -50,3 +50,16 @@ test("the playground sends real requests and shows what came back (P10.3b)", asy
   await expect(page.locator("p.mono span.text-bad")).toHaveText("404");
   if (!isMobile) expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
 });
+
+test("the developers' guide: the public API's envelope, endpoints, releases, limits as the API states them, errors and terms (P10.3c)", async ({ page }) => {
+  const index = (await (await page.request.get("/api/v1/public")).json()) as { data: { limits: { per_minute_without_key: number; per_minute_with_key: number } } };
+  await page.goto("/developers");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("واجهة برمجية للمطوّرين");
+  await expect(page.getByText(`بلا مفتاح: ${ar(index.data.limits.per_minute_without_key)} طلبا في الدقيقة لكل عنوان.`, { exact: false })).toBeVisible();
+  for (const path of ["/api/v1/public/quran/roots/{root}", "/api/v1/public/quran/concordance", "/api/v1/releases/{version}/manifest"]) await expect(page.locator("main dl").filter({ hasText: path }).first()).toBeVisible();
+  for (const code of ["invalid_key", "rate_limited", "held"]) await expect(page.getByText(code, { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "مختبر الواجهة البرمجية" })).toHaveAttribute("href", /\/data\?tab=api$/);
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
+  await page.goto("/en/developers");
+  await expect(page.getByText(`Without a key: ${index.data.limits.per_minute_without_key} requests a minute per address.`, { exact: false })).toBeVisible();
+});

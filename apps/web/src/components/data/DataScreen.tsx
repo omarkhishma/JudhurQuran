@@ -243,7 +243,7 @@ function Cite({ release }: { release: Release | null }) {
           </button>
         ))}
       </div>
-      <pre className="cite-box" dir={format === "arabic" ? "rtl" : "ltr"} aria-label={t("citeText")}>
+      <pre className="cite-box" dir={format === "arabic" ? "rtl" : "ltr"} aria-label={t("citeText")} tabIndex={0}>
         {text}
       </pre>
       <button
@@ -446,7 +446,7 @@ function Playground() {
               {sent.version && <span className="text-t3">dataset {sent.version}</span>}
               {sent.limit && <span className="text-t3">{`${sent.remaining}/${sent.limit} ${t("perMinute")}`}</span>}
             </p>
-            <pre className="response-box" dir="ltr" aria-label={t("response")}>
+            <pre className="response-box" dir="ltr" aria-label={t("response")} tabIndex={0}>
               {sent.body}
             </pre>
           </div>
