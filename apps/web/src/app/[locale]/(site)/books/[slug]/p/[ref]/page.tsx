@@ -8,7 +8,7 @@ import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { type Book, type BookParagraph, chapterHref, citedBy, isBookSlug, paragraphHref } from "@/lib/books";
-import { localized } from "@/lib/seo";
+import { localized, snippet } from "@/lib/seo";
 import type { Surah } from "@/lib/types";
 
 export const revalidate = 86400;
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/books/[s
   const t = await getTranslations({ locale, namespace: "books" });
   return {
     title: t("paragraphTitle", { book: b.title_ar, cite: p.cite.ar.split("، ").slice(-2).join("، ") }),
-    description: p.ar_full.replace(/ /g, " ").slice(0, 160),
+    description: snippet(p.ar_full),
     alternates: localized(locale, paragraphHref(slug, p.ref)),
   };
 }

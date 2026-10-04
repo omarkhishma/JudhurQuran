@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { type Narrator, type TextHit, hadithHref, narratorHref, refText } from "@/lib/hadith";
-import { localized } from "@/lib/seo";
+import { localized, snippet } from "@/lib/seo";
 
 // a page of a list is read from ?page (or ?q): rendered for each request, the API answers it from its cache
 export const dynamic = "force-dynamic";
@@ -29,7 +29,7 @@ const pageOf = (sp: { [k: string]: string | string[] | undefined }) => Math.max(
 export async function generateMetadata({ params, searchParams }: PageProps<"/[locale]/hadith/narrators/[id]">): Promise<Metadata> {
   const { locale, id } = await params;
   const { n } = await load(id, pageOf(await searchParams));
-  return { title: n.name, description: n.text.slice(0, 160), alternates: localized(locale, narratorHref(n.id)) };
+  return { title: n.name, description: snippet(n.text), alternates: localized(locale, narratorHref(n.id)) };
 }
 
 /** A narrator (P11.2b): Ibn Ḥajar's entry verbatim; what his own rules read from it, each beside his introduction's

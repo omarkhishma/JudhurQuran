@@ -11,7 +11,7 @@ import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { cnt, formatNumber } from "@/lib/format";
 import { type Collection, type HadithRecord, hadithHref, isCollection, kitabHref, narratorHref, refOfPath, refText, unnumbered } from "@/lib/hadith";
-import { localized } from "@/lib/seo";
+import { localized, snippet } from "@/lib/seo";
 
 export const revalidate = 86400;
 
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/hadith/[
   const matn = r.parts?.matn ? r.ar_full.slice(r.parts.matn[0], r.parts.matn[1]) : r.ar_full;
   return {
     title: t("hadithTitle", { collection: book, ref: refText(r.ref, locale) }),
-    description: matn.replace(/[‏‎"]/g, "").slice(0, 160),
+    description: snippet(matn.replace(/[‏‎"]/g, "")),
     alternates: localized(locale, hadithHref(collection, r.ref)),
   };
 }
