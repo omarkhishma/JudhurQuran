@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 from jadhr_arabic.analysis import Vocabulary, word_spans
-from jadhr_pipeline.texts.model import Chapter, Draft, Passage, assemble
+from jadhr_pipeline.ecosystem.model import Chapter, Draft, Passage, assemble
 
 V = Vocabulary(
     forms={"العلم": [(1, "علم", "N", 9)], "من": [(9, None, "P", 40)], "كتاب": [(3, "كتب", "N", 7)]},
