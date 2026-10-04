@@ -5,7 +5,9 @@
  * reader's account data (no request with credentials, nothing under /me, /auth, /sync, the board's or the classroom's).
  *
  * Pages and data: network first, the copy when the network fails. The build's own files (/_next/static, immutable):
- * the copy first. Each cache keeps its newest entries only.
+ * the copy first. A page's copy is stored only once its own files are, so a page kept is a page that runs offline
+ * (stored first, a copy taken offline before its scripts came drew its server HTML and never woke). Each cache keeps
+ * its newest entries only.
  */
 const VERSION = "v1";
 const SHELL = `jadhr-shell-${VERSION}`;
@@ -80,18 +82,30 @@ async function keepAssets(html) {
   await trim(STATIC);
 }
 
-async function page(request) {
+/** A page's key in the cache: its path and its query written one way (2:32:4 and 2%3A32%3A4 are one place). */
+function pageKey(url) {
+  const qs = new URLSearchParams(url.search).toString();
+  return url.pathname + (qs ? `?${qs}` : "");
+}
+
+/** A page's copy, stored after its own files. */
+async function keepPage(key, res) {
+  await keepAssets(await res.clone().text());
+  await (await caches.open(PAGES)).put(key, res);
+  await trim(PAGES);
+}
+
+async function page(request, event) {
   const url = new URL(request.url);
   try {
     const res = await fetch(request);
     if (res.ok && READING.test(url.pathname) && !res.headers.get("cache-control")?.includes("no-store")) {
-      const cache = await caches.open(PAGES);
-      await cache.put(url.pathname + url.search, res.clone());
-      keepAssets(await res.clone().text()).then(() => trim(PAGES));
+      // kept in the background, the worker held alive until it is
+      event.waitUntil(keepPage(pageKey(url), res.clone()).catch(() => undefined));
     }
     return res;
   } catch {
-    const copy = (await caches.match(url.pathname + url.search, { cacheName: PAGES })) || (await caches.match(url.pathname, { cacheName: PAGES, ignoreSearch: true }));
+    const copy = (await caches.match(pageKey(url), { cacheName: PAGES })) || (await caches.match(url.pathname, { cacheName: PAGES, ignoreSearch: true }));
     if (copy) return copy;
     const offline = url.pathname.startsWith("/en/") || url.pathname === "/en" ? "/en/offline" : "/offline";
     return (await caches.match(offline, { cacheName: SHELL })) || Response.error();
@@ -130,7 +144,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (req.headers.get("authorization")) return;
-  if (req.mode === "navigate") return event.respondWith(page(req));
+  if (req.mode === "navigate") return event.respondWith(page(req, event));
   // a client-side move to another page: without a connection, a plain failure makes the app load the page itself,
   // which the copy of that page answers
   if (req.headers.get("rsc") || url.searchParams.has("_rsc")) {
@@ -150,10 +164,7 @@ self.addEventListener("message", (event) => {
         if (typeof p !== "string" || !p.startsWith("/") || !READING.test(p.split("?")[0])) continue;
         try {
           const res = await fetch(p);
-          if (res.ok) {
-            await (await caches.open(PAGES)).put(p, res.clone());
-            await keepAssets(await res.text());
-          }
+          if (res.ok) await keepPage(pageKey(new URL(p, self.location.origin)), res);
         } catch {}
       }
       for (const d of msg.data.slice(0, 200)) {
@@ -162,7 +173,6 @@ self.addEventListener("message", (event) => {
           await data(new Request(d));
         } catch {}
       }
-      await trim(PAGES);
     })(),
   );
 });
