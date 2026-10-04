@@ -11,13 +11,14 @@ import { noteOn, useSaved } from "@/lib/store/saved";
 import { createGraph, loadGraph, saveGraph } from "./persist";
 import { loadEntry } from "./quote";
 import type { Seed, TrailSeedStep } from "./seedCodec";
+import { subtopicLink, topicCard, topicCardId, topicVerses, type TopicPage } from "./topics";
 import type { GraphEdge, GraphKind, GraphNode, NodeKind } from "./types";
 
 /** The cards a seed becomes, before they are laid out and stored. The title is a message key with values. */
 export type SeedGraph = {
   kind: GraphKind;
   /** numbers stay numbers here, written in the reader's digits where the title is made (SeedImport) */
-  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle" | "phraseTitle" | "setTitle" | "quoteTitle" | "noteTitle"; values: Record<string, string | number> };
+  title: { key: "rootTitle" | "wordTitle" | "verseTitle" | "trailTitle" | "phraseTitle" | "setTitle" | "quoteTitle" | "noteTitle" | "topicTitle"; values: Record<string, string | number> };
   nodes: GraphNode[];
   edges: GraphEdge[];
 };
@@ -238,7 +239,23 @@ async function noteSeed(id: string): Promise<SeedGraph> {
   };
 }
 
-export function buildSeedGraph(seed: Seed): Promise<SeedGraph> {
+/** A topic (P8.3, QAN-09): its heading card with its credit, its first ten verses gathered under it, and its
+ * sub-topics' cards under it — a topic map, laid out once and the reader's to extend. */
+async function topicSeed(id: string, locale: string): Promise<SeedGraph> {
+  const p = await getJSON<TopicPage>(`/topics/${encodeURIComponent(id)}?limit=10`);
+  const credit = Object.values(p.sources)[0];
+  const head = { ...topicCard(p, credit, locale), data: { ...topicCard(p, credit, locale).data, focus: true, cursor: `t:${p.data.length}` } };
+  const subs = p.subtopics.slice(0, 12).map((s) => topicCard(s, credit, locale));
+  const verses = topicVerses(head.id, p.data.map((v) => v.verse_key), [head], []);
+  return {
+    kind: "topic",
+    title: { key: "topicTitle", values: { name: p.name } },
+    nodes: [head, ...subs, ...verses.nodes],
+    edges: [...subs.map((s) => subtopicLink(s.id, topicCardId(p.id))), ...verses.edges],
+  };
+}
+
+export function buildSeedGraph(seed: Seed, locale = "ar"): Promise<SeedGraph> {
   switch (seed.seed) {
     case "word":
       return wordSeed(seed.slug, seed.at);
@@ -254,6 +271,8 @@ export function buildSeedGraph(seed: Seed): Promise<SeedGraph> {
       return quoteSeed(seed.entry);
     case "note":
       return noteSeed(seed.note);
+    case "topic":
+      return topicSeed(seed.topic, locale);
   }
 }
 

@@ -5,6 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber } from "@/lib/format";
+import { encodeSeed } from "@/lib/graph/seedCodec";
+import { creditLine, type VerseTopics } from "@/lib/graph/topics";
 import { getJSON } from "@/lib/reader/api";
 import type { EditorNote, KnowledgeSource, VerseKnowledge as VK } from "@/lib/reader/types";
 
@@ -199,6 +201,8 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
         <SourceCredit s={k.sources["ibn-kathir-crossrefs"]} />
       </VerseLayer>
 
+      <TopicsLayer verseKey={verseKey} />
+
       {named.length > 0 && (
         <VerseLayer title={t("secEntities")} defaultOpen={false}>
           <ul className="flex flex-col gap-1.5">
@@ -220,5 +224,39 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
       )}
       <p className="text-[11px] text-t3">{t("extractedNote")}</p>
     </>
+  );
+}
+
+/** The topics a verse is gathered under (P8.3): Quranpedia's, each with the topic above it, credited with the version
+ * of its data, and opened as a topic map; said when the index has none — it barely goes past sūra 39. */
+function TopicsLayer({ verseKey }: { verseKey: string }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const q = useQuery({ queryKey: ["verse-topics", verseKey], queryFn: () => getJSON<VerseTopics>(`/verses/${verseKey}/topics`), staleTime: 10 * 60_000 });
+  if (!q.data) return null;
+  const credit = Object.values(q.data.sources)[0];
+  return (
+    <VerseLayer title={t("secTopics")} meta={q.data.data.length ? formatNumber(q.data.data.length, locale) : undefined} defaultOpen={false}>
+      {q.data.data.length === 0 ? (
+        <p className="text-[12.5px] text-t3">{t("topicsNoneHere")}</p>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {q.data.data.map((x) => (
+            <li key={x.id} className="flex flex-wrap items-baseline gap-x-2">
+              <span className="text-[14px] text-t1" lang="ar">{x.name}</span>
+              {x.parent_name && <span className="text-[11.5px] text-t3" lang="ar">{x.parent_name}</span>}
+              <Link href={`/graph/seed?s=${encodeSeed({ seed: "topic", topic: x.id })}`} className="text-[11.5px] text-word hover:underline">
+                {t("topicMap")}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {credit && (
+        <p className="text-[11px] text-t3">
+          <a href={credit.url} target="_blank" rel="noreferrer" className="hover:underline">{creditLine(credit, locale)}</a>
+        </p>
+      )}
+    </VerseLayer>
   );
 }

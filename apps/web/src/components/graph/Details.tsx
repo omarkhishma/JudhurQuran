@@ -12,6 +12,7 @@ import { FieldEditor } from "./FieldEditor";
 import { useCanvasTools, type CanvasTools } from "./GraphCanvas";
 import { Meaning } from "./Meaning";
 import { MapSettings } from "./Sharing";
+import { sourceHeading } from "@/lib/graph/topics";
 
 const KINDS: NodeKind[] = ["root", "pattern", "lemma", "verse", "note", "frame"];
 
@@ -49,7 +50,10 @@ export function Details({ title }: { title: string }) {
   // (HWF-31), and so does a selection just grouped
   const tabs: Tab[] = tools.editable ? ["meaning", "settings", "comments"] : ["meaning", "comments"];
   const shown: Tab = frame && tab === "meaning" ? "settings" : tabs.includes(tab) ? tab : "meaning";
-  const kindName = (n: GraphNode) => t(n.data.phrase ? "kindPhrase" : n.data.entry ? "kindQuote" : META[n.data.kind].label);
+  const kindName = (n: GraphNode) => {
+    const h = n.data.kind === "note" ? sourceHeading(n.id) : null;
+    return t(h === "topic" ? "kindTopic" : h === "field" ? "kindField" : n.data.phrase ? "kindPhrase" : n.data.entry ? "kindQuote" : META[n.data.kind].label);
+  };
   const head = frame
     ? t("detailsHeadGroup", { label: frame.data.title || t("groupUntitled") })
     : one
@@ -63,7 +67,9 @@ export function Details({ title }: { title: string }) {
       <header className="details-head">
         <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-t1" dir="auto">{head}</span>
         {one && (
-          <span className="kind-badge" style={{ color: frame ? "var(--t2)" : KIND_COLOR[one.data.kind], background: frame ? "var(--card-2)" : `color-mix(in srgb, ${KIND_COLOR[one.data.kind]} 14%, transparent)` }}>
+          // the kind's colour drawn toward the text colour, so the small label reads in both themes (the grey of a
+          // note fell under 4.5:1 on its own tint)
+          <span className="kind-badge" style={{ color: frame ? "var(--t2)" : `color-mix(in srgb, ${KIND_COLOR[one.data.kind]} 72%, var(--t1))`, background: frame ? "var(--card-2)" : `color-mix(in srgb, ${KIND_COLOR[one.data.kind]} 14%, transparent)` }}>
             {kindName(one)}
           </span>
         )}
@@ -161,7 +167,8 @@ function Breadcrumb({ tools, card }: { tools: CanvasTools; card: GraphNode }) {
   const seen = new Set([card.id]);
   let at = card.id;
   for (let i = 0; i < 8; i++) {
-    const up = tools.edges.find((e) => e.target === at && !seen.has(e.source) && tools.nodes.find((n) => n.id === e.source && n.data.kind !== "note" && n.data.kind !== "frame"));
+    // where a card comes from, not what belongs to it: a topic's verses and a field's members link into it
+    const up = tools.edges.find((e) => e.target === at && e.data?.rel !== "part-of-topic" && e.data?.rel !== "field-member" && !seen.has(e.source) && tools.nodes.find((n) => n.id === e.source && n.data.kind !== "note" && n.data.kind !== "frame"));
     if (!up) break;
     const parent = tools.nodes.find((n) => n.id === up.source)!;
     chain.unshift(parent);

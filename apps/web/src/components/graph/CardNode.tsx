@@ -13,6 +13,7 @@ import { getJSON } from "@/lib/reader/api";
 import { useAudio } from "@/lib/store/audio";
 import type { CardStats } from "./GraphCanvas";
 import { CommentMarker } from "./Comments";
+import { sourceHeading } from "@/lib/graph/topics";
 import { FieldEditor } from "./FieldEditor";
 import { opening, useEntry } from "@/lib/graph/quote";
 import { excerptOf, keyOf, markedVerse, useVerseText } from "@/lib/graph/verseText";
@@ -41,6 +42,8 @@ export type GraphActions = {
   /** the map takes meaning relations between roots, and a root's related roots are added (P8.4) */
   relations: boolean;
   relate: (id: string) => void;
+  /** a topic card's next ten verses (P8.3) */
+  topicVerses: (id: string) => void;
 };
 
 export const GraphActionsContext = createContext<GraphActions>({
@@ -61,6 +64,7 @@ export const GraphActionsContext = createContext<GraphActions>({
   toast: () => {},
   relations: false,
   relate: () => {},
+  topicVerses: () => {},
 });
 
 /**
@@ -76,6 +80,8 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
   const color = KIND_COLOR[data.kind];
   const [draft, setDraft] = useState(data.text ?? "");
   const meta = META[data.kind];
+  // a topic's or a field's heading card: the source's words, not the reader's (P8.3, P8.4c)
+  const heading = data.kind === "note" ? sourceHeading(id) : null;
   const translitLine = actions.translit || (data.kind !== "root" && data.kind !== "pattern");
   const summary = data.kind === "lemma" ? data.sub : (data.kind === "root" || data.kind === "pattern") && actions.translit ? data.sub : undefined;
 
@@ -98,7 +104,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
       <div className="flex items-center justify-between gap-3 px-3 pt-2.5">
         <span className="flex items-center gap-1.5" title={t(meta.hint)}>
           <span className="dot" style={{ background: color }} />
-          <span className="text-[10.5px] font-medium tracking-wide" style={{ color }}>{t(data.phrase ? "kindPhrase" : data.entry ? "kindQuote" : meta.label)}</span>
+          <span className="text-[10.5px] font-medium tracking-wide" style={{ color }}>{t(heading === "topic" ? "kindTopic" : heading === "field" ? "kindField" : data.phrase ? "kindPhrase" : data.entry ? "kindQuote" : meta.label)}</span>
         </span>
         <span className="flex items-center gap-1">
           {/* what is open in the comments on this card (EDT-194) */}
@@ -121,6 +127,11 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
       <div className="px-3 pb-3">
         {data.kind === "note" && data.entry ? (
           <Quote entry={data.entry} folded={!!data.folded} />
+        ) : heading ? (
+          <div className="mt-1">
+            <p className="text-[15px] font-semibold leading-snug text-t1" lang="ar" dir="auto">{(data.text ?? "").split("\n")[0]}</p>
+            {(data.text ?? "").split("\n")[1] && <p className="mt-0.5 text-[11px] text-t3" dir="auto">{(data.text ?? "").split("\n").slice(1).join(" ")}</p>}
+          </div>
         ) : data.kind === "note" && data.phrase ? (
           // the reader's analysed phrase
           <p className="ar-classical mt-1 whitespace-pre-wrap text-[22px] leading-[1.7] text-t1" dir="auto">{data.text}</p>
@@ -175,7 +186,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
             )}
             {data.kind === "lemma" && data.first && <FirstVerse place={data.first} />}
             {data.kind === "verse" && data.verse && <VerseCite verseKey={data.verse.key} />}
-            {data.kind === "note" && !data.phrase && !data.entry && <p className="mt-1 text-[10.5px] text-t3">{t("personalNote")}</p>}
+            {data.kind === "note" && !data.phrase && !data.entry && <p className="mt-1 text-[10.5px] text-t3">{t(heading === "topic" ? "topicCardFrom" : heading === "field" ? "fieldCardFrom" : "personalNote")}</p>}
             {data.reading && (
               <p className="reading-chip mt-1.5" title={t("readingHint")}>
                 {t("readingChip", { conf: new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(data.reading.conf) })}
@@ -315,6 +326,27 @@ function Extract({ id, data }: { id: string; data: GraphNode["data"] }) {
   const [open, setOpen] = useState(false);
   const color = KIND_COLOR[data.kind];
   if (data.kind === "frame") return null;
+  if (data.kind === "note" && id.startsWith("topic:")) {
+    // a topic's heading card gathers its verses, ten at a time (P8.3)
+    const total = data.totals?.verses ?? 0;
+    const taken = Number((data.cursor ?? "t:0").replace(/^t:/, "")) || 0;
+    const left = Math.max(0, total - taken);
+    const mine = actions.expanding === id;
+    return (
+      <div className="extract-row nodrag">
+        <button
+          type="button"
+          className={"extract-btn" + (left ? "" : " is-done")}
+          style={left ? { background: color, color: "var(--card)" } : undefined}
+          disabled={!left || !actions.editable || !!actions.expanding}
+          aria-busy={mine}
+          onClick={() => actions.topicVerses(id)}
+        >
+          {mine ? t("extracting") : left ? t("topicVersesOf", { k: formatNumber(Math.min(10, left), locale), ...cnt(total, locale) }) : t("topicAllVerses")}
+        </button>
+      </div>
+    );
+  }
   if (data.kind === "note")
     return (
       <div className="extract-row">

@@ -41,7 +41,7 @@ export function HandoffDialog({ seed, onClose, onToast }: { seed: Seed; onClose:
   const [into, setInto] = useState<string>("");
   // a note is the reader's and may have changed since: read afresh each time; the rest is the dataset's
   const mine = seed.seed === "note";
-  const built = useQuery({ queryKey: ["seed-graph", JSON.stringify(seed)], queryFn: () => buildSeedGraph(seed), staleTime: mine ? 0 : 5 * 60_000, gcTime: mine ? 0 : 5 * 60_000 });
+  const built = useQuery({ queryKey: ["seed-graph", JSON.stringify(seed)], queryFn: () => buildSeedGraph(seed, locale), staleTime: mine ? 0 : 5 * 60_000, gcTime: mine ? 0 : 5 * 60_000 });
   const graphs = useMyGraphs();
   const rows = built.data ? seedRows(built.data) : [];
 

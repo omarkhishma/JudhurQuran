@@ -21,10 +21,14 @@ export type Seed =
   | { seed: "quote"; entry: number }
   /** a note of the reader's Notebook (NTB-22) — a free note, or a verse's (`v:{key}`) — named by its id: its words
    * stay in this browser, which builds it */
-  | { seed: "note"; note: string };
+  | { seed: "note"; note: string }
+  /** a topic (P8.3): its heading card, its first verses and its sub-topics, read from the dataset by its id */
+  | { seed: "topic"; topic: string };
 
 const LOCATION = /^\d{1,3}:\d{1,3}:\d{1,3}$/;
 const VERSE_KEY = /^\d{1,3}:\d{1,3}$/;
+/** a topic's id as the dataset makes it (Quranpedia's: `qp:{n}`) */
+const TOPIC_ID = /^qp:\d{1,7}$/;
 const MAX_STEPS = 40;
 /** a Notebook note's id (lib/store/notebook) */
 const NOTE_ID = /^(n[a-z0-9]{1,20}|v:\d{1,3}:\d{1,3})$/;
@@ -82,6 +86,8 @@ export function validSeed(x: unknown): Seed | null {
       return typeof o.entry === "number" && Number.isInteger(o.entry) && o.entry > 0 && o.entry < 2_000_000_000 ? { seed: "quote", entry: o.entry } : null;
     case "note":
       return str(o.note, 24) && NOTE_ID.test(o.note) ? { seed: "note", note: o.note } : null;
+    case "topic":
+      return str(o.topic, 24) && TOPIC_ID.test(o.topic) ? { seed: "topic", topic: o.topic } : null;
     default:
       return null;
   }

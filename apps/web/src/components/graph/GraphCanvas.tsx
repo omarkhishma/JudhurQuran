@@ -28,6 +28,7 @@ import { fromPattern, fromRoot, fromVerses, linkVerse, versePlan, versesOf, type
 import { bundleFiles } from "@/lib/graph/files";
 import { endsOf, fieldMember, fromRelations, fromShared, relationLink, rootCardOf, type RelationEdge, type RootRelations } from "@/lib/graph/meaning";
 import { useEntryTitles } from "@/lib/graph/quote";
+import { topicCard, topicOf, topicVerses, type TopicCredit, type TopicPage, type TopicRow } from "@/lib/graph/topics";
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
 import { allowedRels, checkLink, META, type Refusal } from "@/lib/graph/relations";
@@ -126,6 +127,12 @@ export type CanvasTools = {
   addShared: (edgeId: string) => void;
   /** a root put in a field: the field's one card on the map, and the root's link to it (P8.4c) */
   addFieldMember: (e: RelationEdge, beside: string, reviewed: boolean) => void;
+  /** a topic's heading card (P8.3), linked part-of-topic to a card on the map when `link` names the two ends */
+  addTopic: (t: Pick<TopicRow, "id" | "name" | "verses">, credit: TopicCredit | undefined, link?: { from: string; to: string }) => void;
+  /** the next ten verses a topic gathers, under its card (P8.3) */
+  addTopicVerses: (cardId: string) => void;
+  /** whether this map's type gathers cards under a topic (P8.3) */
+  topicLinks: boolean;
   /** a card or link whose dataset is being read */
   expanding: string | null;
 };
@@ -172,6 +179,8 @@ export const DRAG_TYPE = "application/x-jadhr-card";
 function nameOf(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "kindQuote" | "kindFrame") => string, locale: string, works: Map<number, string>): string {
   if (!n) return "";
   const d = n.data;
+  // a topic's or a field's heading by its name, the first line of its card
+  if (d.kind === "note" && (n.id.startsWith("topic:") || n.id.startsWith("field:"))) return (d.text ?? "").split("\n")[0];
   // a quotation by the work it quotes, once that is read
   if (d.kind === "note" && d.entry) return works.get(d.entry) ?? t("kindQuote");
   if (d.kind === "note") return t(d.phrase ? "kindPhrase" : "kindNote");
@@ -603,6 +612,37 @@ function CanvasInner({
     },
     [expanding, tidy, t, locale, toast],
   );
+  // Topic maps (P8.3, QAN-09): a topic's verses ten at a time in the mushaf's order, gathered under its card; the
+  // card keeps where the next page starts
+  const addTopicVerses = useCallback(
+    async (cardId: string) => {
+      const node = live.current.nodes.find((n) => n.id === cardId);
+      const tid = topicOf(cardId);
+      if (!node || !tid || expanding) return;
+      setExpanding(cardId);
+      try {
+        const offset = Number((node.data.cursor ?? "t:0").replace(/^t:/, "")) || 0;
+        const page = await getJSON<TopicPage>(`/topics/${encodeURIComponent(tid)}?limit=10&offset=${offset}`);
+        const { nodes: now, edges: wires } = live.current;
+        const out = topicVerses(cardId, page.data.map((v) => v.verse_key), now, wires);
+        const next = offset + page.data.length;
+        const updated = now.map((n) => (n.id === cardId ? { ...n, data: { ...n.data, cursor: `t:${next}`, totals: { ...n.data.totals, verses: page.total }, expanded: true } } : n));
+        if (!out.nodes.length && !out.edges.length) {
+          setNodes(updated);
+          toast(t(next >= page.total ? "topicAllVerses" : "nothingLeft"));
+          return;
+        }
+        await tidy(t("doTopicVerses", cnt(out.count, locale)), { nodes: [...updated, ...out.nodes], edges: [...wires, ...out.edges] }, [cardId, ...out.nodes.map((n) => n.id)]);
+        toast(t("topicVersesAdded", { ...cnt(out.count, locale), all: formatNumber(page.total, locale) }), true);
+      } catch {
+        toast(t("versesFailed"));
+      } finally {
+        setExpanding(null);
+      }
+    },
+    [expanding, tidy, t, locale, toast],
+  );
+
   // folding is a view of the card, not an edit: saved, never an undo step (EDT-099, EDT-210)
   // one card toggles; several all take the opposite of the first's state (EDT-163); frames have no fold
   const fold = useCallback((ids: string[]) => {
@@ -946,8 +986,9 @@ function CanvasInner({
       toast: (text) => toast(text),
       relations: allowedRels(kind, "root", "root").includes("near-in-meaning"),
       relate: (id) => void relate(id),
+      topicVerses: (id) => void addTopicVerses(id),
     }),
-    [editable, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast, kind, relate],
+    [editable, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast, kind, relate, addTopicVerses],
   );
   const frameActions: FrameActions = useMemo(
     () => ({ members: (id) => membersOf(id, nodes), resize: resizeFrame, selectInside: (id) => selectIds(membersOf(id)) }),
@@ -1147,6 +1188,15 @@ function CanvasInner({
     meaningLinks: allowedRels(kind, "root", "root").includes("near-in-meaning"),
     addRelation: (e, beside, reviewed) => void addRelation(e, beside, reviewed),
     addShared: (id) => void addShared(id),
+    addTopic: (tp, credit, ends) => {
+      const c = topicCard(tp, credit, locale);
+      const label = t("doAddTopic", { name: tp.name });
+      if (!ends) return addCards([c], [], label);
+      const beside = ends.from === c.id ? ends.to : ends.from;
+      addLinked(c, link(ends.from, ends.to, "part-of-topic"), beside, label);
+    },
+    addTopicVerses: (id) => void addTopicVerses(id),
+    topicLinks: allowedRels(kind, "verse", "note").includes("part-of-topic"),
     addFieldMember: (e, beside, reviewed) => {
       const fm = fieldMember(e, beside, reviewed, locale);
       if (fm) addLinked(fm.card, fm.edge, beside, t(reviewed ? "doAddFieldMember" : "doAddOwnFieldMember", { word: e.a.word, field: e.sense ?? e.field?.title ?? "" }));

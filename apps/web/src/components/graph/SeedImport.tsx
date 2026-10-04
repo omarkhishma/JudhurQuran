@@ -35,7 +35,7 @@ function Build({ seed, into }: { seed: Seed | null; into: string | null }) {
     gcTime: 0,
     retry: false,
     queryFn: async () => {
-      const g = await buildSeedGraph(seed!);
+      const g = await buildSeedGraph(seed!, locale);
       const values = Object.fromEntries(Object.entries(g.title.values).map(([k, v]) => [k, typeof v === "number" ? formatNumber(v, locale) : v]));
       if (typeof g.title.values.count === "number") Object.assign(values, cnt(g.title.values.count, locale));
       return saveSeedGraph(g, t(g.title.key, values), into);
