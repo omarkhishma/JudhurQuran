@@ -66,6 +66,8 @@ export function WhereNext({ w }: { w: WordPayload }) {
           );
         })}
       </div>
+      {/* no door to offer: said, not left blank (P3.10) */}
+      {w.next_steps.length === 0 && <p className="text-[12.5px] text-t3">{t("noDoors")}</p>}
     </section>
   );
 }

@@ -32,6 +32,8 @@ __pycache__/
 data/raw/
 data/build/
 data/release/
+# the expert reviewers' packets quote the display-only lexica: made on demand (python -m jadhr_api.packets), never committed
+data/review/
 
 # The owner's example data (36 MB) stays local; its sha256 is recorded in docs/DATA-VALIDATION.md
 Example Data/

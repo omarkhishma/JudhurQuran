@@ -2364,7 +2364,8 @@
     "stoppedAtPassage": "Stopped at passage {n}",
     "deckShapeSub": "the mould this word was poured into",
     "embedLink": "Embed…",
-    "embedTitle": "Published maps can be framed on any site: make this entry a map and publish it"
+    "embedTitle": "Published maps can be framed on any site: make this entry a map and publish it",
+    "noDoors": "No door from this word: no other word of its root, no other place in the Quran, no recorded pattern."
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
