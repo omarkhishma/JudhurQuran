@@ -8,13 +8,13 @@ Audited 2026-10-04 against commit `0e7d424`, then updated at `8032395` for the r
 
 | Scope | Rows | done | adapted | bug-fixed | n/a | open | waiting |
 |---|---|---|---|---|---|---|---|
-| P1 clauses | 68 | 51 | 6 | 0 | 0 | 7 | 4 |
-| SHL items | 78 | 47 | 16 | 6 | 5 | 4 | 0 |
-| **Total** | **146** | **98** | **22** | **6** | **5** | **11** | **4** |
+| P1 clauses | 68 | 53 | 6 | 0 | 0 | 5 | 4 |
+| SHL items | 78 | 49 | 16 | 6 | 5 | 2 | 0 |
+| **Total** | **146** | **102** | **22** | **6** | **5** | **7** | **4** |
 
 Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next steps seeded by word and dataset version (P1.3), the basmala strip tested (P1.8, and with it P1.9's "P1.8 closed"), the header omnibox's `dir="auto"` (SHL-F08); the dead "being built" frame and a false "coming soon" line removed. Built alongside: D7's vowel-marks switch (1875674), which report 3 found missing.
 
-**Open (11):** P1.3 the `{full, bare, translit}` envelope on the remaining Arabic fields; P1.3 `?in_text=`; P1.3a the glossary matcher on the shared normalisation; P1.5 the design-system audit as a document; P1.7a `dict:` and `user:` identifiers; P1.9 the route × language × theme × width sweep; SHL-Q05 and SHL-Q10 a digits preference; SHL-Q07 the omnibox over the hadith, the books, the dictionary and the reader's texts; SHL-Q09 the context leading back to a hadith or a book.
+**Open (7):** P1.3 the `{full, bare, translit}` envelope on the remaining Arabic fields; P1.3 `?in_text=`; P1.5 the design-system audit as a document; P1.7a `dict:` and `user:` identifiers; SHL-Q05 and SHL-Q10 a digits preference. Closed since the audit: P1.3a (918d5bb), P1.9's sweep, SHL-Q07 (8e311ad), SHL-Q09 (df469d3).
 
 **Waiting on the owner (4):** the phone layouts were not shown before they were built, except the editor's (P1.7: offered now for review after the fact, screenshots at 390 px in every phase's audit); the phone editor (P8.6a); the lexica's legal basis (D22); research 07's findings (D2, D19, D22).
 
@@ -43,7 +43,7 @@ Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next ste
 | P1.3 next steps seeded by word + dataset version | done | A/lexicon.py `_next_steps` (1d1cab6) |
 | P1.3a one normalisation spec | done | packages/arabic-spec |
 | P1.3a Python + TypeScript, 30 vectors, TypeScript in CI | done | vectors.json, both test suites, .github/workflows/ci.yml |
-| P1.3a used by every matcher | open | Search, Ask, the rail, the Notebook and the map's find use it; the glossary matcher (W/lib/termDetect.ts) only lower-cases, so a vowelled term in prose is missed |
+| P1.3a used by every matcher | done | Search, Ask, the rail, the Notebook and the map's find; the glossary matcher since 918d5bb (W/lib/termDetect.ts: the spec's folding classes, marks and tatweel between letters) |
 | P1.3b stable, collision-free slugs | done | P/slugs.py, data/registry/*.tsv, pipeline/tests/test_slugs.py |
 | P1.4 OpenSearch in dev and prod | done | docker-compose.yml, infra/compose.prod.yml |
 | P1.4 indices from Postgres, counted, aliases flipped | done | A/searchindex.py (eight indices now) |
@@ -88,7 +88,7 @@ Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next ste
 | P1.8 research 07's engineering fixes | done | The release's copyright block, labels and holds |
 | P1.8 the lexica's legal basis | waiting | D22 |
 | P1.8 findings put to the owner | waiting | Research 07 under D2/D19/D22 |
-| P1.9 every route in both languages and themes at three widths | open | The suite runs at 1440 and 412 px; no spec walks every route × language × theme × width |
+| P1.9 every route in both languages and themes at three widths | done | E/routes-sweep.spec.ts (e35a71a): 41 routes × 2 languages × 2 themes × 1440/1024/390 px, 492 pages — status, main landmark, no error boundary, no sideways scroll, the language, the theme after hydration; checked against a missing page |
 | P1.9 the word payload carries every section | done | T/test_lexicon_api.py; E/entry-sections.spec.ts |
 | P1.9 search assertions green | done | T/test_search_engine.py; E/search.spec.ts |
 | P1.9 the P1.8 audit closed | done | Everything fixed or with the owner (the basmala test, 1d1cab6) |
@@ -156,9 +156,9 @@ Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next ste
 | SHL-Q04 | done | Fonts per script |
 | SHL-Q05 | open | No digits preference: digits follow the language (W/lib/format.ts); the server renders numbers, and with no cookie it cannot know a preference before the page is drawn |
 | SHL-Q06 | done | The toggle and one theme key before paint; the embed from its address |
-| SHL-Q07 | open | The header omnibox lists verses, sūras, roots, forms, patterns and words — no hadith, books, dictionary roots or the reader's texts |
+| SHL-Q07 | done | The header omnibox adds the dictionary's roots, the hadith, the books' paragraphs and the reader's own texts (8e311ad; E/omnibox.spec.ts) |
 | SHL-Q08 | done | The header's parts |
-| SHL-Q09 | open | The context holds a word, a root and a Quran verse; a word looked up in a hadith or a book reaches the hub and the concordance (72eb8d4), but the strip cannot lead back to that hadith or book (audit 22 had it done) |
+| SHL-Q09 | done | A word looked up in a hadith or a book carries its place; the hub's strip leads back to it when newer than the last verse read (df469d3; E/hadith.spec.ts) |
 | SHL-Q10 | open | Everything the item lists exists but the digits preference (SHL-Q05) |
 | SHL-F01 | done | The nav's scroll |
 | SHL-F02 | done | `aria-current` |
