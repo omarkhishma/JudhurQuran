@@ -20,6 +20,7 @@ import yaml
 from fastapi import APIRouter, Query, Request
 from fastapi import Path as P
 from fastapi.responses import Response
+from fastapi.routing import APIRoute
 from sqlalchemy import text
 
 from . import content, lexicon, releases
@@ -115,13 +116,9 @@ def index(request: Request) -> Response:
     data = {
         "products": {"quran": "the Quran's text, morphology and patterns"},
         "endpoints": [
-            {
-                "method": "GET",
-                "path": f"/api/v1/public{r.path.removeprefix('/api/v1/public')}",
-                "summary": r.summary,
-            }
+            {"method": "GET", "path": r.path, "summary": r.summary}
             for r in router.routes
-            if getattr(r, "path", "") != "/api/v1/public"
+            if isinstance(r, APIRoute) and r.path != "/api/v1/public"
         ],
         # without a key, per address; with one, per key (RateLimit-* headers on every answer)
         "limits": {

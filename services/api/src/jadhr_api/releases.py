@@ -225,7 +225,9 @@ def file(version: str, path: str) -> tuple[Path, dict[str, Any]]:
     if r["published_at"] is None:
         raise Refusal(403, "unpublished", "This release is not published yet.")
     if f.get("held"):
-        hold = next((h for h in r["manifest"].get("publication_hold", []) if h.get("id") == f["held"]), {})
+        hold: dict[str, Any] = next(
+            (h for h in r["manifest"].get("publication_hold", []) if h.get("id") == f["held"]), {}
+        )
         raise Refusal(403, "held", f"Held: {hold.get('why', f['held'])}")
     full = release_dir() / version / path
     if not full.is_file() or full.stat().st_size != f["bytes"]:

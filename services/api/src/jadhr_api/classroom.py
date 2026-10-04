@@ -212,12 +212,13 @@ def update(
         if archived is not None:
             sets["archived_at"] = datetime.now(UTC) if archived else None
         if sets:
-            c = q1(
+            changed = q1(
                 conn,
                 f"update classroom.classes set {', '.join(f'{k} = :{k}' for k in sets)} where id = :id returning *",
                 {**sets, "id": c["id"]},
             )
-            assert c is not None
+            assert changed is not None
+            c = changed
         return _class_out(conn, c, "instructor", u)
 
 
@@ -239,13 +240,13 @@ def new_code(u: dict[str, Any], cid: str) -> dict[str, Any]:
     """A new join link: the old one stops working; members stay."""
     with tx() as conn:
         c = _own(conn, u, cid)
-        c = q1(
+        changed = q1(
             conn,
             "update classroom.classes set join_code = :k where id = :c returning *",
             {"k": _code(conn), "c": c["id"]},
         )
-        assert c is not None
-        return _class_out(conn, c, "instructor", u)
+        assert changed is not None
+        return _class_out(conn, changed, "instructor", u)
 
 
 # ─── joining, with consent ──────────────────────────────────────────────────────
@@ -589,12 +590,13 @@ def update_lesson(
             sets["due_at"] = _due(due)
         if sets:
             cols = ", ".join(f"{k} = cast(:{k} as jsonb)" if k == "ranges" else f"{k} = :{k}" for k in sets)
-            lesson = q1(
+            changed = q1(
                 conn,
                 f"update classroom.lessons set {cols} where id = :id returning *",
                 {**sets, "id": lesson["id"]},
             )
-            assert lesson is not None
+            assert changed is not None
+            lesson = changed
         return _lesson_out(conn, lesson, "instructor", u)
 
 
@@ -1236,9 +1238,9 @@ def _map_out(conn: Connection, lesson: dict[str, Any], role: str) -> dict[str, A
 def _card(n: Any) -> dict[str, Any]:
     """What a feed or a proposal says of a card: its id, its kind and its name — the root's letters, the word, the
     verse's key, a note's first words, a group's title."""
-    d = n.get("data") if isinstance(n, dict) and isinstance(n.get("data"), dict) else {}
+    d: dict[str, Any] = n["data"] if isinstance(n, dict) and isinstance(n.get("data"), dict) else {}
     kind = d.get("kind") if d.get("kind") in CARD_KINDS else "note"
-    verse = d.get("verse") if isinstance(d.get("verse"), dict) else {}
+    verse: dict[str, Any] = d["verse"] if isinstance(d.get("verse"), dict) else {}
     label = d.get("ar") or verse.get("key") or d.get("title") or d.get("text") or ""
     return {"id": str(n.get("id", ""))[:200], "kind": kind, "label": str(label).strip()[:80]}
 
@@ -1398,13 +1400,13 @@ def set_map(u: dict[str, Any], lid: str, graph_id: Any) -> dict[str, Any]:
             raise Refusal(404, "not_found", "No such map of yours shared.")
         if q1(conn, "select 1 as x from classroom.lessons where graph_id = :g", {"g": g["id"]}):
             raise Refusal(409, "taken", "This map is another lesson's.")
-        lesson = q1(
+        named = q1(
             conn,
             "update classroom.lessons set graph_id = :g where id = :l returning *",
             {"g": g["id"], "l": lesson["id"]},
         )
-        assert lesson is not None
-        out = _lesson_out(conn, lesson, "instructor", u)
+        assert named is not None
+        out = _lesson_out(conn, named, "instructor", u)
         out["class"] = {"id": str(c["id"]), "name": c["name"], "minors": c["minors"], "role": "instructor"}
         return out
 
@@ -1472,7 +1474,7 @@ def _proposed(
             raise Refusal(422, "bad_proposal", "A card of a kind the editor knows.")
         if n["id"] in on_map or any(c["id"] == n["id"] for c in cards):
             continue
-        pos = n.get("position") if isinstance(n.get("position"), dict) else {}
+        pos: dict[str, Any] = n["position"] if isinstance(n.get("position"), dict) else {}
         x, y = pos.get("x", 0), pos.get("y", 0)
         cards.append(
             {
@@ -1565,13 +1567,14 @@ def decide(u: dict[str, Any], pid: str, decision: Any) -> dict[str, Any]:
         lesson, _ = _teaching(conn, u, str(p["lesson_id"]))
         if p["status"] != "pending":
             raise Refusal(409, "decided", "This proposal was decided already.")
-        p = q1(
+        decided = q1(
             conn,
             """update classroom.proposals set status = :s, decided_by = :u, decided_at = now() where id = :p
                returning *""",
             {"s": decision, "u": u["id"], "p": p["id"]},
         )
-        assert p is not None
+        assert decided is not None
+        p = decided
         _log(
             conn,
             lesson["id"],

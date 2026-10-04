@@ -114,7 +114,7 @@ def check(key: str) -> str | None:
             {"h": h},
         )
     who = str(r["id"]) if r else None
-    if who and (r["last_used_on"] != today):
+    if r is not None and who and r["last_used_on"] != today:
         _note(who, today)
     if len(_SEEN) > 10_000:
         _SEEN.clear()
