@@ -173,7 +173,8 @@ function PanelSearch() {
   const openWord = useReader((s) => s.openWord);
   const res = useQuery({
     queryKey: ["panel-search", dq],
-    queryFn: () => getJSON<{ results: { lemmas: SearchLemma[] } }>(`/search?q=${encodeURIComponent(dq)}&limit=9`),
+    // six rows fit the popover without a scroll: every one is reached by the arrow keys, and no region hides any
+    queryFn: () => getJSON<{ results: { lemmas: SearchLemma[] } }>(`/search?q=${encodeURIComponent(dq)}&limit=6`),
     enabled: dq.length > 0,
   });
   const items = res.data?.results.lemmas ?? [];
@@ -215,13 +216,16 @@ function PanelSearch() {
         dir="auto"
       />
       {dq && (
-        <ul id="panel-results" role="listbox" className="popover panel-results" aria-label={t("panelSearchLabel")}>
-          {res.isFetching && !res.data && <li className="px-3 py-2 text-[12.5px] text-t3" role="status">{t("searching")}</li>}
-          {res.isError && <li className="px-3 py-2 text-[12.5px] text-bad" role="alert">{t("loadFailed")}</li>}
-          {res.isFetched && !res.isError && items.length === 0 && <li className="px-3 py-2 text-[12.5px] text-t3">{t("noResults")}</li>}
+        // a listbox holds options only: the searching, error and empty states are said beside it (axe sweep, P12)
+        <div className="popover panel-results">
+          {res.isFetching && !res.data && <p className="px-3 py-2 text-[12.5px] text-t3" role="status">{t("searching")}</p>}
+          {res.isError && <p className="px-3 py-2 text-[12.5px] text-bad" role="alert">{t("loadFailed")}</p>}
+          {res.isFetched && !res.isError && items.length === 0 && <p className="px-3 py-2 text-[12.5px] text-t3">{t("noResults")}</p>}
+          {items.length > 0 && (
+        <ul id="panel-results" role="listbox" aria-label={t("panelSearchLabel")}>
           {items.map((x, i) => (
-            <li key={x.slug} id={`pr-${x.slug}`} role="option" aria-selected={i === active}>
-              <button type="button" tabIndex={-1} className={"panel-result" + (i === active ? " is-active" : "")} onMouseEnter={() => setActive(i)} onClick={() => pick(x)}>
+            <li key={x.slug} role="presentation">
+              <button type="button" id={`pr-${x.slug}`} role="option" aria-selected={i === active} tabIndex={-1} className={"panel-result" + (i === active ? " is-active" : "")} onMouseEnter={() => setActive(i)} onClick={() => pick(x)}>
                 <span className="ar-classical min-w-[76px] text-[19px] leading-[1.6]" lang="ar" dir="rtl">{x.ar}</span>
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[12.5px] text-t2" lang={locale === "ar" ? undefined : "en"}>{x.gloss_en ?? x.senses_en?.[0] ?? ""}</span>
@@ -240,6 +244,8 @@ function PanelSearch() {
             </li>
           ))}
         </ul>
+          )}
+        </div>
       )}
     </div>
   );

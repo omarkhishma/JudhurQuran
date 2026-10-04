@@ -1,4 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { dynamicRoutes, STATIC } from "./routes";
 
 /**
  * P1.9's exit, kept as a sweep: every route of the site renders in both languages, both themes and three widths
@@ -14,58 +15,6 @@ const WIDTHS = [
   [1024, 768],
   [390, 844],
 ] as const;
-const enc = encodeURIComponent;
-
-async function dynamicRoutes(page: Page): Promise<string[]> {
-  const j = async <T,>(p: string) => (await (await page.request.get(`/api/v1${p}`)).json()) as T;
-  const texts = await j<{ data: { slug: string; kind: string }[] }>("/texts");
-  const slug = texts.data.find((t) => t.kind === "book")!.slug;
-  const book = await j<{ chapters: { ordinal: number }[] }>(`/texts/${slug}`);
-  const first = book.chapters[0].ordinal;
-  const ch = await j<{ passages: { ref: string }[] }>(`/texts/${slug}/chapters/${first}?limit=1`);
-  return [`/books/${slug}`, `/books/${slug}/${first}`, `/books/${slug}/p/${enc(ch.passages[0].ref)}`];
-}
-
-const STATIC = [
-  "/",
-  "/quran",
-  "/quran/1",
-  "/quran/2/255",
-  "/word/1:1:1",
-  "/roots",
-  `/roots/${enc("علم")}`,
-  "/graph",
-  `/graph/root/${enc("علم")}`,
-  "/split",
-  "/library",
-  `/search?q=${enc("علم")}`,
-  `/concordance?root=${enc("علم")}`,
-  "/analyse",
-  "/explore",
-  "/notebook",
-  "/review",
-  "/classroom",
-  "/g",
-  "/me",
-  "/data",
-  "/developers",
-  "/sources",
-  "/about",
-  "/privacy",
-  "/saved",
-  "/signin",
-  "/dictionary",
-  `/dictionary/letter/${enc("ء")}`,
-  `/dictionary/${enc("علم")}`,
-  `/dictionary/${enc("علم")}/texts`,
-  "/hadith",
-  "/hadith/bukhari",
-  "/hadith/bukhari/1",
-  "/hadith/bukhari/kitab/1",
-  "/hadith/narrators",
-  "/books",
-  "/books/catalogue",
-];
 
 for (const locale of ["ar", "en"] as const)
   for (const theme of ["light", "dark"] as const)

@@ -159,9 +159,11 @@ function Omnibox({ onClose }: { onClose: () => void }) {
         />
         <span className="chip text-[11px] text-t3">{label}</span>
       </div>
+      {/* a listbox holds options only: with none, what the reader is told stands in its place (axe sweep, P12) */}
+      {!dq && <p id="omni-list" className="max-h-[60vh] px-4 py-3 text-[12.5px] text-t3">{t("omniEmpty")}</p>}
+      {dq && res.isFetched && rows.length === 0 && <p id="omni-list" className="px-4 py-3 text-[12.5px] text-t3">{t("omniNone", { q: dq })}</p>}
+      {rows.length > 0 && (
       <ul id="omni-list" role="listbox" aria-label={t("searchEverything")} className="max-h-[60vh] overflow-y-auto py-1">
-        {!dq && <li role="presentation" className="px-4 py-3 text-[12.5px] text-t3">{t("omniEmpty")}</li>}
-        {dq && res.isFetched && rows.length === 0 && <li role="presentation" className="px-4 py-3 text-[12.5px] text-t3">{t("omniNone", { q: dq })}</li>}
         {rows.map((r, i) => (
           <li key={r.key} role="presentation">
             {(i === 0 || rows[i - 1].group !== r.group) && <p className="label-caps px-4 pt-2 pb-1" aria-hidden="true">{r.group}</p>}
@@ -174,6 +176,7 @@ function Omnibox({ onClose }: { onClose: () => void }) {
           </li>
         ))}
       </ul>
+      )}
       <div className="flex items-center gap-3 border-t border-line px-4 py-2 text-[11.5px] text-t3">
         <span>{t("omniEnter")}</span>
         <span>{t("omniEsc")}</span>
