@@ -21,9 +21,10 @@ from fastapi import APIRouter, Query, Request
 from fastapi import Path as P
 from fastapi.responses import Response
 from fastapi.routing import APIRoute
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 
-from . import content, lexicon, releases
+from . import analyse, content, lexicon, releases
 from .db import connect
 from .search import search as run_search
 
@@ -43,6 +44,12 @@ LAYERS = {
     "text_corpus": ("the word forms, Tanzil's Uthmani text as the corpus carries it", "qac-tanzil"),
     "morphology": ("roots, lemmas, parts of speech, features and segments", "qac"),
     "patterns": ("each lemma's pattern (wazn), derived by this project", "jadhr"),
+    "analysis": (
+        "a text's words read against the Quran's own words by this project: the corpus's analysis where the text is "
+        "the Quran's, else the same written form in the Quran, the form without its clitics, or the Quran's patterns "
+        "over its roots — machine-derived, each reading with its confidence",
+        "jadhr",
+    ),
 }
 _LOC = re.compile(r"^\d{1,3}:\d{1,3}:\d{1,3}$")
 _VERSE = re.compile(r"^\d{1,3}:\d{1,3}$")
@@ -116,7 +123,7 @@ def index(request: Request) -> Response:
     data = {
         "products": {"quran": "the Quran's text, morphology and patterns"},
         "endpoints": [
-            {"method": "GET", "path": r.path, "summary": r.summary}
+            {"method": sorted(r.methods - {"HEAD"})[0], "path": r.path, "summary": r.summary}
             for r in router.routes
             if isinstance(r, APIRoute) and r.path != "/api/v1/public"
         ],
@@ -349,6 +356,70 @@ def concordance(
             "next_cursor": r.get("next_cursor"),
         }
         return _answer(request, conn, ["text_corpus", "morphology"], data)
+
+
+class _Text(BaseModel):
+    text: str = Field(min_length=1, max_length=600)
+
+
+def _reading(c: dict[str, Any], at_place: bool) -> dict[str, Any]:
+    """One reading of a word, as the public API gives it: no word-by-word English or transliteration (left out of
+    the bulk release); the inflection and segments only for a word read at its own place in the Quran — for any
+    other text they would be the inflection of the Quranic example, not of the reader's word."""
+    out: dict[str, Any] = {
+        "lemma": c["lemma"],
+        "root": {"key": c["root"]["key"], "spaced": c["root"]["spaced"]} if c.get("root") else None,
+        "pattern": c["pattern"],
+        "pos": c["pos"],
+        "confidence": c["confidence"],
+    }
+    if at_place:
+        out |= {"location": c["location"], "features": c["features"], "segments": c["segments"]}
+    else:
+        out |= {"quran_occurrences": c["count"], "share": c["share"], "quran_example": c["location"]}
+    return out
+
+
+@router.post(
+    "/quran/analyse",
+    summary="A phrase read word by word against the Quran: the corpus's analysis where it is the Quran's, ranked "
+    "readings otherwise — machine-derived, each with its confidence (the text is not stored)",
+)
+def analyse_text(body: _Text) -> Response:
+    from .main import ORJSONResponse, dataset_release
+
+    with connect() as conn:
+        a = analyse.analyse(conn, body.text)
+        tokens = []
+        for t in a["tokens"]:
+            # a word read from a verse has its place; any other word was matched to the Quran's words
+            at_place = t.get("location") is not None
+            tok: dict[str, Any] = {
+                "surface": t["surface"],
+                # how it was read: gold (the corpus, at its place), form, clitic, pattern, particle, none
+                "kind": t["kind"],
+                "confidence": t["confidence"],
+                "location": t.get("location"),
+                "clitics": t.get("clitics", []),
+                "readings": [_reading(c, at_place) for c in t["candidates"]],
+            }
+            if t.get("particle"):
+                tok["particle"] = _reading(t["particle"], at_place)
+            tokens.append(tok)
+        data = {
+            "text": a["text"],
+            "source": a["source"],
+            "tokens": tokens,
+            "counts": a["counts"],
+            "truncated": a["truncated"],
+        }
+        payload = {"meta": _meta(conn, ["text_corpus", "morphology", "patterns", "analysis"]), "data": data}
+    version, release = dataset_release()
+    # a reader's text: answered, never kept, never cached
+    return ORJSONResponse(
+        payload,
+        headers={"Cache-Control": "no-store", "X-Dataset-Version": version, "X-Dataset-Release": release},
+    )
 
 
 # ─── releases ─────────────────────────────────────────────────────────────────

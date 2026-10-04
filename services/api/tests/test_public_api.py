@@ -84,7 +84,13 @@ def test_not_found_and_a_recorded_release_named(monkeypatch: pytest.MonkeyPatch)
     for path in ("/quran/words/9:999:1", "/quran/roots/xyz", "/quran/verses/200:1", "/quran/patterns/nope"):
         r = client.get(f"{BASE}{path}")
         assert r.status_code == 404 and r.json()["error"]["code"] == "not_found", path
-    assert _get("/quran/roots/علم")["meta"]["release"] is None  # nothing recorded for this version yet
+    # no release recorded for the loaded version: none named (set here, not read from the database)
+    monkeypatch.setattr(routes_public.releases, "recorded", lambda version: None)
+    assert _get("/quran/roots/علم")["meta"]["release"] is None
+    # the recorded one, as the database has it, when there is one
+    monkeypatch.undo()
+    real = releases.recorded(client.get("/api/v1/meta").json()["dataset"]["version"])
+    assert _get("/quran/roots/علم?y=1")["meta"]["release"] == real
     named = {
         "version": "2026.10.0",
         "manifest_sha256": "0" * 64,
@@ -95,3 +101,41 @@ def test_not_found_and_a_recorded_release_named(monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(releases, "recorded", lambda version: named)
     monkeypatch.setattr(routes_public.releases, "recorded", lambda version: named)
     assert client.get(f"{BASE}/quran/roots/علم?x=1").json()["meta"]["release"] == named
+
+
+def test_a_text_is_read_against_the_quran_and_said_to_be_machine_read() -> None:
+    """POST /quran/analyse (DAT-35): the corpus's analysis where the text is the Quran's, each word at its place;
+    any other text read against the Quran's words, each reading with its confidence and its Quranic example — never
+    the example's inflection as the reader's, never the word-by-word English or transliteration; not cached."""
+    free = client.post(f"{BASE}/quran/analyse", json={"text": "إِنَّ العِلْمَ لَا يُدْرَكُ"})
+    assert free.status_code == 200, free.text
+    assert free.headers["cache-control"] == "no-store" and free.headers["x-dataset-version"]
+    body = free.json()
+    assert (
+        _layers(body)[-1] == ("analysis", "jadhr") and "machine-derived" in body["meta"]["layers"][-1]["what"]
+    )
+    assert body["data"]["source"]["kind"] == "free"
+    ilm = next(t for t in body["data"]["tokens"] if t["surface"] == "العِلْمَ")
+    assert ilm["kind"] == "form" and ilm["location"] is None and ilm["readings"][0]["root"]["key"] == "علم"
+    assert {"quran_example", "quran_occurrences", "share", "confidence"} <= set(ilm["readings"][0])
+    assert "features" not in ilm["readings"][0] and "segments" not in ilm["readings"][0]
+    verse = client.post(f"{BASE}/quran/analyse", json={"text": "2:255"}).json()
+    assert verse["data"]["source"] == {"kind": "quran", "verse_key": "2:255", "whole_verse": True}
+    first = verse["data"]["tokens"][0]
+    assert first["kind"] == "gold" and first["location"] == "2:255:1"
+    assert first["readings"][0]["features"] and first["readings"][0]["location"] == "2:255:1"
+    for b in (body, verse):
+        assert '"gloss_en"' not in free.text and '"translit"' not in str(b).replace("'", '"')
+    # a text too long, or none, is refused with the reason
+    assert client.post(f"{BASE}/quran/analyse", json={"text": "ع" * 601}).status_code == 422
+    assert client.post(f"{BASE}/quran/analyse", json={"text": ""}).status_code == 422
+    # the index names its method; any site's page may send a text, without being invited to send a key
+    eps = {(e["method"], e["path"]) for e in _get("")["data"]["endpoints"]}
+    assert ("POST", f"{BASE}/quran/analyse") in eps and ("GET", f"{BASE}/quran/lookup") in eps
+    pre = client.options(
+        f"{BASE}/quran/analyse",
+        headers={"Origin": "https://example.org", "Access-Control-Request-Method": "POST"},
+    )
+    assert pre.status_code == 204 and pre.headers["access-control-allow-origin"] == "*"
+    assert "POST" in pre.headers["access-control-allow-methods"]
+    assert pre.headers["access-control-allow-headers"] == "Content-Type"

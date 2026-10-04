@@ -1093,6 +1093,19 @@ def create_app() -> FastAPI:
         # the public API (P10.2b): a key reads at its own limit, an address without one at the public limit; both
         # said in RateLimit-* headers, and readable from any site's pages without a key
         if request.url.path.startswith(f"{API_PREFIX}/public/"):
+            # any site's page may read, and send a text to analyse, without a key; a key belongs on a server, so a
+            # page is not invited to send one (P10.2b)
+            if request.method == "OPTIONS":
+                return _public(
+                    Response(
+                        status_code=204,
+                        headers={
+                            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                            "Access-Control-Allow-Headers": "Content-Type",
+                            "Access-Control-Max-Age": "86400",
+                        },
+                    )
+                )
             key = request.headers.get("x-api-key") or request.headers.get("authorization", "").removeprefix(
                 "Bearer "
             )
