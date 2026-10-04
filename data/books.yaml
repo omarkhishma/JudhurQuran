@@ -1,0 +1,496 @@
+# The books' shelf (PLAN P11.3a, D9, research 21 §4.3): the 37 OpenITI primary versions read as books — the 40 pinned works
+# (authors died by 911 AH) less al-Bukhārī, Muslim and the Muwaṭṭaʾ, which are the hadith encyclopedia's (P11.2).
+# Generated from OpenITI's catalogue (OpenITI_metadata_2025-1-9.tsv): titles and authors in Arabic and in OpenITI's Latin
+# form (its schemes vary; an editor's English names are a proposal), the death year (its CE year by the standard
+# conversion, for the timeline), the genre from OpenITI's subject tags where it gives any (16 books have none: no genre
+# of ours). The title shown, the author's short name and the edition are read from each version's own header at build
+# time (ecosystem/books.py, card()); the catalogue's are the fallback. No sect label: those are the owner's or the
+# board's (research 21 §4.4).
+
+turath_check: openiti-2025.1.9/_evidence/turath-print-page-check-2026-10-04.json
+books:
+- slug: zaydibncali-musnad
+  work: 0122ZaydIbnCali.Musnad
+  version: 0122ZaydIbnCali.Musnad.Zaydiyya0000052-ara1
+  file: openiti-2025.1.9/shelf/0122ZaydIbnCali.Musnad.Zaydiyya0000052-ara1.mARkdown
+  title_ar: مسند
+  title_en: Musnad
+  author_ar: زيد بن علي بن الحسين بن علي بن أبي طالب
+  author_full_ar: ''
+  author_en: Zayd b. ʿAlī b. al-Ḥusayn b. ʿAlī b. Abī Ṭālib
+  death_ah: 122
+  era_year: 740
+  genre: null
+  words: 49573
+- slug: rabicibnhabibazdi-jamicsahih
+  work: 0170RabicIbnHabibAzdi.JamicSahih
+  version: 0170RabicIbnHabibAzdi.JamicSahih.ShamIbadiyya0000155-ara1
+  file: openiti-2025.1.9/shelf/0170RabicIbnHabibAzdi.JamicSahih.ShamIbadiyya0000155-ara1
+  title_ar: 'الجامع الصحيح مسند الإمام الربيع بن حبيب :: الجامع الصحيح مسند الإمام الربيع بن حبيب  :: الجامع الصحيح مسند الربيع موافق للمطبوع'
+  title_en: Jamic Sahih
+  author_ar: 'الربيع بن حبيب بن عمر الأزدي البصري (المتوفى حوالي سنة: 170ه)'
+  author_full_ar: ''
+  author_en: Rabic Ibn Habib Azdi
+  death_ah: 170
+  era_year: 787
+  genre: null
+  words: 49828
+- slug: sibawayhi-kitabsibawayhi
+  work: 0180Sibawayhi.KitabSibawayhi
+  version: 0180Sibawayhi.KitabSibawayhi.Shamela0023018-ara1
+  file: openiti-2025.1.9/shelf/0180Sibawayhi.KitabSibawayhi.Shamela0023018-ara1.mARkdown
+  title_ar: كتاب سيبويه
+  title_en: Kitāb Sībawayhi
+  author_ar: سيبويه
+  author_full_ar: أبو بشر عمرو بن عثمان بن قنبر
+  author_en: Abū Bišr ʿAmrů b. ʿUṯmān b. Qanbar
+  death_ah: 180
+  era_year: 796
+  genre: grammar
+  words: 277570
+- slug: shafici-risala
+  work: 0204Shafici.Risala
+  version: 0204Shafici.Risala.LAL2013020402-ara2
+  file: openiti-2025.1.9/shelf/0204Shafici.Risala.LAL2013020402-ara2
+  title_ar: ''
+  title_en: Risala
+  author_ar: Muḥammad ibn Idrīs al-Shāfiʿī
+  author_full_ar: محمّد بن إدريس الشافعيّ
+  author_en: Shafici
+  death_ah: 204
+  era_year: 820
+  genre: null
+  words: 47483
+- slug: ibnziyadfarra-macaniquran
+  work: 0207IbnZiyadFarra.MacaniQuran
+  version: 0207IbnZiyadFarra.MacaniQuran.Shamela0023634-ara1
+  file: openiti-2025.1.9/shelf/0207IbnZiyadFarra.MacaniQuran.Shamela0023634-ara1
+  title_ar: معاني القرآن
+  title_en: Macani Quran
+  author_ar: 'أبو زكريا يحيى بن زياد بن عبد الله بن منظور الديلمي الفراء (المتوفى: 207هـ)'
+  author_full_ar: ''
+  author_en: Ibn Ziyad Farra
+  death_ah: 207
+  era_year: 822
+  genre: tafsir
+  words: 215551
+- slug: abucubayda-majazquran
+  work: 0209AbuCubayda.MajazQuran
+  version: 0209AbuCubayda.MajazQuran.JK010146-ara1
+  file: openiti-2025.1.9/shelf/0209AbuCubayda.MajazQuran.JK010146-ara1
+  title_ar: مجاز القرآن
+  title_en: Majaz Quran
+  author_ar: أبو عبيدة
+  author_full_ar: أبو عبيدة معمر بن المثنى
+  author_en: Abū ʿUbaydaŧ Maʿmar b. al-Muṯanná
+  death_ah: 209
+  era_year: 824
+  genre: tafsir
+  words: 63290
+- slug: ibnhisham-siranabawiyya
+  work: 0213IbnHisham.SiraNabawiyya
+  version: 0213IbnHisham.SiraNabawiyya.Shamela0023833-ara1
+  file: openiti-2025.1.9/shelf/0213IbnHisham.SiraNabawiyya.Shamela0023833-ara1.completed
+  title_ar: السيرة النبوية لابن هشام
+  title_en: Sira Nabawiyya
+  author_ar: ابن هشام
+  author_full_ar: جمال الدين أبو محمد عبد الملك بن هشام بن أيوب الحميري، المعافري
+  author_en: Ǧamāl al-dīn Abū Muḥammad ʿAbd al-Malik b. Hišām b. Ayyūb al-ḥimyarī, al-Maʿāfirī
+  death_ah: 213
+  era_year: 828
+  genre: null
+  words: 278907
+- slug: jahiz-bayanwatabyin
+  work: 0255Jahiz.BayanWaTabyin
+  version: 0255Jahiz.BayanWaTabyin.Shamela0010614-ara1
+  file: openiti-2025.1.9/shelf/0255Jahiz.BayanWaTabyin.Shamela0010614-ara1.completed
+  title_ar: البيان والتبيين
+  title_en: Bayan Wa Tabyin
+  author_ar: الجاحظ
+  author_full_ar: أبو عثمان عمرو بن بحر الفقامي البصري
+  author_en: abū ʿUṯmān ʿamrů b. baḥr al-fuqāmī al-baṣrī
+  death_ah: 255
+  era_year: 869
+  genre: null
+  words: 162824
+- slug: jahiz-bukhala
+  work: 0255Jahiz.Bukhala
+  version: 0255Jahiz.Bukhala.Shamela0010501-ara1
+  file: openiti-2025.1.9/shelf/0255Jahiz.Bukhala.Shamela0010501-ara1.mARkdown
+  title_ar: البخلاء
+  title_en: al-buḫlāʾ
+  author_ar: الجاحظ
+  author_full_ar: أبو عثمان عمرو بن بحر الفقامي البصري
+  author_en: abū ʿUṯmān ʿamrů b. baḥr al-fuqāmī al-baṣrī
+  death_ah: 255
+  era_year: 869
+  genre: null
+  words: 50701
+- slug: ibnqutaybadinawari-adabkatib
+  work: 0276IbnQutaybaDinawari.AdabKatib
+  version: 0276IbnQutaybaDinawari.AdabKatib.Shamela0026349-ara1
+  file: openiti-2025.1.9/shelf/0276IbnQutaybaDinawari.AdabKatib.Shamela0026349-ara1.mARkdown
+  title_ar: أدب الكاتب (أو) أدب الكتاب
+  title_en: Adab Katib
+  author_ar: ابن قتيبة، الدينوري
+  author_full_ar: أبو محمد عبد الله بن مسلم بن قتيبة الدينوري، الكوفي، المروزي
+  author_en: Abū Muḥammad ʿAbd Allāh b. Muslim b. Qutaybaŧ al-Dīnawarī, al-Kūfī, al-Marwazī
+  death_ah: 276
+  era_year: 889
+  genre: null
+  words: 68580
+- slug: ibnqutaybadinawari-shicrwashucara
+  work: 0276IbnQutaybaDinawari.ShicrWaShucara
+  version: 0276IbnQutaybaDinawari.ShicrWaShucara.Shamela0023785-ara1
+  file: openiti-2025.1.9/shelf/0276IbnQutaybaDinawari.ShicrWaShucara.Shamela0023785-ara1.mARkdown
+  title_ar: الشعر و الشعراء
+  title_en: al-Šiʿr wa al-šuʿarāʾ
+  author_ar: ابن قتيبة، الدينوري
+  author_full_ar: أبو محمد عبد الله بن مسلم بن قتيبة الدينوري، الكوفي، المروزي
+  author_en: Abū Muḥammad ʿAbd Allāh b. Muslim b. Qutaybaŧ al-Dīnawarī, al-Kūfī, al-Marwazī
+  death_ah: 276
+  era_year: 889
+  genre: adab
+  words: 87966
+- slug: ibnqutaybadinawari-tawilmushkilquran
+  work: 0276IbnQutaybaDinawari.TawilMushkilQuran
+  version: 0276IbnQutaybaDinawari.TawilMushkilQuran.Shamela0023596-ara1
+  file: openiti-2025.1.9/shelf/0276IbnQutaybaDinawari.TawilMushkilQuran.Shamela0023596-ara1.completed
+  title_ar: تأويل مشكل القرآن
+  title_en: Tawil Mushkil Quran
+  author_ar: ابن قتيبة، الدينوري
+  author_full_ar: أبو محمد عبد الله بن مسلم بن قتيبة الدينوري، الكوفي، المروزي
+  author_en: Abū Muḥammad ʿAbd Allāh b. Muslim b. Qutaybaŧ al-Dīnawarī, al-Kūfī, al-Marwazī
+  death_ah: 276
+  era_year: 889
+  genre: tafsir
+  words: 57018
+- slug: baladhuri-futuhbuldan
+  work: 0279Baladhuri.FutuhBuldan
+  version: 0279Baladhuri.FutuhBuldan.Shamela0012221-ara1
+  file: openiti-2025.1.9/shelf/0279Baladhuri.FutuhBuldan.Shamela0012221-ara1.mARkdown
+  title_ar: فتوح البلدان
+  title_en: Futūḥ al-buldān
+  author_ar: بلاذري
+  author_full_ar: أبو الحسن أحمد بن يحيى بن جابر بن داوود
+  author_en: Abū al-Ḥasan Aḥmad b. Yaḥyá b. Jābir b. Dāwůd
+  death_ah: 279
+  era_year: 892
+  genre: history
+  words: 115849
+- slug: hudhawwari-tafsir
+  work: 0280HudHawwari.Tafsir
+  version: 0280HudHawwari.Tafsir.Tafsir06048-ara1
+  file: openiti-2025.1.9/shelf/0280HudHawwari.Tafsir.Tafsir06048-ara1
+  title_ar: تفسير كتاب الله العزيز
+  title_en: Tafsir
+  author_ar: الهواري
+  author_full_ar: ''
+  author_en: Hud Hawwari
+  death_ah: 280
+  era_year: 893
+  genre: null
+  words: 394752
+- slug: ibnyazidmubarrad-kamilfilugha
+  work: 0285IbnYazidMubarrad.KamilFiLugha
+  version: 0285IbnYazidMubarrad.KamilFiLugha.Shamela0008505-ara1
+  file: openiti-2025.1.9/shelf/0285IbnYazidMubarrad.KamilFiLugha.Shamela0008505-ara1.mARkdown
+  title_ar: 'الكامل في للغة والأدب :: الكامل في للغة والأدب'
+  title_en: 'al-Kāmil fī l-luġaŧ wa-l-adab :: al-Kāmil fī l-luġaŧ wa-l-adab'
+  author_ar: ابن يزيد المبرد
+  author_full_ar: أبو لعباس محمد بن يزيد بن عبد الأكبر بن عمير بن حسان بن سليم بن سعد بن عبدالله بن زيد بن مالك بن الحارث بن عامر بن عبدالله بن بلال بن عوف بن أسلم بن كعب بن الحارث بن كعب بن عبدالله بن
+    مالك بن النضر بن الأزد بن الغوث الأزدي الثمالي المبرد
+  author_en: Abū l-ʿAbbās Muḥammad b. Yazīd b. ʿAbd al-Akbar b. ʿUmayr b. Ḥasān b. Salīm b. Saʿd b. ʿAbdallāh b. Zayd b. Mālik b. al-Ḥāriṯ b. ʿĀmir b. ʿAbdallāh b. Bilāl b. ʿAwf b. Aslam b. Kaʿb b. al-Ḥāriṯ
+    b. Kaʿb b. ʿAbdallāh b. Mālik b. al-Naḍr b. al-Azad b. al-Ġawṯ al-Azdī al-Ṯimālī al-Mubarrad
+  death_ah: 285
+  era_year: 898
+  genre: null
+  words: 187444
+- slug: ibnyazidmubarrad-muqtadab
+  work: 0285IbnYazidMubarrad.Muqtadab
+  version: 0285IbnYazidMubarrad.Muqtadab.Shamela0006965-ara1
+  file: openiti-2025.1.9/shelf/0285IbnYazidMubarrad.Muqtadab.Shamela0006965-ara1.mARkdown
+  title_ar: 'كتاب المقتضب :: كتاب المقتضب'
+  title_en: 'Kitāb al-Muqtaḍab :: Kitāb al-Muqtaḍab'
+  author_ar: ابن يزيد المبرد
+  author_full_ar: أبو لعباس محمد بن يزيد بن عبد الأكبر بن عمير بن حسان بن سليم بن سعد بن عبدالله بن زيد بن مالك بن الحارث بن عامر بن عبدالله بن بلال بن عوف بن أسلم بن كعب بن الحارث بن كعب بن عبدالله بن
+    مالك بن النضر بن الأزد بن الغوث الأزدي الثمالي المبرد
+  author_en: Abū l-ʿAbbās Muḥammad b. Yazīd b. ʿAbd al-Akbar b. ʿUmayr b. Ḥasān b. Salīm b. Saʿd b. ʿAbdallāh b. Zayd b. Mālik b. al-Ḥāriṯ b. ʿĀmir b. ʿAbdallāh b. Bilāl b. ʿAwf b. Aslam b. Kaʿb b. al-Ḥāriṯ
+    b. Kaʿb b. ʿAbdallāh b. Mālik b. al-Naḍr b. al-Azad b. al-Ġawṯ al-Azdī al-Ṯimālī al-Mubarrad
+  death_ah: 285
+  era_year: 898
+  genre: grammar
+  words: 170859
+- slug: hadiilahaqqyahya-ahkam
+  work: 0298HadiIlaHaqqYahya.Ahkam
+  version: 0298HadiIlaHaqqYahya.Ahkam.Shia000812Vols-ara1
+  file: openiti-2025.1.9/shelf/0298HadiIlaHaqqYahya.Ahkam.Shia000812Vols-ara1
+  title_ar: الأحكام
+  title_en: Ahkam
+  author_ar: الهادي الى الحقق يحيى
+  author_full_ar: ''
+  author_en: al-Hādī Ilá al-Ḥaqq Yaḥyá
+  death_ah: 298
+  era_year: 911
+  genre: null
+  words: 219651
+- slug: tabari-jamicbayan
+  work: 0310Tabari.JamicBayan
+  version: 0310Tabari.JamicBayan.Shamela0007798-ara1
+  file: openiti-2025.1.9/shelf/0310Tabari.JamicBayan.Shamela0007798-ara1.inProgress
+  title_ar: تفسير الطبري = جامع البيان عن تأويل آي القرآن
+  title_en: Jamic Bayan
+  author_ar: الطبري
+  author_full_ar: أبو جعفر محمد بن جرير بن يزيد بن كثير بن غالب الطبري، الآملي
+  author_en: Abū Ǧaʿfar Muḥammad b. Ǧarīr b. Yazīd b. Kaṯīr b. Ġālib al-Ṭabarī, al-Āmulī
+  death_ah: 310
+  era_year: 922
+  genre: null
+  words: 2910593
+- slug: ibnsarizajjaj-macaniquran
+  work: 0311IbnSariZajjaj.MacaniQuran
+  version: 0311IbnSariZajjaj.MacaniQuran.Shamela0000922-ara1
+  file: openiti-2025.1.9/shelf/0311IbnSariZajjaj.MacaniQuran.Shamela0000922-ara1
+  title_ar: معاني القرآن وإعرابه
+  title_en: Macani Quran
+  author_ar: 'إبراهيم بن السري بن سهل، أبو إسحاق الزجاج (المتوفى: 311هـ)'
+  author_full_ar: ''
+  author_en: Ibn Sari Zajjaj
+  death_ah: 311
+  era_year: 923
+  genre: tafsir
+  words: 400504
+- slug: ibnyacqubkulayni-kafi
+  work: 0329IbnYacqubKulayni.Kafi
+  version: 0329IbnYacqubKulayni.Kafi.Shia001122Vols-ara1
+  file: openiti-2025.1.9/shelf/0329IbnYacqubKulayni.Kafi.Shia001122Vols-ara1.mARkdown
+  title_ar: الكافي
+  title_en: al-Kāfī
+  author_ar: الكليني
+  author_full_ar: ثقة الإسلام أبو جعفر محمد بن يعقوب بن اسحاق الكلينيىلكليني الرازي
+  author_en: Ṯiqaŧ al-ʾIslām Abū Ǧaʿfar Muḥammad b. Yaʿqūb b. Isḥāq al-Kulaynī/al-Kulīnī al-Rāzī
+  death_ah: 329
+  era_year: 941
+  genre: null
+  words: 1118542
+- slug: abuhasanbisyawi-jamic
+  work: 0364AbuHasanBisyawi.Jamic
+  version: 0364AbuHasanBisyawi.Jamic.ShamIbadiyya0000129-ara1
+  file: openiti-2025.1.9/shelf/0364AbuHasanBisyawi.Jamic.ShamIbadiyya0000129-ara1
+  title_ar: 'جامع أبي الحسن البسيوي جديد :: جامع أبي الحسن البسيوي - المتن المحقق'
+  title_en: Jamic
+  author_ar: أبو الحسن البسيوي
+  author_full_ar: أبو الحسن علي بن محمد بن علي بن محمد بن الحسن البسيوي، العماني
+  author_en: Abū al-Ḥasan ʿAlī b. Muḥammad b. ʿAlī b. Muḥammad b. al-Ḥasan al-Basīwī, al-ʿUmānī
+  death_ah: 364
+  era_year: 975
+  genre: null
+  words: 275132
+- slug: ibnjinnimawsili-khasais
+  work: 0392IbnJinniMawsili.Khasais
+  version: 0392IbnJinniMawsili.Khasais.JK001302-ara1
+  file: openiti-2025.1.9/shelf/0392IbnJinniMawsili.Khasais.JK001302-ara1.mARkdown
+  title_ar: 'الخصائص :: كتاب الخصائص العربي'
+  title_en: 'al-Ḫaṣāʾiṣ :: Kitāb al-Ḫaṣāʾiṣ al-ʿarabiyya'
+  author_ar: ابن جني الموصلي
+  author_full_ar: ''
+  author_en: Ibn Jinnī al-Mawṣilī
+  death_ah: 392
+  era_year: 1002
+  genre: grammar
+  words: 193810
+- slug: ibnfarisqazwini-sahibi
+  work: 0395IbnFarisQazwini.Sahibi
+  version: 0395IbnFarisQazwini.Sahibi.JK010092-ara1
+  file: openiti-2025.1.9/shelf/0395IbnFarisQazwini.Sahibi.JK010092-ara1
+  title_ar: الصاحبي في فقه اللغة
+  title_en: Sahibi
+  author_ar: ابن فارس
+  author_full_ar: 'أبو الحسين أحمد بن فارس بن زكريا (المتوفى : 395هـ)'
+  author_en: Ibn Faris Qazwini
+  death_ah: 395
+  era_year: 1005
+  genre: grammar
+  words: 38212
+- slug: badiczamanhamadhani-maqamat
+  work: 0398BadicZamanHamadhani.Maqamat
+  version: 0398BadicZamanHamadhani.Maqamat.JK009269-ara1
+  file: openiti-2025.1.9/shelf/0398BadicZamanHamadhani.Maqamat.JK009269-ara1.completed
+  title_ar: مقامات بديع الزمان الهمذاني
+  title_en: Maqamat
+  author_ar: بديع الزمان
+  author_full_ar: أبو الفضل أحمد بن الحسين بن يحيى
+  author_en: Badic Zaman Hamadhani
+  death_ah: 398
+  era_year: 1008
+  genre: adab
+  words: 20751
+- slug: sharifradi-nahjbalagha
+  work: 0406SharifRadi.NahjBalagha
+  version: 0406SharifRadi.NahjBalagha.Shia20200618-ara1
+  file: openiti-2025.1.9/shelf/0406SharifRadi.NahjBalagha.Shia20200618-ara1.mARkdown
+  title_ar: نهج البلاغة
+  title_en: Nahǧ al-balāġaŧ
+  author_ar: الشريف الرضي
+  author_full_ar: أبو الحسن محمد بن الحسين بن موسى
+  author_en: Abū al-Ḥasan Muḥammad b. al-Ḥusayn b. Mūsá
+  death_ah: 406
+  era_year: 1015
+  genre: null
+  words: 74242
+- slug: abumansurthacalibi-fiqhlugha
+  work: 0429AbuMansurThacalibi.FiqhLugha
+  version: 0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1
+  file: openiti-2025.1.9/shelf/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.mARkdown
+  title_ar: فقه اللغة و سر العربية
+  title_en: Fiqh al-luġaŧ wa sirr al-ʿarabiyyaŧ
+  author_ar: الثعالبي
+  author_full_ar: أبو منصور عبد الملك بن محمد بن اسماعيل الثعالبي
+  author_en: Abū Manṣūr ʿAbd al-Malik b. Muḥammad b. Ismāʿīl al-Ṯaʿālibī
+  death_ah: 429
+  era_year: 1038
+  genre: lexicology
+  words: 55721
+- slug: abuhasanmawardi-ahkamsultaniyya
+  work: 0450AbuHasanMawardi.AhkamSultaniyya
+  version: 0450AbuHasanMawardi.AhkamSultaniyya.Shamela0022881-ara1
+  file: openiti-2025.1.9/shelf/0450AbuHasanMawardi.AhkamSultaniyya.Shamela0022881-ara1.mARkdown
+  title_ar: الأحكام السلطانية
+  title_en: al-Aḥkām al-sulṭāniyyaŧ
+  author_ar: الماوردي
+  author_full_ar: أبو الحسن علي بن محمد بن حبيب البصري، البغدادي
+  author_en: Abū al-Ḥasan ʿAlī b. Muḥammad b. Ḥabīb al-Baṣrī, al-Baġdādī
+  death_ah: 450
+  era_year: 1058
+  genre: fiqh
+  words: 84513
+- slug: jarallahzamakhshari-kashshaf
+  work: 0538JarAllahZamakhshari.Kashshaf
+  version: 0538JarAllahZamakhshari.Kashshaf.JK001496-ara1
+  file: openiti-2025.1.9/shelf/0538JarAllahZamakhshari.Kashshaf.JK001496-ara1
+  title_ar: 'الكشاف :: الكشاف عن حقائق التنزيل وعيون الأقاويل في وجوه التأويل'
+  title_en: Kashshaf
+  author_ar: جار الله الزمخشري
+  author_full_ar: ''
+  author_en: Jār Allāh al-Zamaḫšarī
+  death_ah: 538
+  era_year: 1144
+  genre: null
+  words: 785826
+- slug: jarallahzamakhshari-mufassalfisuncaticrab
+  work: 0538JarAllahZamakhshari.MufassalFiSuncatIcrab
+  version: 0538JarAllahZamakhshari.MufassalFiSuncatIcrab.JK001224-ara1
+  file: openiti-2025.1.9/shelf/0538JarAllahZamakhshari.MufassalFiSuncatIcrab.JK001224-ara1
+  title_ar: 'المفصل في صنعة الإعراب :: المفصل'
+  title_en: Mufassal Fi Suncat Icrab
+  author_ar: جار الله الزمخشري
+  author_full_ar: ''
+  author_en: Jār Allāh al-Zamaḫšarī
+  death_ah: 538
+  era_year: 1144
+  genre: grammar
+  words: 48249
+- slug: ibncatiyyaandalusi-muharrarwajiz
+  work: 0541IbnCatiyyaAndalusi.MuharrarWajiz
+  version: 0541IbnCatiyyaAndalusi.MuharrarWajiz.Shamela0023632-ara1
+  file: openiti-2025.1.9/shelf/0541IbnCatiyyaAndalusi.MuharrarWajiz.Shamela0023632-ara1.completed
+  title_ar: المحرر الوجيز في تفسير الكتاب العزيز
+  title_en: Muharrar Wajiz
+  author_ar: 'أبو محمد عبد الحق بن غالب بن عبد الرحمن بن تمام بن عطية الأندلسي المحاربي (المتوفى: 542هـ)'
+  author_full_ar: ''
+  author_en: Ibn Catiyya Andalusi
+  death_ah: 541
+  era_year: 1146
+  genre: tafsir
+  words: 1138623
+- slug: ibnrushdhafid-bidayatmujtahid
+  work: 0595IbnRushdHafid.BidayatMujtahid
+  version: 0595IbnRushdHafid.BidayatMujtahid.JK000222-ara1
+  file: openiti-2025.1.9/shelf/0595IbnRushdHafid.BidayatMujtahid.JK000222-ara1
+  title_ar: 'بداية المجتهد :: بداية المجتهد ونهاية المقتصد'
+  title_en: Bidayat Mujtahid
+  author_ar: ابن رشد الحفيد
+  author_full_ar: ''
+  author_en: Ibn Rušd al-Ḥafīd
+  death_ah: 595
+  era_year: 1199
+  genre: fiqh
+  words: 305252
+- slug: ibnmalik-alfiyya
+  work: 0672IbnMalik.Alfiyya
+  version: 0672IbnMalik.Alfiyya.Shamela0008522-ara1
+  file: openiti-2025.1.9/shelf/0672IbnMalik.Alfiyya.Shamela0008522-ara1
+  title_ar: ألفية ابن مالك
+  title_en: Alfiyya
+  author_ar: جمال الدين أبي عبد الله محمد بن عبد الله بن محمد بن عبد الله بن مالك الطاعي الجياني
+  author_full_ar: ''
+  author_en: Ǧamāl al-Dīn Abī ʿAbd Allāh Muḥammad b. ʿAbd Allāh b. Muḥammad b. ʿAbd Allāh b. Mālik al-Ṭāʿī al-Ǧayyānī
+  death_ah: 672
+  era_year: 1274
+  genre: grammar
+  words: 9911
+- slug: nawawi-riyadsalihin
+  work: 0676Nawawi.RiyadSalihin
+  version: 0676Nawawi.RiyadSalihin.Shamela0012014-ara1
+  file: openiti-2025.1.9/shelf/0676Nawawi.RiyadSalihin.Shamela0012014-ara1.mARkdown
+  title_ar: رياض الصالحين
+  title_en: Riyāḍ al-ṣāliḥīn
+  author_ar: النووي
+  author_full_ar: محيي الدين أبو زكريا يحيى بن شرف بن مري بن حسن بن حسين بن محمد بن جمعة بن حزام الحزامي، الدمشقي
+  author_en: Muḥyī al-dīn Abū Zakariyyā Yaḥyá b. Šaraf b. Murī b. Ḥasan b. Ḥusayn b. Muḥammad b. Ǧumʿaŧ b. Ḥizām al-Ḥizāmī, al-Dimašqī
+  death_ah: 676
+  era_year: 1277
+  genre: hadith
+  words: 119900
+- slug: jamaldinibnhisham-mughnilabib
+  work: 0761JamalDinIbnHisham.MughniLabib
+  version: 0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+  file: openiti-2025.1.9/shelf/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+  title_ar: 'مغني اللبيب عن كتب الأعاريب :: مغني اللبيب'
+  title_en: Mughni Labib
+  author_ar: جمال الدين ابن هشام الأنصاري
+  author_full_ar: ''
+  author_en: Jamal Din Ibn Hisham
+  death_ah: 761
+  era_year: 1360
+  genre: grammar
+  words: 152539
+- slug: ibnkathir-tafsirquran
+  work: 0774IbnKathir.TafsirQuran
+  version: 0774IbnKathir.TafsirQuran.Shamela0008473-ara1
+  file: openiti-2025.1.9/shelf/0774IbnKathir.TafsirQuran.Shamela0008473-ara1.mARkdown
+  title_ar: تفسير القرآن العظيم
+  title_en: Tafsīr al-Qurʾān al-ʿaẓīm
+  author_ar: ابن كثير
+  author_full_ar: عماد الدين أبوالفداء اسماعيل بن عمر بن كثير القرشي، البصري، الدمشقي
+  author_en: ʿImād al-dīn Abū-al-Fadāʾ Ismāʿīl b. ʿUmar b. Kaṯīr al-Qarašī, al-Baṣrī, al-Dimašqī
+  death_ah: 774
+  era_year: 1373
+  genre: null
+  words: 1568356
+- slug: ibnkhaldun-tarikh
+  work: 0808IbnKhaldun.Tarikh
+  version: 0808IbnKhaldun.Tarikh.Shamela0012320-ara1
+  file: openiti-2025.1.9/shelf/0808IbnKhaldun.Tarikh.Shamela0012320-ara1.mARkdown
+  title_ar: 'تاريخ :: ديوان المبتدا والخبر في تاريخ العرب والبربر و من عاصرهم من ذوي الشأن الأكبر'
+  title_en: 'Tārīḫ :: Dīwān al-mubtadā wa-l-ḫabar fī tārīḫ al-ʿArab wa-al-barbar wa man ʿāṣarahum min ḏawī al-šaʾn al-akbar'
+  author_ar: ابن خلدون
+  author_full_ar: والي الدين أبو زيد عبد الرحمان بن محمد بن محمد بن أبي بكر محمد بن الحسن بن خلدون الحضرمي الاشبيلي
+  author_en: Wālī al-dīn Abū Zayd ʿAbd al-Raḥmān b. Muḥammad b. Muḥammad b. Abī Bakr Muḥammad b. al-Ḥasan b. Ḫaldūn al-Ḥaḍramī al-Išbīlī
+  death_ah: 808
+  era_year: 1406
+  genre: history
+  words: 1380889
+- slug: suyuti-itqan
+  work: 0911Suyuti.Itqan
+  version: 0911Suyuti.Itqan.JK001295-ara1
+  file: openiti-2025.1.9/shelf/0911Suyuti.Itqan.JK001295-ara1
+  title_ar: الإتقان في علوم القرآن
+  title_en: Itqan
+  author_ar: جلال الدين السيوطي
+  author_full_ar: جلال الدين، أبو الفضل عبد الرحمان بن أبي بكر بن محمد جلال الدين الخضيري الأسيوطي
+  author_en: Ǧalāl al-dīn, Abū al-faḍl ʿAbd al-Raḥmān b. Abī Bakr b. Muḥammad Ǧalāl al-dīn al-Ḫuḍayrī al-Asyūṭī
+  death_ah: 911
+  era_year: 1505
+  genre: tafsir
+  words: 246909

@@ -3386,3 +3386,180 @@ licences:
   - The usage policy is volatile — its 2026-08-12 version (f224c014) said it did not grant blanket commercial rights — so it is re-read before every release (PLAN P1.8); a written confirmation from the publisher is the owner's to ask (D19, not sent).
   - 'Conditions met: verbatim, publisher and source named, version given, no advertising. Condition 5 (telling the source of any note on the content) and 6 (updating to new versions) are the editors'' tasks.'
   - The reference field comes from the API dump, which is unversioned; the Excel export, versioned, carries the content and agrees with the API on 3,581 of 3,582 texts.
+- id: openiti-books
+  registry: data/sources.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0122ZaydIbnCali/0122ZaydIbnCali.Musnad/0122ZaydIbnCali.Musnad.Zaydiyya0000052-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0170RabicIbnHabibAzdi/0170RabicIbnHabibAzdi.JamicSahih/0170RabicIbnHabibAzdi.JamicSahih.ShamIbadiyya0000155-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0180Sibawayhi/0180Sibawayhi.KitabSibawayhi/0180Sibawayhi.KitabSibawayhi.Shamela0023018-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0204Shafici/0204Shafici.Risala/0204Shafici.Risala.LAL2013020402-ara2.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0207IbnZiyadFarra/0207IbnZiyadFarra.MacaniQuran/0207IbnZiyadFarra.MacaniQuran.Shamela0023634-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0209AbuCubayda/0209AbuCubayda.MajazQuran/0209AbuCubayda.MajazQuran.JK010146-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0213IbnHisham/0213IbnHisham.SiraNabawiyya/0213IbnHisham.SiraNabawiyya.Shamela0023833-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0255Jahiz/0255Jahiz.BayanWaTabyin/0255Jahiz.BayanWaTabyin.Shamela0010614-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0255Jahiz/0255Jahiz.Bukhala/0255Jahiz.Bukhala.Shamela0010501-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0276IbnQutaybaDinawari/0276IbnQutaybaDinawari.AdabKatib/0276IbnQutaybaDinawari.AdabKatib.Shamela0026349-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0276IbnQutaybaDinawari/0276IbnQutaybaDinawari.ShicrWaShucara/0276IbnQutaybaDinawari.ShicrWaShucara.Shamela0023785-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0276IbnQutaybaDinawari/0276IbnQutaybaDinawari.TawilMushkilQuran/0276IbnQutaybaDinawari.TawilMushkilQuran.Shamela0023596-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0279Baladhuri/0279Baladhuri.FutuhBuldan/0279Baladhuri.FutuhBuldan.Shamela0012221-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0280HudHawwari/0280HudHawwari.Tafsir/0280HudHawwari.Tafsir.Tafsir06048-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0285IbnYazidMubarrad/0285IbnYazidMubarrad.KamilFiLugha/0285IbnYazidMubarrad.KamilFiLugha.Shamela0008505-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0285IbnYazidMubarrad/0285IbnYazidMubarrad.Muqtadab/0285IbnYazidMubarrad.Muqtadab.Shamela0006965-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0298HadiIlaHaqqYahya/0298HadiIlaHaqqYahya.Ahkam/0298HadiIlaHaqqYahya.Ahkam.Shia000812Vols-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0310Tabari/0310Tabari.JamicBayan/0310Tabari.JamicBayan.Shamela0007798-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0311IbnSariZajjaj/0311IbnSariZajjaj.MacaniQuran/0311IbnSariZajjaj.MacaniQuran.Shamela0000922-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0329IbnYacqubKulayni/0329IbnYacqubKulayni.Kafi/0329IbnYacqubKulayni.Kafi.Shia001122Vols-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0364AbuHasanBisyawi/0364AbuHasanBisyawi.Jamic/0364AbuHasanBisyawi.Jamic.ShamIbadiyya0000129-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0392IbnJinniMawsili/0392IbnJinniMawsili.Khasais/0392IbnJinniMawsili.Khasais.JK001302-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395IbnFarisQazwini/0395IbnFarisQazwini.Sahibi/0395IbnFarisQazwini.Sahibi.JK010092-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0398BadicZamanHamadhani/0398BadicZamanHamadhani.Maqamat/0398BadicZamanHamadhani.Maqamat.JK009269-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0406SharifRadi/0406SharifRadi.NahjBalagha/0406SharifRadi.NahjBalagha.Shia20200618-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0450AbuHasanMawardi/0450AbuHasanMawardi.AhkamSultaniyya/0450AbuHasanMawardi.AhkamSultaniyya.Shamela0022881-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0538JarAllahZamakhshari/0538JarAllahZamakhshari.Kashshaf/0538JarAllahZamakhshari.Kashshaf.JK001496-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0538JarAllahZamakhshari/0538JarAllahZamakhshari.MufassalFiSuncatIcrab/0538JarAllahZamakhshari.MufassalFiSuncatIcrab.JK001224-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0541IbnCatiyyaAndalusi/0541IbnCatiyyaAndalusi.MuharrarWajiz/0541IbnCatiyyaAndalusi.MuharrarWajiz.Shamela0023632-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0595IbnRushdHafid/0595IbnRushdHafid.BidayatMujtahid/0595IbnRushdHafid.BidayatMujtahid.JK000222-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0672IbnMalik/0672IbnMalik.Alfiyya/0672IbnMalik.Alfiyya.Shamela0008522-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0676Nawawi/0676Nawawi.RiyadSalihin/0676Nawawi.RiyadSalihin.Shamela0012014-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0774IbnKathir/0774IbnKathir.TafsirQuran/0774IbnKathir.TafsirQuran.Shamela0008473-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0808IbnKhaldun/0808IbnKhaldun.Tarikh/0808IbnKhaldun.Tarikh.Shamela0012320-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.Itqan/0911Suyuti.Itqan.JK001295-ara1.yml
+  fetched: '2026-10-04'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: c131ba14144fe2b1a6bb0013be0491e8a1ff2a92ab33c3f5c4a9e8124fc11e73
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0122ZaydIbnCali/0122ZaydIbnCali.Musnad/0122ZaydIbnCali.Musnad.Zaydiyya0000052-ara1.yml
+    : 7664cfda5dfae20d0b3458b8d339697c6ff4d4092f423700b2279c148f6a2106
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0170RabicIbnHabibAzdi/0170RabicIbnHabibAzdi.JamicSahih/0170RabicIbnHabibAzdi.JamicSahih.ShamIbadiyya0000155-ara1.yml
+    : 29751ace0aec459d03b19a8d29e5979b5cc440f41949fcde3aecde6ab1dbcf06
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0180Sibawayhi/0180Sibawayhi.KitabSibawayhi/0180Sibawayhi.KitabSibawayhi.Shamela0023018-ara1.yml
+    : 1449b3fd25c83d4746b4defc733f8ee45c68e99628d7e8c36717fcb722480e3a
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0204Shafici/0204Shafici.Risala/0204Shafici.Risala.LAL2013020402-ara2.yml
+    : 03648c1596b45093934b5360a6bb0a9f953d37f73300cfbcc6a7609219d484d3
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0207IbnZiyadFarra/0207IbnZiyadFarra.MacaniQuran/0207IbnZiyadFarra.MacaniQuran.Shamela0023634-ara1.yml
+    : 905df1fe2236b7c22846078762a586123117fb72e6e1de59f2ca20507554cc5a
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0209AbuCubayda/0209AbuCubayda.MajazQuran/0209AbuCubayda.MajazQuran.JK010146-ara1.yml
+    : c8bece6305d006671088f163d36bba851f0890fc127d78a75216efbcac094a62
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0213IbnHisham/0213IbnHisham.SiraNabawiyya/0213IbnHisham.SiraNabawiyya.Shamela0023833-ara1.yml
+    : 8e147963fd4f18c82bb7762f81cbd0641b61cd4bd9307fe55641c277e52acb77
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0255Jahiz/0255Jahiz.BayanWaTabyin/0255Jahiz.BayanWaTabyin.Shamela0010614-ara1.yml
+    : a67f08372d2af487cdb7ace93480a30d8cccedb050a0c6db3bd9f1eefede537f
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0255Jahiz/0255Jahiz.Bukhala/0255Jahiz.Bukhala.Shamela0010501-ara1.yml
+    : a45fd99fc913f2691811e3fde0a6a6ecb4ce63ba8fd930224b37a21165bf1e16
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0276IbnQutaybaDinawari/0276IbnQutaybaDinawari.AdabKatib/0276IbnQutaybaDinawari.AdabKatib.Shamela0026349-ara1.yml
+    : 0aec94a40d3679b4c554b986e839586cd3f53e08158f6de9951af8a1f75b741d
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0276IbnQutaybaDinawari/0276IbnQutaybaDinawari.ShicrWaShucara/0276IbnQutaybaDinawari.ShicrWaShucara.Shamela0023785-ara1.yml
+    : 4fe401af510dde3d1a1b24347f95668ac8cdd767e524e26247768a349c3e66d9
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0276IbnQutaybaDinawari/0276IbnQutaybaDinawari.TawilMushkilQuran/0276IbnQutaybaDinawari.TawilMushkilQuran.Shamela0023596-ara1.yml
+    : 01156e957ff7b806cea962cc86577bd7f881ef1317c64a9bf7b59c6e7b0486da
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0279Baladhuri/0279Baladhuri.FutuhBuldan/0279Baladhuri.FutuhBuldan.Shamela0012221-ara1.yml
+    : 7b55bd3a3e5f188f2bf2cf472f95c63aeb3a1786284b8fa71504f5334d963297
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0280HudHawwari/0280HudHawwari.Tafsir/0280HudHawwari.Tafsir.Tafsir06048-ara1.yml
+    : a71ab6dc046d2abb09c0dddd04c041e5810551b7de34e08440aee94679301232
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0285IbnYazidMubarrad/0285IbnYazidMubarrad.KamilFiLugha/0285IbnYazidMubarrad.KamilFiLugha.Shamela0008505-ara1.yml
+    : e2a518edad97d7e71b8fc0a1a095e82baa243a6c32d712a217eac10119aa922d
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0285IbnYazidMubarrad/0285IbnYazidMubarrad.Muqtadab/0285IbnYazidMubarrad.Muqtadab.Shamela0006965-ara1.yml
+    : 454f5deb52db39880587ff17f313d62839bd88b039c22a70641e87c528b8af03
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0298HadiIlaHaqqYahya/0298HadiIlaHaqqYahya.Ahkam/0298HadiIlaHaqqYahya.Ahkam.Shia000812Vols-ara1.yml
+    : 4093a474d7356d3e643321cae9e9ee482b9d625793333ce145cacb20be4481f4
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0310Tabari/0310Tabari.JamicBayan/0310Tabari.JamicBayan.Shamela0007798-ara1.yml
+    : 98129077bc91295bc31b1c55719ad341f41c50f16b150f61d1a82c52dacc4285
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0311IbnSariZajjaj/0311IbnSariZajjaj.MacaniQuran/0311IbnSariZajjaj.MacaniQuran.Shamela0000922-ara1.yml
+    : a4abf201a63918ea64453febbde78f7344bb64dedaa15298bdd3a309e2a1e6d7
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0329IbnYacqubKulayni/0329IbnYacqubKulayni.Kafi/0329IbnYacqubKulayni.Kafi.Shia001122Vols-ara1.yml
+    : 7b246ae7d6e4c860f347e59664a3c947b9ef38424400bb39fa098eaf3de7191a
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0364AbuHasanBisyawi/0364AbuHasanBisyawi.Jamic/0364AbuHasanBisyawi.Jamic.ShamIbadiyya0000129-ara1.yml
+    : ea37ad35edded496270489a8b2c1f3d0abd99138004b7f16b65ad63562d0ede1
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0392IbnJinniMawsili/0392IbnJinniMawsili.Khasais/0392IbnJinniMawsili.Khasais.JK001302-ara1.yml
+    : 02db2e562995de93aa14944adcce9db8ec12777705b101bd9a45c25ac0fcdb24
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0395IbnFarisQazwini/0395IbnFarisQazwini.Sahibi/0395IbnFarisQazwini.Sahibi.JK010092-ara1.yml
+    : 6821a37897967ec52f5fda59240184fa1884abb48b8e0c4936e9a1235f09c598
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0398BadicZamanHamadhani/0398BadicZamanHamadhani.Maqamat/0398BadicZamanHamadhani.Maqamat.JK009269-ara1.yml
+    : fabd3bd9e7c4cfe2d303449ac441fd9d66830cd8d14018b902e005954d726dcf
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0406SharifRadi/0406SharifRadi.NahjBalagha/0406SharifRadi.NahjBalagha.Shia20200618-ara1.yml
+    : cf38dd66ea4d24798b13f83732f804491bb142d5397ccebb1fb1cafbf217a962
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0429AbuMansurThacalibi/0429AbuMansurThacalibi.FiqhLugha/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.yml
+    : 047a7eae3b24d2f5cd954373c9a741f0e85cb42f66df39db10e300af4ce1aed5
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0450AbuHasanMawardi/0450AbuHasanMawardi.AhkamSultaniyya/0450AbuHasanMawardi.AhkamSultaniyya.Shamela0022881-ara1.yml
+    : e745e86212b161af7a3a514fd9541ca87554bf725f59796a9bd2f53464a6421d
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0538JarAllahZamakhshari/0538JarAllahZamakhshari.Kashshaf/0538JarAllahZamakhshari.Kashshaf.JK001496-ara1.yml
+    : 4adb00acc6bb047aa57840e5d46d1a368cbd80c16efadb81d5e344f6bfc9d17b
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0538JarAllahZamakhshari/0538JarAllahZamakhshari.MufassalFiSuncatIcrab/0538JarAllahZamakhshari.MufassalFiSuncatIcrab.JK001224-ara1.yml
+    : a0ae1f537c5f3052addfeefca7e98eb7c9a0ec825cb5eb7202938ff85a56b14e
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0541IbnCatiyyaAndalusi/0541IbnCatiyyaAndalusi.MuharrarWajiz/0541IbnCatiyyaAndalusi.MuharrarWajiz.Shamela0023632-ara1.yml
+    : e407d28b493a450e3b0aefb304a2ef74d5285f1e1d284aa7a277f7f5ebaf3377
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0595IbnRushdHafid/0595IbnRushdHafid.BidayatMujtahid/0595IbnRushdHafid.BidayatMujtahid.JK000222-ara1.yml
+    : 2f2007bd7fec254e6d909818fd1bc348f54d440adb0229567fa464ef9b905e6b
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0672IbnMalik/0672IbnMalik.Alfiyya/0672IbnMalik.Alfiyya.Shamela0008522-ara1.yml
+    : a82855f06bdd95b1ccf8df3282d1485407ad3884a64415f3550a4636afed32f2
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0676Nawawi/0676Nawawi.RiyadSalihin/0676Nawawi.RiyadSalihin.Shamela0012014-ara1.yml
+    : 8a825a46556b6a45871cafa03f855dec9aa4c66b1e09581d0268303838197319
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0761JamalDinIbnHisham/0761JamalDinIbnHisham.MughniLabib/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1.yml
+    : d379b581015a81a1e690b4c02a0c62b6b7f89e072793060474fa75734365620b
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0774IbnKathir/0774IbnKathir.TafsirQuran/0774IbnKathir.TafsirQuran.Shamela0008473-ara1.yml
+    : a344738e90a5606e695788ec973fe6f79e8661a958d9c65016ecc297f43d4de6
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0808IbnKhaldun/0808IbnKhaldun.Tarikh/0808IbnKhaldun.Tarikh.Shamela0012320-ara1.yml
+    : 2cf5d0844a917190afabc6ff59c215d16c99ff72f3d5293700da1ee65ccac951
+    ? https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0911Suyuti/0911Suyuti.Itqan/0911Suyuti.Itqan.JK001295-ara1.yml
+    : 4f762e73b3c83f263373f2058a93743989aac9a9b4254a69401572289ba40ccf
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode)
+      license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: modification
+    quote: OpenITI has a duty to ensure all content of uploaded texts is not subject to copyright. In order to comply
+      with this, all editions which are still in copyright must have their copyrighted content removed (that is
+      all editorial input, such as footnotes and introductory matter).
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and
+      produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: indicate if You modified the Licensed Material and retain an indication of any previous modifications;
+      and
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the
+      URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean
+      operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0204Shafici/0204Shafici.Risala/0204Shafici.Risala.LAL2013020402-ara2.yml
+  our_use: 'Shown in the book reader (P11.3b, /books) and searched: the 37 books of data/books.yaml (OpenITI primary
+    versions, authors died 122–911 AH; al-Bukhārī, Muslim and the Muwaṭṭaʾ are the hadith encyclopedia''s) read into
+    the generic text model by ecosystem/books.py — headings a tree of chapters, paragraphs passages — keeping the
+    author''s text by rules applied to every book and counted: page markers, milestones and each library''s markup
+    out (a paragraph keeps its printed pages, cited by page where the version''s pages pass the check: 32 books), the
+    editor''s footnote markers out (59,027) while verse numbers stay (13,244, told apart by the Quran''s own verse
+    endings), the editor''s verse references out of the text and kept as links (62,690), any other bracket kept as
+    printed and marked as the editor''s (12,795), «### |EDITOR|» and «|PARATEXT|» sections left out. Every word read
+    to its root once (text_forms), a narrator''s name not counted; every page credits OpenITI and the version''s
+    edition. Not in the bulk release.'
+  status: attention
+  notes:
+  - 'Terms read 2026-10-04: the documentation page, the Zenodo answer and the legal code as the other OpenITI entries
+    of the day recorded them; the 37 version cards equal the copies pinned in data/raw/openiti-2025.1.9/shelf at
+    commit cfc4157a.'
+  - The authors died 122–911 AH (public domain); each version names its edition in its header where OpenITI recorded
+    one, and the page shows it. A version's cleaned text still carries editors' material (footnote markers, restorations,
+    numbering), which the rules take out or mark (research 21 §4.2); bracketed restorations are kept as printed
+    and marked as the editor's until the owner decides (research 21 §4.4).
+  - 'No vowels: OpenITI''s texts carry none (research 21 §4.2); a vowelled display needs permission or our own OCR
+    of a public-domain printing (D9).'
+  - 'CC BY-NC-SA 4.0: non-commercial display with attribution is approved (D18); rows served through the API stay
+    CC BY-NC-SA 4.0 (ShareAlike); a commercial path needs re-keyed public-domain printings (D2).'

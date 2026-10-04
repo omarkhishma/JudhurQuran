@@ -23,6 +23,10 @@ NEEDS_DATA = {
     "test_taqrib.py",
     "test_narrators.py",
     "test_hadeethenc.py",
+    "test_no_word_of_the_authors_is_lost_on_the_shelf",
+    "test_a_books_paragraphs_carry_the_printed_pages_they_stand_on",
+    "test_every_book_holds_only_the_authors_text_with_the_editors_apparatus_counted",
+    "test_no_markup_of_the_versions_is_left_in_the_books",
     "test_every_pinned_source_file_matches",
     "test_the_dictionary_on_the_build",
 }

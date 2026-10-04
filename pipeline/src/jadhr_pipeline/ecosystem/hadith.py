@@ -23,6 +23,7 @@ import json
 import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -371,10 +372,11 @@ def collection(
     )
 
 
-def build_hadith(raw: Path, registry: Path) -> tuple[list[Draft], dict[str, Any]]:
+@lru_cache(maxsize=2)
+def known(raw: Path, registry: Path) -> frozenset[str]:
+    """The names the chains of all seven books use, read once without them (isnad.py's first pass) — the lexicon the
+    hadith's second pass reads with, and the books' narrator names are found by."""
     reg = yaml.safe_load(registry.read_text(encoding="utf-8"))
-    stats: Counter[str] = Counter()
-    # the names the chains of all seven books use, read once without them (isnad.py's first pass)
     first = []
     for spec in reg["collections"]:
         data = json.loads(
@@ -383,9 +385,15 @@ def build_hadith(raw: Path, registry: Path) -> tuple[list[Draft], dict[str, Any]
         first += [
             (t, split(t, spec["slug"])) for t in (h["text"] or "" for h in data["hadiths"]) if t.strip()
         ]
-    known = known_names(first)
-    stats["split:known-names"] = len(known)
-    drafts = [collection(raw, spec, reg, stats, known) for spec in reg["collections"]]
+    return known_names(first)
+
+
+def build_hadith(raw: Path, registry: Path) -> tuple[list[Draft], dict[str, Any]]:
+    reg = yaml.safe_load(registry.read_text(encoding="utf-8"))
+    stats: Counter[str] = Counter()
+    lexicon = known(raw, registry)
+    stats["split:known-names"] = len(lexicon)
+    drafts = [collection(raw, spec, reg, stats, lexicon) for spec in reg["collections"]]
     # each name in each isnād linked to Ibn Ḥajar's entries, with its candidates, rule and confidence (narrators.py);
     # held in the passage's meta until the build gives the links their own rows
     entries = taqrib.parse((raw / reg["narrators"]["file"]).read_text(encoding="utf-8"))

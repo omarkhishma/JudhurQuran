@@ -297,6 +297,169 @@ sources:
       - path: hadeethenc/api-ar-all-2026-10-04.json
         sha256: 502dec96a69341a5cf02adc98ce9a705e889d103486567153075c87f1d866665
 
+  - id: openiti-books
+    role_ar: "كتب الرف: سبعة وثلاثون كتابًا من مدونة OpenITI، نص المؤلف وحده، كل فقرة بموضعها في الطبعة حيث تصح علامات صفحاتها"
+    license_ar: "النص الرقمي من مدونة OpenITI، إصدار 2025.1.9، برخصة المشاع الإبداعي — نسب المصنف، غير تجاري، المشاركة بالمثل 4.0؛ مؤلفوها توفوا بين 122 و911هـ"
+    kind: books
+    role: The shelf's 37 books from OpenITI's primary versions — the author's text only, by rules applied to every book and counted; each paragraph with its printed page where the version's markers pass the check
+    title_ar: مدونة OpenITI — كتب الرف (37 نسخة أولية)
+    title_en: OpenITI corpus — the shelf's books (37 primary versions)
+    version: OpenITI release 2025.1.9 (DOI 10.5281/zenodo.17767721), commit cfc4157a
+    url: https://github.com/OpenITI/RELEASE/tree/v2025.1.9
+    license: "CC BY-NC-SA 4.0 (OpenITI's digital texts); the authors died 122–911 AH"
+    license_url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+    attribution_ar: "النص الرقمي من مدونة OpenITI، إصدار 2025.1.9، برخصة CC BY-NC-SA 4.0، والطبعة كما تذكرها كل نسخة."
+    attribution_en: "Digital text from the OpenITI corpus, release 2025.1.9, CC BY-NC-SA 4.0; the edition as each version names it."
+    files:
+      - path: openiti-2025.1.9/shelf/0122ZaydIbnCali.Musnad.Zaydiyya0000052-ara1.mARkdown
+        sha256: d5aa2db230c7add9ac37d938b5d5103d214ab111bcb66c62899c5d5919ae0235
+      - path: openiti-2025.1.9/shelf/0122ZaydIbnCali.Musnad.Zaydiyya0000052-ara1.yml
+        sha256: 7664cfda5dfae20d0b3458b8d339697c6ff4d4092f423700b2279c148f6a2106
+      - path: openiti-2025.1.9/shelf/0170RabicIbnHabibAzdi.JamicSahih.ShamIbadiyya0000155-ara1
+        sha256: 074e0b137e7056feda4a6786d0ee272fa5bbb342e58589f8083303b470548b08
+      - path: openiti-2025.1.9/shelf/0170RabicIbnHabibAzdi.JamicSahih.ShamIbadiyya0000155-ara1.yml
+        sha256: 29751ace0aec459d03b19a8d29e5979b5cc440f41949fcde3aecde6ab1dbcf06
+      - path: openiti-2025.1.9/shelf/0180Sibawayhi.KitabSibawayhi.Shamela0023018-ara1.mARkdown
+        sha256: ad676dffaa6df22a7b2ef4c4dbc4424d1e214e09e3f296a538ce887c89affcad
+      - path: openiti-2025.1.9/shelf/0180Sibawayhi.KitabSibawayhi.Shamela0023018-ara1.yml
+        sha256: 1449b3fd25c83d4746b4defc733f8ee45c68e99628d7e8c36717fcb722480e3a
+      - path: openiti-2025.1.9/shelf/0204Shafici.Risala.LAL2013020402-ara2
+        sha256: 73046edae7e708e905cd5133c455d4ac671cf66267c3070cb3260b76e69e9efc
+      - path: openiti-2025.1.9/shelf/0204Shafici.Risala.LAL2013020402-ara2.yml
+        sha256: 03648c1596b45093934b5360a6bb0a9f953d37f73300cfbcc6a7609219d484d3
+      - path: openiti-2025.1.9/shelf/0207IbnZiyadFarra.MacaniQuran.Shamela0023634-ara1
+        sha256: 7c0d3ceeaeac001a13fe7b439f2a45944255679e1ae8c07ce095d7e4535bc225
+      - path: openiti-2025.1.9/shelf/0207IbnZiyadFarra.MacaniQuran.Shamela0023634-ara1.yml
+        sha256: 905df1fe2236b7c22846078762a586123117fb72e6e1de59f2ca20507554cc5a
+      - path: openiti-2025.1.9/shelf/0209AbuCubayda.MajazQuran.JK010146-ara1
+        sha256: 432dae05748f2f972b3238e56dd0c56e72b10f0c3900ee8da1a8cca812b2fc88
+      - path: openiti-2025.1.9/shelf/0209AbuCubayda.MajazQuran.JK010146-ara1.yml
+        sha256: c8bece6305d006671088f163d36bba851f0890fc127d78a75216efbcac094a62
+      - path: openiti-2025.1.9/shelf/0213IbnHisham.SiraNabawiyya.Shamela0023833-ara1.completed
+        sha256: 8e0d274c7bf5433d0c160aceca7e446f545be02a054035239b2dd349b5c399cd
+      - path: openiti-2025.1.9/shelf/0213IbnHisham.SiraNabawiyya.Shamela0023833-ara1.yml
+        sha256: 8e147963fd4f18c82bb7762f81cbd0641b61cd4bd9307fe55641c277e52acb77
+      - path: openiti-2025.1.9/shelf/0255Jahiz.BayanWaTabyin.Shamela0010614-ara1.completed
+        sha256: c0dcb20c30a09648f5ec82ef923d0ba4eff2c53976684e1ad3c14306183e4ea2
+      - path: openiti-2025.1.9/shelf/0255Jahiz.BayanWaTabyin.Shamela0010614-ara1.yml
+        sha256: a67f08372d2af487cdb7ace93480a30d8cccedb050a0c6db3bd9f1eefede537f
+      - path: openiti-2025.1.9/shelf/0255Jahiz.Bukhala.Shamela0010501-ara1.mARkdown
+        sha256: 90011d8e2dde0d4c075ec60248792e05b531b1c3af1fe57ac8417211e7b7aedf
+      - path: openiti-2025.1.9/shelf/0255Jahiz.Bukhala.Shamela0010501-ara1.yml
+        sha256: a45fd99fc913f2691811e3fde0a6a6ecb4ce63ba8fd930224b37a21165bf1e16
+      - path: openiti-2025.1.9/shelf/0276IbnQutaybaDinawari.AdabKatib.Shamela0026349-ara1.mARkdown
+        sha256: b068d59c6798c14cf54b5b81b78c0ad7eca8b0a8cd6a24229468714392187900
+      - path: openiti-2025.1.9/shelf/0276IbnQutaybaDinawari.AdabKatib.Shamela0026349-ara1.yml
+        sha256: 0aec94a40d3679b4c554b986e839586cd3f53e08158f6de9951af8a1f75b741d
+      - path: openiti-2025.1.9/shelf/0276IbnQutaybaDinawari.ShicrWaShucara.Shamela0023785-ara1.mARkdown
+        sha256: a4cbb2faa12ec1e871d67eb40fd38fdfeade1b08fb5cc6e0e0c10de1665b1854
+      - path: openiti-2025.1.9/shelf/0276IbnQutaybaDinawari.ShicrWaShucara.Shamela0023785-ara1.yml
+        sha256: 4fe401af510dde3d1a1b24347f95668ac8cdd767e524e26247768a349c3e66d9
+      - path: openiti-2025.1.9/shelf/0276IbnQutaybaDinawari.TawilMushkilQuran.Shamela0023596-ara1.completed
+        sha256: 5bccd4ad03e7b3cc06c70aa1bd867ee40c2c7f589690b866d5c6e6309a012a86
+      - path: openiti-2025.1.9/shelf/0276IbnQutaybaDinawari.TawilMushkilQuran.Shamela0023596-ara1.yml
+        sha256: 01156e957ff7b806cea962cc86577bd7f881ef1317c64a9bf7b59c6e7b0486da
+      - path: openiti-2025.1.9/shelf/0279Baladhuri.FutuhBuldan.Shamela0012221-ara1.mARkdown
+        sha256: 14ffc19f9aad3b6d57846dd25a0941b9919ef26238ebb4b4d4e40032d02a0c10
+      - path: openiti-2025.1.9/shelf/0279Baladhuri.FutuhBuldan.Shamela0012221-ara1.yml
+        sha256: 7b55bd3a3e5f188f2bf2cf472f95c63aeb3a1786284b8fa71504f5334d963297
+      - path: openiti-2025.1.9/shelf/0280HudHawwari.Tafsir.Tafsir06048-ara1
+        sha256: 7f99c2d17566c852dd801d06160e1afcdb017ad318fea6d64b2efa6591c67871
+      - path: openiti-2025.1.9/shelf/0280HudHawwari.Tafsir.Tafsir06048-ara1.yml
+        sha256: a71ab6dc046d2abb09c0dddd04c041e5810551b7de34e08440aee94679301232
+      - path: openiti-2025.1.9/shelf/0285IbnYazidMubarrad.KamilFiLugha.Shamela0008505-ara1.mARkdown
+        sha256: 7052d17e8f831a71efca41d764b807e914e5596c98ec908be0375331da8b54c5
+      - path: openiti-2025.1.9/shelf/0285IbnYazidMubarrad.KamilFiLugha.Shamela0008505-ara1.yml
+        sha256: e2a518edad97d7e71b8fc0a1a095e82baa243a6c32d712a217eac10119aa922d
+      - path: openiti-2025.1.9/shelf/0285IbnYazidMubarrad.Muqtadab.Shamela0006965-ara1.mARkdown
+        sha256: 7186dd66a86f666ff4f88137ce3edba1f1a5d5d53155a20dc34103a1cc683615
+      - path: openiti-2025.1.9/shelf/0285IbnYazidMubarrad.Muqtadab.Shamela0006965-ara1.yml
+        sha256: 454f5deb52db39880587ff17f313d62839bd88b039c22a70641e87c528b8af03
+      - path: openiti-2025.1.9/shelf/0298HadiIlaHaqqYahya.Ahkam.Shia000812Vols-ara1
+        sha256: 96f70c266776927ed7dbd643ecd41a70a269e99a933d80a746e9d52470109421
+      - path: openiti-2025.1.9/shelf/0298HadiIlaHaqqYahya.Ahkam.Shia000812Vols-ara1.yml
+        sha256: 4093a474d7356d3e643321cae9e9ee482b9d625793333ce145cacb20be4481f4
+      - path: openiti-2025.1.9/shelf/0310Tabari.JamicBayan.Shamela0007798-ara1.inProgress
+        sha256: 0b717bcc55878744caf74a3e64f953f407e4d8cf549d78f7ff055205df8196ff
+      - path: openiti-2025.1.9/shelf/0310Tabari.JamicBayan.Shamela0007798-ara1.yml
+        sha256: 98129077bc91295bc31b1c55719ad341f41c50f16b150f61d1a82c52dacc4285
+      - path: openiti-2025.1.9/shelf/0311IbnSariZajjaj.MacaniQuran.Shamela0000922-ara1
+        sha256: 7b815bdfbcfa7e105e3bef7114718675ecaf16d01b02ae1eff012c96f8d06ad9
+      - path: openiti-2025.1.9/shelf/0311IbnSariZajjaj.MacaniQuran.Shamela0000922-ara1.yml
+        sha256: a4abf201a63918ea64453febbde78f7344bb64dedaa15298bdd3a309e2a1e6d7
+      - path: openiti-2025.1.9/shelf/0329IbnYacqubKulayni.Kafi.Shia001122Vols-ara1.mARkdown
+        sha256: 7cd0df733916b9a32e4d6785d4d3f8f443905d988eaf1e4b2a5012902032fdd9
+      - path: openiti-2025.1.9/shelf/0329IbnYacqubKulayni.Kafi.Shia001122Vols-ara1.yml
+        sha256: 7b246ae7d6e4c860f347e59664a3c947b9ef38424400bb39fa098eaf3de7191a
+      - path: openiti-2025.1.9/shelf/0364AbuHasanBisyawi.Jamic.ShamIbadiyya0000129-ara1
+        sha256: be449c6439f43e864de2ea83ab3245a553c509ec74e47e0b455bedd3de00da0b
+      - path: openiti-2025.1.9/shelf/0364AbuHasanBisyawi.Jamic.ShamIbadiyya0000129-ara1.yml
+        sha256: ea37ad35edded496270489a8b2c1f3d0abd99138004b7f16b65ad63562d0ede1
+      - path: openiti-2025.1.9/shelf/0392IbnJinniMawsili.Khasais.JK001302-ara1.mARkdown
+        sha256: 72dc4207ad281c25ccd1adc2cab1ee00375e25bc75550d85a37d7cdb033e4cdb
+      - path: openiti-2025.1.9/shelf/0392IbnJinniMawsili.Khasais.JK001302-ara1.yml
+        sha256: 02db2e562995de93aa14944adcce9db8ec12777705b101bd9a45c25ac0fcdb24
+      - path: openiti-2025.1.9/shelf/0395IbnFarisQazwini.Sahibi.JK010092-ara1
+        sha256: 462276fff02bc9ffae38e40a3b028da2e63ab6cfecb3c5402f7c6936cc8b59aa
+      - path: openiti-2025.1.9/shelf/0395IbnFarisQazwini.Sahibi.JK010092-ara1.yml
+        sha256: 6821a37897967ec52f5fda59240184fa1884abb48b8e0c4936e9a1235f09c598
+      - path: openiti-2025.1.9/shelf/0398BadicZamanHamadhani.Maqamat.JK009269-ara1.completed
+        sha256: 90f829a9f7e249aedc1bb3a5df7827e54682d3e1b91fed8c437e538b9c91ef3d
+      - path: openiti-2025.1.9/shelf/0398BadicZamanHamadhani.Maqamat.JK009269-ara1.yml
+        sha256: fabd3bd9e7c4cfe2d303449ac441fd9d66830cd8d14018b902e005954d726dcf
+      - path: openiti-2025.1.9/shelf/0406SharifRadi.NahjBalagha.Shia20200618-ara1.mARkdown
+        sha256: eae1127a8e95f90f85892086a29b5030196817be1ccce86164f118f0f1f3409f
+      - path: openiti-2025.1.9/shelf/0406SharifRadi.NahjBalagha.Shia20200618-ara1.yml
+        sha256: cf38dd66ea4d24798b13f83732f804491bb142d5397ccebb1fb1cafbf217a962
+      - path: openiti-2025.1.9/shelf/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.mARkdown
+        sha256: 40f0a8afe34318b8fcbd1035c73fa8b8deedde349fc60afbec7124318612b590
+      - path: openiti-2025.1.9/shelf/0429AbuMansurThacalibi.FiqhLugha.Shamela0011235-ara1.yml
+        sha256: 047a7eae3b24d2f5cd954373c9a741f0e85cb42f66df39db10e300af4ce1aed5
+      - path: openiti-2025.1.9/shelf/0450AbuHasanMawardi.AhkamSultaniyya.Shamela0022881-ara1.mARkdown
+        sha256: 815c0fcb969016479d869b818e478a00c6b1f6d23c1cd88e80fb2ffce2c0eab3
+      - path: openiti-2025.1.9/shelf/0450AbuHasanMawardi.AhkamSultaniyya.Shamela0022881-ara1.yml
+        sha256: e745e86212b161af7a3a514fd9541ca87554bf725f59796a9bd2f53464a6421d
+      - path: openiti-2025.1.9/shelf/0538JarAllahZamakhshari.Kashshaf.JK001496-ara1
+        sha256: 92c4b68618cc5786302e1781b13cd88d99f262d39d3c2ef8e53a80a4b53a22aa
+      - path: openiti-2025.1.9/shelf/0538JarAllahZamakhshari.Kashshaf.JK001496-ara1.yml
+        sha256: 4adb00acc6bb047aa57840e5d46d1a368cbd80c16efadb81d5e344f6bfc9d17b
+      - path: openiti-2025.1.9/shelf/0538JarAllahZamakhshari.MufassalFiSuncatIcrab.JK001224-ara1
+        sha256: 25f451293c6bd48d141073f6be972226bde72f2712fa6eb8d043d0f96b9918f4
+      - path: openiti-2025.1.9/shelf/0538JarAllahZamakhshari.MufassalFiSuncatIcrab.JK001224-ara1.yml
+        sha256: a0ae1f537c5f3052addfeefca7e98eb7c9a0ec825cb5eb7202938ff85a56b14e
+      - path: openiti-2025.1.9/shelf/0541IbnCatiyyaAndalusi.MuharrarWajiz.Shamela0023632-ara1.completed
+        sha256: 023eb9a9314cdea7a21be67c992a58edc20fa44ee9e19091e5556f02655cb30f
+      - path: openiti-2025.1.9/shelf/0541IbnCatiyyaAndalusi.MuharrarWajiz.Shamela0023632-ara1.yml
+        sha256: e407d28b493a450e3b0aefb304a2ef74d5285f1e1d284aa7a277f7f5ebaf3377
+      - path: openiti-2025.1.9/shelf/0595IbnRushdHafid.BidayatMujtahid.JK000222-ara1
+        sha256: 7143190ae00ff814ea097ce0c032849c642deae8afc0bc046824dc318c1af1b2
+      - path: openiti-2025.1.9/shelf/0595IbnRushdHafid.BidayatMujtahid.JK000222-ara1.yml
+        sha256: 2f2007bd7fec254e6d909818fd1bc348f54d440adb0229567fa464ef9b905e6b
+      - path: openiti-2025.1.9/shelf/0672IbnMalik.Alfiyya.Shamela0008522-ara1
+        sha256: 13b351a0a02d9060fdedbb5db568544718eb4e89bef323f5572b8a26c0921ca0
+      - path: openiti-2025.1.9/shelf/0672IbnMalik.Alfiyya.Shamela0008522-ara1.yml
+        sha256: a82855f06bdd95b1ccf8df3282d1485407ad3884a64415f3550a4636afed32f2
+      - path: openiti-2025.1.9/shelf/0676Nawawi.RiyadSalihin.Shamela0012014-ara1.mARkdown
+        sha256: 568d7787f83eb14f9141d3b01a1e998ccf104857fef3b9b47c789a338ed51e81
+      - path: openiti-2025.1.9/shelf/0676Nawawi.RiyadSalihin.Shamela0012014-ara1.yml
+        sha256: 8a825a46556b6a45871cafa03f855dec9aa4c66b1e09581d0268303838197319
+      - path: openiti-2025.1.9/shelf/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1
+        sha256: 57f5142f72a1d4a01a16c5ecdfda5ecb07b2a7a03ab2fc13b3e7202a6e7a686b
+      - path: openiti-2025.1.9/shelf/0761JamalDinIbnHisham.MughniLabib.JK001131-ara1.yml
+        sha256: d379b581015a81a1e690b4c02a0c62b6b7f89e072793060474fa75734365620b
+      - path: openiti-2025.1.9/shelf/0774IbnKathir.TafsirQuran.Shamela0008473-ara1.mARkdown
+        sha256: 669ff708771b355da390ccf976cce974514b34101e91b0a02ddea8298faa6e89
+      - path: openiti-2025.1.9/shelf/0774IbnKathir.TafsirQuran.Shamela0008473-ara1.yml
+        sha256: a344738e90a5606e695788ec973fe6f79e8661a958d9c65016ecc297f43d4de6
+      - path: openiti-2025.1.9/shelf/0808IbnKhaldun.Tarikh.Shamela0012320-ara1.mARkdown
+        sha256: 581ef74982d8b208361f286a5a446dcf7be7df9008aed529cc952e12bd9729a5
+      - path: openiti-2025.1.9/shelf/0808IbnKhaldun.Tarikh.Shamela0012320-ara1.yml
+        sha256: 2cf5d0844a917190afabc6ff59c215d16c99ff72f3d5293700da1ee65ccac951
+      - path: openiti-2025.1.9/shelf/0911Suyuti.Itqan.JK001295-ara1
+        sha256: 17f57f45f1eb52d4b735e014b9dc46f77ebc94d675ab84d2948f8c325265c338
+      - path: openiti-2025.1.9/shelf/0911Suyuti.Itqan.JK001295-ara1.yml
+        sha256: 4f762e73b3c83f263373f2058a93743989aac9a9b4254a69401572289ba40ccf
+
   - id: openiti-taqrib
     role_ar: "تراجم رواة الكتب الستة من تقريب التهذيب لابن حجر: الاسم وحكمه عليه وطبقته ووفاته ورموز من أخرج له"
     license_ar: "النص الرقمي من مدونة OpenITI، إصدار 2025.1.9، برخصة المشاع الإبداعي — نسب المصنف، غير تجاري، المشاركة بالمثل 4.0؛ المؤلف توفي سنة 852هـ"

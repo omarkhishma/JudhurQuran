@@ -62,6 +62,7 @@ class RawPaths:
     glossary: Path | None = None
     registry_dir: Path | None = None
     hadith_registry: Path | None = None
+    books_registry: Path | None = None
 
     @classmethod
     def default(
@@ -73,12 +74,14 @@ class RawPaths:
         glossary: Path | None = None,
         registry_dir: Path | None = None,
         hadith_registry: Path | None = None,
+        books_registry: Path | None = None,
     ) -> RawPaths:
         return cls(
             root=raw,
             glossary=glossary,
             registry_dir=registry_dir,
             hadith_registry=hadith_registry,
+            books_registry=books_registry,
             works_registry=works_registry,
             lexica_registry=lexica_registry,
             recitations_registry=recitations_registry,
@@ -655,6 +658,26 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
 
         drafts, report["hadith"] = build_hadith(raw.root, raw.hadith_registry)
         stage("hadith")
+        # the books (P11.3a): the shelf's 37 OpenITI versions, the author's text by rules applied to every book;
+        # a narrator's name in them (al-Ṭabarī's and al-Kulaynī's chains) counts no root, as in the hadith
+        if raw.books_registry:
+            from .ecosystem.books import build_books
+            from .ecosystem.hadith import known
+            from .ecosystem.isnad import chain_words
+
+            books, report["books"] = build_books(raw.root, raw.books_registry, verses_out, surahs_out)
+            stage("books")
+            lexicon = known(raw.root, raw.hadith_registry)
+            for b in books:
+                for p in b.passages:
+                    names, formulas, blessings = chain_words(p.text, None, lexicon)
+                    p.meta |= {
+                        "names": [list(x) for x in names],
+                        "chain": [list(x) for x in formulas],
+                        "formulaic": [list(x) for x in blessings],
+                    }
+            drafts += books
+            stage("books' chain words")
         vocab = vocabulary_from(words_out, roots_out, generic["patterns"], dict_roots_out)
         extra = assemble(
             drafts,

@@ -38,6 +38,7 @@ def main(argv: list[str] | None = None) -> int:
                 glossary=REPO / "data/glossary.yaml",
                 registry_dir=REPO / "data/registry",
                 hadith_registry=REPO / "data/hadith.yaml",
+                books_registry=REPO / "data/books.yaml",
             ),
             out,
             args.version,
