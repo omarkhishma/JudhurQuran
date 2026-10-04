@@ -450,7 +450,12 @@ def status() -> dict[str, Any]:
 def main() -> int:
     cmd = sys.argv[1] if len(sys.argv) > 1 else "status"
     if cmd == "reindex":
-        print(json.dumps(reindex(sys.argv[2:] or None), ensure_ascii=False))
+        out = reindex(sys.argv[2:] or None)
+        # the site's server-rendered search pages read the index through its cache: expire it, as a load does
+        from .loader import revalidate_web
+
+        out["web_revalidate"] = revalidate_web()
+        print(json.dumps(out, ensure_ascii=False))
         return 0
     if cmd == "status":
         print(json.dumps(status(), ensure_ascii=False))
