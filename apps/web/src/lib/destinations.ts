@@ -14,6 +14,7 @@ export const DESTINATIONS: Destination[] = [
   { key: "library", href: "/library" },
   { key: "lookup", href: "/read?mode=lookup" },
   { key: "roots", href: "/roots" },
+  { key: "dictionary", href: "/dictionary" },
   { key: "concordance", href: "/concordance" },
   { key: "analyser", href: "/analyse" },
   { key: "search", href: "/search" },

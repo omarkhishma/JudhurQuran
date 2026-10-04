@@ -1,0 +1,32 @@
+import type { LexiconWork } from "@/lib/types";
+
+/** The Arabic dictionary (P11.1): every root the lexica file an article under, the Quran's and all the others. */
+export type DictRootRow = {
+  key: string;
+  display: string;
+  letters: number;
+  first: string;
+  quran_root: string | null;
+  lexica: string[];
+  articles: number;
+  attested_as_written: boolean;
+  unsure: boolean;
+  filed_under: string | null;
+};
+/** How an article reached its root (jadhr_pipeline.lexica.dictroots). */
+export type DictRule = "quran" | "as-written" | "alif-hamza" | "alif-weak" | "two-letter-doubled" | "two-letter-weak" | "ambiguous" | "unresolved";
+export type DictArticle = { id: number; headword: string; rule: DictRule; candidates: string[] | null; page_ref: string | null; excerpt: string; length: number };
+export type DictWork = LexiconWork & { kind: string; articles: DictArticle[] };
+export type DictRoot = Omit<DictRootRow, "filed_under"> & {
+  spaced: string;
+  works: DictWork[];
+  candidates: { key: string; display: string; articles: number }[];
+  quran: { key: string; spaced: string; translit: string; occurrences: number; verse_count: number; surah_count: number; lemma_count: number; gist_ar: string | null } | null;
+  filed_under: DictRootRow | null;
+  prev: { key: string; display: string } | null;
+  next: { key: string; display: string } | null;
+};
+export type DictLetter = { letter: string; roots: number; quranic: number };
+
+/** A root's address on the dictionary: its key (the hamza written ء), never a guess at a spelling. */
+export const dictHref = (key: string) => `/dictionary/${encodeURIComponent(key)}`;

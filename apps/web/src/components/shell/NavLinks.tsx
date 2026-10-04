@@ -12,6 +12,8 @@ export const NAV_ITEMS = [
   { href: "/explore", key: "explore", match: ["/explore"] },
   { href: "/library", key: "library", match: ["/library"] },
   { href: "/read?mode=lookup", key: "lookup", match: [] },
+  // the Arabic dictionary as its own surface (P11.1): every root of the lexica, the Quran one layer among many
+  { href: "/dictionary", key: "dictionary", match: ["/dictionary"] },
   { href: "/concordance", key: "concordance", match: ["/concordance", "/roots"] },
   { href: "/analyse", key: "analyser", match: ["/analyse"] },
   { href: "/graph", key: "graph", match: ["/graph", "/g", "/split"] },

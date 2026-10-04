@@ -59,7 +59,8 @@
     "me": "My account",
     "more": "More",
     "ask": "Ask",
-    "contribute": "Contribute"
+    "contribute": "Contribute",
+    "dictionary": "Dictionary"
   },
   "hub": {
     "rootOfDay": "Root of the day",
@@ -178,6 +179,10 @@
       "sources": {
         "title": "Sources & licences",
         "purpose": "Where every text comes from, and under which licence"
+      },
+      "dictionary": {
+        "title": "The dictionary",
+        "purpose": "Every root of Arabic in the classical lexica, with the Quran as one layer"
       }
     },
     "nameGloss": "jadhr, “root”",
@@ -3467,5 +3472,55 @@
     "ep_analyse": "A phrase read word by word against the Quran: the corpus's analysis where it is the Quran's, ranked readings otherwise, each with its confidence. The text goes in the body and is not kept.",
     "bodyText": "The text, sent in the body",
     "ep_releases": "Every recorded dataset release, with its files' hashes and holds."
+  },
+  "dictionary": {
+    "title": "The dictionary",
+    "indexLead": "The roots of Arabic as the lexicographers filed their articles: {n} roots in our lexica, {n2} of them the Quran's. Each root has a page gathering its articles from every lexicon, in the order their authors died, with the Quran as one layer among them.",
+    "findLabel": "Find a root",
+    "findPlaceholder": "علم, ع ل م, ʿ-l-m, or as a lexicon writes it",
+    "findGo": "Go",
+    "notFound": "No root with these letters in the lexica.",
+    "failed": "The search failed; try again.",
+    "letters": "Letters",
+    "lexicaTitle": "The lexica",
+    "lexicaLead": "Articles are shown in the order their authors died, oldest first, with Lane's English lexicon last.",
+    "displayOnly": "The Arabic lexica's digital texts are shown, not published as files; Lane's Lexicon is in the data files.",
+    "sources": "Sources and licences",
+    "letterTitle": "Roots in {letter}",
+    "letterLead": "{count, plural, one {One root} other {{n} roots}}, {count2, plural, =0 {none} other {{n2}}} of them the Quran's.",
+    "prevLetter": "Previous letter: {letter}",
+    "nextLetter": "Next letter: {letter}",
+    "quranMarkLegend": "The dot marks a root the Quran has; the number is how many lexica have an article on it.",
+    "quranMark": "In the Quran",
+    "size3": "Triliteral",
+    "size4": "Quadriliteral",
+    "size5": "Quinqueliteral",
+    "size2": "Left on two letters",
+    "kind2": "Two letters",
+    "kind3": "Triliteral",
+    "kind4": "Quadriliteral",
+    "kind5": "Quinqueliteral",
+    "rootTitle": "The root {root} in the lexica",
+    "rootDescription": "The root {root} in {n} Arabic lexica: {lexica}. Their articles as their authors wrote them, with the Quran as one layer.",
+    "rootDescriptionFiled": "The root {root} in the Arabic lexica, and where they file it.",
+    "inLexica": "{count, plural, one {In one lexicon} other {In {n} lexica}}",
+    "inQuranChip": "In the Quran",
+    "unsureRoot": "This root is as a lexicographer wrote it; the other lexica do not settle what it is. Its article names what it may be.",
+    "quranTitle": "In the Quran",
+    "inQuran": "The Quran has it {occ, plural, one {once} other {{occN} times}} in {vc, plural, one {one verse} other {{vcN} verses}} of {sc, plural, one {one sūra} other {{scN} sūras}}, in {lc, plural, one {one word} other {{lcN} words}}.",
+    "quranRootPage": "The root's page in the Quran",
+    "quranConcordance": "Every occurrence in context",
+    "notInQuran": "The Quran does not have this root.",
+    "filedUnder": "The lexicographers give this root no article of its own; they treat it in the article on",
+    "rootLexicaLead": "{count, plural, one {One article} other {{n} articles}}, each as its author wrote it; read the whole of one from its button.",
+    "inLexicons": "Lexica",
+    "edition": "Edition and licence",
+    "unsureNote": "The lexicographer filed this article under «{headword}», and the other lexica do not settle its root.",
+    "mayBe": "It may be:",
+    "or": " or ",
+    "ruleNote": "The lexicographer headed it «{headword}»; it is filed under {root} by what the other lexica write.",
+    "leaf": "Leaf through the dictionary",
+    "prevRoot": "Previous root",
+    "nextRoot": "Next root"
   }
 }
