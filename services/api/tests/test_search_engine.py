@@ -252,29 +252,35 @@ def test_the_dictionary_is_searched_beyond_the_quran() -> None:
 
 def test_the_texts_beyond_the_quran_are_searched() -> None:
     """P11.4a: a hadith's words find the records that hold them, the phrase itself first, each with its collection,
-    its kitāb and the bāb it is filed under and its words marked; the Postgres engine finds the records holding the
-    phrase; a page of them follows the one before; a verse reference or a Latin word asks nothing of them."""
+    its kitāb and the bāb it is filed under and its words marked; the books' paragraphs holding them come as a group of
+    their own (P11.3); the Postgres engine finds the passages holding the phrase; a page of them follows the one
+    before; a verse reference or a Latin word asks nothing of them."""
     from jadhr_api.db import connect, rows
     from jadhr_api.search import search_pg
 
     q = "إنما الأعمال بالنيات"
     with connect() as conn:
-        held = {
-            r["uri"]
-            for r in rows(
-                conn,
-                "select uri from content.passages where verse_id is null and norm like :p",
-                {"p": "%انما الاعمال بالنيات%"},
-            )
-        }
-        pg = search_pg(conn, q, 20)
-    assert len(held) >= 3 and {h["uri"] for h in pg["results"]["texts"]} == held
-    assert pg["totals"]["texts"] == len(held)
-    d = search(q, limit=20)
+        held: dict[str, set[str]] = {"hadith": set(), "book": set()}
+        for r in rows(
+            conn,
+            """select p.uri, t.kind from content.passages p join content.texts t on t.id = p.text_id
+                where p.verse_id is null and p.norm like :p""",
+            {"p": "%انما الاعمال بالنيات%"},
+        ):
+            held[r["kind"]].add(r["uri"])
+        pg = search_pg(conn, q, 40)
+    assert len(held["hadith"]) >= 3 and len(held["book"]) >= 1
+    for group, kind in (("texts", "hadith"), ("books", "book")):
+        assert {h["uri"] for h in pg["results"][group]} == held[kind] and pg["totals"][group] == len(held[kind])
+        assert {h["text"]["kind"] for h in pg["results"][group]} == {kind}
+    d = search(q, limit=40)
     found = d["results"]["texts"]
-    assert {h["uri"] for h in found[: len(held)]} == held and d["totals"]["texts"] >= len(held)
-    for h in found[: len(held)]:
+    assert {h["uri"] for h in found[: len(held["hadith"])]} == held["hadith"]
+    assert d["totals"]["texts"] >= len(held["hadith"])
+    for h in found[: len(held["hadith"])]:
         assert h["excerpt"].count("⁨") >= 3 and h["text"]["title_ar"] and h["top"]["title_ar"]
+    books = d["results"]["books"]
+    assert {h["uri"] for h in books[: len(held["book"])]} == held["book"] and {h["text"]["kind"] for h in books} == {"book"}
     first = next(h for h in found if h["uri"] == "hadith:bukhari:1")
     assert first["chapter"]["title_ar"].startswith("باب كيف كان بدء الوحي") and first["start"]
     # paging one kind: the second page follows the first
@@ -283,4 +289,8 @@ def test_the_texts_beyond_the_quran_are_searched() -> None:
         for o in (0, 2)
     ]
     assert [h["uri"] for p in pages for h in p["results"]["texts"]] == [h["uri"] for h in found[:4]]
+    assert all(p["results"]["books"] == [] for p in pages)
+    more = client.get("/api/v1/search", params={"q": q, "only": "books", "limit": 1, "offset": 1}).json()
+    assert [h["uri"] for h in more["results"]["books"]] == [h["uri"] for h in books[1:2]]
+    assert search("2:255")["results"]["books"] == [] and search("kitab")["results"]["books"] == []
     assert search("2:255")["results"]["texts"] == [] and search("kitab")["results"]["texts"] == []

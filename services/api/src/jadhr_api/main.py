@@ -463,9 +463,10 @@ def text_chapter(
     ordinal: Annotated[int, Path(ge=1)],
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    words: bool = False,
 ) -> Response:
     with connect() as conn:
-        c = texts_api.chapter(conn, slug, ordinal, offset, limit)
+        c = texts_api.chapter(conn, slug, ordinal, offset, limit, words)
         if c is None:
             raise not_found("chapter")
         return cached(request, c)
@@ -1018,7 +1019,7 @@ def search(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0, le=10000),
     only: str | None = Query(
-        None, pattern="^(verses|lemmas|dictionary|texts)$", description="page through one kind"
+        None, pattern="^(verses|lemmas|dictionary|texts|books)$", description="page through one kind"
     ),
 ) -> Response:
     with connect() as conn:

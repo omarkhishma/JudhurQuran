@@ -10,6 +10,7 @@ A reading is the rules' (``jadhr_arabic.analysis``), never a person's: its kind 
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from jadhr_arabic.analysis import word_spans
@@ -36,6 +37,49 @@ def _source(conn: Connection, sid: str | None) -> dict[str, Any] | None:
 
 def _text_head(t: dict[str, Any]) -> dict[str, Any]:
     return {k: t[k] for k in ("slug", "kind", "title_ar", "title_en", "author_ar", "author_en")}
+
+
+_AR_DIGITS = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
+_EDITOR_WORD = re.compile(r"(تحقيق|شرح|تجميع|جمع|ترتيب|ضبط)")
+
+
+def cite(
+    t: dict[str, Any], p: dict[str, Any], chapter: int, chapter_title: str | None
+) -> dict[str, str] | None:
+    """A book's paragraph as it is cited (PLAN P11.3, the citation model): the key
+    ``urn:cts:arabicLit:<version>:<volume>.<page>.<n>`` — the printed page it opens on and its place among the
+    paragraphs opening there — and the Arabic form «الطبري، جامع البيان، ت. …، ١/٣، ف٢»; where the version's pages did
+    not pass the check, the editor's paragraph number where he numbers them (``n<N>``, «…، ف٤٥٦»), else its section
+    and its place in it (``<chapter>.<n>``, «…، باب كذا، ف٤»)."""
+    if t["kind"] != "book":
+        return None
+    info, m = t.get("info") or {}, p.get("meta") or {}
+    editor = (info.get("edition") or {}).get("editor")
+    parts = [t["author_ar"], info.get("short_title_ar") or t["title_ar"]]
+    if editor:
+        parts.append(editor if _EDITOR_WORD.match(editor) else f"ت. {editor}")
+    pages = m.get("pages")
+    if info.get("pages_trusted") and pages and m.get("on_page"):
+        v, page = pages[0]
+        n = m["on_page"]
+        key, by = f"{v}.{page}.{n}", "page"
+        where = f"{v}/{page}" if (info.get("volumes") or 1) > 1 else f"ص{page}"
+    elif info.get("numbered_by_editor") and (m.get("editor_number") or m.get("editor_section")):
+        # the editor's own paragraph numbers, where he numbers them and the pages cannot be cited
+        n = m.get("editor_number") or m["editor_section"]
+        key, by, where = f"n{n}", "number", None
+    else:
+        n = p["ordinal"]
+        key, by = f"{chapter}.{n}", "section"
+        words = (chapter_title or "").split()
+        where = " ".join(words[:8]) + ("…" if len(words) > 8 else "") if words else f"القسم {chapter}"
+    return {
+        "key": f"urn:cts:arabicLit:{info.get('version')}:{key}",
+        "ar": "، ".join(
+            [*parts, *([where.translate(_AR_DIGITS)] if where else []), f"ف{n}".translate(_AR_DIGITS)]
+        ),
+        "by": by,
+    }
 
 
 # a chapter with what a contents line needs: its passages, its own and in all its sub-chapters, and its children
@@ -82,7 +126,8 @@ def text_detail(conn: Connection, slug: str) -> dict[str, Any] | None:
 def _chapter_row(conn: Connection, tid: int, ordinal: int) -> dict[str, Any] | None:
     return one(
         conn,
-        """select c.id, c.ordinal, c.title_ar, c.title_en, c.parent_id, coalesce(c.level, 1) as level, c.passage_count
+        """select c.id, c.ordinal, c.title_ar, c.title_en, c.parent_id, coalesce(c.level, 1) as level, c.passage_count,
+                  c.meta
              from content.chapters c where c.text_id = :t and c.ordinal = :o""",
         {"t": tid, "o": ordinal},
     )
@@ -105,9 +150,13 @@ def _path(conn: Connection, parent_id: int | None) -> list[dict[str, Any]]:
     return out
 
 
-def chapter(conn: Connection, slug: str, ordinal: int, offset: int, limit: int) -> dict[str, Any] | None:
+def chapter(
+    conn: Connection, slug: str, ordinal: int, offset: int, limit: int, words: bool = False
+) -> dict[str, Any] | None:
     """A chapter: where it sits, its sub-chapters, and the passages under it and under them in the text's order,
-    paged — each passage with the chapter it is filed under, so a kitāb's page can head each bāb."""
+    paged — each passage with the chapter it is filed under, so a kitāb's page can head each bāb. With ``words``,
+    each passage cut into its words (``segments``, ``words``: as a passage's own page gives them) and the readings
+    of the page's forms once (``forms``), so a reader can open any word of the page."""
     t = _text(conn, slug)
     if t is None:
         return None
@@ -130,18 +179,37 @@ def chapter(conn: Connection, slug: str, ordinal: int, offset: int, limit: int) 
     )
     passages = rows(
         conn,
-        """select p.ref, p.ordinal, ch.ordinal as chapter, p.ar_full, p.token_count, p.meta
+        """select p.ref, p.ordinal, ch.ordinal as chapter, ch.title_ar as chapter_title, p.ar_full, p.token_count,
+                  p.meta, p.form_ids
              from content.passages p join content.chapters ch on ch.id = p.chapter_id
             where p.chapter_id = any(:ids) order by p.id offset :o limit :l""",
         {"ids": ids, "o": offset, "l": limit},
     )
-    siblings = rows(
+    for x in passages:
+        x["cite"] = cite(t, x, x["chapter"], x.pop("chapter_title"))
+    forms: dict[str, Any] | None = None
+    if words:
+        every: list[int] = []
+        for x in passages:
+            segs, ids_ = segments(x["ar_full"] or "", x["form_ids"] or [])
+            mark(segs, (x["meta"] or {}).get("split"), [])
+            mark_editor(segs, (x["meta"] or {}).get("editor") or [])
+            x["segments"], x["words"] = segs, ids_
+            every += ids_
+        forms = {str(k): v for k, v in _forms(conn, every).items()}
+    for x in passages:
+        x.pop("form_ids", None)
+    # its neighbours under the same parent (al-Ṭabarī has thousands of headings: only the two are read)
+    near = rows(
         conn,
-        """select ordinal, title_ar, title_en from content.chapters
-            where text_id = :t and parent_id is not distinct from :p order by ordinal""",
-        {"t": t["id"], "p": c["parent_id"]},
+        """(select 'prev' as side, ordinal, title_ar, title_en, meta from content.chapters
+             where text_id = :t and parent_id is not distinct from :p and ordinal < :o order by ordinal desc limit 1)
+           union all
+           (select 'next', ordinal, title_ar, title_en, meta from content.chapters
+             where text_id = :t and parent_id is not distinct from :p and ordinal > :o order by ordinal limit 1)""",
+        {"t": t["id"], "p": c["parent_id"], "o": ordinal},
     )
-    at = next(i for i, s in enumerate(siblings) if s["ordinal"] == ordinal)
+    side = {x.pop("side"): x for x in near}
     children = rows(conn, _CHAPTER_SQL.format(where="and c.parent_id = :c"), {"t": t["id"], "c": c["id"]})
     path = _path(conn, c["parent_id"])
     c.pop("id")
@@ -151,9 +219,10 @@ def chapter(conn: Connection, slug: str, ordinal: int, offset: int, limit: int) 
         "chapter": {**c, "total": total},
         "path": path,
         "children": children,
-        "prev": siblings[at - 1] if at > 0 else None,
-        "next": siblings[at + 1] if at + 1 < len(siblings) else None,
+        "prev": side.get("prev"),
+        "next": side.get("next"),
         "passages": passages,
+        **({"forms": forms} if forms is not None else {}),
         "offset": offset,
         "limit": limit,
         "total": total,
@@ -263,6 +332,26 @@ def mark(segs: list[dict[str, Any]], split: dict[str, Any] | None, links: list[d
     segs[:] = out
 
 
+def mark_editor(segs: list[dict[str, Any]], spans: list[list[int]]) -> None:
+    """Each piece inside the editor's brackets in a book told so (``e``): a restored word, a gloss — kept as he
+    printed it, marked as his (research 21 §4.4). A piece between words is cut where a bracket opens or closes."""
+    if not spans:
+        return
+    bounds = sorted({x for a, b in spans for x in (a, b)})
+    out: list[dict[str, Any]] = []
+    at = 0
+    for seg in segs:
+        start, text = at, seg["t"]
+        at += len(text)
+        cuts = [b - start for b in bounds if start < b < start + len(text)] if "w" not in seg else []
+        for k, (i, j) in enumerate(zip([0, *cuts], [*cuts, len(text)], strict=True)):
+            piece = {**seg, "t": text[i:j]} if k == 0 else {"t": text[i:j]}
+            if any(a <= start + i < b for a, b in spans):
+                piece["e"] = 1
+            out.append(piece)
+    segs[:] = out
+
+
 def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
     """One passage: its text verbatim cut into its words, each with its reading; its place in the text's chapters;
     the passages before and after it; its roots, the sure apart from the possible."""
@@ -291,6 +380,7 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
         {"p": p["id"]},
     )
     mark(segs, split, links)
+    mark_editor(segs, (p["meta"] or {}).get("editor") or [])
     # HadeethEnc's items citing this hadith by its number, as HadeethEnc gives them (P11.2c); a citation whose
     # wording our record does not hold is not shown
     explanations = rows(
@@ -320,6 +410,7 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
     return {
         "text": _text_head(t),
         "ref": p["ref"],
+        "cite": cite(t, p, ch["ordinal"], ch["title_ar"]) if ch else None,
         "path": path,
         "ar_full": p["ar_full"],
         "token_count": p["token_count"],

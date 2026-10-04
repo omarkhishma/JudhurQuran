@@ -653,7 +653,7 @@ def texts(conn: Connection) -> list[dict[str, Any]]:
     out = rows(
         conn,
         f"""select t.slug, t.uri, t.kind, t.title_ar, t.title_en, t.author_ar, t.author_en, t.meta_ar, t.meta_en,
-                  t.era_year, t.chapter_count, t.passage_count, t.token_count, t.source_id,
+                  t.era_year, t.chapter_count, t.passage_count, t.token_count, t.source_id, t.info,
                   case when t.kind = 'quran' then (select count(*) from content.lemmas l where {content})::int end
                     as lemma_count
            from content.texts t order by t.sort_order, t.id""",

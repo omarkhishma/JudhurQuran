@@ -32,10 +32,14 @@ def _records(edition: str) -> list[dict[str, Any]]:
     return json.loads((EDITIONS / edition).read_text(encoding="utf-8"))["hadiths"]
 
 
-def test_the_shelf_lists_the_seven_collections_after_the_quran() -> None:
+BOOKS = yaml.safe_load((REPO / "data/books.yaml").read_text(encoding="utf-8"))["books"]
+
+
+def test_the_shelf_lists_the_seven_collections_after_the_quran_then_the_books() -> None:
     shelf = get("/api/v1/texts")["data"]
-    assert [t["slug"] for t in shelf] == ["quran", *[c["slug"] for c in COLLECTIONS]]
-    for t, c in zip(shelf[1:], COLLECTIONS, strict=True):
+    assert [t["slug"] for t in shelf] == ["quran", *[c["slug"] for c in COLLECTIONS], *[b["slug"] for b in BOOKS]]
+    assert all(t["kind"] == "book" and t["info"]["version"] for t in shelf[1 + len(COLLECTIONS) :])
+    for t, c in zip(shelf[1 : 1 + len(COLLECTIONS)], COLLECTIONS, strict=True):
         assert t["kind"] == "hadith" and t["passage_count"] == len(_records(c["edition"]))
         assert t["lemma_count"] is None and t["function_lemmas"] == []
 
@@ -123,6 +127,20 @@ def test_a_passage_is_its_text_verbatim_cut_into_words_each_with_its_reading() -
     assert "زيد" not in p["roots"] + p["roots_low"] and m["split"]["matn"]
 
 
+def test_a_chapter_page_can_carry_its_words_and_their_readings_once() -> None:
+    path = "/api/v1/texts/bukhari/chapters/2"
+    plain, full = get(path, limit=7), get(path, limit=7, words="true")
+    assert "forms" not in plain and not {"segments", "words", "form_ids"} & set(plain["passages"][0])
+    assert [p["ref"] for p in full["passages"]] == [p["ref"] for p in plain["passages"]]
+    for x in full["passages"]:
+        one = get(f"/api/v1/texts/bukhari/passages/{x['ref']}")
+        # the words as the passage's own page cuts them (its narrators' links are that page's)
+        assert [{k: v for k, v in s.items() if k != "n"} for s in one["segments"]] == x["segments"]
+        assert x["words"] == one["words"] and "".join(s["t"] for s in x["segments"]) == x["ar_full"]
+        assert all(full["forms"][str(i)] == one["forms"][str(i)] for i in x["words"] if i)
+    assert set(full["forms"]) == {str(i) for x in full["passages"] for i in x["words"] if i}
+
+
 def test_only_texts_beyond_the_quran_are_served_as_passages_here() -> None:
     assert client.get("/api/v1/texts/quran/passages/2:255").status_code == 404
     assert client.get("/api/v1/texts/bukhari/passages/999999").status_code == 404
@@ -136,7 +154,7 @@ def test_every_passage_lines_its_words_up_with_its_stored_forms() -> None:
     with connect() as conn:
         found = rows(
             conn,
-            """select p.ar_full, p.form_ids from content.passages p join content.texts t on t.id = p.text_id
+            """select p.ar_full, p.form_ids, t.kind from content.passages p join content.texts t on t.id = p.text_id
                 where t.kind <> 'quran'""",
         )
         missing = scalar(
@@ -144,7 +162,8 @@ def test_every_passage_lines_its_words_up_with_its_stored_forms() -> None:
             """select count(*) from content.passages p, unnest(p.form_ids) f
                 where f <> 0 and not exists (select 1 from content.text_forms x where x.id = f)""",
         )
-    assert len(found) == sum(len(_records(c["edition"])) for c in COLLECTIONS)
+    assert sum(r["kind"] == "hadith" for r in found) == sum(len(_records(c["edition"])) for c in COLLECTIONS)
+    assert {r["kind"] for r in found} == {"hadith", "book"}
     for r in found:
         segs, _ = segments(r["ar_full"] or "", r["form_ids"] or [])
         assert "".join(s["t"] for s in segs) == (r["ar_full"] or "")

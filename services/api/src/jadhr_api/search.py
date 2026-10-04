@@ -268,7 +268,7 @@ def rank_lemmas(lemmas: list[dict[str, Any]], q: str) -> list[dict[str, Any]]:
 
 
 # kinds a client can page through with ``only`` and ``offset`` (SRC-21, SRC-23)
-PAGED = ("verses", "lemmas", "dictionary", "texts")
+PAGED = ("verses", "lemmas", "dictionary", "texts", "books")
 
 
 def search(
@@ -339,6 +339,7 @@ def search_pg(
         "dictionary": [],
         "dict_roots": [],
         "texts": [],
+        "books": [],
     }
     totals: dict[str, int] = {}
     norm_q = normalize(q)
@@ -493,17 +494,29 @@ def search_pg(
         # the texts beyond the Quran (P11.4a): a hadith or a book's passage holding the words, in the text's order
         from .texts import hits as text_hits
 
-        held = "p.verse_id is null and p.norm like :p"
-        found = rows(
-            conn,
-            f"select p.uri from content.passages p where {held} order by p.id limit :limit offset :offset",
-            {"p": pattern, **page},
-        )
-        by_uri = text_hits(conn, [r["uri"] for r in found])
-        results["texts"] = [by_uri[r["uri"]] | {"excerpt": None} for r in found if r["uri"] in by_uri]
-        totals["texts"] = int(
-            scalar(conn, f"select count(*) from content.passages p where {held}", {"p": pattern}) or 0
-        )
+        # the hadith (``texts``) and the books (``books``, P11.3) apart, each its own group
+        for group, text_kind in (("texts", "hadith"), ("books", "book")):
+            if only and only != group:
+                continue
+            held = (
+                "p.verse_id is null and p.norm like :p"
+                " and p.text_id in (select id from content.texts where kind = :k)"
+            )
+            found = rows(
+                conn,
+                f"select p.uri from content.passages p where {held} order by p.id limit :limit offset :offset",
+                {"p": pattern, "k": text_kind, **page},
+            )
+            by_uri = text_hits(conn, [r["uri"] for r in found])
+            results[group] = [by_uri[r["uri"]] | {"excerpt": None} for r in found if r["uri"] in by_uri]
+            totals[group] = int(
+                scalar(
+                    conn,
+                    f"select count(*) from content.passages p where {held}",
+                    {"p": pattern, "k": text_kind},
+                )
+                or 0
+            )
     if kind in LATIN_KINDS:
         like = "%" + q.strip().lower().replace("%", "").replace("_", "") + "%"
         folded = "%" + fold_latin(q).replace("%", "").replace("_", "") + "%"
