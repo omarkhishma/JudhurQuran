@@ -97,6 +97,19 @@ def _dict_query(q: str, latin: bool) -> dict[str, Any]:
     return {"bool": {"should": should, "minimum_should_match": 1}}
 
 
+def _texts_query(q: str) -> dict[str, Any]:
+    return {
+        "bool": {
+            "should": [
+                {"match_phrase": {"ar": {"query": q, "boost": 8}}},
+                {"match": {"ar": {"query": q, "operator": "and", "boost": 3}}},
+                {"match": {"ar.stemmed": {"query": q, "operator": "and", "boost": 1}}},
+            ],
+            "minimum_should_match": 1,
+        }
+    }
+
+
 def _passages_query(q: str, latin: bool) -> dict[str, Any]:
     if latin:
         should = [
@@ -153,6 +166,7 @@ _PLAN_KIND = {
     "passages": "verses",
     "dict": "dictionary",
     "patterns": "patterns",
+    "texts": "texts",
 }
 
 
@@ -167,6 +181,7 @@ def search(
     results: dict[str, list[dict[str, Any]]] = base["results"]
     totals: dict[str, int] = base["totals"]
     results.setdefault("passages", [])
+    results.setdefault("texts", [])
     if kind in ("empty", "verse_ref", "word_loc", "juz", "hizb", "page", "pattern"):
         base["engine"] = "opensearch"
         return base
@@ -210,6 +225,28 @@ def search(
             },
         )
         if not latin:
+            # the texts beyond the Quran (P11.4a): the words as a phrase first, then all of them anywhere
+            add(
+                "texts",
+                "texts",
+                {
+                    "query": _texts_query(q),
+                    "_source": ["uri"],
+                    "highlight": {
+                        # the plain highlighter: the unified one cut a phrase at the quote mark before it
+                        "fields": {
+                            "ar": {
+                                "type": "plain",
+                                "fragment_size": 180,
+                                "number_of_fragments": 1,
+                                "no_match_size": 180,
+                            }
+                        },
+                        "pre_tags": ["⁨"],
+                        "post_tags": ["⁩"],
+                    },
+                },
+            )
             # a root by the letters it begins with (قبع… finds قبعثر), beside the exact ones the plan already has
             add(
                 "dictroots",
@@ -301,6 +338,19 @@ def search(
             ]
             # the Postgres engine's verse list, now ranked by relevance
             results["verses"] = [p["verse"] for p in results["passages"]]
+        elif name == "texts":
+            from .texts import hits as text_hits
+
+            by_uri = text_hits(conn, [h["_source"]["uri"] for h in hits])
+            results["texts"] = [
+                by_uri[h["_source"]["uri"]]
+                | {
+                    "excerpt": (h.get("highlight", {}).get("ar") or [None])[0],
+                    "score": round(h["_score"] or 0, 3),
+                }
+                for h in hits
+                if h["_source"]["uri"] in by_uri
+            ]
         elif name == "dict":
             works = {
                 w["id"]: w

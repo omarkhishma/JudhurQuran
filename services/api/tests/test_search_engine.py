@@ -96,6 +96,10 @@ def test_index_counts_match_postgres() -> None:
     assert st["indices"]["roots"]["documents"] == meta["roots"]
     assert st["indices"]["passages"]["documents"] == meta["verses"]
     assert st["indices"]["occurrences"]["documents"] == meta["words"]
+    shelf = client.get("/api/v1/texts").json()["data"]
+    assert st["indices"]["texts"]["documents"] == sum(
+        t["passage_count"] for t in shelf if t["kind"] != "quran"
+    )
 
 
 def test_chat_alphabet_finds_the_word() -> None:
@@ -244,3 +248,39 @@ def test_the_dictionary_is_searched_beyond_the_quran() -> None:
     assert word and all(a["dict_root"] == "قبعثر" for a in word[:3])
     # no dictionary roots for a verse reference
     assert search("2:255")["results"].get("dict_roots", []) == []
+
+
+def test_the_texts_beyond_the_quran_are_searched() -> None:
+    """P11.4a: a hadith's words find the records that hold them, the phrase itself first, each with its collection,
+    its kitāb and the bāb it is filed under and its words marked; the Postgres engine finds the records holding the
+    phrase; a page of them follows the one before; a verse reference or a Latin word asks nothing of them."""
+    from jadhr_api.db import connect, rows
+    from jadhr_api.search import search_pg
+
+    q = "إنما الأعمال بالنيات"
+    with connect() as conn:
+        held = {
+            r["uri"]
+            for r in rows(
+                conn,
+                "select uri from content.passages where verse_id is null and norm like :p",
+                {"p": "%انما الاعمال بالنيات%"},
+            )
+        }
+        pg = search_pg(conn, q, 20)
+    assert len(held) >= 3 and {h["uri"] for h in pg["results"]["texts"]} == held
+    assert pg["totals"]["texts"] == len(held)
+    d = search(q, limit=20)
+    found = d["results"]["texts"]
+    assert {h["uri"] for h in found[: len(held)]} == held and d["totals"]["texts"] >= len(held)
+    for h in found[: len(held)]:
+        assert h["excerpt"].count("⁨") >= 3 and h["text"]["title_ar"] and h["top"]["title_ar"]
+    first = next(h for h in found if h["uri"] == "hadith:bukhari:1")
+    assert first["chapter"]["title_ar"].startswith("باب كيف كان بدء الوحي") and first["start"]
+    # paging one kind: the second page follows the first
+    pages = [
+        client.get("/api/v1/search", params={"q": q, "only": "texts", "limit": 2, "offset": o}).json()
+        for o in (0, 2)
+    ]
+    assert [h["uri"] for p in pages for h in p["results"]["texts"]] == [h["uri"] for h in found[:4]]
+    assert search("2:255")["results"]["texts"] == [] and search("kitab")["results"]["texts"] == []

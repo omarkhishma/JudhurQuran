@@ -135,6 +135,15 @@ MAPPINGS: dict[str, dict[str, Any]] = {
     },
     # the dictionary's roots (P11.1): every root the lexica file an article under, the Quran's and the others
     "dict_roots": {"key": KW, "display": AR_FIELD, "first": KW, "letters": INT, "quran_root": KW, "lexica": INT},
+    # the texts beyond the Quran (P11.4a): a hadith collection's records, a book's passages — no prefix field, a
+    # passage being long; its roots, the sure and the possible apart, for the filters to come (P11.4b)
+    "texts": {
+        "uri": KW, "ref": KW, "text_slug": KW, "text_kind": KW, "chapter": INT, "top": INT,
+        "ar": {"type": "text", "analyzer": "ar_bare",
+               "fields": {"exact": {"type": "text", "analyzer": "ar_exact"},
+                          "stemmed": {"type": "text", "analyzer": "ar_stemmed"}}},
+        "roots": KW, "roots_low": KW, "era_year": INT,
+    },
 }  # fmt: skip
 
 PREFIX = "jadhr_"
@@ -342,6 +351,42 @@ def _dict_roots(conn: Connection) -> Iterator[dict[str, Any]]:
         yield {"_id": r["key"], **r, "display": [r["display"], " ".join(r["display"])]}
 
 
+def _texts(conn: Connection) -> Iterator[dict[str, Any]]:
+    tops = {
+        r["id"]: r["top"]
+        for r in rows(
+            conn,
+            """with recursive up as (
+                 select c.id, c.ordinal as top from content.chapters c
+                  join content.texts t on t.id = c.text_id where t.kind <> 'quran' and c.parent_id is null
+                 union all
+                 select k.id, up.top from up join content.chapters k on k.parent_id = up.id
+               ) select id, top from up""",
+        )
+    }
+    for p in rows(
+        conn,
+        """select p.uri, p.ref, p.chapter_id, c.ordinal as chapter, p.ar_full, p.roots, p.roots_low,
+                  t.slug, t.kind, t.era_year
+             from content.passages p join content.texts t on t.id = p.text_id
+             join content.chapters c on c.id = p.chapter_id
+            where t.kind <> 'quran' order by p.id""",
+    ):
+        yield {
+            "_id": p["uri"],
+            "uri": p["uri"],
+            "ref": p["ref"],
+            "text_slug": p["slug"],
+            "text_kind": p["kind"],
+            "chapter": p["chapter"],
+            "top": tops.get(p["chapter_id"]),
+            "ar": p["ar_full"],
+            "roots": p["roots"] or [],
+            "roots_low": p["roots_low"] or [],
+            "era_year": p["era_year"],
+        }
+
+
 SOURCES = {
     "words": (_words, "select count(*) from content.lemmas"),
     "roots": (_roots, "select count(*) from content.roots"),
@@ -353,6 +398,10 @@ SOURCES = {
         "select count(*) from content.lexicon_entries where displayable or cardinality(dict_roots) > 0",
     ),
     "dict_roots": (_dict_roots, "select count(*) from content.dict_roots"),
+    "texts": (
+        _texts,
+        "select count(*) from content.passages p join content.texts t on t.id = p.text_id where t.kind <> 'quran'",
+    ),
 }
 
 

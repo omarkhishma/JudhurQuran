@@ -268,7 +268,7 @@ def rank_lemmas(lemmas: list[dict[str, Any]], q: str) -> list[dict[str, Any]]:
 
 
 # kinds a client can page through with ``only`` and ``offset`` (SRC-21, SRC-23)
-PAGED = ("verses", "lemmas", "dictionary")
+PAGED = ("verses", "lemmas", "dictionary", "texts")
 
 
 def search(
@@ -338,6 +338,7 @@ def search_pg(
         "patterns": [],
         "dictionary": [],
         "dict_roots": [],
+        "texts": [],
     }
     totals: dict[str, int] = {}
     norm_q = normalize(q)
@@ -488,6 +489,20 @@ def search_pg(
         )
         totals["verses"] = int(
             scalar(conn, f"select count(*) from content.verses v where {like('v', 'p')}", {"p": pattern}) or 0
+        )
+        # the texts beyond the Quran (P11.4a): a hadith or a book's passage holding the words, in the text's order
+        from .texts import hits as text_hits
+
+        held = "p.verse_id is null and p.norm like :p"
+        found = rows(
+            conn,
+            f"select p.uri from content.passages p where {held} order by p.id limit :limit offset :offset",
+            {"p": pattern, **page},
+        )
+        by_uri = text_hits(conn, [r["uri"] for r in found])
+        results["texts"] = [by_uri[r["uri"]] | {"excerpt": None} for r in found if r["uri"] in by_uri]
+        totals["texts"] = int(
+            scalar(conn, f"select count(*) from content.passages p where {held}", {"p": pattern}) or 0
         )
     if kind in LATIN_KINDS:
         like = "%" + q.strip().lower().replace("%", "").replace("_", "") + "%"

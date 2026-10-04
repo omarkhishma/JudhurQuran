@@ -996,7 +996,8 @@ def lemma(request: Request, lemma_id: int) -> Response:
 
 
 @router.get(
-    "/search", summary="Search verses, surahs, roots, lemmas, patterns, word forms and dictionary entries"
+    "/search",
+    summary="Search verses, surahs, roots, lemmas, patterns, word forms, dictionary entries and the texts beyond the Quran",
 )
 def search(
     request: Request,
@@ -1004,7 +1005,7 @@ def search(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0, le=10000),
     only: str | None = Query(
-        None, pattern="^(verses|lemmas|dictionary)$", description="page through one kind"
+        None, pattern="^(verses|lemmas|dictionary|texts)$", description="page through one kind"
     ),
 ) -> Response:
     with connect() as conn:

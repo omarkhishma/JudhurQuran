@@ -279,3 +279,53 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
         "source": _source(conn, t["source_id"]),
     }
 
+
+# a search hit's opening words: the passage's start, cut at a word's end
+START = 220
+
+
+def _start(text: str) -> str:
+    if len(text) <= START:
+        return text
+    cut = text.rfind(" ", 0, START)
+    return text[: cut if cut > 0 else START]
+
+
+def hits(conn: Connection, uris: list[str]) -> dict[str, dict[str, Any]]:
+    """Passages beyond the Quran as a search lists them, by uri: the text, the top-level chapter and the chapter it is
+    filed under, and its opening words (verbatim)."""
+    found = rows(
+        conn,
+        """with recursive up as (
+             select c.id as start, c.id, c.parent_id from content.chapters c
+              where c.id in (select chapter_id from content.passages where uri = any(:u))
+             union all
+             select up.start, k.id, k.parent_id from up join content.chapters k on k.id = up.parent_id
+           )
+           select p.uri, p.ref, p.ar_full, t.slug, t.kind, t.title_ar as text_ar, t.title_en as text_en,
+                  c.ordinal as c_ord, c.title_ar as c_ar, c.title_en as c_en,
+                  k.ordinal as k_ord, k.title_ar as k_ar, k.title_en as k_en
+             from content.passages p
+             join content.texts t on t.id = p.text_id
+             join content.chapters c on c.id = p.chapter_id
+             join up on up.start = c.id and up.parent_id is null
+             join content.chapters k on k.id = up.id
+            where p.uri = any(:u)""",
+        {"u": uris},
+    )
+    out: dict[str, dict[str, Any]] = {}
+    for r in found:
+        out[r["uri"]] = {
+            "uri": r["uri"],
+            "ref": r["ref"],
+            "text": {
+                "slug": r["slug"],
+                "kind": r["kind"],
+                "title_ar": r["text_ar"],
+                "title_en": r["text_en"],
+            },
+            "top": {"ordinal": r["k_ord"], "title_ar": r["k_ar"], "title_en": r["k_en"]},
+            "chapter": {"ordinal": r["c_ord"], "title_ar": r["c_ar"], "title_en": r["c_en"]},
+            "start": _start(r["ar_full"] or ""),
+        }
+    return out
