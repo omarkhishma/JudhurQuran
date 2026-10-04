@@ -1,3 +1,6 @@
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
+import path from "node:path";
 import { expect, test } from "@playwright/test";
 import { api, ar, expectNoHorizontalScroll } from "./helpers";
 
@@ -144,3 +147,51 @@ test("the sūra list says when it cannot load, and tries again (LIB-39)", async 
   await alert.getByRole("button", { name: "أعد المحاولة" }).click();
   await expect(page.locator(".surah-cell")).toHaveCount(114);
 });
+
+const SENTENCE = "قال الشافعي والبيان اسم جامع لمعان مجتمعة الأصول متشعبة الفروع";
+const ARTICLE = `<html><head><title>الرسالة للشافعي</title></head><body><nav><a href="/">الرئيسية</a> <a href="/c">اتصل بنا</a></nav><article><h1>الرسالة للشافعي</h1>${Array.from({ length: 8 }, (_, i) => `<p>${SENTENCE} في الفقرة رقم ${i + 1} من الباب الأول.</p>`).join("")}</article><footer>جميع الحقوق محفوظة</footer></body></html>`;
+
+test("a text from a web page and from a PDF: read on our server, handed back, saved with where it came from (P11.3c)", async ({ page }) => {
+  // the page is served by the test itself; the e2e API fetches local addresses (JADHR_INTAKE_ALLOW_PRIVATE=1)
+  const server = createServer((_, res) => {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(ARTICLE);
+  });
+  await new Promise<void>((done) => server.listen(0, "127.0.0.1", done));
+  const port = (server.address() as AddressInfo).port;
+  try {
+    await page.addInitScript((v) => { if (!localStorage.getItem("jadhr-personal")) localStorage.setItem("jadhr-personal", JSON.stringify(v)); }, seed({}));
+    await page.goto("/library?add=1");
+    const sheet = page.getByRole("dialog", { name: "نص جديد" });
+    const modes = sheet.getByRole("group", { name: "من أين النص" });
+    await modes.getByRole("button", { name: "صفحة على الويب" }).click();
+    await sheet.getByRole("textbox", { name: "عنوان الصفحة" }).fill(`http://127.0.0.1:${port}/article`);
+    await sheet.getByRole("button", { name: "اجلب النص" }).click();
+    const text = sheet.getByRole("textbox", { name: "نصّك" });
+    await expect(text).toHaveValue(new RegExp(SENTENCE));
+    await expect(text).not.toHaveValue(/اتصل بنا/);
+    await expect(sheet.getByRole("textbox", { name: "عنوان النص" })).toHaveValue("الرسالة للشافعي");
+    await expect(sheet.getByRole("status").filter({ hasText: "النص من 127.0.0.1" })).toBeVisible();
+    await sheet.getByRole("button", { name: "احفظ في مكتبتي" }).click();
+    await page.locator(".book-card", { hasText: "الرسالة للشافعي" }).click();
+    await expect(page.getByText("من صفحة الويب:")).toBeVisible();
+    await page.getByRole("button", { name: "احذف" }).click();
+    await page.getByRole("button", { name: "احذف" }).click();
+    await expect(page).toHaveURL(/\/library$/);
+  } finally {
+    server.close();
+  }
+  // a PDF: two sound pages, one in display order turned back, one blank waiting for OCR
+  await page.goto("/library?add=1");
+  const sheet = page.getByRole("dialog", { name: "نص جديد" });
+  await sheet.getByRole("group", { name: "من أين النص" }).getByRole("button", { name: "ملف PDF" }).click();
+  await sheet.getByLabel("ملف PDF").setInputFiles(path.join(__dirname, "fixtures/arabic-text.pdf"));
+  await expect(sheet).toContainText(`صفحات فيها نص: ${ar(3)} (منها ${ar(1)}`);
+  await expect(sheet).toContainText(`لم يُتح بعد: ${ar(4)}`);
+  await expect(sheet.getByRole("checkbox")).toHaveCount(3);
+  await sheet.getByRole("button", { name: "أضف ٣ صفحات" }).click();
+  await expect(sheet.getByRole("textbox", { name: "نصّك" })).toHaveValue(new RegExp(`^${SENTENCE}`));
+  await expect(sheet.getByRole("textbox", { name: "عنوان النص" })).toHaveValue("الرسالة للتجربة");
+  await expect(sheet.getByRole("status").filter({ hasText: "arabic-text.pdf" })).toBeVisible();
+});
+

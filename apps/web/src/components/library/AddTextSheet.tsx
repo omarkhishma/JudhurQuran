@@ -6,9 +6,10 @@ import { useMemo, useState } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { Link } from "@/i18n/navigation";
 import { formatNumber } from "@/lib/format";
-import { type FormResult, newTextId, saveText } from "@/lib/library/texts";
+import { type FormResult, type TextSource, newTextId, saveText } from "@/lib/library/texts";
 import { hasTashkil, passages, words } from "@/lib/library/segment";
 import { useDebounced } from "@/lib/useDebounced";
+import { FromPdf, FromUrl, type Imported } from "./Intake";
 
 export const PREVIEW_WORDS = 80;
 const MAX_CHARS = 200_000;
@@ -26,17 +27,26 @@ export async function readWords(tokens: string[]): Promise<{ token: string; r: F
 export const isReview = (r: FormResult | undefined) => !!r && (r.kind === "clitic" || r.kind === "pattern" || (r.kind === "form" && r.confidence < 0.8));
 
 /**
- * Add a text (design 05 §5.1, LIB-17…35 with LIB-45/48): paste, a live preview of the first words read against
- * the Quran — matched, to review (with the Analyser one click away), not found — and a save that cuts the text
- * into passages and keeps it in this browser. URL and PDF/photo import come with the import pipeline (P11.3a);
- * they are not offered here rather than promised (LIB-48). No vowels are added to anyone's text.
+ * Add a text (design 05 §5.1, LIB-17…35 with LIB-45/48; P11.3c): pasted, or brought from a web page or a PDF — read
+ * on our server and handed back, never kept there — then a live preview of the first words read against the Quran
+ * (matched, to review with the Analyser one click away, not found) and a save that cuts the text into passages and
+ * keeps it in this browser with where it came from. A scanned page waits for OCR, said so (LIB-48: nothing is
+ * promised that is not offered). No vowels are added to anyone's text.
  */
 export function AddTextSheet({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const t = useTranslations("library");
   const locale = useLocale();
   const fmtC = (x: number) => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(x);
+  const [mode, setMode] = useState<"paste" | "url" | "pdf">("paste");
   const [text, setText] = useState("");
   const [title, setTitle] = useState("");
+  const [source, setSource] = useState<TextSource | undefined>(undefined);
+  const imported = (x: Imported) => {
+    setText(x.text.slice(0, MAX_CHARS));
+    if (!title.trim()) setTitle(x.title);
+    setSource(x.source);
+    setMode("paste");
+  };
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const dtext = useDebounced(text, 400);
@@ -66,6 +76,7 @@ export function AddTextSheet({ onClose, onSaved }: { onClose: () => void; onSave
         id: newTextId(),
         title: title.trim(),
         text: text.slice(0, MAX_CHARS),
+        ...(source ? { source } : {}),
         passages: ps,
         words: ws.length,
         // content words the Quran attests, for "% known" by unique lemma (particles are not counted)
@@ -92,35 +103,52 @@ export function AddTextSheet({ onClose, onSaved }: { onClose: () => void; onSave
           <button type="button" className="btn icon-btn" onClick={onClose} aria-label={t("close")}>✕</button>
         </div>
         <div className="add-text-body">
-          <form
-            className="flex flex-col gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void save();
-            }}
-          >
-            <label className="flex flex-col gap-1">
-              <span className="label-caps">{t("yourText")}</span>
-              <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} dir="rtl" lang="ar" className="add-text-input" placeholder={t("pastePlaceholder")} data-autofocus />
-            </label>
-            <p className="text-[12px] text-t3">
-              {counted ? t(hasTashkil(text) ? "metaVowelled" : "metaBare", { n: formatNumber(counted, locale) }) : t("metaEmpty")}
-            </p>
-            <label className="flex flex-col gap-1">
-              <span className="label-caps">{t("textTitle")}</span>
-              <input value={title} onChange={(e) => setTitle(e.target.value)} dir="rtl" lang="ar" className="field ar-classical text-[16px]" placeholder={t("titlePlaceholder")} />
-            </label>
-            <button type="submit" className={"btn " + (valid ? "btn-primary" : "")} disabled={!valid}>
-              {saving ? t("saving") : t("save")}
-            </button>
-            {error && (
-              <p className="text-[12.5px] text-bad" role="alert">
-                {error}
-              </p>
+          <div className="flex flex-col gap-3">
+            <div role="group" aria-label={t("modesLabel")} className="flex flex-wrap gap-1.5">
+              {(["paste", "url", "pdf"] as const).map((m) => (
+                <button key={m} type="button" className={`chip${mode === m ? " is-on" : ""}`} aria-pressed={mode === m} onClick={() => setMode(m)}>
+                  {t(m === "paste" ? "modePaste" : m === "url" ? "modeUrl" : "modePdf")}
+                </button>
+              ))}
+            </div>
+            {mode === "url" && <FromUrl onImported={imported} />}
+            {mode === "pdf" && <FromPdf onImported={imported} />}
+            {mode === "paste" && (
+              <form
+                className="flex flex-col gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void save();
+                }}
+              >
+                <label className="flex flex-col gap-1">
+                  <span className="label-caps">{t("yourText")}</span>
+                  <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} dir="rtl" lang="ar" className="add-text-input" placeholder={t("pastePlaceholder")} data-autofocus />
+                </label>
+                {source && (
+                  <p className="text-[12px] text-t2" role="status">
+                    {t("importedFrom", { from: source.kind === "url" ? (source.site ?? source.url) : source.name })}
+                  </p>
+                )}
+                <p className="text-[12px] text-t3">
+                  {counted ? t(hasTashkil(text) ? "metaVowelled" : "metaBare", { n: formatNumber(counted, locale) }) : t("metaEmpty")}
+                </p>
+                <label className="flex flex-col gap-1">
+                  <span className="label-caps">{t("textTitle")}</span>
+                  <input value={title} onChange={(e) => setTitle(e.target.value)} dir="rtl" lang="ar" className="field ar-classical text-[16px]" placeholder={t("titlePlaceholder")} />
+                </label>
+                <button type="submit" className={"btn " + (valid ? "btn-primary" : "")} disabled={!valid}>
+                  {saving ? t("saving") : t("save")}
+                </button>
+                {error && (
+                  <p className="text-[12.5px] text-bad" role="alert">
+                    {error}
+                  </p>
+                )}
+                <p className="text-[11.5px] leading-relaxed text-t3">{t("privacy")}</p>
+              </form>
             )}
-            <p className="text-[11.5px] leading-relaxed text-t3">{t("privacy")}</p>
-            <p className="text-[11.5px] leading-relaxed text-t3">{t("importLater")}</p>
-          </form>
+          </div>
           <section className="flex min-w-0 flex-col gap-2" aria-label={t("preview")}>
             <div className="flex items-center gap-2">
               <span className="label-caps">{t("preview")}</span>

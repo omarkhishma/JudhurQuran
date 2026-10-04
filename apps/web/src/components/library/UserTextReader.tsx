@@ -128,6 +128,22 @@ export function UserTextReader({ id }: { id: string }) {
       <p className="text-[12.5px] text-t3">
         {t("mineMeta", { words: formatNumber(d.words, locale), review: formatNumber(d.review, locale) })} • {t("privateNote")}
       </p>
+      {d.source && (
+        <p className="text-[12.5px] text-t3">
+          {d.source.kind === "url" ? (
+            <>
+              {t("sourceUrl")}{" "}
+              <a href={d.source.url} className="underline decoration-dotted underline-offset-2 hover:text-t1" rel="noopener noreferrer" target="_blank">
+                <bdi dir="ltr">{d.source.site ?? d.source.url}</bdi>
+              </a>
+            </>
+          ) : (
+            <>
+              {t("sourcePdf")} <bdi dir="ltr">{d.source.name}</bdi>
+            </>
+          )}
+        </p>
+      )}
       {position && position.passage > 1 && (
         <a href={`#p${position.passage}`} className="btn self-start">
           {t("resumeText", { n: formatNumber(position.passage, locale), of: formatNumber(d.passages.length, locale) })}

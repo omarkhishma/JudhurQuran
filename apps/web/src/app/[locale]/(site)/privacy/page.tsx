@@ -26,7 +26,7 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/priva
         <ul>
           <li><strong>لا تتبّع ولا إعلانات ولا ملفات تعريف ارتباط.</strong> لا أدوات تحليل ولا تتبّع من أطراف أخرى، ولا نضع أي ملف تعريف ارتباط، حتى للدخول.</li>
           <li><strong>ما تحفظه يبقى في متصفحك:</strong> المحفوظات والملاحظات وسجلّ القراءة وحالات الكلمات وبطاقات المراجعة والخرائط ونصوصك وموضع القراءة والإعدادات، في التخزين المحلي للمتصفح وقاعدة بياناته. تصدّرها كلها أو تحذفها من صفحة «حسابي».</li>
-          <li><strong>ما يُرسل ولا يُحفظ:</strong> لتُجلب لك صفحة تُرسل أحيانًا كلمات مما عندك — جذور الكلمات التي تراجعها، وما تغطيه كلماتك من القرآن، وما تذكره في ملاحظاتك، ونصوصك كلمةً كلمة ليُعرف ما فيها. تُرسل في متن الطلب لا في الرابط، ولا تُحفظ ولا تُخزَّن مؤقتًا.</li>
+          <li><strong>ما يُرسل ولا يُحفظ:</strong> لتُجلب لك صفحة تُرسل أحيانًا كلمات مما عندك — جذور الكلمات التي تراجعها، وما تغطيه كلماتك من القرآن، وما تذكره في ملاحظاتك، ونصوصك كلمةً كلمة ليُعرف ما فيها. تُرسل في متن الطلب لا في الرابط، ولا تُحفظ ولا تُخزَّن مؤقتًا. وإن أضفت نصًّا من صفحة على الويب أو من ملف PDF، جلب خادمُنا الصفحة أو قرأ الملف وأعاد إليك نصه، ثم لا يحفظ العنوان ولا الملف ولا النص ولا يسجّلها؛ ويبقى النص بعدها في متصفحك كسائر نصوصك.</li>
           <li><strong>ما بعد علامة # في الرابط لا يصل إلى خوادمنا:</strong> فيه تحمل روابط مشاركة الخرائط الخريطة نفسها، وفيه يُذكر الدفتر الملاحظة المفتوحة، فلا يعرف الخادم على أي آية كتبت.</li>
         </ul>
 
@@ -75,7 +75,7 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/priva
       <ul>
         <li><strong>No tracking, no ads, no cookies.</strong> No third-party analytics or tracking tools, and we set no cookie at all, not even to sign in.</li>
         <li><strong>What you keep stays in your browser:</strong> saved items, notes, the reading journal, word states, review cards, maps, your own texts, your reading position and settings, in the browser&apos;s local storage and database. Export or delete them all from the Profile page.</li>
-        <li><strong>What is sent and not kept:</strong> to fetch a page, words from what you have are sometimes sent — the roots of the words you review, how much of the Quran your words cover, what your notes mention, your own texts word by word to read them. They travel in the request body, never in a link, and are neither stored nor cached.</li>
+        <li><strong>What is sent and not kept:</strong> to fetch a page, words from what you have are sometimes sent — the roots of the words you review, how much of the Quran your words cover, what your notes mention, your own texts word by word to read them. They travel in the request body, never in a link, and are neither stored nor cached. If you add a text from a web page or a PDF, our server fetches the page or reads the file and hands its text back to you, then keeps neither the address, the file nor the text, nor logs them; the text then lives in your browser like your other texts.</li>
         <li><strong>What follows the # in an address never reaches our servers:</strong> map share links carry the map there, and the Notebook names the note you have open there, so the server never learns which verse you wrote on.</li>
       </ul>
 

@@ -9,10 +9,14 @@ import { storageFrozen } from "@/lib/store/safeStorage";
  * word (POST /analyse/tokens, not stored there) and, when the reader signs in, synced to the account (P6).
  */
 export type FormResult = { kind: "form" | "clitic" | "pattern" | "particle" | "none"; confidence: number; lemma: string | null; lemma_ar?: string | null; root: string | null; root_spaced?: string | null; gloss_en?: string | null };
+/** Where a text came from, when it was not pasted (P11.3c): a web page's address, or a PDF's name and the pages taken. */
+export type TextSource = { kind: "url"; url: string; site?: string } | { kind: "pdf"; name: string; pages: number[] };
+
 export type UserText = {
   id: string;
   title: string;
   text: string;
+  source?: TextSource;
   passages: string[];
   words: number;
   /** distinct lemma slugs the text holds, for "% known" by unique lemma (LIB-Q04) */

@@ -7077,3 +7077,12 @@ a.wotd-pill:hover {
 .bk-cite-btn:hover {
   text-decoration: underline;
 }
+
+/* a file picker whose button speaks the page's language (P11.3c): the input hidden, its focus shown on the label */
+.file-pick {
+  cursor: pointer;
+}
+.file-pick:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
