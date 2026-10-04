@@ -652,6 +652,27 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         for k in ("texts", "chapters", "passages"):
             generic[k] = generic[k] + extra[k]
         generic["text_forms"] = extra["text_forms"]
+        # each narrator's name in an isnād and its link, a row of its own (P11.2b)
+        generic["narrator_links"] = [
+            {
+                "id": len_ + 1,
+                "passage_id": p["id"],
+                "ordinal": k,
+                "span_start": link["span"][0],
+                "span_end": link["span"][1],
+                "text": link["text"],
+                "narrator_id": link["chosen"],
+                "rule": link["rule"],
+                "confidence": link["confidence"],
+                "status": link["status"],
+                "candidates": link["candidates"],
+            }
+            for len_, (p, k, link) in enumerate(
+                (p, k, link)
+                for p in extra["passages"]
+                for k, link in enumerate(p["meta"].pop("narrators", None) or [], start=1)
+            )
+        ]
         # the narrators' profiles (P11.2b): Ibn Ḥajar's Taqrīb, each entry verbatim and what is read from it
         from .ecosystem.hadith import narrator_rows
 

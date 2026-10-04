@@ -62,6 +62,9 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
     # narrator profiles from Ibn Ḥajar's Taqrīb (P11.2b)
     ("narrators", "narrators.jsonl", ["id", "source_id", "number", "kind", "text", "name", "name_norm", "verdict", "rank",
                                       "tabaqa", "tabaqa_rule", "death_text", "death_ah", "death_rule", "sigla"], set()),
+    # each narrator's name in an isnād linked to his Taqrīb entry, with its candidates (P11.2b)
+    ("narrator_links", "narrator_links.jsonl", ["id", "passage_id", "ordinal", "span_start", "span_end", "text",
+                                                "narrator_id", "rule", "confidence", "status", "candidates"], set()),
     ("passage_tokens", "passage_tokens.jsonl", ["id", "passage_id", "ordinal", "uri", "surface", "surface_bare",
                                                 "norm", "lemma_id", "root_id", "pattern_id", "pos", "confidence",
                                                 "word_id"], set()),
@@ -272,6 +275,7 @@ TRUNCATE_ORDER = [
     "senses",
     "glossary_terms",
     "corpora",
+    "narrator_links",
     "narrators",
     "text_forms",
     "passage_tokens",

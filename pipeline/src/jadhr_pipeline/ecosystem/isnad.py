@@ -20,6 +20,7 @@ import re
 from collections import Counter
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from jadhr_arabic import normalize
 
@@ -209,12 +210,18 @@ def known_names(splits: Iterable[tuple[str, Split | None]], least: int = 3) -> f
     )
 
 
+@lru_cache(maxsize=4)
+def _firsts(known: frozenset[str]) -> frozenset[str]:
+    """The first words of the known names, once per lexicon (a parse is made for every record)."""
+    return frozenset(n.split()[0] for n in known)
+
+
 class _Parse:
     def __init__(self, text: str, book: str, known: frozenset[str]) -> None:
         self.text = text
         self.book = book
         self.known = known
-        self.known_first = frozenset(n.split()[0] for n in known)
+        self.known_first = _firsts(known)
         self.ts = tokens(text)
         self.names: list[tuple[int, int]] = []
 

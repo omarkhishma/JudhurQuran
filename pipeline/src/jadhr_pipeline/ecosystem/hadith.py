@@ -29,6 +29,7 @@ from typing import Any
 import yaml
 from jadhr_arabic import normalize
 
+from . import narrators, taqrib
 from .isnad import chain_words, known_names, split
 from .model import Chapter, Draft, Passage
 
@@ -39,6 +40,8 @@ _PAGE_REF = re.compile(r"^\[\s*ص\s*:")
 _LETTERS = re.compile(r"[ء-ي]+")
 _LATIN = re.compile(r"[A-Za-z]+")
 _VERDICT = re.compile(r"حديث\s+(حسن\s+صحيح\s+غريب|حسن\s+صحيح|حسن\s+غريب|صحيح\s+غريب|حسن|صحيح|غريب)")
+# the splits whose last name is the Companion who reports from the Prophet
+PROPHET_ENDS = frozenset({"prophet-speech", "prophet-said", "that-prophet", "prophet-report"})
 NUMBER_JOIN_SHARE = 0.6
 TEXT_JOIN_SCORE = 0.5
 
@@ -383,6 +386,26 @@ def build_hadith(raw: Path, registry: Path) -> tuple[list[Draft], dict[str, Any]
     known = known_names(first)
     stats["split:known-names"] = len(known)
     drafts = [collection(raw, spec, reg, stats, known) for spec in reg["collections"]]
+    # each name in each isnād linked to Ibn Ḥajar's entries, with its candidates, rule and confidence (narrators.py);
+    # held in the passage's meta until the build gives the links their own rows
+    entries = taqrib.parse((raw / reg["narrators"]["file"]).read_text(encoding="utf-8"))
+    index = narrators.Index([{"id": i} for i in range(1, len(entries) + 1)], entries)
+    chains = []
+    for d in drafts:
+        for p in d.passages:
+            sp = p.meta.get("split")
+            if sp and sp.get("names"):
+                links = narrators.link_chain(
+                    index, d.slug, p.text, [tuple(n) for n in sp["names"]], sp["rule"] in PROPHET_ENDS
+                )
+                p.meta["narrators"] = links
+                chains.append((d.slug, links))
+    for rule, n in narrators.resolve(index, chains).items():
+        stats[f"links:{rule}"] = n
+    for d in drafts:
+        for p in d.passages:
+            if "narrators" in p.meta:
+                p.meta["narrators"] = [link.row() for link in p.meta["narrators"]]
     return drafts, dict(sorted(stats.items()))
 
 
