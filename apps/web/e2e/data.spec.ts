@@ -80,7 +80,7 @@ test("the playground sends a text by POST, and its curl runs as copied (DAT-35, 
   await page.getByRole("button", { name: "أرسل" }).click();
   await expect(box).toContainText("قال: 'إن العلم لا يدرك'");
   await page.getByRole("button", { name: "curl", exact: true }).click();
-  await expect(page.getByRole("status").filter({ hasText: "نسخ أمر curl" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "نسخ curl" })).toBeVisible();
   const curl = await page.evaluate(() => navigator.clipboard.readText());
   expect(curl).toContain("-X POST");
   expect(curl).toContain("-H 'Content-Type: application/json'");
@@ -89,7 +89,7 @@ test("the playground sends a text by POST, and its curl runs as copied (DAT-35, 
   expect(out.data.text).toBe("قال: 'إن العلم لا يدرك'");
   expect(out.data.source.kind).toBe("free");
   // the copied word goes away by itself
-  await expect(page.getByRole("status").filter({ hasText: "نسخ أمر curl" })).toHaveCount(0, { timeout: 4000 });
+  await expect(page.getByRole("status").filter({ hasText: "نسخ curl" })).toHaveCount(0, { timeout: 4000 });
 });
 
 test("the developers' guide: the public API's envelope, endpoints, releases, limits as the API states them, errors and terms (P10.3c)", async ({ page }) => {
@@ -203,4 +203,27 @@ test("a download checked on this device against the manifest (B53)", async ({ pa
   await expect(page.getByText(`هذا الملف roots.csv من الإصدار v${v} كما هو حرفا بحرف.`)).toBeVisible();
   await check.setInputFiles({ name: "x.csv", mimeType: "text/csv", buffer: Buffer.concat([roots, Buffer.from(" ")]) });
   await expect(page.getByText(`لا ملف في الإصدار v${v} بهذه البصمة`, { exact: false })).toBeVisible();
+});
+
+test("the playground's request copied as Python and as JavaScript runs as copied (B54)", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/data?tab=api");
+  await page.getByRole("navigation", { name: "نقاط الواجهة" }).getByRole("button", { name: /quran\/analyse/ }).click();
+  await page.getByRole("textbox", { name: "النص، يرسل في متن الطلب" }).fill('العلم "نور"');
+  const { execFileSync } = await import("node:child_process");
+  for (const [lang, run] of [
+    ["Python", (code: string) => execFileSync("python3", ["-c", code], { encoding: "utf-8" })],
+    ["JavaScript", (code: string) => execFileSync("node", ["--input-type=module", "-e", code], { encoding: "utf-8" })],
+  ] as const) {
+    await page.getByRole("button", { name: lang, exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: `نسخ ${lang}` })).toBeVisible();
+    const out = JSON.parse(run(await page.evaluate(() => navigator.clipboard.readText()))) as { data: { text: string } };
+    expect(out.data.text, lang).toBe('العلم "نور"');
+  }
+  // and a GET as Python
+  await page.getByRole("navigation", { name: "نقاط الواجهة" }).getByRole("button", { name: /quran\/roots/ }).click();
+  await page.getByRole("button", { name: "Python", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "نسخ Python" })).toBeVisible();
+  const root = JSON.parse(execFileSync("python3", ["-c", await page.evaluate(() => navigator.clipboard.readText())], { encoding: "utf-8" })) as { data: { key: string } };
+  expect(root.data.key).toBe("علم");
 });

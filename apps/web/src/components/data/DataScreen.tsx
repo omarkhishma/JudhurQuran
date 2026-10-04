@@ -447,6 +447,15 @@ function urlOf(path: string, param: string): { url: string; head: string; tail: 
 type Asked = { url: string; body: string | null; n: number };
 const bodyOf = (text: string) => JSON.stringify({ text });
 /** The same request for a shell: the body single-quoted, its own single quotes closed and reopened (DAT-50). */
+/** The same request as a Python script (the standard library only) and as JavaScript (fetch), runnable as copied (B54). */
+const pythonOf = (origin: string, a: Pick<Asked, "url" | "body">) =>
+  a.body == null
+    ? `import json, urllib.request\n\nprint(json.dumps(json.load(urllib.request.urlopen(${JSON.stringify(origin + a.url)})), ensure_ascii=False, indent=2))`
+    : `import json, urllib.request\n\nreq = urllib.request.Request(\n    ${JSON.stringify(origin + a.url)},\n    data=json.dumps(${a.body}).encode("utf-8"),\n    headers={"Content-Type": "application/json"},\n)\nprint(json.dumps(json.load(urllib.request.urlopen(req)), ensure_ascii=False, indent=2))`;
+const jsOf = (origin: string, a: Pick<Asked, "url" | "body">) =>
+  a.body == null
+    ? `const r = await fetch(${JSON.stringify(origin + a.url)});\nconsole.log(JSON.stringify(await r.json(), null, 2));`
+    : `const r = await fetch(${JSON.stringify(origin + a.url)}, {\n  method: "POST",\n  headers: { "Content-Type": "application/json" },\n  body: JSON.stringify(${a.body}),\n});\nconsole.log(JSON.stringify(await r.json(), null, 2));`;
 const curlOf = (origin: string, a: Pick<Asked, "url" | "body">) =>
   a.body == null ? `curl -s '${origin}${a.url}'` : `curl -s -X POST '${origin}${a.url}' -H 'Content-Type: application/json' -d '${a.body.replace(/'/g, "'\\''")}'`;
 
@@ -494,7 +503,15 @@ function Playground() {
     e?.preventDefault();
     setAsked((a) => ({ ...ask(path, param, post), n: a.n + 1 }));
   };
-  const curl = client ? curlOf(window.location.origin, ask(path, param, post)) : "";
+  const code = (as: (origin: string, a: Pick<Asked, "url" | "body">) => string) => (client ? as(window.location.origin, ask(path, param, post)) : "");
+  const copy = async (text: string, lang: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSaid(t("codeCopied", { lang }));
+    } catch {
+      setSaid(t("curlCopyFailed"));
+    }
+  };
   const lim = index.data?.limits;
   return (
     <div className="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -551,20 +568,17 @@ function Playground() {
             </label>
           )}
           <button type="submit" className="btn btn-primary" disabled={answer.isFetching}>{t("send")}</button>
-          <button
-            type="button"
-            className="btn"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(curl);
-                setSaid(t("curlCopied"));
-              } catch {
-                setSaid(t("curlCopyFailed"));
-              }
-            }}
-          >
-            curl
-          </button>
+          {(
+            [
+              ["curl", curlOf],
+              ["Python", pythonOf],
+              ["JavaScript", jsOf],
+            ] as const
+          ).map(([lang, as]) => (
+            <button key={lang} type="button" className="btn" onClick={() => void copy(code(as), lang)}>
+              {lang}
+            </button>
+          ))}
           <span role="status" className="self-center text-[12px] text-t2">{said}</span>
         </form>
         {sent && (
