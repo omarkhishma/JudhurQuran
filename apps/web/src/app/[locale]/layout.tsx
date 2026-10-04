@@ -38,8 +38,9 @@ export const viewport: Viewport = {
   ],
 };
 
-// Runs before first paint: apply the stored theme (default light, per the design system).
-const themeScript = `try{var t=localStorage.getItem(${JSON.stringify(THEME_KEY)});if(t==="dark"||t==="light"){document.documentElement.dataset.theme=t}else{document.documentElement.dataset.theme="light"}}catch(e){document.documentElement.dataset.theme="light"}`;
+// Runs before first paint: apply the stored theme (default light, per the design system); then follow it when
+// another window of the site changes it — another tab, or the split view's page and its panes (P8.6).
+const themeScript = `try{var t=localStorage.getItem(${JSON.stringify(THEME_KEY)});if(t==="dark"||t==="light"){document.documentElement.dataset.theme=t}else{document.documentElement.dataset.theme="light"}}catch(e){document.documentElement.dataset.theme="light"}addEventListener("storage",function(e){if(e.key===${JSON.stringify(THEME_KEY)}&&(e.newValue==="dark"||e.newValue==="light"))document.documentElement.dataset.theme=e.newValue});`;
 
 export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {
   const { locale } = await params;

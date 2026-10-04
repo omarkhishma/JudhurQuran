@@ -23,6 +23,7 @@ import { EditorHelp } from "./EditorHelp";
 import { GraphCanvas, type CanvasTools } from "./GraphCanvas";
 import { Library } from "./Library";
 import { PresenceBlock } from "./Presence";
+import { SplitReceiver } from "./SplitReceiver";
 import { ShareDialog } from "./Sharing";
 
 /** What autosave compares: the map as the reader made it — not the sizes xyflow measures, nor what is selected. */
@@ -432,6 +433,8 @@ function EditorInner({
         }}
         header={
           <>
+            {/* in the split view's graph pane, the word the reader sends (P8.6) */}
+            <SplitReceiver />
             <EditorHeader
               title={title}
               onTitle={(v) => {

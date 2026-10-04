@@ -19,6 +19,11 @@ type UiPrefs = {
 };
 
 export const GRAPH_UI_KEY = "jadhr-graph-ui";
+/** The editor in the split view's graph pane (P8.6): a pane half a screen wide, so it opens with the library and the
+ * details folded to their rails, and keeps its own panels apart from the editor's on its own. Only this site frames
+ * its pages (frame-ancestors 'self'), and only the split view does. */
+const inPane = typeof window !== "undefined" && window.parent !== window;
+const KEY = inPane ? `${GRAPH_UI_KEY}:split` : GRAPH_UI_KEY;
 
 // written 200 ms after the last change (HWF-34): dragging a panel open and shut writes once; a page left before
 // then writes what is pending as it goes
@@ -58,8 +63,8 @@ const debounced: StateStorage = {
 
 export const useGraphUi = create<UiPrefs>()(
   persist(
-    (set) => ({ libraryOpen: true, typesHidden: false, detailsOpen: true, translit: null, set: (p) => set(p) }),
-    { name: GRAPH_UI_KEY, storage: createJSONStorage(() => debounced), version: 1, partialize: ({ libraryOpen, typesHidden, detailsOpen, translit }) => ({ libraryOpen, typesHidden, detailsOpen, translit }) },
+    (set) => ({ libraryOpen: !inPane, typesHidden: false, detailsOpen: !inPane, translit: null, set: (p) => set(p) }),
+    { name: KEY, storage: createJSONStorage(() => debounced), version: 1, partialize: ({ libraryOpen, typesHidden, detailsOpen, translit }) => ({ libraryOpen, typesHidden, detailsOpen, translit }) },
   ),
 );
 

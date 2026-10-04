@@ -6272,3 +6272,89 @@ a.wotd-pill:hover {
   padding: 8px 12px;
   background: color-mix(in srgb, var(--ring) 8%, var(--panel));
 }
+
+/* The split view (P8.6; EDT-315…322): its own 52 px header, then the reader and the map side by side — or one at a
+ * time on a phone */
+.split-view {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.split-head {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  padding: 6px 12px;
+}
+.split-brand {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+.split-context {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+.split-chip {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 2px 10px;
+  font-size: 12.5px;
+  color: var(--t1);
+  white-space: nowrap;
+}
+.split-said {
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--good) 8%, var(--panel));
+  padding: 4px 12px;
+  font-size: 12.5px;
+  color: var(--t1);
+}
+.split-panes {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+.split-pane {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: var(--canvas);
+}
+.split-pane.is-reader {
+  flex: 1.15;
+}
+.split-pane.is-reader:not([hidden]) + .split-pane.is-graph:not([hidden]) {
+  border-inline-start: 1px solid var(--line);
+}
+.split-pane[hidden] {
+  display: none;
+}
+@media (max-width: 767px) {
+  .split-head {
+    flex-wrap: wrap;
+    padding-block: 8px;
+  }
+  .split-brand .text-t3 {
+    display: none;
+  }
+  .split-context {
+    order: 5;
+    flex-basis: 100%;
+    overflow-x: auto;
+  }
+}

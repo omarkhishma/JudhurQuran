@@ -249,7 +249,10 @@ export type TrailStep = { kind: "word" | "verse" | "root"; id: string; ts: numbe
 export type ProgressEntry = { chapter: number; passage: number; at: number };
 export type SavedTrail = { id: string; steps: TrailStep[]; ts: number };
 /** What the reader last looked up (RDR-441): read by the hub, the concordance and the shell. */
-export type ReadingContext = { word: string | null; wordAr: string | null; root: string | null; verse: string | null; ts: number };
+/** What the reader looked up last (RDR-113): the word's slug and its Arabic, its root, the verse — and, for the split
+ * view's context strip and its "send to the map" (P8.6), the word's transliteration, its root's letters and its
+ * place. */
+export type ReadingContext = { word: string | null; wordAr: string | null; root: string | null; verse: string | null; wordTr?: string | null; rootAr?: string | null; at?: string | null; ts: number };
 /** One day's reading in one text (RDR-437): what was looked up, for the Notebook, Classroom and Profile.
  * A count of lookups, not a time — nothing here pretends to measure minutes. */
 export type Session = { day: string; text: string; words: string[]; roots: string[]; verses: string[]; lookups: number; /** another device's, when the journal syncs (P6) */ device?: string };

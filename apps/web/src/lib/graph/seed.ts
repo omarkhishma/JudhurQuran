@@ -4,7 +4,7 @@ import { REVIEW_BELOW } from "@/lib/analyse";
 import { getJSON } from "@/lib/reader/api";
 import type { WordPayload } from "@/lib/reader/types";
 import type { Verse } from "@/lib/types";
-import { buildRootGraph, lemmaId, link, POS_AR, rootId, verseId, type RootGraphPayload } from "./build";
+import { buildRootGraph, lemmaCard, lemmaId, link, patternCard, patternId, POS_AR, rootCard, rootId, verseId, type RootGraphPayload } from "./build";
 import { entityCard, type EntityPage } from "./entities";
 import { layout } from "./layout";
 import { notebookLoaded, useNotebook } from "@/lib/store/notebook";
@@ -27,7 +27,7 @@ export type SeedGraph = {
 type RootSummary = { key: string; spaced: string; translit: string; occurrences: number };
 
 let surahNamesP: Promise<Map<number, string>> | null = null;
-function surahNames(): Promise<Map<number, string>> {
+export function surahNames(): Promise<Map<number, string>> {
   surahNamesP ??= getJSON<{ data: { number: number; name_ar: string }[] }>("/surahs").then((d) => new Map(d.data.map((s) => [s.number, s.name_ar])));
   return surahNamesP;
 }
@@ -64,6 +64,37 @@ async function wordSeed(slug: string, at: string | null | undefined): Promise<Se
     if (nodes.some((n) => n.id === lid)) edges.push(link(lid, verseId(occ.verse_key), "attests", { place: occ.location }));
   }
   return { kind: "root", title, nodes, edges };
+}
+
+/** One word sent from the reader into an open map (P8.6; EDT-319, EDT-323): its card — with its pattern and part of
+ * speech — its root and its pattern linked as on a root's map, and the verse at the word's place; not the rest of
+ * the family, which the root's card extracts when asked. A word with no root is its own card (L2). */
+export async function wordCards(slug: string, at: string | null | undefined): Promise<{ nodes: GraphNode[]; edges: GraphEdge[]; word: string }> {
+  const w = await getJSON<WordPayload>(`/words/${encodeURIComponent(slug)}?limit=0${at ? `&at=${at}` : ""}`);
+  const lid = lemmaId(w.slug);
+  const nodes: GraphNode[] = [];
+  const edges: GraphEdge[] = [];
+  const l = w.root ? (await getJSON<RootGraphPayload>(`/roots/${encodeURIComponent(w.root.key)}/graph`)) : null;
+  const lemma = l?.lemmas.find((x) => x.slug === w.slug);
+  if (l && lemma) {
+    nodes.push(rootCard(l, false));
+    const p = lemma.pattern_slug ? l.patterns?.find((x) => x.slug === lemma.pattern_slug) : undefined;
+    if (p) {
+      nodes.push(patternCard(p, false));
+      edges.push(link(rootId(l.root.key), patternId(p.slug), "derives"), link(patternId(p.slug), lid, "realises"));
+    } else edges.push(link(rootId(l.root.key), lid, "derives"));
+    nodes.push(lemmaCard(lemma, l.root.key, false));
+  } else {
+    nodes.push(card(lid, "lemma", { slug: w.slug, ar: w.ar.full, sub: POS_AR[w.pos.tag] ?? w.pos.ar ?? w.pos.tag, count: w.corpus_freq }));
+  }
+  const occ = w.occurrence;
+  if (occ) {
+    nodes.push(verseCard(occ.verse_key, [occ.location], {}));
+    edges.push(link(lid, verseId(occ.verse_key), "attests", { place: occ.location }));
+  }
+  // arriving in a map the reader is working on: the word open, what it hangs from folded to one line each
+  const folded = nodes.map((n) => (n.id === lid ? n : { ...n, data: { ...n.data, folded: true } }));
+  return { nodes: folded, edges, word: occ?.surface.full ?? w.ar.full };
 }
 
 async function rootSeed(root: string): Promise<SeedGraph> {

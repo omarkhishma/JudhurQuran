@@ -51,7 +51,15 @@ export function WordEntry({
   const looked = query.data;
   useEffect(() => {
     if (!looked) return;
-    usePersonal.getState().recordLookup({ word: looked.slug, wordAr: looked.ar.full, root: looked.root?.key ?? null, verse: looked.occurrence?.verse_key ?? null });
+    usePersonal.getState().recordLookup({
+      word: looked.slug,
+      wordAr: looked.ar.full,
+      wordTr: looked.ar.translit,
+      root: looked.root?.key ?? null,
+      rootAr: looked.root?.ar_spaced ?? null,
+      verse: looked.occurrence?.verse_key ?? null,
+      at: looked.occurrence?.location ?? null,
+    });
   }, [looked?.slug, looked?.occurrence?.location]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!scrollTo) return;
