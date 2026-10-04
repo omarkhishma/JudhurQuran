@@ -584,3 +584,96 @@ class _Parse:
             return self.done(self.marks(k), "prophet-speech", k)
         # «عن النبي ﷺ أنه صلى …»: the report begins at «أنه», as «عن عائشة أنها …» does
         return self.done(that if that is not None else k, "prophet-report", k)
+
+
+STRONG = _words("حدثنا حدثني أخبرنا أخبرني أنبأنا أنبأني ثنا نا سمعت")
+# words that name who else reported a hadith, a known name after them: «تابعه الزبيدي», «حفظناه من الزهري»
+WEAK = _words("تابعه تابعهم وتابعه من عند")
+# fixed formulas of blessing and praise, in normalised words: they say nothing of what a hadith is about
+FORMULAIC = [
+    tuple(normalize(w) for w in f.split())
+    for f in (
+        "صلى الله عليه وسلم",
+        "رضي الله عنه",
+        "رضي الله عنها",
+        "رضي الله عنهما",
+        "رضي الله عنهم",
+        "عليه السلام",
+        "عليها السلام",
+        "عليهما السلام",
+        "عليهم السلام",
+        "عز وجل",
+        "جل وعز",
+        "تبارك وتعالى",
+        "سبحانه وتعالى",
+    )
+]
+
+
+def chain_words(
+    text: str, s: Split | None, known: frozenset[str]
+) -> tuple[list[tuple[int, int]], list[tuple[int, int]], list[tuple[int, int]]]:
+    """Every narrator's name in the record, its isnād's and those of the chains elsewhere in it (Muslim's further
+    chains after a report, a collector's comment, a record the rules could not split); the formulas that introduce
+    them; and the fixed formulas of blessing («صلى الله عليه وسلم») — the words a root's life must not count
+    («الزهري» is a narrator, not the root زهر; «صلى» there is a blessing, not the root صلو of prayer).
+
+    After «حدثنا»-like formulas any name; after «عن», «تابعه», «من» only a name the chains use, or one with its links
+    («عن أبي هريرة», never «عن الصلاة»); after «قال» only a known name that does not speak inside the story."""
+    p = _Parse(text, "", known)
+    ts = p.ts
+    p.names = names = list(s.names) if s else []
+    formulas: list[tuple[int, int]] = []
+    blessings: list[tuple[int, int]] = []
+
+    def with_co_narrators(e: int) -> None:
+        """«رواه يونس وصالح ومعمر», «قال إسرائيل وزهير»: the names joined to the one just read."""
+        k = p.marks(e)
+        while p.joins(k):
+            e2 = p.name_end(k)
+            p.add_name(k, e2)
+            k = p.marks(e2)
+
+    def inside(pos: int) -> bool:
+        return any(a <= pos < b for a, b in names)
+
+    for i, t in enumerate(ts):
+        if not t.norm:
+            continue
+        for f in FORMULAIC:
+            if _seq(ts, i, f):
+                blessings.append((t.start, ts[i + len(f) - 1].end))
+        if inside(t.start):
+            continue
+        j = p.marks(i + 1)
+        if j >= len(ts):
+            break
+        weak = t.norm in WEAK
+        if p.formula(i) or weak:
+            if inside(ts[j].start):
+                if not weak:
+                    formulas.append((t.start, t.end))
+                continue
+            if not p.plain(j):
+                continue
+            strong = t.norm in STRONG or (t.norm[:1] in ("و", "ف") and t.norm[1:] in STRONG)
+            known_end = p.known_at(j)
+            if strong:
+                e = p.name_end(j)
+            elif known_end > j:
+                # a known name ends where it ends («عن الزهري في الجهر»)
+                e = known_end
+            else:
+                e = p.name_end(j)
+                if weak or not any(p.link(x) for x in range(j, e)):
+                    continue
+            names.append((ts[j].start, ts[e - 1].end))
+            if not weak or t.norm[:3] in ("تاب", "وتا"):
+                formulas.append((t.start, t.end))
+            with_co_narrators(e)
+        elif t.norm in INTRO or t.norm == "وقال":
+            e = p.known_at(j)
+            if e > j and not p.character(e) and not inside(ts[j].start):
+                names.append((ts[j].start, ts[e - 1].end))
+                with_co_narrators(e)
+    return sorted(names), formulas, blessings

@@ -29,7 +29,7 @@ from typing import Any
 import yaml
 from jadhr_arabic import normalize
 
-from .isnad import known_names, split
+from .isnad import chain_words, known_names, split
 from .model import Chapter, Draft, Passage
 
 HEADER_END = "#META#Header#End#"
@@ -323,6 +323,11 @@ def collection(
             sp = split(text, slug, known)
             meta["split"] = sp.as_meta() if sp else None
             stats[f"{slug}:split-{sp.rule if sp else 'none'}"] += 1
+            # every narrator's name in it and the formulas before them: no root of theirs is counted (model.py)
+            names, formulas, blessings = chain_words(text, sp, known)
+            meta["names"] = [list(n) for n in names]
+            meta["chain"] = [list(f) for f in formulas]
+            meta["formulaic"] = [list(f) for f in blessings]
         if not text.strip():
             stats[f"{slug}:empty"] += 1
             u = (

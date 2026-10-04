@@ -123,3 +123,26 @@ def test_the_split_agrees_with_sanadsets_boundaries() -> None:
         speech = m[book]["prophet-speech"]
         assert speech["exact"] / speech["n"] >= 0.93, (book, speech)
     assert s["malik"]["exact"] >= 0.4 and s["malik"]["within 5"] >= 0.6, s["malik"]
+
+
+def test_every_narrators_name_in_a_record_is_found_and_a_matns_words_are_not() -> None:
+    """The names a root's life must not count: those of the isnād and of the chains elsewhere in the record (a
+    collector's note naming who else reported it), never the words of the report («عن الصلاة» is no narrator)."""
+    from jadhr_pipeline.ecosystem.isnad import chain_words, known_names, split
+
+    recs, sp = _all()
+    known = known_names((h["text"], s) for b in recs for h, s in zip(recs[b], sp[b], strict=True))
+    k = next(k for k, h in enumerate(recs["bukhari"]) if h["hadithnumber"] == 27)
+    t = recs["bukhari"][k]["text"]  # «… رواه يونس وصالح ومعمر وابن أخي الزهري عن الزهري.»
+    names, formulas, _ = chain_words(t, sp["bukhari"][k], known)
+    found = [_bare(t[a:b]) for a, b in names]
+    assert found[-5:] == ["يونس", "صالح", "معمر", "ابن اخي الزهري", "الزهري"]
+    assert all(
+        _bare(t[a:b]).removeprefix("و") in {"عن", "حدثنا", "اخبرنا", "اخبرني", "حدثني", "رواه", "سمعت"}
+        for a, b in formulas
+    )
+    text = "حَدَّثَنَا قُتَيْبَةُ، عَنْ أَنَسٍ، قَالَ سَأَلْتُ رَسُولَ اللَّهِ صلى الله عليه وسلم عَنِ الصَّلاَةِ"
+    names, _, blessings = chain_words(text, split(text, "bukhari", known), known)
+    assert [_bare(text[a:b]) for a, b in names] == ["قتيبه", "انس"]
+    # the blessing after his name is a formula, not the root صلو of «الصلاة»
+    assert [_bare(text[a:b]) for a, b in blessings] == ["صلي الله عليه وسلم"]

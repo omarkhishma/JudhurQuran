@@ -5,10 +5,13 @@ A passage keeps its text exactly as the source has it (never normalised: the sou
 and the lexica's are kept), the id of each word's form in the order ``jadhr_arabic.analysis.word_spans`` cuts them,
 and the roots its words reach — ``roots`` where the form is the Quran's (alone or with its clitics), ``roots_low``
 where a pattern or a weak-root rule found it — so a root's life across the texts never mixes the sure and the
-possible."""
+possible. A hadith counts the roots of what it reports: never its isnād (``meta.split``), nor a narrator's name or
+the formula before it where they stand elsewhere in it (``meta.names``, ``meta.chain``), nor a fixed blessing
+(``meta.formulaic``: «صلى الله عليه وسلم» is no use of the root صلو)."""
 
 from __future__ import annotations
 
+from bisect import bisect_right
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -131,12 +134,21 @@ def assemble(
             ids: list[int] = []
             sure: dict[str, None] = {}
             low: dict[str, None] = {}
+            # a hadith counts the roots of what it reports: not its isnād, not a narrator's name or the formula before
+            # it wherever they stand — «الزهري» names a narrator, it does not put the root زهر in every chain he is in
+            sp = p.meta.get("split") if isinstance(p.meta.get("split"), dict) else None
+            reported = sp["matn"][0] if sp and sp.get("matn") else (sp["isnad"][1] if sp else 0)
+            skip = sorted((x, y) for k in ("names", "chain", "formulaic") for x, y in (p.meta.get(k) or []))
+            starts = [x for x, _ in skip]
             for a, b in word_spans(p.text):
                 k = normalize(p.text[a:b]).replace(" ", "")
                 if not k:
                     ids.append(0)
                     continue
                 ids.append(form_id[k])
+                at = bisect_right(starts, a) - 1
+                if a < reported or (at >= 0 and a < skip[at][1]):
+                    continue
                 an = analyses[k]
                 root = an.readings[0].dict_root if an.readings else None
                 if root and an.kind in SURE:

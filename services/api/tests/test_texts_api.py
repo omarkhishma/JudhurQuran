@@ -103,10 +103,24 @@ def test_a_passage_is_its_text_verbatim_cut_into_words_each_with_its_reading() -
     # a word the Quran spells is sure and carries the Quran's lemma
     sure = [w for w in words if w and w["sure"] and w["readings"] and w["readings"][0]["lemma"]]
     assert sure and all(w["readings"][0]["lemma"]["slug"] for w in sure)
-    # the passage's roots: the sure from sure words, the possible from the rest, never both
-    first = [(w["sure"], w["readings"][0]["dict_root"]) for w in words if w and w["readings"]]
-    assert set(p["roots"]) == {r for s, r in first if s and r}
-    assert set(p["roots_low"]) == {r for s, r in first if not s and r} - set(p["roots"])
+    # the passage's roots: those of its report only — not its isnād, a narrator's name or a blessing — the sure from
+    # sure words, the possible from the rest, never both
+    at, starts = 0, []
+    for seg in p["segments"]:
+        if "w" in seg:
+            starts.append(at)
+        at += len(seg["t"])
+    m = p["meta"]
+    skip = [x for k in ("names", "chain", "formulaic") for x in m[k]]
+    counted = [
+        (w["sure"], w["readings"][0]["dict_root"])
+        for w, a in zip(words, starts, strict=True)
+        if w and w["readings"] and a >= m["split"]["matn"][0] and not any(x <= a < y for x, y in skip)
+    ]
+    assert set(p["roots"]) == {r for s, r in counted if s and r}
+    assert set(p["roots_low"]) == {r for s, r in counted if not s and r} - set(p["roots"])
+    # «يزيد», a narrator's name in the chain (ثور بن يزيد), gives no root
+    assert "زيد" not in p["roots"] + p["roots_low"] and m["split"]["matn"]
 
 
 def test_only_texts_beyond_the_quran_are_served_as_passages_here() -> None:
