@@ -11,7 +11,7 @@ import { AccountButton } from "@/components/account/AccountButton";
 export async function SiteHeader() {
   const t = await getTranslations("common");
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-panel/95 backdrop-blur supports-[backdrop-filter]:bg-panel/80">
+    <header className="sticky top-0 z-40 print:hidden border-b border-line bg-panel/95 backdrop-blur supports-[backdrop-filter]:bg-panel/80">
       <div className="mx-auto flex h-[52px] max-w-[1400px] items-center gap-3 px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2" aria-label={t("home")}>
           <span className="block h-[18px] w-[18px] rounded-[5px] bg-root" aria-hidden="true" />

@@ -6708,3 +6708,26 @@ a.wotd-pill:hover {
   background: color-mix(in srgb, var(--amber) 6%, var(--card));
   color: var(--t1);
 }
+
+/* ─── A lesson sheet (B49): the verses run on as in the mushaf; printed in ink on white, whatever the theme ─── */
+.sheet-text {
+  font-size: 26px;
+  line-height: 2.3;
+  color: var(--t1);
+  text-align: justify;
+}
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+  .lesson-sheet,
+  .lesson-sheet * {
+    color: #000 !important;
+    background: transparent !important;
+    border-color: #bbb !important;
+  }
+  .lesson-sheet .sheet-text {
+    font-size: 20pt;
+  }
+}

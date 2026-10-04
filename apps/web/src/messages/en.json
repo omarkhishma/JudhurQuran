@@ -3359,6 +3359,12 @@
     "legendOwn_lookup": "Your lookups per word",
     "legendOwn_note": "Your notes per verse",
     "legendOwn_confirm": "Your confirmations per word",
-    "legendOwn_struggle": "Your struggles per word"
+    "legendOwn_struggle": "Your struggles per word",
+    "sheetLink": "A sheet to print",
+    "sheetPrint": "Print",
+    "sheetBack": "Back to the lesson",
+    "sheetLead": "The lesson on one sheet: its verses as the mushaf writes them, its roots, and the instructor's notes.",
+    "sheetCredit": "Quran text: King Fahd Glorious Quran Printing Complex, with the Tanzil Project text (tanzil.net) for verification. Morphology: the Quranic Arabic Corpus (corpus.quran.com). Every tafsir and translation is credited to its author and source where it appears.",
+    "sheetNotes": "The instructor's notes"
   }
 }

@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Fragment, useState, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { useAccount } from "@/lib/account/store";
-import { addNote, editNote, getHeat, getLesson, getMatrix, getMine, getNotes, getPack, rangesLine, removeNote, sendNudge, type Cell, type Heat, type Layer, type LessonOut, type LessonNote } from "@/lib/classroom";
+import { addNote, editNote, getHeat, getLesson, getMatrix, getMine, getNotes, getPack, rangesLine, removeNote, sendNudge, type Cell, type Heat, type Layer, type LessonOut, type LessonNote, type Range } from "@/lib/classroom";
 import { setFinished } from "@/lib/classroomSignals";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
@@ -92,6 +92,8 @@ function Head({ lesson }: { lesson: LessonOut }) {
       <p className="text-[13px] text-t2">
         {rangesLine(lesson.ranges, names, fmt)} · {t("versesCount", cnt(lesson.verses, locale))}
         {lesson.due_at && ` · ${t("due", { day: day(lesson.due_at, locale) })}`}
+        {" · "}
+        <Link href={`/classroom/lesson/${lesson.id}/sheet`} className="underline-offset-2 hover:underline">{t("sheetLink")}</Link>
       </p>
     </header>
   );
@@ -132,18 +134,18 @@ function LessonTabs({ tab, onTab, teach, pending }: { tab: LessonTab; onTab: (t:
 
 /** The lesson's verses, a range at a time, with the translation the reader shows in the reader when they show one
  * (CLS-11; on in English by default, as there). */
-function useLessonVerses(lesson: LessonOut, enabled = true, translation: string | null = null) {
+export function useLessonVerses(ranges: Range[], enabled = true, translation: string | null = null) {
   return useQuery({
-    queryKey: ["lesson-verses", JSON.stringify(lesson.ranges), translation],
+    queryKey: ["lesson-verses", JSON.stringify(ranges), translation],
     queryFn: async () => {
-      const parts = await Promise.all(lesson.ranges.map((r) => getJSON<SurahPayload>(`/surahs/${r.surah}?start=${r.from}&end=${r.to}${translation ? `&translation=${encodeURIComponent(translation)}` : ""}`)));
+      const parts = await Promise.all(ranges.map((r) => getJSON<SurahPayload>(`/surahs/${r.surah}?start=${r.from}&end=${r.to}${translation ? `&translation=${encodeURIComponent(translation)}` : ""}`)));
       return { verses: parts.flatMap((p) => p.verses), work: parts.find((p) => p.translation)?.translation ?? null };
     },
     staleTime: Infinity,
     enabled,
   });
 }
-function useTranslationShown(): string | null {
+export function useTranslationShown(): string | null {
   const locale = useLocale();
   const on = usePrefs((p) => p.translationLine) ?? locale !== "ar";
   const work = usePrefs((p) => p.translation);
@@ -158,7 +160,7 @@ function TeachLesson({ lesson }: { lesson: LessonOut }) {
   const [view, setView] = useState<"text" | "matrix">("text");
   const [focus, setFocus] = useState<string | null>(null);
   const heat = useQuery({ queryKey: ["heat", lesson.id], queryFn: () => getHeat(lesson.id), refetchOnWindowFocus: true, refetchInterval: 60_000 });
-  const verses = useLessonVerses(lesson, true, useTranslationShown());
+  const verses = useLessonVerses(lesson.ranges, true, useTranslationShown());
   const h = heat.data;
   const words = wordsOf(verses.data?.verses);
   const shown: Layer = view === "matrix" && layer === "note" ? "lookup" : layer;
@@ -681,7 +683,7 @@ function LearnLesson({ lesson }: { lesson: LessonOut }) {
   const fmt = useFmt();
   const mine = useQuery({ queryKey: ["lesson-mine", lesson.id], queryFn: () => getMine(lesson.id) });
   const pack = useQuery({ queryKey: ["lesson-pack", lesson.id], queryFn: () => getPack(lesson.id) });
-  const verses = useLessonVerses(lesson, !!mine.data?.counts.length);
+  const verses = useLessonVerses(lesson.ranges, !!mine.data?.counts.length);
   const words = wordsOf(verses.data?.verses);
   // what this member's reader sent, laid on the text as the instructor's view lays the class's (B48)
   const ownHeat: Heat | undefined = mine.data?.counts.length

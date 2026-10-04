@@ -284,6 +284,23 @@ test("an instructor reads the class's heat above the floor, keeps lesson notes a
     await expect(page.getByRole("region", { name: "الطالب والجذر" })).toContainText("كلمات الجذر في الدرس");
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
 
+    // the lesson on a sheet to print (B49): its verses run on with their numbers, its notes, the text's credit; in
+    // print, the sheet alone
+    await page.goto(`/classroom/lesson/${lesson.id}`);
+    await page.getByRole("link", { name: "ورقة للطباعة" }).click();
+    await expect(page).toHaveURL(new RegExp(`/classroom/lesson/${lesson.id}/sheet$`));
+    const sheet = page.locator("article.lesson-sheet");
+    await expect(sheet.getByRole("heading", { level: 1 })).toHaveText("ربوبية الفاتحة");
+    await expect(sheet.locator(".sheet-text .ayah-num")).toHaveCount(7);
+    await expect(sheet.getByRole("region", { name: "ملاحظات المعلم" }).locator("li")).toHaveCount(2);
+    await expect(sheet).toContainText("مجمع الملك فهد");
+    expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
+    await page.emulateMedia({ media: "print" });
+    await expect(page.locator("header").first()).toBeHidden();
+    await expect(page.getByRole("button", { name: "اطبع" })).toBeHidden();
+    await expect(sheet).toBeVisible();
+    await page.emulateMedia({ media: "screen" });
+
     // in English the verses carry the reader's translation, credited (CLS-11)
     await page.goto(`/en/classroom/lesson/${lesson.id}`);
     await expect(page.getByText(/^Translation: /)).toBeVisible();

@@ -12,7 +12,7 @@ export async function SiteFooter() {
     .then((m) => m.dataset.version)
     .catch(() => null);
   return (
-    <footer className="mt-16 border-t border-line bg-panel">
+    <footer className="mt-16 border-t border-line bg-panel print:hidden">
       <div className="mx-auto grid max-w-[1200px] gap-6 px-4 py-8 text-[13px] text-t2 md:grid-cols-[1fr_auto]">
         <div className="max-w-[70ch] space-y-2">
           <p>{tf("attribution")}</p>
