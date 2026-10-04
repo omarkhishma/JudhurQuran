@@ -37,6 +37,10 @@ test("the dataset tab: counts from the data, releases with their holds, the chan
   await expect(page.getByText("كل تعديل مدموج يظهر في هذا السجل باسم صاحبه يوم دمجه.")).toBeVisible();
   await expect(page.getByText("والإصدار صورة ثابتة منها تبقى كما هي.", { exact: false })).toBeVisible();
   await expect(page.getByRole("heading", { name: "المصادر والتراخيص" })).toBeVisible();
+  // the window focused again: the releases and the changelog are read again (DAT-03, H01)
+  const again = Promise.all([page.waitForRequest((r) => r.url().endsWith("/api/v1/releases")), page.waitForRequest((r) => r.url().includes("/api/v1/changelog"))]);
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await again;
   // no invented numbers: no "used by", no placeholder DOI
   await expect(page.getByText(/used by|zenodo\.0000000/i)).toHaveCount(0);
   expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);

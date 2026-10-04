@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -65,10 +65,19 @@ const size = (n: number, locale: string) => {
 function Dataset() {
   const t = useTranslations("dataset");
   const locale = useLocale();
-  const meta = useQuery({ queryKey: ["meta"], queryFn: getMeta, refetchOnWindowFocus: true });
-  const list = useQuery({ queryKey: ["releases"], queryFn: getReleases, refetchOnWindowFocus: true });
+  // read again when the reader comes back — the tab shown again, or the window focused beside another (DAT-03, H01):
+  // a release published or a merge made elsewhere shows at once
+  const meta = useQuery({ queryKey: ["meta"], queryFn: getMeta, staleTime: 10_000, refetchOnWindowFocus: true });
+  const list = useQuery({ queryKey: ["releases"], queryFn: getReleases, staleTime: 10_000, refetchOnWindowFocus: true });
   const latest = list.data?.data[0];
-  const current = useQuery({ queryKey: ["release", latest?.version], queryFn: () => getRelease(latest!.version), enabled: !!latest, refetchOnWindowFocus: true });
+  const current = useQuery({ queryKey: ["release", latest?.version], queryFn: () => getRelease(latest!.version), enabled: !!latest, staleTime: 10_000, refetchOnWindowFocus: true });
+  const qc = useQueryClient();
+  useEffect(() => {
+    // the query library listens for the tab becoming visible; a window focused beside another is heard here
+    const again = () => void qc.invalidateQueries({ predicate: (q) => ["meta", "releases", "release", "changelog"].includes(String(q.queryKey[0])) });
+    window.addEventListener("focus", again);
+    return () => window.removeEventListener("focus", again);
+  }, [qc]);
   const c = meta.data?.dataset.counts;
   const n = (x: number | undefined) => (x == null ? "—" : formatNumber(x, locale));
   return (
