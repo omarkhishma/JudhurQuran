@@ -18,7 +18,7 @@ export function ClassicalLink({ p }: { p: PatternInfo }) {
   return (
     <button
       type="button"
-      className="text-[11px] text-t3 underline-offset-2 hover:text-t1 hover:underline"
+      className="classical-link text-[11px] text-t3 underline-offset-2 hover:text-t1 hover:underline"
       onClick={() => openShapes(p.slug)}
       title={t("classicalLinkTitle", { p: p.ar.full })}
     >

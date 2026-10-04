@@ -1159,6 +1159,11 @@ textarea.field {
 .panel-icon:disabled {
   color: var(--line-2);
 }
+/* «what the books of sarf say» is a control, not a word of a sentence: a touch target in the sheet (RDR-415) */
+.reader-sheet .classical-link {
+  min-height: 44px;
+  padding-inline: 8px;
+}
 .reader-sheet .panel-icon {
   width: 44px;
   height: 44px;
