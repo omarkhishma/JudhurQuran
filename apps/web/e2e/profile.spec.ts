@@ -207,7 +207,7 @@ test("a file this site exported is brought back: the new added, what differs rep
   await input.setInputFiles(file(exported));
   await expect(dlg).toContainText("عنصران جديدان هنا وسيُضافان."); // the root star and the map
   await expect(dlg).toContainText("عنصران يختلفان عمّا في هذا المتصفح."); // the word star's label, the text size
-  await expect(dlg).toContainText("تُرك منه ما حفظته نسخة أخرى من الموقع: المراجعة.");
+  await expect(dlg).toContainText("تُرك منه ما حفظته نسخة أخرى من الموقع: مراجعة الجذور.");
   await dlg.getByRole("button", { name: "أضف الجديد وأبقِ ما عندي" }).click();
   await expect(said).toHaveText("أُدخل الملف: أُضيف ٢، واستُبدل ٠.");
   expect((await saved()).bookmarks.map((b: { label: string }) => b.label).sort()).toEqual(["ص ب ر", "عِلْم"]);

@@ -16,7 +16,7 @@ const prime = async (page: Page, stars: string[]) =>
     localStorage.setItem("jadhr-personal", JSON.stringify(s.personal));
     localStorage.setItem("jadhr-saved", JSON.stringify(s.saved));
   }, seed(stars));
-const deck = (page: Page) => page.getByRole("dialog", { name: "المراجعة" });
+const deck = (page: Page) => page.getByRole("dialog", { name: "مراجعة الجذور" });
 const cards = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-review") ?? "{}").state?.cards ?? {});
 
 test("the reader's starred words make the queue; the badge counts what is due; grades go to the scheduler and the forgotten root comes back first (RDR-345, 346, 358, 359)", async ({ page, isMobile }) => {
@@ -24,7 +24,7 @@ test("the reader's starred words make the queue; the badge counts what is due; g
   await page.clock.install({ time: new Date("2026-10-03T09:00:00Z") });
   await prime(page, ["ilm", "kitab"]);
   await page.goto("/quran/1");
-  const review = page.getByRole("button", { name: /^المراجعة/ });
+  const review = page.getByRole("button", { name: /^مراجعة الجذور/ });
   await expect(review).toContainText(ar(2));
   await review.click();
   await expect(deck(page)).toContainText("جذور الكلمات التي حفظتها بالنجمة أو عرفتها");

@@ -121,7 +121,7 @@ test("in context, the verse recited is offered as a hint (RDR-569)", async ({ pa
   });
   const d = await api<{ context: { verse_key: string } }>(page, `/roots/${encodeURIComponent("علم")}/review`);
   await page.goto("/quran/1?mode=review");
-  const deck = page.getByRole("dialog", { name: "المراجعة" });
+  const deck = page.getByRole("dialog", { name: "مراجعة الجذور" });
   await deck.getByRole("button", { name: "في السياق" }).click();
   const [res] = await Promise.all([
     page.waitForResponse((r) => r.url().includes("/api/v1/recitations/") && r.ok()),

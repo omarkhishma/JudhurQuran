@@ -27,10 +27,10 @@ test("journey B: the shelf → a word starred → due in the header → the fami
   await page.getByRole("button", { name: "احفظ في قائمتك" }).first().click();
 
   // the header counts the family due (never reviewed: due now)
-  const review = page.getByRole("button", { name: /^المراجعة/ });
+  const review = page.getByRole("button", { name: /^مراجعة الجذور/ });
   await expect(review).toContainText(ar(1));
   await review.click();
-  const deck = page.getByRole("dialog", { name: "المراجعة" });
+  const deck = page.getByRole("dialog", { name: "مراجعة الجذور" });
   await expect(deck.locator(".review-card")).toContainText(w.root!.spaced);
 
   // the family drilled, then the same root in context
@@ -53,7 +53,7 @@ test("journey B: the shelf → a word starred → due in the header → the fami
   await page.getByRole("button", { name: "ادرسها بالبطاقات" }).click();
   await page.keyboard.press("ArrowRight");
   await page.goto("/quran/1");
-  await expect(page.getByRole("button", { name: /^المراجعة/ })).toContainText(ar(1));
+  await expect(page.getByRole("button", { name: /^مراجعة الجذور/ })).toContainText(ar(1));
 });
 
 test("journey B on a phone: a word starred in the sheet, the deck from the ⋯ menu, the family drilled and scheduled", async ({ page, isMobile }) => {
@@ -67,7 +67,7 @@ test("journey B on a phone: a word starred in the sheet, the deck from the ⋯ m
   await page.getByRole("button", { name: "احفظ في قائمتك" }).first().click();
   await page.getByRole("button", { name: "المزيد" }).click();
   await page.getByRole("menuitem", { name: "راجع الجذور التي مررت بها" }).click();
-  const deck = page.getByRole("dialog", { name: "المراجعة" });
+  const deck = page.getByRole("dialog", { name: "مراجعة الجذور" });
   await expect(deck.locator(".review-card")).toContainText(w.root!.spaced);
   await deck.getByRole("button", { name: "عرفتها كلها" }).click();
   await expect(deck).toContainText("انتهت الجلسة");

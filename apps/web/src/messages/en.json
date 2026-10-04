@@ -65,7 +65,7 @@
     "concordance": "Concordance",
     "analyser": "Analyser",
     "notebook": "Notebook",
-    "reviewQueue": "Review queue",
+    "reviewQueue": "Edit requests",
     "classroom": "Classroom",
     "data": "Data & API",
     "me": "My account",
@@ -159,7 +159,7 @@
         "purpose": "Text, dictionary and graph side by side"
       },
       "review": {
-        "title": "Review",
+        "title": "Root review",
         "purpose": "Recall the root families you have met"
       },
       "notebook": {
@@ -171,7 +171,7 @@
         "purpose": "The words and verses you kept"
       },
       "reviewQueue": {
-        "title": "Review queue",
+        "title": "Edit requests",
         "purpose": "Readers' proposals, merged after two independent approvals"
       },
       "classroom": {
@@ -292,7 +292,7 @@
     "pathWhyTitle": "Why this lesson"
   },
   "review": {
-    "title": "Review",
+    "title": "Root review",
     "metaMine": "roots of the words you starred or know",
     "metaChapter": "roots on this sūra — star words to build your own set",
     "modeLabel": "Card",
@@ -1710,7 +1710,7 @@
       "lead": "Your notes on words and verses, your trails, and your reading journal."
     },
     "review": {
-      "title": "Review queue",
+      "title": "Edit requests",
       "lead": "Readers' proposals on meanings, merged only after two independent approvals."
     },
     "classroom": {
@@ -1752,7 +1752,7 @@
     "search": "Search",
     "searchTitle": "Search everything (⌘K)",
     "searchEverything": "Search everything",
-    "review": "Review",
+    "review": "Root review",
     "reviewTitle": "Review the roots you have met, family by family",
     "reviewRoots": "Review roots you met",
     "reading": "Reading",
@@ -2724,7 +2724,7 @@
       "personal": "Word states and places",
       "journal": "Reading journal",
       "notebook": "Notebook",
-      "review": "Review",
+      "review": "Root review",
       "prefs": "Reading settings",
       "audio": "Recitation settings",
       "analyse": "Analyser choices",
@@ -2948,7 +2948,7 @@
     "display": "Display in this browser"
   },
   "contrib": {
-    "title": "Review queue",
+    "title": "Edit requests",
     "meta": "{open} open • {mine} yours",
     "filters": "Filter proposals",
     "filter": {
@@ -3049,7 +3049,7 @@
     "tooMany": "That is enough proposals for today.",
     "sentTitle": "Sent for review",
     "sentBody": "Reviewers and readers of the queue see it, under the name you chose for your account, or as “a contributor” if you chose none. Two independent approvals, one of them the editorial board's, merge it.",
-    "track": "Follow it in the review queue",
+    "track": "Follow it in the edit requests",
     "close": "Close",
     "keptTitle": "Your proposal is kept on this device. Sign in to send it for review; nothing you wrote is lost.",
     "footSigned": "It goes to the review queue, where reviewers and readers see it under the name you chose. Two independent approvals, one of them the editorial board's, merge it.",
@@ -3139,7 +3139,7 @@
     "draft": "kept on this device • sent for review when you sign in • {date}",
     "draftSending": "kept on this device • being sent for review • {date}",
     "status": {
-      "open": "in the review queue • {n} of 2 approvals",
+      "open": "in the edit requests • {n} of 2 approvals",
       "approved": "approved by two reviewers • waiting for the editorial board",
       "changes": "changes requested",
       "declined": "declined",
