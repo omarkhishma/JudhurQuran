@@ -10,5 +10,5 @@ export default async function GraphEditPage({ params, searchParams }: PageProps<
   // the word the map was made from: a slug and a place, only in their own shapes
   const w = typeof q.w === "string" && /^[\p{L}\p{N}_.'-]{1,80}$/u.test(q.w) ? q.w : undefined;
   const at = typeof q.at === "string" && /^\d{1,3}:\d{1,3}:\d{1,3}$/.test(q.at) ? q.at : undefined;
-  return <GraphEditor id={id} from={{ w, at }} />;
+  return <GraphEditor id={id} from={{ w, at, forked: q.forked === "1" }} />;
 }

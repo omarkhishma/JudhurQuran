@@ -3,6 +3,8 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { Link } from "@/i18n/navigation";
+import { publishedPath } from "@/lib/graph/published";
 import { cnt, formatNumber } from "@/lib/format";
 import { META } from "@/lib/graph/relations";
 import { FIELD_KINDS, KIND_COLOR, type GraphNode, type NodeKind } from "@/lib/graph/types";
@@ -48,7 +50,7 @@ export function Details({ title }: { title: string }) {
   }, [focus, tools, setUi]);
   // a shared map read by others has no settings; a group has no meaning of its own: it opens on its settings
   // (HWF-31), and so does a selection just grouped
-  const tabs: Tab[] = tools.editable ? ["meaning", "settings", "comments"] : ["meaning", "comments"];
+  const tabs: Tab[] = map.published ? ["meaning", "settings"] : tools.editable ? ["meaning", "settings", "comments"] : ["meaning", "comments"];
   const shown: Tab = frame && tab === "meaning" ? "settings" : tabs.includes(tab) ? tab : "meaning";
   const kindName = (n: GraphNode) => {
     const h = n.data.kind === "note" ? sourceHeading(n.id) : null;
@@ -65,7 +67,8 @@ export function Details({ title }: { title: string }) {
   return (
     <aside className="graph-details" aria-label={t("details")}>
       <header className="details-head">
-        <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-t1" dir="auto">{head}</span>
+        {/* the panel's heading: what it shows, above its sections (heading-order) */}
+        <h2 className="min-w-0 flex-1 truncate text-[13px] font-medium text-t1" dir="auto">{head}</h2>
         {one && (
           // the kind's colour drawn toward the text colour, so the small label reads in both themes (the grey of a
           // note fell under 4.5:1 on its own tint)
@@ -78,7 +81,7 @@ export function Details({ title }: { title: string }) {
         </button>
       </header>
       {one && !frame && <Breadcrumb tools={tools} card={one} />}
-      {(sel.length > 0 || map.gid || tools.editable) && (
+      {(sel.length > 0 || map.gid || tools.editable || map.published) && (
         <div className="details-tabs" role="tablist" aria-label={t("details")}>
           {tabs.map((k) => (
             <button
@@ -125,7 +128,7 @@ export function Details({ title }: { title: string }) {
           ) : (
             <ManySettings tools={tools} />
           )
-        ) : shown === "settings" ? (
+        ) : shown === "settings" && !map.published ? (
           <MapSettings tools={tools} />
         ) : (
           <MapSummary tools={tools} title={title} />
@@ -203,6 +206,7 @@ function Breadcrumb({ tools, card }: { tools: CanvasTools; card: GraphNode }) {
 function MapSummary({ tools, title }: { tools: CanvasTools; title: string }) {
   const t = useTranslations("graph");
   const locale = useLocale();
+  const { forkedFrom } = useSharedMap();
   const cards = tools.nodes.filter((n) => n.data.kind !== "frame").length;
   return (
     <div className="flex flex-col gap-2">
@@ -213,6 +217,15 @@ function MapSummary({ tools, title }: { tools: CanvasTools; title: string }) {
       <p className="text-[12.5px] text-t2">
         {t(`mapType_${tools.kind}`)} · {t("cards", cnt(cards, locale))} · {t("links", cnt(tools.edges.length, locale))}
       </p>
+      {forkedFrom && (
+        <p className="text-[12.5px] leading-relaxed text-t2">
+          {t("forkedFromLabel")}{" "}
+          <Link href={publishedPath(forkedFrom.slug, forkedFrom.version)} className="underline underline-offset-2" dir="auto">
+            {forkedFrom.title || forkedFrom.slug}
+          </Link>{" "}
+          <span className="text-t3">{t("publishedVersionN", { v: formatNumber(forkedFrom.version, locale) })}</span>
+        </p>
+      )}
       <Breakdown nodes={tools.nodes} />
     </div>
   );

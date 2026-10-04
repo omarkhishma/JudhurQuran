@@ -6,7 +6,7 @@ import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from
 import { upgrade } from "./migrate";
 import { cleanDoc, cleanKind, cleanTitle } from "./sanitize";
 import { dropVersions } from "./history";
-import type { GraphDoc, GraphMeta, SharedRef } from "./types";
+import type { ForkRef, GraphDoc, GraphMeta, SharedRef } from "./types";
 
 /** Local-first storage: graphs live in this browser's IndexedDB, and sync to the account when signed in (P6). */
 const INDEX = "jadhr-graphs-index";
@@ -29,7 +29,15 @@ export async function loadGraph(id: string): Promise<GraphDoc | undefined> {
   if (!doc) return undefined;
   const kind = cleanKind(doc.kind);
   const { nodes, edges } = await upgrade(doc.version, kind, doc.nodes, doc.edges);
-  return { ...doc, version: 2, kind, nodes, edges, shared: cleanShared(doc.shared) };
+  return { ...doc, version: 2, kind, nodes, edges, shared: cleanShared(doc.shared), forkedFrom: cleanFork(doc.forkedFrom) };
+}
+
+/** The published map a map was copied from, kept only in its own shape. */
+export function cleanFork(v: unknown): ForkRef | undefined {
+  const f = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  return typeof f.slug === "string" && f.slug.length <= 60 && Number.isInteger(f.version) && (f.version as number) >= 1
+    ? { slug: f.slug, version: f.version as number, title: typeof f.title === "string" ? f.title.slice(0, 200) : "" }
+    : undefined;
 }
 
 const SHARED_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -155,7 +163,7 @@ export async function decodeShare(fragment: string): Promise<GraphDoc | null> {
 }
 
 /** Create and store a new graph; returns its id. (Timestamps and ids are made here, outside render.) */
-export async function createGraph(input: Pick<GraphDoc, "title" | "kind" | "nodes" | "edges" | "pendingLayout">): Promise<string> {
+export async function createGraph(input: Pick<GraphDoc, "title" | "kind" | "nodes" | "edges" | "pendingLayout" | "forkedFrom">): Promise<string> {
   const id = newId();
   const now = Date.now();
   await saveGraph({ version: 2, id, createdAt: now, updatedAt: now, ...input });

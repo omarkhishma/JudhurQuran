@@ -29,11 +29,23 @@ const KEY = inPane ? `${GRAPH_UI_KEY}:split` : GRAPH_UI_KEY;
 // then writes what is pending as it goes
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 const pending = new Map<string, string>();
+/** A published map read in the editor's frame — on its page, framed by another site or in a window of its own —
+ * changes nothing the reader keeps (EDT-288, spec §4.6): its panels follow the address, and are written nowhere. */
+let frozen = 0;
+export function freezeGraphUi(): () => void {
+  frozen++;
+  const before = useGraphUi.getState().detailsOpen;
+  return () => {
+    useGraphUi.setState({ detailsOpen: before });
+    pending.clear();
+    frozen--;
+  };
+}
 const write = (name: string) => {
   const value = pending.get(name);
   pending.delete(name);
   clearTimeout(timers.get(name));
-  if (value === undefined || storageFrozen()) return;
+  if (value === undefined || frozen > 0 || storageFrozen()) return;
   try {
     localStorage.setItem(name, value);
   } catch {
@@ -50,6 +62,7 @@ const debounced: StateStorage = {
     }
   },
   setItem: (name, value) => {
+    if (frozen > 0) return;
     pending.set(name, value);
     clearTimeout(timers.get(name));
     timers.set(name, setTimeout(() => write(name), 200));

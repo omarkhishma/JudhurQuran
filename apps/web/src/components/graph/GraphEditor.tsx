@@ -24,20 +24,23 @@ import { GraphCanvas, type CanvasTools } from "./GraphCanvas";
 import { Library } from "./Library";
 import { PresenceBlock } from "./Presence";
 import { SplitReceiver } from "./SplitReceiver";
+import { PublishDialog, useMyPublished } from "./Publish";
 import { ShareDialog } from "./Sharing";
 
 /** What autosave compares: the map as the reader made it — not the sizes xyflow measures, nor what is selected. */
 const contentOf = (title: string, nodes: GraphNode[], edges: GraphEdge[]) =>
   JSON.stringify([title, nodes.map((n) => [n.id, Math.round(n.position.x), Math.round(n.position.y), n.data]), edges.map((e) => [e.id, e.source, e.target, e.data?.label ?? ""])]);
 
-/** The word the map was made from, when it was (`?w=&at=` from the hand-off), for the way back to the reader. */
-export type MapOrigin = { w?: string; at?: string };
+/** The word the map was made from, when it was (`?w=&at=` from the hand-off), for the way back to the reader; and
+ * whether it was just copied from a published map (`?forked=1`, EDT-239). */
+export type MapOrigin = { w?: string; at?: string; forked?: boolean };
 
 export function GraphEditor({ id, from }: { id: string; from?: MapOrigin }) {
   const t = useTranslations("graph");
   // read afresh on every opening — a copy kept from an earlier visit would be written back over newer work (F1)
   const q = useQuery({ queryKey: ["graph", id], queryFn: async () => (await loadGraph(id)) ?? null, gcTime: 0, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false });
-  const [notice, setNotice] = useState<string | null>(null);
+  // a copy just made of a published map says so, once (EDT-239)
+  const [notice, setNotice] = useState<string | null>(() => (from?.forked ? t("forkedNotice") : null));
   // the soft lock (P8.6, D5): one window edits a map; another is told and may take it. Between this browser's tabs
   // for any map; for a shared one also across the owner's devices, with who else is on it
   const [sharedId, setSharedId] = useState<string | null>(null);
@@ -154,6 +157,9 @@ function EditorInner({
   const [push, setPush] = useState<Push>("idle");
   // the map as it was when the share dialog opened (null: closed)
   const [shareDoc, setShareDoc] = useState<GraphDoc | null>(null);
+  // the map as it was when the publish dialog opened (null: closed), and whether it is published (the server's word)
+  const [publishDoc, setPublishDoc] = useState<GraphDoc | null>(null);
+  const published = !!useMyPublished().data?.data.some((r) => r.local_id === doc.id);
   // writes to this browser's copy one at a time: one that records the shared revision never overtakes a save
   const lane = useRef<Promise<unknown>>(Promise.resolve());
   const laneBusy = useRef(0);
@@ -421,7 +427,7 @@ function EditorInner({
   }
 
   return (
-    <SharedMapContext.Provider value={{ gid: shared?.id ?? null, owner: true, openShare, mapId: doc.id }}>
+    <SharedMapContext.Provider value={{ gid: shared?.id ?? null, owner: true, openShare, mapId: doc.id, forkedFrom: doc.forkedFrom }}>
     <div className="flex min-h-0 flex-1 flex-col">
       <GraphCanvas
         initialNodes={doc.nodes}
@@ -484,6 +490,8 @@ function EditorInner({
               onImport={(f, tools) => void importInto(f, tools)}
               onShare={openShare}
               shared={!!shared}
+              onPublish={() => setPublishDoc({ ...doc, title: titleRef.current || t("untitled"), nodes: latest.current.nodes, edges: latest.current.edges })}
+              published={published}
               detailsOpen={detailsOpen}
               onDetails={() => setUi({ detailsOpen: !detailsOpen })}
               onHelp={() => setHelp(true)}
@@ -514,6 +522,7 @@ function EditorInner({
         end={detailsOpen ? <Details title={title} /> : <DetailsRail />}
       />
       <EditorHelp open={help} onClose={() => setHelp(false)} />
+      {publishDoc && <PublishDialog open onClose={() => setPublishDoc(null)} doc={publishDoc} />}
       {shareDoc && (
         <ShareDialog
           open

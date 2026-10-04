@@ -13,7 +13,7 @@ import { cnt, formatNumber } from "@/lib/format";
 import { foldQuery as fold } from "@/lib/graph/find";
 import { META } from "@/lib/graph/relations";
 import { deleteComment, getComments, markCommentsRead, postComment, resolveComment, type Comment, type Person } from "@/lib/graph/shared";
-import { KIND_COLOR, type GraphNode } from "@/lib/graph/types";
+import { KIND_COLOR, type ForkRef, type GraphNode } from "@/lib/graph/types";
 import type { CanvasTools } from "./GraphCanvas";
 
 /**
@@ -26,7 +26,17 @@ import type { CanvasTools } from "./GraphCanvas";
 
 /** The map the canvas shows, as sharing sees it: its shared copy's id (null: private), whose it is, and the way to
  * share it from the editor. */
-export type SharedMap = { gid: string | null; owner: boolean; openShare?: () => void; /** the map's id in this browser, for its history */ mapId?: string };
+export type SharedMap = {
+  gid: string | null;
+  owner: boolean;
+  openShare?: () => void;
+  /** the map's id in this browser, for its history */
+  mapId?: string;
+  /** a published version, read (P8.5): no comments, its settings shown read-only (EDT-282, EDT-283, EDT-289) */
+  published?: boolean;
+  /** the published map this one was copied from (EDT-290), named on it */
+  forkedFrom?: ForkRef;
+};
 export const SharedMapContext = createContext<SharedMap>({ gid: null, owner: true });
 export const useSharedMap = () => useContext(SharedMapContext);
 

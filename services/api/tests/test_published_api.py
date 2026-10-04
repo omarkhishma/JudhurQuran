@@ -85,6 +85,22 @@ def _publish(h: dict[str, str], slug: str, local: str = "m1", **kw: object) -> d
     return r.json()
 
 
+def test_the_address_rules_are_the_ones_the_browser_shows() -> None:
+    """The browser shows the address the API will make (apps/web lib/graph/published.ts reads the same cases)."""
+    import json
+    import unicodedata
+    from pathlib import Path
+
+    cases = json.loads(
+        (Path(__file__).resolve().parents[3] / "apps/web/src/lib/graph/slug-vectors.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert len(cases) >= 10
+    for c in cases:
+        assert published.slugify(c["input"]) == unicodedata.normalize("NFC", c["slug"]), c["why"]
+
+
 def test_a_map_is_published_under_an_arabic_address_and_read_by_anyone(people: dict, tag: str) -> None:
     a, r = people["a"], people["r"]
     assert (

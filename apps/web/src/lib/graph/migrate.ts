@@ -170,6 +170,7 @@ export async function migrateV1(type: GraphKind, rawNodes: unknown[], rawEdges: 
 /** Any map's cards and links, as version 2: read through the sanitiser, a version-1 map migrated first. */
 export async function upgrade(version: unknown, type: GraphKind, nodes: unknown, edges: unknown): Promise<Cleaned> {
   const n = Array.isArray(nodes) ? nodes : [];
-  const e = Array.isArray(edges) ? edges : [];
+  // a link as an object or, in older records, as a [source, target] pair (EDT-277, EDT-291, HWF-53)
+  const e = (Array.isArray(edges) ? edges : []).map((x) => (Array.isArray(x) ? { source: x[0], target: x[1] } : x));
   return version === 2 ? cleanGraph(n, e) : migrateV1(type, n, e);
 }

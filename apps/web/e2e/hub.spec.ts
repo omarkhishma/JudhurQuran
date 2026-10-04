@@ -95,7 +95,9 @@ test("the doors count from the data, and every surface is listed with its purpos
   await expect(page.locator('a.hub-tile[href="/hadith"]')).toContainText("الحديث");
   await expect(page.locator('a.hub-tile[href="/books"]')).toContainText("الكتب");
   for (const tile of await tiles.all()) await expect(tile.locator(".hub-tile-purpose")).not.toBeEmpty();
-  await expect(page.locator('.hub-tile[data-building] .hub-tile-phase').first()).toContainText("قيد البناء");
+  // every destination is built: the published maps (P8.5) were the last tile waiting
+  await expect(page.locator(".hub-tile[data-building]")).toHaveCount(0);
+  await expect(page.locator('a.hub-tile[href="/g"]')).toContainText("الخرائط المنشورة");
   const hrefs = await page.locator("a.hub-tile").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
   for (const href of hrefs) {
     const r = await page.request.get(href);

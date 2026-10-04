@@ -111,9 +111,12 @@ export type GraphDoc = {
   pendingLayout?: boolean;
   /** Shared for comments (P8.1-E): the server's copy, and the revision this copy was last saved as there. */
   shared?: SharedRef;
+  /** Copied from a published map (P8.5, EDT-290): its address, the version copied and its title then. */
+  forkedFrom?: ForkRef;
 };
 
 export type SharedRef = { id: string; revision: number };
+export type ForkRef = { slug: string; version: number; title: string };
 
 export type GraphMeta = Pick<GraphDoc, "id" | "title" | "kind" | "createdAt" | "updatedAt"> & { nodeCount: number; shared?: string };
 

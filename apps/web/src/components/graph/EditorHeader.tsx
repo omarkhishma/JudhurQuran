@@ -21,6 +21,8 @@ export function EditorHeader({
   onImport,
   onShare,
   shared,
+  onPublish,
+  published,
   detailsOpen,
   onDetails,
   onHelp,
@@ -33,6 +35,9 @@ export function EditorHeader({
   onShare: () => void;
   /** shared for comments (P8.1-E) */
   shared: boolean;
+  /** publishing (P8.5, EDT-021), and whether the map is published */
+  onPublish: () => void;
+  published: boolean;
   detailsOpen: boolean;
   onDetails: () => void;
   onHelp: () => void;
@@ -87,6 +92,10 @@ export function EditorHeader({
         <Icon name="share" />
         {t("share")}
         {shared && <span className="dot" style={{ background: "var(--good)" }} aria-label={t("sharedOn")} />}
+      </button>
+      <button type="button" className="btn shrink-0" onClick={onPublish} aria-haspopup="dialog" title={t(published ? "publishedOnTitle" : "publishHint")}>
+        {t("publish")}
+        {published && <span className="dot" style={{ background: "var(--good)" }} aria-label={t("publishedOn")} />}
       </button>
       <button type="button" className="btn shrink-0 max-md:hidden" aria-pressed={detailsOpen} onClick={onDetails} title={t("detailsToggle")}>
         {t("details")}

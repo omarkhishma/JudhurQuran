@@ -178,6 +178,11 @@ export type GraphCanvasProps = {
   translit?: boolean;
   /** inside a page (a root's map on its page, QAN-21): the wheel scrolls the page, a drag pans, ⌘ with the wheel zooms */
   embedded?: boolean;
+  /** read-only: what an act the map refuses is told (a published copy, EDT-244, EDT-257) — said, never silent */
+  guard?: string;
+  /** whether a read-only map's cards may be moved on screen (a shared map's readers arrange their view; a published
+   * one keeps its author's, EDT-282) */
+  draggable?: boolean;
 };
 
 export const DRAG_TYPE = "application/x-jadhr-card";
@@ -303,6 +308,8 @@ function CanvasInner({
   onHelp,
   translit = false,
   embedded = false,
+  guard,
+  draggable = true,
 }: GraphCanvasProps) {
   const t = useTranslations("graph");
   const locale = useLocale();
@@ -970,6 +977,7 @@ function CanvasInner({
   const actions: GraphActions = useMemo(
     () => ({
       editable,
+      publishedCopy: !editable && !!guard,
       translit,
       mapView,
       toggleFold: (id) => fold([id]),
@@ -999,7 +1007,7 @@ function CanvasInner({
       relate: (id) => void relate(id),
       topicVerses: (id) => void addTopicVerses(id),
     }),
-    [editable, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast, kind, relate, addTopicVerses],
+    [editable, guard, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast, kind, relate, addTopicVerses],
   );
   const frameActions: FrameActions = useMemo(
     () => ({ members: (id) => membersOf(id, nodes), resize: resizeFrame, selectInside: (id) => selectIds(membersOf(id)) }),
@@ -1019,6 +1027,13 @@ function CanvasInner({
       const mod = e.metaKey || e.ctrlKey;
       const k = e.key.toLowerCase();
       const sel = live.current.nodes.filter((n) => n.selected);
+      // a published copy refuses every edit in one place, and says so (HWF-11): deleting, undoing, duplicating,
+      // grouping, cutting and pasting, tidying, extracting and linking; reading, folding and moving about still work
+      if (!editable && guard && inEditor && ((mod && "zdxvg".includes(k) && k.length === 1) || (!mod && ["delete", "backspace", "t", "e", "l"].includes(k)))) {
+        e.preventDefault();
+        toast(guard);
+        return;
+      }
       if (mod && k === "z") {
         e.preventDefault();
         if (e.shiftKey) redo();
@@ -1099,7 +1114,7 @@ function CanvasInner({
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [undo, redo, tidy, fit, rf, onHelp, fold, select, editable, commit, t, ensureVisible, zoomBy, zoomTo, expand, linkPicked, duplicate, group, ungroup]);
+  }, [undo, redo, tidy, fit, rf, onHelp, fold, select, editable, commit, t, ensureVisible, zoomBy, zoomTo, expand, linkPicked, duplicate, group, ungroup, guard, toast]);
 
   const exportPng = useCallback(async () => {
     const viewport = wrapper.current?.querySelector<HTMLElement>(".react-flow__viewport");
@@ -1494,6 +1509,7 @@ function CanvasInner({
                 setFuture([]);
               }}
               nodesConnectable={editable}
+              nodesDraggable={editable || draggable}
               elementsSelectable
               deleteKeyCode={editable ? ["Backspace", "Delete"] : null}
               zoomOnDoubleClick={false}

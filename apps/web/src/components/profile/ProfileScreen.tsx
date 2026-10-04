@@ -10,6 +10,7 @@ import { authFetch, useAccount } from "@/lib/account/store";
 import { myProposals, type ProposalOut } from "@/lib/contrib";
 import { useIsClient } from "@/lib/client";
 import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
+import { myPublished, publishedPath } from "@/lib/graph/published";
 import { useMyGraphs } from "@/lib/graph/useMyGraphs";
 import { listTexts, loadText } from "@/lib/library/texts";
 import { applyImport, type ImportPlan, MAX_IMPORT_BYTES, planCounts, planImport } from "@/lib/importData";
@@ -396,6 +397,8 @@ function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
   const verseNotes = useSaved((s) => s.notes);
   const notes = useNotebook((s) => s.notes);
   const graphs = useMyGraphs(tab === "graphs");
+  // the maps this reader published (PRF-20): each by its first root, opening its public page
+  const published = useQuery({ queryKey: ["my-published", session], queryFn: myPublished, enabled: tab === "graphs" && !!session, staleTime: 30_000 });
   const texts = useQuery({ queryKey: ["user-texts"], queryFn: listTexts, enabled: tab === "library" });
   const date = (ms: number) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date(ms));
   const day = (d: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { weekday: "long", day: "numeric", month: "long" }).format(new Date(`${d}T12:00:00`));
@@ -438,7 +441,10 @@ function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
     }
     if (tab === "graphs")
       return graphs.data
-        ? graphs.data.map((g) => ({ id: g.id, dot: "var(--c-form)", ar: null, text: `${g.title} • ${t("cardsCount", cnt(g.nodeCount, locale))}`, when: date(g.updatedAt), href: `/graph/edit/${g.id}` }))
+        ? [
+            ...(published.data?.data ?? []).map((p) => ({ id: `p:${p.slug}`, dot: "var(--c-form)", ar: p.counts.lead, text: `${p.title} • ${t("cardsCount", cnt(p.counts.cards, locale))} • ${t("publishedMap")}`, when: date(Date.parse(p.updated_at)), href: publishedPath(p.slug) })),
+            ...graphs.data.map((g) => ({ id: g.id, dot: "var(--c-desc)", ar: null, text: `${g.title} • ${t("cardsCount", cnt(g.nodeCount, locale))}`, when: date(g.updatedAt), href: `/graph/edit/${g.id}` })),
+          ]
         : null;
     if (tab === "library")
       return texts.data
@@ -448,7 +454,7 @@ function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
     return mergeSessions(sessions)
       .sort((a, b) => b.day.localeCompare(a.day))
       .map((s) => ({ id: `${s.day}:${s.text}`, dot: "var(--c-root)", ar: s.roots.slice(0, 3).join(" • ") || null, text: `${s.text === "quran" ? t("quran") : s.text} • ${t("lookupsCount", cnt(s.lookups, locale))}`, when: day(s.day), href: "/notebook?tab=journal" }));
-  }, [tab, proposals, server.data, bookmarks, notes, verseNotes, graphs.data, texts.data, sessions, ready, t, locale]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tab, proposals, server.data, bookmarks, notes, verseNotes, graphs.data, published.data, texts.data, sessions, ready, t, locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!rows) return <div className="h-24 animate-pulse rounded-xl bg-card-2" aria-hidden="true" />;
   if (!rows.length) return <p className="profile-empty">{t("empty." + tab)}</p>;

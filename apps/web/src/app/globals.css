@@ -5070,12 +5070,16 @@ a.wotd-pill:hover {
 }
 /* a shared map read by others (P8.1-E): on a phone its few tools wrap under the title instead of scrolling away */
 @media (max-width: 767px) {
-  .editor-header.is-shared {
+  .editor-header.is-shared,
+  .editor-header.is-published {
     flex-wrap: wrap;
     height: auto;
     row-gap: 6px;
     padding-block: 8px;
     overflow-x: visible;
+  }
+  .editor-header.is-published > .flex-1 {
+    display: none;
   }
   .editor-header.is-shared .shared-title {
     flex: 1 1 calc(100% - 140px);
@@ -7110,4 +7114,104 @@ a.wotd-pill:hover {
   color: var(--t1);
   border-radius: 4px;
   padding: 0 0.12em;
+}
+
+/* ── published maps (P8.5; EDT-324…341) ── */
+/* the editor read-only in a window of its own (EDT-025): the pill that says so */
+.published-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--card-2);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--t2);
+  white-space: nowrap;
+}
+:lang(en) .published-pill {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+/* a frame whose map is gone (EDT-279): said in the frame, on the paper colour */
+.graph-empty-frame {
+  background: var(--paper, var(--bg));
+}
+/* the map's page: the other maps of its author in one row, then the map and its actions side by side */
+.pub-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.pub-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 899px) {
+  .pub-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.pub-frame {
+  position: relative;
+  min-height: 480px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+}
+.pub-iframe {
+  display: block;
+  width: 100%;
+  height: min(72vh, 640px);
+  min-height: 480px;
+  border: 0;
+}
+@media (max-width: 899px) {
+  .pub-frame,
+  .pub-iframe {
+    min-height: 420px;
+  }
+  .pub-iframe {
+    height: 64vh;
+  }
+}
+/* the caption under the map (EDT-330): under it, not over it, where it would cover the details' heading */
+.pub-caption {
+  margin-top: -4px;
+}
+.pub-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+.pub-actions .btn {
+  min-height: 40px;
+}
+.pub-card-strip {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.pub-notice {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--amber) 12%, var(--panel));
+  color: var(--t1);
+}
+.pub-row:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }

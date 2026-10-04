@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAccount } from "@/lib/account/store";
 import { createGraph, deleteGraph } from "@/lib/graph/persist";
+import { forkPublished, publishedPath, readPublished } from "@/lib/graph/published";
 import { listShared, sharedPath, stopSharing, type SharedRow } from "@/lib/graph/shared";
 import { useMyGraphs } from "@/lib/graph/useMyGraphs";
 import type { GraphKind } from "@/lib/graph/types";
@@ -14,6 +15,7 @@ import { MAX_MAP_IMPORT, restoreFiles, sweepFiles } from "@/lib/graph/files";
 import { upgrade } from "@/lib/graph/migrate";
 import { cleanKind, cleanTitle, type Cleaned } from "@/lib/graph/sanitize";
 import { useWhereSaved } from "@/lib/graph/whereSaved";
+import { useMyPublished } from "./Publish";
 
 
 export function GraphHome() {
@@ -34,10 +36,24 @@ export function GraphHome() {
   const here = new Set(graphs?.map((g) => g.id) ?? []);
   // shared with this reader, and this reader's own shared maps that this browser does not hold
   const others = sharedRows.filter((r) => !r.owner.mine || !here.has(r.local_id ?? ""));
+  // this reader's published maps (P8.5): marked on their rows, and listed with their pages
+  const published = useMyPublished().data?.data ?? [];
+  const publishedOf = new Map(published.filter((r) => r.local_id).map((r) => [r.local_id!, r]));
   // files no map holds any more, once a day has passed (lib/graph/files)
   useEffect(() => {
     void sweepFiles().catch(() => 0);
   }, []);
+  // `?fork={slug}&v=` (EDT-290): a published map copied into this reader's maps, then opened
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const slug = p.get("fork");
+    if (!slug) return;
+    const v = Number(p.get("v")) || undefined;
+    readPublished(slug, v)
+      .then((m) => forkPublished(m, t("forkTitle", { title: m.title })))
+      .then((id) => router.replace(`/graph/edit/${id}?forked=1`))
+      .catch(() => setMessage({ text: t("forkMissing") }));
+  }, [router, t]);
 
   async function create(kind: GraphKind) {
     const title = kind === "topic" ? t("newTopic") : kind === "meaning" ? t("newMeaning") : t("newFree");
@@ -152,6 +168,12 @@ export function GraphHome() {
                   {t("cards", cnt(g.nodeCount, locale))} • {t("updated", { date: new Date(g.updatedAt).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB") })}
                 </span>
                 {g.shared && <SharedLine row={mineShared.get(g.id)} />}
+                {publishedOf.has(g.id) && (
+                  <span className="mt-0.5 flex items-center gap-1 text-[12px] text-t2">
+                    <span className="dot" style={{ background: "var(--c-form)" }} aria-hidden="true" />
+                    {t("publishedRowLine", { v: formatNumber(publishedOf.get(g.id)!.latest, locale) })}
+                  </span>
+                )}
               </Link>
               <button
                 type="button"
@@ -165,11 +187,32 @@ export function GraphHome() {
                   void shared.refetch();
                 }}
               >
-                {confirming === g.id ? t(g.shared ? "deleteSharedConfirm" : "deleteConfirm") : t("delete")}
+                {confirming === g.id ? t(g.shared ? "deleteSharedConfirm" : publishedOf.has(g.id) ? "deletePublishedConfirm" : "deleteConfirm") : t("delete")}
               </button>
             </li>
           ))}
         </ul>
+
+        {published.length > 0 && (
+          <>
+            <h2 className="label-caps mt-10 mb-3">{t("myPublished")}</h2>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {published.map((r) => (
+                <li key={r.slug} className="card p-4">
+                  <Link href={publishedPath(r.slug)} className="block min-w-0">
+                    <span className="flex items-baseline gap-2">
+                      {r.counts.lead && <span className="ar-classical text-[16px]" lang="ar">{r.counts.lead}</span>}
+                      <span className="min-w-0 flex-1 truncate font-semibold" dir="auto">{r.title}</span>
+                    </span>
+                    <span className="text-[12.5px] text-t3">
+                      {t("publishedVersionN", { v: formatNumber(r.latest, locale) })} • {t("cards", cnt(r.counts.cards, locale))} • {t("publishedForks", cnt(r.fork_count, locale))}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
         {others.length > 0 && (
           <>

@@ -20,6 +20,8 @@ import { excerptOf, keyOf, markedVerse, useVerseText } from "@/lib/graph/verseTe
 
 export type GraphActions = {
   editable: boolean;
+  /** a published copy (P8.5, EDT-282): its author's arrangement as published — nothing extracted into it */
+  publishedCopy: boolean;
   /** transliteration shown on the cards (QAN-22) */
   translit: boolean;
   /** zoomed out below the map threshold: each card shows only its headline, large (EDT-058, QAN-20) */
@@ -48,6 +50,7 @@ export type GraphActions = {
 
 export const GraphActionsContext = createContext<GraphActions>({
   editable: false,
+  publishedCopy: false,
   translit: false,
   mapView: false,
   expanding: null,
@@ -202,7 +205,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
             )}
             <Stats id={id} data={data} />
             <Fields id={id} data={data} />
-            <Extract id={id} data={data} />
+            {!actions.publishedCopy && <Extract id={id} data={data} />}
             {data.kind === "root" && data.rootKey && actions.relations && actions.editable && (
               // a meaning map's roots: those the classical books relate to this one, reviewed by the board (P8.4)
               <div className="extract-row nodrag">
