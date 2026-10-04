@@ -33,6 +33,9 @@ test("the dataset tab: counts from the data, releases with their holds, the chan
     await expect(rel.first()).toContainText("لم يسجل إصدار بعد.");
   }
   await expect(page.getByRole("heading", { name: "سجل التغييرات" })).toBeVisible();
+  // what the page claims is true: merges reach this changelog, not the release files; a release is a fixed snapshot
+  await expect(page.getByText("كل تعديل مدموج يظهر في هذا السجل باسم صاحبه يوم دمجه.")).toBeVisible();
+  await expect(page.getByText("والإصدار صورة ثابتة منها تبقى كما هي.", { exact: false })).toBeVisible();
   await expect(page.getByRole("heading", { name: "المصادر والتراخيص" })).toBeVisible();
   // no invented numbers: no "used by", no placeholder DOI
   await expect(page.getByText(/used by|zenodo\.0000000/i)).toHaveCount(0);
