@@ -14,7 +14,9 @@ import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { sourceLine } from "@/lib/reader/board";
 import { Term } from "@/components/terms/Term";
 import { localized } from "@/lib/seo";
+import { RootInTexts } from "@/components/rootlife/RootInTexts";
 import { dictHrefOfQuranRoot } from "@/lib/dictionary";
+import type { RootInTexts as RootInTextsData } from "@/lib/rootlife";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 
 export const revalidate = 86400;
@@ -62,10 +64,12 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
   const tb = await getTranslations("board");
   const tl = await getTranslations("lexicon");
   const tg = await getTranslations("graph");
-  const [r, surahs, sources] = await Promise.all([
+  const [r, surahs, sources, inTexts] = await Promise.all([
     load(root),
     api<{ data: Surah[] }>("/surahs"),
     api<{ data: Source[] }>("/sources"),
+    // the root beyond the Quran (P11.4b): its passages in the hadith and the books
+    api<RootInTextsData>(`/roots/${encodeURIComponent(decodeURIComponent(root))}/texts?limit=5`).catch(() => null),
   ]);
   const sourceTitle = (id: string) => {
     const s = sources.data.find((x) => x.id === id);
@@ -240,6 +244,8 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
         <p className="mb-3 text-[13.5px] text-t2">{t("concordanceLead")}</p>
         <Concordance root={r.key} lemmas={r.lemmas.map((l) => ({ id: l.id, ar: l.ar, occurrences: l.occurrences }))} />
       </section>
+
+      {inTexts && <RootInTexts data={inTexts} />}
 
       {(r.variants.length > 0 || r.also_attributed.length > 0) && (
         <section className="mt-10" aria-labelledby="variants">

@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { permanentRedirect } from "next/navigation";
 import { DictionaryLexicon } from "@/components/dictionary/DictionaryLexicon";
+import { RootInTexts } from "@/components/rootlife/RootInTexts";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { dictHref, type DictRoot } from "@/lib/dictionary";
 import { cnt, formatNumber } from "@/lib/format";
+import type { RootInTexts as RootInTextsData } from "@/lib/rootlife";
 import { localized } from "@/lib/seo";
 
 export const revalidate = 86400;
@@ -35,6 +37,8 @@ export default async function DictionaryRootPage({ params }: PageProps<"/[locale
   setRequestLocale(locale);
   const t = await getTranslations("dictionary");
   const r = await load(root);
+  // the root beyond the Quran and the lexica (P11.4b): its passages in the hadith and the books
+  const inTexts = await api<RootInTextsData>(`/roots/${encodeURIComponent(r.key)}/texts?limit=5`).catch(() => null);
   // one address per root: a spelling a reader typed (سما, اخذ) goes to the root it reached
   if (decodeURIComponent(root) !== r.key) permanentRedirect(dictHref(r.key));
   const n = (x: number) => formatNumber(x, locale);
@@ -103,6 +107,8 @@ export default async function DictionaryRootPage({ params }: PageProps<"/[locale
           <DictionaryLexicon root={r} />
         </section>
       )}
+
+      {inTexts && <RootInTexts data={inTexts} />}
 
       <nav className="mt-10 flex flex-wrap justify-between gap-2 border-t border-line pt-4 text-[13px]" aria-label={t("leaf")}>
         {r.prev ? (

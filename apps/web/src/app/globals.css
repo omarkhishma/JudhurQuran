@@ -7086,3 +7086,11 @@ a.wotd-pill:hover {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+/* a root's word in a passage of the texts (P11.4b): marked in the root's colour */
+.kwic-word {
+  background: color-mix(in srgb, var(--c-root) 16%, transparent);
+  color: var(--t1);
+  border-radius: 4px;
+  padding: 0 0.12em;
+}

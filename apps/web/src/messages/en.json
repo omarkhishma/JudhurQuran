@@ -2265,7 +2265,12 @@
     "rangeTo": "to",
     "rangeNone": "only",
     "surahTo": "to sūra",
-    "juzTo": "to juzʾ"
+    "juzTo": "to juzʾ",
+    "sourceLabel": "Source",
+    "sourceQuran": "The Quran",
+    "sourceHadith": "Hadith",
+    "sourceBooks": "Books",
+    "textsMore": "Every passage, by book and reading"
   },
   "analyse": {
     "pageTitle": "Analyser",
@@ -3762,5 +3767,36 @@
     "readTurath": "On turath",
     "catalogueGate": "The catalogue holds {all} works of the Arabic corpus: those whose authors died by 1374 AH, uncorrected OCR left out. Works of authors who died 1375–1394 AH wait for the owner's decision; later ones are not included.",
     "catalogueLink": "The whole catalogue"
+  },
+  "rootTexts": {
+    "title": "In the hadith and the books",
+    "lead": "Where the root stands in the hadith collections and the classical books as the rules read them: «sure» where the word's form is the Quran's, alone or with its clitics, «possible» where a pattern or the weak-root rule found it. An isnād, a narrator's name and the blessing on the Prophet are not counted.",
+    "none": "The root is found in neither the hadith collections nor the classical books.",
+    "inHadith": "In the hadith collections",
+    "inBooks": "In the classical books",
+    "sureCount": "{count, plural, one {# sure passage} other {{n} sure passages}}",
+    "possibleCount": "{count, plural, one {and one possible} other {and {n} possible}}",
+    "allHadith": "All its passages in the hadith",
+    "allBooks": "All its passages in the books",
+    "first": "The first passages",
+    "all": "{count, plural, one {The sure passage} other {All {n} sure passages}}",
+    "possibleChip": "possible",
+    "noLine": "The word is not marked in this passage.",
+    "whereHadith": "{book}, hadith {ref}",
+    "whereBook": "{book}",
+    "pageTitle": "The root {root} in the hadith and the books",
+    "dictionary": "Dictionary",
+    "kindLabel": "Kind",
+    "kindAll": "All",
+    "whichLabel": "Reading",
+    "which_sure": "Sure",
+    "which_possible": "Possible",
+    "which_all": "Both",
+    "textLabel": "Book",
+    "textAll": "All books",
+    "found": "{count, plural, one {# passage} other {{n} passages}}",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "pageOf": "Page {page} of {pages}"
   }
 }
