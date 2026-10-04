@@ -38,6 +38,7 @@ Read `docs/PLAN.md` (status) and `docs/DECISIONS.md` (decisions + lessons) befor
 | Validation report / release (built once; `--force` before it is recorded) | `uv run python -m jadhr_pipeline.validation` · `uv run python -m jadhr_pipeline.release` |
 | Jing for the release's TEI Lex-0 check (once; needs Java) | `uv run python -m jadhr_pipeline.lexicon_xml fetch-jing` |
 | Record a built release (once; publishing it is the owner's go) | `uv run python -m jadhr_api.releases record data/release/2026.10.0` · `… publish 2026.10.0` · `… doi 2026.10.0 <doi>` |
+| Expert review packets (D15, P3.10; outside git) | `uv run python -m jadhr_api.packets data/review/2026.10.0` |
 | Python tests (strict, with data) | `JADHR_REQUIRE_DATA=1 uv run pytest packages/arabic-py pipeline services/api -q` |
 | Web checks | `pnpm lint && pnpm typecheck && pnpm build` |
 | E2E + axe, against the production build | API started with `JADHR_RATE_LIMIT_PER_MINUTE=100000 JADHR_MAIL_PER_IP_PER_HOUR=100000 JADHR_ACCOUNT_RATE_PER_MINUTE=100000 JADHR_INTAKE_ALLOW_PRIVATE=1` (every browser shares one address, the suite signs in dozens of times, and the intake test serves its web page on loopback — never set the last one in production); `pnpm build && JADHR_REVALIDATE_SECRET=e2e pnpm exec next start --port 3215`; `E2E_REVALIDATE_SECRET=e2e E2E_BASE_URL=http://localhost:3215 pnpm exec playwright test` (the secret lets the tests expire that server's cached pages after the board approves) |
