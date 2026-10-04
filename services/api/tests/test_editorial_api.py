@@ -450,3 +450,22 @@ def test_fields_from_the_books_and_a_loose_reading_kept_from_readers_until_revie
     assert client.get(f"/api/v1/relations/{secret}").json()["status"] == "in_force"
     panel = client.get(f"/api/v1/words/{slug['slug']}/relations").json()["fields"]
     assert [x["review"]["verdict"] for x in panel if x["id"] == secret] == ["reviewed"]
+
+
+def test_the_web_lists_every_kind_and_layer_the_api_keeps() -> None:
+    """The workbench's screen keeps its own list of kinds and layers (apps/web/src/lib/editorialShape.ts); a layer
+    the API judges but the screen does not list cannot be worked on (topic_links was, until P8.3b)."""
+    import re
+    from pathlib import Path
+
+    shape = (Path(__file__).resolve().parents[3] / "apps/web/src/lib/editorialShape.ts").read_text(
+        encoding="utf-8"
+    )
+
+    def listed(name: str) -> list[str]:
+        found = re.search(rf"export const {name}[^=]*= \[([^\]]*)\]", shape)
+        assert found, name
+        return re.findall(r'"([a-z_]+)"', found.group(1))
+
+    assert listed("LAYERS") == list(editorial.LAYERS)
+    assert listed("KINDS") == [k for k in editorial.KINDS if k != "verdict"]

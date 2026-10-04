@@ -548,30 +548,40 @@ _LISTS = {
 
 def _topic_targets(conn: Connection, query: str) -> list[dict[str, Any]]:
     """The headings of the taxonomy: the board's own first, then La Beaume's chapters in the book's order, then
-    Quranpedia's topics, those gathering the most verses first; a search folds the Arabic as every search does."""
-    folded = normalize(query) if query else ""
-    own = rows(
-        conn,
-        """select distinct on (target) target as key, coalesce(value->>'name_ar', '') as label
-           from editorial.entries where kind = 'topic' and target like 'board:%' and status <> 'retired'
-           order by target, (status = 'approved') desc, updated_at desc""",
-    )
+    Quranpedia's topics, those gathering the most verses first. A heading the board has named shows that name, its
+    source's beside it, and is found by either; a search folds the Arabic as every search does, and Latin case."""
+    folded = normalize(query).lower() if query else ""
+    named = {
+        r["key"]: r["label"]
+        for r in rows(
+            conn,
+            """select distinct on (target) target as key, coalesce(value->>'name_ar', '') as label
+               from editorial.entries where kind = 'topic' and status <> 'retired'
+               order by target, (status = 'approved') desc, updated_at desc""",
+        )
+    }
+    hit = {k for k, v in named.items() if v and folded and folded in normalize(v).lower()}
     items = [
-        {"key": o["key"], "label": o["label"], "sub": "", "occurrences": None}
-        for o in own
-        if not folded or folded in normalize(o["label"])
+        {"key": k, "label": v, "sub": "", "occurrences": None}
+        for k, v in named.items()
+        if k.startswith("board:") and (not folded or k in hit)
     ]
-    items += rows(
+    found = rows(
         conn,
         f"""select t.id as key, coalesce(t.name_ar, t.name_fr) as label,
                    case when t.source_id = 'labeaume' then t.source_ref else coalesce(p.name_ar, '') end as sub,
                    t.verse_count as occurrences
             from content.topics t left join content.topics p on p.id = t.parent_id
-            where t.source_id in ('quranpedia-topics', 'labeaume'){" and t.name_norm like :q" if folded else ""}
+            where t.source_id in ('quranpedia-topics', 'labeaume')
+              {"and (t.name_norm like :q or t.id = any(:hit))" if folded else ""}
             order by (t.source_id = 'labeaume') desc, t.level, t.verse_count desc, length(t.id), t.id""",
-        {"q": f"%{folded}%"} if folded else {},
+        {"q": f"%{folded}%", "hit": sorted(hit)} if folded else {},
     )
-    return items
+    for r in found:
+        if named.get(r["key"]):
+            r["sub"] = " · ".join(x for x in (r["label"], r["sub"]) if x)
+            r["label"] = named[r["key"]]
+    return items + found
 
 
 def targets(

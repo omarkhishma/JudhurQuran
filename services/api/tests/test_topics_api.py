@@ -164,6 +164,15 @@ def test_la_beaumes_chapters_are_the_boards_to_adopt_and_quranpedias_topics_to_p
         f"lb:{n}" for n in range(1, 19)
     ]
     assert rows[19]["key"].startswith("qp:")
+    # found in the workbench by the board's name, which it shows, the book's beside it
+    by_name = client.get("/api/v1/editorial/topic", headers=a, params={"q": "الدعوه", "limit": 5}).json()[
+        "data"
+    ]
+    assert (
+        by_name[0]["key"] == "lb:3"
+        and by_name[0]["label"] == "الدعوة (تجربة)"
+        and "Prédication" in by_name[0]["sub"]
+    )
     page = client.get("/api/v1/editorial/topic/lb:3", headers=a).json()
     assert page["candidates"]["chapter"] == {
         "work": "labeaume",
@@ -209,7 +218,7 @@ def test_a_qsac_tag_is_the_boards_to_place_under_an_arabic_topic(
     assert client.get("/api/v1/topics/coverage").json()["placed"] == 0
     _approve(board, "verdict", target, {"verdict": "corrected", "ends": {"topic": "qp:29"}})
     t = client.get("/api/v1/topics/qp:29", params={"limit": 500}).json()
-    assert t["total"] == before + 1
+    assert t["total"] == before + 1 and t["placed"] == 1
     placed = [x for x in t["data"] if x["verse_key"] == key]
     assert placed and placed[0]["source_id"] == "qsac" and placed[0]["review"]["verdict"] == "placed"
     assert "qsac" in t["sources"] and "CC BY 4.0" in t["sources"]["qsac"]["attribution_en"]

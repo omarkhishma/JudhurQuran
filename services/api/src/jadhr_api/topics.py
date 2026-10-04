@@ -276,6 +276,7 @@ def topic(conn: Connection, tid: str, limit: int, offset: int) -> dict[str, Any]
         "chain": [every[c] | {"level": i} for i, c in enumerate(chain)],
         "subtopics": subs,
         "total": len(links),
+        "placed": sum(1 for x in links if x["source_id"] == "qsac"),
         "data": [
             {k: x[k] for k in ("verse_key", "link", "source_id", "review") if k in x}
             for x in links[offset : offset + limit]
