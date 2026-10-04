@@ -159,3 +159,15 @@ def test_a_release_never_changes(release: tuple[str, Path]) -> None:
     releases.set_doi(version, "10.5281/zenodo.123")
     with pytest.raises(DBAPIError):
         releases.set_doi(version, "10.5281/zenodo.456")
+
+
+def test_production_serves_releases_from_their_folder() -> None:
+    """The API and the loader both see the built releases, read-only, where the settings say: without the mount every
+    file of a published release would answer 410."""
+    import yaml
+
+    compose = yaml.safe_load((releases.REPO / "infra/compose.prod.yml").read_text(encoding="utf-8"))
+    for name in ("api", "loader"):
+        svc = compose["services"][name]
+        assert svc["environment"]["JADHR_RELEASE_DIR"] == "/data/release", name
+        assert "../data/release:/data/release:ro" in svc["volumes"], name

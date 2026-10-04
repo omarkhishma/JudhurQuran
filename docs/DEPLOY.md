@@ -80,6 +80,29 @@ When the API changed (search behaviour, payload fields), expire the pages and re
 docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader python -m jadhr_api.loader --revalidate
 ```
 
+## Dataset releases (P10)
+
+A dataset release is the redistributable part of a build — `data/release/<version>/`, a `MANIFEST.json` and its files (JSON Lines, CSV, and the lexicon as TEI Lex-0 and LMF). It is built once, recorded once and published once; the database refuses any change to a recorded release.
+
+1. Build it where the dataset was built. The TEI Lex-0 files are checked with Jing, which needs Java 11 or later; fetch Jing once (pinned by its sha256). Every file is checked as it is built, and a failure writes no manifest.
+
+   ```
+   uv run python -m jadhr_pipeline.lexicon_xml fetch-jing
+   uv run python -m jadhr_pipeline.release <version>
+   ```
+
+2. Copy `data/release/<version>/` to the server's `data/release/` (the API and the loader mount it read-only at `/data/release`).
+3. Record it — every file's size and sha256 are checked against the manifest first:
+
+   ```
+   docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader python -m jadhr_api.releases record /data/release/<version>
+   ```
+
+4. Publish it — **only on the owner's go** (`… releases publish <version>`). From then on its files are served, except those under a hold in its manifest (`publication_hold`), which stay listed with their reason until a later release lifts the hold. Before Lane's files are published, the owner offers Perseus our modifications (its terms; docs/DECISIONS.md).
+5. When a DOI is minted: `… releases doi <version> <doi>`.
+
+Keep `data/release/<version>/` for good: a recorded release whose folder is gone answers 410 for its files, and its citation names those bytes.
+
 ## Things that bite
 
 - **`HOSTNAME=0.0.0.0`** must stay in the web image. Docker sets `HOSTNAME` to the container id; with that, the locale proxy's internal rewrite is treated as an external host and every Arabic page redirect-loops.

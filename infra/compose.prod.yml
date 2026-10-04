@@ -77,6 +77,11 @@ services:
       JADHR_APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
       JADHR_APPLE_KEY_ID: ${APPLE_KEY_ID:-}
       JADHR_APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+      # Dataset releases (P10.1): served from the folder the release was built into, read-only; a file is served only
+      # when its release is recorded and published and its bytes are those the manifest names (docs/DEPLOY.md)
+      JADHR_RELEASE_DIR: /data/release
+    volumes:
+      - ../data/release:/data/release:ro
 
   web:
     build:
@@ -142,9 +147,12 @@ services:
       # migrations that seal account data (0021) and the maintenance commands use the same key as the API
       JADHR_DATA_KEY: ${DATA_KEY:?set DATA_KEY (openssl rand -base64 32)}
       JADHR_ENVIRONMENT: production
+      # recording a release reads its folder (python -m jadhr_api.releases record /data/release/<version>)
+      JADHR_RELEASE_DIR: /data/release
     volumes:
       - ../data/build:/data/build:ro
       - ../data/sources.yaml:/data/sources.yaml:ro
+      - ../data/release:/data/release:ro
     command: ["sh", "-c", "alembic upgrade head && python -m jadhr_api.loader /data/build/${DATASET_VERSION:?set DATASET_VERSION} /data/sources.yaml"]
 
 volumes:
