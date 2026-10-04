@@ -1,0 +1,5 @@
+swagger-ui-dist 5.33.1 (Apache-2.0), from https://registry.npmjs.org/swagger-ui-dist/-/swagger-ui-dist-5.33.1.tgz
+tarball integrity sha512-H872wWkA53bFIsGgi7OWgmq+CRWw3nFQGdJWRqOB9wNwTm6e5ol34+qPDkV4AJlK+gglM2EsJiOOzsGsEGbluA== (checked against the registry)
+served by the API at /api/v1/docs instead of a CDN (security review M3); the files below are the package's own, unchanged:
+sha256 050bc415ee7048dcd881682678f720264e7da5e373f7461d7c58c755305255f7  swagger-ui-bundle.js
+sha256 1ac324f7dcd27e4b9386b4bd6421271ec147e922a22c05ba24b11515e9aa6321  swagger-ui.css

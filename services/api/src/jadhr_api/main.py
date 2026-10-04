@@ -6,7 +6,9 @@ Run: ``uv run uvicorn jadhr_api.main:app --port 8000``  ·  Docs: ``/api/v1/docs
 from __future__ import annotations
 
 import asyncio
+import base64
 import hashlib
+import pathlib
 import re
 import time
 from collections import defaultdict, deque
@@ -19,6 +21,8 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Req
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -70,6 +74,36 @@ CONTENT_CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=60
 
 def error(status: int, code: str, message: str, field: str | None = None) -> ORJSONResponse:
     return ORJSONResponse({"error": {"code": code, "message": message, "field": field}}, status_code=status)
+
+
+# The API's reference page (/api/v1/docs): Swagger UI from the API's own files, pinned (static/swagger/SOURCE), never
+# from a CDN — the page is on the site's origin, where a script from elsewhere could read a reader's session (security
+# review M3); its one inline script allowed by its hash, nothing else from anywhere but here.
+_SWAGGER = pathlib.Path(__file__).parent / "static" / "swagger"
+_DOCS_FILES = {
+    "swagger-ui-bundle.js": "text/javascript; charset=utf-8",
+    "swagger-ui.css": "text/css; charset=utf-8",
+}
+
+
+def _docs_page(title: str) -> Response:
+    page = get_swagger_ui_html(
+        openapi_url=f"{API_PREFIX}/openapi.json",
+        title=f"{title} — reference",
+        swagger_js_url=f"{API_PREFIX}/docs/swagger-ui-bundle.js",
+        swagger_css_url=f"{API_PREFIX}/docs/swagger-ui.css",
+        swagger_favicon_url="/favicon.ico",
+    )
+    html = bytes(page.body).decode()
+    inline = re.findall(r"<script>(.*?)</script>", html, re.DOTALL)
+    hashes = " ".join(
+        "'sha256-" + base64.b64encode(hashlib.sha256(s.encode()).digest()).decode() + "'" for s in inline
+    )
+    policy = (
+        f"default-src 'none'; script-src 'self' {hashes}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+        "font-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    )
+    return HTMLResponse(html, headers={"Content-Security-Policy": policy, "Cache-Control": "no-cache"})
 
 
 # The loaded release, re-read every RELEASE_TTL seconds so a new release is served without a restart.
@@ -1310,7 +1344,7 @@ def create_app() -> FastAPI:
             "and derived root families. Every response is tied to a dataset version; every source and its license "
             "is listed at /api/v1/sources."
         ),
-        docs_url=f"{API_PREFIX}/docs",
+        docs_url=None,  # served below from the API's own files (security review M3)
         openapi_url=f"{API_PREFIX}/openapi.json",
         redoc_url=None,
         default_response_class=ORJSONResponse,
@@ -1428,6 +1462,19 @@ def create_app() -> FastAPI:
         first = exc.errors()[0] if exc.errors() else {}
         loc = first.get("loc", [])
         return error(422, "unprocessable", first.get("msg", "invalid request"), str(loc[-1]) if loc else None)
+
+    @app.get(f"{API_PREFIX}/docs", include_in_schema=False)
+    def docs() -> Response:
+        return _docs_page(app.title)
+
+    @app.get(f"{API_PREFIX}/docs/{{name}}", include_in_schema=False)
+    def docs_file(name: str) -> Response:
+        kind = _DOCS_FILES.get(name)
+        if kind is None:
+            raise HTTPException(status_code=404)
+        return FileResponse(
+            _SWAGGER / name, media_type=kind, headers={"Cache-Control": "public, max-age=86400"}
+        )
 
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, str]:
