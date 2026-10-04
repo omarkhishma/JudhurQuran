@@ -165,6 +165,25 @@ def _out(r: dict[str, Any], full: bool) -> dict[str, Any]:
     return out
 
 
+def recorded(version: str) -> dict[str, Any] | None:
+    """The recorded release of a dataset version, as a citation names it — or None until it is recorded."""
+    with tx() as conn:
+        r = q1(
+            conn,
+            "select version, manifest_sha256, published_at, doi from releases.dataset_releases where version = :v",
+            {"v": version},
+        )
+    if r is None:
+        return None
+    return {
+        "version": r["version"],
+        "manifest_sha256": r["manifest_sha256"],
+        "published": r["published_at"] is not None,
+        "doi": r["doi"],
+        "url": f"/api/v1/releases/{r['version']}",
+    }
+
+
 def releases() -> dict[str, Any]:
     """Every recorded release, newest first."""
     with tx() as conn:

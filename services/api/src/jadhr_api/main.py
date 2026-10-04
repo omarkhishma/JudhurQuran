@@ -45,6 +45,7 @@ from . import (
     routes_editorial,
     routes_graphs,
     routes_me,
+    routes_public,
     routes_releases,
     topics,
 )
@@ -1119,6 +1120,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_graphs.router)
     app.include_router(routes_classroom.router)
     app.include_router(routes_releases.router)
+    app.include_router(routes_public.router)
     return app
 
 
