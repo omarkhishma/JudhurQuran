@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import hashlib
+import hmac
 import pathlib
 import re
 import time
@@ -1365,7 +1366,8 @@ def create_app() -> FastAPI:
     @app.middleware("http")
     async def rate_limit(request: Request, call_next: Any) -> Response:
         token = settings.internal_token
-        if token and request.headers.get("x-jadhr-internal") == token:
+        sent = request.headers.get("x-jadhr-internal", "").encode("latin-1", "replace")
+        if token and hmac.compare_digest(sent, token.encode()):
             response = await call_next(request)
             response.headers.setdefault("X-Content-Type-Options", "nosniff")
             return response
