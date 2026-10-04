@@ -4,13 +4,16 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { Link } from "@/i18n/navigation";
+import { setLocalStorage, useLocalStorage } from "@/lib/client";
 import { verseRef } from "@/lib/format";
+import { lemmaId, verseId } from "@/lib/graph/build";
 import { createGraph, loadGraph } from "@/lib/graph/persist";
 import { surahNames } from "@/lib/graph/seed";
 import type { ReadingContext } from "@/lib/reader/store";
 import type { SplitMessage } from "@/components/graph/SplitReceiver";
 
 const MAP_KEY = "jadhr-split-map";
+const FOLLOW_KEY = "jadhr-split-follow";
 const PERSONAL_KEY = "jadhr-personal";
 type Panes = { reader: boolean; graph: boolean };
 
@@ -46,6 +49,8 @@ export function SplitView({ surah, map }: { surah: number; map: string | null })
   const [ctx, setCtx] = useState<ReadingContext | null>(null);
   const [names, setNames] = useState<Map<number, string> | null>(null);
   const [said, setSaid] = useState("");
+  // following the reading (B45): the map picks the card of what the reader looks up, when it holds one
+  const follow = useLocalStorage(FOLLOW_KEY) === "1";
   const graph = useRef<HTMLIFrameElement>(null);
   const ready = useRef(false);
   const pending = useRef<SplitMessage | null>(null);
@@ -108,6 +113,12 @@ export function SplitView({ surah, map }: { surah: number; map: string | null })
     return () => window.removeEventListener("message", on);
   }, [t]);
 
+  useEffect(() => {
+    if (!follow || !ctx || !ready.current) return;
+    const id = ctx.word ? lemmaId(ctx.word) : ctx.verse ? verseId(ctx.verse) : null;
+    if (id) graph.current?.contentWindow?.postMessage({ type: "jadhr:focus", id } satisfies SplitMessage, location.origin);
+  }, [follow, ctx]);
+
   // the graph pane's map is followed as the reader moves in it, and kept for next time
   const followGraph = useCallback(() => {
     // a new page in the pane: asked whether it holds a map, which answers when it is ready
@@ -127,12 +138,14 @@ export function SplitView({ surah, map }: { surah: number; map: string | null })
       return next.reader || next.graph ? next : p;
     });
 
-  function send() {
-    if (!ctx?.word) return;
+  /** The word — or, from its chip, the verse or the root (B44) — handed to the open map. */
+  function send(what: "word" | "verse" | "root" = "word") {
+    const m: SplitMessage | null =
+      what === "word" && ctx?.word ? { type: "jadhr:add-word", slug: ctx.word, at: ctx.at ?? null } : what === "verse" && ctx?.verse ? { type: "jadhr:add-verse", key: ctx.verse } : what === "root" && ctx?.root ? { type: "jadhr:add-root", root: ctx.root } : null;
+    if (!m) return;
     setSaid("");
     // the map is shown, as the design's shell did (EDT-319)
     setPanes((p) => (narrow ? { reader: false, graph: true } : { ...p, graph: true }));
-    const m: SplitMessage = { type: "jadhr:add-word", slug: ctx.word, at: ctx.at ?? null };
     let inEditor = false;
     try {
       inEditor = /\/graph\/edit\//.test(graph.current?.contentWindow?.location.pathname ?? "");
@@ -161,36 +174,46 @@ export function SplitView({ surah, map }: { surah: number; map: string | null })
           ))}
         </div>
         {/* the context: the verse, the word and its root the reader looked up last (EDT-317) */}
-        <div className="split-context" role="status" aria-live="polite" aria-label={t("splitContext")}>
+        <div className="split-context" role="group" aria-label={t("splitContext")}>
           <span className="label-caps max-md:hidden">{t("splitContext")}</span>
           {ctx?.word || ctx?.verse ? (
             <>
+              {/* each chip sends what it names to the map (B44) */}
               {verse && (
-                <span className="split-chip">
+                <button type="button" className="split-chip" disabled={!mapId} onClick={() => send("verse")} title={t("splitSendVerse", { verse: verseRef(ctx!.verse!, locale) })} aria-label={t("splitSendVerse", { verse: verseRef(ctx!.verse!, locale) })}>
                   <span className="dot" style={{ background: "var(--c-sentence)" }} />
                   {names?.get(verse[0]) ? `${names.get(verse[0])} ` : ""}
                   {verseRef(ctx!.verse!, locale)}
-                </span>
+                </button>
               )}
               {ctx?.wordAr && (
-                <span className="split-chip" dir="auto">
+                <button type="button" className="split-chip" dir="auto" disabled={!ctx.word || !mapId} onClick={() => send("word")} title={t("splitSendWord", { word: ctx.wordAr })} aria-label={t("splitSendWord", { word: ctx.wordAr })}>
                   <span className="dot" style={{ background: "var(--c-word)" }} />
                   <span className="ar-classical text-[15px]" lang="ar">{ctx.wordAr}</span>
                   {ctx.wordTr && <span className="mono text-[11.5px] text-t3" dir="ltr">· {ctx.wordTr}</span>}
-                </span>
+                </button>
               )}
               {ctx?.rootAr && (
-                <span className="split-chip">
+                <button type="button" className="split-chip" disabled={!ctx.root || !mapId} onClick={() => send("root")} title={t("splitSendRoot", { root: ctx.rootAr })} aria-label={t("splitSendRoot", { root: ctx.rootAr })}>
                   <span className="dot" style={{ background: "var(--c-root)" }} />
                   <span className="ar-classical text-[15px]" lang="ar">{ctx.rootAr}</span>
-                </span>
+                </button>
               )}
             </>
           ) : (
             <span className="text-[12.5px] text-t3">{t("splitPick")}</span>
           )}
         </div>
-        <button type="button" className="btn btn-primary shrink-0" disabled={!ctx?.word || !mapId} onClick={send}>
+        <button
+          type="button"
+          className={"btn shrink-0" + (follow ? " is-on" : "")}
+          aria-pressed={follow}
+          title={t("splitFollowHint")}
+          onClick={() => setLocalStorage(FOLLOW_KEY, follow ? "0" : "1")}
+        >
+          {t("splitFollow")}
+        </button>
+        <button type="button" className="btn btn-primary shrink-0" disabled={!ctx?.word || !mapId} onClick={() => send("word")}>
           {t("splitSend")}
         </button>
         <ThemeToggle />

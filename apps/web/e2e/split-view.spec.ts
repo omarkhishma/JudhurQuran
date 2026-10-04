@@ -81,6 +81,29 @@ test("the reader and a map side by side: a word looked up is the context, sent t
   await mapFrame.locator(".editor-header").getByRole("button", { name: "تراجع" }).click();
   await expect.poll(async () => (await storedGraph(page, mapId))?.nodes.some((n) => n.id === `lemma:${ctx.word}`), { timeout: 15_000 }).toBe(false);
 
+  // the root and the verse sent from their chips (B44): each its own card, nothing more
+  await strip.getByRole("button", { name: `أرسل الجذر ${ctx.rootAr} إلى الخريطة` }).click();
+  await expect.poll(async () => (await storedGraph(page, mapId))?.nodes.map((n) => n.id), { timeout: 15_000 }).toContain(`root:${ctx.root}`);
+  await strip.getByRole("button", { name: "أرسل الآية ١:٢ إلى الخريطة" }).click();
+  await expect.poll(async () => (await storedGraph(page, mapId))?.nodes.map((n) => n.id).sort(), { timeout: 15_000 }).toEqual([`root:${ctx.root}`, "verse:1:2"].sort());
+
+  // following the reading (B45): a word looked up whose card the map holds is picked there; one it lacks adds nothing
+  await head.getByRole("button", { name: "تتبع القراءة" }).click();
+  await expect(head.getByRole("button", { name: "تتبع القراءة" })).toHaveAttribute("aria-pressed", "true");
+  await send.click();
+  await expect.poll(async () => (await storedGraph(page, mapId))?.nodes.some((n) => n.id === `lemma:${ctx.word}`), { timeout: 15_000 }).toBe(true);
+  await mapFrame.locator(".editor-header").getByRole("button", { name: "ملاءمة" }).click();
+  await mapFrame.locator(`.react-flow__node[data-id="root:${ctx.root}"]`).click();
+  await expect(mapFrame.locator(`.react-flow__node[data-id="root:${ctx.root}"]`)).toHaveClass(/selected/);
+  const cards = (await storedGraph(page, mapId))!.nodes.length;
+  await reader.locator('.w[data-w="1:2:2"]').click();
+  await expect.poll(async () => (await context(page))?.at, { timeout: 15_000 }).toBe("1:2:2");
+  await expect(mapFrame.locator(`.react-flow__node[data-id="root:${ctx.root}"]`)).toHaveClass(/selected/);
+  await reader.locator('.w[data-w="1:2:3"]').click();
+  await expect.poll(async () => (await context(page))?.at, { timeout: 15_000 }).toBe("1:2:3");
+  await expect(mapFrame.locator(`.react-flow__node[data-id="lemma:${ctx.word}"]`)).toHaveClass(/selected/, { timeout: 10_000 });
+  expect((await storedGraph(page, mapId))!.nodes.length).toBe(cards);
+
   // the panes: either alone, never neither
   const readerToggle = head.getByRole("button", { name: "النص والمعجم" });
   const mapToggle = head.getByRole("button", { name: "الخريطة", exact: true });

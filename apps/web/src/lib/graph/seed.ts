@@ -97,6 +97,17 @@ export async function wordCards(slug: string, at: string | null | undefined): Pr
   return { nodes: folded, edges, word: occ?.surface.full ?? w.ar.full };
 }
 
+/** A verse sent from the reader into an open map (P8.6, B44): its card alone, its words extracted from it when asked. */
+export function verseCards(key: string): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  return { nodes: [verseCard(key, [], {})], edges: [] };
+}
+
+/** A root sent from the reader into an open map (P8.6, B44): its card alone, its family extracted from it when asked. */
+export async function rootCards(root: string): Promise<{ nodes: GraphNode[]; edges: GraphEdge[]; name: string }> {
+  const g = await getJSON<RootGraphPayload>(`/roots/${encodeURIComponent(root)}/graph`);
+  return { nodes: [rootCard(g, false)], edges: [], name: g.root.spaced };
+}
+
 async function rootSeed(root: string): Promise<SeedGraph> {
   const g = await getJSON<RootGraphPayload>(`/roots/${encodeURIComponent(root)}/graph`);
   return { kind: "root", title: { key: "rootTitle", values: { root: g.root.spaced } }, ...buildRootGraph(g) };

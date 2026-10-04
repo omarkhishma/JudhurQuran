@@ -1397,7 +1397,12 @@
     "splitWordAdded": "«{word}» added from the reader",
     "splitWordThere": "«{word}» was on the map already",
     "splitLocked": "This map is being edited in another window; edit it here first.",
-    "doSendWord": "Add «{word}» from the reader"
+    "doSendWord": "Add «{word}» from the reader",
+    "splitSendVerse": "Send the verse {verse} to the map",
+    "splitSendWord": "Send «{word}» to the map",
+    "splitSendRoot": "Send the root {root} to the map",
+    "splitFollow": "Follow the reading",
+    "splitFollowHint": "When the word you look up in the reader is on the map, the map picks its card and shows it — it adds nothing."
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

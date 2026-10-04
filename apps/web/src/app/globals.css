@@ -6317,6 +6317,13 @@ a.wotd-pill:hover {
   color: var(--t1);
   white-space: nowrap;
 }
+.split-chip:enabled {
+  cursor: pointer;
+}
+.split-chip:enabled:hover {
+  border-color: var(--line-2);
+  background: var(--card-2);
+}
 .split-said {
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--good) 8%, var(--panel));
