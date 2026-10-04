@@ -50,7 +50,7 @@ export function Concordance({ root, lemmas }: { root: string; lemmas: { id: numb
           <li key={o.location} className={"md:col-span-full md:grid md:grid-cols-subgrid " + (i ? "border-t border-line" : "")}>
             {/* Phone: the snippet reads as a sentence with the keyword marked */}
             <Link
-              href={`/quran/${o.verse_key.split(":")[0]}?w=${o.location}#v${o.verse_key.split(":")[1]}`}
+              href={`/quran/${o.verse_key.split(":")[0]}?at=${o.location}#v${o.verse_key.split(":")[1]}`}
               className="block px-3 py-2 hover:bg-card-2 md:hidden"
             >
               <span className="quran line-clamp-2 text-[19px] leading-[2.1]" lang="ar">
@@ -61,7 +61,7 @@ export function Concordance({ root, lemmas }: { root: string; lemmas: { id: numb
               <span className="mono text-[11.5px] text-t3" dir="ltr">{verseRef(o.verse_key, locale)}</span>
             </Link>
             <Link
-              href={`/quran/${o.verse_key.split(":")[0]}?w=${o.location}#v${o.verse_key.split(":")[1]}`}
+              href={`/quran/${o.verse_key.split(":")[0]}?at=${o.location}#v${o.verse_key.split(":")[1]}`}
               className="hidden items-center gap-x-2 px-3 py-1.5 hover:bg-card-2 md:col-span-full md:grid md:grid-cols-subgrid"
             >
               <span className="quran truncate text-start text-[18px] leading-[2.1] text-t2 [direction:ltr]" lang="ar">

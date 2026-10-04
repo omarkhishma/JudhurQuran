@@ -129,3 +129,21 @@ test("in context, the verse recited is offered as a hint (RDR-569)", async ({ pa
   ]);
   expect(res.url()).toMatch(new RegExp(`/surahs/${d.context.verse_key.split(":")[0]}`));
 });
+
+test("a word's place in the address opens the word at that place, written either way, and the root's concordance links its places so (P12, what went wrong)", async ({ page }) => {
+  // the board's errors page counted «reading 'translit'» on /quran/1: the root's concordance linked ?w=1:1:3, and the
+  // panel took the place for a word's name
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 3 })));
+  const w = await api<{ translit: string }>(page, "/words/1:1:3");
+  for (const q of ["at=1:1:3", "w=1:1:3"]) {
+    await page.goto(`/quran/1?${q}#v1`);
+    await expect(page.locator(".reader-panel, .reader-sheet").getByText(w.translit, { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/حدث خطأ غير متوقع/)).toHaveCount(0);
+  }
+  expect(errors).toEqual([]);
+  await page.goto(`/roots/${encodeURIComponent("رحم")}`);
+  const first = page.locator("#occurrences a[href*='/quran/']").first();
+  await expect(first).toHaveAttribute("href", /\/quran\/1\?at=1:1:3#v1$/);
+});

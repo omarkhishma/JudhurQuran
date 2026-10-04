@@ -19,6 +19,9 @@ import { noteOn, useSaved } from "@/lib/store/saved";
 import { InlineLines } from "./InlineLines";
 import { VerseDrawer, type DrawerTool } from "./VerseDrawer";
 
+/** A word's place, s:a:w. */
+const PLACE = /^\d{1,3}:\d{1,3}:\d{1,3}$/;
+
 /**
  * Wraps the server-rendered sūra and owns its interaction through event delegation (design 03 §3.4):
  * word and verse clicks, the URL (?w=slug&at=location, ?v=2:255 — read and written, RDR-449/539),
@@ -151,8 +154,10 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   // resume marker from the last visit (shown, then the reader goes on).
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    const w = p.get("w") ?? initial?.word?.slug ?? (p.get("at") ? "" : null);
-    const at = p.get("at") ?? initial?.word?.at ?? null;
+    // a place written where the word's name goes (?w=1:1:3, as the root page's concordance once linked) is the place
+    const placed = PLACE.test(p.get("w") ?? "");
+    const w = placed ? "" : (p.get("w") ?? initial?.word?.slug ?? (p.get("at") ? "" : null));
+    const at = (placed ? p.get("w") : p.get("at")) ?? initial?.word?.at ?? null;
     const v = p.get("v") ?? initial?.verse ?? null;
     if (w || v) arrival.current = true;
     if (w !== null && (w || at)) {
@@ -215,12 +220,15 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       const u = new URL(window.location.href);
       const m = u.pathname.match(/\/quran\/(\d+)(?:\/(\d+))?\/?$/);
       if (!m || Number(m[1]) !== chapter.number) return;
-      const w = u.searchParams.get("w");
+      const raw = u.searchParams.get("w");
+      const placed = PLACE.test(raw ?? "");
+      const w = placed ? "" : raw;
+      const at = placed ? raw : u.searchParams.get("at");
       const v = u.searchParams.get("v");
       const mode = u.searchParams.get("mode");
       const s = useReader.getState();
       if (m[2]) s.openVerse(`${m[1]}:${m[2]}`);
-      else if (w || u.searchParams.get("at")) s.openWord({ slug: w ?? "", at: u.searchParams.get("at") }, { fromHistory: true });
+      else if (w || at) s.openWord({ slug: w ?? "", at }, { fromHistory: true });
       else if (v) s.openVerse(v);
       else if (mode === "lookup") s.setMode("index");
       else if (mode === "about") s.setMode("surah");
