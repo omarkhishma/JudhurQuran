@@ -137,3 +137,14 @@ test("the shelf and the search reach the hadith", async ({ page }) => {
   await expect(group.locator('a[href="/hadith/bukhari/1"]')).toBeVisible();
   await expect(group.locator("mark").first()).toBeVisible();
 });
+
+test("a word looked up in a hadith is the reader's last lookup: the hub carries its root (SHL-Q09)", async ({ page }) => {
+  await page.addInitScript(() => { if (!localStorage.getItem("jadhr-personal")) localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })); });
+  const r = await record(page, "bukhari", "1");
+  const word = r.segments.find((x) => x.w !== undefined && x.p === "matn" && bare(x.t) === "الاعمال")!;
+  await page.goto("/hadith/bukhari/1");
+  await page.locator(".hadith-text .hp-matn").getByRole("button", { name: word.t, exact: true }).click();
+  await expect(page.getByRole("complementary", { name: "الكلمة" }).getByRole("link", { name: "الجذر في القرآن" })).toBeVisible();
+  await page.goto("/");
+  await expect(page.locator(".hub-context").getByRole("link", { name: "ع م ل" })).toHaveAttribute("href", `/concordance?root=${enc("عمل")}`);
+});

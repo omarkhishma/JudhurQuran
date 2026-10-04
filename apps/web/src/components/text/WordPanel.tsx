@@ -1,9 +1,11 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { useEffect } from "react";
 import { Link } from "@/i18n/navigation";
 import { dictHref } from "@/lib/dictionary";
 import type { Form } from "@/lib/hadith";
+import { usePersonal } from "@/lib/reader/store";
 
 /**
  * A word's reading beside a text beyond the Quran (P11.4a), shared by the hadith and the books: how the rules read it
@@ -18,6 +20,14 @@ export function WordPanel({ word, form, onClose, ref, hint }: { word: string | n
   const t = useTranslations("hadith");
   const locale = useLocale();
   const first = form?.readings[0];
+  // a word looked up in a hadith or a book is the reader's last lookup, as in the Quran (SHL-Q09): the hub's strip
+  // and the concordance carry its lemma and its root
+  const recordLookup = usePersonal((s) => s.recordLookup);
+  const lemma = first?.lemma?.slug ?? null;
+  const root = first?.root ?? null;
+  useEffect(() => {
+    if (word && (lemma || root)) recordLookup({ word: lemma, wordAr: word, root, verse: null });
+  }, [word, lemma, root, recordLookup]);
   return (
     <aside ref={ref} tabIndex={-1} className={`hadith-panel${word ? " is-open" : ""}`} aria-label={t("wordTitle")} aria-live="polite">
       {!word ? (
