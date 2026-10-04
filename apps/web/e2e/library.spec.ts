@@ -89,7 +89,8 @@ test("a text of the reader's own keeps its place: the bar on the shelf, resuming
   await page.goto("/library/text/tx1");
   // opening the text does not move the place; the resume link goes there
   await expect(page.getByRole("link", { name: `تابع من المقطع ${ar(2)} من ${ar(3)}` })).toHaveAttribute("href", "#p2");
-  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state.progress["text:tx1"].passage);
+  // kept under the text's identifier (P1.7a); the place seeded under the name used before identifiers moved there
+  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state.progress["user:tx1"]?.passage);
   expect(await stored()).toBe(2);
   // passage 3 at the top of the screen, or the foot of the page where it cannot rise that far
   await page.evaluate(() => window.scrollTo(0, document.querySelector("#p3")!.getBoundingClientRect().top + window.scrollY - 60));

@@ -7,7 +7,7 @@ import { MarksToggle } from "@/components/ui/MarksToggle";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
 import { formatNumber } from "@/lib/format";
-import { deleteText, loadText, rootShown, saveText } from "@/lib/library/texts";
+import { deleteText, loadText, rootShown, saveText, userUri } from "@/lib/library/texts";
 import { words } from "@/lib/library/segment";
 import { useMarks } from "@/lib/reader/marks";
 import { usePersonal } from "@/lib/reader/store";
@@ -34,7 +34,7 @@ export function UserTextReader({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState("");
   const [confirm, setConfirm] = useState(false);
-  const position = usePersonal((s) => s.progress[`text:${id}`]);
+  const position = usePersonal((s) => s.progress[userUri(id)]);
   const setProgress = usePersonal((s) => s.setProgress);
   const ready = !!doc.data;
 
@@ -51,7 +51,7 @@ export function UserTextReader({ id }: { id: string }) {
       const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
       const top = [...seen].filter(([, v]) => v).map(([k]) => k);
       const passage = atEnd ? Math.max(...seen.keys()) : top.length ? Math.min(...top) : 0;
-      if (passage > 0) setProgress(`text:${id}`, { chapter: 1, passage });
+      if (passage > 0) setProgress(userUri(id), { chapter: 1, passage });
     };
     const onScroll = () => {
       moved = true;

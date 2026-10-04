@@ -9,7 +9,7 @@ import { paragraphHref } from "@/lib/books";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber } from "@/lib/format";
 import { hadithHref, refText } from "@/lib/hadith";
-import { listTexts, type UserTextMeta } from "@/lib/library/texts";
+import { listTexts, type UserTextMeta, userUri } from "@/lib/library/texts";
 import { getJSON } from "@/lib/reader/api";
 import { usePersonal } from "@/lib/reader/store";
 import { AddTextSheet } from "./AddTextSheet";
@@ -369,7 +369,7 @@ function UserTextCard({ x, known }: { x: UserTextMeta; known: Set<string> }) {
   const locale = useLocale();
   const k = x.lemmas.filter((s) => known.has(s)).length;
   // where the reader is in this text (LIB-13), and its bar
-  const at = usePersonal((s) => s.progress[`text:${x.id}`]);
+  const at = usePersonal((s) => s.progress[userUri(x.id)]);
   const of = x.passageCount;
   return (
     <Link href={`/library/text/${x.id}${at && at.passage > 1 ? `#p${at.passage}` : ""}`} className="book-card">

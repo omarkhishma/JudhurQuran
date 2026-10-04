@@ -7,6 +7,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Seed } from "@/lib/graph/seedCodec";
+import { progressByIdentifier } from "@/lib/library/ids";
 import { safeJSONStorage } from "@/lib/store/safeStorage";
 
 export type Mode = "empty" | "word" | "verse" | "index" | "surah";
@@ -440,10 +441,13 @@ export const usePersonal = create<PersonalState>()(
     {
       name: "jadhr-personal",
       storage: safeJSONStorage,
-      version: 2,
-      // version 2 adds the reader's verse links and topics, the reading context, sessions and furthest verses read
-      migrate: (old) =>
-        ({ links: {}, topics: [], verseTopics: {}, context: null, sessions: [], read: {}, ...((old as Partial<PersonalState>) ?? {}) }) as PersonalState,
+      version: 3,
+      // version 2 adds the reader's verse links and topics, the reading context, sessions and furthest verses read;
+      // version 3 keeps the place in a reader's own text under its identifier, user:<id> (P1.7a), not text:<id>
+      migrate: (old) => {
+        const s = { links: {}, topics: [], verseTopics: {}, context: null, sessions: [], read: {}, ...((old as Partial<PersonalState>) ?? {}) } as PersonalState;
+        return { ...s, progress: progressByIdentifier(s.progress ?? {}) };
+      },
     },
   ),
 );

@@ -3,7 +3,7 @@
 import { getMany, keys as idbKeys } from "idb-keyval";
 import { deleteGraph, GRAPH_PREFIX, putGraph } from "@/lib/graph/persist";
 import type { GraphDoc } from "@/lib/graph/types";
-import { deleteText, putText, TEXT_PREFIX, type UserText } from "@/lib/library/texts";
+import { deleteText, LEGACY_PROGRESS, putText, TEXT_PREFIX, type UserText, userUri } from "@/lib/library/texts";
 import { DEFAULT_PREFS, type Prefs, type Session, usePersonal, usePrefs } from "@/lib/reader/store";
 import { useAnalyseChoices } from "@/lib/store/analyseChoices";
 import { useAudio } from "@/lib/store/audio";
@@ -103,7 +103,11 @@ const personal: Adapter = {
       for (const c of changes) {
         const [kind, k] = split(c.key);
         if (kind === "w") put(wordStates, k, c);
-        else if (kind === "p") put(progress, k, c);
+        // a place another device kept before identifiers (text:<id>) arrives under the text's identifier (P1.7a); its
+        // removal, which that device's move sends, never removes the place now kept under the identifier
+        else if (kind === "p" && k.startsWith(LEGACY_PROGRESS)) {
+          if (!c.deleted) progress[userUri(k.slice(LEGACY_PROGRESS.length))] ??= c.value as (typeof progress)[string];
+        } else if (kind === "p") put(progress, k, c);
         else if (kind === "l") put(links, k, c);
         else if (kind === "vt") put(verseTopics, k, c);
         // the furthest verse read only moves forward, whichever device read further (RDR-071)

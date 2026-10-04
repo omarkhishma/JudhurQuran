@@ -12,7 +12,7 @@ import { useIsClient } from "@/lib/client";
 import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
 import { myPublished, publishedPath } from "@/lib/graph/published";
 import { useMyGraphs } from "@/lib/graph/useMyGraphs";
-import { listTexts, loadText } from "@/lib/library/texts";
+import { listTexts, loadText, userUri } from "@/lib/library/texts";
 import { applyImport, type ImportPlan, MAX_IMPORT_BYTES, planCounts, planImport } from "@/lib/importData";
 import { deleteLocalData, exportLocalData } from "@/lib/localData";
 import { TABS, type Tab } from "@/lib/profile";
@@ -241,7 +241,8 @@ function DataControls({ signedIn }: { signedIn: boolean }) {
 
   async function exportTexts() {
     const metas = await listTexts();
-    const texts = (await Promise.all(metas.map((m) => loadText(m.id)))).filter(Boolean);
+    // each with its identifier (P1.7a), which the reader's notes and places name it by
+    const texts = (await Promise.all(metas.map((m) => loadText(m.id)))).filter((x) => !!x).map((x) => ({ uri: userUri(x.id), ...x }));
     download(`jadhr-texts-${new Date().toISOString().slice(0, 10)}.json`, { format: "jadhr-texts-1", texts });
     setSaid(t("exported"));
   }

@@ -79,3 +79,4 @@ export async function deleteText(id: string, quiet = false): Promise<void> {
 }
 
 export const newTextId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+export { LEGACY_PROGRESS, userUri } from "./ids";
