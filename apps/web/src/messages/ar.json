@@ -1574,7 +1574,16 @@
     "publishedReportSend": "أرسل البلاغ",
     "publishedRowLine": "منشورة · الإصدار {v}",
     "deletePublishedConfirm": "احذفها من هنا؟ تبقى منشورة على رابطها",
-    "myPublished": "خرائطي المنشورة"
+    "myPublished": "خرائطي المنشورة",
+    "changedAdded": "{count, plural, one {أُضيفت بطاقة} two {أُضيفت بطاقتان} few {أُضيفت {n} بطاقات} many {أُضيفت {n} بطاقة} other {أُضيفت {n} بطاقة}}",
+    "changedRemoved": "{count, plural, one {حُذفت بطاقة} two {حُذفت بطاقتان} few {حُذفت {n} بطاقات} many {حُذفت {n} بطاقة} other {حُذفت {n} بطاقة}}",
+    "changedMoved": "{count, plural, one {نُقلت بطاقة} two {نُقلت بطاقتان} few {نُقلت {n} بطاقات} many {نُقلت {n} بطاقة} other {نُقلت {n} بطاقة}}",
+    "changedLinks": "الروابط: أُضيف {added} وحُذف {removed}",
+    "changedNothing": "لم يتغير شيء في البطاقات",
+    "changedSince": "ما تغيّر منذ الإصدار {v}",
+    "changedAddedList": "أُضيف:",
+    "changedRemovedList": "حُذف:",
+    "changedMore": "{count, plural, one {وواحدة أخرى} two {واثنتان أخريان} few {و{n} أخرى} many {و{n} أخرى} other {و{n} أخرى}}"
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",

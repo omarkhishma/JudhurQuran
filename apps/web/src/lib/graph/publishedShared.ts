@@ -7,6 +7,11 @@ import type { GraphEdge, GraphKind, GraphNode } from "./types";
 
 export type MapCounts = { cards: number; roots: number; words: number; lead: string | null };
 
+/** A card as a change names it: its kind and the words it shows. */
+export type ChangedCard = { id: string; kind: string; name: string };
+export type VersionChanges = { added: ChangedCard[]; removed: ChangedCard[]; moved: number; links_added: number; links_removed: number };
+export type ChangeCounts = { added: number; removed: number; moved: number; links_added: number; links_removed: number };
+
 export type PublishedMap = {
   slug: string;
   version: number;
@@ -24,7 +29,10 @@ export type PublishedMap = {
   fork_count: number;
   cite_count: number;
   forked_from: { slug: string; version: number; title: string | null } | null;
-  versions: { version: number; title: string; counts: MapCounts; published_at: string }[];
+  /** each with what it changed in the one before it, counted (B59; the latest twenty) */
+  versions: { version: number; title: string; counts: MapCounts; published_at: string; changes?: ChangeCounts }[];
+  /** what the version shown changed in the one before it, its cards named (B59); null for the first */
+  changes: VersionChanges | null;
   mine: boolean;
   /** the owner's own id for the map in their browser: given to the owner only */
   local_id?: string;

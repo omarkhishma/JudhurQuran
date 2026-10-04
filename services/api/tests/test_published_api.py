@@ -364,3 +364,34 @@ def test_an_account_deleted_withdraws_its_maps_and_the_export_carries_them(peopl
         accounts.q(conn, "delete from accounts.users where id = :u returning id", {"u": uid})
     assert client.get(f"/api/v1/published/{slug}").status_code == 410
     assert client.get("/api/v1/published/check", params={"slug": slug}).json()["available"] is False
+
+
+def test_a_version_says_what_it_changed_in_the_one_before(people: dict, tag: str) -> None:
+    """B59: from the two immutable versions, the cards added and removed by name, how many moved, the links."""
+    a = people["a"]
+    slug = f"changes-{tag}"
+    _publish(a, slug)
+    doc = _doc(roots=1, words=3)  # one word more, and its link
+    doc["nodes"] = [n for n in doc["nodes"] if n["id"] != "frame:f"]  # the frame taken away
+    doc["nodes"][0]["position"] = {"x": 10, "y": 20}  # the root moved
+    doc["nodes"].append(
+        {
+            "id": "verse:2:255",
+            "position": {"x": 800, "y": 0},
+            "data": {"kind": "verse", "verse": {"key": "2:255"}},
+        }
+    )
+    r = client.post(f"/api/v1/published/{slug}/versions", headers=a, json={"title": "عائلة علم", "doc": doc})
+    assert r.status_code == 201, r.text
+    two = client.get(f"/api/v1/published/{slug}").json()
+    assert two["version"] == 2
+    c = two["changes"]
+    assert sorted((x["kind"], x["name"]) for x in c["added"]) == [("lemma", "عِلْم"), ("verse", "2:255")]
+    assert c["removed"] == [{"id": "frame:f", "kind": "frame", "name": "مجموعة"}]
+    assert c["moved"] == 1 and c["links_added"] == 1 and c["links_removed"] == 0
+    # the versions list counts each version's changes; the first has none to count
+    v2, v1 = two["versions"]
+    assert v2["changes"] == {"added": 2, "removed": 1, "moved": 1, "links_added": 1, "links_removed": 0}
+    assert "changes" not in v1
+    # version 1 read by its number says nothing changed before it
+    assert client.get(f"/api/v1/published/{slug}", params={"v": 1}).json()["changes"] is None

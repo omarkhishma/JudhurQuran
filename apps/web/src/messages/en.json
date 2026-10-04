@@ -1574,7 +1574,16 @@
     "publishedReportSend": "Send the report",
     "publishedRowLine": "Published · version {v}",
     "deletePublishedConfirm": "Delete it here? It stays published at its address",
-    "myPublished": "My published maps"
+    "myPublished": "My published maps",
+    "changedAdded": "{count, plural, one {one card added} other {{n} cards added}}",
+    "changedRemoved": "{count, plural, one {one card removed} other {{n} cards removed}}",
+    "changedMoved": "{count, plural, one {one card moved} other {{n} cards moved}}",
+    "changedLinks": "links: +{added} −{removed}",
+    "changedNothing": "no card changed",
+    "changedSince": "What changed since version {v}",
+    "changedAddedList": "Added:",
+    "changedRemovedList": "Removed:",
+    "changedMore": "{count, plural, one {and one more} other {and {n} more}}"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

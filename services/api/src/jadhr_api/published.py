@@ -99,6 +99,50 @@ def counts(doc: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _card(n: dict[str, Any]) -> dict[str, Any]:
+    """A card as a change names it: its kind and the words it shows — a root's letters, a word, a verse's key, a note's
+    first line, a quotation by its article, a frame's title."""
+    d = n.get("data") or {}
+    kind = d.get("kind")
+    verse = d.get("verse") if isinstance(d.get("verse"), dict) else None
+    if kind == "verse" and verse:
+        name = verse.get("key")
+    elif kind == "note" and d.get("entry"):
+        name = str(d["entry"])
+        kind = "quote"
+    elif kind == "note":
+        name = _str((d.get("text") or "").split("\n")[0], 60)
+    elif kind == "frame":
+        name = _str(d.get("title"), 60)
+    else:
+        name = d.get("ar")
+    return {"id": n.get("id"), "kind": kind, "name": name if isinstance(name, str) else ""}
+
+
+def changes(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
+    """What a version changed in the one before it (B59): the cards added and removed, named; how many were moved;
+    the links added and removed. Computed from the two immutable versions, so it is the same for every reader."""
+    old = {n.get("id"): n for n in before.get("nodes") or []}
+    new = {n.get("id"): n for n in after.get("nodes") or []}
+
+    def at(n: dict[str, Any]) -> tuple[float, float]:
+        p = n.get("position") or {}
+        return (round(float(p.get("x") or 0)), round(float(p.get("y") or 0)))
+
+    def link(e: dict[str, Any]) -> tuple[Any, Any, Any]:
+        return (e.get("source"), e.get("target"), (e.get("data") or {}).get("rel"))
+
+    old_links = {link(e) for e in before.get("edges") or []}
+    new_links = {link(e) for e in after.get("edges") or []}
+    return {
+        "added": [_card(new[i]) for i in new if i not in old],
+        "removed": [_card(old[i]) for i in old if i not in new],
+        "moved": sum(1 for i in new if i in old and at(new[i]) != at(old[i])),
+        "links_added": len(new_links - old_links),
+        "links_removed": len(old_links - new_links),
+    }
+
+
 def _content(title: Any, description: Any, kind: Any, raw: Any) -> dict[str, Any]:
     doc, _ = checked_doc(raw)
     t = _str(title, 200)
@@ -318,6 +362,33 @@ def _record(
            order by version desc""",
         {"s": slug},
     )
+    # what each version changed in the one before (B59): the latest twenty, from the immutable versions
+    docs = {
+        r["version"]: r["doc"]
+        for r in q(
+            conn,
+            """select version, doc from graphs.published_versions where slug = :s and version >= :lo
+                order by version""",
+            {"s": slug, "lo": max(1, versions[0]["version"] - 20) if versions else 1},
+        )
+    }
+    for x in versions:
+        prev = docs.get(x["version"] - 1)
+        if prev is not None and x["version"] in docs:
+            c = changes(prev, docs[x["version"]])
+            x["changes"] = {k: (len(c[k]) if isinstance(c[k], list) else c[k]) for k in c}
+    shown_changes = None
+    if v > 1:
+        before = docs.get(v - 1) or (
+            q1(
+                conn,
+                "select doc from graphs.published_versions where slug = :s and version = :v",
+                {"s": slug, "v": v - 1},
+            )
+            or {}
+        ).get("doc")
+        if before is not None:
+            shown_changes = changes(before, row["doc"])
     origin = None
     if p["forked_from"]:
         o = q1(
@@ -351,6 +422,8 @@ def _record(
         "cite_count": p["cite_count"],
         "forked_from": origin,
         "versions": versions,
+        # what this version changed in the one before it, cards named (B59)
+        "changes": shown_changes,
         "mine": mine,
     }
     if mine:

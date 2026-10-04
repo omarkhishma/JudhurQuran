@@ -13,11 +13,13 @@ export {
   publishedMapPath,
   publishedPath,
   slugify,
+  type ChangeCounts,
   type EmbedOptions,
   type MapCiteFormat,
   type MapCounts,
   type PublishedMap,
   type PublishedRow,
+  type VersionChanges,
 } from "./publishedShared";
 import type { PublishedMap, PublishedRow } from "./publishedShared";
 

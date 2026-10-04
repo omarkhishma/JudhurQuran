@@ -8,9 +8,10 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { errorKind } from "@/lib/account/errors";
 import { useAccount } from "@/lib/account/store";
 import { useTheme } from "@/lib/client";
-import { cnt, formatNumber } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { loadGraph } from "@/lib/graph/persist";
 import {
+  type ChangeCounts,
   countCite,
   embedPath,
   embedSnippet,
@@ -26,6 +27,7 @@ import {
   readPublished,
   reportMap,
   resolveMapReport,
+  type VersionChanges,
   withdrawMap,
 } from "@/lib/graph/published";
 import type { CardMessage } from "./PublishedView";
@@ -59,6 +61,15 @@ const prefixOf = (locale: string) => (locale === "ar" ? "" : "/en");
  */
 export function PublishedScreen({ initial, text }: { initial: PublishedMap; text: AsText }) {
   const t = useTranslations("graph");
+  const changeLine = (c: ChangeCounts) =>
+    [
+      c.added && t("changedAdded", cnt(c.added, locale)),
+      c.removed && t("changedRemoved", cnt(c.removed, locale)),
+      c.moved && t("changedMoved", cnt(c.moved, locale)),
+      (c.links_added || c.links_removed) && t("changedLinks", { added: formatNumber(c.links_added, locale), removed: formatNumber(c.links_removed, locale) }),
+    ]
+      .filter(Boolean)
+      .join(" • ") || t("changedNothing");
   const locale = useLocale();
   const router = useRouter();
   const session = useAccount((s) => s.session);
@@ -298,10 +309,13 @@ export function PublishedScreen({ initial, text }: { initial: PublishedMap; text
                     <span className="flex-1" />
                     <span className="text-t3">{t("cards", cnt(v.counts.cards, locale))}</span>
                   </Link>
+                  {/* what it changed in the one before it (B59) */}
+                  {v.changes && <p className="text-[11.5px] text-t3">{changeLine(v.changes)}</p>}
                 </li>
               ))}
             </ol>
           </section>
+          {m.changes && <VersionChangesPanel m={m} />}
 
           {m.mine && <OwnerPanel m={m} onWithdrawn={() => router.refresh()} />}
           {m.reports && m.reports.length > 0 && <BoardPanel m={m} onDone={() => void qc.invalidateQueries({ queryKey: ["published", m.slug] }).then(() => router.refresh())} />}
@@ -482,5 +496,44 @@ export function PublishedGone({ by }: { by: "author" | "board" }) {
       <p className="text-[14px] leading-relaxed text-t2">{t(by === "board" ? "publishedWithdrawnBoard" : "publishedWithdrawnAuthor")}</p>
       <Link href="/g" className="btn">{t("publishedAll")}</Link>
     </div>
+  );
+}
+
+/** What the version shown changed in the one before it (B59): its cards added and removed by kind and name, how many
+ * were moved, its links — from the two versions as published, the same for every reader. */
+function VersionChangesPanel({ m }: { m: PublishedMap }) {
+  const t = useTranslations("graph");
+  const locale = useLocale();
+  const c = m.changes!;
+  const KIND: Record<string, string> = { root: "kindRoot", lemma: "kindLemma", verse: "kindVerse", note: "kindNote", pattern: "kindPattern", frame: "kindFrame", quote: "kindQuote" };
+  const list = (cards: VersionChanges["added"], label: string) =>
+    cards.length > 0 && (
+      <div className="flex flex-col gap-1">
+        <p className="text-[12px] text-t2">{label}</p>
+        <ul className="flex flex-wrap gap-1.5">
+          {cards.slice(0, 24).map((x) => (
+            <li key={x.id} className="chip text-[12px]">
+              <span className="text-t3">{KIND[x.kind] ? t(KIND[x.kind] as "kindRoot") : x.kind}</span>
+              <bdi className={x.kind === "root" || x.kind === "lemma" ? "ar-classical text-[14px]" : ""} dir="auto">{(x.kind === "verse" ? verseRef(x.name, locale) : x.name) || "—"}</bdi>
+            </li>
+          ))}
+          {cards.length > 24 && <li className="text-[12px] text-t3">{t("changedMore", cnt(cards.length - 24, locale))}</li>}
+        </ul>
+      </div>
+    );
+  return (
+    <section className="flex flex-col gap-2 border-t border-line pt-3" aria-labelledby="pub-changes-h">
+      <h2 id="pub-changes-h" className="label-caps">{t("changedSince", { v: formatNumber(m.version - 1, locale) })}</h2>
+      {list(c.added, t("changedAddedList"))}
+      {list(c.removed, t("changedRemovedList"))}
+      <p className="text-[12px] text-t3">
+        {[
+          c.moved ? t("changedMoved", cnt(c.moved, locale)) : null,
+          t("changedLinks", { added: formatNumber(c.links_added, locale), removed: formatNumber(c.links_removed, locale) }),
+        ]
+          .filter(Boolean)
+          .join(" • ")}
+      </p>
+    </section>
   );
 }

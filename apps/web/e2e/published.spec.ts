@@ -326,3 +326,43 @@ test("every read-only map is read, never rearranged: no tidy or undo, no ports, 
   await expect(page.locator(".graph-card.is-open")).toHaveCount(0);
 });
 
+
+test("a version says what it changed in the one before: on its page, by kind and name, and counted in the versions list (B59)", async ({ browser, page }) => {
+  test.setTimeout(120_000);
+  const t = tag();
+  const o = await person(browser, `e2e-pub-c-${t}@example.org`);
+  try {
+    const m = await publishVia(o, `changes-${t}`, `خريطة التغييرات ${t}`);
+    // version 2: a word added and linked, a note removed, the root moved
+    const nodes = [
+      { id: "root:علم", position: { x: 40, y: 0 }, data: { kind: "root", ar: "ع ل م", rootKey: "علم" } },
+      { id: "note:a", position: { x: 420, y: 0 }, data: { kind: "note", text: "أول ما نزل في العلم" } },
+      { id: "lemma:ilm", position: { x: 0, y: 320 }, data: { kind: "lemma", ar: "عِلْم", slug: "ilm", rootKey: "علم" } },
+    ];
+    const edges = [
+      { id: "e1", source: "root:علم", target: "note:a", data: { rel: "describes" } },
+      { id: "e2", source: "root:علم", target: "lemma:ilm", data: { rel: "derives" } },
+    ];
+    const r = await o.page.request.post(`/api/v1/published/${enc(m.slug)}/versions`, { headers: o.h, data: { title: m.title, kind: "free", doc: { version: 2, nodes, edges } } });
+    expect(r.status(), await r.text()).toBe(201);
+    const two = (await published(page, m.slug)) as Published & { changes: { added: { name: string }[]; removed: { name: string }[]; moved: number } };
+    expect([two.changes.added.map((x) => x.name), two.changes.removed.map((x) => x.name), two.changes.moved]).toEqual([["عِلْم"], ["والقلم"], 1]);
+    await page.goto(`/g/${enc(m.slug)}`);
+    const panel = page.locator("section[aria-labelledby=pub-changes-h]");
+    await expect(panel.getByRole("heading")).toHaveText(`ما تغيّر منذ الإصدار ${AR(1)}`);
+    await expect(panel.locator("li", { hasText: "عِلْم" })).toContainText("كلمة");
+    await expect(panel.locator("li", { hasText: "والقلم" })).toContainText("ملاحظة");
+    await expect(panel).toContainText("نُقلت بطاقة");
+    await expect(panel).toContainText("الروابط: أُضيف ١ وحُذف ٠");
+    // the versions list counts each version's changes
+    const rows = page.locator("section[aria-labelledby=pub-versions-h] li");
+    await expect(rows.first()).toContainText("أُضيفت بطاقة • حُذفت بطاقة • نُقلت بطاقة • الروابط: أُضيف ١ وحُذف ٠");
+    // the first version has nothing before it
+    await page.goto(`/g/${enc(m.slug)}?v=1`);
+    await expect(page.locator("section[aria-labelledby=pub-versions-h]")).toBeVisible();
+    await expect(page.locator("section[aria-labelledby=pub-changes-h]")).toHaveCount(0);
+  } finally {
+    free(t);
+    await o.page.context().close();
+  }
+});
