@@ -674,9 +674,10 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             )
         ]
         # the narrators' profiles (P11.2b): Ibn Ḥajar's Taqrīb, each entry verbatim and what is read from it
-        from .ecosystem.hadith import narrator_rows
+        from .ecosystem.hadith import narrator_rows, narrator_scales
 
         generic["narrators"], report["narrators"] = narrator_rows(raw.root, raw.hadith_registry)
+        generic["narrator_scales"] = narrator_scales(raw.root, raw.hadith_registry)
         kinds = Counter(f["kind"] for f in extra["text_forms"])
         report["texts"] = {
             "texts": len(extra["texts"]),

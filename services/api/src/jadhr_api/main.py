@@ -47,6 +47,7 @@ from . import (
     routes_editorial,
     routes_graphs,
     routes_me,
+    routes_narrators,
     routes_public,
     routes_releases,
     topics,
@@ -1215,6 +1216,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_releases.router)
     app.include_router(routes_public.router)
     app.include_router(routes_dictionary.router)
+    app.include_router(routes_narrators.router)
     return app
 
 

@@ -36,9 +36,11 @@ def test_every_entry_is_read_in_the_books_order() -> None:
 
 
 def test_his_words_give_the_verdict_tabaqa_year_and_books() -> None:
-    e = _no(1)  # «… صدوق من العاشرة مات سنة ست وثلاثين د فق»
+    e = _no(
+        1
+    )  # «… صدوق من العاشرة مات سنة ست وثلاثين د فق»; the name ends where his description begins («نزيل»)
     assert (e.name, e.verdict, e.rank, e.tabaqa) == (
-        "أحمد بن إبراهيم بن خالد الموصلي أبو علي نزيل بغداد",
+        "أحمد بن إبراهيم بن خالد الموصلي أبو علي",
         "صدوق",
         4,
         10,
@@ -69,3 +71,17 @@ def test_most_entries_are_read_and_the_years_follow_the_tabaqat() -> None:
         statistics.median([e.death_ah for e in main if e.tabaqa == t and e.death_ah]) for t in range(2, 13)
     ]
     assert medians == sorted(medians), medians
+
+
+def test_his_introduction_defines_each_rank_and_tabaqa_in_his_words() -> None:
+    from jadhr_pipeline.ecosystem.taqrib import introduction
+
+    rows = introduction(FILE.read_text(encoding="utf-8"))
+    ranks = {r["n"]: r["text"] for r in rows if r["scale"] == "rank"}
+    tabaqat = {r["n"]: r["text"] for r in rows if r["scale"] == "tabaqa"}
+    assert sorted(ranks) == sorted(tabaqat) == list(range(1, 13))
+    # the terms the rank reading uses are his: «صدوق» the fourth, «مقبول» the sixth, the Companions the first
+    assert "بصدوق" in ranks[4] and "مقبول" in ranks[6] and "الصحابة" in ranks[1] and "الصحابة" in tabaqat[1]
+    assert "كالزهري" in tabaqat[4] and "كمالك" in tabaqat[7]
+    death = next(r["text"] for r in rows if r["scale"] == "death")
+    assert "قبل المائة" in death and "بعد المائتين" in death

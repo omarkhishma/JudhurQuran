@@ -229,6 +229,40 @@ def segments(text: str, form_ids: list[int]) -> tuple[list[dict[str, Any]], list
     return out, form_ids
 
 
+def mark(segs: list[dict[str, Any]], split: dict[str, Any] | None, links: list[dict[str, Any]]) -> None:
+    """Each piece told which part of a hadith it belongs to (``p``: isnad, matn, comment), a piece between words cut
+    where a part begins; each word of a narrator's name told its link (``n``: the link's ordinal)."""
+    if not split:
+        return
+    bounds = sorted({x for part in ("matn", "comment") if split.get(part) for x in split[part][:1]})
+    out: list[dict[str, Any]] = []
+    at = 0
+    for seg in segs:
+        start, text = at, seg["t"]
+        at += len(text)
+        cuts = [b - start for b in bounds if start < b < start + len(text)] if "w" not in seg else []
+        pieces = [text[i:j] for i, j in zip([0, *cuts], [*cuts, len(text)], strict=True)]
+        for k, piece in enumerate(pieces):
+            out.append({**seg, "t": piece} if k == 0 else {"t": piece})
+    at = 0
+    for seg in out:
+        start = at
+        at += len(seg["t"])
+        seg["p"] = next(
+            (
+                part
+                for part in ("comment", "matn")
+                if split.get(part) and split[part][0] <= start < split[part][1]
+            ),
+            "isnad",
+        )
+        if "w" in seg:
+            n = next((x["ordinal"] for x in links if x["span_start"] <= start < x["span_end"]), None)
+            if n is not None:
+                seg["n"] = n
+    segs[:] = out
+
+
 def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
     """One passage: its text verbatim cut into its words, each with its reading; its place in the text's chapters;
     the passages before and after it; its roots, the sure apart from the possible."""
@@ -245,6 +279,18 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
     if p is None:
         return None
     segs, ids = segments(p["ar_full"] or "", p["form_ids"] or [])
+    # a hadith's isnād, matn and comment, and the narrators its chain names, each linked or left open (P11.2b)
+    split = (p["meta"] or {}).get("split")
+    links = rows(
+        conn,
+        """select l.ordinal, l.span_start, l.span_end, l.text, l.rule, l.confidence, l.status,
+                  cardinality(l.candidates) as candidates, n.id, n.number, n.name, n.verdict, n.rank, n.tabaqa,
+                  n.death_ah
+             from content.narrator_links l left join content.narrators n on n.id = l.narrator_id
+            where l.passage_id = :p order by l.ordinal""",
+        {"p": p["id"]},
+    )
+    mark(segs, split, links)
     forms = _forms(conn, ids)
     ch = one(
         conn,
@@ -269,6 +315,25 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
         "token_count": p["token_count"],
         "meta": p["meta"],
         "segments": segs,
+        "parts": {k: split[k] for k in ("method", "rule", "status", "isnad", "matn", "comment")}
+        if split
+        else None,
+        "narrators": [
+            {
+                "ordinal": x["ordinal"],
+                "text": x["text"],
+                "rule": x["rule"],
+                "confidence": x["confidence"],
+                "status": x["status"],
+                "candidates": x["candidates"],
+                "narrator": (
+                    {k: x[k] for k in ("id", "number", "name", "verdict", "rank", "tabaqa", "death_ah")}
+                    if x["id"]
+                    else None
+                ),
+            }
+            for x in links
+        ],
         # each word's form id (0 where a piece holds no letters), each form's reading once
         "words": ids,
         "forms": {str(i): f for i, f in forms.items()},

@@ -141,6 +141,24 @@ RANKS: list[tuple[tuple[str, ...], int]] = sorted(
     key=lambda x: -len(x[0]),
 )
 
+_DESCRIBES = frozenset(
+    normalize(w)
+    for w in [
+        "الفقيه",
+        "الحافظ",
+        "متفق",
+        "مشهور",
+        "المشهور",
+        "الإمام",
+        "إمام",
+        "نزيل",
+        "قاضي",
+        "صاحب",
+        "الصحابي",
+        "الصحابية",
+        "حليف",
+    ]
+)
 _UNITS = {
     "واحد": 1,
     "احدي": 1,
@@ -331,6 +349,12 @@ def _entry(number: int | None, kind: str, text: str) -> Entry:
         tabaqa, tabaqa_rule = 1, "companion"
     death_ah, rule, d_at = _death(norm, tabaqa)
     ends = [x for x in (v_at, t_at, d_at) if x is not None]
+    # a description never part of a name ends it too («… الزهري أبو بكر الفقيه الحافظ متفق على جلالته»)
+    ends += [
+        i
+        for i in range(2, len(norm))
+        if norm[i] in _DESCRIBES or norm[i : i + 2] in (["ام", "المومنين"], ["امير", "المومنين"])
+    ][:1]
     name_end = min(ends) if ends else len(words)
     verdict = " ".join(words[v_at : t_at if t_at and t_at > v_at else (d_at or len(words))]) if v_at else None
     death_text = None
@@ -350,4 +374,31 @@ def _entry(number: int | None, kind: str, text: str) -> Entry:
         death_ah=death_ah,
         death_rule=rule,
         sigla=sigla,
+    )
+
+
+def introduction(raw: str) -> list[dict[str, Any]]:
+    """His introduction's own definitions, verbatim: the twelve ranks («فأما المراتب»), the twelve ṭabaqāt («وأما
+    الطبقات») and the rule for the years of death («وذكرت وفاة …») — quoted where a page explains a rank, a ṭabaqa
+    or a year read by that rule."""
+    body = raw.split(HEADER_END, 1)[1]
+    paragraphs: list[str] = []
+    for line in body.splitlines():
+        if line.startswith("# "):
+            paragraphs.append(line[2:])
+        elif line.startswith("~~") and paragraphs:
+            paragraphs[-1] += " " + line[2:]
+        elif line.startswith("### $"):
+            break
+    clean = [re.sub(r"\s+", " ", _NOISE.sub(" ", p)).strip() for p in paragraphs]
+    start = next(i for i, p in enumerate(clean) if p.startswith("فأولها"))
+    middle = next(i for i, p in enumerate(clean) if p.startswith("وأما الطبقات"))
+    death = next(i for i, p in enumerate(clean) if p.startswith("وذكرت وفاة"))
+    ranks, tabaqat = clean[start:middle], clean[middle + 1 : death]
+    if len(ranks) != 12 or len(tabaqat) != 12:
+        raise ValueError(f"the introduction: {len(ranks)} ranks and {len(tabaqat)} ṭabaqāt, not 12 and 12")
+    return (
+        [{"scale": "rank", "n": n, "text": t} for n, t in enumerate(ranks, start=1)]
+        + [{"scale": "tabaqa", "n": n, "text": t} for n, t in enumerate(tabaqat, start=1)]
+        + [{"scale": "death", "n": 1, "text": clean[death]}]
     )

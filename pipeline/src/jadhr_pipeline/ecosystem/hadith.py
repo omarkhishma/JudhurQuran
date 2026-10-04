@@ -409,6 +409,14 @@ def build_hadith(raw: Path, registry: Path) -> tuple[list[Draft], dict[str, Any]
     return drafts, dict(sorted(stats.items()))
 
 
+def narrator_scales(raw: Path, registry: Path) -> list[dict[str, Any]]:
+    """Ibn Ḥajar's definitions of his ranks and ṭabaqāt and his rule for the years of death, verbatim."""
+    from .taqrib import introduction
+
+    spec = yaml.safe_load(registry.read_text(encoding="utf-8"))["narrators"]
+    return introduction((raw / spec["file"]).read_text(encoding="utf-8"))
+
+
 def narrator_rows(raw: Path, registry: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """The Taqrīb's entries as rows for ``content.narrators``, in the book's order, and what was read from them."""
     from jadhr_arabic import normalize
