@@ -5,11 +5,11 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, Path, WebSocket
 from fastapi.responses import ORJSONResponse, Response
 from pydantic import BaseModel, Field
 
-from . import accounts, shared_maps
+from . import accounts, presence, shared_maps
 
 router = APIRouter(prefix="/api/v1")
 NO_STORE = {"Cache-Control": "no-store"}
@@ -112,3 +112,10 @@ def resolve(u: User, comment_id: Annotated[str, Path(max_length=40)], body: _Res
 def delete_comment(u: User, comment_id: Annotated[str, Path(max_length=40)]) -> Response:
     shared_maps.delete_comment(u, comment_id)
     return Response(status_code=204, headers=NO_STORE)
+
+
+@router.websocket("/graphs/{gid}/presence")
+async def graph_presence(ws: WebSocket, gid: GraphId) -> None:
+    """Who is on a shared map now, and which of its owner's windows edits it (P8.6): a hello, then the presence as it
+    changes."""
+    await presence.serve(ws, gid)

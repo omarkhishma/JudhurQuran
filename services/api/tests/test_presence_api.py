@@ -1,0 +1,144 @@
+"""Presence on a shared map (P8.6, D5; EDT-014, EDT-296, EDT-297): who is there now — the signed-in by the name
+their comments carry, anyone else counted — told to every window as it changes; one of the owner's windows edits and
+another is told, and may take it over; another worker's windows heard through Postgres; a map not shared refused.
+Nothing is written down."""
+
+from __future__ import annotations
+
+import json
+import threading
+import time
+import uuid
+from collections.abc import Callable
+from typing import Any
+
+import anyio
+import pytest
+from fastapi.testclient import TestClient
+from jadhr_api import accounts
+from jadhr_api.main import app
+from starlette.websockets import WebSocketDisconnect
+from test_graphs_api import _share, people  # noqa: F401  (the owner and two readers, signed in)
+
+
+def _token(h: dict[str, str]) -> str:
+    return h["Authorization"].removeprefix("Bearer ")
+
+
+def _receive(ws: Any, within: float = 10.0) -> dict[str, Any]:
+    """The next message, or a failure after `within` seconds — a window told nothing must fail the test, not hang it."""
+
+    async def next_message() -> Any:
+        with anyio.fail_after(within):
+            return await ws._send_rx.receive()
+
+    try:
+        m = ws.portal.call(next_message)
+    except TimeoutError:
+        raise AssertionError(f"nothing told within {within}s") from None
+    ws._raise_on_close(m)
+    return json.loads(m["text"])
+
+
+def _until(ws: Any, ok: Callable[[dict[str, Any]], bool], most: int = 12) -> dict[str, Any]:
+    """The first message that satisfies `ok`: a window is told each time anything changes."""
+    for _ in range(most):
+        m = _receive(ws)
+        if ok(m):
+            return m
+    raise AssertionError("no such message")
+
+
+def _names(m: dict[str, Any]) -> set[str]:
+    return {p["name"] for p in m["people"]}
+
+
+def test_who_is_on_a_shared_map_and_which_window_edits(people: dict[str, dict[str, str]]) -> None:  # noqa: F811
+    o, r = people["o"], people["r"]
+    g = _share(o, local=f"pres{uuid.uuid4().hex[:6]}")
+    on = f"/api/v1/graphs/{g['id']}/presence"
+    with TestClient(app) as tc, tc.websocket_connect(on) as a:
+        a.send_json({"type": "hello", "token": _token(o), "editing": True})
+        first = _until(a, lambda m: m["type"] == "presence")
+        owner_name = first["people"][0]["name"]
+        assert first["editor"] == "you" and first["people"] == [
+            {"name": owner_name, "owner": True, "you": True, "windows": 1, "editing": True}
+        ]
+        with tc.websocket_connect(on) as b:
+            b.send_json({"type": "hello", "token": _token(r), "editing": True})  # a reader cannot edit
+            seen = _until(b, lambda m: len(m["people"]) == 2)
+            assert seen["editor"] == "elsewhere" and [p["you"] for p in seen["people"]] == [True, False]
+            assert [p["owner"] for p in seen["people"]] == [False, True]
+            _until(a, lambda m: len(m["people"]) == 2)
+            with tc.websocket_connect(on) as guest:
+                guest.send_json({"type": "hello"})
+                g1 = _until(guest, lambda m: m["guests"] == 1)
+                assert len(g1["people"]) == 2 and g1["editor"] == "elsewhere"
+                _until(a, lambda m: m["guests"] == 1)
+            # the guest has gone, and is no longer counted
+            _until(a, lambda m: m["guests"] == 0)
+        _until(a, lambda m: len(m["people"]) == 1)
+        # the owner's second window: told another edits, the owner shown once with two windows; it takes the map
+        with tc.websocket_connect(on) as a2:
+            a2.send_json({"type": "hello", "token": _token(o), "editing": True})
+            w2 = _until(a2, lambda m: m["type"] == "presence")
+            assert w2["editor"] == "elsewhere" and w2["people"][0]["windows"] == 2
+            a2.send_json({"type": "take"})
+            assert _until(a2, lambda m: m["editor"] == "you")["editor"] == "you"
+            assert _until(a, lambda m: m["editor"] == "elsewhere")["editor"] == "elsewhere"
+        # the window that took it closed: the one left edits again
+        assert _until(a, lambda m: m["editor"] == "you")["people"][0]["windows"] == 1
+
+
+def test_another_workers_windows_are_heard_through_postgres(people: dict[str, dict[str, str]]) -> None:  # noqa: F811
+    o = people["o"]
+    g = _share(o, local=f"pres{uuid.uuid4().hex[:6]}")
+    other = {
+        "conn": "x1",
+        "user": "someone-else",
+        "name": "قارئ في عامل آخر",
+        "owner": False,
+        "editing": False,
+        "claimed": 0,
+    }
+    stop = threading.Event()
+
+    def say(entries: list[dict[str, Any]]) -> None:
+        # the other worker speaks until this one has heard (its listener may still be connecting)
+        while not stop.is_set():
+            with accounts.tx() as c:
+                accounts.q(
+                    c,
+                    "select pg_notify('jadhr_presence', :b) as sent",
+                    {"b": json.dumps({"w": "another-worker", "g": g["id"], "e": entries})},
+                )
+            time.sleep(0.3)
+
+    with TestClient(app) as tc, tc.websocket_connect(f"/api/v1/graphs/{g['id']}/presence") as a:
+        a.send_json({"type": "hello", "token": _token(o), "editing": True})
+        _until(a, lambda m: m["type"] == "presence")
+        t = threading.Thread(target=say, args=([other],), daemon=True)
+        t.start()
+        try:
+            heard = _until(a, lambda m: "قارئ في عامل آخر" in _names(m), most=60)
+        finally:
+            stop.set()
+            t.join()
+        assert len(heard["people"]) == 2 and heard["editor"] == "you"
+        # the other worker's last window left: it says so with an empty list
+        stop.clear()
+        t = threading.Thread(target=say, args=([],), daemon=True)
+        t.start()
+        try:
+            gone = _until(a, lambda m: len(m["people"]) == 1, most=60)
+        finally:
+            stop.set()
+            t.join()
+        assert "قارئ في عامل آخر" not in _names(gone)
+
+
+def test_a_map_not_shared_is_refused() -> None:
+    with TestClient(app) as tc, tc.websocket_connect(f"/api/v1/graphs/{uuid.uuid4()}/presence") as ws:
+        with pytest.raises(WebSocketDisconnect) as e:
+            _receive(ws)
+        assert e.value.code == 4404
