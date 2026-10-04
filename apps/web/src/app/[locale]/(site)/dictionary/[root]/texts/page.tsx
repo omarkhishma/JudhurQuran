@@ -27,6 +27,9 @@ function read(sp: { [k: string]: string | string[] | undefined }): Query {
   };
 }
 
+/** A root as the dictionary names it on its page: its letters apart (ع ل م). */
+const spaced = (display: string) => [...display].join(" ");
+
 async function load(raw: string, q: Query) {
   const p = new URLSearchParams({ which: q.which, offset: String((q.page - 1) * PAGE), limit: String(PAGE) });
   if (q.kind) p.set("kind", q.kind);
@@ -41,7 +44,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/[lo
   const q = read(await searchParams);
   const d = await load(root, q);
   const t = await getTranslations({ locale, namespace: "rootTexts" });
-  return { title: t("pageTitle", { root: d.root.display }), description: t("lead"), alternates: localized(locale, rootTextsHref(d.root.key, q)) };
+  return { title: t("pageTitle", { root: spaced(d.root.display) }), description: t("lead"), alternates: localized(locale, rootTextsHref(d.root.key, q)) };
 }
 
 /** Every passage of the hadith and the books holding a root (P11.4b), a page at a time — by kind, by text, the
@@ -54,19 +57,20 @@ export default async function RootTextsPage({ params, searchParams }: PageProps<
   const d = await load(root, q);
   const ar = locale === "ar";
   const key = d.root.key;
+  const name = spaced(d.root.display);
   const pages = Math.max(1, Math.ceil(d.total / PAGE));
   const texts = d.counts.filter((c) => !q.kind || c.kind === q.kind);
   const chip = (on: boolean) => `chip${on ? " is-on" : ""}`;
   return (
     <div className="mx-auto max-w-[1000px] px-4 py-10">
-      <JsonLd data={breadcrumbs(locale, [[ar ? "الرئيسية" : "Home", "/"], [d.root.display, dictHref(key)], [t("pageTitle", { root: d.root.display }), rootTextsHref(key)]])} />
+      <JsonLd data={breadcrumbs(locale, [[ar ? "الرئيسية" : "Home", "/"], [name, dictHref(key)], [t("pageTitle", { root: name }), rootTextsHref(key)]])} />
       <nav className="mb-4 flex flex-wrap gap-x-2 text-[13px] text-t3" aria-label="breadcrumb">
         <Link href="/dictionary" className="hover:text-t1">{t("dictionary")}</Link>
         <span aria-hidden="true">›</span>
-        <Link href={dictHref(key)} className="ar-classical hover:text-t1" lang="ar">{d.root.display}</Link>
+        <Link href={dictHref(key)} className="ar-classical hover:text-t1" lang="ar">{name}</Link>
       </nav>
       <header className="mb-5 flex flex-col gap-2">
-        <h1 className="text-[26px] font-semibold">{t("pageTitle", { root: d.root.display })}</h1>
+        <h1 className="text-[26px] font-semibold">{t("pageTitle", { root: name })}</h1>
         <p className="max-w-[75ch] text-[13px] leading-relaxed text-t3">{t("lead")}</p>
       </header>
       <div className="mb-3 flex flex-col gap-2">

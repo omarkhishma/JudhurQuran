@@ -43,7 +43,7 @@ test("the Quran's root page and the dictionary's show the root in the hadith and
 test("every passage of a root: by kind, by book, the sure or the possible", async ({ page }) => {
   const books = await life(page, "?kind=book&which=possible&limit=40");
   await page.goto(`/dictionary/${enc("علم")}/texts`);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("الجذر علم في الحديث والكتب");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("الجذر ع ل م في الحديث والكتب");
   await page.getByRole("navigation", { name: "النوع" }).getByRole("link", { name: "في كتب التراث" }).click();
   await expect(page).toHaveURL(/kind=book/);
   await page.getByRole("navigation", { name: "القراءة" }).getByRole("link", { name: "المحتمل" }).click();
