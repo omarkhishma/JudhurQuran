@@ -103,6 +103,8 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
     # the dictionary's roots (P11.1): every root the lexica file an article under
     ("dict_roots", "dict_roots.jsonl", ["key", "display", "letters", "first", "quran_root", "lexica", "articles",
                                         "attested_as_written", "unsure", "filed_under"], set()),
+    # Lane's paragraph on each Quranic word (P3.1): the article's paragraph, by its index, never its words
+    ("lane_words", "lane_words.jsonl", ["lemma_id", "entry_id", "para", "headword", "page_ref", "rule"], set()),
     ("reciters", "reciters.jsonl", ["id", "name_ar", "name_en", "style", "folder", "audio_url", "is_default", "sort_order",
                                     "word_audio"], set()),
     ("recitation_timings", "recitation_timings.jsonl", ["reciter_id", "verse_id", "segments", "quality"],
@@ -307,6 +309,7 @@ TRUNCATE_ORDER = [
     "recitation_timings",
     "reciters",
     "gharib_glosses",
+    "lane_words",
     "dict_roots",
     "lexicon_entries",
     "lexicon_works",

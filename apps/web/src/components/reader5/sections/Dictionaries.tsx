@@ -146,6 +146,7 @@ function ArticleEntry({ e, lang, expanded, onToggle, onCopied }: { e: DictEntry;
   return (
     <div className="flex flex-col gap-1">
       {e.confidence === "high" && <p className="text-[11px] text-amber">{t("approxMapping", { head: e.headword })}</p>}
+      {e.word?.map((p) => <WordParagraph key={p.para} p={p} lang={lang} />)}
       <div
         className={lang === "en" ? "dict-body text-[13px] leading-relaxed" : "dict-body ar-classical text-[15px] leading-[2]"}
         lang={lang === "en" ? "en" : "ar"}
@@ -174,8 +175,39 @@ function ArticleEntry({ e, lang, expanded, onToggle, onCopied }: { e: DictEntry;
   );
 }
 
+/** The paragraph of the article on this word (P3.1: Lane per word), its words the article's, with its headword as the
+ * lexicographer keys it, its page and how it was matched — above the whole article, which follows as it is. */
+function WordParagraph({ p, lang }: { p: NonNullable<DictEntry["word"]>[number]; lang: string }) {
+  const t = useTranslations("rd");
+  const shown = useMarks();
+  const [open, setOpen] = useState(false);
+  const long = p.text.length > 700;
+  return (
+    <div className="dict-word flex flex-col gap-1 rounded-lg border border-line bg-card-2 p-2.5">
+      <p className="text-[11.5px] text-t3">
+        {t("laneOnWord")}{" "}
+        {/* Perseus keys a few paragraphs with no Arabic word («1»): no headword is shown for those */}
+        {/[\u0621-\u064a]/.test(p.headword) && <bdi className="ar-classical text-[15px] text-t1" lang="ar">{shown(p.headword)}</bdi>}
+      </p>
+      <div className={lang === "en" ? "dict-body text-[13px] leading-relaxed" : "dict-body ar-classical text-[15px] leading-[2]"} lang={lang === "en" ? "en" : "ar"} dir={lang === "en" ? "ltr" : "rtl"} data-collapsed={long && !open}>
+        {shown(long && !open ? `${p.text.slice(0, 700)}…` : p.text)}
+      </div>
+      <p className="flex flex-wrap items-center gap-x-3 text-[11px] text-t3">
+        {long && (
+          <button type="button" className="hover:text-t1" onClick={() => setOpen(!open)}>
+            {open ? t("showLess") : t("laneWordMore")}
+          </button>
+        )}
+        {p.page_ref && <span>{t("lanePage", { page: p.page_ref })}</span>}
+        <span>{t(p.rule === "verb-form" ? "laneRule_verbForm" : "laneRule_vocalised")}</span>
+      </p>
+    </div>
+  );
+}
+
 function Compare({ works }: { works: DictWork[] }) {
   const t = useTranslations("rd");
+  const shown = useMarks();
   const locale = useLocale();
   const compare = usePrefs((s) => s.compare);
   const set = usePrefs((s) => s.set);
@@ -207,7 +239,6 @@ function Compare({ works }: { works: DictWork[] }) {
                 <p key={e.id} className={w.lang === "en" ? "text-[12.5px] leading-relaxed text-t2" : "ar-classical text-[14px] leading-[1.95] text-t2"} lang={w.lang === "en" ? "en" : "ar"} dir={w.lang === "en" ? "ltr" : "rtl"}>
                   {shown(e.excerpt)}
                 </p>
-  const shown = useMarks();
               ))}
             </div>
           );

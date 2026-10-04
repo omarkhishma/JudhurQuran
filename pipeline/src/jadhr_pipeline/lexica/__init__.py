@@ -95,7 +95,7 @@ def _articles(spec: WorkSpec, counters: Counters, ctx: _Context) -> tuple[list[R
     if fmt == "perseus-lane":
         lane = read_lane(spec.path(spec.cfg["files"][0]["path"]), counters)
         arts = [RawArticle(e.headword, e.body, e.page_ref, e.source_ref) for e in lane]
-        return arts, {"lane_tokens": [e.tokens for e in lane]}
+        return arts, {"lane_tokens": [e.tokens for e in lane], "lane_words": [e.words for e in lane]}
     pages = load_pages(spec.dir)
     toc = load_toc(spec.dir)
     lines = read_lines(
@@ -229,11 +229,13 @@ def build_lexica(
         arts = [arts[i] for i in keep]
         if "lane_tokens" in extra:
             extra["lane_tokens"] = [extra["lane_tokens"][i] for i in keep]
+            extra["lane_words"] = [extra["lane_words"][i] for i in keep]
         matches = _map_roots(
             spec, arts, extra, matcher, {r["key"]: int(r.get("occurrences") or 0) for r in roots}
         )
         unmatched: list[dict[str, Any]] = []
         lane_tokens = extra.get("lane_tokens")
+        lane_words = extra.get("lane_words")
         for n, (a, m) in enumerate(zip(arts, matches, strict=True), start=1):
             eid = base + n
             if m.root_key is not None and m.root_key not in root_keys:
@@ -251,6 +253,8 @@ def build_lexica(
                     "source_ref": a.source_ref,
                     # the headings it is filed under, for the dictionary's roots (lexica/dictroots.py); not loaded
                     "heads": lane_tokens[n - 1] if lane_tokens is not None else a.match_heads,
+                    # Lane's words, paragraph by paragraph (lexica/lane_words.py); not loaded
+                    **({"lane_words": lane_words[n - 1]} if lane_words is not None else {}),
                 }
             )
             if m.match is None and m.suppressed:
@@ -308,7 +312,7 @@ def build_lexica(
                 "unmatched_headwords": [u["headword"] for u in unmatched],
             }
         )
-        wrep.update({k: v for k, v in extra.items() if k != "lane_tokens"})
+        wrep.update({k: v for k, v in extra.items() if k not in ("lane_tokens", "lane_words")})
         wrep.update(_split_counters(counters, reg.rules))
         report["works"][spec.id] = wrep
 

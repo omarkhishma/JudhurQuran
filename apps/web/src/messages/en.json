@@ -2327,6 +2327,11 @@
     "textsNone": "The root is in none of the hadith collections and books.",
     "textsOpen": "Its passages there",
     "citeDataset": "Cite the whole dataset",
+    "laneOnWord": "This word's paragraph in the article:",
+    "laneWordMore": "The whole paragraph",
+    "lanePage": "p. {page}",
+    "laneRule_vocalised": "matched to the word by its vowels",
+    "laneRule_verbForm": "matched to the word by its verb form",
     "prefMarks": "Vowel marks in the dictionaries, hadith, books and your texts",
     "prefMarksHint": "The mushaf always keeps all of its marks"
   },

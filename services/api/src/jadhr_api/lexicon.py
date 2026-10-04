@@ -351,6 +351,23 @@ def word_payload(
     lex = (
         content.root_lexicon(conn, root["key"], excerpt=900) if root else {"core_meaning": None, "works": []}
     )
+    # P3.1: Lane's paragraph on this word in his article of its root — cut from the article, never stored apart —
+    # with his headword, the page it starts on and the rule that matched them (lexica/lane_words.py)
+    lane_here = rows(
+        conn,
+        """select lw.entry_id, lw.para, lw.headword, lw.page_ref, lw.rule,
+                  split_part(e.body, E'\n\n', lw.para + 1) as text
+             from content.lane_words lw join content.lexicon_entries e on e.id = lw.entry_id
+            where lw.lemma_id = :l and e.displayable order by lw.entry_id, lw.para""",
+        {"l": lem["id"]},
+    )
+    for w in lex["works"]:
+        for e in w["entries"]:
+            mine = [x for x in lane_here if x["entry_id"] == e["id"]]
+            if mine:
+                e["word"] = [
+                    {k: x[k] for k in ("para", "headword", "page_ref", "rule", "text")} for x in mine
+                ]
     senses = rows(
         conn,
         "select id, ordinal, text_ar, text_en, sources, status from content.senses where lemma_id = :l order by ordinal",

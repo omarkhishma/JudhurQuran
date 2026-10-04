@@ -592,6 +592,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
 
     lex_works, lex_entries, gharib, lex_report = ([], [], [], {})
     dict_roots_out: list[dict[str, Any]] = []
+    lane_words_out: list[dict[str, Any]] = []
     if raw.lexica_registry:
         from .lexica import build_lexica
 
@@ -617,8 +618,13 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         dict_roots_out, report["dictionary"] = build_dict_roots(
             lex_entries, roots_out, [w["id"] for w in sorted(lex_works, key=lambda w: w["sort_order"])]
         )
+        # P3.1: Lane's paragraph on each Quranic word, by its vowelled form or its verb form (lexica/lane_words.py)
+        from .lexica.lane_words import map_lane_words
+
+        lane_words_out, report["lane_words"] = map_lane_words(lex_entries, lemmas_out, roots_out)
         for e in lex_entries:
             e.pop("heads", None)
+            e.pop("lane_words", None)
         from .lexica.maqayis_core import usul_kind
 
         # P3.4: a root's Arabic core idea is Ibn Fāris's statement of its aṣl in Maqāyīs — the article's
@@ -795,6 +801,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         ("lexicon_works", lex_works),
         ("lexicon_entries", lex_entries),
         ("dict_roots", dict_roots_out),
+        ("lane_words", lane_words_out),
         ("gharib_glosses", gharib),
         ("reciters", reciters_out),
         ("recitation_timings", timings_out),

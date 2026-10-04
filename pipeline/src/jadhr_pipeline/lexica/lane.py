@@ -65,6 +65,18 @@ def root_tokens(n: str) -> list[str]:
 
 
 @dataclass
+class LaneWord:
+    """One word Lane treats inside a root's article: its paragraph (an ``<entryFree>``, counted among the article's
+    paragraphs from 0), its headword as Perseus keys it (Buckwalter), whether it is a verb form (``<itype>``, the
+    form's number), and the page the paragraph starts on."""
+
+    para: int
+    key: str
+    itype: str | None
+    page: str | None
+
+
+@dataclass
 class LaneEntry:
     root_n: str
     headword: str
@@ -72,6 +84,7 @@ class LaneEntry:
     page_ref: str | None
     source_ref: str
     tokens: list[str]
+    words: list[LaneWord]
 
 
 _LETTER_ORDER = "AbtvjHxd*rzs$SDTZEgfqklmnhwy"
@@ -141,6 +154,7 @@ def read_lane(tar_path: Path, counters: Counters) -> list[LaneEntry]:
                 _text(head_el, counters, [None]) if head_el is not None else translit(el.get("n") or "")
             )
             paras: list[str] = []
+            words: list[LaneWord] = []
             first_id = None
             for child in el:
                 ctag = child.tag if isinstance(child.tag, str) else ""
@@ -148,8 +162,19 @@ def read_lane(tar_path: Path, counters: Counters) -> list[LaneEntry]:
                     continue
                 if ctag == "entryFree" and first_id is None:
                     first_id = child.get("id")
+                at = page[0]
                 t = _text(child, counters, page)
                 if t:
+                    if ctag == "entryFree" and child.get("key"):
+                        it = child.find(".//itype")
+                        words.append(
+                            LaneWord(
+                                len(paras),
+                                child.get("key") or "",
+                                (it.text or "").strip() if it is not None else None,
+                                at,
+                            )
+                        )
                     paras.append(t)
                     counters.add("lane-markup-removed")
             end_page = page[0]
@@ -163,6 +188,7 @@ def read_lane(tar_path: Path, counters: Counters) -> list[LaneEntry]:
                     page_ref=ref,
                     source_ref=f"perseus:lane:{Path(name).name}:{first_id or n}",
                     tokens=root_tokens(n),
+                    words=words,
                 )
             )
     return entries

@@ -30,6 +30,7 @@ NEEDS_DATA = {
     "test_no_markup_of_the_versions_is_left_in_the_books",
     "test_every_pinned_source_file_matches",
     "test_the_dictionary_on_the_build",
+    "test_on_lanes_own_article_of_the_root",
     "test_on_the_pinned_text_every_first_verse_loses_exactly_the_basmala",
     "test_the_verses_word_counts_match_the_build_once_stripped",
 }

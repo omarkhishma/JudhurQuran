@@ -214,6 +214,8 @@ export type DictEntry = {
   length: number;
 };
 export type DictWork = {
+  /** Lane's paragraph on this word in the article (P3.1): its index, his headword, its page, how it was matched */
+  word?: { para: number; headword: string; page_ref: string | null; rule: "vocalised" | "verb-form"; text: string }[];
   id: string;
   title_ar: string;
   title_en: string;
