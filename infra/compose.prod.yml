@@ -60,7 +60,9 @@ services:
       retries: 5
       start_period: 30s
     environment:
-      JADHR_DATABASE_URL: postgresql+psycopg://jadhr:${POSTGRES_PASSWORD}@db:5432/jadhr
+      # its own role, made by the loader (python -m jadhr_api.dbroles): reads the content, writes the readers' schemas
+      # and nothing else — never the superuser (security review L9)
+      JADHR_DATABASE_URL: postgresql+psycopg://jadhr_api:${APP_DB_PASSWORD:?set APP_DB_PASSWORD}@db:5432/jadhr
       JADHR_SEARCH_URL: http://search:9200
       JADHR_ENVIRONMENT: production
       JADHR_PUBLIC_BASE_URL: ${PUBLIC_URL:?set PUBLIC_URL}
@@ -133,7 +135,8 @@ services:
     logging: *logging
     depends_on: { db: { condition: service_healthy } }
     environment:
-      PGPASSWORD: ${POSTGRES_PASSWORD}
+      # read as the API's role, which reads these schemas, never as the superuser (security review L9)
+      PGPASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD}
     volumes:
       - account_backups:/backups
     entrypoint:
@@ -142,7 +145,7 @@ services:
       - >-
         while true; do
         f=/backups/accounts-$$(date -u +%Y%m%dT%H%M).sql.gz;
-        pg_dump -h db -U jadhr -d jadhr -n accounts -n contributions --no-owner | gzip > $$f.tmp && mv $$f.tmp $$f;
+        pg_dump -h db -U jadhr_api -d jadhr -n accounts -n contributions --no-owner | gzip > $$f.tmp && mv $$f.tmp $$f;
         find /backups -name 'accounts-*.sql.gz' -mmin +20100 -delete;
         sleep 86400;
         done
@@ -156,13 +159,14 @@ services:
     logging: *logging
     depends_on: { caddy: { condition: service_started } }
     environment:
-      JADHR_DATABASE_URL: postgresql+psycopg://jadhr:${POSTGRES_PASSWORD}@db:5432/jadhr
+      JADHR_DATABASE_URL: postgresql+psycopg://jadhr_api:${APP_DB_PASSWORD:?set APP_DB_PASSWORD}@db:5432/jadhr
       JADHR_ENVIRONMENT: production
       JADHR_DATA_KEY: ${DATA_KEY:?set DATA_KEY (openssl rand -base64 32)}
       JADHR_ALERT_WEBHOOK: ${ALERT_WEBHOOK:-}
     command: ["python", "-m", "jadhr_api.ops", "watch", "${PUBLIC_URL:?set PUBLIC_URL}"]
 
-  # One-off: apply migrations, load data/build/<version>, expire the web cache.
+  # One-off, as the database's owner: apply migrations, make or update the API's role, load data/build/<version>,
+  # expire the web cache.
   loader:
     profiles: [tools]
     build: { context: .., dockerfile: services/api/Dockerfile }
@@ -177,11 +181,13 @@ services:
       JADHR_ENVIRONMENT: production
       # recording a release reads its folder (python -m jadhr_api.releases record /data/release/<version>)
       JADHR_RELEASE_DIR: /data/release
+      # the API's role is made or updated after the migrations, with this password (jadhr_api.dbroles)
+      JADHR_APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD}
     volumes:
       - ../data/build:/data/build:ro
       - ../data/sources.yaml:/data/sources.yaml:ro
       - ../data/release:/data/release:ro
-    command: ["sh", "-c", "alembic upgrade head && python -m jadhr_api.loader /data/build/${DATASET_VERSION:?set DATASET_VERSION} /data/sources.yaml"]
+    command: ["sh", "-c", "alembic upgrade head && python -m jadhr_api.dbroles && python -m jadhr_api.loader /data/build/${DATASET_VERSION:?set DATASET_VERSION} /data/sources.yaml"]
 
 volumes:
   pg:

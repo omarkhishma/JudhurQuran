@@ -22,6 +22,7 @@ Files: `infra/compose.prod.yml`, `infra/Caddyfile`, `.env.example` (every variab
 
 ```
 POSTGRES_PASSWORD=<long random>
+APP_DB_PASSWORD=<long random>  # the API's and the monitor's own database role (jadhr_api), never the superuser
 REVALIDATE_SECRET=<long random>
 INTERNAL_TOKEN=<long random>   # the web server's renders send it to the API and skip the per-IP rate limit
 PUBLIC_URL=https://<domain>
@@ -46,11 +47,14 @@ Copy `data/build/<version>/` and `data/sources.yaml` to the same paths in the se
 ## First deploy
 
 ```
-docker compose -f infra/compose.prod.yml --env-file .env.production up -d --build
+docker compose -f infra/compose.prod.yml --env-file .env.production up -d db search
 docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader
+docker compose -f infra/compose.prod.yml --env-file .env.production up -d --build
 ```
 
-The loader prints `"web_revalidate": "ok (200)"` when the web cache was expired. Until the first load the site answers 500 (no data).
+The loader runs first: the migrations, then the API's own database role (`python -m jadhr_api.dbroles`, from `APP_DB_PASSWORD`), then the load — the API connects as that role and cannot start before it exists. On this first run the loader prints `"web_revalidate": "failed …"` (the web is not up yet, and holds no cached page to expire); on every later load it prints `"ok (200)"`.
+
+The API, the monitor and the backups' reader never connect as the superuser (security review L9): `jadhr_app` reads `content` and `releases` and reads and writes the readers' schemas, nothing else — no table made, no program run by the database. A migration that adds a schema grants it (test_dbroles.py fails otherwise). To change `APP_DB_PASSWORD`: set it, run the loader's `python -m jadhr_api.dbroles`, restart `api` and `monitor`.
 
 ## Smoke check after any deploy
 
