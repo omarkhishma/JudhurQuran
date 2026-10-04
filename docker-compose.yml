@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: jadhr
       POSTGRES_DB: jadhr
     ports:
-      - "5442:5432"
+      - "127.0.0.1:5442:5432"  # this machine only: the dev password is "jadhr" (security review L10)
     volumes:
       - jadhr_quran_pg:/var/lib/postgresql/data
     healthcheck:
@@ -26,7 +26,7 @@ services:
       DISABLE_INSTALL_DEMO_CONFIG: "true"
       OPENSEARCH_JAVA_OPTS: -Xms768m -Xmx768m
     ports:
-      - "9201:9200"
+      - "127.0.0.1:9201:9200"  # this machine only: no security plugin
     volumes:
       - jadhr_quran_search:/usr/share/opensearch/data
     healthcheck:
