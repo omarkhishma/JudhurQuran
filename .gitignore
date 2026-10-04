@@ -38,3 +38,6 @@ Example Data/
 
 # Agent worktrees (local, transient)
 .claude/worktrees/
+
+# Pinned validation tools (Jing), fetched by sha256: uv run python -m jadhr_pipeline.lexicon_xml fetch-jing
+data/tools/
