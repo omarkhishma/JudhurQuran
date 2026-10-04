@@ -8,13 +8,13 @@ Audited 2026-10-04 against commit `0e7d424`, then updated at `8032395` for the r
 
 | Scope | Rows | done | adapted | bug-fixed | n/a | open | waiting |
 |---|---|---|---|---|---|---|---|
-| P1 clauses | 68 | 55 | 6 | 0 | 0 | 3 | 4 |
+| P1 clauses | 68 | 56 | 6 | 0 | 0 | 2 | 4 |
 | SHL items | 78 | 49 | 16 | 6 | 5 | 2 | 0 |
-| **Total** | **146** | **104** | **22** | **6** | **5** | **5** | **4** |
+| **Total** | **146** | **105** | **22** | **6** | **5** | **4** | **4** |
 
 Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next steps seeded by word and dataset version (P1.3), the basmala strip tested (P1.8, and with it P1.9's "P1.8 closed"), the header omnibox's `dir="auto"` (SHL-F08); the dead "being built" frame and a false "coming soon" line removed. Built alongside: D7's vowel-marks switch (1875674), which report 3 found missing.
 
-**Open (5):** P1.3 the `{full, bare, translit}` envelope on the remaining Arabic fields; P1.3 `?in_text=`; P1.5 the design-system audit as a document; SHL-Q05 and SHL-Q10 a digits preference. Closed since the audit: P1.3a (918d5bb), P1.9's sweep, SHL-Q07 (8e311ad), SHL-Q09 (df469d3), P1.7a's `dict:` and `user:` identifiers (248334c, 665ff16).
+**Open (4):** P1.3 the `{full, bare, translit}` envelope on the remaining Arabic fields; P1.5 the design-system audit as a document; SHL-Q05 and SHL-Q10 a digits preference. Closed since the audit: P1.3a (918d5bb), P1.9's sweep, SHL-Q07 (8e311ad), SHL-Q09 (df469d3), P1.7a's `dict:` and `user:` identifiers (248334c, 665ff16), P1.3 `?in_text=`.
 
 **Waiting on the owner (4):** the phone layouts were not shown before they were built, except the editor's (P1.7: offered now for review after the fact, screenshots at 390 px in every phase's audit); the phone editor (P8.6a); the lexica's legal basis (D22); research 07's findings (D2, D19, D22).
 
@@ -39,7 +39,7 @@ Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next ste
 | P1.2 migrations and loaders | done | M/0007…0043; A/loader.py |
 | P1.3 API envelope {full, bare, translit} | open | `lexicon.ar()` covers the lemma, its pattern, the occurrence's surface, family members and patterns; sūra names, articles' headwords, concordance lines, Analyser tokens, the texts' payloads and the public API go out as plain strings (report 3) |
 | P1.3 word payload v2 with every panel section | done | One request (A/lexicon.py word_payload); T/test_lexicon_api.py |
-| P1.3 `?in_text=` | open | No "In this text" for a word in a hadith, a book or the reader's text |
+| P1.3 `?in_text=` | done | `/words/{slug}?in_text=<text>` and `/texts/{text}/words/{slug}` (A/rootlife.py lemma_in_text): the word's sure places in a collection or a book, in its order, with siblings from the texts that hold it when it has none; the panel's "In this text" beside a hadith, a book paragraph and the reader's own text (T/test_lemma_in_text_api.py, E/in-this-text.spec.ts, E/library.spec.ts) |
 | P1.3 next steps seeded by word + dataset version | done | A/lexicon.py `_next_steps` (1d1cab6) |
 | P1.3a one normalisation spec | done | packages/arabic-spec |
 | P1.3a Python + TypeScript, 30 vectors, TypeScript in CI | done | vectors.json, both test suites, .github/workflows/ci.yml |
