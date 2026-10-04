@@ -6381,3 +6381,189 @@ a.wotd-pill:hover {
   line-height: 1.6;
   color: var(--t1);
 }
+
+/* ─── A lesson as its instructor sees it (P9.2b): heat under the words, never on the letters (CLS-Q04) ─── */
+:root {
+  --heat-1: color-mix(in srgb, var(--c-root) 14%, var(--card));
+  --heat-2: color-mix(in srgb, var(--c-root) 30%, var(--card));
+  --heat-3: color-mix(in srgb, var(--c-root) 50%, var(--card));
+}
+:root[data-theme="dark"] {
+  --heat-1: color-mix(in srgb, var(--c-root) 16%, var(--card));
+  --heat-2: color-mix(in srgb, var(--c-root) 30%, var(--card));
+  --heat-3: color-mix(in srgb, var(--c-root) 46%, var(--card));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --heat-1: color-mix(in srgb, var(--c-root) 16%, var(--card));
+    --heat-2: color-mix(in srgb, var(--c-root) 30%, var(--card));
+    --heat-3: color-mix(in srgb, var(--c-root) 46%, var(--card));
+  }
+}
+.class-verse {
+  font-size: 27px;
+  color: var(--t1);
+  text-align: start;
+}
+@media (max-width: 899px) {
+  .class-verse {
+    font-size: 23px;
+  }
+}
+.heat-w {
+  font: inherit;
+  color: var(--t1);
+  background: transparent;
+  border: 0;
+  padding: 0.04em 0.12em;
+  border-radius: 5px;
+  line-height: 1.6;
+  cursor: pointer;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.class-verse[data-heat] {
+  margin-inline: -0.3em;
+  padding: 0 0.3em;
+  border-radius: 10px;
+}
+.heat-w:hover {
+  box-shadow: inset 0 -1.5px 0 var(--t3);
+}
+.heat-w[data-heat="1"],
+.class-verse[data-heat="1"],
+.heat-swatch[data-heat="1"],
+.class-matrix td[data-heat="1"] {
+  background: var(--heat-1);
+}
+.heat-w[data-heat="2"],
+.class-verse[data-heat="2"],
+.heat-swatch[data-heat="2"],
+.class-matrix td[data-heat="2"] {
+  background: var(--heat-2);
+}
+.heat-w[data-heat="3"],
+.class-verse[data-heat="3"],
+.heat-swatch[data-heat="3"],
+.class-matrix td[data-heat="3"] {
+  background: var(--heat-3);
+}
+/* counted from too few learners to say a number: marked, not filled */
+.heat-w[data-heat="few"],
+.class-verse[data-heat="few"] {
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c-root) 55%, transparent);
+}
+.heat-swatch[data-heat="few"] {
+  background: transparent;
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c-root) 55%, transparent);
+}
+.heat-w[aria-pressed="true"] {
+  box-shadow: inset 0 -2px 0 var(--c-root), 0 0 0 1.5px var(--c-root);
+}
+.heat-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 11px;
+  border-radius: 3px;
+}
+.focus-card {
+  box-shadow: var(--sh);
+}
+.nudge-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.45em;
+  border-radius: 99px;
+}
+.nudge-dot.is-start {
+  background: var(--bad);
+}
+.nudge-dot.is-quick {
+  background: var(--amber);
+}
+.note-act {
+  min-height: 28px;
+  min-width: 28px;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--t2);
+  font-size: 12px;
+}
+.note-act:hover:not(:disabled) {
+  background: var(--card-2);
+  color: var(--t1);
+}
+.note-act:disabled {
+  opacity: 0.4;
+}
+/* the matrix: tight cells, a 2px surface gap between fills */
+.class-matrix {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: 12px;
+  margin: 4px;
+}
+.class-matrix thead th {
+  padding: 2px 4px;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--c-root);
+  white-space: nowrap;
+}
+.class-matrix thead th:first-child {
+  font-size: 11px;
+  color: var(--t3);
+  text-align: start;
+}
+.class-matrix tbody th {
+  padding: 0 10px 0 4px;
+  text-align: start;
+  font-weight: 500;
+  color: var(--t1);
+  white-space: nowrap;
+}
+.class-matrix tr.is-others th {
+  color: var(--t2);
+  font-weight: 400;
+}
+.class-matrix td {
+  padding: 0;
+  border-radius: 4px;
+  background: var(--card-2);
+}
+.class-matrix td button {
+  display: block;
+  width: 100%;
+  min-width: 54px;
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--t1);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.class-matrix td button[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--c-root);
+}
+.mine-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.mine-table th {
+  padding: 4px 8px 4px 0;
+  text-align: start;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--t3);
+}
+.mine-table td {
+  padding: 4px 8px 4px 0;
+  border-top: 1px solid var(--line);
+  color: var(--t1);
+}

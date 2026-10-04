@@ -138,7 +138,9 @@ function LessonRow({ lesson, teach }: { lesson: LessonOut; teach: boolean }) {
   return (
     <li className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
       <div className="flex flex-wrap items-baseline gap-2">
-        <h3 className="text-[16px] font-semibold" dir="auto">{lesson.title}</h3>
+        <h3 className="text-[16px] font-semibold" dir="auto">
+          <Link href={`/classroom/lesson/${lesson.id}`} className="underline-offset-2 hover:underline">{lesson.title}</Link>
+        </h3>
         <span className="text-[12.5px] text-t3">{t("versesCount", cnt(lesson.verses, locale))}</span>
         {lesson.due_at && <span className="text-[12.5px] text-t3">· {t("due", { day: day(lesson.due_at, locale) ?? "" })}</span>}
         {!lesson.open && <span className="state-chip">{t("closed")}</span>}
@@ -158,6 +160,7 @@ function LessonRow({ lesson, teach }: { lesson: LessonOut; teach: boolean }) {
         {lesson.ranges.map((r, i) => (
           <Link key={i} href={`/quran/${r.surah}/${r.from}`} className="btn">{t("readRange", { range: rangesLine([r], names, fmt) })}</Link>
         ))}
+        {teach && <Link href={`/classroom/lesson/${lesson.id}`} className="btn btn-primary">{t("classView")}</Link>}
         <button type="button" className="btn" onClick={() => void download()}>{t("packDownload")}</button>
         {!teach && lesson.open && (
           // the member's own word that they finished (P9.2a)
@@ -170,7 +173,7 @@ function LessonRow({ lesson, teach }: { lesson: LessonOut; teach: boolean }) {
               await qc.invalidateQueries({ queryKey: ["class", lesson.class_id] });
             }}
           >
-            {t(lesson.mine?.finished_on ? "markUnfinished" : "markFinished")}
+            {t("markFinished")}
           </button>
         )}
         {teach &&

@@ -47,7 +47,7 @@ export type LessonPack = {
   ranges: Range[];
   verses: string[];
   roots: { key: string; spaced: string }[];
-  notes: { location: string | null; root: string | null; text: string }[];
+  notes: { location: string | null; root: string | null; text: string; word?: string | null }[];
   due_at: string | null;
   exported_at: string;
 };
@@ -84,7 +84,15 @@ export function readPack(raw: unknown): LessonPack | null {
   if (!o || o.format !== "jadhr-lesson-pack" || o.version !== 1 || typeof o.title !== "string" || !Array.isArray(o.verses) || !Array.isArray(o.ranges)) return null;
   const verses = o.verses.filter((k): k is string => typeof k === "string" && /^\d{1,3}:\d{1,3}$/.test(k)).slice(0, 300);
   const roots = (Array.isArray(o.roots) ? o.roots : []).filter((r): r is { key: string; spaced: string } => !!r && typeof r.key === "string" && typeof r.spaced === "string").slice(0, 30);
-  const notes = (Array.isArray(o.notes) ? o.notes : []).filter((n) => !!n && typeof n.text === "string").slice(0, 200).map((n) => ({ location: typeof n.location === "string" ? n.location : null, root: typeof n.root === "string" ? n.root : null, text: n.text.slice(0, 1000) }));
+  const notes = (Array.isArray(o.notes) ? o.notes : [])
+    .filter((n) => !!n && typeof n.text === "string")
+    .slice(0, 200)
+    .map((n) => ({
+      location: typeof n.location === "string" && /^\d{1,3}:\d{1,3}:\d{1,3}$/.test(n.location) ? n.location : null,
+      root: typeof n.root === "string" ? n.root.slice(0, 8) : null,
+      text: n.text.slice(0, 1000),
+      word: typeof n.word === "string" ? n.word.slice(0, 60) : null,
+    }));
   return {
     format: "jadhr-lesson-pack",
     version: 1,
@@ -104,3 +112,46 @@ export function readPack(raw: unknown): LessonPack | null {
 export function rangesLine(ranges: Range[], names: Map<number, string> | undefined, fmt: (n: number) => string): string {
   return ranges.map((r) => `${names?.get(r.surah) ?? fmt(r.surah)} ${r.from === r.to ? fmt(r.from) : `${fmt(r.from)}–${fmt(r.to)}`}`).join(" · ");
 }
+
+// ─── the instructor's views and the member's own (P9.2b) ─────────────────────
+
+export type Layer = "lookup" | "note" | "confirm" | "struggle";
+export type Cell = { learners: number; total: number } | { few: true };
+export type Heat = {
+  members: number;
+  floor: number;
+  few: number;
+  floor_met: boolean;
+  minors: boolean;
+  opened: number;
+  finished: number;
+  median_minutes: number | null;
+  not_started: { count: number; named: (string | null)[] };
+  quick: { count: number; named: (string | null)[] };
+  words: Record<string, Partial<Record<Layer, Cell>>>;
+  roots: ({ key: string; spaced: string } & Cell)[];
+  nudges: { sent: number; seen: number };
+};
+export type Matrix = {
+  floor_met: boolean;
+  floor: number;
+  members: number;
+  columns: { key: string; spaced: string }[];
+  rows: { name: string | null; cells: Record<string, number> }[];
+  others: { count: number; cells: Record<string, number> } | null;
+  others_few?: boolean;
+};
+export type LessonNote = { id: string; location: string | null; root: string | null; text: string };
+
+const L = (id: string) => `${base}/lessons/${encodeURIComponent(id)}`;
+export const getHeat = (id: string) => authFetch<Heat>(`${L(id)}/heat`);
+export const getMatrix = (id: string, layer: Layer) => authFetch<Matrix>(`${L(id)}/matrix?layer=${layer}`);
+export const getMine = (id: string) => authFetch<{ counts: { location: string; kind: Layer; n: number }[] }>(`${L(id)}/mine`);
+export const getNotes = (id: string) => authFetch<{ data: LessonNote[] }>(`${L(id)}/notes`);
+export const addNote = (id: string, p: { location?: string; root?: string; text?: string }) => authFetch<{ data: LessonNote[] }>(`${L(id)}/notes`, json(p));
+export const editNote = (id: string, p: { text?: string; move?: -1 | 1 }) => authFetch<{ data: LessonNote[] }>(`${base}/notes/${encodeURIComponent(id)}`, json(p, "PATCH"));
+export const removeNote = (id: string) => authFetch<{ data: LessonNote[] }>(`${base}/notes/${encodeURIComponent(id)}`, { method: "DELETE" });
+export const sendNudge = (id: string) => authFetch<{ sent: number }>(`${L(id)}/nudges`, { method: "POST" });
+
+/** The verse keys a lesson covers, in the mushaf's order. */
+export const lessonKeys = (ranges: Range[]) => ranges.flatMap((r) => Array.from({ length: r.to - r.from + 1 }, (_, i) => `${r.surah}:${r.from + i}`));

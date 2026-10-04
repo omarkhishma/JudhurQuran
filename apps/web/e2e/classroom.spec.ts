@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test, type APIRequestContext } from "@playwright/test";
 import { drop, person, sql, tag } from "./board";
 
 /**
@@ -147,4 +147,139 @@ test("a member's reader says when its reading counts for a lesson, and sends onl
     await drop(teacher);
     await drop(learner);
   }
+});
+
+/** A reader signed in through the development outbox with no browser of their own: their session, for the API. */
+async function reader(req: APIRequestContext, email: string, name: string): Promise<Record<string, string>> {
+  await req.post("/api/v1/auth/email", { data: { email, return_to: "/classroom", locale: "ar" } });
+  let link = "";
+  await expect
+    .poll(async () => (link = ((await (await req.get(`/api/v1/auth/dev/outbox?email=${encodeURIComponent(email)}`)).json()) as { messages: { link: string }[] }).messages.at(-1)?.link ?? ""))
+    .not.toBe("");
+  const s = (await (await req.post("/api/v1/auth/verify", { data: { token: new URL(link).searchParams.get("token") } })).json()) as { session: string };
+  const h = { Authorization: `Bearer ${s.session}` };
+  await req.patch("/api/v1/me", { headers: h, data: { display_name: name } });
+  return h;
+}
+async function forget(req: APIRequestContext, h: Record<string, string>) {
+  const c = (await (await req.post("/api/v1/me/delete", { headers: h })).json().catch(() => ({}))) as { confirm?: string };
+  if (c.confirm) await req.post("/api/v1/me/delete/confirm", { headers: h, data: { confirm: c.confirm } });
+}
+
+test("an instructor reads the class's heat above the floor, keeps lesson notes and reminds gently; a member sees what was kept of them (P9.2b)", async ({ browser, isMobile }) => {
+  test.skip(isMobile, "two accounts in desktop windows; the phone layout is read in screenshots");
+  test.setTimeout(180_000);
+  const t = tag();
+  const teacher = await person(browser, `e2e-heat-t-${t}@example.org`, "instructor");
+  const learner = await person(browser, `e2e-heat-l-${t}@example.org`);
+  const req = teacher.page.request;
+  await req.patch("/api/v1/me", { headers: learner.h, data: { display_name: `ليلى ${t.slice(-4)}` } });
+  const others: Record<string, string>[] = [];
+  try {
+    for (let i = 0; i < 4; i++) others.push(await reader(req, `e2e-heat-k${i}-${t}@example.org`, `خفي ${i} ${t.slice(-4)}`));
+    const c = (await (await req.post("/api/v1/classroom/classes", { headers: teacher.h, data: { name: "حلقة العصر" } })).json()) as { id: string; join_code: string };
+    const join = (h: Record<string, string>, detail = false) => req.post(`/api/v1/classroom/join/${c.join_code}`, { headers: h, data: { consent: "2026-10-04", detail_opt_in: detail } });
+    await join(learner.h, true); // the only one who chose to show their detail
+    for (const h of others.slice(0, 3)) await join(h);
+    const lesson = (await (await req.post(`/api/v1/classroom/classes/${c.id}/lessons`, { headers: teacher.h, data: { title: "ربوبية الفاتحة", ranges: [{ surah: 1, from: 1, to: 7 }], roots: ["حمد"] } })).json()) as { id: string };
+    const url = `/api/v1/classroom/lessons/${lesson.id}`;
+    const day = new Date().toISOString().slice(0, 10);
+    const counts = (h: Record<string, string>, items: { location: string; kind: string; n?: number }[]) => req.post(`${url}/counts`, { headers: h, data: { day, items } });
+    // رَبِّ looked up four times each by three learners, who each wrote a note on its verse; one learner alone on a word of 1:5
+    for (const h of [learner.h, others[0], others[1]]) expect((await counts(h, [{ location: "1:2:3", kind: "lookup", n: 4 }, { location: "1:2:0", kind: "note" }])).status()).toBe(200);
+    await counts(others[2], [{ location: "1:5:2", kind: "lookup" }]);
+    await req.post(`${url}/progress`, { headers: others[0], data: { day, minutes: 2, finished: true } });
+    await req.post(`${url}/progress`, { headers: others[1], data: { day, minutes: 12 } });
+
+    // four members: under the floor, nothing about a word
+    const page = teacher.page;
+    await page.goto(`/classroom/lesson/${lesson.id}`);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("ربوبية الفاتحة");
+    await expect(page.getByRole("status").filter({ hasText: "في الصف ٤ من ٥ طلاب" })).toBeVisible();
+    await expect(page.locator('[data-w="1:2:3"]')).not.toHaveAttribute("data-heat", /./);
+    await expect(page.getByText("تظهر حين يبلغ الصف ٥ طلاب.")).toBeVisible();
+
+    // a fifth: the heat appears under the words, the letters keep their colour
+    await join(others[3]);
+    await page.reload();
+    const rabb = page.locator('[data-w="1:2:3"]');
+    await expect(rabb).toHaveAttribute("data-heat", "3");
+    await expect(rabb).toHaveAttribute("aria-label", /البحث: ٣ طلاب، ١٢ مرة/);
+    await expect(page.locator('[data-w="1:5:2"]')).toHaveAttribute("data-heat", "few");
+    await expect(page.locator('[data-w="1:5:2"]')).toHaveAttribute("aria-label", /من أقل من ٣ طلاب، فلا يذكر العدد/);
+    const ink = (sel: string) => page.locator(sel).evaluate((e) => getComputedStyle(e).color);
+    expect(await ink('[data-w="1:2:3"]')).toBe(await ink('[data-w="1:1:1"]'));
+    // the class panel: computed, never sample numbers
+    const panel = page.getByRole("region", { name: "الصف في هذا الدرس" });
+    await expect(panel.getByRole("heading", { name: "الصف · ٥ طلاب" })).toBeVisible();
+    await expect(panel.locator("li").filter({ hasText: "ر ب ب" })).toContainText("١٢");
+    await expect(panel.getByText("٣ طلاب لم يفتحوا الدرس")).toBeVisible();
+    await expect(panel.getByText("طالب واحد أتمه في أقل من ثلاث دقائق")).toBeVisible();
+    expect(await panel.locator("text=خفي").count()).toBe(0); // no one named who did not choose it
+    expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
+
+    // a word's card, and the word into the lesson notes; a line of the instructor's own, moved first
+    await rabb.click();
+    const card = page.getByRole("region", { name: /^الكلمة / });
+    await expect(card).toContainText("٣ طلاب، ١٢ مرة");
+    await expect(card).toContainText("٣ طلاب، ٣ ملاحظات");
+    await card.getByRole("button", { name: "أضفها إلى ملاحظات الدرس" }).click();
+    await expect(card.getByRole("button", { name: "في ملاحظات الدرس" })).toBeDisabled();
+    const notes = panel.locator("ol > li");
+    await expect(notes).toHaveCount(1);
+    await panel.getByRole("textbox", { name: "ملاحظة للدرس" }).fill("نقف عند الربوبية قبل الحمد");
+    await panel.getByRole("button", { name: "أضف", exact: true }).click();
+    await expect(notes).toHaveCount(2);
+    await notes.nth(1).getByRole("button", { name: "انقلها أعلى" }).click();
+    await expect(notes.nth(0)).toContainText("نقف عند الربوبية");
+    // the notes' layer sits on the verse, not a word
+    await page.getByRole("group", { name: "الطبقة" }).getByRole("button", { name: "الملاحظات" }).click();
+    await expect(page.locator("article").filter({ has: page.locator('[data-w="1:2:1"]') })).toContainText("الملاحظات على الآية: ٣ طلاب، ٣ ملاحظات");
+    await expect(page.getByText("الملاحظات على الآية", { exact: true }).first()).toBeVisible();
+
+    // a reminder: a notice on their own page, the instructor told how many
+    await panel.getByRole("button", { name: "ذكّر من لم يفتحه" }).click();
+    await expect(panel.getByRole("status").filter({ hasText: "أرسل التذكير إلى ٣ طلاب." })).toBeVisible();
+
+    // the table: a row only for the one who chose, the others together; a cell focusing its pair
+    await page.getByRole("group", { name: "العرض" }).getByRole("button", { name: "الجدول" }).click();
+    const table = page.getByRole("table");
+    await expect(table.getByRole("rowheader")).toHaveText([`ليلى ${t.slice(-4)}`, "البقية مجموعين (٤)"]);
+    await expect(table).not.toContainText("خفي");
+    await table.getByRole("button", { name: new RegExp(`ليلى ${t.slice(-4)} · ر ب ب: ٤`) }).click();
+    await expect(page.getByRole("region", { name: "الطالب والجذر" })).toContainText("كلمات الجذر في الدرس");
+    expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
+
+    // the member: reminded, the notes, what their reader sent, finished by their word
+    const lp = learner.page;
+    await lp.goto(`/classroom/lesson/${lesson.id}`);
+    await expect(lp.getByText("ذكّرك معلمك بهذا الدرس.")).toBeVisible();
+    const inotes = lp.getByRole("region", { name: "ملاحظات المعلم" });
+    await expect(inotes.locator("li")).toHaveCount(2);
+    await expect(inotes.locator("li").nth(1).locator(".quran")).not.toBeEmpty();
+    const mine = lp.getByRole("table", { name: "ما أرسله قارئك لهذا الدرس" });
+    await expect(mine.getByRole("row").filter({ hasText: "البحث" })).toContainText("٤");
+    await expect(mine.getByRole("row").filter({ hasText: "الملاحظات على الآية" })).toContainText("١:٢");
+    await lp.getByRole("button", { name: "أتممت الدرس" }).click();
+    await expect(lp.getByRole("status").filter({ hasText: "سجل أنك أتممته." })).toBeVisible();
+    expect(sql(`select finished_on is not null from classroom.progress p join accounts.users u on u.id = p.user_id where p.lesson_id = '${lesson.id}' and u.email = '${learner.email}'`)).toEqual(["t"]);
+    expect((await new AxeBuilder({ page: lp }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
+    // the member never sees the class's numbers
+    expect((await lp.request.get(`${url}/heat`, { headers: learner.h })).status()).toBe(403);
+    // and once they leave the class, the lesson is not theirs any more
+    await lp.request.delete(`/api/v1/classroom/classes/${c.id}/membership`, { headers: learner.h });
+    await lp.reload();
+    await expect(lp.getByRole("alert").filter({ hasText: "لا درس بهذا الرابط لك." })).toBeVisible();
+    await expect(lp.getByRole("link", { name: "إلى الصف" })).toBeVisible();
+  } finally {
+    for (const h of others) await forget(req, h);
+    await drop(teacher);
+    await drop(learner);
+  }
+});
+
+test("a lesson's page asks a signed-out reader to sign in (P9.2b)", async ({ page }) => {
+  await page.goto("/classroom/lesson/00000000-0000-4000-8000-000000000000");
+  await expect(page.getByRole("link", { name: "ادخل" })).toHaveAttribute("href", /next=%2Fclassroom%2Flesson%2F00000000/);
+  expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
 });

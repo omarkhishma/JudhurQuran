@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 
 type SurahRow = { number: number; name_ar: string; name_translit: string; verse_count: number };
@@ -50,5 +50,33 @@ export function ConsentText({ minors, floor, level = 3 }: { minors: boolean; flo
       <p className="text-[13px] text-t2">{t("consentLeave")}</p>
       {minors && <p className="rounded-lg border border-line bg-card-2 p-3 text-[13px] text-t1">{t("consentMinors")}</p>}
     </div>
+  );
+}
+
+type NoteLike = { location: string | null; root: string | null; text: string; word?: string | null };
+
+/** A lesson note as it reads: the word as the mushaf writes it and where, the root, the instructor's line. */
+export function NoteLine({ n, word }: { n: NoteLike; word?: string }) {
+  const locale = useLocale();
+  const w = word ?? n.word;
+  return (
+    <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      {n.location && w && (
+        <span className="quran text-[19px] leading-[1.6]" lang="ar" dir="rtl">
+          {w}
+        </span>
+      )}
+      {n.location && (
+        <span className="mono text-[11px] text-t3" dir="ltr">
+          {verseRef(n.location, locale)}
+        </span>
+      )}
+      {n.root && (
+        <span className="ar-classical text-[15px]" lang="ar">
+          {[...n.root].join(" ")}
+        </span>
+      )}
+      {n.text && <span dir="auto">{n.text}</span>}
+    </span>
   );
 }

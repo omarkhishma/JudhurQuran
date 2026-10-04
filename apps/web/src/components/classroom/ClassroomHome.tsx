@@ -8,7 +8,7 @@ import { ApiError, useAccount } from "@/lib/account/store";
 import { createClass, getClasses, rangesLine, readPack, type ClassOut, type LessonPack } from "@/lib/classroom";
 import { useIsClient } from "@/lib/client";
 import { cnt } from "@/lib/format";
-import { useFmt, useSurahNames } from "./shared";
+import { NoteLine, useFmt, useSurahNames } from "./shared";
 
 /**
  * The classroom's home (P9.1, CLS-01, 02, Q01, Q07): the classes this reader teaches and those they joined, a new
@@ -190,7 +190,9 @@ export function PackView({ pack }: { pack: LessonPack }) {
           <span className="label-caps">{t("lessonNotes")}</span>
           <ul className="flex flex-col gap-1 text-[13.5px] text-t1">
             {pack.notes.map((n, i) => (
-              <li key={i} dir="auto">{n.text}</li>
+              <li key={i}>
+                <NoteLine n={n} />
+              </li>
             ))}
           </ul>
         </div>
