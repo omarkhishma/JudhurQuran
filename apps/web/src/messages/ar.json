@@ -2153,7 +2153,14 @@
     "topicBoardPlaced": "وضعتها هيئة التحرير بعد اقتراح من مدونة QSAC الآلية",
     "topicBoardNamed": "سمته هيئة التحرير",
     "entityMap": "خريطة العلم",
-    "topicsFromSources": "من فهارس الموضوعات"
+    "topicsFromSources": "من فهارس الموضوعات",
+    "lessonCounts": "تعد قراءتك في هذه الآيات لدرس «{lesson}» من صف «{class}»: عدد بحثك وملاحظاتك عليها، لا نصوصها.",
+    "lessonWhatSeen": "ما يراه المعلم",
+    "lessonFinishButton": "أتممت الدرس",
+    "lessonFinishedButton": "أتممته ✓",
+    "lessonFinished": "قلت للمعلم إنك أتممت الدرس.",
+    "lessonUnfinished": "لم يعد الدرس متمما.",
+    "lessonFailed": "تعذر ذلك الآن."
   },
   "board": {
     "reviewed": "راجعته هيئة التحرير",
@@ -3125,6 +3132,8 @@
     "archived": "أرشف الصف: لا ينضم إليه أحد ولا يضاف إليه درس.",
     "unarchived": "عاد الصف من الأرشيف.",
     "deleteClass": "احذف الصف",
-    "deleteClassConfirm": "انقر مرة أخرى: يحذف الصف ودروسه وكل ما حفظ فيه"
+    "deleteClassConfirm": "انقر مرة أخرى: يحذف الصف ودروسه وكل ما حفظ فيه",
+    "markFinished": "أتممت الدرس",
+    "markUnfinished": "لم أتممه بعد"
   }
 }

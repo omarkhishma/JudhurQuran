@@ -6365,3 +6365,19 @@ a.wotd-pill:hover {
     overflow-x: auto;
   }
 }
+
+/* The classroom's strip in the reader (P9.2a): said whenever this reading counts for a lesson */
+.lesson-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  border: 1px solid color-mix(in srgb, var(--c-sentence) 35%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--c-sentence) 6%, var(--card));
+  padding: 8px 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--t1);
+}

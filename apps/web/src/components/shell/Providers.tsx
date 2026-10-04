@@ -6,6 +6,7 @@ import { SyncRunner } from "@/components/account/SyncRunner";
 import { DueTitle } from "@/components/shell/DueTitle";
 import { StorageWarning } from "@/components/shell/StorageWarning";
 import { AudioEngine } from "@/components/audio/AudioEngine";
+import { ClassroomSignals } from "@/components/classroom/ClassroomSignals";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // Content is immutable within a dataset release: keep fetched words/roots for the session.
@@ -22,6 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <SyncRunner />
       <StorageWarning />
       <DueTitle />
+      <ClassroomSignals />
     </QueryClientProvider>
   );
 }

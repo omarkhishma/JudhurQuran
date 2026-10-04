@@ -167,6 +167,31 @@ def pack(u: User, lesson_id: Id) -> ORJSONResponse:
     return ok(classroom.pack(u, lesson_id))
 
 
+class _Counts(BaseModel):
+    day: str = Field(max_length=10)
+    items: list[dict[str, Any]] = Field(max_length=500)
+
+
+class _Progress(BaseModel):
+    day: str = Field(max_length=10)
+    finished: bool | None = None
+    minutes: int = 0
+
+
+@router.post(
+    "/lessons/{lesson_id}/counts", summary="What a member's reader counted for an open lesson's verses"
+)
+def add_counts(u: User, lesson_id: Id, body: _Counts) -> ORJSONResponse:
+    return ok(classroom.add_counts(u, lesson_id, body.day, body.items))
+
+
+@router.post(
+    "/lessons/{lesson_id}/progress", summary="A member's lesson: opened, finished by their word, minutes"
+)
+def progress(u: User, lesson_id: Id, body: _Progress) -> ORJSONResponse:
+    return ok(classroom.progress(u, lesson_id, body.day, body.finished, body.minutes))
+
+
 @router.get("/me/active", summary="The open lessons of my classes: the verses my reader counts for")
 def active(u: User) -> ORJSONResponse:
     return ok(classroom.active(u))

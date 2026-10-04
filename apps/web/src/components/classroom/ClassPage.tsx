@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { ApiError, useAccount } from "@/lib/account/store";
 import { addLesson, deleteClass, deleteLesson, getClass, getPack, leaveClass, newCode, rangesLine, removeMember, setDetail, updateClass, type ClassOut, type LessonOut, type Range } from "@/lib/classroom";
 import { useIsClient } from "@/lib/client";
+import { setFinished } from "@/lib/classroomSignals";
 import { cnt } from "@/lib/format";
 import { ConsentText, useFmt, useSurahNames, useSurahs } from "./shared";
 
@@ -158,6 +159,20 @@ function LessonRow({ lesson, teach }: { lesson: LessonOut; teach: boolean }) {
           <Link key={i} href={`/quran/${r.surah}/${r.from}`} className="btn">{t("readRange", { range: rangesLine([r], names, fmt) })}</Link>
         ))}
         <button type="button" className="btn" onClick={() => void download()}>{t("packDownload")}</button>
+        {!teach && lesson.open && (
+          // the member's own word that they finished (P9.2a)
+          <button
+            type="button"
+            className="btn"
+            aria-pressed={!!lesson.mine?.finished_on}
+            onClick={async () => {
+              await setFinished(lesson.id, !lesson.mine?.finished_on);
+              await qc.invalidateQueries({ queryKey: ["class", lesson.class_id] });
+            }}
+          >
+            {t(lesson.mine?.finished_on ? "markUnfinished" : "markFinished")}
+          </button>
+        )}
         {teach &&
           (confirm ? (
             <button

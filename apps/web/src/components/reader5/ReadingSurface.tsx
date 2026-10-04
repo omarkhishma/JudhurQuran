@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { LessonStrip } from "@/components/classroom/LessonStrip";
 import { useRouter } from "@/i18n/navigation";
 import { useAfterMount } from "@/lib/client";
 import { cnt, formatNumber } from "@/lib/format";
@@ -529,6 +530,8 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
         setFocusVerse(el.matches(":focus-visible") ? (el.closest<HTMLElement>(".passage")?.dataset.verse ?? null) : null);
       }}
     >
+      {/* the classroom: said here whenever this reading counts for a lesson (P9.2a) */}
+      {mounted && <LessonStrip chapter={chapter.number} />}
       {children}
       {mounted && <InlineLines chapter={chapter.number} />}
       {resumeEl &&

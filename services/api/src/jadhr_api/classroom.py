@@ -11,6 +11,7 @@ marked for minors. Leaving a class, or being removed from it, deletes what it he
 from __future__ import annotations
 
 import json
+import re
 import secrets
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
@@ -687,3 +688,96 @@ def export_for(u: dict[str, Any]) -> dict[str, Any]:
             ],
         }
     }
+
+
+# ─── what a member's reader sends for an open lesson (P9.2a) ─────────────────────
+
+KINDS = ("lookup", "note", "confirm", "struggle")
+_PLACE = re.compile(r"^(\d{1,3}):(\d{1,3}):(\d{1,3})$")
+
+
+def _in(location: str, ranges: list[dict[str, Any]]) -> bool:
+    m = _PLACE.match(location)
+    if not m:
+        return False
+    s, a = int(m.group(1)), int(m.group(2))
+    return any(r["surah"] == s and r["from"] <= a <= r["to"] for r in ranges)
+
+
+def _open_for(conn: Connection, u: dict[str, Any], lid: str) -> dict[str, Any]:
+    """A lesson this reader is a member for, open now: anything else is refused, never kept."""
+    lesson, c, role = _lesson_role(conn, u, lid)
+    if role != "member":
+        raise Refusal(403, "not_member", "Only a member's reader sends what it counts.")
+    now = datetime.now(UTC)
+    if c["archived_at"] or not lesson["assigned_at"] <= now <= open_until(lesson):
+        raise Refusal(409, "closed", "This lesson is not open.")
+    return lesson
+
+
+def _day(raw: Any) -> date:
+    """The reader's own day, within a day of the server's either way (time zones), never an earlier one."""
+    try:
+        d = date.fromisoformat(str(raw))
+    except ValueError:
+        raise Refusal(422, "bad_day", "A day is YYYY-MM-DD.") from None
+    if abs((d - datetime.now(UTC).date()).days) > 1:
+        raise Refusal(422, "bad_day", "Counts are sent for the day they were made.")
+    return d
+
+
+def add_counts(u: dict[str, Any], lid: str, day: Any, items: Any) -> dict[str, Any]:
+    """A batch of counts: per word's place (a verse's own place is its word 0), kind and day; a place outside the
+    lesson's verses is not kept."""
+    if not isinstance(items, list) or not 1 <= len(items) <= 500:
+        raise Refusal(422, "bad_batch", "One to five hundred counts at a time.")
+    d = _day(day)
+    with tx() as conn:
+        lesson = _open_for(conn, u, lid)
+        summed: dict[tuple[str, str], int] = {}
+        refused = 0
+        for it in items:
+            loc, kind, n = (it or {}).get("location"), (it or {}).get("kind"), (it or {}).get("n", 1)
+            if (
+                not isinstance(loc, str)
+                or kind not in KINDS
+                or not isinstance(n, int)
+                or not 1 <= n <= 100
+                or not _in(loc, lesson["ranges"])
+            ):
+                refused += 1
+                continue
+            summed[(loc, kind)] = summed.get((loc, kind), 0) + n
+        for (loc, kind), n in summed.items():
+            q(
+                conn,
+                """insert into classroom.counts (lesson_id, user_id, location, kind, day, n) values (:l, :u, :loc, :k, :d, :n)
+                   on conflict (lesson_id, user_id, location, kind, day)
+                   do update set n = least(classroom.counts.n + excluded.n, 10000) returning n""",
+                {"l": lesson["id"], "u": u["id"], "loc": loc, "k": kind, "d": d, "n": n},
+            )
+        return {"kept": sum(summed.values()), "refused": refused}
+
+
+def progress(u: dict[str, Any], lid: str, day: Any, finished: Any = None, minutes: Any = 0) -> dict[str, Any]:
+    """The member's lesson: opened (the first day it was read), finished by their word or not, the active minutes
+    their reader counted (at most an hour per message)."""
+    d = _day(day)
+    if not isinstance(minutes, int) or not 0 <= minutes <= 60:
+        raise Refusal(422, "bad_minutes", "Zero to sixty minutes at a time.")
+    with tx() as conn:
+        lesson = _open_for(conn, u, lid)
+        q(
+            conn,
+            """insert into classroom.progress (lesson_id, user_id, opened_on, minutes) values (:l, :u, :d, :m)
+               on conflict (lesson_id, user_id) do update set minutes = least(classroom.progress.minutes + excluded.minutes, 100000)
+               returning minutes""",
+            {"l": lesson["id"], "u": u["id"], "d": d, "m": minutes},
+        )
+        if finished is not None:
+            q(
+                conn,
+                "update classroom.progress set finished_on = :f where lesson_id = :l and user_id = :u returning lesson_id",
+                {"f": d if finished else None, "l": lesson["id"], "u": u["id"]},
+            )
+        return _lesson_out(conn, lesson, "member", u)["mine"]

@@ -238,3 +238,108 @@ def test_leaving_takes_what_the_class_held_and_the_export_holds_it_meanwhile(
     )
     assert held(uid["b"]) == 0
     assert client.get(f"/api/v1/classroom/classes/{c['id']}", headers=t).json()["members"] == 0
+
+
+def test_a_members_reader_sends_counts_only_for_an_open_lessons_verses(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """P9.2a: counts per word's place, kind and day, kept only inside the lesson's verses, only from a member, only
+    while the lesson is open, only for today; progress opened, finished by the member's word, minutes added."""
+    t, a, b = people["t"], people["a"], people["b"]
+    c = _class(t)
+    _join(a, c["join_code"])
+    lesson = client.post(
+        f"/api/v1/classroom/classes/{c['id']}/lessons",
+        headers=t,
+        json={"title": "ل", "ranges": [{"surah": 1, "from": 2, "to": 4}]},
+    ).json()
+    today = datetime.now(UTC).date().isoformat()
+    url = f"/api/v1/classroom/lessons/{lesson['id']}"
+    sent = client.post(
+        f"{url}/counts",
+        headers=a,
+        json={
+            "day": today,
+            "items": [
+                {"location": "1:2:3", "kind": "lookup", "n": 2},
+                {"location": "1:2:3", "kind": "lookup"},
+                {"location": "1:3:0", "kind": "note"},
+                {"location": "1:5:1", "kind": "lookup"},  # outside the lesson: not kept
+                {"location": "1:2:3", "kind": "time"},  # no such kind
+            ],
+        },
+    ).json()
+    assert sent == {"kept": 4, "refused": 2}
+    client.post(
+        f"{url}/counts", headers=a, json={"day": today, "items": [{"location": "1:2:3", "kind": "lookup"}]}
+    )
+    with accounts.tx() as conn:
+        rows = accounts.q(
+            conn,
+            "select location, kind, n from classroom.counts where lesson_id = :l order by location, kind",
+            {"l": lesson["id"]},
+        )
+    assert rows == [
+        {"location": "1:2:3", "kind": "lookup", "n": 4},
+        {"location": "1:3:0", "kind": "note", "n": 1},
+    ]
+    # not a member, the instructor, another day, a closed lesson: refused, nothing kept
+    assert (
+        client.post(
+            f"{url}/counts",
+            headers=b,
+            json={"day": today, "items": [{"location": "1:2:3", "kind": "lookup"}]},
+        ).status_code
+        == 404
+    )
+    assert (
+        _code(
+            client.post(
+                f"{url}/counts",
+                headers=t,
+                json={"day": today, "items": [{"location": "1:2:3", "kind": "lookup"}]},
+            )
+        )
+        == "not_member"
+    )
+    old = (datetime.now(UTC) - timedelta(days=3)).date().isoformat()
+    assert (
+        _code(
+            client.post(
+                f"{url}/counts",
+                headers=a,
+                json={"day": old, "items": [{"location": "1:2:3", "kind": "lookup"}]},
+            )
+        )
+        == "bad_day"
+    )
+    # progress: opened today, minutes added, finished and unfinished by the member's word
+    p = client.post(f"{url}/progress", headers=a, json={"day": today, "minutes": 3}).json()
+    assert (p["opened_on"], p["minutes"], p["finished_on"]) == (today, 3, None)
+    p = client.post(f"{url}/progress", headers=a, json={"day": today, "minutes": 2, "finished": True}).json()
+    assert (p["minutes"], p["finished_on"]) == (5, today)
+    assert (
+        client.post(f"{url}/progress", headers=a, json={"day": today, "finished": False}).json()[
+            "finished_on"
+        ]
+        is None
+    )
+    assert (
+        _code(client.post(f"{url}/progress", headers=a, json={"day": today, "minutes": 90})) == "bad_minutes"
+    )
+    with accounts.tx() as conn:
+        accounts.q(
+            conn,
+            "update classroom.lessons set due_at = now() - interval '15 days' where id = :l returning id",
+            {"l": lesson["id"]},
+        )
+    assert (
+        _code(
+            client.post(
+                f"{url}/counts",
+                headers=a,
+                json={"day": today, "items": [{"location": "1:2:3", "kind": "lookup"}]},
+            )
+        )
+        == "closed"
+    )

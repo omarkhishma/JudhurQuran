@@ -15,9 +15,16 @@ export const DB = process.env.E2E_DATABASE_URL ?? "postgresql://jadhr:jadhr@127.
 export const tag = () => `${test.info().project.name}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 export const role = (email: string, r: string) => execFileSync("uv", ["run", "python", "-m", "jadhr_api.roles", email, r, "e2e workbench"], { cwd: ROOT, stdio: "pipe" });
 
+const PSQL = process.env.E2E_PSQL ?? (existsSync("/opt/homebrew/opt/postgresql@17/bin/psql") ? "/opt/homebrew/opt/postgresql@17/bin/psql" : "psql");
+
+/** One query's rows as tab-separated lines: what the server kept, read where the API would not show it. */
+export function sql(query: string): string[] {
+  return execFileSync(PSQL, [DB, "-Atq", "-F", "\t", "-c", query], { stdio: "pipe" }).toString().trim().split("\n").filter(Boolean);
+}
+
 /** The test's own editorial work, removed so the reader never shows it. */
 export function clean(emails: string[]) {
-  const psql = process.env.E2E_PSQL ?? (existsSync("/opt/homebrew/opt/postgresql@17/bin/psql") ? "/opt/homebrew/opt/postgresql@17/bin/psql" : "psql");
+  const psql = PSQL;
   const list = emails.map((e) => `'${e}'`).join(",");
   execFileSync(psql, [DB, "-q", "-c", `delete from editorial.entries where author_id in (select id from accounts.users where email in (${list}));`], { stdio: "pipe" });
 }

@@ -2153,7 +2153,14 @@
     "topicBoardPlaced": "Placed by the editorial board after a suggestion of QSAC's machine labelling",
     "topicBoardNamed": "Named by the editorial board",
     "entityMap": "Map of the name",
-    "topicsFromSources": "From the topic indexes"
+    "topicsFromSources": "From the topic indexes",
+    "lessonCounts": "Your reading in these verses counts for the lesson «{lesson}» of the class «{class}»: how often you look words up and note on them, never what you write.",
+    "lessonWhatSeen": "What the instructor sees",
+    "lessonFinishButton": "I finished this lesson",
+    "lessonFinishedButton": "Finished ✓",
+    "lessonFinished": "You told the instructor you finished the lesson.",
+    "lessonUnfinished": "The lesson is no longer marked finished.",
+    "lessonFailed": "That could not be done just now."
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
@@ -3125,6 +3132,8 @@
     "archived": "The class is archived: no one joins it and no lesson is added.",
     "unarchived": "The class is back from the archive.",
     "deleteClass": "Delete the class",
-    "deleteClassConfirm": "Click again: the class, its lessons and everything kept in it are deleted"
+    "deleteClassConfirm": "Click again: the class, its lessons and everything kept in it are deleted",
+    "markFinished": "I finished this lesson",
+    "markUnfinished": "Not finished yet"
   }
 }
