@@ -72,7 +72,7 @@
 | Published Graph `/g/<slug>` | ✅ | P8.5: the gallery `/g`, a map's page with the real editor framed, its embed for any site, fork, cite by version, versions, reports to the board; the licence words wait on EDT-335 |
 | Profile `/me` | ✅ | P6.3 with the P6.5 fix pass, B32 import and B35 what the server keeps; contributions from the server (P7.3) |
 | Data & API `/data` | ✅ | P10: releases recorded once and never changed, JSONL/CSV/TEI Lex-0/LMF with their hashes and holds, the public API with keys and limits, the playground, citations, the developers' guide; audit research 20. The DOI and publishing are the owner's (D14, D19) |
-| Journeys A–F | 🟡 | A (P2.11), B (P5.5), E (P8.7) and F (P9.4) end to end as e2e tests on desktop and phone; D (P7.4) on desktop; C next |
+| Journeys A–F | ✅ | All six end to end as e2e tests on desktop and phone: A (P2.11), B (P5.5), C (`journey-c.spec.ts`, 2026-10-04), D (P7.4, on the phone since 2026-10-04), E (P8.7), F (P9.4) |
 
 ## 4 · Decisions (the recommendation column was approved by the owner on 2026-10-03)
 

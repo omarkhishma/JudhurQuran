@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { type Browser, expect, type Page, test } from "@playwright/test";
+import { type Browser, devices, expect, type Page, test } from "@playwright/test";
 import { ar, followSignInLink } from "./helpers";
 
 /**
@@ -31,8 +31,9 @@ function clean(t: string) {
   }
 }
 
-async function reader(browser: Browser): Promise<Page> {
-  const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
+/** A reader's window: a desktop one, or on the phone project a phone (journey D is walked on both). */
+async function reader(browser: Browser, phone = false): Promise<Page> {
+  const page = await (await browser.newContext(phone ? { ...devices["Pixel 7"] } : { viewport: { width: 1440, height: 900 } })).newPage();
   await page.addInitScript(() => {
     if (sessionStorage.getItem("e2e-seeded")) return;
     sessionStorage.setItem("e2e-seeded", "1");
@@ -80,11 +81,10 @@ async function propose(page: Page, text: string) {
 }
 
 test("journey D: proposed in the Reader, approved by a reviewer and the board, credited beside its source, in the changelog and on the Profile (P7.4)", async ({ browser, isMobile }) => {
-  test.skip(isMobile, "three accounts in three desktop windows; the queue's phone layout is checked below");
   test.setTimeout(150_000); // three accounts, signed in one after another
   const t = tag();
   const text = `knowledge, the grasp of a thing as it is ${t}`;
-  const [a, r, e] = [await reader(browser), await reader(browser), await reader(browser)];
+  const [a, r, e] = [await reader(browser, isMobile), await reader(browser, isMobile), await reader(browser, isMobile)];
   const mails = { a: `e2e-d-a-${t}@example.org`, r: `e2e-d-r-${t}@example.org`, e: `e2e-d-e-${t}@example.org` };
   try {
     const ha = await test.step("sign in a", () => signIn(a, mails.a, `أمل ${t}`));
