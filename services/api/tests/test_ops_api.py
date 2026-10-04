@@ -15,13 +15,18 @@ from jadhr_api.main import app
 from sqlalchemy import text
 
 
+def _tag() -> str:
+    """A test's mark in a message, in letters only: a run of five digits is a number the scrubber takes out."""
+    return "".join(chr(97 + int(c, 16)) for c in uuid.uuid4().hex[:10])
+
+
 def _rows(tag: str) -> list[dict]:
     with tx() as conn:
         return q(conn, "select * from ops.errors where message like :t", {"t": f"%{tag}%"})
 
 
 def test_a_pages_error_is_counted_by_day_with_nothing_about_who() -> None:
-    tag = uuid.uuid4().hex[:8]
+    tag = _tag()
     client = TestClient(app)
     for _ in range(2):
         r = client.post(
@@ -51,7 +56,7 @@ def test_a_pages_error_is_counted_by_day_with_nothing_about_who() -> None:
 
 
 def test_an_error_the_api_did_not_handle_is_counted_by_its_route() -> None:
-    tag = uuid.uuid4().hex[:8]
+    tag = _tag()
 
     def boom() -> None:
         raise RuntimeError(f"boom {tag}")
@@ -91,7 +96,7 @@ def test_the_smoke_check_names_what_did_not_answer() -> None:
 
 
 def test_thirty_days_are_kept() -> None:
-    tag = uuid.uuid4().hex[:8]
+    tag = _tag()
     with tx() as conn:
         conn.execute(
             text(
@@ -129,7 +134,7 @@ def test_reports_are_bounded_by_kind_place_day_and_address(monkeypatch: object) 
     import pytest
 
     mp = pytest.MonkeyPatch()
-    tag = uuid.uuid4().hex[:8]
+    tag = _tag()
     try:
         ops.record("web", "<img onerror>", f"odd {tag}", "/")
         assert _rows(tag)[0]["kind"] == "Error"
