@@ -277,3 +277,22 @@ sources:
         sha256: a8ca427804457198efc8cb516bb5ad91da500a9d8fe1a697a7e11e5239a07782
       - path: openiti-2025.1.9-hadith/0179MalikIbnAnas.Muwatta.Shamela0001699-ara1.completed
         sha256: 1402840d20bf094e127d75450d0e77df82ca2f056c9c426300f6758a3ca1d3fb
+
+  - id: openiti-taqrib
+    role_ar: "تراجم رواة الكتب الستة من تقريب التهذيب لابن حجر: الاسم وحكمه عليه وطبقته ووفاته ورموز من أخرج له"
+    license_ar: "النص الرقمي من مدونة OpenITI، إصدار 2025.1.9، برخصة المشاع الإبداعي — نسب المصنف، غير تجاري، المشاركة بالمثل 4.0؛ المؤلف توفي سنة 852هـ"
+    kind: narrators
+    role: Narrator profiles from Ibn Ḥajar's Taqrīb al-Tahdhīb — each entry verbatim with his verdict, ṭabaqa, death year and the sigla of the books that narrate from him
+    title_ar: تقريب التهذيب لابن حجر العسقلاني، تحقيق محمد عوامة — نسخة مدونة OpenITI
+    title_en: Ibn Ḥajar al-ʿAsqalānī, Taqrīb al-Tahdhīb, ed. Muḥammad ʿAwwāma — OpenITI version
+    version: OpenITI release 2025.1.9 (DOI 10.5281/zenodo.17767721), 0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1
+    url: https://github.com/OpenITI/RELEASE/tree/v2025.1.9
+    license: "CC BY-NC-SA 4.0 (OpenITI's digital text); the author died 852 AH"
+    license_url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+    attribution_ar: "ابن حجر العسقلاني، تقريب التهذيب، تحقيق محمد عوامة (دار الرشيد، سوريا، 1406هـ/1986م). النص الرقمي: مدونة OpenITI، إصدار 2025.1.9، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Ibn Ḥajar al-ʿAsqalānī, Taqrīb al-Tahdhīb, ed. Muḥammad ʿAwwāma (Dār al-Rashīd, Syria, 1406/1986). Digital text: OpenITI corpus release 2025.1.9, CC BY-NC-SA 4.0."
+    files:
+      - path: openiti-2025.1.9-hadith/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.completed
+        sha256: 178d493bd150032bc64a81ed4397d7e4a828209ee690deed283c1e63cada4637
+      - path: openiti-2025.1.9-hadith/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.yml
+        sha256: 288aa890b643fde51376387495e5941b925f93416ba75b3759cab5a273d0b52e

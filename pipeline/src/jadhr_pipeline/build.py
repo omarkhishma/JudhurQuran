@@ -652,6 +652,10 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         for k in ("texts", "chapters", "passages"):
             generic[k] = generic[k] + extra[k]
         generic["text_forms"] = extra["text_forms"]
+        # the narrators' profiles (P11.2b): Ibn Ḥajar's Taqrīb, each entry verbatim and what is read from it
+        from .ecosystem.hadith import narrator_rows
+
+        generic["narrators"], report["narrators"] = narrator_rows(raw.root, raw.hadith_registry)
         kinds = Counter(f["kind"] for f in extra["text_forms"])
         report["texts"] = {
             "texts": len(extra["texts"]),

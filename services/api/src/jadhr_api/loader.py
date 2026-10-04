@@ -59,6 +59,9 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                                     "norm", "token_count", "form_ids", "roots", "roots_low", "meta"], {"meta"}),
     # each written form of the texts beyond the Quran, read once (P11.4a)
     ("text_forms", "text_forms.jsonl", ["id", "norm", "kind", "confidence", "clitics", "readings"], {"readings"}),
+    # narrator profiles from Ibn Ḥajar's Taqrīb (P11.2b)
+    ("narrators", "narrators.jsonl", ["id", "source_id", "number", "kind", "text", "name", "name_norm", "verdict", "rank",
+                                      "tabaqa", "tabaqa_rule", "death_text", "death_ah", "death_rule", "sigla"], set()),
     ("passage_tokens", "passage_tokens.jsonl", ["id", "passage_id", "ordinal", "uri", "surface", "surface_bare",
                                                 "norm", "lemma_id", "root_id", "pattern_id", "pos", "confidence",
                                                 "word_id"], set()),
@@ -269,6 +272,7 @@ TRUNCATE_ORDER = [
     "senses",
     "glossary_terms",
     "corpora",
+    "narrators",
     "text_forms",
     "passage_tokens",
     "passages",

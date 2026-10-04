@@ -384,3 +384,27 @@ def build_hadith(raw: Path, registry: Path) -> tuple[list[Draft], dict[str, Any]
     stats["split:known-names"] = len(known)
     drafts = [collection(raw, spec, reg, stats, known) for spec in reg["collections"]]
     return drafts, dict(sorted(stats.items()))
+
+
+def narrator_rows(raw: Path, registry: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """The Taqrīb's entries as rows for ``content.narrators``, in the book's order, and what was read from them."""
+    from jadhr_arabic import normalize
+
+    from .taqrib import parse
+
+    spec = yaml.safe_load(registry.read_text(encoding="utf-8"))["narrators"]
+    entries = parse((raw / spec["file"]).read_text(encoding="utf-8"))
+    rows = [
+        {**e.row(), "id": i, "source_id": spec["source"], "name_norm": normalize(e.name)}
+        for i, e in enumerate(entries, start=1)
+    ]
+    main = [e for e in entries if e.kind == "entry"]
+    report = {
+        "entries": len(main),
+        "cross_references": len(entries) - len(main),
+        "with_rank": sum(e.rank is not None for e in main),
+        "with_tabaqa": sum(e.tabaqa is not None for e in main),
+        "with_death_year": sum(e.death_ah is not None for e in main),
+        "with_sigla": sum(bool(e.sigla) for e in main),
+    }
+    return rows, report

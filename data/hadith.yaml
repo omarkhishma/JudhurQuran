@@ -90,6 +90,11 @@ collections:
     numbering_ar: ترقيم المجموعة المفتوحة (لا يطابق طبعة مطبوعة)؛ يستشهد بالكتاب وموضع الحديث فيه
     numbering_en: the compilation's own numbering (no printed edition matches it); cited by its kitāb and place
 
+# The narrators' profiles: Ibn Ḥajar's Taqrīb al-Tahdhīb in OpenITI's version (research 21 §3; ecosystem/taqrib.py)
+narrators:
+  source: openiti-taqrib
+  file: openiti-2025.1.9-hadith/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.completed
+
 # Graders whose rulings these are, with the work each ruling comes from (research 21 §3, the evidence pages saved in
 # data/raw/fawazahmed0-hadith-api/grade-evidence/).
 graders:

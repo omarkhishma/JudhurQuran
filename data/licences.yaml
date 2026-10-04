@@ -3279,3 +3279,56 @@ licences:
   - The authors died 179–303 AH (public domain). OpenITI does not record per title whether a kitāb or bāb title is the author's or a later editor's, so the screen credits the titles to the OpenITI version and its edition, never to the author (P11.2c).
   - The al-Tirmidhī version was cleaned from a typing of al-Albānī's Ṣaḥīḥ wa-ḍaʿīf Sunan al-Tirmidhī with its paratext removed; we read its titles only. The Abū Dāwūd and Ibn Mājah cards are OpenITI's unfilled template, so their printed edition is unstated.
   - 'CC BY-NC-SA 4.0: non-commercial display with attribution is approved (D18); rows served through the API stay CC BY-NC-SA 4.0 (ShareAlike); a commercial path needs titles from a public-domain printing or another licensed source (D2, research 21: Arabic Wikisource or MIS).'
+- id: openiti-taqrib
+  registry: data/sources.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.TaqribTahdhib/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.completed
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.TaqribTahdhib/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.yml
+  fetched: '2026-10-04'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: c131ba14144fe2b1a6bb0013be0491e8a1ff2a92ab33c3f5c4a9e8124fc11e73
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.TaqribTahdhib/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.completed: 178d493bd150032bc64a81ed4397d7e4a828209ee690deed283c1e63cada4637
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.TaqribTahdhib/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.yml: 288aa890b643fde51376387495e5941b925f93416ba75b3759cab5a273d0b52e
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.TaqribTahdhib/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.yml
+  - topic: other
+    quote: '#META# 040.EdEDITOR :: محمد عوامة'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.TaqribTahdhib/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.completed
+  - topic: other
+    quote: '#META# 043.EdPUBLISHER :: دار الرشيد'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.TaqribTahdhib/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.completed
+  - topic: other
+    quote: '#META# 045.EdYEAR :: 1406 - 1986'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0852IbnHajarCasqalani/0852IbnHajarCasqalani.TaqribTahdhib/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.completed
+  our_use: 'Built and loaded, not yet shown: the 8,522 entries and 3,217 cross-references of the Taqrīb (pipeline/src/jadhr_pipeline/ecosystem/taqrib.py), each Ibn Ḥajar''s words verbatim with his edition''s number, and beside them what is read from those words by rule — his verdict as worded and its rank on his own scale, his ṭabaqa, his year of death by the rule his introduction states, the sigla of the books that narrate from him; for the hadith pages'' narrator profiles and for linking the names in a chain to their entries (P11.2b). Not in the bulk release.'
+  status: attention
+  notes:
+  - Terms read 2026-10-04 and unchanged from the other OpenITI entries of the same day (documentation page 41c356b2…, Zenodo answer c131ba14…, legal code 527c4e0e…); the text (178d493b…) and the version card (288aa890…) equal the copies pinned in data/raw/openiti-2025.1.9-hadith at commit cfc4157a.
+  - The author died 852 AH (public domain); the edition is Muḥammad ʿAwwāma's (Dār al-Rashīd, 1406/1986), whose apparatus OpenITI's cleaned version removes; the entry numbers are the edition's.
+  - The rank, ṭabaqa and computed year are read from Ibn Ḥajar's words by the rules his own introduction states; the page shows his words, with the reading labelled as derived.
+  - 'CC BY-NC-SA 4.0: non-commercial display with attribution is approved (D18); rows served through the API stay CC BY-NC-SA 4.0 (ShareAlike); a commercial path needs a re-keyed public-domain printing (D2).'

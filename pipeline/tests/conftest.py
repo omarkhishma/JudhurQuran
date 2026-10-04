@@ -20,6 +20,7 @@ NEEDS_DATA = {
     "test_lexicon_xml.py",
     "test_hadith.py",
     "test_isnad.py",
+    "test_taqrib.py",
     "test_every_pinned_source_file_matches",
     "test_the_dictionary_on_the_build",
 }
