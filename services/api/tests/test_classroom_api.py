@@ -716,3 +716,57 @@ def test_members_propose_the_instructor_decides_and_the_feed_says_what_changed(
         "edited",
     ]
     assert client.get(f"{on}/comments", headers=t).json()["data"] == []
+
+
+def test_a_lesson_is_copied_into_another_class_and_an_archived_class_takes_none(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """B46: a lesson copied into another class of the instructor's — its verses, roots, due date and notes, nothing of
+    any member, not its map; an archived class takes no new lesson, copied or made."""
+    t, a = people["t"], people["a"]
+    one, two = _class(t, "حلقة الفجر"), _class(t, "حلقة العصر")
+    _join(a, one["join_code"])
+    lesson = client.post(
+        f"/api/v1/classroom/classes/{one['id']}/lessons",
+        headers=t,
+        json={
+            "title": "ل",
+            "ranges": [{"surah": 1, "from": 1, "to": 7}],
+            "roots": ["حمد"],
+            "due": "2026-12-01",
+        },
+    ).json()
+    url = f"/api/v1/classroom/lessons/{lesson['id']}"
+    client.post(f"{url}/notes", headers=t, json={"location": "1:2:3", "text": "الرب"})
+    today = datetime.now(UTC).date().isoformat()
+    client.post(
+        f"{url}/counts", headers=a, json={"day": today, "items": [{"location": "1:2:3", "kind": "lookup"}]}
+    )
+    r = client.post(f"{url}/copy", headers=t, json={"class_id": two["id"]})
+    assert r.status_code == 201, r.text
+    copy = r.json()
+    assert (copy["class_id"], copy["title"], copy["verses"], [x["key"] for x in copy["roots"]]) == (
+        two["id"],
+        "ل",
+        7,
+        ["حمد"],
+    )
+    assert copy["due_at"].startswith("2026-12-01") and copy["map"] is None and copy["id"] != lesson["id"]
+    notes = client.get(f"/api/v1/classroom/lessons/{copy['id']}/notes", headers=t).json()["data"]
+    assert [(n["location"], n["text"]) for n in notes] == [("1:2:3", "الرب")]
+    with accounts.tx() as conn:
+        held = accounts.q1(
+            conn, "select count(*)::int as n from classroom.counts where lesson_id = :l", {"l": copy["id"]}
+        )
+    assert held == {"n": 0}
+    # not into the same class, not by a member, not into an archived class
+    assert _code(client.post(f"{url}/copy", headers=t, json={"class_id": one["id"]})) == "same_class"
+    assert client.post(f"{url}/copy", headers=a, json={"class_id": two["id"]}).status_code == 403
+    client.patch(f"/api/v1/classroom/classes/{two['id']}", headers=t, json={"archived": True})
+    assert _code(client.post(f"{url}/copy", headers=t, json={"class_id": two["id"]})) == "archived"
+    r = client.post(
+        f"/api/v1/classroom/classes/{two['id']}/lessons",
+        headers=t,
+        json={"title": "x", "ranges": [{"surah": 1, "from": 1, "to": 2}]},
+    )
+    assert _code(r) == "archived"

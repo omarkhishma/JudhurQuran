@@ -83,7 +83,7 @@ export function NoteLine({ n, word }: { n: NoteLike; word?: string }) {
   );
 }
 
-const REFUSALS = ["not_instructor", "not_member", "instructor_edits", "class_only", "not_found", "already", "closed", "decided", "has_map", "no_map", "own_class", "taken", "too_large", "bad_ranges", "bad_roots", "bad_due", "consent", "empty", "too_long", "nothing_new", "too_many_notes", "too_many_proposals", "bad_proposal"] as const;
+const REFUSALS = ["not_instructor", "not_member", "instructor_edits", "class_only", "not_found", "already", "closed", "decided", "has_map", "no_map", "own_class", "taken", "too_large", "bad_ranges", "bad_roots", "bad_due", "consent", "empty", "too_long", "nothing_new", "too_many_notes", "too_many_proposals", "bad_proposal", "archived", "same_class"] as const;
 type Refused = (typeof REFUSALS)[number];
 
 /** What went wrong in the classroom, as the reader is told it: the API's reason in the reader's language, else the

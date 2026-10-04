@@ -211,3 +211,6 @@ export function cardRef(n: GraphNode): CardRef {
   const kinds: CardKind[] = ["root", "pattern", "lemma", "verse", "note", "frame"];
   return { id: n.id, kind: kinds.includes(d.kind as CardKind) ? (d.kind as CardKind) : "note", label: (d.ar || d.verse?.key || d.title || d.text || "").trim().slice(0, 80) };
 }
+
+/** A lesson copied into another class of the instructor's (B46): its verses, roots, due date and notes. */
+export const copyLesson = (id: string, classId: string) => authFetch<LessonOut>(`${base}/lessons/${encodeURIComponent(id)}/copy`, json({ class_id: classId }));

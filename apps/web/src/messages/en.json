@@ -3257,7 +3257,9 @@
       "nothing_new": "Everything in your proposal is on the map already.",
       "too_many_notes": "The lesson has a hundred notes.",
       "too_many_proposals": "You have twenty proposals waiting for the instructor; wait until some are decided.",
-      "bad_proposal": "The proposal cannot be taken in this shape."
+      "bad_proposal": "The proposal cannot be taken in this shape.",
+      "archived": "The class is archived: it takes no new lesson.",
+      "same_class": "The lesson is in this class already."
     },
     "lessonViews": "The lesson's views",
     "tabClass": "How the class read it",
@@ -3345,6 +3347,9 @@
     "focusLookup": "{learners} of {n} learners, {avg} times each on average",
     "worthPause": "Worth a pause in class.",
     "footnotes": "The translation's footnotes",
-    "verseLookedNone": "{count, plural, one {one word} other {{n} words}}, none looked up by the class"
+    "verseLookedNone": "{count, plural, one {one word} other {{n} words}}, none looked up by the class",
+    "copyTo": "Copy it to",
+    "copiedTo": "The lesson is copied to “{name}”.",
+    "copyLesson": "Copy the lesson"
   }
 }

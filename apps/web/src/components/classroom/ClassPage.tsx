@@ -2,10 +2,10 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useAccount } from "@/lib/account/store";
-import { addLesson, deleteClass, deleteLesson, getClass, getPack, leaveClass, newCode, rangesLine, removeMember, setDetail, updateClass, type ClassOut, type LessonOut, type Range } from "@/lib/classroom";
+import { addLesson, copyLesson, deleteClass, deleteLesson, getClass, getClasses, getPack, leaveClass, newCode, rangesLine, removeMember, setDetail, updateClass, type ClassOut, type LessonOut, type Range } from "@/lib/classroom";
 import { useIsClient } from "@/lib/client";
 import { setFinished } from "@/lib/classroomSignals";
 import { cnt } from "@/lib/format";
@@ -198,7 +198,52 @@ function LessonRow({ lesson, teach }: { lesson: LessonOut; teach: boolean }) {
             <button type="button" className="btn" onClick={() => setConfirm(true)}>{t("deleteLesson")}</button>
           ))}
       </div>
+      {teach && <CopyLesson lesson={lesson} />}
     </li>
+  );
+}
+
+/** The same lesson for another circle (B46): copied into another class of the instructor's — its verses, roots, due
+ * date and notes, nothing of any member. Offered only when there is another open class to copy into. */
+function CopyLesson({ lesson }: { lesson: LessonOut }) {
+  const t = useTranslations("classroom");
+  const fail = useClassError();
+  const qc = useQueryClient();
+  const classes = useQuery({ queryKey: ["classes"], queryFn: getClasses, staleTime: 60_000 });
+  const others = (classes.data?.teaching ?? []).filter((c) => c.id !== lesson.class_id && !c.archived_at);
+  const [to, setTo] = useState("");
+  const [said, setSaid] = useState<ReactNode>("");
+  if (!others.length) return null;
+  const target = others.find((c) => c.id === to) ?? others[0];
+  return (
+    <form
+      className="flex flex-wrap items-center gap-2 border-t border-line pt-2 text-[12.5px]"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        try {
+          await copyLesson(lesson.id, target.id);
+          await qc.invalidateQueries({ queryKey: ["class", target.id] });
+          setSaid(
+            <>
+              {t("copiedTo", { name: target.name })} <Link href={`/classroom/${target.id}`} className="underline underline-offset-2">{t("openClass")}</Link>
+            </>,
+          );
+        } catch (err) {
+          setSaid(fail(err));
+        }
+      }}
+    >
+      <label className="flex items-center gap-2 text-t2">
+        {t("copyTo")}
+        <select className="field-input py-1 text-[12.5px]" value={target.id} onChange={(e) => setTo(e.target.value)}>
+          {others.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
+      </label>
+      <button type="submit" className="btn text-[12.5px]">{t("copyLesson")}</button>
+      <span role="status" className="text-t2">{said}</span>
+    </form>
   );
 }
 

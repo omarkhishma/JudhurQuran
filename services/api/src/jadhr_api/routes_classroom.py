@@ -307,3 +307,14 @@ def withdraw(u: User, proposal_id: Id) -> Response:
 @router.get("/lessons/{lesson_id}/activity", summary="What happened on the lesson's map, newest first")
 def activity(u: User, lesson_id: Id, before: str | None = None, limit: int = 30) -> ORJSONResponse:
     return ok(classroom.activity(u, lesson_id, before, limit))
+
+
+class _Copy(BaseModel):
+    class_id: str = Field(max_length=40)
+
+
+@router.post(
+    "/lessons/{lesson_id}/copy", summary="Copy a lesson into another class of mine (its verses, roots, notes)"
+)
+def copy_lesson(u: User, lesson_id: Id, body: _Copy) -> ORJSONResponse:
+    return ok(classroom.copy_lesson(u, lesson_id, body.class_id), status=201)

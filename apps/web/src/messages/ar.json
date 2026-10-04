@@ -3257,7 +3257,9 @@
       "nothing_new": "كل ما في اقتراحك على الخريطة من قبل.",
       "too_many_notes": "بلغ الدرس مئة ملاحظة.",
       "too_many_proposals": "لك عشرون اقتراحا تنتظر قرار المعلم؛ انتظر حتى يقرر في بعضها.",
-      "bad_proposal": "لا يقبل الاقتراح بشكله هذا."
+      "bad_proposal": "لا يقبل الاقتراح بشكله هذا.",
+      "archived": "الصف مؤرشف: لا يضاف إليه درس.",
+      "same_class": "الدرس في هذا الصف من قبل."
     },
     "lessonViews": "عرضا الدرس",
     "tabClass": "أثر الصف",
@@ -3345,6 +3347,9 @@
     "focusLookup": "{learners} {count, plural, one {من طالب واحد} two {من طالبين} few {من {n} طلاب} many {من {n} طالبا} other {من {n} طالب}}، والمتوسط {avg} لكل واحد",
     "worthPause": "تستحق وقفة في الدرس.",
     "footnotes": "حواشي الترجمة",
-    "verseLookedNone": "{count, plural, one {كلمة واحدة} two {كلمتان} few {{n} كلمات} many {{n} كلمة} other {{n} كلمة}}، لم يبحث الصف عن شيء منها"
+    "verseLookedNone": "{count, plural, one {كلمة واحدة} two {كلمتان} few {{n} كلمات} many {{n} كلمة} other {{n} كلمة}}، لم يبحث الصف عن شيء منها",
+    "copyTo": "انسخه إلى",
+    "copiedTo": "نسخ الدرس إلى «{name}».",
+    "copyLesson": "انسخ الدرس"
   }
 }

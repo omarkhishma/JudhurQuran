@@ -64,6 +64,16 @@ test("a class made, joined by consent, given a lesson that travels as a file, an
     await teacher.page.getByRole("button", { name: "أضف الدرس" }).click();
     await expect(teacher.page.getByRole("status").filter({ hasText: "أضيف الدرس." })).toBeVisible();
 
+    // the same lesson for another circle (B46): copied into another class of the instructor's, its notes with it
+    const other = (await (await teacher.page.request.post("/api/v1/classroom/classes", { headers: teacher.h, data: { name: "حلقة المغرب" } })).json()) as { id: string };
+    await teacher.page.reload();
+    const tRow = teacher.page.locator("li").filter({ hasText: "الحمد في الفاتحة" }).first();
+    await tRow.getByRole("combobox", { name: "انسخه إلى" }).selectOption({ label: "حلقة المغرب" });
+    await tRow.getByRole("button", { name: "انسخ الدرس" }).click();
+    await expect(tRow.getByRole("status")).toContainText("نسخ الدرس إلى «حلقة المغرب».");
+    const copied = (await (await teacher.page.request.get(`/api/v1/classroom/classes/${other.id}`, { headers: teacher.h })).json()) as { lessons: { title: string; verses: number }[] };
+    expect(copied.lessons.map((l) => [l.title, l.verses])).toEqual([["الحمد في الفاتحة", 7]]);
+
     // the member reads it, and takes it away as a file
     await learner.page.reload();
     const row = learner.page.locator("li").filter({ hasText: "الحمد في الفاتحة" });

@@ -492,9 +492,15 @@ def lessons(u: dict[str, Any], cid: str) -> dict[str, Any]:
         return {"data": _lessons_of(conn, c, _role_in(conn, u, c), u)}
 
 
+def _open_class(c: dict[str, Any]) -> None:
+    if c["archived_at"]:
+        raise Refusal(409, "archived", "An archived class takes no new lesson.")
+
+
 def add_lesson(u: dict[str, Any], cid: str, title: Any, ranges: Any, roots: Any, due: Any) -> dict[str, Any]:
     with tx() as conn:
         c = _own(conn, u, cid)
+        _open_class(c)
         lesson = q1(
             conn,
             """insert into classroom.lessons (class_id, title, ranges, roots, due_at)
@@ -509,6 +515,40 @@ def add_lesson(u: dict[str, Any], cid: str, title: Any, ranges: Any, roots: Any,
         )
         assert lesson is not None
         return _lesson_out(conn, lesson, "instructor", u)
+
+
+def copy_lesson(u: dict[str, Any], lid: str, cid: str) -> dict[str, Any]:
+    """An instructor teaching several classes copies a lesson into another of theirs (B46): its title, verses, roots,
+    due date and lesson notes — nothing of any member, and not its map, which is the first class's."""
+    with tx() as conn:
+        lesson = _lesson(conn, lid)
+        _own(conn, u, str(lesson["class_id"]))
+        c = _own(conn, u, cid)
+        _open_class(c)
+        if c["id"] == lesson["class_id"]:
+            raise Refusal(409, "same_class", "The lesson is in this class already.")
+        new = q1(
+            conn,
+            """insert into classroom.lessons (class_id, title, ranges, roots, due_at)
+               values (:c, :t, cast(:r as jsonb), :k, :d) returning *""",
+            {
+                "c": c["id"],
+                "t": lesson["title"],
+                "r": json.dumps(lesson["ranges"]),
+                "k": list(lesson["roots"]),
+                "d": lesson["due_at"],
+            },
+        )
+        assert new is not None
+        q(
+            conn,
+            """insert into classroom.notes (lesson_id, location, root, text, position)
+               select :n, location, root, text, position from classroom.notes where lesson_id = :l returning id""",
+            {"n": new["id"], "l": lesson["id"]},
+        )
+        out = _lesson_out(conn, new, "instructor", u)
+        out["class"] = {"id": str(c["id"]), "name": c["name"], "minors": c["minors"], "role": "instructor"}
+        return out
 
 
 def _lesson_role(conn: Connection, u: dict[str, Any], lid: str) -> tuple[dict[str, Any], dict[str, Any], str]:
