@@ -16,7 +16,7 @@ from datetime import date, datetime, timedelta
 from typing import Annotated, Any
 
 import orjson
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, Response
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, Response, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -36,6 +36,7 @@ from . import (
     daily,
     entities,
     hear,
+    intake,
     knowledge,
     lexicon,
     path,
@@ -55,6 +56,7 @@ from . import (
 from . import catalogue as catalogue_api
 from . import texts as texts_api
 from .db import connect, one
+from .refusal import Refusal
 from .search import search as run_search
 from .settings import get_settings
 
@@ -913,6 +915,56 @@ class _Tokens(BaseModel):
 def analyse_tokens(body: _Tokens) -> Response:
     with connect() as conn:
         return ORJSONResponse(analyse.analyse_many(conn, body.tokens), headers={"Cache-Control": "no-store"})
+
+
+class _UrlIntake(BaseModel):
+    url: str = Field(min_length=8, max_length=2000)
+
+
+_INTAKE_REFUSALS = {
+    "bad_url": "Give an http or https address.",
+    "not_public": "That address is not on the public internet.",
+    "unreachable": "The site could not be reached.",
+    "fetch_failed": "The page could not be fetched.",
+    "not_html": "That address is not a web page.",
+    "too_large": "The file is too large.",
+    "no_text": "The page holds no Arabic text to speak of.",
+    "not_pdf": "That file is not a PDF we can read.",
+    "encrypted": "The PDF is locked.",
+    "too_many_pages": "The PDF has too many pages.",
+}
+
+
+def _refuse(e: intake.IntakeError) -> Refusal:
+    return Refusal(422, e.code, _INTAKE_REFUSALS.get(e.code, "The text could not be read."))
+
+
+@router.post(
+    "/intake/url",
+    summary="A web page's main text, for the reader's library (fetched, handed back, never stored)",
+)
+def intake_url(body: _UrlIntake) -> Response:
+    # the reader's address and the page stay out of every log and cache (D9a): in a body, answered no-store
+    try:
+        out = intake.from_url(body.url, get_settings().intake_allow_private)
+    except intake.IntakeError as e:
+        raise _refuse(e) from e
+    return ORJSONResponse(out, headers={"Cache-Control": "no-store"})
+
+
+@router.post(
+    "/intake/pdf",
+    summary="A PDF's pages told apart — a text layer, one in visual order, a broken one, a scan — never stored",
+)
+def intake_pdf(file: UploadFile) -> Response:
+    data = file.file.read(intake.PDF_BYTES + 1)
+    with connect() as conn:
+        lex = intake.lexicon(conn)
+    try:
+        out = intake.from_pdf(data, file.filename or "", lex)
+    except intake.IntakeError as e:
+        raise _refuse(e) from e
+    return ORJSONResponse(out, headers={"Cache-Control": "no-store"})
 
 
 @router.get(

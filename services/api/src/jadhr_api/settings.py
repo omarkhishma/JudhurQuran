@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     # OpenSearch (derived index; Postgres is the source of truth). Unset → search falls back to Postgres.
     search_url: str | None = "http://localhost:9201"
     search_timeout: float = 3.0
+    # text intake (P11.3c): a web page is fetched only at a public address; tests serve their pages on loopback
+    intake_allow_private: bool = False
 
     # ─── Releases (P10.1b) ──────────────────────────────────────────────────────
     # where built releases live (data/release/<version>/MANIFEST.json and its files); a relative path is from the repo

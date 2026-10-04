@@ -18,6 +18,10 @@ dependencies = [
   "cryptography>=43",
   "pyjwt[crypto]>=2.9",
   "httpx>=0.27",
+  # text intake (P11.3c): a web page's main text, a PDF's text layer, an upload — permissive licences only
+  "trafilatura>=2.0",
+  "pypdf>=6.0",
+  "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]

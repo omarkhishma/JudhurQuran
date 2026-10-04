@@ -21,6 +21,8 @@ dev = [
     "mypy>=1.11",
     "pyarrow>=17",
     "openpyxl>=3.1",
+    # tests only: a PDF with a text layer, made to be read back (BSD)
+    "reportlab>=4.2",
 ]
 
 [tool.ruff]
