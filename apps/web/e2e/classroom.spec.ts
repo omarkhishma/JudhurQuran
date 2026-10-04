@@ -322,6 +322,8 @@ test("an instructor reads the class's heat above the floor, keeps lesson notes a
     await expect(ownText.locator('[data-w="1:5:2"]')).not.toHaveAttribute("data-heat", /./);
     const mine = lp.getByRole("table", { name: "ما أرسله قارئك لهذا الدرس" });
     await expect(mine.getByRole("row").filter({ hasText: "البحث" })).toContainText("٤");
+    // each of their words opens it in the reader, at its place
+    await expect(ownText.locator('[data-w="1:2:3"]')).toHaveAttribute("href", "/word/1:2:3");
     await expect(mine.getByRole("row").filter({ hasText: "الملاحظات على الآية" })).toContainText("١:٢");
     await lp.getByRole("button", { name: "أتممت الدرس" }).click();
     await expect(lp.getByRole("status").filter({ hasText: "سجل أنك أتممته." })).toBeVisible();

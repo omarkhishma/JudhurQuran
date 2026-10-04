@@ -261,7 +261,7 @@ function Legend({ layer, few, matrix, own = false }: { layer: Layer; few: number
 
 /** One verse in the mushaf's text, each word a button with the class's heat under it (never on its letters); a note
  * is written on a verse, so the notes' heat sits under the whole verse. `own`: a member's own marks (B48) — the words
- * marked, not buttons, the verse opening the reader. */
+ * marked, each a link that opens it in the reader at its place, and the verse too. */
 function HeatVerse({ v, heat, layer, focus = null, same = null, onFocus, own = false, children }: { v: Verse; heat: Heat | undefined; layer: Layer; focus?: string | null; same?: string | null; onFocus?: (loc: string | null) => void; own?: boolean; children?: ReactNode }) {
   const t = useTranslations("classroom");
   const locale = useLocale();
@@ -296,9 +296,10 @@ function HeatVerse({ v, heat, layer, focus = null, same = null, onFocus, own = f
           return (
             <Fragment key={tk.position}>
               {own ? (
-                <span className="heat-w is-own" data-heat={lv || undefined} data-w={loc} title={said}>
+                // the member's own word opens it in the reader, at this place (B48)
+                <Link href={`/word/${loc}`} className="heat-w is-own" data-heat={lv || undefined} data-w={loc} title={said} aria-label={said ? `${word} — ${said}` : undefined}>
                   {word}
-                </span>
+                </Link>
               ) : (
               <button
                 type="button"
