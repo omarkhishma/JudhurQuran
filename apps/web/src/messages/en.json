@@ -3712,6 +3712,21 @@
     "why_turath": "turath's scanned print agrees on {n} of {of} sampled pages",
     "pagesByNumber": "Cited by the editor's paragraph numbers",
     "pagesByNumberNote": "This version's page numbers did not pass the check against the print, and its editor numbers the paragraphs, so a citation gives his paragraph number.",
-    "versionLabel": "Version:"
+    "versionLabel": "Version:",
+    "catalogueTitle": "Catalogue of books",
+    "catalogueLead": "Every Arabic work in the OpenITI corpus whose author died by 1374 AH, uncorrected OCR left out: its title, author, size and its library's category as the corpus metadata gives them. The shelf's thirty-seven books are read here; the rest at their sources.",
+    "catalogueSearch": "Search the catalogue",
+    "cataloguePlaceholder": "A title or an author",
+    "centuryLabel": "Century of death",
+    "century": "Century {n}",
+    "beforeIslam": "Before Islam",
+    "catalogueFound": "{count, plural, one {# work} other {{n} works}}",
+    "catalogueNone": "No work in the catalogue has these words.",
+    "readHere": "Read it here",
+    "readOpenITI": "In the OpenITI corpus",
+    "readShamela": "On al-Maktaba al-Shāmila",
+    "readTurath": "On turath",
+    "catalogueGate": "The catalogue holds {all} works of the Arabic corpus: those whose authors died by 1374 AH, uncorrected OCR left out. Works of authors who died 1375–1394 AH wait for the owner's decision; later ones are not included.",
+    "catalogueLink": "The whole catalogue"
   }
 }

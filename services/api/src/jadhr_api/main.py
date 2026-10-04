@@ -52,6 +52,7 @@ from . import (
     routes_releases,
     topics,
 )
+from . import catalogue as catalogue_api
 from . import texts as texts_api
 from .db import connect, one
 from .search import search as run_search
@@ -484,6 +485,21 @@ def text_passage(
         if p is None:
             raise not_found("passage")
         return cached(request, p)
+
+
+@router.get(
+    "/catalogue", summary="The catalogue: the works the D9 gate lets in, by title, author and century"
+)
+def catalogue(
+    request: Request,
+    q: Annotated[str | None, Query(max_length=100)] = None,
+    century: Annotated[int | None, Query(ge=0, le=14, description="0: the poets before Islam")] = None,
+    shelf: bool = False,
+    offset: Annotated[int, Query(ge=0, le=10000)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 40,
+) -> Response:
+    with connect() as conn:
+        return cached(request, catalogue_api.catalogue(conn, q, century, shelf, offset, limit))
 
 
 @router.get(

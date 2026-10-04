@@ -69,6 +69,11 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
      {"word_meanings"}),
     ("hadeethenc_links", "hadeethenc_links.jsonl", ["id", "item_id", "passage_id", "book", "number", "agreement",
                                                     "status"], set()),
+    # the catalogue: the works the D9 gate lets in, each linked to where its text is read (P11.3a)
+    ("catalogue_works", "catalogue_works.jsonl", ["id", "version", "work", "author_uri", "death_ah", "before_islam",
+                                                  "era_year", "title_ar", "title_lat", "author_ar", "author_lat",
+                                                  "words", "subjects", "categories", "library", "library_id",
+                                                  "shamela_id", "path", "shelf", "norm"], set()),
     # each narrator's name in an isnād linked to his Taqrīb entry, with its candidates (P11.2b)
     ("narrator_links", "narrator_links.jsonl", ["id", "passage_id", "ordinal", "span_start", "span_end", "text",
                                                 "narrator_id", "rule", "confidence", "status", "candidates"], set()),
@@ -282,6 +287,7 @@ TRUNCATE_ORDER = [
     "senses",
     "glossary_terms",
     "corpora",
+    "catalogue_works",
     "hadeethenc_links",
     "hadeethenc_items",
     "narrator_links",

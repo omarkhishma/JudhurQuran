@@ -460,6 +460,22 @@ sources:
       - path: openiti-2025.1.9/shelf/0911Suyuti.Itqan.JK001295-ara1.yml
         sha256: 4f762e73b3c83f263373f2058a93743989aac9a9b4254a69401572289ba40ccf
 
+  - id: openiti-catalogue
+    role_ar: "فهرس الكتب: ٦٬٧٦٦ عملًا عربيًا من مدونة OpenITI توفي مؤلفوها حتى سنة ١٣٧٤هـ، بلا نسخ التعرف الآلي غير المصححة، بعناوينها ومؤلفيها وتصنيف مكتباتها"
+    license_ar: "فهرس مدونة OpenITI للنسخ الأولية، إصدار 2025.1.9، برخصة المشاع الإبداعي — نسب المصنف، غير تجاري، المشاركة بالمثل 4.0"
+    kind: catalogue
+    role: "The catalogue: OpenITI's primary versions of Arabic works whose authors died by 1374 AH, uncorrected OCR left out (the D9 gate, research 21 §4.1) — titles, authors, death years, sizes and the libraries' own categories, each linked to where its text is read"
+    title_ar: مدونة OpenITI — فهرس النسخ الأولية
+    title_en: OpenITI corpus — the catalogue of primary versions
+    version: "OpenITI 2025.1.9, primary-version metadata (Zenodo 10.5281/zenodo.18613982, published 2026-02-12)"
+    url: https://zenodo.org/records/18613982
+    license: CC BY-NC-SA 4.0
+    license_url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+    attribution_ar: "الفهرس من بيانات مدونة OpenITI الوصفية، إصدار 2025.1.9، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Catalogue from the OpenITI corpus metadata, release 2025.1.9, CC BY-NC-SA 4.0."
+    files:
+      - path: openiti-2025.1.9/OpenITI_metadata_2025-1-9_pri.tsv
+        sha256: 9662fdf3d09cef4ab23fbe27d51ae1a360d63e0005b6937baea07fa9087f9140
   - id: openiti-taqrib
     role_ar: "تراجم رواة الكتب الستة من تقريب التهذيب لابن حجر: الاسم وحكمه عليه وطبقته ووفاته ورموز من أخرج له"
     license_ar: "النص الرقمي من مدونة OpenITI، إصدار 2025.1.9، برخصة المشاع الإبداعي — نسب المصنف، غير تجاري، المشاركة بالمثل 4.0؛ المؤلف توفي سنة 852هـ"

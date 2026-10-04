@@ -678,6 +678,16 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                     }
             drafts += books
             stage("books' chain words")
+            # the catalogue (P11.3a): the works the D9 gate lets in, each linked to where its text is read
+            import yaml
+
+            from .ecosystem.catalogue import build_catalogue
+
+            shelf_reg = yaml.safe_load(raw.books_registry.read_text(encoding="utf-8"))
+            generic["catalogue_works"], report["catalogue"] = build_catalogue(
+                raw.root / shelf_reg["catalogue"], {b.info["version"]: b.slug for b in books}
+            )
+            stage("catalogue")
         vocab = vocabulary_from(words_out, roots_out, generic["patterns"], dict_roots_out)
         extra = assemble(
             drafts,

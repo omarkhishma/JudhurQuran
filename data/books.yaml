@@ -8,6 +8,8 @@
 # board's (research 21 §4.4).
 
 turath_check: openiti-2025.1.9/_evidence/turath-print-page-check-2026-10-04.json
+# the catalogue the shelf is drawn from: OpenITI's primary versions, through the D9 gate (ecosystem/catalogue.py)
+catalogue: openiti-2025.1.9/OpenITI_metadata_2025-1-9_pri.tsv
 books:
 - slug: zaydibncali-musnad
   work: 0122ZaydIbnCali.Musnad

@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BookShelf, type ShelfBook } from "@/components/books/BookShelf";
 import { Sources } from "@/components/hadith/Sources";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
+import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { Book } from "@/lib/books";
 import { localized } from "@/lib/seo";
@@ -45,6 +46,9 @@ export default async function BooksPage({ params }: PageProps<"/[locale]/books">
         <button type="submit" className="btn btn-primary">{t("searchGo")}</button>
       </form>
       <BookShelf books={books} />
+      <p className="mt-6">
+        <Link href="/books/catalogue" className="btn">{t("catalogueLink")}</Link>
+      </p>
       <section className="mt-10 max-w-[80ch]" aria-labelledby="rules-h">
         <h2 id="rules-h" className="mb-2 text-[15px] font-semibold text-t2">{t("rulesTitle")}</h2>
         <p className="text-[13px] leading-relaxed text-t3">{t("rulesNote")}</p>

@@ -130,3 +130,26 @@ test("the library and the search reach the books; the English page", async ({ pa
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Classical books");
   await axe(page);
 });
+
+test("the catalogue: every work the gate lets in, by title, author and century, linked to where it is read", async ({ page }) => {
+  const all = await json<{ all: number; total: number; centuries: { century: number; n: number }[] }>(page, "/api/v1/catalogue?limit=1");
+  await page.goto("/books");
+  await page.getByRole("link", { name: "فهرس الكتب كلها" }).click();
+  await expect(page).toHaveURL(/\/books\/catalogue$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("فهرس الكتب");
+  await expect(page.locator("p[aria-live=polite]")).toContainText(ar(all.total));
+  await axe(page);
+  await expectNoHorizontalScroll(page);
+  // a century: the works of authors who died in it
+  const fourth = all.centuries.find((c) => c.century === 4)!;
+  await page.getByRole("navigation", { name: "قرن الوفاة" }).getByRole("link", { name: /^القرن ٤/ }).click();
+  await expect(page).toHaveURL(/century=4/);
+  await expect(page.locator("[data-work]")).toHaveCount(Math.min(40, fourth.n));
+  // a search: al-Ṭabarī's Jāmiʿ, read here, on Shamela and on turath
+  await page.goto(`/books/catalogue?q=${enc("جامع البيان")}`);
+  const tabari = page.locator('[data-work="0310Tabari.JamicBayan.Shamela0007798-ara1"]');
+  await expect(tabari.getByRole("link", { name: "اقرأه هنا" })).toHaveAttribute("href", "/books/tabari-jamicbayan");
+  await expect(tabari.getByRole("link", { name: "في المكتبة الشاملة" })).toHaveAttribute("href", "https://shamela.ws/book/7798");
+  await axe(page);
+});
+

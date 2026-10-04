@@ -3279,6 +3279,46 @@ licences:
   - The authors died 179–303 AH (public domain). OpenITI does not record per title whether a kitāb or bāb title is the author's or a later editor's, so the screen credits the titles to the OpenITI version and its edition, never to the author (P11.2c).
   - The al-Tirmidhī version was cleaned from a typing of al-Albānī's Ṣaḥīḥ wa-ḍaʿīf Sunan al-Tirmidhī with its paratext removed; we read its titles only. The Abū Dāwūd and Ibn Mājah cards are OpenITI's unfilled template, so their printed edition is unstated.
   - 'CC BY-NC-SA 4.0: non-commercial display with attribution is approved (D18); rows served through the API stay CC BY-NC-SA 4.0 (ShareAlike); a commercial path needs titles from a public-domain printing or another licensed source (D2, research 21: Arabic Wikisource or MIS).'
+- id: openiti-catalogue
+  registry: data/sources.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/18613982
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  fetched: '2026-10-04'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/18613982: fa0b60219cf2b957df2aa76e063f2f7aa9c3c2b1b6134f4d9b87df6031bac2d4
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode)
+      license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/18613982
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and
+      produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the
+      URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  our_use: 'The catalogue (P11.3a, /books/catalogue): of the primary-version metadata, the rows of Arabic works whose
+    authors died by 1374 AH, uncorrected OCR left out (6,766, the D9 gate), each with its title, author, death year,
+    size, OpenITI subject codes and the libraries'' own categories as the metadata gives them, searchable and linked to
+    its text on this site (the shelf''s 37), in OpenITI''s release, and on shamela.ws and turath where its id is
+    Shamela''s. Metadata only: no text beyond the shelf is fetched or shown. Not in the bulk release.'
+  status: ok
+  notes:
+  - 'Terms read 2026-10-04: the Zenodo record 18613982 as fetched for research 21 (data/raw/openiti-2025.1.9/zenodo-record-18613982.json, its sha256 above), the documentation page and the legal code as the openiti-books entry of the day recorded them.'
+  - The TSV is Zenodo's file of the record (md5 b786907514b438a5a27558f521c312a1, equal to Zenodo's published checksum; SOURCE.txt).
+  - 'The 482 works of authors who died 1375–1394 AH stay out until the owner decides (research 21 §4.4); the 1,507 others (died 1395 or later, the placeholder 1450, or uncorrected OCR) fail the gate.'
 - id: openiti-taqrib
   registry: data/sources.yaml
   urls_checked:
