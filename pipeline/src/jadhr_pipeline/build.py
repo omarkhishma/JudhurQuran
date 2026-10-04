@@ -572,6 +572,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
     report["works"] = works_report
 
     lex_works, lex_entries, gharib, lex_report = ([], [], [], {})
+    dict_roots_out: list[dict[str, Any]] = []
     if raw.lexica_registry:
         from .lexica import build_lexica
 
@@ -591,6 +592,14 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 else (r or {}).get("confidence", "low")
             )
             e["displayable"] = e["root_key"] is not None and e["confidence"] in ("exact", "manual", "high")
+        # P11.1: every article's root, the Quran's and all the others, and the dictionary's registry of roots
+        from .lexica.dictroots import build_dict_roots
+
+        dict_roots_out, report["dictionary"] = build_dict_roots(
+            lex_entries, roots_out, [w["id"] for w in sorted(lex_works, key=lambda w: w["sort_order"])]
+        )
+        for e in lex_entries:
+            e.pop("heads", None)
         from .lexica.maqayis_core import usul_kind
 
         # P3.4: a root's Arabic core idea is Ibn Fāris's statement of its aṣl in Maqāyīs — the article's
@@ -650,6 +659,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         ("work_passages", passages_out),
         ("lexicon_works", lex_works),
         ("lexicon_entries", lex_entries),
+        ("dict_roots", dict_roots_out),
         ("gharib_glosses", gharib),
         ("reciters", reciters_out),
         ("recitation_timings", timings_out),

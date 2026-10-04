@@ -315,7 +315,10 @@ def test_root_keys_are_canonical_and_rows_follow_the_contract(built: tuple, root
             "core_meaning",
             "page_ref",
             "source_ref",
+            # the headings it is filed under, for the dictionary's roots (dictroots.py; dropped before writing)
+            "heads",
         }
+        assert e["heads"] is None or (e["heads"] and all(isinstance(h, str) and h for h in e["heads"]))
     ids = [e["id"] for e in entries] + [g["id"] for g in glosses]
     assert len(ids) == len(set(ids))
     blocks = {w.id: w.id_block for w in load_registry(RAW, REGISTRY, verify=False).works}

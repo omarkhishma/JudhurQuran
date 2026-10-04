@@ -233,6 +233,7 @@ def build_lexica(
             spec, arts, extra, matcher, {r["key"]: int(r.get("occurrences") or 0) for r in roots}
         )
         unmatched: list[dict[str, Any]] = []
+        lane_tokens = extra.get("lane_tokens")
         for n, (a, m) in enumerate(zip(arts, matches, strict=True), start=1):
             eid = base + n
             if m.root_key is not None and m.root_key not in root_keys:
@@ -248,6 +249,8 @@ def build_lexica(
                     "core_meaning": a.core_meaning,
                     "page_ref": a.page_ref,
                     "source_ref": a.source_ref,
+                    # the headings it is filed under, for the dictionary's roots (lexica/dictroots.py); not loaded
+                    "heads": lane_tokens[n - 1] if lane_tokens is not None else a.match_heads,
                 }
             )
             if m.match is None and m.suppressed:

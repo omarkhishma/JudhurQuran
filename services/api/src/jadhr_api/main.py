@@ -43,6 +43,7 @@ from . import (
     review,
     routes_classroom,
     routes_contrib,
+    routes_dictionary,
     routes_editorial,
     routes_graphs,
     routes_me,
@@ -1179,6 +1180,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_classroom.router)
     app.include_router(routes_releases.router)
     app.include_router(routes_public.router)
+    app.include_router(routes_dictionary.router)
     return app
 
 
