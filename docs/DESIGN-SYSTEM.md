@@ -73,6 +73,7 @@ One preference key across the product, `jadhr-theme`, as the handoff asks; the t
 | IBM Plex Sans 400/500/600 | `--font-latin`, second in `--font-ui` | Latin interface text | Preloaded |
 | IBM Plex Mono 400/500 | `--font-mono` | Numbers in a measured context: counts, references, identifiers, keyboard hints | Not preloaded |
 | Jadhr Symbols (a Noto Naskh Arabic subset, OFL) | after Plex and Amiri in `--font-ui` and `--font-classical` | Only U+FDFA–FDFF, the honorific ligatures neither Plex nor Amiri has (1,809 articles) | Fetched only when such a character is on the page |
+| Jadhr Latin Digits, Jadhr Latin Digits Mono, Jadhr Arabic Digits (from Plex Sans Arabic and Plex Mono, OFL) | first in each stack while `<html data-digits>` asks | The digits preference (SHL-Q05): one set of digits drawn in the other's shapes; not in the mushaf's stack, nor in code samples, form fields or the choice's samples | A kilobyte each, fetched only when the preference is set |
 
 All through `next/font`, self-hosted: no request to a font service at run time. Plex Mono has no Arabic: an Arabic letter inside a mono run (an article's identifier, `dict:lane:علم`) falls back to Plex Sans Arabic, a little off the mono baseline.
 

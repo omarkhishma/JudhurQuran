@@ -9,12 +9,12 @@ Audited 2026-10-04 against commit `0e7d424`, then updated at `8032395` for the r
 | Scope | Rows | done | adapted | bug-fixed | n/a | open | waiting |
 |---|---|---|---|---|---|---|---|
 | P1 clauses | 68 | 57 | 7 | 0 | 0 | 0 | 4 |
-| SHL items | 78 | 49 | 16 | 6 | 5 | 2 | 0 |
-| **Total** | **146** | **106** | **23** | **6** | **5** | **2** | **4** |
+| SHL items | 78 | 51 | 16 | 6 | 5 | 0 | 0 |
+| **Total** | **146** | **108** | **23** | **6** | **5** | **0** | **4** |
 
 Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next steps seeded by word and dataset version (P1.3), the basmala strip tested (P1.8, and with it P1.9's "P1.8 closed"), the header omnibox's `dir="auto"` (SHL-F08); the dead "being built" frame and a false "coming soon" line removed. Built alongside: D7's vowel-marks switch (1875674), which report 3 found missing.
 
-**Open (2):** SHL-Q05 and SHL-Q10 a digits preference. Closed since the audit: P1.3a (918d5bb), P1.9's sweep, SHL-Q07 (8e311ad), SHL-Q09 (df469d3), P1.7a's `dict:` and `user:` identifiers (248334c, 665ff16), P1.3 `?in_text=`, P1.5's document (b7953fd), P1.3's envelope (adapted, DECISIONS).
+**Open (0).** Closed since the audit: P1.3a (918d5bb), P1.9's sweep, SHL-Q07 (8e311ad), SHL-Q09 (df469d3), P1.7a's `dict:` and `user:` identifiers (248334c, 665ff16), P1.3 `?in_text=`, P1.5's document (b7953fd), P1.3's envelope (adapted, DECISIONS), SHL-Q05 and Q10 the digits preference.
 
 **Waiting on the owner (4):** the phone layouts were not shown before they were built, except the editor's (P1.7: offered now for review after the fact, screenshots at 390 px in every phase's audit); the phone editor (P8.6a); the lexica's legal basis (D22); research 07's findings (D2, D19, D22).
 
@@ -154,12 +154,12 @@ Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next ste
 | SHL-Q02 | done | Logical properties; the few physical ones deliberate (KWIC columns, canvas corners) |
 | SHL-Q03 | done | المعجم · الحديث · الكتب in the nav |
 | SHL-Q04 | done | Fonts per script |
-| SHL-Q05 | open | No digits preference: digits follow the language (W/lib/format.ts); the server renders numbers, and with no cookie it cannot know a preference before the page is drawn |
+| SHL-Q05 | done | By the language, ١٢٣ or 123 on every page: kept in the browser, set before paint, drawn by digit faces first in each font stack, the text unchanged (W/lib/digits.ts, W/components/ui/DigitsPref.tsx in the profile and the reader's preferences; DECISIONS); reference parsers accept both (search, the verse drawer, the page jump); E/digits.spec.ts compares the drawn shapes |
 | SHL-Q06 | done | The toggle and one theme key before paint; the embed from its address |
 | SHL-Q07 | done | The header omnibox adds the dictionary's roots, the hadith, the books' paragraphs and the reader's own texts (8e311ad; E/omnibox.spec.ts) |
 | SHL-Q08 | done | The header's parts |
 | SHL-Q09 | done | A word looked up in a hadith or a book carries its place; the hub's strip leads back to it when newer than the last verse read (df469d3; E/hadith.spec.ts) |
-| SHL-Q10 | open | Everything the item lists exists but the digits preference (SHL-Q05) |
+| SHL-Q10 | done | Language, theme, digits, transliteration, auth state, cross-page context and the destination catalogue all exist (digits since SHL-Q05) |
 | SHL-F01 | done | The nav's scroll |
 | SHL-F02 | done | `aria-current` |
 | SHL-F03 | done | One theme key for the site, the reader and the editor; default light |
