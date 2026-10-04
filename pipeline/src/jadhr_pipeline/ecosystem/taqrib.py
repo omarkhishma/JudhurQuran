@@ -144,6 +144,10 @@ RANKS: list[tuple[tuple[str, ...], int]] = sorted(
 _DESCRIBES = frozenset(
     normalize(w)
     for w in [
+        # «… المخزومي أحد العلماء الأثبات», «… المدني أحد الفقهاء السبعة وكان ثبتا»
+        "أحد",
+        "كان",
+        "وكان",
         "الفقيه",
         "الحافظ",
         "متفق",
