@@ -386,7 +386,8 @@ def _reading(c: dict[str, Any], at_place: bool) -> dict[str, Any]:
     "readings otherwise — machine-derived, each with its confidence (the text is not stored)",
 )
 def analyse_text(body: _Text) -> Response:
-    from .main import ORJSONResponse, dataset_release
+    from .main import dataset_release
+    from .responses import ORJSONResponse
 
     with connect() as conn:
         a = analyse.analyse(conn, body.text)

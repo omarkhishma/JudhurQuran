@@ -6,10 +6,10 @@ import re
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
-from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 
 from . import accounts, apikeys, classroom, contrib, oidc, published, shared_maps, sync
+from .responses import ORJSONResponse
 from .settings import get_settings
 
 router = APIRouter(prefix="/api/v1")

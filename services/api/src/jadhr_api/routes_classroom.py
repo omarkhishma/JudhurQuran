@@ -6,10 +6,11 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Path
-from fastapi.responses import ORJSONResponse, Response
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from . import accounts, classroom
+from .responses import ORJSONResponse
 
 router = APIRouter(prefix="/api/v1/classroom")
 NO_STORE = {"Cache-Control": "no-store"}

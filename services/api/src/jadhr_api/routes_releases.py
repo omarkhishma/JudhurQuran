@@ -7,9 +7,10 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Path
-from fastapi.responses import FileResponse, ORJSONResponse, Response
+from fastapi.responses import FileResponse, Response
 
 from . import releases
+from .responses import ORJSONResponse
 
 router = APIRouter(prefix="/api/v1")
 FOREVER = "public, max-age=31536000, immutable"

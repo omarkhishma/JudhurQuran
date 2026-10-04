@@ -15,12 +15,10 @@ from contextlib import asynccontextmanager, suppress
 from datetime import date, datetime, timedelta
 from typing import Annotated, Any
 
-import orjson
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, Response, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -60,19 +58,13 @@ from . import catalogue as catalogue_api
 from . import texts as texts_api
 from .db import connect, one, rows
 from .refusal import Refusal
+from .responses import ORJSONResponse
 from .search import search as run_search
 from .settings import get_settings
 
 API_PREFIX = "/api/v1"
 MAX_BODY = 8_000_000  # bytes: the largest request body the API reads
 CONTENT_CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800"
-
-
-class ORJSONResponse(JSONResponse):
-    media_type = "application/json; charset=utf-8"
-
-    def render(self, content: Any) -> bytes:
-        return orjson.dumps(content, option=orjson.OPT_NON_STR_KEYS, default=str)
 
 
 def error(status: int, code: str, message: str, field: str | None = None) -> ORJSONResponse:
