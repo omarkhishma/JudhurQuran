@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getJSON, useWordAt } from "@/lib/reader/api";
-import { useReader } from "@/lib/reader/store";
+import { usePrefs, useReader } from "@/lib/reader/store";
 import type { Features, WordPayload } from "@/lib/reader/types";
 import { tags } from "./GrammarBand";
 import { WordStateControl } from "./WordEntry";
@@ -26,6 +26,8 @@ export function HoverCard({ word, onEnter, onLeave, onClose }: { word: HoverWord
   const locale = useLocale();
   const openWord = useReader((s) => s.openWord);
   const setHandoff = useReader((s) => s.setHandoff);
+  // the entry opens in the panel, which the reader may have closed
+  const setPrefs = usePrefs((s) => s.set);
   const box = useRef<HTMLDivElement>(null);
   const [below, setBelow] = useState(false);
   const q = useQuery({
@@ -106,6 +108,7 @@ export function HoverCard({ word, onEnter, onLeave, onClose }: { word: HoverWord
           className="btn flex-1 text-[12px]"
           onClick={() => {
             openWord({ slug: word.slug, at: word.at });
+            setPrefs({ panelOpen: true });
             onClose();
           }}
         >
@@ -117,6 +120,7 @@ export function HoverCard({ word, onEnter, onLeave, onClose }: { word: HoverWord
             className="btn flex-1 text-[12px]"
             onClick={() => {
               openWord({ slug: word.slug, at: word.at });
+              setPrefs({ panelOpen: true });
               setHandoff({ seed: "word", slug: word.slug, at: word.at });
               onClose();
             }}

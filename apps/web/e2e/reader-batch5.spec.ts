@@ -71,3 +71,18 @@ test("a word in the verse's map preview chooses itself in the verse, its entry i
   await expect(page).toHaveURL(new RegExp(`w=${first.lemma_slug}`));
   await expect(panel(page).locator('[data-section="family"], .entry-head, h2').first()).toBeVisible();
 });
+
+test("the hover card's actions open the entry in the panel when the reader has closed it", async ({ page, isMobile }) => {
+  test.skip(isMobile, "a mouse-only preview: no hover on touch");
+  await seed(page, {}, { panelOpen: false });
+  await page.goto("/quran/2#v3");
+  await expect(page.locator(".reader-panel")).toHaveCount(0);
+  const word = page.locator('.w[data-w="2:3:2"]');
+  await word.scrollIntoViewIfNeeded();
+  await page.mouse.move(0, 0);
+  await word.hover();
+  const card = page.getByRole("dialog", { name: "بطاقة الكلمة" });
+  await expect(card).toBeVisible();
+  await card.getByRole("button", { name: "المدخل كاملًا" }).click();
+  await expect(page.locator(".reader-panel")).toBeVisible();
+});
