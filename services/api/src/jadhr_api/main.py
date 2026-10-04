@@ -1042,9 +1042,11 @@ class _ErrorReport(BaseModel):
 @router.post(
     "/ops/errors", status_code=204, summary="An error a page met, counted by day: what, where, which release"
 )
-def ops_error(body: _ErrorReport) -> Response:
-    # nothing about who: no address, no account, no request is kept (the privacy page says so)
-    ops.record("web", body.kind, body.message, body.place, body.release)
+def ops_error(body: _ErrorReport, request: Request) -> Response:
+    # nothing about who: no address, no account, no request is kept (the privacy page says so); the address counts
+    # only towards its minute, in memory (security review L5)
+    if ops.reports_allowed(client_key(request)):
+        ops.record("web", body.kind, body.message, body.place, body.release)
     return Response(status_code=204)
 
 
@@ -1453,7 +1455,11 @@ def create_app() -> FastAPI:
         route = request.scope.get("route")
         with suppress(Exception):
             await asyncio.to_thread(
-                ops.record, "api", type(exc).__name__, str(exc), getattr(route, "path", request.url.path)
+                ops.record,
+                "api",
+                type(exc).__name__,
+                ops.where_of(exc),
+                getattr(route, "path", request.url.path),
             )
         return error(500, "server_error", "Something went wrong on our side.")
 
