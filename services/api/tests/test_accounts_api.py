@@ -486,6 +486,14 @@ def test_the_export_holds_everything_and_every_table_is_accounted_for(email: str
         "contributions.reports": "contributions.reports",
         "contributions.role_grants": "contributions.role_grants",
         "contributions.merges": "contributions.merges_credited",
+        # the classroom schema (P9): what it holds of a teacher and of a member
+        "classroom.classes": "classroom.teaching",
+        "classroom.lessons": "classroom.teaching.lessons",
+        "classroom.notes": "classroom.teaching.lessons.notes",
+        "classroom.members": "classroom.joined",
+        "classroom.counts": "classroom.counts",
+        "classroom.progress": "classroom.progress",
+        "classroom.nudges": "classroom.nudges",
     }
     not_data = {
         "login_tokens": "a secret, by address",
@@ -502,10 +510,11 @@ def test_the_export_holds_everything_and_every_table_is_accounted_for(email: str
             for r in accounts.q(
                 conn,
                 """select table_schema as s, table_name as t from information_schema.tables
-                   where table_schema in ('accounts', 'contributions') and table_type = 'BASE TABLE'""",
+                   where table_schema in ('accounts', 'contributions', 'classroom') and table_type = 'BASE TABLE'""",
             )
         }
     assert tables == set(exported) | set(not_data)
+    assert set(out["classroom"]) == {"teaching", "joined", "counts", "progress", "nudges"}
     # turning sharing off takes the shared lookups off the server
     client.patch("/api/v1/me", headers=h, json={"settings": {"share_lookups": False}})
     assert client.get("/api/v1/me/export", headers=h).json()["lookups"] == []

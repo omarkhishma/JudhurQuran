@@ -28,6 +28,7 @@ from . import (
     accounts,
     analyse,
     board,
+    classroom,
     collections,
     concordance,
     content,
@@ -39,6 +40,7 @@ from . import (
     path,
     relations,
     review,
+    routes_classroom,
     routes_contrib,
     routes_editorial,
     routes_graphs,
@@ -1011,6 +1013,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             # an account schema not yet migrated must not stop the content API
             with suppress(Exception):
                 await asyncio.to_thread(accounts.purge)
+            # a lesson's counts, 90 days after its due date (P9)
+            with suppress(Exception):
+                await asyncio.to_thread(classroom.purge)
             await asyncio.sleep(86_400)
 
     task = asyncio.create_task(daily_purge())
@@ -1111,6 +1116,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_contrib.router)
     app.include_router(routes_editorial.router)
     app.include_router(routes_graphs.router)
+    app.include_router(routes_classroom.router)
     return app
 
 
