@@ -3173,3 +3173,109 @@ licences:
   notes:
   - 'Public domain by age: La Beaume died about 1876 and Kazimirski, whose translation the book analyses, in 1887 (archive.org''s creator field); the scan carries no licence statement of its own.'
   - archive.org's published SHA-1 of the text (3f7dbeca…) matched the download.
+- id: fawazahmed0-hadith-api
+  registry: data/sources.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/LICENSE
+  - https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/README.md
+  - https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/References.md
+  fetched: '2026-10-04'
+  page_sha256:
+    https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/LICENSE: 6b0382b16279f26ff69014300541967a356a666eb0b91b422f6862f6b7dad17e
+    https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/README.md: 5ffde2406be81c56c12312cb15e4ffce11ed39512c2f598b554b7f2fd68b59a2
+    https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/References.md: 00d51c7d58ec4d90106fc792ca0f1e400eaaad6a51527a4a69dd1d062a4f8283
+  clauses:
+  - topic: redistribution
+    quote: Anyone is free to copy, modify, publish, use, compile, sell, or distribute this software, either in source code form or as a compiled binary, for any purpose, commercial or non-commercial, and by any means.
+    url: https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/LICENSE
+  - topic: other
+    quote: In jurisdictions that recognize copyright laws, the author or authors of this software dedicate any and all copyright interest in the software to the public domain.
+    url: https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/LICENSE
+  - topic: other
+    quote: 'Here is a list of websites that helped me either directly or indirectly in making this possible:'
+    url: https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/References.md
+  - topic: other
+    quote: https://sunnah.com/
+    url: https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/References.md
+  - topic: other
+    quote: https://al-maktaba.org/book/33759 abu dawed, Muhammad Muhyi Al-Din Abdul Hamid
+    url: https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/References.md
+  - topic: display
+    quote: Multiple Grades
+    url: https://raw.githubusercontent.com/fawazahmed0/hadith-api/df57907be35291c91ad6a6691180e22ca9920784/README.md
+  our_use: 'Built and loaded, not yet shown: the seven Arabic editions (ara-<book>.json at df57907, pinned in data/sources.yaml) become seven texts of kind hadith in the generic text model (pipeline/src/jadhr_pipeline/ecosystem/hadith.py; 36,390 passages, each text verbatim with the compilation''s numbering, grades and references in meta), read word by word to roots (text_forms). GET /api/v1/texts and /texts/{slug} list them; the library page shows only the Quran from that list, and the hadith pages come with P11.2c. A grade is kept only under the grader whose ruling it is (data/hadith.yaml). Not in the bulk release.'
+  status: attention
+  notes:
+  - Terms read 2026-10-04 at the pinned commit; the LICENSE, README and References bytes equal the copies saved in data/raw/fawazahmed0-hadith-api on the same day.
+  - The Unlicense covers the compilation. The authors died 179–303 AH (public domain); the vowelled Arabic appears to come from sunnah.com (RLM marks in 98.4% of records, research 21), whose terms forbid mass reproduction without agreement — D8 keeps this as the fallback until a sunnah.com agreement (D19, the owner's).
+  - 'Grades: the compilation labels four columns with editors'' names (Muḥyī al-Dīn, Shākir, Abū Ghudda, ʿAbd al-Bāqī) that measure as al-Albānī''s ruling, and a fifth (Bashshār) as al-Tirmidhī''s own verdict; none is shown under those names (data/hadith.yaml excluded_graders, research 21 §3.2). Whether they are dropped or kept as a witness of al-Albānī''s ruling is the owner''s (D8).'
+  - Each grading is its grader's published ruling, credited by name with the work it comes from; al-Bukhārī's and Muslim's collections carry no grade of ours (D8).
+- id: openiti-hadith
+  registry: data/sources.yaml
+  urls_checked:
+  - https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - https://zenodo.org/api/records/17767721
+  - https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0256Bukhari/0256Bukhari.Sahih/0256Bukhari.Sahih.JK000110-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0261Muslim/0261Muslim.Sahih/0261Muslim.Sahih.Shamela0001727-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0275AbuDawudSijistani/0275AbuDawudSijistani.Sunan/0275AbuDawudSijistani.Sunan.Shamela0001726-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0279Tirmidhi/0279Tirmidhi.Sunan/0279Tirmidhi.Sunan.JK000140-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0303Nasai/0303Nasai.SunanSughra/0303Nasai.SunanSughra.JK000130-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0273IbnMaja/0273IbnMaja.Sunan/0273IbnMaja.Sunan.Shamela0001198-ara1.yml
+  - https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0179MalikIbnAnas/0179MalikIbnAnas.Muwatta/0179MalikIbnAnas.Muwatta.Shamela0001699-ara1.yml
+  fetched: '2026-10-04'
+  page_sha256:
+    https://raw.githubusercontent.com/OpenITI/documentation/master/index.md: 41c356b25b95dd1c7a456321992f2c511e5aaef068e689aea78568f1dd160ea2
+    https://zenodo.org/api/records/17767721: c131ba14144fe2b1a6bb0013be0491e8a1ff2a92ab33c3f5c4a9e8124fc11e73
+    https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode: 527c4e0e75a7aafe819a9ed481c227f27645736fa800f25d6d94ed37a362afd7
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0256Bukhari/0256Bukhari.Sahih/0256Bukhari.Sahih.JK000110-ara1.yml: cdbf6ba76dfc918d665f6cab2beb5f7f84d1521d63cdce3d06e946baaa51c4be
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0261Muslim/0261Muslim.Sahih/0261Muslim.Sahih.Shamela0001727-ara1.yml: 9a1e125a279ce6c218bd27e1334f46e72bb60a2f8f5397a385b7646314c9f24f
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0275AbuDawudSijistani/0275AbuDawudSijistani.Sunan/0275AbuDawudSijistani.Sunan.Shamela0001726-ara1.yml: b3fc4979be0bca3d1af36ac936173fc9d8b846cc5760fa48328972196c7a6c29
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0279Tirmidhi/0279Tirmidhi.Sunan/0279Tirmidhi.Sunan.JK000140-ara1.yml: d68b05896cd0be4f711868cd5333045b5073c2664bcbfa34804ff1471b9f500c
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0303Nasai/0303Nasai.SunanSughra/0303Nasai.SunanSughra.JK000130-ara1.yml: 2154fa13a4b705c133141f1650d582a1afe2083721482f121038e96145b9de4c
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0273IbnMaja/0273IbnMaja.Sunan/0273IbnMaja.Sunan.Shamela0001198-ara1.yml: c89f1a43e59d11e351d4f7d3a22617daeb967f792f0216db55f65586b3bf7802
+    https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0179MalikIbnAnas/0179MalikIbnAnas.Muwatta/0179MalikIbnAnas.Muwatta.Shamela0001699-ara1.yml: 57826929cc4bb82498dbb338965ad3e6ff7f04e2480e0bf00d690eabbc448ab0
+  clauses:
+  - topic: redistribution
+    quote: OpenITI is published under the [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode) license. You can use the corpus and publish or share your works based on it according to the license.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: attribution
+    quote: Please, do cite the files or the corpus if you use them.
+    url: https://raw.githubusercontent.com/OpenITI/documentation/master/index.md
+  - topic: other
+    quote: '"license": {"id": "cc-by-nc-sa-4.0"}'
+    url: https://zenodo.org/api/records/17767721
+  - topic: commercial
+    quote: reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: modification
+    quote: The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or later, or a BY-NC-SA Compatible License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: attribution
+    quote: indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+  - topic: other
+    quote: All paratextual elements (introductions, footnotes, indices, ...) removed by HRH and MGR (OpenITI Clean operation, 2023)
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0256Bukhari/0256Bukhari.Sahih/0256Bukhari.Sahih.JK000110-ara1.yml
+  - topic: other
+    quote: 'NOTE OF THE REVIEWER (HRH): Some second-level headers do not exist in the PDF and are typed unnumbered by the typist(s).'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0261Muslim/0261Muslim.Sahih/0261Muslim.Sahih.Shamela0001727-ara1.yml
+  - topic: other
+    quote: 'The text is taken from an edition in which it is published with a sharḥ by al-Suyuti and marginal notes by al-Sindī. The sharḥ and marginal notes are not included in the digitized version.'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0303Nasai/0303Nasai.SunanSughra/0303Nasai.SunanSughra.JK000130-ara1.yml
+  - topic: other
+    quote: 'Link to the text file as it was before it was cleaned: https://raw.githubusercontent.com/OpenITI/1425AH/pre-clean/data/1420MuhammadNasirDinAlbani/1420MuhammadNasirDinAlbani.SahihWaDacifSunanTirmidhi/1420MuhammadNasirDinAlbani.SahihWaDacifSunanTirmidhi.JK000140-ara1'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0279Tirmidhi/0279Tirmidhi.Sunan/0279Tirmidhi.Sunan.JK000140-ara1.yml
+  - topic: other
+    quote: 'The page numbers at the top of the pages are interred into the text. I just untagged them. They must be removed.'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0179MalikIbnAnas/0179MalikIbnAnas.Muwatta/0179MalikIbnAnas.Muwatta.Shamela0001699-ara1.yml
+  - topic: other
+    quote: 'a free running comment here; you can add as many lines as you see fit; the main goal of this comment section is to have a place to record valuable information, which is difficult to formalize into the above given categories.'
+    url: https://raw.githubusercontent.com/OpenITI/RELEASE/cfc4157a3cf2054c0888f133970a4eaa3e22e58c/data/0273IbnMaja/0273IbnMaja.Sunan/0273IbnMaja.Sunan.Shamela0001198-ara1.yml
+  our_use: 'Built and loaded, not yet shown: only the Arabic kitāb and bāb titles of the seven OpenITI versions (pinned in data/sources.yaml) are read, as the chapters of the seven hadith texts (pipeline/src/jadhr_pipeline/ecosystem/hadith.py; joined to the hadith by number for Abū Dāwūd, al-Tirmidhī, al-Nasāʾī and Ibn Mājah, by aligning the text for al-Bukhārī, Muslim and the Muwaṭṭaʾ); the hadith text itself is fawazahmed0''s. Listed by GET /api/v1/texts/{slug}; the hadith pages that will show them with the credit come with P11.2c. Not in the bulk release.'
+  status: attention
+  notes:
+  - 'Terms read 2026-10-04: the documentation page (41c356b2…) and the CC BY-NC-SA 4.0 legal code (527c4e0e…) are byte-identical to what the other OpenITI entries recorded; the Zenodo answer differs from the copy pinned in data/raw/openiti-2025.1.9 only in its view and download counters, the licence id unchanged; the seven version cards equal the copies saved in data/raw/openiti-2025.1.9-hadith.'
+  - The authors died 179–303 AH (public domain). OpenITI does not record per title whether a kitāb or bāb title is the author's or a later editor's, so the screen credits the titles to the OpenITI version and its edition, never to the author (P11.2c).
+  - The al-Tirmidhī version was cleaned from a typing of al-Albānī's Ṣaḥīḥ wa-ḍaʿīf Sunan al-Tirmidhī with its paratext removed; we read its titles only. The Abū Dāwūd and Ibn Mājah cards are OpenITI's unfilled template, so their printed edition is unstated.
+  - 'CC BY-NC-SA 4.0: non-commercial display with attribution is approved (D18); rows served through the API stay CC BY-NC-SA 4.0 (ShareAlike); a commercial path needs titles from a public-domain printing or another licensed source (D2, research 21: Arabic Wikisource or MIS).'

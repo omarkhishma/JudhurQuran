@@ -59,6 +59,7 @@ class RawPaths:
     recitations_registry: Path | None = None
     glossary: Path | None = None
     registry_dir: Path | None = None
+    hadith_registry: Path | None = None
 
     @classmethod
     def default(
@@ -69,11 +70,13 @@ class RawPaths:
         recitations_registry: Path | None = None,
         glossary: Path | None = None,
         registry_dir: Path | None = None,
+        hadith_registry: Path | None = None,
     ) -> RawPaths:
         return cls(
             root=raw,
             glossary=glossary,
             registry_dir=registry_dir,
+            hadith_registry=hadith_registry,
             works_registry=works_registry,
             lexica_registry=lexica_registry,
             recitations_registry=recitations_registry,
@@ -629,6 +632,33 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             "usul": dict(
                 Counter((r["gist_source"] or {}).get("usul") for r in roots_out if r["gist_source"])
             ),
+        }
+    # P11.2a: the hadith collections as texts of the generic model, every word read once to its root (P11.4a)
+    if raw.hadith_registry and generic.get("texts"):
+        from .ecosystem.hadith import build_hadith
+        from .ecosystem.model import assemble
+        from .ecosystem.vocab import vocabulary_from
+
+        drafts, report["hadith"] = build_hadith(raw.root, raw.hadith_registry)
+        vocab = vocabulary_from(words_out, roots_out, generic["patterns"], dict_roots_out)
+        extra = assemble(
+            drafts,
+            vocab,
+            text_id=max(t["id"] for t in generic["texts"]) + 1,
+            chapter_id=max(c["id"] for c in generic["chapters"]) + 1,
+            passage_id=max(p["id"] for p in generic["passages"]) + 1,
+            sort_order=max(t["sort_order"] for t in generic["texts"]) + 1,
+        )
+        for k in ("texts", "chapters", "passages"):
+            generic[k] = generic[k] + extra[k]
+        generic["text_forms"] = extra["text_forms"]
+        kinds = Counter(f["kind"] for f in extra["text_forms"])
+        report["texts"] = {
+            "texts": len(extra["texts"]),
+            "passages": len(extra["passages"]),
+            "tokens": sum(p["token_count"] for p in extra["passages"]),
+            "forms": len(extra["text_forms"]),
+            "forms_by_kind": dict(kinds.most_common()),
         }
     reciters_out, timings_out, rec_report = ([], [], {})
     if raw.recitations_registry:

@@ -219,3 +219,61 @@ sources:
     license_url: https://creativecommons.org/licenses/by/4.0/
     attribution_ar: "توقيت الكلمات من مشروع quran-align لكولن فير (CC BY 4.0)، معدّلًا."
     attribution_en: "Word timings from quran-align by Collin Fair (CC BY 4.0), modified."
+
+  - id: fawazahmed0-hadith-api
+    role_ar: "نص كتب الحديث السبعة مشكولا بترقيمها المطبوع، وأحكام المحدثين الذين تصح نسبة أحكامهم إليهم"
+    license_ar: "مجموعة منشورة بترخيص Unlicense (التنازل للملك العام)؛ مؤلفو الكتب توفوا بين ١٧٩ و٣٠٣هـ، والأحكام لأصحابها"
+    kind: hadith
+    role: The Six Books and the Muwaṭṭaʾ, vowelled, under their printed numberings; the gradings of the graders whose attribution holds (data/hadith.yaml)
+    title_ar: مجموعة fawazahmed0 لكتب الحديث (hadith-api)
+    title_en: fawazahmed0/hadith-api — hadith collections
+    version: commit df57907be35291c91ad6a6691180e22ca9920784 (2026-06-03)
+    url: https://github.com/fawazahmed0/hadith-api
+    license: "Unlicense (a public-domain dedication of the compilation); the authors died 179–303 AH; each grading is its grader's, credited by name"
+    license_url: https://github.com/fawazahmed0/hadith-api/blob/df57907be35291c91ad6a6691180e22ca9920784/LICENSE
+    attribution_ar: "نص الحديث من مجموعة fawazahmed0/hadith-api (الإصدار df57907)، والترقيم والأحكام كما يذكر لكل حديث."
+    attribution_en: "Hadith text from fawazahmed0/hadith-api (commit df57907); numbering and gradings as stated per hadith."
+    files:
+      - path: fawazahmed0-hadith-api/editions/ara-bukhari.json
+        sha256: e34a3402889ca378871da3c5984b7875c680920e93f1c8738ac7afe502179562
+      - path: fawazahmed0-hadith-api/editions/ara-muslim.json
+        sha256: 194073b24090c5368e4d14a3f55c9e0ef144c7437bd7e5aa83aa4d2bc54a8ea0
+      - path: fawazahmed0-hadith-api/editions/ara-abudawud.json
+        sha256: 216139c5f40a8147e700d62ffa3b5b2fe45d0e034f86941a193c598c10056189
+      - path: fawazahmed0-hadith-api/editions/ara-tirmidhi.json
+        sha256: 408028cd56329ed78edbe3ad443beb96b58e16c3e5bd49f9bc7b0eac77c8820f
+      - path: fawazahmed0-hadith-api/editions/ara-nasai.json
+        sha256: c705983c19bb089c87cd6531aff609bd94d862183ed0859115b0ff991826a956
+      - path: fawazahmed0-hadith-api/editions/ara-ibnmajah.json
+        sha256: b406e6be81588ab0ec1ddbed32f5fd95bbcdda242c460d88331e82eb5c2bc0aa
+      - path: fawazahmed0-hadith-api/editions/ara-malik.json
+        sha256: 088b1f354e110211da006d47e37dd8f8837368f318ed683271f0fdb0f09a3ab5
+
+  - id: openiti-hadith
+    role_ar: "عناوين الكتب والأبواب في كتب الحديث السبعة"
+    license_ar: "النص الرقمي من مدونة OpenITI، إصدار 2025.1.9، برخصة المشاع الإبداعي — نسب المصنف، غير تجاري، المشاركة بالمثل 4.0"
+    kind: hadith-titles
+    role: Arabic kitāb and bāb titles of the seven collections, from OpenITI's annotated versions
+    title_ar: مدونة OpenITI — نسخ كتب الحديث السبعة
+    title_en: OpenITI corpus — versions of the seven hadith collections
+    version: OpenITI release 2025.1.9 (DOI 10.5281/zenodo.17767721)
+    url: https://github.com/OpenITI/RELEASE/tree/v2025.1.9
+    license: "CC BY-NC-SA 4.0 (OpenITI's digital text); the authors died 179–303 AH"
+    license_url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+    attribution_ar: "عناوين الكتب والأبواب من مدونة OpenITI، إصدار 2025.1.9، برخصة CC BY-NC-SA 4.0."
+    attribution_en: "Kitāb and bāb titles from the OpenITI corpus, release 2025.1.9, CC BY-NC-SA 4.0."
+    files:
+      - path: openiti-2025.1.9-hadith/0256Bukhari.Sahih.JK000110-ara1.completed
+        sha256: 69e95684acfde24171d29dd7ba43ff2c8f9b54ade5e3ab0a73899c06671082b7
+      - path: openiti-2025.1.9-hadith/0261Muslim.Sahih.Shamela0001727-ara1.mARkdown
+        sha256: 8126f063f53504b68d6e9e133cec049c10acf498c501f5f4897013efc1e56d9e
+      - path: openiti-2025.1.9-hadith/0275AbuDawudSijistani.Sunan.Shamela0001726-ara1
+        sha256: f153a439d58e7fbeded321cd6ba9cba3b5402c5d3b3286ca3dde9b620d6feef6
+      - path: openiti-2025.1.9-hadith/0279Tirmidhi.Sunan.JK000140-ara1.completed
+        sha256: 5bc99d3d942ceaa729a83c11389016d940ae11fb0b641a4e012c743f9e44b647
+      - path: openiti-2025.1.9-hadith/0303Nasai.SunanSughra.JK000130-ara1.mARkdown
+        sha256: 5afdd931303a85babd351afd72063cad455327b13263f16c5de2f6df5f30a4d1
+      - path: openiti-2025.1.9-hadith/0273IbnMaja.Sunan.Shamela0001198-ara1
+        sha256: a8ca427804457198efc8cb516bb5ad91da500a9d8fe1a697a7e11e5239a07782
+      - path: openiti-2025.1.9-hadith/0179MalikIbnAnas.Muwatta.Shamela0001699-ara1.completed
+        sha256: 1402840d20bf094e127d75450d0e77df82ca2f056c9c426300f6758a3ca1d3fb

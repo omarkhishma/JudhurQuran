@@ -18,6 +18,7 @@ NEEDS_DATA = {
     "test_lexica_dictionaries.py",
     "test_release.py",
     "test_lexicon_xml.py",
+    "test_hadith.py",
     "test_every_pinned_source_file_matches",
     "test_the_dictionary_on_the_build",
 }

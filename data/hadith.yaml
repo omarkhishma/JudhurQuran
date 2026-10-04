@@ -1,0 +1,182 @@
+# The hadith encyclopedia's register (PLAN P11.2, D8, research 21 §3). The text is fawazahmed0's compilation (D8's
+# fallback until a sunnah.com agreement), verbatim; the Arabic kitāb and bāb titles come from OpenITI's annotated
+# versions; a grade is shown only under the name of the grader whose ruling it is.
+
+collections:
+  - slug: bukhari
+    title_ar: صحيح البخاري
+    title_en: Ṣaḥīḥ al-Bukhārī
+    author_ar: محمد بن إسماعيل البخاري
+    author_en: al-Bukhārī
+    death_ah: 256
+    era_year: 870
+    edition: ara-bukhari.json
+    openiti: 0256Bukhari.Sahih.JK000110-ara1.completed
+    join: text            # OpenITI's is al-Bughā's numbering, ours Fatḥ al-Bārī's: titles joined by aligning the text
+    numbering_ar: ترقيم فتح الباري
+    numbering_en: Fatḥ al-Bārī numbering
+    rule: units           # how OpenITI's file marks a kitāb, a bāb and a hadith (texts/hadith.py)
+  - slug: muslim
+    title_ar: صحيح مسلم
+    title_en: Ṣaḥīḥ Muslim
+    author_ar: مسلم بن الحجاج النيسابوري
+    author_en: Muslim b. al-Ḥajjāj
+    death_ah: 261
+    era_year: 875
+    edition: ara-muslim.json
+    openiti: 0261Muslim.Sahih.Shamela0001727-ara1.mARkdown
+    join: text            # OpenITI's numbers restart in each kitāb, and the in-book references drift: titles by text
+    numbering_ar: ترقيم محمد فؤاد عبد الباقي
+    numbering_en: ʿAbd al-Bāqī numbering
+  - slug: abudawud
+    title_ar: سنن أبي داود
+    title_en: Sunan Abī Dāwūd
+    author_ar: أبو داود سليمان بن الأشعث السجستاني
+    author_en: Abū Dāwūd al-Sijistānī
+    death_ah: 275
+    era_year: 889
+    edition: ara-abudawud.json
+    openiti: 0275AbuDawudSijistani.Sunan.Shamela0001726-ara1
+    join: number
+    numbering_ar: ترقيم محمد محيي الدين عبد الحميد
+    numbering_en: Muḥyī al-Dīn ʿAbd al-Ḥamīd numbering
+  - slug: tirmidhi
+    title_ar: جامع الترمذي
+    title_en: Jāmiʿ al-Tirmidhī
+    author_ar: أبو عيسى محمد بن عيسى الترمذي
+    author_en: al-Tirmidhī
+    death_ah: 279
+    era_year: 892
+    edition: ara-tirmidhi.json
+    openiti: 0279Tirmidhi.Sunan.JK000140-ara1.completed
+    join: number
+    numbering_ar: ترقيم أحمد محمد شاكر
+    numbering_en: Aḥmad Shākir numbering
+  - slug: nasai
+    title_ar: سنن النسائي (المجتبى)
+    title_en: Sunan al-Nasāʾī (al-Mujtabā)
+    author_ar: أبو عبد الرحمن أحمد بن شعيب النسائي
+    author_en: al-Nasāʾī
+    death_ah: 303
+    era_year: 915
+    edition: ara-nasai.json
+    openiti: 0303Nasai.SunanSughra.JK000130-ara1.mARkdown
+    join: number
+    numbering_ar: ترقيم عبد الفتاح أبو غدة
+    numbering_en: Abū Ghudda numbering
+  - slug: ibnmajah
+    title_ar: سنن ابن ماجه
+    title_en: Sunan Ibn Mājah
+    author_ar: محمد بن يزيد ابن ماجه القزويني
+    author_en: Ibn Mājah
+    death_ah: 273
+    era_year: 887
+    edition: ara-ibnmajah.json
+    openiti: 0273IbnMaja.Sunan.Shamela0001198-ara1
+    join: number
+    numbering_ar: ترقيم محمد فؤاد عبد الباقي
+    numbering_en: ʿAbd al-Bāqī numbering
+  - slug: malik
+    title_ar: موطأ مالك (رواية يحيى الليثي)
+    title_en: al-Muwaṭṭaʾ of Mālik (Yaḥyā al-Laythī's recension)
+    author_ar: مالك بن أنس
+    author_en: Mālik b. Anas
+    death_ah: 179
+    era_year: 795
+    edition: ara-malik.json
+    openiti: 0179MalikIbnAnas.Muwatta.Shamela0001699-ara1.completed
+    join: text            # OpenITI's numbering restarts in each kitāb
+    # the compilation's 1–1858 matches no printed edition tested (research 21): cited by its kitāb and its place there
+    numbering_ar: ترقيم المجموعة المفتوحة (لا يطابق طبعة مطبوعة)؛ يستشهد بالكتاب وموضع الحديث فيه
+    numbering_en: the compilation's own numbering (no printed edition matches it); cited by its kitāb and place
+
+# Graders whose rulings these are, with the work each ruling comes from (research 21 §3, the evidence pages saved in
+# data/raw/fawazahmed0-hadith-api/grade-evidence/).
+graders:
+  Al-Albani:
+    ar: محمد ناصر الدين الألباني
+    en: Muḥammad Nāṣir al-Dīn al-Albānī
+    works:
+      abudawud: صحيح وضعيف سنن أبي داود
+      tirmidhi: صحيح وضعيف سنن الترمذي
+      nasai: صحيح وضعيف سنن النسائي
+      ibnmajah: صحيح وضعيف سنن ابن ماجه
+  Shuaib Al Arnaut:
+    ar: شعيب الأرنؤوط
+    en: Shuʿayb al-Arnaʾūṭ
+    works:
+      abudawud: تحقيق سنن أبي داود، مع محمد كامل قره بللي (دار الرسالة العالمية، 1430هـ)
+      ibnmajah: تحقيق سنن ابن ماجه (دار الرسالة العالمية)
+  Zubair Ali Zai:
+    ar: زبير علي زئي
+    en: Zubair ʿAlī Zaʾī
+    # his gradings are published in English, often with references; shown as he wrote them
+    as_published: true
+    works:
+      abudawud: تخريج سنن أبي داود
+      tirmidhi: تخريج جامع الترمذي
+      nasai: تخريج سنن النسائي
+      ibnmajah: تخريج سنن ابن ماجه
+  Salim al-Hilali:
+    ar: سليم بن عيد الهلالي
+    en: Salīm b. ʿĪd al-Hilālī
+    works:
+      malik: صحيح الموطأ وضعيف الموطأ
+
+# Columns not shown under their names: measured to be another grader's ruling (research 21 §3.2) — the owner decides
+# whether they are dropped or kept as a second witness of al-Albānī's ruling with the edition named.
+excluded_graders:
+  Muhammad Muhyi Al-Din Abdul Hamid: al-Albānī's ruling (96.7% identical to his column); the edition's footnote is unlabelled
+  Ahmad Muhammad Shakir: al-Albānī's ruling (96.5% identical)
+  Abu Ghuddah: al-Albānī's ruling (95.1% identical)
+  Muhammad Fouad Abd al-Baqi: al-Albānī's ruling (94.8% identical; shamela.ws labels the same footnote «[حكم الألباني]»)
+  Bashar Awad Maarouf: al-Tirmidhī's own verdict in his text (88.5%), shown as al-Tirmidhī's instead
+
+# The graders' values as the compilation writes them, rendered in Arabic. Our rendering of technical terms, to be
+# checked against the graders' printed books (an editor's task); the value as published is kept beside it.
+grade_terms:
+  Sahih: صحيح
+  Daif: ضعيف
+  Hasan: حسن
+  Hasan Sahih: حسن صحيح
+  Sahih Lighairihi: صحيح لغيره
+  Mauquf Sahih: صحيح موقوف
+  Sahih Isnaad: صحيح الإسناد
+  Daif Isnaad: ضعيف الإسناد
+  Very Daif: ضعيف جدا
+  Maqtu Sahih: صحيح مقطوع
+  Mauquf Daif: ضعيف موقوف
+  Hasan Lighairihi: حسن لغيره
+  Sahih Hadith: حديث صحيح
+  Shadh: شاذ
+  Mawdu: موضوع
+  Sahih Muquf: صحيح موقوف
+  Munkar: منكر
+  Hasan Isnaad: حسن الإسناد
+  Maqtu Daif: ضعيف مقطوع
+  Sahih Maqtu: صحيح مقطوع
+  Sahih Isnaad Maqtu: صحيح الإسناد مقطوع
+  Sahih Isnaad Mauquf: صحيح الإسناد موقوف
+  Sanad Daif: ضعيف السند
+  Mauquf Hasan: حسن موقوف
+  Maqtu: مقطوع
+  Hasan Sahih Isnaad: حسن صحيح الإسناد
+  Daif Isnaad Maqtu: ضعيف الإسناد مقطوع
+  Sahih Mutawatir: صحيح متواتر
+  Very Daif Isnaad: ضعيف الإسناد جدا
+  Daif Maqtu: ضعيف مقطوع
+  Mauquf Sahih Lighairihi: صحيح لغيره موقوف
+  Daif Muquf: ضعيف موقوف
+  Hasan Maqtu: حسن مقطوع
+  Daif Munkar: ضعيف منكر
+  Sahih Matn: صحيح المتن
+  Maqtu Hasan: حسن مقطوع
+  Sahih Isnaad Mursal: صحيح الإسناد مرسل
+  Munkar Daif: منكر ضعيف
+  Maqtu Sahih Lighairihi: صحيح لغيره مقطوع
+  Mauquf Hasan Lighairihi: حسن لغيره موقوف
+  Mursal: مرسل
+  Batil: باطل
+  Isnaad Malool: إسناده معلول
+  Mursal Sahih Isnaad: مرسل صحيح الإسناد
+  Mauquf Munkar: منكر موقوف
