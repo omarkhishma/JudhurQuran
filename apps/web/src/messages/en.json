@@ -3350,6 +3350,15 @@
     "verseLookedNone": "{count, plural, one {one word} other {{n} words}}, none looked up by the class",
     "copyTo": "Copy it to",
     "copiedTo": "The lesson is copied to “{name}”.",
-    "copyLesson": "Copy the lesson"
+    "copyLesson": "Copy the lesson",
+    "ownTitle": "Your reading of the lesson's verses",
+    "ownLead": "What your reader sent, marked under the words one kind at a time. This is yours alone; the instructor sees the class as a whole.",
+    "verseLookedOwn": "{count, plural, one {one word} other {{n} words}}, {looked} of them looked up by you",
+    "verseLookedOwnNone": "{count, plural, one {one word} other {{n} words}}, none looked up by you",
+    "readVerse": "Read it",
+    "legendOwn_lookup": "Your lookups per word",
+    "legendOwn_note": "Your notes per verse",
+    "legendOwn_confirm": "Your confirmations per word",
+    "legendOwn_struggle": "Your struggles per word"
   }
 }

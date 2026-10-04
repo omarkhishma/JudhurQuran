@@ -297,6 +297,12 @@ test("an instructor reads the class's heat above the floor, keeps lesson notes a
     const inotes = lp.getByRole("region", { name: "ملاحظات المعلم" });
     await expect(inotes.locator("li")).toHaveCount(2);
     await expect(inotes.locator("li").nth(1).locator(".quran")).not.toBeEmpty();
+    // their own reading laid on the text (B48): their marks only, said as theirs
+    const ownText = lp.getByRole("region", { name: "قراءتك على آيات الدرس" });
+    await expect(ownText.locator('[data-w="1:2:3"]')).toHaveAttribute("data-heat", "2");
+    await expect(ownText.locator('[data-w="1:2:3"]')).toHaveAttribute("title", "البحث: ٤ مرات");
+    await expect(ownText).toContainText("٤ كلمات، بحثت عن ١ منها");
+    await expect(ownText.locator('[data-w="1:5:2"]')).not.toHaveAttribute("data-heat", /./);
     const mine = lp.getByRole("table", { name: "ما أرسله قارئك لهذا الدرس" });
     await expect(mine.getByRole("row").filter({ hasText: "البحث" })).toContainText("٤");
     await expect(mine.getByRole("row").filter({ hasText: "الملاحظات على الآية" })).toContainText("١:٢");

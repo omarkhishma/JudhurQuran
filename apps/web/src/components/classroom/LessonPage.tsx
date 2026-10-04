@@ -34,8 +34,9 @@ const day = (iso: string, locale: string) => new Date(iso).toLocaleDateString(lo
 function useCellText() {
   const t = useTranslations("classroom");
   const locale = useLocale();
-  return (c: Cell | undefined, layer: Layer, few: number) =>
-    !c ? t("cellNone") : "few" in c ? t("cellFew", { few: formatNumber(few, locale) }) : `${t("learnersN", cnt(c.learners, locale))}${locale === "ar" ? "، " : ", "}${t(layer === "note" ? "notesN" : "timesN", cnt(c.total, locale))}`;
+  // a member's own (B48) says only how often
+  return (c: Cell | undefined, layer: Layer, few: number, own = false) =>
+    !c ? t("cellNone") : "few" in c ? t("cellFew", { few: formatNumber(few, locale) }) : own ? t(layer === "note" ? "notesN" : "timesN", cnt(c.total, locale)) : `${t("learnersN", cnt(c.learners, locale))}${locale === "ar" ? "، " : ", "}${t(layer === "note" ? "notesN" : "timesN", cnt(c.total, locale))}`;
 }
 
 /**
@@ -231,7 +232,7 @@ function TeachLesson({ lesson }: { lesson: LessonOut }) {
 }
 
 /** The legend follows the kind shown (DEF-11, CLS-05). */
-function Legend({ layer, few, matrix }: { layer: Layer; few: number; matrix: boolean }) {
+function Legend({ layer, few, matrix, own = false }: { layer: Layer; few: number; matrix: boolean; own?: boolean }) {
   const t = useTranslations("classroom");
   const locale = useLocale();
   const [a, b, d] = STEPS[layer];
@@ -239,14 +240,14 @@ function Legend({ layer, few, matrix }: { layer: Layer; few: number; matrix: boo
   const spans = [a === b - 1 ? n(a) : `${n(a)}–${n(b - 1)}`, b === d - 1 ? n(b) : `${n(b)}–${n(d - 1)}`, `${n(d)}+`];
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-t2">
-      <span>{t(matrix ? `legendMatrix_${layer}` : `legend_${layer}`)}</span>
+      <span>{t(matrix ? `legendMatrix_${layer}` : own ? `legendOwn_${layer}` : `legend_${layer}`)}</span>
       {spans.map((s, i) => (
         <span key={i} className="flex items-center gap-1.5">
           <span className="heat-swatch" data-heat={i + 1} aria-hidden="true" />
           <span dir="ltr">{s}</span>
         </span>
       ))}
-      {!matrix && (
+      {!matrix && !own && (
         <span className="flex items-center gap-1.5">
           <span className="heat-swatch" data-heat="few" aria-hidden="true" />
           {t("legendFew", { few: n(few) })}
@@ -257,8 +258,9 @@ function Legend({ layer, few, matrix }: { layer: Layer; few: number; matrix: boo
 }
 
 /** One verse in the mushaf's text, each word a button with the class's heat under it (never on its letters); a note
- * is written on a verse, so the notes' heat sits under the whole verse. */
-function HeatVerse({ v, heat, layer, focus, same, onFocus, children }: { v: Verse; heat: Heat | undefined; layer: Layer; focus: string | null; same: string | null; onFocus: (loc: string | null) => void; children: ReactNode }) {
+ * is written on a verse, so the notes' heat sits under the whole verse. `own`: a member's own marks (B48) — the words
+ * marked, not buttons, the verse opening the reader. */
+function HeatVerse({ v, heat, layer, focus = null, same = null, onFocus, own = false, children }: { v: Verse; heat: Heat | undefined; layer: Layer; focus?: string | null; same?: string | null; onFocus?: (loc: string | null) => void; own?: boolean; children?: ReactNode }) {
   const t = useTranslations("classroom");
   const locale = useLocale();
   const say = useCellText();
@@ -272,8 +274,13 @@ function HeatVerse({ v, heat, layer, focus, same, onFocus, children }: { v: Vers
     <article className="flex flex-col gap-1" aria-labelledby={`v-${v.key}`}>
       <div className="flex flex-wrap items-baseline gap-x-3 text-[11.5px] text-t3">
         <span id={`v-${v.key}`} className="mono" dir="ltr">{verseRef(v.key, locale)}</span>
-        {heat?.floor_met && layer !== "note" && <span>{t(looked ? "verseLooked" : "verseLookedNone", { ...cnt(v.words.length, locale), looked: formatNumber(looked, locale) })}</span>}
-        {layer === "note" && <span>{`${t("noteOnVerse")}: ${say(verseCell, "note", few)}`}</span>}
+        {heat?.floor_met && layer === "lookup" && <span>{t(own ? (looked ? "verseLookedOwn" : "verseLookedOwnNone") : looked ? "verseLooked" : "verseLookedNone", { ...cnt(v.words.length, locale), looked: formatNumber(looked, locale) })}</span>}
+        {layer === "note" && <span>{`${t("noteOnVerse")}: ${say(verseCell, "note", few, own)}`}</span>}
+        {own && (
+          <Link href={`/quran/${v.surah}/${v.ayah}`} className="underline-offset-2 hover:underline">
+            {t("readVerse")}
+          </Link>
+        )}
       </div>
       <p className="quran class-verse" dir="rtl" lang="ar" data-heat={layer === "note" ? level(verseCell, "note") || undefined : undefined}>
         {v.hizb_mark && <span className="hizb-mark" aria-hidden="true">{"۞ "}</span>}
@@ -283,9 +290,14 @@ function HeatVerse({ v, heat, layer, focus, same, onFocus, children }: { v: Vers
           const lv = level(cell, layer);
           const { word, sajda } = splitFurniture(tk.text);
           const w = byPos.get(tk.word_from);
-          const said = layer === "note" ? undefined : `${layerName}: ${say(cell, layer, few)}`;
+          const said = layer === "note" ? undefined : `${layerName}: ${say(cell, layer, few, own)}`;
           return (
             <Fragment key={tk.position}>
+              {own ? (
+                <span className="heat-w is-own" data-heat={lv || undefined} data-w={loc} title={said}>
+                  {word}
+                </span>
+              ) : (
               <button
                 type="button"
                 className="heat-w"
@@ -296,10 +308,11 @@ function HeatVerse({ v, heat, layer, focus, same, onFocus, children }: { v: Vers
                 aria-pressed={focus === loc}
                 aria-label={said ? `${word} — ${said}` : word}
                 title={said ? `${said}${w?.translit ? ` · ${w.translit}` : ""}` : (w?.translit ?? undefined)}
-                onClick={() => onFocus(focus === loc ? null : loc)}
+                onClick={() => onFocus?.(focus === loc ? null : loc)}
               >
                 {word}
               </button>
+              )}
               {sajda && <span className="sajda-mark" aria-hidden="true">{SAJDA}</span>}
               {i < v.tokens.length - 1 ? " " : null}
             </Fragment>
@@ -670,6 +683,24 @@ function LearnLesson({ lesson }: { lesson: LessonOut }) {
   const pack = useQuery({ queryKey: ["lesson-pack", lesson.id], queryFn: () => getPack(lesson.id) });
   const verses = useLessonVerses(lesson, !!mine.data?.counts.length);
   const words = wordsOf(verses.data?.verses);
+  // what this member's reader sent, laid on the text as the instructor's view lays the class's (B48)
+  const ownHeat: Heat | undefined = mine.data?.counts.length
+    ? {
+        members: 1,
+        floor: 1,
+        few: 1,
+        floor_met: true,
+        minors: false,
+        opened: 0,
+        finished: 0,
+        median_minutes: null,
+        not_started: { count: 0, named: [] },
+        quick: { count: 0, named: [] },
+        roots: [],
+        nudges: { sent: 0, seen: 0 },
+        words: mine.data.counts.reduce<Heat["words"]>((acc, c) => ({ ...acc, [c.location]: { ...acc[c.location], [c.kind]: { learners: 1, total: c.n } } }), {}),
+      }
+    : undefined;
   const [said, setSaid] = useState("");
   const done = !!lesson.mine?.finished_on;
   const [tab, setTab] = useLessonTab();
@@ -739,7 +770,8 @@ function LearnLesson({ lesson }: { lesson: LessonOut }) {
             {instructorNotes}
           </section>
         )}
-        <section aria-labelledby="mine-h" className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
+        {ownHeat && verses.data && <OwnText verses={verses.data.verses} heat={ownHeat} />}
+      <section aria-labelledby="mine-h" className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
           <h2 id="mine-h" className="text-[15px] font-semibold">{t("mineTitle")}</h2>
           <p className="text-[12.5px] leading-relaxed text-t2">{t(lesson.class?.minors ? "mineLeadMinors" : "mineLead")}</p>
           {mine.isPending ? (
@@ -782,5 +814,31 @@ function LearnLesson({ lesson }: { lesson: LessonOut }) {
         </section>
       </div>
     </div>
+  );
+}
+
+/** A member's own reading of the lesson (B48): the verses with what their reader sent marked under the words, one
+ * kind at a time — theirs alone; each verse opens the reader. */
+function OwnText({ verses, heat }: { verses: Verse[]; heat: Heat }) {
+  const t = useTranslations("classroom");
+  const [layer, setLayer] = useState<Layer>("lookup");
+  return (
+    <section aria-labelledby="own-h" className="flex flex-col gap-3 rounded-xl border border-line bg-card p-4">
+      <h2 id="own-h" className="text-[15px] font-semibold">{t("ownTitle")}</h2>
+      <p className="text-[12.5px] leading-relaxed text-t2">{t("ownLead")}</p>
+      <div className="seg-group self-start" role="group" aria-label={t("layer")}>
+        {LAYERS.map((l) => (
+          <button key={l} type="button" className="seg" aria-pressed={layer === l} onClick={() => setLayer(l)}>
+            {t(`layer_${l}`)}
+          </button>
+        ))}
+      </div>
+      <Legend layer={layer} few={1} matrix={false} own />
+      <div className="flex flex-col gap-4">
+        {verses.map((v) => (
+          <HeatVerse key={v.key} v={v} heat={heat} layer={layer} own />
+        ))}
+      </div>
+    </section>
   );
 }

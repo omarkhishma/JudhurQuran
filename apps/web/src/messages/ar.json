@@ -3350,6 +3350,15 @@
     "verseLookedNone": "{count, plural, one {كلمة واحدة} two {كلمتان} few {{n} كلمات} many {{n} كلمة} other {{n} كلمة}}، لم يبحث الصف عن شيء منها",
     "copyTo": "انسخه إلى",
     "copiedTo": "نسخ الدرس إلى «{name}».",
-    "copyLesson": "انسخ الدرس"
+    "copyLesson": "انسخ الدرس",
+    "ownTitle": "قراءتك على آيات الدرس",
+    "ownLead": "ما أرسله قارئك، معلما تحت الكلمات نوعا نوعا. هذا لك وحدك؛ يرى المعلم الصف مجموعا.",
+    "verseLookedOwn": "{count, plural, one {كلمة واحدة} two {كلمتان} few {{n} كلمات} many {{n} كلمة} other {{n} كلمة}}، بحثت عن {looked} منها",
+    "verseLookedOwnNone": "{count, plural, one {كلمة واحدة} two {كلمتان} few {{n} كلمات} many {{n} كلمة} other {{n} كلمة}}، لم تبحث عن شيء منها",
+    "readVerse": "اقرأها",
+    "legendOwn_lookup": "مرات بحثك عن الكلمة",
+    "legendOwn_note": "ملاحظاتك على الآية",
+    "legendOwn_confirm": "مرات تأكيدك معرفة الكلمة",
+    "legendOwn_struggle": "مرات تعثرك في الكلمة"
   }
 }
