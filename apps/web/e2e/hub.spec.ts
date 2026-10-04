@@ -89,7 +89,9 @@ test("the doors count from the data, and every surface is listed with its purpos
   await expect(doors.getByRole("link", { name: /ابحث في المعجم/ })).toContainText(`${roots} و${lemmas}`);
   await expect(doors.getByRole("link", { name: /ابحث في المعجم/ })).toContainText(arCount(lexica, { one: "معجم واحد", two: "معجمان", few: "# معاجم", many: "# معجمًا", other: "# معجم" }));
   const tiles = page.locator(".hub-tile");
-  await expect(tiles).toHaveCount(20);
+  await expect(tiles).toHaveCount(21);
+  // the dictionary as its own surface (P11.1)
+  await expect(page.locator('a.hub-tile[href="/dictionary"]')).toContainText("المعجم");
   for (const tile of await tiles.all()) await expect(tile.locator(".hub-tile-purpose")).not.toBeEmpty();
   await expect(page.locator('.hub-tile[data-building] .hub-tile-phase').first()).toContainText("قيد البناء");
   const hrefs = await page.locator("a.hub-tile").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
