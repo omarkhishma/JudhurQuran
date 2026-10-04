@@ -80,7 +80,7 @@ export default async function BookParagraphPage({ params }: PageProps<"/[locale]
         </p>
         <p className="text-[12.5px] text-t3">{t(citedBy(b.info).note)}</p>
       </header>
-      <BookText slug={slug} paragraphs={[{ ref: p.ref, meta: p.meta, cite: p.cite, segments: p.segments, words: p.words }]} forms={p.forms} surahs={surahs} volumes={b.info.volumes ?? 1} linkParagraphs={false} />
+      <BookText slug={slug} paragraphs={[{ ref: p.ref, meta: p.meta, cite: p.cite, segments: p.segments, words: p.words }]} forms={p.forms} surahs={surahs} volumes={b.info.volumes ?? 1} linkParagraphs={false} title={b.title_ar} />
       <nav className="mt-8 flex flex-wrap gap-2" aria-label={p.cite.ar}>
         {p.prev && <Link href={paragraphHref(slug, p.prev)} className="btn" rel="prev">{t("prevParagraph")}</Link>}
         {p.next && <Link href={paragraphHref(slug, p.next)} className="btn" rel="next">{t("nextParagraph")}</Link>}

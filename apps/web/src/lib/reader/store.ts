@@ -257,7 +257,18 @@ export type SavedTrail = { id: string; steps: TrailStep[]; ts: number };
 /** What the reader looked up last (RDR-113): the word's slug and its Arabic, its root, the verse — and, for the split
  * view's context strip and its "send to the map" (P8.6), the word's transliteration, its root's letters and its
  * place. */
-export type ReadingContext = { word: string | null; wordAr: string | null; root: string | null; verse: string | null; wordTr?: string | null; rootAr?: string | null; at?: string | null; ts: number };
+export type ReadingContext = {
+  word: string | null;
+  wordAr: string | null;
+  root: string | null;
+  verse: string | null;
+  wordTr?: string | null;
+  rootAr?: string | null;
+  at?: string | null;
+  /** a word looked up in a hadith or a book (SHL-Q09): that page's address and the words that name it, for the way back */
+  place?: { href: string; label: string } | null;
+  ts: number;
+};
 /** One day's reading in one text (RDR-437): what was looked up, for the Notebook, Classroom and Profile.
  * A count of lookups, not a time — nothing here pretends to measure minutes. */
 export type Session = { day: string; text: string; words: string[]; roots: string[]; verses: string[]; lookups: number; /** another device's, when the journal syncs (P6) */ device?: string };

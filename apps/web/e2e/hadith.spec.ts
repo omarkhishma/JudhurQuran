@@ -147,4 +147,6 @@ test("a word looked up in a hadith is the reader's last lookup: the hub carries 
   await expect(page.getByRole("complementary", { name: "الكلمة" }).getByRole("link", { name: "الجذر في القرآن" })).toBeVisible();
   await page.goto("/");
   await expect(page.locator(".hub-context").getByRole("link", { name: "ع م ل" })).toHaveAttribute("href", `/concordance?root=${enc("عمل")}`);
+  // and the way back is to the hadith the word was read in, newer than any verse read
+  await expect(page.locator(".hub-context").getByRole("link", { name: "صحيح البخاري ١" })).toHaveAttribute("href", "/hadith/bukhari/1");
 });

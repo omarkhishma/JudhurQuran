@@ -97,7 +97,7 @@ export default async function HadithPage({ params }: PageProps<"/[locale]/hadith
         <>
           {!r.parts && <p className="mb-3 text-[12.5px] text-t3">{t("noSplit")}</p>}
           {r.parts && !r.parts.matn && <p className="mb-3 text-[12.5px] text-t3">{t("chainOnly")}</p>}
-          <HadithText segments={r.segments} words={r.words} forms={r.forms} chain={r.narrators} />
+          <HadithText segments={r.segments} words={r.words} forms={r.forms} chain={r.narrators} place={{ href: hadithHref(c.slug, r.ref), label: `${book} ${unnumbered(r.ref) ? number : refText(r.ref, locale)}` }} />
         </>
       )}
 

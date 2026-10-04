@@ -118,6 +118,7 @@ export default async function BookChapterPage({ params, searchParams }: PageProp
         forms={ch.forms}
         surahs={surahs}
         volumes={volumes}
+        title={b.title_ar}
       />
 
       <nav className="mt-8 flex flex-wrap items-center gap-2" aria-label={t("pageOf", { page: formatNumber(page, locale), pages: formatNumber(pages, locale) })}>

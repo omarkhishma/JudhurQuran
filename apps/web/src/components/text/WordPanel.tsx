@@ -16,7 +16,22 @@ function pct(x: number, locale: string) {
   return new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { style: "percent", maximumFractionDigits: 0 }).format(x);
 }
 
-export function WordPanel({ word, form, onClose, ref, hint }: { word: string | null; form: Form | null; onClose: () => void; ref: React.Ref<HTMLElement>; hint?: string }) {
+export function WordPanel({
+  word,
+  form,
+  onClose,
+  ref,
+  hint,
+  place,
+}: {
+  word: string | null;
+  form: Form | null;
+  onClose: () => void;
+  ref: React.Ref<HTMLElement>;
+  hint?: string;
+  /** the hadith or the book paragraph the word is read in (SHL-Q09): the hub's strip leads back to it */
+  place?: { href: string; label: string } | null;
+}) {
   const t = useTranslations("hadith");
   const locale = useLocale();
   const first = form?.readings[0];
@@ -25,9 +40,11 @@ export function WordPanel({ word, form, onClose, ref, hint }: { word: string | n
   const recordLookup = usePersonal((s) => s.recordLookup);
   const lemma = first?.lemma?.slug ?? null;
   const root = first?.root ?? null;
+  const placeHref = place?.href ?? null;
+  const placeLabel = place?.label ?? null;
   useEffect(() => {
-    if (word && (lemma || root)) recordLookup({ word: lemma, wordAr: word, root, verse: null });
-  }, [word, lemma, root, recordLookup]);
+    if (word && (lemma || root)) recordLookup({ word: lemma, wordAr: word, root, verse: null, place: placeHref && placeLabel ? { href: placeHref, label: placeLabel } : null });
+  }, [word, lemma, root, recordLookup, placeHref, placeLabel]);
   return (
     <aside ref={ref} tabIndex={-1} className={`hadith-panel${word ? " is-open" : ""}`} aria-label={t("wordTitle")} aria-live="polite">
       {!word ? (

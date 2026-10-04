@@ -1,5 +1,6 @@
 "use client";
 
+import { hasArabic } from "@/lib/arabic/normalize";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
@@ -31,7 +32,10 @@ export function ContextStrip({ surahs }: { surahs: SurahName[] }) {
     return s ? (locale === "ar" ? s[1] : s[2]) : String(n);
   };
   const chips: { key: string; href: string; label: string; ar: boolean; color: string }[] = [];
-  if (progress && progress.at > clearedAt && progress.chapter >= 1 && progress.chapter <= 114) {
+  // a word looked up in a hadith or a book after the last verse read: the way back is to that page (SHL-Q09)
+  if (context?.place && context.ts > clearedAt && context.ts > (progress?.at ?? 0)) {
+    chips.push({ key: "text", href: context.place.href, label: context.place.label, ar: hasArabic(context.place.label), color: "var(--c-sentence)" });
+  } else if (progress && progress.at > clearedAt && progress.chapter >= 1 && progress.chapter <= 114) {
     chips.push({
       key: "text",
       href: `/quran/${progress.chapter}${progress.passage > 1 ? `#v${progress.passage}` : ""}`,

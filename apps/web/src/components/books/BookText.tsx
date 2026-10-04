@@ -34,8 +34,11 @@ export function BookText({
   surahs,
   volumes,
   linkParagraphs = true,
+  title,
 }: {
   slug: string;
+  /** the book's title, naming the place a word was looked up in (SHL-Q09) */
+  title?: string;
   paragraphs: ReaderParagraph[];
   forms: { [id: string]: Form };
   surahs: { [n: number]: string };
@@ -167,6 +170,7 @@ export function BookText({
         form={chosen ? (forms[String(chosen.words[selected!.w])] ?? null) : null}
         onClose={() => setSelected(null)}
         hint={t("wordHint")}
+        place={chosen && title ? { href: paragraphHref(slug, chosen.ref), label: title } : null}
       />
     </div>
   );
