@@ -61,6 +61,12 @@ for p in / /about /quran/2/255 /word/2:255:23 /roots/%D8%B9%D9%84%D9%85 /en/word
 
 Every line must read `200 redirects=0`. `curl -s https://<domain>/api/v1/meta` shows the loaded dataset version and its text hash, which must equal `text_sha256` in `data/build/<version>/report.json`.
 
+## Monitoring and errors (P12)
+
+- **Health:** the `api` and `web` containers answer a health check every 30 s (`/healthz`, `/robots.txt`); Caddy starts once both are healthy, and Docker restarts a container that stops answering.
+- **The monitor:** the `monitor` service runs the smoke check above against `PUBLIC_URL` every five minutes (`python -m jadhr_api.ops watch`). What fails is counted in `ops.errors` and, when `ALERT_WEBHOOK` is set in `.env.production`, posted to it as one line (a Slack-style `{"text": …}` hook; the owner chooses where it goes). Run the check by hand at any time: `docker compose -f infra/compose.prod.yml --env-file .env.production run --rm monitor python -m jadhr_api.ops check https://<domain>` — it exits 1 when a page did not answer 200.
+- **Errors:** an error a reader's page meets (the web's error page) and an error the API did not handle are counted by day in `ops.errors` — the kind, the message, the page's path with the reader's own ids taken out (or the API's route), the release — and nothing about who: no address, no account, no request. Kept thirty days (the API purges daily; the privacy page says so). Read them: `docker compose -f infra/compose.prod.yml --env-file .env.production run --rm monitor python -m jadhr_api.ops errors 7`.
+
 ## Releasing new content
 
 1. Build and validate the new dataset version (above); keep the previous `data/build/<version>/` directory.

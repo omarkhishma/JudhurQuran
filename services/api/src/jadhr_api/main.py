@@ -39,6 +39,7 @@ from . import (
     intake,
     knowledge,
     lexicon,
+    ops,
     path,
     relations,
     review,
@@ -1004,6 +1005,22 @@ def analyse_form(body: _Form) -> Response:
         return ORJSONResponse(f, headers={"Cache-Control": "no-store"})
 
 
+class _ErrorReport(BaseModel):
+    kind: str = Field(min_length=1, max_length=80)
+    message: str = Field("", max_length=300)
+    place: str = Field(min_length=1, max_length=400)
+    release: str = Field("", max_length=20)
+
+
+@router.post(
+    "/ops/errors", status_code=204, summary="An error a page met, counted by day: what, where, which release"
+)
+def ops_error(body: _ErrorReport) -> Response:
+    # nothing about who: no address, no account, no request is kept (the privacy page says so)
+    ops.record("web", body.kind, body.message, body.place, body.release)
+    return Response(status_code=204)
+
+
 class _Known(BaseModel):
     lemmas: list[Annotated[str, Field(max_length=80)]] = Field(max_length=10000)
 
@@ -1271,6 +1288,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
             # a lesson's counts, 90 days after its due date (P9)
             with suppress(Exception):
                 await asyncio.to_thread(classroom.purge)
+            # the errors counted, after thirty days (P12)
+            with suppress(Exception):
+                await asyncio.to_thread(ops.purge)
             await asyncio.sleep(86_400)
 
     task = asyncio.create_task(daily_purge())
@@ -1394,6 +1414,16 @@ def create_app() -> FastAPI:
             503: "unavailable",
         }.get(exc.status_code, "server_error")
         return error(exc.status_code, code, str(exc.detail))
+
+    @app.exception_handler(Exception)
+    async def unhandled(request: Request, exc: Exception) -> ORJSONResponse:
+        # counted by its kind and its route, nothing about the request (P12); the reader is told it failed
+        route = request.scope.get("route")
+        with suppress(Exception):
+            await asyncio.to_thread(
+                ops.record, "api", type(exc).__name__, str(exc), getattr(route, "path", request.url.path)
+            )
+        return error(500, "server_error", "Something went wrong on our side.")
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(_: Request, exc: RequestValidationError) -> ORJSONResponse:

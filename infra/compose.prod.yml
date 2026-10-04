@@ -52,6 +52,13 @@ services:
     restart: unless-stopped
     logging: *logging
     depends_on: { db: { condition: service_healthy }, search: { condition: service_healthy } }
+    # alive and reading the dataset (P12): Caddy waits for it, and a restart follows a failure
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     environment:
       JADHR_DATABASE_URL: postgresql+psycopg://jadhr:${POSTGRES_PASSWORD}@db:5432/jadhr
       JADHR_SEARCH_URL: http://search:9200
@@ -92,7 +99,13 @@ services:
         JADHR_API_ORIGIN: http://api:8000
     restart: unless-stopped
     logging: *logging
-    depends_on: [api]
+    depends_on: { api: { condition: service_healthy } }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/robots.txt').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     environment:
       JADHR_API_ORIGIN: http://api:8000
       JADHR_REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set REVALIDATE_SECRET}
@@ -102,7 +115,7 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     logging: *logging
-    depends_on: [web, api]
+    depends_on: { web: { condition: service_healthy }, api: { condition: service_healthy } }
     ports: ["${HTTP_PORT:-80}:80", "${HTTPS_PORT:-443}:443"]
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
@@ -133,6 +146,21 @@ services:
         find /backups -name 'accounts-*.sql.gz' -mmin +20100 -delete;
         sleep 86400;
         done
+
+  # The site watched from outside (P12): every five minutes the smoke check of docs/DEPLOY.md against the public
+  # address; what failed is counted in ops.errors (source "monitor", nothing about anyone) and, when ALERT_WEBHOOK
+  # is set, posted to it. `python -m jadhr_api.ops errors` lists what went wrong.
+  monitor:
+    build: { context: .., dockerfile: services/api/Dockerfile }
+    restart: unless-stopped
+    logging: *logging
+    depends_on: { caddy: { condition: service_started } }
+    environment:
+      JADHR_DATABASE_URL: postgresql+psycopg://jadhr:${POSTGRES_PASSWORD}@db:5432/jadhr
+      JADHR_ENVIRONMENT: production
+      JADHR_DATA_KEY: ${DATA_KEY:?set DATA_KEY (openssl rand -base64 32)}
+      JADHR_ALERT_WEBHOOK: ${ALERT_WEBHOOK:-}
+    command: ["python", "-m", "jadhr_api.ops", "watch", "${PUBLIC_URL:?set PUBLIC_URL}"]
 
   # One-off: apply migrations, load data/build/<version>, expire the web cache.
   loader:

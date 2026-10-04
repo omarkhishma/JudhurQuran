@@ -10,7 +10,7 @@ import math
 import re
 from pathlib import Path
 
-from jadhr_api import sync
+from jadhr_api import ops, sync
 from jadhr_api.settings import Settings
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -45,6 +45,7 @@ def periods() -> dict[str, int]:
         "backups": math.ceil(backup_min / 1440),
         "deleted": deleted_days,
         "records": sync.MAX_RECORDS,
+        "errors": ops.KEEP_DAYS,
     }
 
 
@@ -61,6 +62,7 @@ def test_the_page_says_every_period_the_code_keeps() -> None:
         "backups": f"are kept {p['backups']} days, so a deleted account leaves them within {p['backups']} days",
         "deleted": f"alone is kept {p['deleted']} days",
         "records": "holds up to 20,000 items",
+        "errors": f"It is deleted after {p['errors']} days.",
     }
     arabic = {
         "link": f"يعمل مرة واحدة خلال {ar(p['link'])} دقيقة",
@@ -72,6 +74,7 @@ def test_the_page_says_every_period_the_code_keeps() -> None:
         "backups": f"تُحفظ {ar(p['backups'])} يومًا، فيخرج منها الحساب المحذوف خلال {ar(p['backups'])} يومًا",
         "deleted": f"وحده {ar(p['deleted'])} يومًا",
         "records": "يتسع الحساب لعشرين ألف عنصر",
+        "errors": f"ويُحذف بعد {ar(p['errors'])} يومًا.",
     }
     missing = [f"en {k}: {v}" for k, v in en.items() if v not in EN] + [
         f"ar {k}: {v}" for k, v in arabic.items() if v not in AR

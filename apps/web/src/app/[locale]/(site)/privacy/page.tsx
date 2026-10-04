@@ -64,6 +64,7 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/priva
         <h2>ما يصل إلى الخادم في كل حال</h2>
         <ul>
           <li><strong>سجلّ الخادم:</strong> يسجّل خادم الويب كل طلب: وقته، والصفحة المطلوبة دون ما بعد علامة ? في الرابط، وعنوان IP مختصرًا لا يدل على اتصال بعينه (يبقى من عنوان IPv4 جزآه الأولان)، ويُحذف السجلّ بعد سبعة أيام. ولا تسجّل واجهة البرمجة الطلبات. وللحدّ من الإفراط في الطلبات يُحفظ العنوان في الذاكرة دقيقة بعد آخر طلب منه، وساعة لرسائل الدخول.</li>
+          <li><strong>الأخطاء:</strong> إذا تعثّرت صفحة أو تعثّر الخادم عُدّ الخطأ عدًّا يوميًّا: نوعه ورسالته والصفحة دون ما بعد علامتي ? و# ودون معرّفات نصوصك وخرائطك، وإصدار البيانات. ولا يُحفظ معه شيء عنك: لا عنوان ولا حساب ولا طلب. ويُحذف بعد ٣٠ يومًا.</li>
           <li><strong>الصوت:</strong> عند تشغيل التلاوة يُجلب الملف من خادم التلاوات المذكور في صفحة المصادر.</li>
         </ul>
       </Prose>
@@ -115,6 +116,7 @@ export default async function PrivacyPage({ params }: PageProps<"/[locale]/priva
       <h2>What reaches the server in any case</h2>
       <ul>
         <li><strong>Server log:</strong> the web server records each request — its time, the page asked for without the part of the address after ?, and your IP address shortened so it no longer points to one connection (an IPv4 address keeps its first two parts) — and deletes the log after seven days. The API keeps no log of requests. To limit excessive requests, an address is held in memory for a minute after its last request, and for an hour for sign-in e-mails.</li>
+        <li><strong>Errors:</strong> when a page or the server fails, the error is counted by day: its kind, its message, the page without the parts after ? and # and without the ids of your texts and maps, and the data release. Nothing about you is kept with it: no address, no account, no request. It is deleted after 30 days.</li>
         <li><strong>Audio:</strong> when you play a recitation, the file is fetched from the recitation server named on the sources page.</li>
       </ul>
     </Prose>
