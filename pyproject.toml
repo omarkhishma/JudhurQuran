@@ -15,7 +15,12 @@ jadhr-pipeline = { workspace = true }
 jadhr-api = { workspace = true }
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pyarrow>=17",
+]
 
 [tool.ruff]
 line-length = 110

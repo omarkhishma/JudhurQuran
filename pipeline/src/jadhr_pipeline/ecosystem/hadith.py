@@ -29,6 +29,7 @@ from typing import Any
 import yaml
 from jadhr_arabic import normalize
 
+from .isnad import known_names, split
 from .model import Chapter, Draft, Passage
 
 HEADER_END = "#META#Header#End#"
@@ -246,7 +247,13 @@ def verdict(text: str) -> str | None:
     return re.sub(r"\s+", " ", found[-1]) if found else None
 
 
-def collection(raw: Path, spec: dict[str, Any], reg: dict[str, Any], stats: Counter[str]) -> Draft:
+def collection(
+    raw: Path,
+    spec: dict[str, Any],
+    reg: dict[str, Any],
+    stats: Counter[str],
+    known: frozenset[str] = frozenset(),
+) -> Draft:
     slug = spec["slug"]
     data = json.loads((raw / "fawazahmed0-hadith-api/editions" / spec["edition"]).read_text(encoding="utf-8"))
     records: list[dict[str, Any]] = data["hadiths"]
@@ -311,6 +318,11 @@ def collection(raw: Path, spec: dict[str, Any], reg: dict[str, Any], stats: Coun
         if slug == "tirmidhi":
             meta["verdict"] = verdict(text)
             stats["tirmidhi:verdict"] += meta["verdict"] is not None
+        if text.strip():
+            # the isnād, the matn and the collector's comment, by rule (isnad.py); None where the rules cannot read it
+            sp = split(text, slug, known)
+            meta["split"] = sp.as_meta() if sp else None
+            stats[f"{slug}:split-{sp.rule if sp else 'none'}"] += 1
         if not text.strip():
             stats[f"{slug}:empty"] += 1
             u = (
@@ -354,5 +366,16 @@ def collection(raw: Path, spec: dict[str, Any], reg: dict[str, Any], stats: Coun
 def build_hadith(raw: Path, registry: Path) -> tuple[list[Draft], dict[str, Any]]:
     reg = yaml.safe_load(registry.read_text(encoding="utf-8"))
     stats: Counter[str] = Counter()
-    drafts = [collection(raw, spec, reg, stats) for spec in reg["collections"]]
+    # the names the chains of all seven books use, read once without them (isnad.py's first pass)
+    first = []
+    for spec in reg["collections"]:
+        data = json.loads(
+            (raw / "fawazahmed0-hadith-api/editions" / spec["edition"]).read_text(encoding="utf-8")
+        )
+        first += [
+            (t, split(t, spec["slug"])) for t in (h["text"] or "" for h in data["hadiths"]) if t.strip()
+        ]
+    known = known_names(first)
+    stats["split:known-names"] = len(known)
+    drafts = [collection(raw, spec, reg, stats, known) for spec in reg["collections"]]
     return drafts, dict(sorted(stats.items()))
