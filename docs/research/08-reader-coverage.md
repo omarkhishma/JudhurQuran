@@ -67,6 +67,185 @@ Closed (done + adapted + bug-fixed + n/a): 445 of 615. Open: 170 — 95 buildabl
 | 41 | Hard-won fixes and subtle rules (keep these) (RDR-577…615) | 39 | 20 | 6 | 0 | 2 | 11 | 0 |
 | | **Total** | **615** | **256** | **137** | **40** | **12** | **170** | **0** |
 
+## Re-audit 2026-10-04
+
+Re-audited against `96185bb` by reading the code again (every item research 08 left open, and 66 closed items spot-checked across 26 sections — none had regressed); then the ten items still open were built or adapted (`3949306`…`01c4d36`). The tables below supersede this file's earlier statuses for the items they name; the "All items" table at the foot keeps the 2026-10-03 statuses.
+
+| Status | 2026-10-03 | Re-audit | Now |
+|---|---|---|---|
+| done | 256 | 350 | 353 |
+| adapted | 137 | 165 | 172 |
+| bug-fixed | 40 | 47 | 47 |
+| n/a | 12 | 12 | 12 |
+| open | 170 | 10 | 0 |
+| waiting (the editorial board's content, D15) | — | 31 | 31 |
+| **total** | **615** | **615** | **615** |
+
+### The ten open at the re-audit, now closed
+
+| ID | Now | How |
+|---|---|---|
+| RDR-063 | adapted | The rail's Texts view lists the Quran, the hadith collections, the books and the reader's own texts, each opening in its own reader with the word panel, and the way back to where the reader stopped (Rail.tsx TextsList; e2e reader-batch5) |
+| RDR-064 | adapted | Choosing a text opens its reader, so the sūra's selection, focus root and drawers are left behind; the overlay rail closes (Rail.tsx) |
+| RDR-442 | adapted | The reader's own texts are read in their own reader with the word panel beside them, as the hadith and the books (UserTextReader.tsx, P11.3; DECISIONS "A reader's own text is read in the same reader…"); the Quran reader's layers are the Quran's |
+| RDR-146 | adapted | No count on Related: nearly every verse shares a root with hundreds of others, so the number says nothing; the drawer lists the four sharing the rarest roots (DECISIONS) |
+| RDR-158 | adapted | A word in the verse's map preview selects itself in the verse; two columns, roots and words, because the editor builds no pattern cards from a verse (VerseDrawer.tsx GraphDrawer; e2e reader-batch5) |
+| RDR-183 | done | The deck's ▶ is 44 px (globals.css `.ask-deck-card .listen-btn`; e2e reader-batch5) |
+| RDR-186 | done | The shape card's line: the pattern's transliteration • «the mould this word was poured into» (AskView.tsx; e2e reader-batch5) |
+| RDR-398 | adapted | «Embed…» in the cite dialog opens the published maps (/g), the way a word, root or verse is framed on another site (Overlays.tsx; e2e reader-batch5) |
+| RDR-450 | adapted | As RDR-398: the outbound link to the published maps |
+| RDR-569 | done | The in-context card offers the verse recited as a hint (ReviewDeck.tsx ContextCard; e2e reader-batch5) |
+
+Found by the re-audit and fixed: the hover card's "full entry" and "open in the map" now open the panel when the reader has closed it (`32ed9cd`).
+
+### Waiting on the editorial board (31)
+
+All need the board's work in the workbench (built, P3.0); the board waits on the owner appointing it (D15). The code that shows each is built unless said.
+
+| Waits on | IDs |
+|---|---|
+| P3.4 the English root gloss (0 of 1,642 roots have one) | RDR-474 (the data), 221 (shown by Word family once it exists), 154, 184, 197 (a few lines each once it exists) |
+| P3.1 sense lists | RDR-475 (the data), 212, 213, 216 (Meanings.tsx renders them), 174 (the Ask card's «also: …», a few lines) |
+| P3.3 pattern functions and plain explanations | RDR-476 (the data), 223, 225 (rendered by PatternFunction and the pattern view) |
+| P3.4a sense ↔ source alignment | RDR-479 (the data), 234, 245–247, 248–252, 254, 258–261, 304, 607, 608 |
+
+### Status changes at the re-audit (160, every one open → something)
+
+| ID | Now | Evidence |
+|---|---|---|
+| RDR-012 | done | Term card portalled to the body at z 75, above the header's 40 (terms/Term.tsx:105-117; globals.css:357-358); e2e reader-polish |
+| RDR-025 | done | The badge counts roots due now, with the deck behind it (ReaderHeader.tsx:39-40, 151-161; lib/review/due.ts:47-50); e2e review-deck |
+| RDR-028 | done | With a word selected, Graph opens the hand-off with a word seed (ReaderHeader.tsx:109-111, 188-199); e2e graph-handoff |
+| RDR-047 | done | Dictionaries in compiler death order (lexicon.py:261-262; data/lexica.yaml sort_order); e2e reader |
+| RDR-048 | done | Kitāb al-ʿAyn loaded (data/lexica.yaml) |
+| RDR-049 | done | Tahdhīb al-Lugha loaded (data/lexica.yaml) |
+| RDR-054 | done | al-Qāmūs loaded (data/lexica.yaml) |
+| RDR-055 | done | Tāj al-ʿArūs loaded (data/lexica.yaml) |
+| RDR-062 | adapted | Text kinds label the Library's shelves (library/LibraryScreen.tsx; LIB-Q02) |
+| RDR-065 | adapted | Import lives in the Library: paste, a web page or a PDF (library/AddTextSheet.tsx; P4.4, P11.3c); e2e library |
+| RDR-071 | done | Each sūra row shows where the reader stopped and a read bar (Rail.tsx; store.ts); e2e reader |
+| RDR-073 | done | Every root reachable, each with its transliteration (Rail.tsx); e2e reader |
+| RDR-082 | done | `?mode=review` opens the real deck (ReaderShell.tsx:54; ReviewDeck.tsx) |
+| RDR-087 | done | Full-screen review overlay at z 92; onboarding hidden while it is open (ReviewDeck.tsx; Overlays.tsx; globals.css) |
+| RDR-106 | done | A word set back to "new" is marked new again (ReadingSurface.tsx); e2e reader |
+| RDR-113 | adapted | Each lookup writes the reading context and today's session (WordEntry.tsx; store.ts); no automatic "learning" (D20); e2e reader |
+| RDR-117 | done | Hover card after a mouse rest, centre clamped, flipped below near the top (ReadingSurface.tsx; HoverCard.tsx); e2e hover-card |
+| RDR-118 | done | 284 px card (globals.css) |
+| RDR-119 | done | Dictionary form, transliteration, root, the meaning here and grammar (HoverCard.tsx) |
+| RDR-120 | adapted | State control only in study mode, per D20 (HoverCard.tsx; WordEntry.tsx) |
+| RDR-121 | done | Full entry, and Open in graph to the hand-off (HoverCard.tsx) |
+| RDR-122 | done | 160/120 ms hand-off; Esc, a click or a scroll closes it (ReadingSurface.tsx); e2e hover-card |
+| RDR-136 | done | The grammar band reads a word with no lemma by its place (GrammarBand.tsx); e2e reader |
+| RDR-137 | done | Inline gloss for a word with no lemma (InlineGloss.tsx); e2e reader |
+| RDR-138 | done | Resume marker hidden on the verse in hand, with "resume here" (ReadingSurface.tsx); e2e reader |
+| RDR-142 | done | Marks row for links and topics (ReadingSurface.tsx); e2e verse-links |
+| RDR-144 | done | Recite shows as pressed and stops playback (ReadingSurface.tsx); e2e reader-polish |
+| RDR-145 | done | Badge with the verse's distinct-root count (SurahText.tsx); e2e verse-links |
+| RDR-147 | done | Icons on every tool; badges hidden at 0 (globals.css); e2e reader-batch3 |
+| RDR-150 | done | Concordance, Analyse, Links, Topic and Cite added (ReadingSurface.tsx; VerseDrawer.tsx); e2e reader-batch3 |
+| RDR-155 | adapted | Empty and error states (VerseDrawer.tsx); related verses from the whole Quran, rarity-weighted (RDR-555) |
+| RDR-156 | adapted | Link by typed reference or suggested related verses; incoming links shown; keys quran:s:a (VerseDrawer.tsx); e2e verse-links |
+| RDR-157 | adapted | The reader's own topics, with the sources' topics beside them (VerseDrawer.tsx); the five fixed labels dropped (RDR-555/576); e2e verse-links |
+| RDR-169 | done | Vowelled form, then exact letters, nouns before verbs, then frequency (search.py); e2e ask-and-search |
+| RDR-172 | done | "Analyse it anyway →" goes to /analyse (AskView.tsx) |
+| RDR-185 | done | ▶ plays the verse on phone card 3 (AskView.tsx); e2e ask-and-search |
+| RDR-193 | done | Panel-search rows with part of speech and root; loading, error and no-result rows; arrow keys (Panel.tsx); e2e ask-and-search |
+| RDR-198 | done | Open in graph goes to the hand-off; 44 px on phones (WordEntry.tsx; globals.css); e2e reader |
+| RDR-201 | done | Each tab carries its count (WordEntry.tsx); e2e reader |
+| RDR-209 | done | A jump keeps its tab in tabs mode (store.ts); e2e reader |
+| RDR-214 | adapted | A merged edit above the source's wording with its credit, never replacing it (sections/Meanings.tsx; DECISIONS "Contributions never overwrite a source") |
+| RDR-215 | adapted | Merged senses numbered after the sourced lines; pending ones under «ما اقترحته» (Meanings.tsx; L2); e2e reader-batch3 |
+| RDR-220 | done | "Select the word in the text" state (Meanings.tsx); e2e entry-sections |
+| RDR-222 | bug-fixed | A real root seed (Family.tsx); e2e graph-handoff |
+| RDR-227 | adapted | "{k} of 10 verb forms": the closed list is the ten verb forms (Shapes.tsx); e2e entry-sections |
+| RDR-228 | adapted | Unattested verb forms as "not attested" rows (Shapes.tsx) |
+| RDR-230 | adapted | "Show all 10 / Hide unattested" (Shapes.tsx) |
+| RDR-231 | done | All roots / In this sūra chips, current row tinted, the full list (Shapes.tsx); e2e entry-sections |
+| RDR-235 | done | Articles in compiler death order; the label is true (content.py; sections/Dictionaries.tsx); e2e reader |
+| RDR-239 | done | "+" quotes the article onto a map (sections/Dictionaries.tsx); by its identifier since P1.7a |
+| RDR-269 | adapted | Inflection and a graph seed at that place on each concordance row (sections/InQuran.tsx; RDR-265/558); e2e entry-sections |
+| RDR-274 | done | Dotted terms in the grammar band and the dictionaries (GrammarBand.tsx; sections/Dictionaries.tsx); e2e reader-batch3 |
+| RDR-306 | done | `sense` term (data/glossary.yaml; Meanings.tsx); e2e reader-batch3 |
+| RDR-309 | done | `corpus` term (data/glossary.yaml; Meanings.tsx); e2e reader-batch3 |
+| RDR-322 | adapted | Drafts and queued proposals under «ما اقترحته» (contrib/WordContributions.tsx; research 12) |
+| RDR-323 | adapted | Credit line beside the source, never over it (WordContributions.tsx) |
+| RDR-324 | done | Merges and the reader's proposals re-read on window focus (WordContributions.tsx; audit 12 F2, P7.5) |
+| RDR-325 | adapted | The two-approval rule enforced by the server and the database (research 12) |
+| RDR-329 | done | The cousin door says "same shape" or "shaped as {pattern}" (sections/WhereNext.tsx); e2e entry-sections |
+| RDR-332 | done | The shape door opens Shapes on the pattern with "{n} more like it" (WhereNext.tsx; store.ts); e2e entry-sections |
+| RDR-341 | done | Trail seed through the hand-off (TrailMap.tsx); e2e graph-handoff |
+| RDR-344 | done | Review entry points; End and Esc close it (ReaderHeader.tsx; ReviewDeck.tsx) |
+| RDR-345 | done | Queue from starred and known words, else the sūra's roots (ReviewDeck.tsx); e2e review-deck |
+| RDR-346 | done | The badge is a due count (lib/review/due.ts); e2e review-deck |
+| RDR-347 | done | Overlay frame with focus trapped and returned (ReviewDeck.tsx; ui/useFocusTrap.ts) |
+| RDR-348 | done | Changing mode resets the card (ReviewDeck.tsx) |
+| RDR-349 | adapted | Ibn Fāris's statement where the English root gloss would go (ReviewDeck.tsx; research 10) |
+| RDR-350 | done | Hidden rows, Reveal, then Entry (ReviewDeck.tsx); e2e review-deck |
+| RDR-351 | done | Space flips; four grades on keys 1–4 (ReviewDeck.tsx); e2e review-deck |
+| RDR-352 | done | The verse with blanks and a side column that drops below at 760 px (ReviewDeck.tsx; globals.css) |
+| RDR-353 | bug-fixed | One of the five verses richest in the root, so it never dead-ends (research 10) |
+| RDR-354 | done | Numbered blanks with a hint on each (ReviewDeck.tsx); e2e review-deck |
+| RDR-355 | done | Mushaf or everyday spelling accepted (ReviewDeck.tsx); e2e review-deck |
+| RDR-356 | done | "Revealed so far" (ReviewDeck.tsx) |
+| RDR-357 | done | Check, then one button graded by the score (ReviewDeck.tsx) |
+| RDR-358 | done | Session summary (ReviewDeck.tsx) |
+| RDR-359 | done | SM-2 scheduler (lib/store/review.ts; review.test.ts) |
+| RDR-360 | done | Starred and known words enter the deck; Keep stars the word (DECISIONS); e2e explore, journey-b |
+| RDR-361 | done | Hand-off from the entry, root, hover card, verse drawer, occurrence row, trail and header |
+| RDR-362 | done | 520 px shared Dialog (GraphHandoff.tsx) |
+| RDR-363 | done | Sub-line per seed (GraphHandoff.tsx) |
+| RDR-364 | adapted | Rows counted from the cards the editor will create (GraphHandoff.tsx; DECISIONS); e2e graph-handoff |
+| RDR-365 | adapted | Verse seed = the verse card with its words' lemmas and roots (seed.ts verseSeed; P8.1a); e2e graph-handoff |
+| RDR-366 | adapted | An occurrence hands over a word seed at that place (InQuran.tsx) |
+| RDR-367 | done | Footnote; add to a new or existing graph, nothing moved (GraphHandoff.tsx); e2e graph-handoff |
+| RDR-368 | done | Copy seed JSON, Cancel, Open graph editor (GraphHandoff.tsx); e2e graph-handoff |
+| RDR-369 | adapted | `/graph/seed?s=` carries the seed; the editor builds the cards (DECISIONS) |
+| RDR-370 | adapted | The copied JSON is the seed, not expanded cards (GraphHandoff.tsx) |
+| RDR-377 | done | Omnibox pattern rows open Shapes on that pattern (Overlays.tsx); e2e entry-sections |
+| RDR-385 | done | Cite scope: word, root or verse (Overlays.tsx); e2e reader-batch3 |
+| RDR-415 | done | Phone sheet targets at 44/40 px (globals.css); e2e reader |
+| RDR-420 | done | Review overlay laid out for phones (globals.css) |
+| RDR-427 | done | Enter checks the in-context answers (ReviewDeck.tsx) |
+| RDR-428 | done | Arrow keys in panel search, Space to flip, Alt+P (Panel.tsx; ReviewDeck.tsx; Overlays.tsx); e2e ask-and-search |
+| RDR-432 | done | Verse links and topics stored under quran:s:a keys (store.ts); e2e verse-links |
+| RDR-437 | adapted | Sessions kept in jadhr-personal; a count of lookups, not invented minutes (store.ts) |
+| RDR-441 | adapted | Reading context kept in jadhr-personal with word, root, verse and place (store.ts) |
+| RDR-444 | done | Storage writes cannot throw, and the reader is told once (lib/store/safeStorage.ts); e2e reader-polish |
+| RDR-451 | done | Error states in the rail, tafsir, drawers, In the Quran and panel search, and a loading row |
+| RDR-453 | done | "No articles of this kind" (sections/Dictionaries.tsx) |
+| RDR-461 | done | ⋯ menu and Reading popover return focus on Esc; the review overlay traps focus (ReaderHeader.tsx); e2e reader-polish |
+| RDR-483 | adapted | The reader's topics and the sources' topics replace the fixed list (store.ts; SourceTopics.tsx) |
+| RDR-484 | done | Sessions, links and topics added (store.ts) |
+| RDR-495 | adapted | Notes stay inline at every width (DECISIONS "Verse notes stay inline…") |
+| RDR-496 | done | As RDR-150 |
+| RDR-497 | done | As RDR-071 |
+| RDR-505 | done | As RDR-274 |
+| RDR-508 | done | As RDR-346, 351 and 359 |
+| RDR-509 | done | As RDR-360 |
+| RDR-524 | bug-fixed | The hover card flips below near the top (HoverCard.tsx); e2e hover-card |
+| RDR-528 | bug-fixed | Seeds reach the editor, and the dialog's rows equal the cards created; e2e graph-handoff |
+| RDR-535 | bug-fixed | As RDR-106 |
+| RDR-536 | bug-fixed | Scheduler, due count, no dead end (research 10) |
+| RDR-540 | bug-fixed | Long-press timer cleared on unmount (ReadingSurface.tsx) |
+| RDR-547 | adapted | Sajda sign beside its word, ḥizb outside, waqf signs on their letter, each explained (VerseLines.tsx; DECISIONS); e2e reader-batch4, mushaf-signs |
+| RDR-555 | done | Links and Topic tools built |
+| RDR-557 | done | Translation chosen and credited (ReadingPrefs.tsx; InlineLines.tsx); e2e reader |
+| RDR-567 | done | Gloss and morphology-tag proposals go to the review queue (Meanings.tsx); e2e reader-batch4 |
+| RDR-573 | done | Long lists paged from the server, off-screen rows skipped (globals.css); e2e reader-batch3, perf |
+| RDR-575 | done | The multi-text model: hadith with isnād/matn and gradings, books (P11.3b), the reader's shelf |
+| RDR-583 | done | Hover card centre clamped (HoverCard.tsx); e2e hover-card |
+| RDR-584 | done | As RDR-122 |
+| RDR-589 | done | As RDR-209 |
+| RDR-592 | done | As RDR-138 |
+| RDR-596 | adapted | As RDR-322…324 |
+| RDR-601 | done | Seed encoded as base64url of UTF-8 (lib/graph/seedCodec.ts); e2e graph-handoff |
+| RDR-602 | done | As RDR-169 |
+| RDR-611 | done | As RDR-355 |
+| RDR-612 | done | `dictOff` keeps only the dictionaries switched off (ReadingPrefs.tsx); e2e reader-polish |
+| RDR-154, 174, 184, 197, 212, 213, 216, 221, 223, 225, 234, 245–252, 254, 258–261, 304, 474–476, 479, 607, 608 | waiting | The editorial board's content (table above) |
+
+Research 12 relabelled three closed items (RDR-311 done → adapted, 312 done → bug-fixed, 317 done → adapted); the counts above keep research 08's labels for them.
+
 ## Defects found while auditing
 
 Beyond parts not yet built, reading the code found these faults in what is built:
@@ -272,6 +451,8 @@ No item needs an owner decision: every open item is either reader work that can 
 | RDR-611 | in-context answer checking | review deck | P5.3 |
 
 ## All items
+
+Statuses as of 2026-10-03; the re-audit above changes 170 of them.
 
 | ID | status | evidence / reason |
 |---|---|---|

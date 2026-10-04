@@ -8,13 +8,13 @@ Audited 2026-10-04 against commit `0e7d424`, then updated at `8032395` for the r
 
 | Scope | Rows | done | adapted | bug-fixed | n/a | open | waiting |
 |---|---|---|---|---|---|---|---|
-| P1 clauses | 68 | 53 | 6 | 0 | 0 | 5 | 4 |
+| P1 clauses | 68 | 55 | 6 | 0 | 0 | 3 | 4 |
 | SHL items | 78 | 49 | 16 | 6 | 5 | 2 | 0 |
-| **Total** | **146** | **102** | **22** | **6** | **5** | **7** | **4** |
+| **Total** | **146** | **104** | **22** | **6** | **5** | **5** | **4** |
 
 Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next steps seeded by word and dataset version (P1.3), the basmala strip tested (P1.8, and with it P1.9's "P1.8 closed"), the header omnibox's `dir="auto"` (SHL-F08); the dead "being built" frame and a false "coming soon" line removed. Built alongside: D7's vowel-marks switch (1875674), which report 3 found missing.
 
-**Open (7):** P1.3 the `{full, bare, translit}` envelope on the remaining Arabic fields; P1.3 `?in_text=`; P1.5 the design-system audit as a document; P1.7a `dict:` and `user:` identifiers; SHL-Q05 and SHL-Q10 a digits preference. Closed since the audit: P1.3a (918d5bb), P1.9's sweep, SHL-Q07 (8e311ad), SHL-Q09 (df469d3).
+**Open (5):** P1.3 the `{full, bare, translit}` envelope on the remaining Arabic fields; P1.3 `?in_text=`; P1.5 the design-system audit as a document; SHL-Q05 and SHL-Q10 a digits preference. Closed since the audit: P1.3a (918d5bb), P1.9's sweep, SHL-Q07 (8e311ad), SHL-Q09 (df469d3), P1.7a's `dict:` and `user:` identifiers (248334c, 665ff16).
 
 **Waiting on the owner (4):** the phone layouts were not shown before they were built, except the editor's (P1.7: offered now for review after the fact, screenshots at 390 px in every phase's audit); the phone editor (P8.6a); the lexica's legal basis (D22); research 07's findings (D2, D19, D22).
 
@@ -75,8 +75,8 @@ Counted from §2's rows. Fixed since the audit read the code (1d1cab6): next ste
 | P1.7a Quran identifiers | done | quran:2:255:3 and its parents |
 | P1.7a hadith identifiers | done | hadith:{collection}… |
 | P1.7a book identifiers | done | book:{work}; the CTS keys |
-| P1.7a dictionary identifiers | open | Articles are integer ids; no `dict:` namespace (B58 proposes `dict:entry`) |
-| P1.7a the reader's text identifiers | open | Browser ids only; no `user:` identifier |
+| P1.7a dictionary identifiers | done | `dict:<work>:<root>` per article from an append-only registry keyed by the source's address (data/registry/dict-articles.tsv, P/lexica/dict_uris.py, M/0044); the article's address, citation, API key and what a map quotes (248334c; T/test_dict_uris_api.py, E/dict-identifiers.spec.ts) |
+| P1.7a the reader's text identifiers | done | `user:<id>[:<passage>[:<word>]]` (W/lib/library/ids.ts); the reader's place kept under it, migrated from `text:<id>`, the export carrying it (665ff16; ids.test.ts, E/library.spec.ts) |
 | P1.8 editors' footnotes stripped from four tafsirs | done | P/works.py; pipeline/tests/test_works_apparatus.py |
 | P1.8 no-pause-marks file, marks file pinned | done | data/sources.yaml |
 | P1.8 basmala stripped in the join | done | P/texts.py |
