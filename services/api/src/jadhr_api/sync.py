@@ -19,6 +19,7 @@ from fastapi import HTTPException
 from sqlalchemy import Connection, text
 
 from .accounts import key_hash, q, q1, seal, tx, unseal
+from .refusal import Refusal
 from .settings import get_settings
 
 STORES = {
@@ -376,9 +377,21 @@ def export(u: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# deleting an account asks for a sign-in this recent on the device (security review L6): a fresh link to the
+# account's address, or its provider again, proves the reader holds it — which a script on the page could not
+REAUTH_MINUTES = 15
+
+
 def request_delete(u: dict[str, Any]) -> str:
     from .accounts import hash_token, new_token
 
+    began = u.get("session_created_at")
+    if began is None or datetime.now(UTC) - began > timedelta(minutes=REAUTH_MINUTES):
+        raise Refusal(
+            403,
+            "sign_in_again",
+            "Sign in again on this device, then delete the account within a quarter of an hour.",
+        )
     token = new_token()
     with tx() as conn:
         conn.execute(

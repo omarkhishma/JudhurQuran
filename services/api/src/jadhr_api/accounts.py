@@ -336,7 +336,7 @@ def current_user(authorization: str | None = Header(None)) -> dict[str, Any]:
             conn,
             """update accounts.sessions s set last_seen_at = now() from accounts.users u
                where s.token_hash = :h and s.expires_at > now() and u.id = s.user_id
-               returning u.*, s.token_hash as session_hash""",
+               returning u.*, s.token_hash as session_hash, s.created_at as session_created_at""",
             {"h": h},
         )
     if u is None:

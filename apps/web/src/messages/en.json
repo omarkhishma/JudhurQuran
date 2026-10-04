@@ -2859,6 +2859,8 @@
     "deleteCancel": "Cancel",
     "deleted": "The account and everything it held on the server are deleted.",
     "deleteFailed": "Could not delete: {error}",
+    "deleteSignInAgain": "To delete the account, sign in again on this device first: a link to your address, or Google or Apple again, proves it is yours. Then delete it within a quarter of an hour.",
+    "deleteSignInAgainButton": "Sign in again",
     "signOutDeviceNamed": "Sign out {device}, last used {when}",
     "restoreNamed": "Restore {what}, replaced {when}",
     "pv": {

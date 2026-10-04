@@ -3,11 +3,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { SignInSheet } from "@/components/account/AccountButton";
 import { SignInPanel } from "@/components/account/SignInPanel";
 import { Link, usePathname } from "@/i18n/navigation";
 import { signOutHere } from "@/lib/account/actions";
 import { errorKind } from "@/lib/account/errors";
-import { type Account, authFetch, useAccount } from "@/lib/account/store";
+import { type Account, ApiError, authFetch, useAccount } from "@/lib/account/store";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import type { ReadingContext, Session } from "@/lib/reader/store";
 import { runSync } from "@/lib/sync/run";
@@ -480,6 +481,8 @@ function DeleteAccount() {
   const t = useTranslations("me");
   const [token, setToken] = useState<string | null>(null);
   const [state, setState] = useState<{ ok: boolean; text: string } | null>(null);
+  // a session older than a quarter of an hour signs in again first (security review L6)
+  const [again, setAgain] = useState<"ask" | "open" | null>(null);
   const errorText = useErrorText();
   const askRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -497,8 +500,12 @@ function DeleteAccount() {
     moved.current = true;
     try {
       setToken((await authFetch<{ confirm: string }>("/me/delete", { method: "POST" })).confirm);
+      setAgain(null);
     } catch (err) {
-      setState({ ok: false, text: t("deleteFailed", { error: errorText(err) }) });
+      if (err instanceof ApiError && err.code === "sign_in_again") {
+        setState(null);
+        setAgain("ask");
+      } else setState({ ok: false, text: t("deleteFailed", { error: errorText(err) }) });
     }
   }
   async function confirm() {
@@ -535,6 +542,15 @@ function DeleteAccount() {
           {state.text}
         </p>
       )}
+      {again && (
+        <div className="flex flex-col items-start gap-2" role="alert">
+          <p className="text-[12.5px] leading-relaxed text-t1">{t("deleteSignInAgain")}</p>
+          <button type="button" className="btn min-h-[40px]" onClick={() => setAgain("open")}>
+            {t("deleteSignInAgainButton")}
+          </button>
+        </div>
+      )}
+      <SignInSheet returnTo={again === "open" ? "/me?tab=account" : null} onClose={() => setAgain("ask")} />
     </Card>
   );
 }

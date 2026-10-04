@@ -2859,6 +2859,8 @@
     "deleteCancel": "تراجع",
     "deleted": "حُذف الحساب وكل ما فيه على الخادم.",
     "deleteFailed": "تعذّر الحذف: {error}",
+    "deleteSignInAgain": "لحذف الحساب ادخل من جديد على هذا الجهاز أولًا — برابط يصل إلى بريدك أو بحسابك في Google أو Apple كما دخلت — فذلك يثبت أنك صاحبه. ثم احذفه خلال ربع ساعة.",
+    "deleteSignInAgainButton": "ادخل من جديد",
     "signOutDeviceNamed": "أخرج {device}، آخر استعمال {when}",
     "restoreNamed": "استرجع {what}، استُبدلت {when}",
     "pv": {

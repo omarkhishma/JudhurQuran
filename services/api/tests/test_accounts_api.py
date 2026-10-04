@@ -764,3 +764,21 @@ def test_a_server_started_with_nothing_set_sends_no_link_and_shows_no_outbox(
     assert client.get("/api/v1/auth/dev/outbox", params={"email": "x@example.org"}).status_code == 404
     assert client.get("/api/v1/auth/providers").json()["email"] is False
     assert client.post("/api/v1/auth/email", json={"email": "x@example.org"}).status_code == 503
+
+
+def test_deleting_an_account_asks_for_a_recent_sign_in(email: str) -> None:
+    """Security review L6: a session older than a quarter of an hour signs in again before the account is deleted."""
+    h = sign_in(email)
+    with accounts.tx() as conn:
+        accounts.q(
+            conn,
+            "update accounts.sessions set created_at = now() - interval '16 minutes' where token_hash = :h returning user_id",
+            {"h": accounts.hash_token(h["Authorization"].removeprefix("Bearer "))},
+        )
+    r = client.post("/api/v1/me/delete", headers=h)
+    assert r.status_code == 403 and r.json()["error"]["code"] == "sign_in_again"
+    fresh = sign_in(email)
+    confirm = client.post("/api/v1/me/delete", headers=fresh).json()["confirm"]
+    assert client.post("/api/v1/me/delete/confirm", headers=fresh, json={"confirm": confirm}).json() == {
+        "deleted": True
+    }
