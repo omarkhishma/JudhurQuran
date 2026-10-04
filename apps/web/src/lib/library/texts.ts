@@ -8,7 +8,21 @@ import { storageFrozen } from "@/lib/store/safeStorage";
  * The reader's own texts (P4.4, LIB-34, D9a): private, kept in this browser's IndexedDB, sent to be read word by
  * word (POST /analyse/tokens, not stored there) and, when the reader signs in, synced to the account (P6).
  */
-export type FormResult = { kind: "form" | "clitic" | "pattern" | "particle" | "none"; confidence: number; lemma: string | null; lemma_ar?: string | null; root: string | null; root_spaced?: string | null; gloss_en?: string | null };
+/** A word of a reader's text as the shared rules read it (P11.4): ``dict_root`` is the dictionary's root, also where
+ * the Quran has none (pattern-dict, weak-dict). */
+export type FormResult = {
+  kind: "form" | "clitic" | "pattern" | "pattern-dict" | "weak" | "weak-dict" | "particle" | "none";
+  confidence: number;
+  lemma: string | null;
+  lemma_ar?: string | null;
+  root: string | null;
+  root_spaced?: string | null;
+  dict_root?: string | null;
+  gloss_en?: string | null;
+};
+
+/** The root a reading names, letter by letter: the Quran's, else the dictionary's. */
+export const rootShown = (r: FormResult | undefined) => r?.root_spaced ?? (r?.dict_root ? [...r.dict_root].join(" ") : null);
 /** Where a text came from, when it was not pasted (P11.3c): a web page's address, or a PDF's name and the pages taken. */
 export type TextSource = { kind: "url"; url: string; site?: string } | { kind: "pdf"; name: string; pages: number[] };
 

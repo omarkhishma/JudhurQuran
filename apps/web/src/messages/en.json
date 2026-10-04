@@ -2304,7 +2304,7 @@
     "legendAffix": "prefix or suffix",
     "legendUnsure": "confidence below 0.8: to review",
     "buildGraph": "Build a graph from this →",
-    "method": "How it works: Quranic words come from the Quranic Arabic Corpus at their place (hand-verified, confidence 1). Other words are matched to Quranic words spelled the same, the confidence being that analysis's share of those occurrences; failing that, after taking off conjunctions, prepositions, the article and attached pronouns (×0.7), then by the Quran's patterns over its roots (0.35 at most). Nothing is proposed that no Quranic word attests.",
+    "method": "How it works: Quranic words come from the Quranic Arabic Corpus at their place (hand-verified, confidence 1). Other words are matched to Quranic words spelled the same, the confidence being that analysis's share of those occurrences; failing that, after taking off conjunctions, prepositions, the article and attached pronouns (×0.7), then by the Quran's patterns over its roots (0.35 at most), then over the lexica's roots the Quran does not have (0.2 at most), then by the rules for weak and doubled roots — the same rules the hadith and the classical books are read by. No root is proposed that no Quranic word or lexicon article attests.",
     "particleNotSegmented": "particle or function word, not segmented",
     "stem": "stem",
     "proclitic": "prefix",
@@ -2323,7 +2323,14 @@
     "choose": "choose among {n} readings",
     "chooseLabel": "Readings of «{word}»",
     "sourceRange": "Verses {ref}: the Quranic Arabic Corpus's analysis, verse by verse, each word at its place (ten verses at most).",
-    "how_pattern_clitic": "after taking off «{clitics}», by the pattern alone; the root is a Quranic root"
+    "how_pattern_clitic": "after taking off «{clitics}», by the pattern alone; the root is a Quranic root",
+    "rootToDictionary": "The root in the dictionary",
+    "how_pattern-dict": "By its pattern alone; the root is the lexica's, not one the Quran has",
+    "how_pattern-dict_clitic": "With «{clitics}» taken off, by its pattern alone; the root is the lexica's, not one the Quran has",
+    "how_weak": "By the rule for weak and doubled roots; the root is one the Quran has",
+    "how_weak_clitic": "With «{clitics}» taken off, by the rule for weak and doubled roots; the root is one the Quran has",
+    "how_weak-dict": "By the rule for weak and doubled roots; the root is the lexica's, not one the Quran has",
+    "how_weak-dict_clitic": "With «{clitics}» taken off, by the rule for weak and doubled roots; the root is the lexica's"
   },
   "library": {
     "title": "Library",

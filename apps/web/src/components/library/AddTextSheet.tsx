@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Dialog } from "@/components/ui/Dialog";
 import { Link } from "@/i18n/navigation";
 import { formatNumber } from "@/lib/format";
-import { type FormResult, type TextSource, newTextId, saveText } from "@/lib/library/texts";
+import { type FormResult, type TextSource, newTextId, rootShown, saveText } from "@/lib/library/texts";
 import { hasTashkil, passages, words } from "@/lib/library/segment";
 import { useDebounced } from "@/lib/useDebounced";
 import { FromPdf, FromUrl, type Imported } from "./Intake";
@@ -24,7 +24,9 @@ export async function readWords(tokens: string[]): Promise<{ token: string; r: F
   return tokens.map((token, i) => ({ token, r: d.forms[d.token_keys[i]] }));
 }
 
-export const isReview = (r: FormResult | undefined) => !!r && (r.kind === "clitic" || r.kind === "pattern" || (r.kind === "form" && r.confidence < 0.8));
+// read by a rule, not as the Quran spells it: to review (a clitic taken off, a pattern, a weak root)
+const BY_RULE: readonly FormResult["kind"][] = ["clitic", "pattern", "pattern-dict", "weak", "weak-dict"];
+export const isReview = (r: FormResult | undefined) => !!r && (BY_RULE.includes(r.kind) || (r.kind === "form" && r.confidence < 0.8));
 
 /**
  * Add a text (design 05 §5.1, LIB-17…35 with LIB-45/48; P11.3c): pasted, or brought from a web page or a PDF — read
@@ -166,7 +168,7 @@ export function AddTextSheet({ onClose, onSaved }: { onClose: () => void; onSave
                 {head.map((w, i) => {
                   const r = rows[i]?.r;
                   const cls = !rows.length ? "is-pending" : isReview(r) ? "is-review" : r && r.kind !== "none" ? "is-hit" : "is-none";
-                  const tip = !r || r.kind === "none" ? t("tipNone") : isReview(r) ? t("tipReview", { root: r.root_spaced ?? "—", c: fmtC(r.confidence) }) : r.kind === "particle" ? t("tipParticle") : `${r.root_spaced ?? ""}${r.gloss_en ? ` — ${r.gloss_en}` : ""}`;
+                  const tip = !r || r.kind === "none" ? t("tipNone") : isReview(r) ? t("tipReview", { root: rootShown(r) ?? "—", c: fmtC(r.confidence) }) : r.kind === "particle" ? t("tipParticle") : `${r.root_spaced ?? ""}${r.gloss_en ? ` — ${r.gloss_en}` : ""}`;
                   return (
                     <span key={i} className={"pv-word " + cls} title={tip}>
                       {w.surface}{" "}
@@ -180,7 +182,7 @@ export function AddTextSheet({ onClose, onSaved }: { onClose: () => void; onSave
                 {review.slice(0, 3).map((x, i) => (
                   <li key={i}>
                     <span className="ar-classical text-[16px]" lang="ar">{x.token}</span>
-                    <span className="flex-1 text-[12px] text-t2">{t("reviewRow", { root: x.r?.root_spaced ?? "—", c: fmtC(x.r?.confidence ?? 0) })}</span>
+                    <span className="flex-1 text-[12px] text-t2">{t("reviewRow", { root: rootShown(x.r) ?? "—", c: fmtC(x.r?.confidence ?? 0) })}</span>
                     <Link href={`/analyse?q=${encodeURIComponent(x.token)}`} className="text-[12px] underline-offset-2 hover:underline">{t("analyse")}</Link>
                   </li>
                 ))}

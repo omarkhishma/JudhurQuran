@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
 import { formatNumber } from "@/lib/format";
-import { deleteText, loadText, saveText } from "@/lib/library/texts";
+import { deleteText, loadText, rootShown, saveText } from "@/lib/library/texts";
 import { words } from "@/lib/library/segment";
 import { usePersonal } from "@/lib/reader/store";
 import { isReview, readWords } from "./AddTextSheet";
@@ -163,7 +163,7 @@ export function UserTextReader({ id }: { id: string }) {
             const r = read.data?.[k]?.r;
             const word = `${w.surface} `;
             if (!read.data) return <span key={k} className="pv-word is-pending">{word}</span>;
-            if (isReview(r)) return <Link key={k} href={`/analyse?q=${encodeURIComponent(w.word)}`} className="pv-word is-review" title={t("tipReview", { root: r?.root_spaced ?? "—", c: fmtC(r?.confidence ?? 0) })}>{word}</Link>;
+            if (isReview(r)) return <Link key={k} href={`/analyse?q=${encodeURIComponent(w.word)}`} className="pv-word is-review" title={t("tipReview", { root: rootShown(r) ?? "—", c: fmtC(r?.confidence ?? 0) })}>{word}</Link>;
             if (r && r.kind !== "none" && r.lemma) return <Link key={k} href={`/read?w=${encodeURIComponent(r.lemma)}`} className="pv-word is-hit" title={r.kind === "particle" ? t("tipParticle") : `${r.root_spaced ?? ""}${r.gloss_en ? ` — ${r.gloss_en}` : ""}`}>{word}</Link>;
             return <span key={k} className="pv-word is-none" title={t("tipNone")}>{word}</span>;
           })}

@@ -5,6 +5,8 @@ export type Segment = { kind: "prefix" | "stem" | "suffix"; text: string; index:
 export type Candidate = {
   lemma: { slug: string; ar: string; pos: string } | null;
   root: { key: string; spaced: string; translit: string } | null;
+  /** the dictionary's root where the Quran has none (P11.4: the shared rules' pattern-dict and weak-dict) */
+  dict_root?: { key: string; display: string } | null;
   pattern: { slug: string; ar: string } | null;
   pos: string | null;
   features: Record<string, Label | boolean | Record<string, unknown> | undefined> | null;
@@ -17,7 +19,11 @@ export type Candidate = {
   confidence: number;
   location: string | null;
 };
-export type TokenKind = "gold" | "form" | "clitic" | "pattern" | "particle" | "none";
+export type TokenKind = "gold" | "form" | "clitic" | "pattern" | "pattern-dict" | "weak" | "weak-dict" | "particle" | "none";
+/** the kinds the shared rules find past the corpus's forms (jadhr_arabic.analysis): a root possible, not sure */
+export const LOW_KINDS: readonly TokenKind[] = ["pattern", "pattern-dict", "weak", "weak-dict"];
+/** a root written letter by letter, as the root pages show it */
+export const spaced = (key: string) => [...key].join(" ");
 export type AnalysedToken = {
   surface: string;
   key: string;

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Term } from "@/components/terms/Term";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link } from "@/i18n/navigation";
-import { type Analysis, type AnalysedToken, type Candidate, REVIEW_BELOW, SAMPLE, toConllu } from "@/lib/analyse";
+import { type Analysis, type AnalysedToken, type Candidate, LOW_KINDS, REVIEW_BELOW, SAMPLE, spaced, toConllu } from "@/lib/analyse";
 import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { encodeSeed, type Seed } from "@/lib/graph/seedCodec";
 import { getJSON } from "@/lib/reader/api";
@@ -179,7 +179,9 @@ export function AnalyseScreen({ initialQ, initialView, initial }: { initialQ: st
                   </span>
                 )}
                 <span className="text-[11.5px] text-t2" lang="en" dir="ltr">{tk.kind === "particle" ? t("particleShort") : (c?.gloss_en ?? "?")}</span>
-                {c?.root && tk.kind !== "particle" && <span className="ar-classical text-[14px] text-root" lang="ar">{c.root.spaced}</span>}
+                {tk.kind !== "particle" && (c?.root || c?.dict_root) && (
+                  <span className="ar-classical text-[14px] text-root" lang="ar">{c.root ? c.root.spaced : spaced(c.dict_root!.display)}</span>
+                )}
                 <span className={"mono text-[10.5px] " + (tk.confidence >= REVIEW_BELOW ? "text-good" : "text-amber")}>{conf(tk.confidence, locale)}</span>
               </li>
             );
@@ -273,6 +275,11 @@ function TokenRow({ tk, pick, onPick }: { tk: AnalysedToken; pick: number; onPic
           <Link href={`/concordance?root=${encodeURIComponent(c.root.key)}`} className="ar-classical text-[16px] text-root hover:underline" lang="ar" title={t("rootToConcordance")}>
             {c.root.spaced}
           </Link>
+        ) : tk.kind !== "particle" && c?.dict_root ? (
+          // a root the Quran does not have: the lexica attest it, its page is the dictionary's
+          <Link href={`/dictionary/${encodeURIComponent(c.dict_root.key)}`} className="ar-classical text-[16px] text-root hover:underline" lang="ar" title={t("rootToDictionary")}>
+            {spaced(c.dict_root.display)}
+          </Link>
         ) : (
           <span className="text-t3">—</span>
         )}
@@ -286,7 +293,7 @@ function TokenRow({ tk, pick, onPick }: { tk: AnalysedToken; pick: number; onPic
         ) : (
           <>
             <span>
-              {posTerm && gram ? <Term id={posTerm}>{gram}</Term> : gram || (tk.kind === "pattern" ? t("byPattern", { pattern: c?.pattern?.ar ?? "" }) : "")}
+              {posTerm && gram ? <Term id={posTerm}>{gram}</Term> : gram || (LOW_KINDS.includes(tk.kind) && c?.pattern ? t("byPattern", { pattern: c.pattern.ar }) : "")}
               {c?.lemma && <span className="ar-classical text-[14px]" lang="ar">{" • "}{c.lemma.ar}</span>}
             </span>
             {/* English on its own line, never inside the Arabic run (SHL-F07) */}
@@ -296,7 +303,7 @@ function TokenRow({ tk, pick, onPick }: { tk: AnalysedToken; pick: number; onPic
               </span>
             )}
             <span className="text-[11.5px] text-t3">
-              {t(tk.kind === "pattern" && tk.clitics.length ? "how_pattern_clitic" : `how_${tk.kind}`, { ...cnt(c?.count ?? 0, locale), clitics: tk.clitics.join("، ") })}
+              {t(LOW_KINDS.includes(tk.kind) && tk.clitics.length ? `how_${tk.kind}_clitic` : `how_${tk.kind}`, { ...cnt(c?.count ?? 0, locale), clitics: tk.clitics.join("، ") })}
               {c?.location && (
                 <>
                   {" • "}
@@ -320,7 +327,7 @@ function TokenRow({ tk, pick, onPick }: { tk: AnalysedToken; pick: number; onPic
                     {tk.candidates.map((x, i) => (
                       <li key={i}>
                         <button type="button" role="option" aria-selected={i === pick} className={"choose-row" + (i === pick ? " is-on" : "")} onClick={() => { onPick(i); setOpen(false); }}>
-                          <span className="ar-classical text-[15px] text-root" lang="ar">{x.root?.spaced ?? "—"}</span>
+                          <span className="ar-classical text-[15px] text-root" lang="ar">{x.root?.spaced ?? (x.dict_root ? spaced(x.dict_root.display) : "—")}</span>
                           <span className="ar-classical text-[14px]" lang="ar">{x.lemma?.ar ?? x.pattern?.ar ?? ""}</span>
                           <span className="flex-1 text-[11.5px] text-t3">{label(x.features?.pos, locale) ?? ""}</span>
                           <span className="mono text-[11px]">{conf(x.confidence, locale)}</span>
