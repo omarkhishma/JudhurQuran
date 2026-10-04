@@ -6787,6 +6787,20 @@ a.wotd-pill:hover {
   font-weight: 600;
   color: var(--good);
 }
+.endpoint-method.is-post {
+  color: var(--ring);
+}
+.body-field {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--t1);
+  font-family: var(--font-classical), var(--font-mono);
+  font-size: 16px;
+  line-height: 1.7;
+}
 .url-field {
   display: flex;
   min-width: min(100%, 260px);

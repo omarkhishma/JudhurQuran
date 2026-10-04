@@ -326,15 +326,18 @@ const DEFAULTS: Record<string, string> = {
   "/api/v1/public/quran/verses/{key}": "2:255",
   "/api/v1/public/quran/patterns/{slug}": "fa3l",
   "/api/v1/public/quran/concordance": "علم",
+  // a text to analyse is sent in the body (DAT-35, 39)
+  "/api/v1/public/quran/analyse": "إِنَّ العِلْمَ لَا يُدْرَكُ",
 };
 // each endpoint said in the page's language (the API states them in English)
-const SUMMARY_KEY: Record<string, "ep_lookup" | "ep_roots" | "ep_words" | "ep_verses" | "ep_patterns" | "ep_concordance" | "ep_releases"> = {
+const SUMMARY_KEY: Record<string, "ep_lookup" | "ep_roots" | "ep_words" | "ep_verses" | "ep_patterns" | "ep_concordance" | "ep_analyse" | "ep_releases"> = {
   "/api/v1/public/quran/lookup": "ep_lookup",
   "/api/v1/public/quran/roots/{root}": "ep_roots",
   "/api/v1/public/quran/words/{location}": "ep_words",
   "/api/v1/public/quran/verses/{key}": "ep_verses",
   "/api/v1/public/quran/patterns/{slug}": "ep_patterns",
   "/api/v1/public/quran/concordance": "ep_concordance",
+  "/api/v1/public/quran/analyse": "ep_analyse",
   "/api/v1/public/releases": "ep_releases",
 };
 const QUERY_PARAM: Record<string, string> = { "/api/v1/public/quran/lookup": "q", "/api/v1/public/quran/concordance": "root" };
@@ -353,10 +356,17 @@ function urlOf(path: string, param: string): { url: string; head: string; tail: 
   return { url: path, head: path, tail: "", takes: false };
 }
 
-async function call(url: string, failed: string): Promise<Sent> {
+/** A request as sent: GET at its address, or POST with the text in its body. */
+type Asked = { url: string; body: string | null; n: number };
+const bodyOf = (text: string) => JSON.stringify({ text });
+/** The same request for a shell: the body single-quoted, its own single quotes closed and reopened (DAT-50). */
+const curlOf = (origin: string, a: Pick<Asked, "url" | "body">) =>
+  a.body == null ? `curl -s '${origin}${a.url}'` : `curl -s -X POST '${origin}${a.url}' -H 'Content-Type: application/json' -d '${a.body.replace(/'/g, "'\\''")}'`;
+
+async function call(url: string, sentBody: string | null, failed: string): Promise<Sent> {
   const t0 = performance.now();
   try {
-    const r = await fetch(url, { cache: "no-store" });
+    const r = await fetch(url, sentBody == null ? { cache: "no-store" } : { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: sentBody });
     const body = await r.text();
     let pretty = body;
     try {
@@ -380,17 +390,24 @@ function Playground() {
   const [path, setPath] = useState(first);
   const [param, setParam] = useState(DEFAULTS[first]);
   // what was sent: the first answer comes at once (DAT-39); Send asks again, even for the same address
-  const [asked, setAsked] = useState({ url: urlOf(first, DEFAULTS[first]).url, n: 0 });
-  const answer = useQuery({ queryKey: ["playground", asked.url, asked.n], queryFn: () => call(asked.url, t("network")), enabled: client, staleTime: Infinity, retry: false });
+  const [asked, setAsked] = useState<Asked>({ url: urlOf(first, DEFAULTS[first]).url, body: null, n: 0 });
+  const answer = useQuery({ queryKey: ["playground", asked.url, asked.body, asked.n], queryFn: () => call(asked.url, asked.body, t("network")), enabled: client, staleTime: Infinity, retry: false });
   const sent = answer.data;
   const [said, setSaid] = useState("");
+  useEffect(() => {
+    if (!said) return;
+    const id = setTimeout(() => setSaid(""), 1800);
+    return () => clearTimeout(id);
+  }, [said]);
   const ep = endpoints.find((e) => e.path === path);
-  const { head, tail, takes, url } = urlOf(path, param);
+  const post = ep?.method === "POST";
+  const { head, tail, takes } = post ? { head: path, tail: "", takes: false } : urlOf(path, param);
+  const ask = (p: string, value: string, isPost: boolean) => (isPost ? { url: p, body: bodyOf(value) } : { url: urlOf(p, value).url, body: null });
   const send = (e?: FormEvent) => {
     e?.preventDefault();
-    setAsked((a) => ({ url, n: a.n + 1 }));
+    setAsked((a) => ({ ...ask(path, param, post), n: a.n + 1 }));
   };
-  const curl = client ? `curl -s '${window.location.origin}${url}'` : "";
+  const curl = client ? curlOf(window.location.origin, ask(path, param, post)) : "";
   const lim = index.data?.limits;
   return (
     <div className="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -407,10 +424,10 @@ function Playground() {
                 onClick={() => {
                   setPath(e.path);
                   setParam(DEFAULTS[e.path] ?? "");
-                  setAsked((a) => ({ url: urlOf(e.path, DEFAULTS[e.path] ?? "").url, n: a.n + 1 }));
+                  setAsked((a) => ({ ...ask(e.path, DEFAULTS[e.path] ?? "", e.method === "POST"), n: a.n + 1 }));
                 }}
               >
-                <span className="endpoint-method">{e.method}</span>
+                <span className={"endpoint-method" + (e.method === "POST" ? " is-post" : "")}>{e.method}</span>
                 <span className="mono min-w-0 truncate" dir="ltr">{e.path.replace("/api/v1/public", "")}</span>
               </button>
             </li>
@@ -418,7 +435,7 @@ function Playground() {
         </ul>
         {lim && (
           <p className="text-[11.5px] leading-relaxed text-t3">
-            {t("limitsLine", { without: formatNumber(lim.per_minute_without_key, locale), with: formatNumber(lim.per_minute_with_key, locale) })}{" "}
+            {t("limitsLine", { without: formatNumber(lim.per_minute_without_key, locale), with: formatNumber(lim.per_minute_with_key, locale) })} ·{" "}
             <a href={index.data!.openapi} className="underline" dir="ltr">
               OpenAPI
             </a>{" "}
@@ -429,7 +446,7 @@ function Playground() {
       <section className="flex min-w-0 flex-col gap-3" aria-labelledby="req-h">
         <div className="flex flex-col gap-1">
           <h2 id="req-h" className="mono text-[15px] font-semibold" dir="ltr">
-            GET {path.replace("/api/v1/public", "")}
+            {ep?.method ?? "GET"} {path.replace("/api/v1/public", "")}
           </h2>
           {ep && <p className="text-[13px] text-t2" dir="auto">{SUMMARY_KEY[ep.path] ? t(SUMMARY_KEY[ep.path]) : ep.summary}</p>}
         </div>
@@ -439,6 +456,13 @@ function Playground() {
             {takes && <input className="url-param" value={param} onChange={(e) => setParam(e.target.value)} dir="auto" aria-label={t("param")} />}
             <span className="text-t3">{tail}</span>
           </div>
+          {post && (
+            // the text goes in the body, as {"text": "…"}: never in the address, where it would be logged and cached
+            <label className="flex w-full flex-col gap-1 text-[12px] text-t3">
+              {t("bodyText")}
+              <textarea className="body-field" value={param} onChange={(e) => setParam(e.target.value)} dir="auto" rows={2} maxLength={600} />
+            </label>
+          )}
           <button type="submit" className="btn btn-primary" disabled={answer.isFetching}>{t("send")}</button>
           <button
             type="button"

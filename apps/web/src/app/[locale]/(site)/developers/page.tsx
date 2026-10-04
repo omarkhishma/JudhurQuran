@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/develope
 type Index = { data: { endpoints: { method: string; path: string }[]; limits: { per_minute_without_key: number; per_minute_with_key: number } } };
 
 // what each public endpoint takes and gives, in both languages (P10.3c)
-const ENDPOINTS: { path: string; params: string; ar: string; en: string }[] = [
+const ENDPOINTS: { method?: "POST"; path: string; params: string; ar: string; en: string }[] = [
   { path: "/api/v1/public", params: "", ar: "فهرس الواجهة: منتجاتها ونقاطها وحدودها كما يحفظها الخادم.", en: "The API's index: its products, endpoints and limits as the server holds them." },
   { path: "/api/v1/public/quran/lookup", params: "q, limit ≤ 20", ar: "مطابقات مصنفة لأي طلب: كلمة بالتشكيل أو بدونه، جذر، وزن، آية.", en: "Typed matches for any query: a word with or without vowels, a root, a pattern, a verse." },
   { path: "/api/v1/public/quran/roots/{root}", params: "علم · ع ل م · ʿ-l-m", ar: "جذر: مداخله بأوزانها وطريقة استخراج كل وزن، وتوزيعه في السور.", en: "A root: its lemmas with their patterns and how each was derived, its distribution." },
@@ -22,7 +22,24 @@ const ENDPOINTS: { path: string; params: string; ar: string; en: string }[] = [
   { path: "/api/v1/public/quran/verses/{key}", params: "2:255", ar: "آية: نصها كما في المصحف، وكلماتها.", en: "A verse: its text as the mushaf writes it, and its words." },
   { path: "/api/v1/public/quran/patterns/{slug}", params: "fa3l, limit ≤ 500", ar: "وزن ومداخله عبر الجذور.", en: "A pattern and its lemmas across roots." },
   { path: "/api/v1/public/quran/concordance", params: "root, limit ≤ 100, cursor", ar: "مواضع الجذر في سياقها، صفحة بعد صفحة (next_cursor).", en: "A root's lines in context, a page at a time (next_cursor)." },
+  {
+    method: "POST",
+    path: "/api/v1/public/quran/analyse",
+    params: '{"text": "…"} ≤ 600',
+    ar: "عبارة تقرأ كلمة كلمة على ألفاظ القرآن: تحليل المدونة بموضع كل كلمة حيث تكون من القرآن، وقراءات مرتبة بدرجة الثقة فيما سوى ذلك.",
+    en: "A phrase read word by word against the Quran: the corpus's analysis, each word at its place, where it is the Quran's; ranked readings with their confidence otherwise.",
+  },
   { path: "/api/v1/public/releases", params: "", ar: "إصدارات البيانات المسجلة.", en: "The recorded dataset releases." },
+];
+
+// how a word of an analysed text was read (POST /quran/analyse)
+const KINDS: { kind: string; ar: string; en: string }[] = [
+  { kind: "gold", ar: "تحليل المدونة القرآنية اللغوية للكلمة في موضعها من القرآن.", en: "The corpus's analysis of the word at its place in the Quran." },
+  { kind: "form", ar: "الرسم نفسه في القرآن، وقراءاته مرتبة بنصيب كل منها من مواضعه.", en: "The same written form in the Quran, its readings ranked by their share of its places." },
+  { kind: "clitic", ar: "الرسم بعد نزع ما اتصل به من حروف العطف والجر وأل والضمائر.", en: "The form after its attached conjunctions, prepositions, article and pronouns are taken off." },
+  { kind: "pattern", ar: "جذر مرشح من أوزان القرآن على جذوره، بثقة أدنى.", en: "A root suggested by the Quran's patterns over its roots, with lower confidence." },
+  { kind: "particle", ar: "حرف لا جذر له.", en: "A particle, with no root." },
+  { kind: "none", ar: "لا قراءة.", en: "No reading." },
 ];
 
 const RELEASES: { path: string; ar: string; en: string }[] = [
@@ -105,11 +122,11 @@ export default async function DevelopersPage({ params }: PageProps<"/[locale]/de
       <h2>{ar ? "النقاط" : "Endpoints"}</h2>
       {ar ? (
         <p>
-          كلها <C>GET</C>، وأسماؤها تحت المنتج: <C>quran</C> اليوم، والمعجم والحديث والكتب بأسمائها حين تأتي.
+          كلها تقرأ بـ <C>GET</C> إلا التحليل فبـ <C>POST</C>: يرسل النص في متن الطلب فلا يقع في عنوان ولا في سجل ولا في ذاكرة مؤقتة، ولا يحفظ. وأسماؤها تحت المنتج: <C>quran</C> اليوم، والمعجم والحديث والكتب بأسمائها حين تأتي.
         </p>
       ) : (
         <p>
-          All are <C>GET</C>, named under their product: <C>quran</C> today; the dictionary, hadith and books under their own names when they come.
+          All are read with <C>GET</C> but the analysis, which takes <C>POST</C>: the text goes in the body, so it never sits in an address, a log line or a cache, and it is not kept. They are named under their product: <C>quran</C> today; the dictionary, hadith and books under their own names when they come.
         </p>
       )}
       {/* each endpoint on its own lines — the path, what it takes, what it gives — at every width */}
@@ -117,6 +134,7 @@ export default async function DevelopersPage({ params }: PageProps<"/[locale]/de
         {ENDPOINTS.map((e) => (
           <div key={e.path} className="flex flex-col gap-0.5 py-2.5">
             <dt className="mono break-all text-[12.5px] text-t1" dir="ltr">
+              {e.method && <span className="me-2 font-semibold text-[var(--ring)]">{e.method}</span>}
               {e.path}
             </dt>
             {e.params && (
@@ -128,6 +146,37 @@ export default async function DevelopersPage({ params }: PageProps<"/[locale]/de
           </div>
         ))}
       </dl>
+
+      <h3>{ar ? "تحليل نص" : "Analysing a text"}</h3>
+      <p>
+        {ar
+          ? "لكل كلمة في الجواب نوع قراءتها في الحقل kind، وهو واحد مما يلي. القراءات آلية ومعها درجة الثقة، وهي نصيب القراءة من مواضع الرسم في القرآن. ولا تعطى الصفات الإعرابية إلا لكلمة قرئت في موضعها من القرآن، وغيرها يعطى مثالها القرآني."
+          : "Each word in the answer says how it was read, in its kind, one of those below. Readings are machine-derived and carry their confidence: the reading's share of the form's places in the Quran. Inflection is given only for a word read at its place in the Quran; any other word gets its Quranic example."}
+      </p>
+      <dl className="not-prose flex flex-col divide-y divide-line">
+        {KINDS.map((k) => (
+          <div key={k.kind} className="flex flex-col gap-0.5 py-2 sm:flex-row sm:gap-3">
+            <dt className="mono shrink-0 text-[12.5px] text-t1 sm:w-20">
+              <span dir="ltr">{k.kind}</span>
+            </dt>
+            <dd className="text-[13.5px] leading-relaxed text-t2">{ar ? k.ar : k.en}</dd>
+          </div>
+        ))}
+      </dl>
+      <pre className="mono overflow-x-auto rounded-xl bg-card p-4 text-[12.5px] leading-relaxed" dir="ltr" tabIndex={0} aria-label={ar ? "مثال التحليل" : "Analysis example"}>{`curl -s -X POST https://<domain>/api/v1/public/quran/analyse \\
+  -H 'Content-Type: application/json' -d '{"text": "إن العلم لا يدرك"}'
+{
+  "meta": { …, "layers": [ …, { "layer": "analysis", "source": "jadhr", "what": "… machine-derived, each reading with its confidence" } ] },
+  "data": {
+    "source": { "kind": "free", "verse_key": null },
+    "tokens": [
+      { "surface": "العلم", "kind": "form", "confidence": 1.0,
+        "readings": [ { "lemma": { "slug": "ilm", "ar": "عِلْم" }, "root": { "key": "علم" }, "pattern": { "ar": "فِعْل" },
+                        "confidence": 1.0, "quran_occurrences": 28, "quran_example": "2:120:23" } ] },
+      …
+    ]
+  }
+}`}</pre>
 
       <h2>{ar ? "الإصدارات" : "Releases"}</h2>
       <p>

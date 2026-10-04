@@ -3452,6 +3452,8 @@
     "ep_verses": "One verse (2:255): its text as the mushaf writes it, and its words.",
     "ep_patterns": "A pattern (wazn) and its lemmas across roots.",
     "ep_concordance": "A root's lines in the Quran (KWIC), a page at a time.",
+    "ep_analyse": "A phrase read word by word against the Quran: the corpus's analysis where it is the Quran's, ranked readings otherwise, each with its confidence. The text goes in the body and is not kept.",
+    "bodyText": "The text, sent in the body",
     "ep_releases": "Every recorded dataset release, with its files' hashes and holds."
   }
 }

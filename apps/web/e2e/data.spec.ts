@@ -58,6 +58,33 @@ test("the playground sends real requests and shows what came back (P10.3b)", asy
   if (!isMobile) expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
 });
 
+test("the playground sends a text by POST, and its curl runs as copied (DAT-35, 39, 50)", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/data?tab=api");
+  await page.getByRole("navigation", { name: "نقاط الواجهة" }).getByRole("button", { name: /quran\/analyse/ }).click();
+  await expect(page.getByRole("heading", { name: "POST /quran/analyse" })).toBeVisible();
+  const body = page.getByRole("textbox", { name: "النص، يرسل في متن الطلب" });
+  await expect(body).toHaveValue("إِنَّ العِلْمَ لَا يُدْرَكُ");
+  const box = page.getByLabel("الجواب");
+  await expect(box).toContainText('"kind": "free"');
+  await expect(box).toContainText('"layer": "analysis"');
+  // a text with a quote in it: sent, and its curl still a valid command
+  await body.fill("قال: 'إن العلم لا يدرك'");
+  await page.getByRole("button", { name: "أرسل" }).click();
+  await expect(box).toContainText("قال: 'إن العلم لا يدرك'");
+  await page.getByRole("button", { name: "curl", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "نسخ أمر curl" })).toBeVisible();
+  const curl = await page.evaluate(() => navigator.clipboard.readText());
+  expect(curl).toContain("-X POST");
+  expect(curl).toContain("-H 'Content-Type: application/json'");
+  const { execFileSync } = await import("node:child_process");
+  const out = JSON.parse(execFileSync("sh", ["-c", curl], { encoding: "utf-8" })) as { data: { text: string; source: { kind: string } } };
+  expect(out.data.text).toBe("قال: 'إن العلم لا يدرك'");
+  expect(out.data.source.kind).toBe("free");
+  // the copied word goes away by itself
+  await expect(page.getByRole("status").filter({ hasText: "نسخ أمر curl" })).toHaveCount(0, { timeout: 4000 });
+});
+
 test("the developers' guide: the public API's envelope, endpoints, releases, limits as the API states them, errors and terms (P10.3c)", async ({ page }) => {
   const index = (await (await page.request.get("/api/v1/public")).json()) as { data: { limits: { per_minute_without_key: number; per_minute_with_key: number } } };
   await page.goto("/developers");
