@@ -63,6 +63,12 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
     ("narrators", "narrators.jsonl", ["id", "source_id", "number", "kind", "text", "name", "name_norm", "verdict", "rank",
                                       "tabaqa", "tabaqa_rule", "death_text", "death_ah", "death_rule", "sigla"], set()),
     ("narrator_scales", "narrator_scales.jsonl", ["scale", "n", "text"], set()),
+    # HadeethEnc's items verbatim and their links to the hadith they cite (P11.2c)
+    ("hadeethenc_items", "hadeethenc_items.jsonl", ["id", "title", "text", "explanation", "word_meanings", "benefits",
+                                                    "grade", "attribution", "link", "reference", "version"],
+     {"word_meanings"}),
+    ("hadeethenc_links", "hadeethenc_links.jsonl", ["id", "item_id", "passage_id", "book", "number", "agreement",
+                                                    "status"], set()),
     # each narrator's name in an isnād linked to his Taqrīb entry, with its candidates (P11.2b)
     ("narrator_links", "narrator_links.jsonl", ["id", "passage_id", "ordinal", "span_start", "span_end", "text",
                                                 "narrator_id", "rule", "confidence", "status", "candidates"], set()),
@@ -276,6 +282,8 @@ TRUNCATE_ORDER = [
     "senses",
     "glossary_terms",
     "corpora",
+    "hadeethenc_links",
+    "hadeethenc_items",
     "narrator_links",
     "narrator_scales",
     "narrators",

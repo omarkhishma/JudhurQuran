@@ -22,6 +22,7 @@ NEEDS_DATA = {
     "test_isnad.py",
     "test_taqrib.py",
     "test_narrators.py",
+    "test_hadeethenc.py",
     "test_every_pinned_source_file_matches",
     "test_the_dictionary_on_the_build",
 }

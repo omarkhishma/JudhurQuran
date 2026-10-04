@@ -95,6 +95,12 @@ narrators:
   source: openiti-taqrib
   file: openiti-2025.1.9-hadith/0852IbnHajarCasqalani.TaqribTahdhib.JK000121-ara1.completed
 
+# HadeethEnc's explanations: the versioned Arabic export, verbatim, and the references the API gives (P11.2c)
+hadeethenc:
+  source: hadeethenc
+  excel: hadeethenc/HadeethEnc.com_ar-v1.7.0.xlsx
+  api: hadeethenc/api-ar-all-2026-10-04.json
+
 # Graders whose rulings these are, with the work each ruling comes from (research 21 §3, the evidence pages saved in
 # data/raw/fawazahmed0-hadith-api/grade-evidence/).
 graders:

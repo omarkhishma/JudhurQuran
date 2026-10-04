@@ -278,6 +278,25 @@ sources:
       - path: openiti-2025.1.9-hadith/0179MalikIbnAnas.Muwatta.Shamela0001699-ara1.completed
         sha256: 1402840d20bf094e127d75450d0e77df82ca2f056c9c426300f6758a3ca1d3fb
 
+  - id: hadeethenc
+    role_ar: "شرح الأحاديث وفوائدها ومعاني كلماتها كما نشرتها موسوعة الأحاديث النبوية، بنصها ورقم إصدارها، مربوطة بالحديث الذي تحيل إليه برقمه"
+    license_ar: "يتاح تنزيل المحتوى وإعادة نشره بشروط الناشر: عدم التعديل أو الإضافة أو الحذف، والإشارة إلى الناشر والمصدر، وذكر رقم الإصدار"
+    kind: hadith-explanations
+    role: HadeethEnc's explanations, benefits and word meanings, verbatim with their version, linked to the hadith each cites by its number
+    title_ar: موسوعة الأحاديث النبوية (HadeethEnc.com) — جمعية خدمة المحتوى الإسلامي باللغات
+    title_en: HadeethEnc.com — Encyclopedia of Translated Prophetic Hadiths (Islamic Content Service Association)
+    version: Arabic export v1.7.0 (2025-11-12); references from the API, 2026-10-04
+    url: https://hadeethenc.com
+    license: "The publisher's terms: no modification, addition or deletion; the publisher and source (HadeethEnc.com) named; the version number given; commercial and non-commercial use allowed (usage policy at IslamHouse-API hub @cccb9f22)"
+    license_url: https://hadeethenc.com/ar/home
+    attribution_ar: "الشرح والفوائد ومعاني الكلمات من موسوعة الأحاديث النبوية (HadeethEnc.com)، الإصدار العربي 1.7.0، جمعية خدمة المحتوى الإسلامي باللغات، كما نشرتها دون تعديل."
+    attribution_en: "Explanation, benefits and word meanings from HadeethEnc.com, Arabic version 1.7.0, Islamic Content Service Association, as published, unchanged."
+    files:
+      - path: hadeethenc/HadeethEnc.com_ar-v1.7.0.xlsx
+        sha256: d5d397cb9fc8ddd54c4c6ee88357c2217721db0bd0759c6ec26d8b3fc36f1ec1
+      - path: hadeethenc/api-ar-all-2026-10-04.json
+        sha256: 502dec96a69341a5cf02adc98ce9a705e889d103486567153075c87f1d866665
+
   - id: openiti-taqrib
     role_ar: "تراجم رواة الكتب الستة من تقريب التهذيب لابن حجر: الاسم وحكمه عليه وطبقته ووفاته ورموز من أخرج له"
     license_ar: "النص الرقمي من مدونة OpenITI، إصدار 2025.1.9، برخصة المشاع الإبداعي — نسب المصنف، غير تجاري، المشاركة بالمثل 4.0؛ المؤلف توفي سنة 852هـ"

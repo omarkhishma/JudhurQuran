@@ -678,6 +678,19 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
 
         generic["narrators"], report["narrators"] = narrator_rows(raw.root, raw.hadith_registry)
         generic["narrator_scales"] = narrator_scales(raw.root, raw.hadith_registry)
+        # HadeethEnc's items, verbatim, linked to the hadith each cites by number (P11.2c)
+        import yaml
+
+        from .ecosystem import hadeethenc
+
+        he_spec = yaml.safe_load(raw.hadith_registry.read_text(encoding="utf-8"))["hadeethenc"]
+        slug_of = {t["id"]: t["slug"] for t in extra["texts"]}
+        records = {
+            (slug_of[p["text_id"]], p["ref"]): (p["id"], p["ar_full"] or "") for p in extra["passages"]
+        }
+        generic["hadeethenc_items"] = hadeethenc.items(raw.root, he_spec)
+        he_links, report["hadeethenc"] = hadeethenc.links(generic["hadeethenc_items"], records)
+        generic["hadeethenc_links"] = [{"id": i, **x} for i, x in enumerate(he_links, start=1)]
         kinds = Counter(f["kind"] for f in extra["text_forms"])
         report["texts"] = {
             "texts": len(extra["texts"]),

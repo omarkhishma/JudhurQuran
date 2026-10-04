@@ -3332,3 +3332,57 @@ licences:
   - The author died 852 AH (public domain); the edition is Muḥammad ʿAwwāma's (Dār al-Rashīd, 1406/1986), whose apparatus OpenITI's cleaned version removes; the entry numbers are the edition's.
   - The rank, ṭabaqa and computed year are read from Ibn Ḥajar's words by the rules his own introduction states; the page shows his words, with the reading labelled as derived.
   - 'CC BY-NC-SA 4.0: non-commercial display with attribution is approved (D18); rows served through the API stay CC BY-NC-SA 4.0 (ShareAlike); a commercial path needs a re-keyed public-domain printing (D2).'
+- id: hadeethenc
+  registry: data/sources.yaml
+  urls_checked:
+  - https://hadeethenc.com/ar/home
+  - https://hadeethenc.com/HadeethEnc.com-API-v1.postman_collection_new.json
+  - https://raw.githubusercontent.com/IslamHouse-API/multilingual-quran-hadith-islamic-content-database-api-hub/cccb9f220e2bc866fd95e3a8e58e74aef428f580/README.md
+  - https://hadeethenc.com/en/check/ar/v1.7.0
+  fetched: '2026-10-04'
+  page_sha256:
+    https://hadeethenc.com/ar/home: 19e8ba7a2874343c5610354454dd7e114e1ebf899a1892e98df6600b09baed30
+    https://hadeethenc.com/HadeethEnc.com-API-v1.postman_collection_new.json: f055630516e4b02a83019d49e3e4a7b6d852ef6df32f07c300e66bd5e6112faa
+    https://raw.githubusercontent.com/IslamHouse-API/multilingual-quran-hadith-islamic-content-database-api-hub/cccb9f220e2bc866fd95e3a8e58e74aef428f580/README.md: eece3db0ad94aac316b21a1a569001db2b5dda6bee602672a80f6d5c91afc31d
+    https://hadeethenc.com/en/check/ar/v1.7.0: 625f49f887e31c692625da6ed10b05fc9c879fb9385bb19f19d78dea129de379
+  clauses:
+  - topic: redistribution
+    quote: يتاح تنزيل محتوى الترجمات وإعادة نشره، بالشروط والضوابط التالية
+    url: https://hadeethenc.com/ar/home
+  - topic: modification
+    quote: 1. عدم التعديل أو الإضافة أو الحذف على المحتوى.
+    url: https://hadeethenc.com/ar/home
+  - topic: attribution
+    quote: 2. الإشارة بوضوح للناشر وللمصدر (HadeethEnc.com).
+    url: https://hadeethenc.com/ar/home
+  - topic: attribution
+    quote: 3. ذكر رقم الإصدار عند إعادة نشر الترجمة.
+    url: https://hadeethenc.com/ar/home
+  - topic: display
+    quote: 7. عدم تضمين إعلانات لا تليق بمحتوى الأحاديث النبوية وترجماتها عند العرض.
+    url: https://hadeethenc.com/ar/home
+  - topic: modification
+    quote: No modification, addition, or deletion of the content.
+    url: https://hadeethenc.com/HadeethEnc.com-API-v1.postman_collection_new.json
+  - topic: commercial
+    quote: Using it in commercial and non-commercial projects.
+    url: https://raw.githubusercontent.com/IslamHouse-API/multilingual-quran-hadith-islamic-content-database-api-hub/cccb9f220e2bc866fd95e3a8e58e74aef428f580/README.md
+  - topic: modification
+    quote: Changing formatting or file format as long as the original text itself is not changed.
+    url: https://raw.githubusercontent.com/IslamHouse-API/multilingual-quran-hadith-islamic-content-database-api-hub/cccb9f220e2bc866fd95e3a8e58e74aef428f580/README.md
+  - topic: display
+    quote: A summary, explanation, or AI-generated text must not be presented as the original text issued by our platforms.
+    url: https://raw.githubusercontent.com/IslamHouse-API/multilingual-quran-hadith-islamic-content-database-api-hub/cccb9f220e2bc866fd95e3a8e58e74aef428f580/README.md
+  - topic: other
+    quote: You do not need prior permission if you follow the conditions below.
+    url: https://raw.githubusercontent.com/IslamHouse-API/multilingual-quran-hadith-islamic-content-database-api-hub/cccb9f220e2bc866fd95e3a8e58e74aef428f580/README.md
+  - topic: other
+    quote: The verion '1.7.0' of the translation 'ar' is up to date
+    url: https://hadeethenc.com/en/check/ar/v1.7.0
+  our_use: 'Built and loaded, shown with a hadith once the hadith pages exist (P11.2c): the 3,582 items of the Arabic export v1.7.0 (title, the hadith as HadeethEnc gives it, explanation, benefits, word meanings, grade, attribution, link), verbatim, with the reference each gives from the API (2026-10-04); each linked to the hadith of the Six Books it cites by number in our numbering, with how much of its wording our record holds — shown as HadeethEnc''s item citing that number, never as our text, its grade as HadeethEnc''s verdict; a citation whose wording disagrees is kept for review, not shown. Not in the bulk release.'
+  status: attention
+  notes:
+  - Terms read 2026-10-04; every page is byte-identical to the copy saved in data/raw/hadeethenc the same day, and the usage policy on the hub's main branch is still commit cccb9f22's.
+  - The usage policy is volatile — its 2026-08-12 version (f224c014) said it did not grant blanket commercial rights — so it is re-read before every release (PLAN P1.8); a written confirmation from the publisher is the owner's to ask (D19, not sent).
+  - 'Conditions met: verbatim, publisher and source named, version given, no advertising. Condition 5 (telling the source of any note on the content) and 6 (updating to new versions) are the editors'' tasks.'
+  - The reference field comes from the API dump, which is unversioned; the Excel export, versioned, carries the content and agrees with the API on 3,581 of 3,582 texts.

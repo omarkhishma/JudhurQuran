@@ -431,6 +431,7 @@ dependencies = [
     { name = "httpx" },
     { name = "jadhr-arabic" },
     { name = "lxml" },
+    { name = "openpyxl" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pyyaml" },
 ]
@@ -446,6 +447,7 @@ requires-dist = [
     { name = "jadhr-arabic", editable = "packages/arabic-py" },
     { name = "lxml", specifier = ">=5" },
     { name = "numpy", marker = "extra == 'audio'", specifier = ">=2.1" },
+    { name = "openpyxl", specifier = ">=3.1" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pyyaml", specifier = ">=6" },
 ]

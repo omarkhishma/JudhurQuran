@@ -486,6 +486,18 @@ def text_passage(
 
 
 @router.get(
+    "/hadeethenc/{item_id}",
+    summary="One HadeethEnc item verbatim (v1.7.0), with the hadith it cites in our texts and how far each agrees",
+)
+def hadeethenc_item(request: Request, item_id: Annotated[int, Path(ge=1)]) -> Response:
+    with connect() as conn:
+        it = texts_api.hadeethenc_item(conn, item_id)
+        if it is None:
+            raise not_found("HadeethEnc item")
+        return cached(request, it)
+
+
+@router.get(
     "/dictionaries", summary="The classical dictionaries with authors, death years, editions and licences"
 )
 def dictionaries(request: Request) -> Response:

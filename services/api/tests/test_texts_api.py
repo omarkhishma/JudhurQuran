@@ -149,3 +149,36 @@ def test_every_passage_lines_its_words_up_with_its_stored_forms() -> None:
         segs, _ = segments(r["ar_full"] or "", r["form_ids"] or [])
         assert "".join(s["t"] for s in segs) == (r["ar_full"] or "")
     assert missing == 0
+
+
+def test_a_hadith_carries_hadeethencs_explanation_of_the_number_it_cites() -> None:
+    """P11.2c: HadeethEnc's items citing this hadith, verbatim with their version, its grade HadeethEnc's verdict; a
+    citation whose wording our record does not hold is never shown."""
+    p = get("/api/v1/texts/bukhari/passages/1")
+    by_id = {x["id"]: x for x in p["explanations"]}
+    x = by_id[4560]
+    assert (
+        x["cites"] == {"book": "bukhari", "number": 1} and x["status"] == "agrees" and x["agreement"] >= 0.6
+    )
+    assert x["version"] == "1.7.0" and x["grade"] == "صحيح" and x["explanation"] and x["benefits"]
+    assert (
+        p["explanations_source"]["id"] == "hadeethenc"
+        and "1.7.0" in p["explanations_source"]["attribution_ar"]
+    )
+    item = get("/api/v1/hadeethenc/4560")
+    assert {(c["slug"], c["ref"]) for c in item["cites"]} >= {
+        ("bukhari", "1"),
+        ("bukhari", "6953"),
+        ("muslim", "1907.01"),
+    }
+    assert item["text"] == x["text"] and client.get("/api/v1/hadeethenc/999999").status_code == 404
+    with connect() as conn:
+        hidden = rows(
+            conn,
+            """select l.passage_id, t.slug, p.ref from content.hadeethenc_links l
+                 join content.passages p on p.id = l.passage_id join content.texts t on t.id = p.text_id
+                where l.status = 'disagrees' limit 3""",
+        )
+    for h in hidden:
+        shown = get(f"/api/v1/texts/{h['slug']}/passages/{h['ref']}")["explanations"]
+        assert all(e["status"] != "disagrees" for e in shown)

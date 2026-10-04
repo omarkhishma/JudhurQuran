@@ -291,6 +291,16 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
         {"p": p["id"]},
     )
     mark(segs, split, links)
+    # HadeethEnc's items citing this hadith by its number, as HadeethEnc gives them (P11.2c); a citation whose
+    # wording our record does not hold is not shown
+    explanations = rows(
+        conn,
+        """select i.id, i.title, i.text, i.explanation, i.word_meanings, i.benefits, i.grade, i.attribution, i.link,
+                  i.version, l.book, l.number, l.agreement, l.status
+             from content.hadeethenc_links l join content.hadeethenc_items i on i.id = l.item_id
+            where l.passage_id = :p and l.status <> 'disagrees' order by l.agreement desc, i.id""",
+        {"p": p["id"]},
+    )
     forms = _forms(conn, ids)
     ch = one(
         conn,
@@ -342,6 +352,23 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
         "prev": next((n["ref"] for n in near if n["side"] == "prev"), None),
         "next": next((n["ref"] for n in near if n["side"] == "next"), None),
         "source": _source(conn, t["source_id"]),
+        "explanations": [
+            {
+                **{
+                    k: x[k]
+                    for k in ("id", "title", "text", "explanation", "word_meanings", "benefits", "link")
+                },
+                # HadeethEnc's own verdict and attribution, credited to it
+                "grade": x["grade"],
+                "attribution": x["attribution"],
+                "version": x["version"],
+                "cites": {"book": x["book"], "number": x["number"]},
+                "agreement": x["agreement"],
+                "status": x["status"],
+            }
+            for x in explanations
+        ],
+        "explanations_source": _source(conn, "hadeethenc") if explanations else None,
     }
 
 
@@ -394,3 +421,20 @@ def hits(conn: Connection, uris: list[str]) -> dict[str, dict[str, Any]]:
             "start": _start(r["ar_full"] or ""),
         }
     return out
+
+
+def hadeethenc_item(conn: Connection, item_id: int) -> dict[str, Any] | None:
+    """One HadeethEnc item, verbatim, with the hadith it cites in our texts and how far each agrees."""
+    it = one(conn, "select * from content.hadeethenc_items where id = :i", {"i": item_id})
+    if it is None:
+        return None
+    it["cites"] = rows(
+        conn,
+        """select t.slug, t.title_ar, t.title_en, p.ref, l.book, l.number, l.agreement, l.status
+             from content.hadeethenc_links l join content.passages p on p.id = l.passage_id
+             join content.texts t on t.id = p.text_id
+            where l.item_id = :i order by t.sort_order, p.id""",
+        {"i": item_id},
+    )
+    it["source"] = _source(conn, "hadeethenc")
+    return it

@@ -9,6 +9,7 @@ dependencies = [
   "pyyaml>=6",
   "psycopg[binary]>=3.2",
   "lxml>=5",
+  "openpyxl>=3.1",
 ]
 
 [project.optional-dependencies]
