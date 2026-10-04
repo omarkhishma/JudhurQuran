@@ -2353,7 +2353,8 @@
     "stoppedAtRef": "توقفت عند الحديث {ref}",
     "stoppedAtLabel": "توقفت عند: {label}",
     "stoppedHere": "تابع من حيث توقفت",
-    "stoppedAtPassage": "توقفت عند المقطع {n}"
+    "stoppedAtPassage": "توقفت عند المقطع {n}",
+    "deckShapeSub": "القالب الذي صُبّت فيه هذه الكلمة"
   },
   "board": {
     "reviewed": "راجعته هيئة التحرير",

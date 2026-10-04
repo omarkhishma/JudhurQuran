@@ -1873,6 +1873,11 @@ button.type-chip:hover {
 .ask-deck::-webkit-scrollbar {
   display: none;
 }
+/* the deck's ▶ is a phone's touch target (RDR-183) */
+.ask-deck-card .listen-btn {
+  width: 44px;
+  height: 44px;
+}
 .ask-deck-card {
   flex: none;
   width: 86%;

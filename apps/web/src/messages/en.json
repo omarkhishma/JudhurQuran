@@ -2353,7 +2353,8 @@
     "stoppedAtRef": "Stopped at hadith {ref}",
     "stoppedAtLabel": "Stopped at: {label}",
     "stoppedHere": "Continue where you stopped",
-    "stoppedAtPassage": "Stopped at passage {n}"
+    "stoppedAtPassage": "Stopped at passage {n}",
+    "deckShapeSub": "the mould this word was poured into"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

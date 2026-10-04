@@ -86,3 +86,18 @@ test("the hover card's actions open the entry in the panel when the reader has c
   await card.getByRole("button", { name: "المدخل كاملًا" }).click();
   await expect(page.locator(".reader-panel")).toBeVisible();
 });
+
+test("the phone deck: a 44 px ▶ on the meaning card, and the shape card names the mould in letters (RDR-183, 186)", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "the deck is the phone layout");
+  const w = await api<{ pattern: { ar: { full: string; translit: string } } | null }>(page, "/words/ilm?limit=0");
+  await seed(page);
+  await page.goto("/quran/1?mode=ask");
+  await page.getByRole("textbox", { name: "عن أي كلمة تتساءل؟" }).fill("علم");
+  const play = page.locator(".ask-deck-card .listen-btn").first();
+  await expect(play).toBeVisible();
+  const box = (await play.boundingBox())!;
+  expect(Math.round(box.width)).toBeGreaterThanOrEqual(44);
+  expect(Math.round(box.height)).toBeGreaterThanOrEqual(44);
+  const shape = page.locator(".ask-deck-card").filter({ hasText: w.pattern!.ar.full });
+  await expect(shape).toContainText(`${w.pattern!.ar.translit} • القالب الذي صُبّت فيه هذه الكلمة`);
+});

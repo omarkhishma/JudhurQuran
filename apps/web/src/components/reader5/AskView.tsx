@@ -326,6 +326,10 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
         <>
           <p className="ar-classical text-[36px] text-form" lang="ar">{w.pattern.ar.full}</p>
           <p className="text-[14px]"><PatternFunction p={w.pattern} /></p>
+          {/* the mould's name in letters the reader can say (RDR-186) */}
+          <p className="text-[12.5px] text-t2">
+            <bdi dir="ltr" lang="en">{w.pattern.ar.translit}</bdi> • {t("deckShapeSub")}
+          </p>
           <p className="text-[12.5px] text-t3">{t("deckShapeBody", cnt(w.pattern.lemma_count, locale))}</p>
         </>
       ) : (
