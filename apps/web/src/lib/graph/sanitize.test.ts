@@ -51,6 +51,8 @@ describe("cleanGraph", () => {
         { id: "quote:7", position: { x: 0, y: 0 }, data: { kind: "note", entry: 7, text: "a forged quotation", phrase: true } },
         { id: "root:x", position: { x: 0, y: 0 }, data: { kind: "root", entry: 7 } },
         { id: "n", position: { x: 0, y: 0 }, data: { kind: "note", entry: "7", text: "mine" } },
+        { id: "quote:dict:lane:علم", position: { x: 0, y: 0 }, data: { kind: "note", entry: "dict:lane:علم", text: "forged" } },
+        { id: "m", position: { x: 0, y: 0 }, data: { kind: "note", entry: "dict:lane:علم<script>", text: "mine too" } },
         {
           id: "f",
           position: { x: 0, y: 0 },
@@ -72,7 +74,10 @@ describe("cleanGraph", () => {
     expect(nodes[0].data).toEqual({ kind: "note", entry: 7 });
     expect(nodes[1].data).toEqual({ kind: "root" });
     expect(nodes[2].data).toEqual({ kind: "note", text: "mine" });
-    expect(nodes[3].data.fields).toEqual([
+    // by its identifier (P1.7a): kept, the words still not the map's
+    expect(nodes[3].data).toEqual({ kind: "note", entry: "dict:lane:علم" });
+    expect(nodes[4].data).toEqual({ kind: "note", text: "mine too" });
+    expect(nodes[5].data.fields).toEqual([
       { id: "a", kind: "link", label: "l", value: "" },
       { id: "b", kind: "select", label: "s", value: "x", options: ["x", "y"] },
       { id: "c", kind: "tags", label: "t", value: ["a"] },

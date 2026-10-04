@@ -1585,7 +1585,10 @@
     "by": "{author} (d. {death} AH)",
     "openInRoot": "Everything the dictionaries say about this root",
     "loading": "Loading…",
-    "inDictionary": "Every article on this root, in the dictionary"
+    "inDictionary": "Every article on this root, in the dictionary",
+    "articleLink": "The article in the dictionary",
+    "copyCite": "Copy citation",
+    "copied": "Copied"
   },
   "saved": {
     "title": "Saved",

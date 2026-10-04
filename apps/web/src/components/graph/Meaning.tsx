@@ -10,7 +10,7 @@ import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { lemmaId, link, POS_AR, rootId } from "@/lib/graph/build";
 import { useEntry } from "@/lib/graph/quote";
-import { KIND_COLOR, type GraphNode } from "@/lib/graph/types";
+import { KIND_COLOR, type GraphNode, type QuoteKey } from "@/lib/graph/types";
 import { DICT_KIND } from "@/lib/lexica";
 import { getJSON } from "@/lib/reader/api";
 import { sourceLine } from "@/lib/reader/board";
@@ -355,7 +355,9 @@ function DictEntryBlock({ tools, card, work, entry }: { tools: CanvasTools; card
       tools.toast(t("copyFailed"));
     }
   }
-  const quoted = tools.nodes.some((n) => n.id === `quote:${entry.id}`);
+  // quoted by its identifier (P1.7a); a map made before identifiers quotes by the row id
+  const key = entry.uri ?? entry.id;
+  const quoted = tools.nodes.some((n) => n.id === `quote:${key}` || n.id === `quote:${entry.id}`);
   return (
     <div className="dict-entry">
       <p className={ar ? "ar-classical whitespace-pre-wrap text-[14px] leading-[2]" : "whitespace-pre-wrap text-[13px] leading-relaxed"} lang={ar ? "ar" : "en"} dir={ar ? "rtl" : "ltr"}>
@@ -375,7 +377,7 @@ function DictEntryBlock({ tools, card, work, entry }: { tools: CanvasTools; card
         )}
         <span className="flex-1" />
         {tools.editable && (
-          <button type="button" className="dict-act hover:text-t1" onClick={() => tools.attachQuote(card.id, entry.id)} title={quoted ? t("entryQuotedHint") : t("entryQuoteHint")} aria-label={quoted ? t("entryQuotedHint") : t("entryQuoteHint")}>
+          <button type="button" className="dict-act hover:text-t1" onClick={() => tools.attachQuote(card.id, key)} title={quoted ? t("entryQuotedHint") : t("entryQuoteHint")} aria-label={quoted ? t("entryQuotedHint") : t("entryQuoteHint")}>
             <Icon name="plus" size={12} />
           </button>
         )}
@@ -555,7 +557,7 @@ function VerseMeaning({ tools, card, verseKey }: { tools: CanvasTools; card: Gra
 }
 
 /** A quoted article in full, with its work's credit as the reader gives it, and the way to its root (RDR-239). */
-export function QuoteMeaning({ entry }: { entry: number }) {
+export function QuoteMeaning({ entry }: { entry: QuoteKey }) {
   const t = useTranslations("graph");
   const locale = useLocale();
   const e = useEntry(entry);

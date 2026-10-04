@@ -164,7 +164,7 @@ function ArticleEntry({ e, lang, expanded, onToggle, onCopied }: { e: DictEntry;
         {e.page_ref && <span>{e.page_ref}</span>}
         <span className="flex-1" />
         {/* the article on a map, as a note that quotes it by its id, describing its root (RDR-239) */}
-        <button type="button" className="dict-act hover:text-t1" onClick={() => setHandoff({ seed: "quote", entry: e.id })} aria-label={t("entryToMap")} title={t("entryToMapTitle")}>
+        <button type="button" className="dict-act hover:text-t1" onClick={() => setHandoff({ seed: "quote", entry: e.uri ?? e.id })} aria-label={t("entryToMap")} title={t("entryToMapTitle")}>
           <Icon name="plus" size={12} />
         </button>
         <button type="button" className="dict-act hover:text-t1" onClick={copy} aria-label={t("copyEntry")} title={t("copyEntry")}>

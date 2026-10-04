@@ -224,7 +224,7 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
       <section className="mt-10 scroll-mt-24" aria-labelledby="lexicon-h" id="lexicon">
         <h2 id="lexicon-h" className="text-[18px] font-semibold"><Term id="lexicon">{tl("inLexicons")}</Term></h2>
         <p className="mb-3 max-w-[80ch] text-[13.5px] text-t2">{tl("lexiconsLead")}</p>
-        <RootLexicon lexicon={r.lexicon} />
+        <RootLexicon lexicon={r.lexicon} root={r.key} />
         {/* the root in the dictionary: every lexicon's article, the Quran one layer among many (P11.1) */}
         <p className="mt-3 text-[13px]">
           <Link href={dictHrefOfQuranRoot(r.key)} className="underline underline-offset-2">{tl("inDictionary")}</Link>

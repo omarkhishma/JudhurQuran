@@ -14,6 +14,8 @@ const RELS: Rel[] = ["derives", "realises", "attests", "cites", "describes", "pa
 const GRAPH_KINDS: GraphKind[] = ["root", "topic", "meaning", "free"];
 export const VERSE_KEY = /^\d{1,3}:\d{1,3}$/;
 export const LOCATION = /^\d{1,3}:\d{1,3}:\d{1,3}$/;
+/** A dictionary article's identifier (P1.7a): `dict:<work>:<root>`, `-2`… for a work's further articles on a root. */
+export const DICT_URI = /^dict:[a-z]{2,12}:(?:[\u0621-\u064a]{1,40}|x)(?:-\d{1,4})?$/;
 const SLUG = /^[\p{L}\p{N}_.'-]{1,80}$/u;
 const MAX_NODES = 2000;
 const MAX_EDGES = 6000;
@@ -57,8 +59,8 @@ function cleanData(raw: unknown): GraphNodeData | null {
   }
   put("text", str(d.text, 20_000));
   put("phrase", bool(d.phrase));
-  // only a note quotes, and only by the article's id
-  if (kind === "note") put("entry", int(d.entry, 1, 2_000_000_000));
+  // only a note quotes, and only by the article's identifier (or its row id, on a map made before identifiers)
+  if (kind === "note") put("entry", int(d.entry, 1, 2_000_000_000) ?? (typeof d.entry === "string" && DICT_URI.test(d.entry) ? d.entry : undefined));
   if (Array.isArray(d.fields)) {
     const fields = d.fields.slice(0, 40).map(cleanField).filter((f): f is Field => !!f);
     if (fields.length) out.fields = fields;

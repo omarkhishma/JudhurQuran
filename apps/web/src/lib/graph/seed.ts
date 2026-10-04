@@ -13,7 +13,7 @@ import { createGraph, loadGraph, saveGraph } from "./persist";
 import { loadEntry } from "./quote";
 import type { Seed, TrailSeedStep } from "./seedCodec";
 import { subtopicLink, topicCard, topicCardId, topicVerses, type TopicPage } from "./topics";
-import type { GraphEdge, GraphKind, GraphNode, NodeKind } from "./types";
+import type { GraphEdge, GraphKind, GraphNode, NodeKind, QuoteKey } from "./types";
 
 /** The cards a seed becomes, before they are laid out and stored. The title is a message key with values. */
 export type SeedGraph = {
@@ -220,8 +220,8 @@ async function trailSeed(steps: TrailSeedStep[], phrase?: string, set?: string):
   return { kind: "free", title: { key: "trailTitle", values: { count: path.length } }, nodes: [...nodes.values()], edges: [...edges.values()] };
 }
 
-/** A quoted article: the note that quotes it, by its id, describing its root (RDR-239). */
-async function quoteSeed(entry: number): Promise<SeedGraph> {
+/** A quoted article: the note that quotes it, by its identifier (P1.7a), describing its root (RDR-239). */
+async function quoteSeed(entry: QuoteKey): Promise<SeedGraph> {
   const e = await loadEntry(entry);
   const r = (await rootSummaries([e.root_key])).get(e.root_key);
   const rid = rootId(e.root_key);

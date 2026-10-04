@@ -129,7 +129,7 @@ MAPPINGS: dict[str, dict[str, Any]] = {
         "era_year": INT,
     },
     "dict_articles": {
-        "entry_id": INT, "work_id": KW, "lang": KW, "root_key": KW, "dict_roots": KW, "headword": AR_FIELD,
+        "entry_id": INT, "uri": KW, "work_id": KW, "lang": KW, "root_key": KW, "dict_roots": KW, "headword": AR_FIELD,
         "body": {"type": "text", "analyzer": "ar_bare", "fields": {"exact": {"type": "text", "analyzer": "ar_exact"}}},
         "body_en": {"type": "text", "analyzer": "english"}, "death_ce": INT,
     },
@@ -325,13 +325,14 @@ def _dict_articles(conn: Connection) -> Iterator[dict[str, Any]]:
     for e in rows(
         conn,
         # every article the dictionary files under a root (P11.1), not only those under the Quran's
-        """select e.id, e.work_id, e.root_key, e.dict_roots, e.headword, e.body, w.lang, w.death_ce
+        """select e.id, e.uri, e.work_id, e.root_key, e.dict_roots, e.headword, e.body, w.lang, w.death_ce
            from content.lexicon_entries e join content.lexicon_works w on w.id = e.work_id
            where e.displayable or cardinality(e.dict_roots) > 0""",
     ):
         doc = {
             "_id": e["id"],
             "entry_id": e["id"],
+            "uri": e["uri"],
             "work_id": e["work_id"],
             "lang": e["lang"],
             "root_key": e["root_key"],

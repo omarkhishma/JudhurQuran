@@ -15,7 +15,7 @@ export type DictRootRow = {
 };
 /** How an article reached its root (jadhr_pipeline.lexica.dictroots). */
 export type DictRule = "quran" | "as-written" | "alif-hamza" | "alif-weak" | "two-letter-doubled" | "two-letter-weak" | "ambiguous" | "unresolved";
-export type DictArticle = { id: number; headword: string; rule: DictRule; candidates: string[] | null; page_ref: string | null; excerpt: string; length: number };
+export type DictArticle = { id: number; uri: string; headword: string; rule: DictRule; candidates: string[] | null; page_ref: string | null; excerpt: string; length: number };
 export type DictWork = LexiconWork & { kind: string; articles: DictArticle[] };
 export type DictRoot = Omit<DictRootRow, "filed_under"> & {
   spaced: string;
@@ -30,6 +30,10 @@ export type DictLetter = { letter: string; roots: number; quranic: number };
 
 /** A root's address on the dictionary: its key (the hamza written ء), never a guess at a spelling. */
 export const dictHref = (key: string) => `/dictionary/${encodeURIComponent(key)}`;
+/** An article's own address (P1.7a): its root's page, opened at it by its identifier. */
+export const articleHref = (key: string, uri: string) => `${dictHref(key)}#${encodeURIComponent(uri)}`;
 const FOLD: Record<string, string> = { "أ": "ء", "إ": "ء", "آ": "ء", "ؤ": "ء", "ئ": "ء", "ٱ": "ء", "ى": "ي", "ة": "ه" };
 /** The dictionary page of a Quranic root (its key أخذ is the dictionary's ءخذ). */
 export const dictHrefOfQuranRoot = (key: string) => dictHref([...key].map((c) => FOLD[c] ?? c).join(""));
+/** An article shown under a Quranic root, on the dictionary's page of that root (P1.7a). */
+export const articleHrefOfQuranRoot = (key: string, uri: string) => `${dictHrefOfQuranRoot(key)}#${encodeURIComponent(uri)}`;

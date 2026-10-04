@@ -337,6 +337,8 @@ export type LexiconWork = {
 
 export type LexiconEntrySummary = {
   id: number;
+  /** the article's identifier, dict:<work>:<root> (P1.7a) */
+  uri?: string;
   headword: string;
   match: string | null;
   confidence: "exact" | "manual" | "high";

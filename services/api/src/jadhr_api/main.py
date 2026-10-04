@@ -1100,11 +1100,19 @@ def lexicon_works(request: Request) -> Response:
 
 
 @router.get(
-    "/lexicon/entries/{entry_id}", summary="One classical lexicon article (display only; see license)"
+    "/lexicon/entries/{entry_id}",
+    summary="One classical lexicon article, by its id or its identifier (dict:lane:علم); display only, see license",
 )
-def lexicon_entry(request: Request, entry_id: int) -> Response:
+def lexicon_entry(request: Request, entry_id: Annotated[str, Path(max_length=80)]) -> Response:
+    key: int | str | None = (
+        int(entry_id)
+        if entry_id.isascii() and entry_id.isdigit()
+        else entry_id
+        if entry_id.startswith("dict:")
+        else None
+    )
     with connect() as conn:
-        e = content.lexicon_entry(conn, entry_id)
+        e = content.lexicon_entry(conn, key) if key is not None else None
         if e is None:
             raise not_found("lexicon entry")
         return cached(request, e)

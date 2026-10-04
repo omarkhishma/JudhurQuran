@@ -10,6 +10,7 @@ import { hasArabic } from "@/lib/arabic/normalize";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { paragraphHref } from "@/lib/books";
+import { articleHref, dictHref } from "@/lib/dictionary";
 import { type TextHit, hadithHref, refText, unnumbered } from "@/lib/hadith";
 import { searchMyTexts } from "@/lib/library/searchTexts";
 import { getJSON } from "@/lib/reader/api";
@@ -18,7 +19,7 @@ import { useDebounced } from "@/lib/useDebounced";
 type Verse = { key: string; surah: number; ayah: number; text_qpc: string; text_imlaei: string; name_ar: string; name_translit: string };
 type Root = { key: string; letters?: string[]; spaced: string; translit: string; occurrences: number; lemma_count: number; verse_count?: number; gist_ar?: string | null; gloss_en?: string | null };
 type Lemma = { id: number; slug?: string; ar: string; envelope?: { translit: string }; translit?: string | null; pos: string; pos_label?: { ar: string; en: string }; occurrences: number; root: string | null; root_spaced?: string; gloss_en?: string | null; senses_en?: string[]; pattern?: string | null };
-type DictEntry = { entry_id: number; work: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; lang: string } | null; root_key: string | null; root_spaced: string | null; dict_root?: string | null; headword: string; excerpt: string | null };
+type DictEntry = { entry_id: number; uri?: string | null; work: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; lang: string } | null; root_key: string | null; root_spaced: string | null; dict_root?: string | null; headword: string; excerpt: string | null };
 /** A root of the dictionary (P11.1): the Quran's or not. */
 type DictRootHit = { key: string; display: string; letters: number; quran_root: string | null; lexica: number };
 type Passage = { uri: string; ref: string; text: { slug: string; kind: string }; verse?: Verse; highlight_ar?: string | null; highlight_en?: string | null; trans_en?: string | null };
@@ -519,7 +520,8 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
                     </>
                   );
                   // an article opens on its root's page in the dictionary, every lexicon's article beside it
-                  const href = e.dict_root ? `/dictionary/${encodeURIComponent(e.dict_root)}` : e.root_key ? `/roots/${encodeURIComponent(e.root_key)}#lexicon` : null;
+                  // the article itself on its root's page, by its identifier (P1.7a)
+                  const href = e.dict_root ? (e.uri ? articleHref(e.dict_root, e.uri) : dictHref(e.dict_root)) : e.root_key ? `/roots/${encodeURIComponent(e.root_key)}#lexicon` : null;
                   return <li key={e.entry_id}>{href ? <Link href={href} className="result-row">{body}</Link> : <div className="result-row">{body}</div>}</li>;
                 })}
               </ul>

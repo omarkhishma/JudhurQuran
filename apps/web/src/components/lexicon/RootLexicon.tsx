@@ -3,11 +3,13 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import type { RootLexicon as RootLexiconData } from "@/lib/types";
+import { articleHrefOfQuranRoot } from "@/lib/dictionary";
 import { formatNumber } from "@/lib/format";
 import { LexiconArticle } from "./LexiconArticle";
 
-/** The root page's dictionary section: one tab per work, ordered by the author's death date. */
-export function RootLexicon({ lexicon }: { lexicon: RootLexiconData }) {
+/** The root page's dictionary section: one tab per work, ordered by the author's death date; each article's identifier
+ * leads to it in the dictionary (P1.7a). */
+export function RootLexicon({ lexicon, root }: { lexicon: RootLexiconData; root: string }) {
   const t = useTranslations("lexicon");
   const locale = useLocale();
   const [active, setActive] = useState(lexicon.works[0]?.id);
@@ -36,7 +38,7 @@ export function RootLexicon({ lexicon }: { lexicon: RootLexiconData }) {
           {locale === "ar" ? w(work.author_ar, work.death_hijri, locale) : `${work.author_en}${work.death_ce ? ` (d. ${work.death_ce} CE)` : ""}`}
         </p>
         {work.entries.map((e) => (
-          <LexiconArticle key={e.id} work={work} entry={e} />
+          <LexiconArticle key={e.id} work={work} entry={e} href={e.uri ? articleHrefOfQuranRoot(root, e.uri) : undefined} />
         ))}
         <details className="text-[12px] text-t3">
           <summary className="cursor-pointer">{t("edition")}</summary>

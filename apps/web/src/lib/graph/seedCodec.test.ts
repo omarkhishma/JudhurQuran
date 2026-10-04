@@ -28,6 +28,12 @@ describe("seeds", () => {
   });
 
   it("name a quoted article and a Notebook note by id, never by their words (RDR-239, NTB-22)", () => {
+    // the article's identifier (P1.7a), or its row id on a link made before identifiers
+    expect(validSeed({ seed: "quote", entry: "dict:lane:علم" })).toEqual({ seed: "quote", entry: "dict:lane:علم" });
+    expect(validSeed({ seed: "quote", entry: "dict:tahdhib:علم-2" })).toEqual({ seed: "quote", entry: "dict:tahdhib:علم-2" });
+    expect(validSeed({ seed: "quote", entry: "dict:lane:<b>" })).toBeNull();
+    expect(validSeed({ seed: "quote", entry: "lane:علم" })).toBeNull();
+    expect(decodeSeed(encodeSeed({ seed: "quote", entry: "dict:lane:علم" }))).toEqual({ seed: "quote", entry: "dict:lane:علم" });
     expect(validSeed({ seed: "quote", entry: 7000514, text: "علم: عَلِمَ" })).toEqual({ seed: "quote", entry: 7000514 });
     expect(validSeed({ seed: "quote", entry: "7000514" })).toBeNull();
     expect(validSeed({ seed: "quote", entry: 1.5 })).toBeNull();

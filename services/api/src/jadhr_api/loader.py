@@ -99,7 +99,7 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                                               "kind", "shamela_id"], set()),
     ("lexicon_entries", "lexicon_entries.jsonl", ["id", "work_id", "root_key", "headword", "match", "confidence",
                                                   "displayable", "body", "core_meaning", "page_ref", "source_ref",
-                                                  "dict_roots", "dict_rule", "dict_candidates"], set()),
+                                                  "dict_roots", "dict_rule", "dict_candidates", "uri"], set()),
     # the dictionary's roots (P11.1): every root the lexica file an article under
     ("dict_roots", "dict_roots.jsonl", ["key", "display", "letters", "first", "quran_root", "lexica", "articles",
                                         "attested_as_written", "unsure", "filed_under"], set()),

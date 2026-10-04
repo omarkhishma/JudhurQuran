@@ -1272,9 +1272,11 @@ test("a Notebook note reaches a map by its id, describing what it mentions; a di
   await page.goto("/quran/20?w=ilm&at=20:114:17");
   const article = page.locator('[data-section="lexica"] .dict-article').first();
   const work = await article.getAttribute("data-dict");
-  const w = await api<{ dict_articles: { id: string; entries: { id: number }[] }[] }>(page, "/words/ilm?limit=0&at=20:114:17");
-  const entry = w.dict_articles.find((d) => d.id === work)!.entries[0].id;
-  const e = await api<{ body: string; title_ar: string; author_ar: string; root_key: string }>(page, `/lexicon/entries/${entry}`);
+  const w = await api<{ dict_articles: { id: string; entries: { id: number; uri: string }[] }[] }>(page, "/words/ilm?limit=0&at=20:114:17");
+  // quoted by its identifier, which no release changes (P1.7a)
+  const entry = w.dict_articles.find((d) => d.id === work)!.entries[0].uri;
+  expect(entry).toMatch(new RegExp(`^dict:${work}:`));
+  const e = await api<{ body: string; title_ar: string; author_ar: string; root_key: string }>(page, `/lexicon/entries/${encodeURIComponent(entry)}`);
   await article.getByRole("button", { name: "أضف إلى خريطة" }).first().click();
   const handoff = page.getByRole("dialog", { name: "سلّمه إلى محرر الخرائط" });
   await expect(handoff).toContainText("لا يُحفظ نصها في الخريطة");
@@ -1334,7 +1336,7 @@ test("the details' Meaning: a root's core idea in Ibn Fāris's words and its dic
   await expect(body).toContainText(`ورد ${ar(w.corpus_freq)} مرة في القرآن`);
   await expect(body).toContainText("اسم · من الجذر ع ل م");
   // its root, by the breadcrumb (EDT-167): Ibn Fāris's words with his page, a three-letter root counted as letters
-  const root = await api<{ occurrences: number; lexicon: { core_meaning: { text: string; page_ref: string }; works: { id: string; death_ce: number | null; entries: { id: number }[] }[] } }>(page, `/roots/${encodeURIComponent("علم")}`);
+  const root = await api<{ occurrences: number; lexicon: { core_meaning: { text: string; page_ref: string }; works: { id: string; death_ce: number | null; entries: { id: number; uri: string }[] }[] } }>(page, `/roots/${encodeURIComponent("علم")}`);
   await details.locator(".crumb").first().click();
   await expect(page.locator('.react-flow__node[data-id="root:علم"].selected')).toHaveCount(1);
   await expect(details.locator(".details-head")).toContainText("جذر · ع ل م");
@@ -1349,8 +1351,8 @@ test("the details' Meaning: a root's core idea in Ibn Fāris's words and its dic
   await expect(body.locator(".dict-entry")).toHaveCount(Math.min(2, byDeath.length));
   await body.getByRole("button", { name: "عن هذه الوسوم" }).click();
   await expect(body).toContainText("وليست ترتيبًا لمرجعيته");
-  // an entry quoted beside the root, by its id (EDT-180, QAN-18, D22)
-  const first = root.lexicon.works.find((d) => d.id === byDeath[0])!.entries[0].id;
+  // an entry quoted beside the root, by its identifier (EDT-180, QAN-18, D22, P1.7a)
+  const first = root.lexicon.works.find((d) => d.id === byDeath[0])!.entries[0].uri;
   await body.locator(".dict-entry").first().getByRole("button", { name: "اقتبس هذه المادة في ملاحظة بجانب البطاقة" }).click();
   await expect(undo).toHaveAttribute("title", "تراجع: اقتباس مادة");
   await expect.poll(async () => (await storedGraph(page, id))!.nodes.find((n) => n.id === `quote:${first}`)?.data, { timeout: 10_000 }).toEqual({ kind: "note", entry: first });

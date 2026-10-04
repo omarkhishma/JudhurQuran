@@ -859,7 +859,7 @@ def root_lexicon(conn: Connection, root_key: str, excerpt: int = 600) -> dict[st
     """Displayable articles for a root, grouped by work, with an excerpt; full bodies load on demand."""
     entries = rows(
         conn,
-        f"""select e.id as entry_id, e.work_id, e.headword, e.match, e.confidence, e.core_meaning, e.page_ref,
+        f"""select e.id as entry_id, e.uri, e.work_id, e.headword, e.match, e.confidence, e.core_meaning, e.page_ref,
                    left(e.body, :n) as excerpt, length(e.body) as length, {_LEX_WORK_COLS}
             from content.lexicon_entries e join content.lexicon_works w on w.id = e.work_id
             where e.root_key = :k and e.displayable order by w.sort_order, e.id""",
@@ -895,7 +895,16 @@ def root_lexicon(conn: Connection, root_key: str, excerpt: int = 600) -> dict[st
             {"id": e["entry_id"]}
             | {
                 k: e[k]
-                for k in ("headword", "match", "confidence", "core_meaning", "page_ref", "excerpt", "length")
+                for k in (
+                    "uri",
+                    "headword",
+                    "match",
+                    "confidence",
+                    "core_meaning",
+                    "page_ref",
+                    "excerpt",
+                    "length",
+                )
             }
         )
         if e["core_meaning"] and core is None and e["confidence"] in ("exact", "manual"):
@@ -911,14 +920,16 @@ def root_lexicon(conn: Connection, root_key: str, excerpt: int = 600) -> dict[st
     return {"core_meaning": core, "works": list(works_out.values())}
 
 
-def lexicon_entry(conn: Connection, entry_id: int) -> dict[str, Any] | None:
+def lexicon_entry(conn: Connection, key: int | str) -> dict[str, Any] | None:
+    """A displayable article whole, by its row id or its identifier (``dict:lane:علم``, P1.7a)."""
+    by = "e.id = :id" if isinstance(key, int) else "e.uri = :id"
     e = one(
         conn,
-        f"""select e.id as entry_id, e.work_id, e.root_key, e.headword, e.match, e.confidence, e.body, e.core_meaning,
+        f"""select e.id as entry_id, e.uri, e.work_id, e.root_key, e.headword, e.match, e.confidence, e.body, e.core_meaning,
                    e.page_ref, e.source_ref, {_LEX_WORK_COLS}
             from content.lexicon_entries e join content.lexicon_works w on w.id = e.work_id
-            where e.id = :id and e.displayable""",
-        {"id": entry_id},
+            where {by} and e.displayable""",
+        {"id": key},
     )
     return e
 

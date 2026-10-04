@@ -6,7 +6,7 @@ import { createContext, memo, useContext, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { citeVerse, cnt, formatNumber } from "@/lib/format";
 import { META } from "@/lib/graph/relations";
-import { FIELD_KINDS, KIND_COLOR, type Field, type FieldKind, type GraphNode } from "@/lib/graph/types";
+import { FIELD_KINDS, KIND_COLOR, type Field, type FieldKind, type GraphNode, type QuoteKey } from "@/lib/graph/types";
 import { useQuery } from "@tanstack/react-query";
 import type { ExtractOptions, VerseWord } from "@/lib/graph/extract";
 import { getJSON } from "@/lib/reader/api";
@@ -257,7 +257,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
  * work and its author and page — read from the dataset, as the reader shows it (D22, L2). The whole article is in
  * the details.
  */
-function Quote({ entry, folded }: { entry: number; folded: boolean }) {
+function Quote({ entry, folded }: { entry: QuoteKey; folded: boolean }) {
   const t = useTranslations("graph");
   const locale = useLocale();
   const e = useEntry(entry);

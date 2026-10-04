@@ -618,6 +618,11 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         dict_roots_out, report["dictionary"] = build_dict_roots(
             lex_entries, roots_out, [w["id"] for w in sorted(lex_works, key=lambda w: w["sort_order"])]
         )
+        # P1.7a: every article's identifier, dict:<work>:<root>, from the append-only registry
+        if raw.registry_dir:
+            from .lexica.dict_uris import assign_dict_uris
+
+            report["dictionary"]["identifiers"] = assign_dict_uris(lex_entries, raw.registry_dir)
         # P3.1: Lane's paragraph on each Quranic word, by its vowelled form or its verb form (lexica/lane_words.py)
         from .lexica.lane_words import map_lane_words
 

@@ -264,7 +264,7 @@ def search(
             "dict_articles",
             {
                 "query": _dict_query(q, latin),
-                "_source": ["entry_id", "work_id", "root_key", "dict_roots", "headword"],
+                "_source": ["entry_id", "uri", "work_id", "root_key", "dict_roots", "headword"],
                 "highlight": {
                     "fields": {
                         "body": {"fragment_size": 150, "number_of_fragments": 1},
@@ -376,6 +376,8 @@ def search(
             results["dictionary"] = [
                 {
                     "entry_id": h["_source"]["entry_id"],
+                    # its identifier (P1.7a): the page of its root opens at it
+                    "uri": h["_source"].get("uri"),
                     "work": works.get(h["_source"]["work_id"]),
                     "root_key": h["_source"]["root_key"],
                     "root_spaced": spaced.get(h["_source"]["root_key"]),

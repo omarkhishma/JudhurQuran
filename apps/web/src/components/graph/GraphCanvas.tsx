@@ -33,7 +33,7 @@ import { headingVersesPath, sourceHeading, topicCard, topicVerses, type TopicCre
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
 import { allowedRels, checkLink, META, type Refusal } from "@/lib/graph/relations";
-import { KIND_COLOR, KIND_SIZE, type Field, type FieldKind, type GraphEdge, type GraphKind, type GraphNode, type Rel } from "@/lib/graph/types";
+import { KIND_COLOR, KIND_SIZE, type Field, type FieldKind, type GraphEdge, type GraphKind, type GraphNode, type QuoteKey, type Rel } from "@/lib/graph/types";
 import { useTheme } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { useGraphUi } from "@/lib/graph/uiPrefs";
@@ -116,7 +116,7 @@ export type CanvasTools = {
   unlink: (edgeId: string) => void;
   /** a dictionary's article quoted on a note beside a card and describing it; the quotation already on the map is
    * linked instead (EDT-180, QAN-18, D22) */
-  attachQuote: (id: string, entry: number) => void;
+  attachQuote: (id: string, entry: QuoteKey) => void;
   /** a card of the dataset beside another and linked to it — a word's root, a verse's word — or, already on the map,
    * selected and linked (EDT-173, QAN-17) */
   addLinked: (card: GraphNode, edge: GraphEdge, beside: string, label: string, places?: { verse: string; place: string }) => void;
@@ -188,7 +188,7 @@ export type GraphCanvasProps = {
 export const DRAG_TYPE = "application/x-jadhr-card";
 
 /** A card as an undo label names it: its letters, word or verse, else its kind (handoff §4.3, EDT-230). */
-function nameOf(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "kindQuote" | "kindFrame") => string, locale: string, works: Map<number, string>): string {
+function nameOf(n: GraphNode | undefined, t: (k: "kindNote" | "kindPhrase" | "kindQuote" | "kindFrame") => string, locale: string, works: Map<QuoteKey, string>): string {
   if (!n) return "";
   const d = n.data;
   // a topic's or a field's heading by its name, the first line of its card
@@ -815,7 +815,7 @@ function CanvasInner({
   );
   /** A dictionary's article quoted on a note beside a card, describing it; already on the map, it is linked. */
   const attachQuote = useCallback(
-    (id: string, entry: number) => {
+    (id: string, entry: QuoteKey) => {
       const ns = live.current.nodes;
       const n = ns.find((x) => x.id === id);
       if (!n) return;

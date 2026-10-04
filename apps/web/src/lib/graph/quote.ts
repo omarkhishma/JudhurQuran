@@ -3,10 +3,13 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { getJSON } from "@/lib/reader/api";
+import type { QuoteKey } from "./types";
 
-/** A dictionary's article as the dataset gives it, with its work's credit (GET /lexicon/entries/{id}). */
+/** A dictionary's article as the dataset gives it, with its work's credit (GET /lexicon/entries/{identifier}). */
 export type Entry = {
   entry_id: number;
+  /** its identifier (P1.7a), what a map quotes it by */
+  uri: string | null;
   root_key: string;
   headword: string;
   body: string;
@@ -21,17 +24,17 @@ export type Entry = {
   redistributable: boolean;
 };
 
-export const loadEntry = (id: number) => getJSON<Entry>(`/lexicon/entries/${id}`);
+export const loadEntry = (key: QuoteKey) => getJSON<Entry>(`/lexicon/entries/${encodeURIComponent(String(key))}`);
 
 /** The article a quoted note names — the same query the reader's dictionaries use, so an article read there is not
  * fetched again. */
-export function useEntry(id: number | undefined) {
+export function useEntry(id: QuoteKey | undefined) {
   return useQuery({ queryKey: ["lex-entry", id], queryFn: () => loadEntry(id!), enabled: id != null, staleTime: Infinity });
 }
 
 /** The works the map's quotations are from, by article id: what names a quoted note in undo labels and for a screen
  * reader. */
-export function useEntryTitles(ids: number[], locale: string): Map<number, string> {
+export function useEntryTitles(ids: QuoteKey[], locale: string): Map<QuoteKey, string> {
   // a stable combine, so the map is made again only when an article arrives
   const combine = useCallback(
     (rs: { data?: Entry }[]) => new Map(rs.flatMap((r, i) => (r.data ? [[ids[i], locale === "ar" ? r.data.title_ar : r.data.title_en] as const] : []))),

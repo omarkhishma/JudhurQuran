@@ -207,6 +207,8 @@ export type Sense = { id: number; ordinal: number; text_ar: string | null; text_
 
 export type DictEntry = {
   id: number;
+  /** the article's identifier, dict:<work>:<root> (P1.7a): what a map quotes it by */
+  uri?: string;
   headword: string;
   match: string | null;
   confidence: string;

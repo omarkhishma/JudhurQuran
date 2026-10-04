@@ -112,7 +112,7 @@ def root(conn: Connection, raw: str, excerpt: int = 700) -> dict[str, Any] | Non
         return None
     arts = rows(
         conn,
-        """select e.id, e.work_id, e.headword, e.dict_rule as rule, e.dict_candidates as candidates, e.page_ref,
+        """select e.id, e.uri, e.work_id, e.headword, e.dict_rule as rule, e.dict_candidates as candidates, e.page_ref,
                   left(e.body, :n) as excerpt, length(e.body) as length,
                   w.title_ar, w.title_en, w.author_ar, w.author_en, w.death_hijri, w.death_ce, w.lang, w.kind,
                   w.edition_note, w.source_url, w.license, w.attribution_ar, w.attribution_en, w.redistributable,
@@ -147,7 +147,10 @@ def root(conn: Connection, raw: str, excerpt: int = 700) -> dict[str, Any] | Non
             | {"id": a["work_id"], "articles": []},
         )
         w["articles"].append(
-            {k: a[k] for k in ("id", "headword", "rule", "candidates", "page_ref", "excerpt", "length")}
+            {
+                k: a[k]
+                for k in ("id", "uri", "headword", "rule", "candidates", "page_ref", "excerpt", "length")
+            }
         )
     # the roots an unsettled article may belong to, where the dictionary has them
     cand_keys = sorted({c for a in arts for c in (a["candidates"] or [])})
@@ -198,13 +201,16 @@ def root(conn: Connection, raw: str, excerpt: int = 700) -> dict[str, Any] | Non
     }
 
 
-def entry(conn: Connection, entry_id: int) -> dict[str, Any] | None:
-    """One article whole, when the dictionary files it under a root (or the site shows it under a Quranic one)."""
+def entry(conn: Connection, key: int | str) -> dict[str, Any] | None:
+    """One article whole, when the dictionary files it under a root (or the site shows it under a Quranic one): by its
+    row id, or by its identifier (``dict:lane:علم``, P1.7a), which never changes between releases."""
+    by = "e.id = :k" if isinstance(key, int) else "e.uri = :k"
     return one(
         conn,
-        """select e.id, e.work_id, e.headword, e.body, e.page_ref, e.source_ref, e.dict_roots, e.dict_rule as rule,
+        f"""select e.id, e.uri, e.work_id, e.headword, e.body, e.page_ref, e.source_ref, e.dict_roots,
+                  e.dict_rule as rule,
                   w.title_ar, w.title_en, w.author_ar, w.author_en, w.lang, w.attribution_ar, w.attribution_en
            from content.lexicon_entries e join content.lexicon_works w on w.id = e.work_id
-           where e.id = :id and (cardinality(e.dict_roots) > 0 or e.displayable)""",
-        {"id": entry_id},
+           where {by} and (cardinality(e.dict_roots) > 0 or e.displayable)""",
+        {"k": key},
     )

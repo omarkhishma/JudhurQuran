@@ -54,10 +54,17 @@ def root(request: Request, root: Annotated[str, Path(max_length=40)]) -> Respons
         return _cached(request, r)
 
 
-@router.get("/entries/{entry_id}", summary="One article whole")
-def entry(request: Request, entry_id: int) -> Response:
+@router.get("/entries/{entry_id}", summary="One article whole, by its id or its identifier (dict:lane:علم)")
+def entry(request: Request, entry_id: Annotated[str, Path(max_length=80)]) -> Response:
+    key: int | str | None = (
+        int(entry_id)
+        if entry_id.isascii() and entry_id.isdigit()
+        else entry_id
+        if entry_id.startswith("dict:")
+        else None
+    )
     with connect() as conn:
-        e = dictionary.entry(conn, entry_id)
+        e = dictionary.entry(conn, key) if key is not None else None
         if e is None:
             raise _missing("entry")
         return _cached(request, e)

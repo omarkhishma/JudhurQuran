@@ -1,19 +1,43 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LexiconArticle } from "@/components/lexicon/LexiconArticle";
 import { MarksToggle } from "@/components/ui/MarksToggle";
 import { Link } from "@/i18n/navigation";
-import { dictHref, type DictArticle, type DictRoot } from "@/lib/dictionary";
+import { articleHref, dictHref, type DictArticle, type DictRoot } from "@/lib/dictionary";
 import { formatNumber } from "@/lib/format";
 
 /** A root's articles in every lexicon (P11.1): one tab per lexicon, in the order their authors died; each article
- * read whole on demand, and said how it reached this root when the lexicographer wrote its heading otherwise. */
+ * read whole on demand, and said how it reached this root when the lexicographer wrote its heading otherwise. An
+ * article's own address is this page with its identifier after `#` (P1.7a): its lexicon's tab opens at it. */
 export function DictionaryLexicon({ root }: { root: DictRoot }) {
   const t = useTranslations("dictionary");
   const locale = useLocale();
   const [active, setActive] = useState(root.works[0]?.id);
+  const [target, setTarget] = useState<string | null>(null);
+  // the address names an article (#dict:lane:علم): its lexicon's tab, then the article in view
+  useEffect(() => {
+    const go = () => {
+      let uri = "";
+      try {
+        uri = decodeURIComponent(window.location.hash.slice(1));
+      } catch {}
+      const w = uri.startsWith("dict:") ? root.works.find((x) => x.articles.some((a) => a.uri === uri)) : undefined;
+      if (!w) return;
+      setActive(w.id);
+      setTarget(uri);
+    };
+    go();
+    window.addEventListener("hashchange", go);
+    return () => window.removeEventListener("hashchange", go);
+  }, [root.works]);
+  useEffect(() => {
+    if (!target) return;
+    const el = document.getElementById(target);
+    el?.scrollIntoView({ block: "start" });
+    el?.focus({ preventScroll: true });
+  }, [target, active]);
   if (!root.works.length) return null;
   const work = root.works.find((w) => w.id === active) ?? root.works[0];
   const display = (key: string) => root.candidates.find((c) => c.key === key);
@@ -63,13 +87,15 @@ export function DictionaryLexicon({ root }: { root: DictRoot }) {
           <MarksToggle />
         </div>
         {work.articles.map((a) => (
-          <LexiconArticle
-            key={a.id}
-            work={work}
-            entry={{ id: a.id, headword: a.headword, match: null, confidence: "exact", core_meaning: null, page_ref: a.page_ref, excerpt: a.excerpt, length: a.length }}
-            entryUrl={`/api/v1/dictionary/entries/${a.id}`}
-            note={note(a)}
-          />
+          <div key={a.id} id={a.uri} tabIndex={-1} className={"dict-anchor" + (a.uri === target ? " is-target" : "")}>
+            <LexiconArticle
+              work={work}
+              entry={{ id: a.id, uri: a.uri, headword: a.headword, match: null, confidence: "exact", core_meaning: null, page_ref: a.page_ref, excerpt: a.excerpt, length: a.length }}
+              entryUrl={`/api/v1/dictionary/entries/${a.id}`}
+              note={note(a)}
+              href={articleHref(root.key, a.uri)}
+            />
+          </div>
         ))}
         <details className="text-[12px] text-t3">
           <summary className="cursor-pointer">{t("edition")}</summary>

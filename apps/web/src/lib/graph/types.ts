@@ -22,6 +22,9 @@ export const FIELD_KINDS: FieldKind[] = ["text", "notes", "number", "select", "t
  * (lib/graph/files), its name beside it. */
 export type Field = { id: string; kind: FieldKind; label: string; value: string | number | string[]; options?: string[]; fileName?: string };
 
+/** A quoted article: its identifier (`dict:<work>:<root>`), or its row id on a map made before identifiers. */
+export type QuoteKey = number | string;
+
 export type GraphNodeData = {
   kind: NodeKind;
   ar?: string; // the Arabic headline: root letters, a pattern, a lemma (never a verse's words)
@@ -39,10 +42,11 @@ export type GraphNodeData = {
   places?: string[]; // a verse card: the words marked in it (`s:a:w`)
   text?: string; // a note: the reader's own text, or a quotation
   phrase?: boolean; // a note that is a phrase the reader analysed (ANA-22)
-  /** a note that quotes a dictionary's article (RDR-239): the article's id. Its words and its credit are read from the
-   * dataset when the card is drawn (lib/graph/quote), never kept in the map — the dictionaries are display-only (D22),
-   * and a quotation is shown verbatim or not at all (law L2). */
-  entry?: number;
+  /** a note that quotes a dictionary's article (RDR-239): the article's identifier (`dict:lane:علم`, P1.7a), which
+   * no release changes — a number on a map made before identifiers, the article's row id then. Its words and its credit
+   * are read from the dataset when the card is drawn (lib/graph/quote), never kept in the map — the dictionaries are
+   * display-only (D22), and a quotation is shown verbatim or not at all (law L2). */
+  entry?: QuoteKey;
   /** the reader's own fields on the card (EDT-092…109) */
   fields?: Field[];
   /** what the dataset holds below this card, for its "to extract" count (P8.2, EDT-091): a root's patterns and words,

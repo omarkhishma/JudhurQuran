@@ -86,9 +86,9 @@ test("a root outside the Quran is found in the dictionary, and a word inside its
   await expect(chip).toContainText("في ٥ معاجم");
   await chip.click();
   await expect(page).toHaveURL(new RegExp(`/dictionary/${encodeURIComponent("قبعثر")}$`));
-  // a word inside the articles (the camel calf al-Khalīl names) reaches the root's page
+  // a word inside the articles (the camel calf al-Khalīl names) reaches the article on the root's page (P1.7a)
   await page.goto(`/search?q=${encodeURIComponent("القبعثرى")}`);
-  await expect(group(page, "في المعاجم").locator(`a[href="/dictionary/${encodeURIComponent("قبعثر")}"]`).first()).toBeVisible();
+  await expect(group(page, "في المعاجم").locator(`a[href^="/dictionary/${encodeURIComponent("قبعثر")}#${encodeURIComponent("dict:")}"]`).first()).toBeVisible();
 });
 
 test("the reader's own texts are searched in the browser (SRC-Q03)", async ({ page }) => {
