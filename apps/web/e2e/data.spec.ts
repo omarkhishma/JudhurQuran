@@ -182,3 +182,13 @@ test("a release after the first says what changed since the one before (B51)", a
   await expect(card.getByText("معجم لين العربي الإنجليزي: جديد في هذا الإصدار، ٥٬٣٠٤ صفا")).toBeVisible();
   await expect(card.getByText(/^الجذور:/)).toHaveCount(0);
 });
+
+test("the dataset described to search engines: a schema.org Dataset with every licence and only the files that can be downloaded (B52)", async ({ page }) => {
+  const { v, rel } = await latestRelease(page);
+  await page.goto("/data");
+  const ld = (await page.locator('script[type="application/ld+json"]').allTextContents()).map((x) => JSON.parse(x) as Record<string, unknown>).find((x) => x["@type"] === "Dataset");
+  expect(ld).toBeTruthy();
+  expect(ld!.version).toBe(v);
+  expect(JSON.stringify(ld!.license)).toContain("creativecommons.org/licenses/by-sa/4.0");
+  expect((ld!.distribution as unknown[]).length).toBe(rel.files.filter((f) => f.available).length);
+});
