@@ -8,6 +8,11 @@ is the same whichever worker a browser reached; a worker that stops speaking is 
 A signed-in person is shown by the name their comments carry; anyone else is counted, never named. The owner may
 have the map open in several windows: one edits — the one that claimed it last — and the others are told, and may
 take it over. The lock is advisory: the save's revision check (P8.1-E) still refuses a save over a newer one.
+
+Anyone may open a window, so each is admitted against limits before it says hello (security review L7): windows on a
+map, windows one address holds, windows it opens in a minute, windows the worker holds in all. A worker's word to the
+others fits one Postgres notification (8000 bytes): guests travel as a count, and past what fits a signed-in window is
+counted rather than named — the presence never silently stops.
 """
 
 from __future__ import annotations
@@ -17,6 +22,7 @@ import contextlib
 import json
 import time
 import uuid
+from collections import deque
 from dataclasses import asdict, dataclass
 from typing import Any
 
@@ -24,6 +30,7 @@ import psycopg
 from fastapi import WebSocket, WebSocketDisconnect
 
 from . import accounts, shared_maps
+from .clients import client_key
 from .refusal import Refusal
 from .settings import get_settings
 
@@ -31,7 +38,12 @@ CHANNEL = "jadhr_presence"
 WORKER = uuid.uuid4().hex[:12]
 HEARTBEAT = 15.0
 STALE = 45.0
-MAX_PER_MAP = 200
+MAX_PER_MAP = 200  # windows on one map, on this worker, counted from the moment one connects
+PER_ADDRESS = 20  # windows one address holds open on this worker
+JOINS_PER_MINUTE = 60  # windows one address opens in a minute
+MAX_SOCKETS = 4000  # windows this worker holds in all
+NOTIFY_BYTES = 7800  # one notification carries 8000 bytes
+NAME_CHARS = 60
 
 
 @dataclass
@@ -50,17 +62,61 @@ class Hub:
     def __init__(self) -> None:
         self.local: dict[str, dict[str, Entry]] = {}
         self.sockets: dict[str, dict[str, WebSocket]] = {}
-        self.remote: dict[str, dict[str, tuple[float, list[dict[str, Any]]]]] = {}
+        # another worker's windows on a map: when it last spoke, its named windows, and how many others
+        self.remote: dict[str, dict[str, tuple[float, list[dict[str, Any]], int]]] = {}
         self.tasks: list[asyncio.Task[None]] = []
         self.leaving: set[asyncio.Task[None]] = set()
+        # the windows open now, hello said or not: by map, by address, in all; and when each address opened its last
+        self.open: dict[str, int] = {}
+        self.by_address: dict[str, int] = {}
+        self.joins: dict[str, deque[float]] = {}
+        self.total = 0
+
+    # ─── room for a window ─────────────────────────────────────────────────────
+
+    def admit(self, gid: str, address: str) -> str | None:
+        """Room for one more window — on the map, for the address, on this worker — or why there is none."""
+        now = time.monotonic()
+        q = self.joins.setdefault(address, deque())
+        while q and now - q[0] > 60:
+            q.popleft()
+        if len(q) >= JOINS_PER_MINUTE or self.by_address.get(address, 0) >= PER_ADDRESS:
+            return "Too many windows from here."
+        if self.total >= MAX_SOCKETS:
+            return "Too many windows; try again later."
+        if self.open.get(gid, 0) >= MAX_PER_MAP:
+            return "Too many windows on this map."
+        q.append(now)
+        self.open[gid] = self.open.get(gid, 0) + 1
+        self.by_address[address] = self.by_address.get(address, 0) + 1
+        self.total += 1
+        return None
+
+    def release(self, gid: str, address: str) -> None:
+        for counts, key in ((self.open, gid), (self.by_address, address)):
+            counts[key] = counts.get(key, 1) - 1
+            if counts[key] <= 0:
+                del counts[key]
+        self.total = max(0, self.total - 1)
+        # an address is kept only while it counts towards the minute or holds a window
+        now = time.monotonic()
+        for a in [
+            a for a, q in self.joins.items() if a not in self.by_address and (not q or now - q[-1] > 60)
+        ]:
+            del self.joins[a]
 
     # ─── what a map's presence is ──────────────────────────────────────────────
 
     def entries(self, gid: str) -> list[dict[str, Any]]:
         now = time.monotonic()
         mine = [asdict(e) for e in self.local.get(gid, {}).values()]
-        theirs = [e for ts, es in self.remote.get(gid, {}).values() if now - ts < STALE for e in es]
+        theirs = [e for ts, es, _ in self.remote.get(gid, {}).values() if now - ts < STALE for e in es]
         return mine + theirs
+
+    def counted(self, gid: str) -> int:
+        """The other workers' windows counted and not named: their guests, and what did not fit their word."""
+        now = time.monotonic()
+        return sum(n for ts, _, n in self.remote.get(gid, {}).values() if now - ts < STALE)
 
     def payload(self, gid: str, conn: str) -> dict[str, Any]:
         """What one window is told: the people there (each once, however many windows), how many others, and who
@@ -88,7 +144,7 @@ class Hub:
         return {
             "type": "presence",
             "people": sorted(people.values(), key=lambda p: (not p["you"], not p["owner"], p["name"] or "")),
-            "guests": sum(1 for e in es if not e["user"]),
+            "guests": sum(1 for e in es if not e["user"]) + self.counted(gid),
             "editor": None if not editor else "you" if editor["conn"] == conn else "elsewhere",
         }
 
@@ -104,9 +160,26 @@ class Hub:
 
     # ─── between workers ───────────────────────────────────────────────────────
 
+    def message(self, gid: str) -> str:
+        """This worker's word on a map, within one notification: the owner's windows each (the lock needs them), the
+        signed-in by name while they fit, everyone else as a count. An empty list and no count when none is left."""
+        es = [asdict(e) for e in self.local.get(gid, {}).values()]
+        named = sorted((e for e in es if e["user"]), key=lambda e: not e["owner"])
+        n = len(es) - len(named)
+
+        def say() -> str:
+            return json.dumps({"w": WORKER, "g": gid, "e": named, "n": n}, ensure_ascii=False)
+
+        body = say()
+        while len(body.encode()) > NOTIFY_BYTES and named and not named[-1]["owner"]:
+            named.pop()
+            n += 1
+            body = say()
+        return body
+
     async def publish(self, gid: str) -> None:
         """Tell the other workers what this one holds on a map (an empty list when its last window left)."""
-        body = json.dumps({"w": WORKER, "g": gid, "e": [asdict(e) for e in self.local.get(gid, {}).values()]})
+        body = self.message(gid)
 
         def notify() -> None:
             with accounts.tx() as c:
@@ -123,14 +196,14 @@ class Hub:
             if m.get("k") == "changed":
                 await self.changed(str(m["g"]))
                 return
-            w, gid, es = str(m["w"]), str(m["g"]), list(m["e"])
+            w, gid, es, n = str(m["w"]), str(m["g"]), list(m["e"]), int(m.get("n", 0))
         except (ValueError, KeyError, TypeError, AttributeError):
             return
         if w == WORKER:
             return
         by = self.remote.setdefault(gid, {})
-        if es:
-            by[w] = (time.monotonic(), es)
+        if es or n:
+            by[w] = (time.monotonic(), es, n)
         else:
             by.pop(w, None)
         if gid in self.sockets:
@@ -157,7 +230,7 @@ class Hub:
                 await self.publish(gid)
             now = time.monotonic()
             for gid, by in list(self.remote.items()):
-                gone = [w for w, (ts, _) in by.items() if now - ts >= STALE]
+                gone = [w for w, (ts, _, _) in by.items() if now - ts >= STALE]
                 for w in gone:
                     del by[w]
                 if gone and gid in self.sockets:
@@ -211,15 +284,25 @@ def _may_join(gid: str, u: dict[str, Any] | None) -> bool:
 
 
 async def serve(ws: WebSocket, gid: str) -> None:
-    """One window on a shared map: its hello (who it is, whether it edits), then its claims, until it closes."""
+    """One window on a shared map, admitted within the limits (module docstring) and counted until it closes."""
     await ws.accept()
+    address = client_key(ws)
+    why = hub.admit(gid, address)
+    if why:
+        await ws.close(code=4429, reason=why)
+        return
+    try:
+        await _serve(ws, gid)
+    finally:
+        hub.release(gid, address)
+
+
+async def _serve(ws: WebSocket, gid: str) -> None:
+    """One window on a shared map: its hello (who it is, whether it edits), then its claims, until it closes."""
     try:
         owner = await asyncio.to_thread(_owner_of, gid)
     except Refusal:
         await ws.close(code=4404, reason="This map is not shared.")
-        return
-    if len(hub.local.get(gid, {})) >= MAX_PER_MAP:
-        await ws.close(code=4429, reason="Too many windows on this map.")
         return
     try:
         hello = await asyncio.wait_for(ws.receive_json(), timeout=10)
@@ -241,7 +324,7 @@ async def serve(ws: WebSocket, gid: str) -> None:
     e = Entry(
         conn=uuid.uuid4().hex[:16],
         user=str(u["id"]) if u else None,
-        name=(u.get("display_name") or None) if u else None,
+        name=(u.get("display_name") or "")[:NAME_CHARS] or None if u else None,
         owner=is_owner,
         editing=editing,
         claimed=time.time() if editing and not others else 0.0,

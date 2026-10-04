@@ -142,3 +142,64 @@ def test_a_map_not_shared_is_refused() -> None:
         with pytest.raises(WebSocketDisconnect) as e:
             _receive(ws)
         assert e.value.code == 4404
+
+
+def test_windows_are_admitted_within_limits(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Security review L7: anyone may open a window, so one address, one map and one worker each hold a bounded
+    number, counted from the moment a window connects — before its hello."""
+    from jadhr_api import presence
+
+    hub = presence.Hub()
+    monkeypatch.setattr(presence, "PER_ADDRESS", 2)
+    monkeypatch.setattr(presence, "JOINS_PER_MINUTE", 3)
+    assert hub.admit("m", "a") is None and hub.admit("m", "a") is None
+    assert hub.admit("m", "a") == "Too many windows from here."
+    assert hub.admit("m", "b") is None  # another address
+    hub.release("m", "a")
+    assert hub.admit("n", "a") is None  # a window closed makes room
+    hub.release("n", "a")
+    assert hub.admit("n", "a") == "Too many windows from here."  # but not past the minute's openings
+    # the map holds one of a's windows and b's
+    monkeypatch.setattr(presence, "MAX_PER_MAP", 2)
+    assert hub.admit("m", "c") == "Too many windows on this map."
+    assert (hub.open, hub.total) == ({"m": 2}, 2)
+    for a in ("a", "b"):
+        hub.release("m", a)
+    assert (hub.open, hub.by_address, hub.total) == ({}, {}, 0)
+
+
+def test_a_window_past_the_limit_is_closed_before_its_hello(
+    people: dict[str, dict[str, str]],  # noqa: F811
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from jadhr_api import presence
+
+    monkeypatch.setattr(presence, "PER_ADDRESS", 1)
+    g = _share(people["o"], local=f"pres{uuid.uuid4().hex[:6]}")
+    on = f"/api/v1/graphs/{g['id']}/presence"
+    with TestClient(app) as tc, tc.websocket_connect(on) as a:
+        a.send_json({"type": "hello"})
+        _until(a, lambda m: m["type"] == "presence")
+        with tc.websocket_connect(on) as b:
+            with pytest.raises(WebSocketDisconnect) as e:
+                _receive(b)
+            assert e.value.code == 4429
+
+
+def test_a_workers_word_fits_one_notification() -> None:
+    """Past what 8000 bytes carry, a signed-in window is counted rather than named; the owner's windows always go."""
+    from jadhr_api import presence
+
+    hub = presence.Hub()
+    es = {
+        f"c{i}": presence.Entry(f"c{i}", uuid.uuid4().hex, "قارئ " + "ب" * 50, False, False, 0.0)
+        for i in range(150)
+    }
+    es["own"] = presence.Entry("own", "owner-id", "صاحب الخريطة", True, True, 1.0)
+    es.update({f"g{i}": presence.Entry(f"g{i}", None, None, False, False, 0.0) for i in range(40)})
+    hub.local["m"] = es
+    body = hub.message("m")
+    m = json.loads(body)
+    assert len(body.encode()) <= presence.NOTIFY_BYTES
+    assert m["e"][0]["user"] == "owner-id" and m["e"][0]["editing"] is True
+    assert len(m["e"]) + m["n"] == 191 and m["n"] > 40  # every window told: named, or counted

@@ -21,4 +21,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz').status == 200 else 1)"
 # Workers: one per CPU is a sane default for a read-only, cache-friendly API. No access log here: Caddy's,
 # filtered (no query string, a shortened address) and kept seven days, is the only request log (privacy page).
-CMD ["sh", "-c", "uvicorn jadhr_api.main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY:-2} --proxy-headers --forwarded-allow-ips='*' --no-access-log"]
+# A presence window's messages are a few dozen bytes: 64 KB is ample, where uvicorn would take 16 MB (L7).
+CMD ["sh", "-c", "uvicorn jadhr_api.main:app --host 0.0.0.0 --port 8000 --workers ${WEB_CONCURRENCY:-2} --proxy-headers --forwarded-allow-ips='*' --no-access-log --ws-max-size 65536"]
