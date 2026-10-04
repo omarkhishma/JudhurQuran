@@ -317,7 +317,9 @@ def test_root_keys_are_canonical_and_rows_follow_the_contract(built: tuple, root
             "source_ref",
             # the headings it is filed under, for the dictionary's roots (dictroots.py; dropped before writing)
             "heads",
-        }
+        } | ({"lane_words"} if e["work_id"] == "lane" else set())
+        # Lane's paragraphs with the word each treats, for the words' Lane paragraph (lane_words.py; dropped too)
+        assert e["work_id"] != "lane" or isinstance(e["lane_words"], list)
         assert e["heads"] is None or (e["heads"] and all(isinstance(h, str) and h for h in e["heads"]))
     ids = [e["id"] for e in entries] + [g["id"] for g in glosses]
     assert len(ids) == len(set(ids))
