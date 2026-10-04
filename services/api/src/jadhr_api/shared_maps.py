@@ -7,6 +7,9 @@ revision (their other device) is refused, never merged — and the map's history
 minutes of editing. Anyone with the link can read the map; to read and write comments they sign in. Comments anchor
 to a card or to the whole map, take one level of replies, are resolved by the owner or their author, and mention
 people who have spoken on the map. Stopping the share deletes the document, its history and its comments.
+
+A lesson's map (P9.3) is its class's: only the class's instructor and members, signed in, read it, comment on it
+and join it, and anyone in the class may be mentioned there (jadhr_api.classroom.map_gate).
 """
 
 from __future__ import annotations
@@ -18,6 +21,7 @@ from typing import Any
 
 from sqlalchemy import Connection, text
 
+from . import classroom
 from .accounts import now, q, q1, tx
 from .refusal import Refusal
 
@@ -85,7 +89,12 @@ def _owned(conn: Connection, u: dict[str, Any], gid: str) -> dict[str, Any]:
     return g
 
 
-def _out(g: dict[str, Any], viewer: dict[str, Any] | None, owner_name: str | None) -> dict[str, Any]:
+def _out(
+    g: dict[str, Any],
+    viewer: dict[str, Any] | None,
+    owner_name: str | None,
+    gate: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     mine = viewer is not None and g["owner_id"] == viewer["id"]
     return {
         "id": str(g["id"]),
@@ -99,6 +108,20 @@ def _out(g: dict[str, Any], viewer: dict[str, Any] | None, owner_name: str | Non
         "owner": {"name": owner_name, "mine": mine},
         # the owner's own id for the map in their browser, so their copy and the shared one are one map
         **({"local_id": g["local_id"]} if mine else {}),
+        # a lesson's map says whose it is: the class reads it, no one else
+        **(
+            {
+                "class": {
+                    "lesson_id": str(gate["lesson_id"]),
+                    "lesson_title": gate["lesson_title"],
+                    "class_id": str(gate["class_id"]),
+                    "class_name": gate["class_name"],
+                    "role": gate["role"],
+                }
+            }
+            if gate
+            else {}
+        ),
     }
 
 
@@ -168,8 +191,17 @@ def read(viewer: dict[str, Any] | None, gid: str) -> dict[str, Any]:
     """The map as its owner last saved it: anyone with the link may read it."""
     with tx() as conn:
         g = _graph(conn, _uuid(gid))
+        gate = classroom.map_gate(conn, g["id"], viewer)
         owner = q1(conn, "select display_name from accounts.users where id = :u", {"u": g["owner_id"]})
-        return _out(g, viewer, owner["display_name"] if owner else None)
+        return _out(g, viewer, owner["display_name"] if owner else None, gate)
+
+
+def may_join(gid: str, viewer: dict[str, Any] | None) -> str:
+    """Who owns a map a window joins (presence, P8.6) — refused when it is a class's map and the window is not."""
+    with tx() as conn:
+        g = _graph(conn, _uuid(gid))
+        classroom.map_gate(conn, g["id"], viewer)
+        return str(g["owner_id"])
 
 
 def save(
@@ -183,6 +215,7 @@ def save(
         g = _graph(conn, str(g["id"]))
         if base != g["revision"]:
             raise Refusal(409, "newer", f"This map was saved elsewhere since (revision {g['revision']}).")
+        before = g
         last = q1(
             conn,
             "select max(saved_at) as at from graphs.revisions where graph_id = :g",
@@ -203,6 +236,8 @@ def save(
         assert new is not None
         if not last or last["at"] is None or now() - last["at"] >= SNAPSHOT_EVERY:
             _snapshot(conn, new)
+        # a lesson's map: what this save changed goes into the lesson's activity
+        classroom.map_saved(conn, before, new, u)
         return {"id": str(new["id"]), "revision": new["revision"], "updated_at": new["updated_at"]}
 
 
@@ -289,7 +324,10 @@ def mine(u: dict[str, Any]) -> dict[str, Any]:
 
 
 def _people(conn: Connection, g: dict[str, Any]) -> dict[str, str | None]:
-    """Who has spoken on the map — its owner and everyone who commented — by id, with their names."""
+    """Who has spoken on the map — its owner and everyone who commented — by id, with their names; on a lesson's
+    map, everyone in the class."""
+    if q1(conn, "select 1 as x from classroom.lessons where graph_id = :g", {"g": g["id"]}):
+        return classroom.map_people(conn, g["id"])
     return {
         str(r["id"]): r["display_name"]
         for r in q(
@@ -332,6 +370,7 @@ def comments(u: dict[str, Any], gid: str) -> dict[str, Any]:
     mentioned; reading them marks them read."""
     with tx() as conn:
         g = _graph(conn, _uuid(gid))
+        classroom.map_gate(conn, g["id"], u)
         rows = q(
             conn, "select * from graphs.comments where graph_id = :g order by created_at", {"g": g["id"]}
         )
@@ -380,6 +419,7 @@ def comment(
         raise Refusal(422, "too_long", "A comment is at most 2,000 characters.")
     with tx() as conn:
         g = _graph(conn, _uuid(gid))
+        classroom.map_gate(conn, g["id"], u)
         recent = q1(
             conn,
             "select count(*)::int as n from graphs.comments where author_id = :u and created_at > now() - interval '10 minutes'",
@@ -440,10 +480,16 @@ def _comment(conn: Connection, cid: str) -> tuple[dict[str, Any], dict[str, Any]
     return c, _graph(conn, str(c["graph_id"]))
 
 
+def _comment_in_reach(conn: Connection, u: dict[str, Any], cid: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    c, g = _comment(conn, cid)
+    classroom.map_gate(conn, g["id"], u)
+    return c, g
+
+
 def resolve(u: dict[str, Any], cid: str, resolved: bool) -> dict[str, Any]:
     """Resolve a thread, or open it again: the map's owner or the comment's author."""
     with tx() as conn:
-        c, g = _comment(conn, cid)
+        c, g = _comment_in_reach(conn, u, cid)
         if c["parent_id"] is not None:
             raise Refusal(422, "reply", "A thread is resolved by its first comment.")
         if u["id"] not in (g["owner_id"], c["author_id"]):
@@ -475,7 +521,7 @@ def _drop(conn: Connection, ids: list[Any]) -> None:
 
 def delete_comment(u: dict[str, Any], cid: str) -> None:
     with tx() as conn:
-        c, g = _comment(conn, cid)
+        c, g = _comment_in_reach(conn, u, cid)
         if u["id"] not in (g["owner_id"], c["author_id"]):
             raise Refusal(403, "not_allowed", "The map's owner or the comment's author deletes it.")
         _drop(conn, [c["id"]])

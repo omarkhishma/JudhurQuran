@@ -494,6 +494,9 @@ def test_the_export_holds_everything_and_every_table_is_accounted_for(email: str
         "classroom.counts": "classroom.counts",
         "classroom.progress": "classroom.progress",
         "classroom.nudges": "classroom.nudges",
+        # a lesson's map (P9.3): a member's proposals, and what the reader did on the map
+        "classroom.proposals": "classroom.proposals",
+        "classroom.activity": "classroom.activity",
     }
     not_data = {
         "login_tokens": "a secret, by address",
@@ -514,7 +517,15 @@ def test_the_export_holds_everything_and_every_table_is_accounted_for(email: str
             )
         }
     assert tables == set(exported) | set(not_data)
-    assert set(out["classroom"]) == {"teaching", "joined", "counts", "progress", "nudges"}
+    assert set(out["classroom"]) == {
+        "teaching",
+        "joined",
+        "counts",
+        "progress",
+        "nudges",
+        "proposals",
+        "activity",
+    }
     # turning sharing off takes the shared lookups off the server
     client.patch("/api/v1/me", headers=h, json={"settings": {"share_lookups": False}})
     assert client.get("/api/v1/me/export", headers=h).json()["lookups"] == []

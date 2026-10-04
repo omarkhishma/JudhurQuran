@@ -222,9 +222,16 @@ def update(
 
 
 def delete(u: dict[str, Any], cid: str) -> None:
-    """A class deleted takes its lessons, notes, members and everything counted with it."""
+    """A class deleted takes its lessons, notes, members and everything counted with it — and its lessons' maps'
+    shared copies, which were the class's to read (the instructor's own copies stay in their browser)."""
     with tx() as conn:
         c = _own(conn, u, cid)
+        q(
+            conn,
+            """delete from graphs.documents where id in
+                 (select graph_id from classroom.lessons where class_id = :c and graph_id is not null) returning id""",
+            {"c": c["id"]},
+        )
         q(conn, "delete from classroom.classes where id = :c returning id", {"c": c["id"]})
 
 
@@ -309,13 +316,38 @@ def set_detail(u: dict[str, Any], cid: str, on: Any) -> dict[str, Any]:
 
 
 def _forget_member(conn: Connection, cid: Any, uid: Any) -> None:
+    from . import shared_maps
+
     lessons = "select id from classroom.lessons where class_id = :c"
-    for t in ("counts", "progress", "nudges"):
+    for t in ("counts", "progress", "nudges", "proposals"):
         q(
             conn,
             f"delete from classroom.{t} where user_id = :u and lesson_id in ({lessons}) returning user_id",
             {"c": cid, "u": uid},
         )
+    q(
+        conn,
+        f"delete from classroom.activity where who = :u and lesson_id in ({lessons}) returning id",
+        {"c": cid, "u": uid},
+    )
+    # their comments on the class's maps go (one others answered stays as a mark), and mentions of them
+    maps = "select graph_id from classroom.lessons where class_id = :c and graph_id is not null"
+    said = [
+        r["id"]
+        for r in q(
+            conn,
+            f"select id from graphs.comments where author_id = :u and graph_id in ({maps})",
+            {"c": cid, "u": uid},
+        )
+    ]
+    if said:
+        shared_maps._drop(conn, said)
+    q(
+        conn,
+        f"""update graphs.comments set mentions = array_remove(mentions, cast(:u as uuid))
+            where cast(:u as uuid) = any(mentions) and graph_id in ({maps}) returning id""",
+        {"c": cid, "u": str(uid)},
+    )
     q(
         conn,
         "delete from classroom.members where class_id = :c and user_id = :u returning user_id",
@@ -416,6 +448,12 @@ def _lesson_out(conn: Connection, lesson: dict[str, Any], role: str, u: dict[str
         "due_at": _iso(lesson["due_at"]),
         "open_until": _iso(open_until(lesson)),
         "open": datetime.now(UTC) <= open_until(lesson),
+        "map": _map_out(conn, lesson, role),
+        "pending": q1(
+            conn,
+            "select count(*)::int as n from classroom.proposals where lesson_id = :l and status = 'pending'",
+            {"l": lesson["id"]},
+        )["n"],  # type: ignore[index]
     }
     if role == "member":
         p = q1(
@@ -521,9 +559,12 @@ def update_lesson(
 
 
 def delete_lesson(u: dict[str, Any], lid: str) -> None:
+    """A lesson deleted takes what it counted, its notes and proposals, and its map's shared copy."""
     with tx() as conn:
         lesson = _lesson(conn, lid)
         _own(conn, u, str(lesson["class_id"]))
+        if lesson["graph_id"]:
+            q(conn, "delete from graphs.documents where id = :g returning id", {"g": lesson["graph_id"]})
         q(conn, "delete from classroom.lessons where id = :l returning id", {"l": lesson["id"]})
 
 
@@ -676,8 +717,26 @@ def export_for(u: dict[str, Any]) -> dict[str, Any]:
                join classroom.lessons l on l.id = n.lesson_id where n.user_id = :u order by n.sent_at""",
             {"u": u["id"]},
         )
+        proposed = q(
+            conn,
+            """select l.title as lesson, p.cards, p.links, p.note, p.status, p.created_at, p.decided_at
+               from classroom.proposals p join classroom.lessons l on l.id = p.lesson_id
+               where p.user_id = :u order by p.created_at""",
+            {"u": u["id"]},
+        )
+        did = q(
+            conn,
+            """select l.title as lesson, a.kind, a.detail, a.at from classroom.activity a
+               join classroom.lessons l on l.id = a.lesson_id where a.who = :u order by a.at""",
+            {"u": u["id"]},
+        )
     return {
         "classroom": {
+            "proposals": [
+                {**p, "created_at": _iso(p["created_at"]), "decided_at": _iso(p["decided_at"])}
+                for p in proposed
+            ],
+            "activity": [{**a, "at": _iso(a["at"])} for a in did],
             "nudges": [
                 {"lesson": n["lesson"], "sent_at": _iso(n["sent_at"]), "seen_at": _iso(n["seen_at"])}
                 for n in nudged
@@ -1101,3 +1160,471 @@ def nudge(u: dict[str, Any], lid: str) -> dict[str, Any]:
             {"l": lesson["id"], "c": c["id"]},
         )
         return {"sent": len(sent)}
+
+
+# ─── the lesson's map (P9.3) ───────────────────────────────────────────────────
+
+CARD_KINDS = ("root", "pattern", "lemma", "verse", "note", "frame")
+MAX_PROPOSAL_CARDS = 40
+MAX_PROPOSAL_LINKS = 80
+MAX_PROPOSAL_BYTES = 200_000
+MAX_PENDING = 20  # one member's proposals waiting on one lesson
+EDIT_RUN = timedelta(minutes=10)  # the instructor's saves within this read as one entry
+FEED_MOST = 50
+
+
+def _graph_of(conn: Connection, lesson: dict[str, Any]) -> dict[str, Any] | None:
+    if not lesson["graph_id"]:
+        return None
+    return q1(conn, "select * from graphs.documents where id = :g", {"g": lesson["graph_id"]})
+
+
+def _map_out(conn: Connection, lesson: dict[str, Any], role: str) -> dict[str, Any] | None:
+    g = _graph_of(conn, lesson)
+    if g is None:
+        return None
+    return {
+        "id": str(g["id"]),
+        "revision": g["revision"],
+        "cards": g["cards"],
+        "title": g["title"],
+        # the instructor's own id for it in their browser: their copy and the class's are one map
+        **({"local_id": g["local_id"]} if role == "instructor" else {}),
+    }
+
+
+def _card(n: Any) -> dict[str, Any]:
+    """What a feed or a proposal says of a card: its id, its kind and its name — the root's letters, the word, the
+    verse's key, a note's first words, a group's title."""
+    d = n.get("data") if isinstance(n, dict) and isinstance(n.get("data"), dict) else {}
+    kind = d.get("kind") if d.get("kind") in CARD_KINDS else "note"
+    verse = d.get("verse") if isinstance(d.get("verse"), dict) else {}
+    label = d.get("ar") or verse.get("key") or d.get("title") or d.get("text") or ""
+    return {"id": str(n.get("id", ""))[:200], "kind": kind, "label": str(label).strip()[:80]}
+
+
+def map_gate(conn: Connection, graph_id: Any, viewer: dict[str, Any] | None) -> dict[str, Any] | None:
+    """A lesson's map is its class's: None when the map is no lesson's; else the lesson, its class and the viewer's
+    place in it — and anyone outside the class (or signed out) is refused as if the map were not there."""
+    row = q1(
+        conn,
+        """select l.id as lesson_id, l.title as lesson_title, l.class_id, c.name as class_name, c.instructor_id
+           from classroom.lessons l join classroom.classes c on c.id = l.class_id where l.graph_id = :g""",
+        {"g": graph_id},
+    )
+    if row is None:
+        return None
+    if viewer is not None and str(row["instructor_id"]) == str(viewer["id"]):
+        role = "instructor"
+    elif viewer is not None and _membership(conn, viewer, str(row["class_id"])):
+        role = "member"
+    else:
+        raise Refusal(404, "class_only", "This map is a class's: its members read it, signed in.")
+    return {**row, "role": role}
+
+
+def map_people(conn: Connection, graph_id: Any) -> dict[str, str | None]:
+    """On a lesson's map anyone in the class may be mentioned: its instructor and its members, by name."""
+    return {
+        str(r["id"]): r["display_name"]
+        for r in q(
+            conn,
+            """select u.id, u.display_name from classroom.lessons l join classroom.classes c on c.id = l.class_id
+               join accounts.users u on u.id = c.instructor_id
+                 or u.id in (select m.user_id from classroom.members m where m.class_id = c.id)
+               where l.graph_id = :g""",
+            {"g": graph_id},
+        )
+    }
+
+
+def _waiting_ids(conn: Connection, lesson_id: Any) -> tuple[set[str], set[str]]:
+    """The cards and links proposed on a lesson, waiting or confirmed: the instructor's save that merges them is the
+    proposal's, not an edit of theirs."""
+    rows = q(
+        conn,
+        "select cards, links from classroom.proposals where lesson_id = :l and status in ('pending', 'confirmed')",
+        {"l": lesson_id},
+    )
+    cards = {str(c.get("id")) for r in rows for c in r["cards"] if isinstance(c, dict)}
+    links = {str(e.get("id")) for r in rows for e in r["links"] if isinstance(e, dict)}
+    return cards, links
+
+
+def map_saved(conn: Connection, before: dict[str, Any], after: dict[str, Any], u: dict[str, Any]) -> None:
+    """The instructor saved a lesson's map: what it added, removed and linked goes into the lesson's activity, a run
+    of saves within ten minutes gathered into one entry."""
+    lesson = q1(conn, "select id from classroom.lessons where graph_id = :g", {"g": after["id"]})
+    if lesson is None:
+        return
+    old = {n.get("id"): n for n in before["doc"].get("nodes", []) if isinstance(n, dict)}
+    new = {n.get("id"): n for n in after["doc"].get("nodes", []) if isinstance(n, dict)}
+    proposed, proposed_links = _waiting_ids(conn, lesson["id"])
+    added = [_card(new[i]) for i in new if i not in old and str(i) not in proposed]
+    removed = [_card(old[i]) for i in old if i not in new]
+    old_links = {e.get("id") for e in before["doc"].get("edges", []) if isinstance(e, dict)}
+    new_links = {e.get("id") for e in after["doc"].get("edges", []) if isinstance(e, dict)}
+    linked = len({i for i in new_links - old_links if str(i) not in proposed_links})
+    unlinked = len(old_links - new_links)
+    if not (added or removed or linked or unlinked):
+        return
+    last = q1(
+        conn,
+        "select * from classroom.activity where lesson_id = :l order by at desc, id desc limit 1",
+        {"l": lesson["id"]},
+    )
+    if (
+        last
+        and last["kind"] == "edited"
+        and last["who"] == u["id"]
+        and datetime.now(UTC) - last["at"] < EDIT_RUN
+    ):
+        d = last["detail"]
+        was_added = {c["id"]: c for c in d.get("added", [])}
+        was_removed = {c["id"]: c for c in d.get("removed", [])}
+        for c in removed:
+            # a card added in this run and taken off again was never there
+            if c["id"] in was_added:
+                del was_added[c["id"]]
+            else:
+                was_removed[c["id"]] = c
+        for c in added:
+            if c["id"] in was_removed:
+                del was_removed[c["id"]]
+            else:
+                was_added[c["id"]] = c
+        detail = {
+            "added": list(was_added.values())[:200],
+            "removed": list(was_removed.values())[:200],
+            "linked": d.get("linked", 0) + linked,
+            "unlinked": d.get("unlinked", 0) + unlinked,
+        }
+        if not (detail["added"] or detail["removed"] or detail["linked"] or detail["unlinked"]):
+            q(conn, "delete from classroom.activity where id = :a returning id", {"a": last["id"]})
+            return
+        q(
+            conn,
+            "update classroom.activity set detail = cast(:d as jsonb), at = now() where id = :a returning id",
+            {"d": json.dumps(detail, ensure_ascii=False), "a": last["id"]},
+        )
+        return
+    _log(
+        conn,
+        lesson["id"],
+        u["id"],
+        "edited",
+        {"added": added[:200], "removed": removed[:200], "linked": linked, "unlinked": unlinked},
+    )
+
+
+def _log(conn: Connection, lesson_id: Any, who: Any, kind: str, detail: dict[str, Any]) -> None:
+    q(
+        conn,
+        """insert into classroom.activity (lesson_id, who, kind, detail) values (:l, :w, :k, cast(:d as jsonb))
+           returning id""",
+        {"l": lesson_id, "w": who, "k": kind, "d": json.dumps(detail, ensure_ascii=False)},
+    )
+    # the feed keeps its last thousand entries
+    q(
+        conn,
+        """delete from classroom.activity where lesson_id = :l and id not in
+             (select id from classroom.activity where lesson_id = :l order by at desc, id desc limit 1000)
+           returning id""",
+        {"l": lesson_id},
+    )
+
+
+def set_map(u: dict[str, Any], lid: str, graph_id: Any) -> dict[str, Any]:
+    """The instructor names one of the maps they share as the lesson's map: from then on the class reads it, and only
+    the class."""
+    with tx() as conn:
+        lesson, c = _teaching(conn, u, lid)
+        if lesson["graph_id"]:
+            raise Refusal(409, "has_map", "This lesson has its map already.")
+        g = q1(conn, "select * from graphs.documents where id = :g", {"g": _uuid(graph_id, "map")})
+        if g is None or g["owner_id"] != u["id"]:
+            raise Refusal(404, "not_found", "No such map of yours shared.")
+        if q1(conn, "select 1 as x from classroom.lessons where graph_id = :g", {"g": g["id"]}):
+            raise Refusal(409, "taken", "This map is another lesson's.")
+        lesson = q1(
+            conn,
+            "update classroom.lessons set graph_id = :g where id = :l returning *",
+            {"g": g["id"], "l": lesson["id"]},
+        )
+        assert lesson is not None
+        out = _lesson_out(conn, lesson, "instructor", u)
+        out["class"] = {"id": str(c["id"]), "name": c["name"], "minors": c["minors"], "role": "instructor"}
+        return out
+
+
+def _names(conn: Connection, ids: set[Any]) -> dict[str, str | None]:
+    if not ids:
+        return {}
+    return {
+        str(r["id"]): r["display_name"]
+        for r in q(
+            conn,
+            "select id, display_name from accounts.users where id = any(cast(:ids as uuid[]))",
+            {"ids": [str(i) for i in ids]},
+        )
+    }
+
+
+def _proposal_out(p: dict[str, Any], names: dict[str, str | None], u: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": str(p["id"]),
+        "by": {"name": names.get(str(p["user_id"])), "me": p["user_id"] == u["id"]},
+        "cards": p["cards"],
+        "links": p["links"],
+        "note": p["note"],
+        "status": p["status"],
+        "base_revision": p["base_revision"],
+        "created_at": _iso(p["created_at"]),
+        "decided_at": _iso(p["decided_at"]),
+    }
+
+
+def proposals(u: dict[str, Any], lid: str) -> dict[str, Any]:
+    """A lesson's proposals: the instructor sees them all; a member sees everyone's waiting and their own decided."""
+    with tx() as conn:
+        lesson, _, role = _lesson_role(conn, u, lid)
+        rows = q(
+            conn,
+            """select * from classroom.proposals where lesson_id = :l and status <> 'withdrawn'
+                 and (:all or status = 'pending' or user_id = :u)
+               order by (status = 'pending') desc, created_at desc limit 200""",
+            {"l": lesson["id"], "all": role == "instructor", "u": u["id"]},
+        )
+        names = _names(conn, {r["user_id"] for r in rows})
+        return {"data": [_proposal_out(r, names, u) for r in rows]}
+
+
+def _proposed(
+    raw_cards: Any, raw_links: Any, doc: dict[str, Any]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """What a member adds to the map as it is now: cards of the editor's kinds that are not on it, and links whose two
+    ends are on it or among those cards. The instructor's editor cleans each card again when it takes it in."""
+    if not isinstance(raw_cards, list) or not isinstance(raw_links, list):
+        raise Refusal(422, "bad_proposal", "A proposal holds cards and links.")
+    if len(raw_cards) > MAX_PROPOSAL_CARDS or len(raw_links) > MAX_PROPOSAL_LINKS:
+        raise Refusal(413, "too_large", "A proposal holds at most 40 cards and 80 links.")
+    if len(json.dumps([raw_cards, raw_links], ensure_ascii=False).encode()) > MAX_PROPOSAL_BYTES:
+        raise Refusal(413, "too_large", "This proposal is too large.")
+    on_map = {n.get("id") for n in doc.get("nodes", []) if isinstance(n, dict)}
+    links_on_map = {e.get("id") for e in doc.get("edges", []) if isinstance(e, dict)}
+    cards: list[dict[str, Any]] = []
+    for n in raw_cards:
+        if not isinstance(n, dict) or not isinstance(n.get("id"), str) or not isinstance(n.get("data"), dict):
+            raise Refusal(422, "bad_proposal", "Each card has an id and its data.")
+        if n["data"].get("kind") not in CARD_KINDS or len(n["id"]) > 200:
+            raise Refusal(422, "bad_proposal", "A card of a kind the editor knows.")
+        if n["id"] in on_map or any(c["id"] == n["id"] for c in cards):
+            continue
+        pos = n.get("position") if isinstance(n.get("position"), dict) else {}
+        x, y = pos.get("x", 0), pos.get("y", 0)
+        cards.append(
+            {
+                "id": n["id"],
+                "position": {
+                    "x": x if isinstance(x, (int, float)) else 0,
+                    "y": y if isinstance(y, (int, float)) else 0,
+                },
+                "data": n["data"],
+            }
+        )
+    ends = on_map | {c["id"] for c in cards}
+    links: list[dict[str, Any]] = []
+    for e in raw_links:
+        if not isinstance(e, dict) or not all(isinstance(e.get(k), str) for k in ("id", "source", "target")):
+            raise Refusal(422, "bad_proposal", "Each link has an id and its two ends.")
+        if e["id"] in links_on_map or e["source"] not in ends or e["target"] not in ends:
+            continue
+        links.append(
+            {
+                "id": e["id"][:200],
+                "source": e["source"],
+                "target": e["target"],
+                "data": e["data"] if isinstance(e.get("data"), dict) else {},
+            }
+        )
+    if not cards and not links:
+        raise Refusal(422, "nothing_new", "Everything in this proposal is on the map already.")
+    return cards, links
+
+
+def propose(u: dict[str, Any], lid: str, base: Any, cards: Any, links: Any, note: Any) -> dict[str, Any]:
+    """A member proposes cards and links for the lesson's map, under their name for the class to see; the instructor
+    confirms them into the map or declines them."""
+    with tx() as conn:
+        lesson, _, role = _lesson_role(conn, u, lid)
+        if role != "member":
+            raise Refusal(403, "instructor_edits", "The instructor edits the map itself.")
+        if datetime.now(UTC) > open_until(lesson):
+            raise Refusal(409, "closed", "This lesson is not open.")
+        g = _graph_of(conn, lesson)
+        if g is None:
+            raise Refusal(409, "no_map", "This lesson has no map yet.")
+        mine = q1(
+            conn,
+            "select count(*)::int as n from classroom.proposals where lesson_id = :l and user_id = :u and status = 'pending'",
+            {"l": lesson["id"], "u": u["id"]},
+        )["n"]  # type: ignore[index]
+        if mine >= MAX_PENDING:
+            raise Refusal(429, "too_many", "That is as many proposals as can wait at once.")
+        got_cards, got_links = _proposed(cards, links, g["doc"])
+        p = q1(
+            conn,
+            """insert into classroom.proposals (lesson_id, user_id, base_revision, cards, links, note)
+               values (:l, :u, :b, cast(:c as jsonb), cast(:k as jsonb), :n) returning *""",
+            {
+                "l": lesson["id"],
+                "u": u["id"],
+                "b": base if isinstance(base, int) and base >= 1 else g["revision"],
+                "c": json.dumps(got_cards, ensure_ascii=False),
+                "k": json.dumps(got_links, ensure_ascii=False),
+                "n": _str(note, 500),
+            },
+        )
+        assert p is not None
+        _log(
+            conn,
+            lesson["id"],
+            u["id"],
+            "proposed",
+            {"proposal": str(p["id"]), "cards": [_card(c) for c in got_cards], "links": len(got_links)},
+        )
+        return _proposal_out(p, {str(u["id"]): u.get("display_name")}, u)
+
+
+def _proposal(conn: Connection, pid: str) -> dict[str, Any]:
+    p = q1(conn, "select * from classroom.proposals where id = :p", {"p": _uuid(pid, "proposal")})
+    if p is None:
+        raise Refusal(404, "not_found", "No such proposal.")
+    return p
+
+
+def decide(u: dict[str, Any], pid: str, decision: Any) -> dict[str, Any]:
+    """The instructor confirms a proposal — its cards and links are taken into the map in their editor, saved as a
+    revision — or declines it."""
+    if decision not in ("confirmed", "declined"):
+        raise Refusal(422, "bad_decision", "Confirm or decline.")
+    with tx() as conn:
+        p = _proposal(conn, pid)
+        lesson, _ = _teaching(conn, u, str(p["lesson_id"]))
+        if p["status"] != "pending":
+            raise Refusal(409, "decided", "This proposal was decided already.")
+        p = q1(
+            conn,
+            """update classroom.proposals set status = :s, decided_by = :u, decided_at = now() where id = :p
+               returning *""",
+            {"s": decision, "u": u["id"], "p": p["id"]},
+        )
+        assert p is not None
+        _log(
+            conn,
+            lesson["id"],
+            u["id"],
+            decision,
+            {
+                "proposal": str(p["id"]),
+                "for": str(p["user_id"]),
+                "cards": [_card(c) for c in p["cards"]],
+                "links": len(p["links"]),
+            },
+        )
+        return _proposal_out(p, _names(conn, {p["user_id"]}), u)
+
+
+def withdraw(u: dict[str, Any], pid: str) -> None:
+    """Its author takes a waiting proposal back: it leaves the feed too."""
+    with tx() as conn:
+        p = _proposal(conn, pid)
+        if p["user_id"] != u["id"]:
+            raise Refusal(404, "not_found", "No such proposal.")
+        if p["status"] != "pending":
+            raise Refusal(409, "decided", "This proposal was decided already.")
+        q(
+            conn,
+            "update classroom.proposals set status = 'withdrawn' where id = :p returning id",
+            {"p": p["id"]},
+        )
+        q(
+            conn,
+            """delete from classroom.activity where lesson_id = :l and kind = 'proposed'
+                 and detail->>'proposal' = :p returning id""",
+            {"l": p["lesson_id"], "p": str(p["id"])},
+        )
+
+
+def activity(u: dict[str, Any], lid: str, before: Any = None, limit: Any = 30) -> dict[str, Any]:
+    """What happened on the lesson's map, newest first: the instructor's edits, proposals made and decided, and the
+    map's comments — each saying what it touched in the product's words. `before` continues from an earlier page."""
+    n = limit if isinstance(limit, int) and 1 <= limit <= FEED_MOST else 30
+    cut: datetime | None = None
+    if before:
+        try:
+            cut = datetime.fromisoformat(str(before))
+        except ValueError:
+            raise Refusal(422, "bad_cursor", "No such page.") from None
+    with tx() as conn:
+        lesson, _, _ = _lesson_role(conn, u, lid)
+        rows = q(
+            conn,
+            """select * from classroom.activity where lesson_id = :l and (cast(:b as timestamptz) is null or at < :b)
+               order by at desc, id desc limit :n""",
+            {"l": lesson["id"], "b": cut, "n": n},
+        )
+        said = (
+            q(
+                conn,
+                """select id, author_id, node_id, parent_id, body, created_at from graphs.comments
+                   where graph_id = :g and deleted_at is null
+                     and (cast(:b as timestamptz) is null or created_at < :b)
+                   order by created_at desc limit :n""",
+                {"g": lesson["graph_id"], "b": cut, "n": n},
+            )
+            if lesson["graph_id"]
+            else []
+        )
+        g = _graph_of(conn, lesson)
+        cards = {
+            nd.get("id"): _card(nd) for nd in (g["doc"].get("nodes", []) if g else []) if isinstance(nd, dict)
+        }
+        who = (
+            {r["who"] for r in rows}
+            | {r["author_id"] for r in said}
+            | {r["detail"].get("for") for r in rows if r["detail"].get("for")}
+        )
+        names = _names(conn, {w for w in who if w})
+    items = [
+        {
+            "id": f"a{r['id']}",
+            "kind": r["kind"],
+            "who": {"name": names.get(str(r["who"])), "me": r["who"] == u["id"]},
+            "at": _iso(r["at"]),
+            "detail": {
+                **{k: v for k, v in r["detail"].items() if k != "for"},
+                **({"for": names.get(str(r["detail"]["for"]))} if r["detail"].get("for") else {}),
+            },
+        }
+        for r in rows
+    ] + [
+        {
+            "id": f"c{c['id']}",
+            "kind": "commented",
+            "who": {"name": names.get(str(c["author_id"])), "me": c["author_id"] == u["id"]},
+            "at": _iso(c["created_at"]),
+            "detail": {
+                "body": c["body"][:200],
+                "reply": c["parent_id"] is not None,
+                "card": cards.get(c["node_id"]) if c["node_id"] else None,
+            },
+        }
+        for c in said
+    ]
+    items.sort(key=lambda x: x["at"] or "", reverse=True)
+    page = items[:n]
+    return {
+        "data": page,
+        "next": page[-1]["at"] if len(items) > n or len(rows) == n or len(said) == n else None,
+    }

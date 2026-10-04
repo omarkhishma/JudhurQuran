@@ -15,6 +15,7 @@ from jadhr_api import accounts, contrib
 from jadhr_api.classroom import CONSENT_VERSION
 from jadhr_api.db import connect, rows
 from jadhr_api.main import app
+from starlette.websockets import WebSocketDisconnect
 
 client = TestClient(app)
 
@@ -484,3 +485,234 @@ def test_lesson_notes_and_a_gentle_reminder(people: dict[str, dict[str, str]]) -
         client.get(f"/api/v1/classroom/classes/{c['id']}", headers=b).json()["lessons"][0]["mine"]["nudged"]
         is False
     )
+
+
+def _class_map(t: dict[str, str]) -> dict:
+    """A map the instructor shares, with a root card and a note."""
+    doc = {
+        "version": 2,
+        "nodes": [
+            {
+                "id": "root:حمد",
+                "position": {"x": 0, "y": 0},
+                "data": {"kind": "root", "ar": "ح م د", "rootKey": "حمد"},
+            },
+            {
+                "id": "note:n1",
+                "position": {"x": 300, "y": 0},
+                "data": {"kind": "note", "text": "الحمد والشكر"},
+            },
+        ],
+        "edges": [],
+    }
+    r = client.post(
+        "/api/v1/graphs",
+        headers=t,
+        json={"local_id": f"cls{uuid.uuid4().hex[:8]}", "title": "خريطة الدرس", "kind": "root", "doc": doc},
+    )
+    assert r.status_code == 201, r.text
+    return r.json()
+
+
+def test_a_lessons_map_is_read_commented_and_joined_by_its_class_only(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """P9.3: the instructor names a shared map as the lesson's; from then on its class reads it, comments on it
+    (anyone in the class may be mentioned) and joins it — no one else, not even with the link."""
+    t, a, b = people["t"], people["a"], people["b"]
+    c = _class(t)
+    _join(a, c["join_code"])
+    lesson = client.post(
+        f"/api/v1/classroom/classes/{c['id']}/lessons",
+        headers=t,
+        json={"title": "ل", "ranges": [{"surah": 1, "from": 1, "to": 7}]},
+    ).json()
+    url = f"/api/v1/classroom/lessons/{lesson['id']}"
+    g = _class_map(t)
+    assert client.put(f"{url}/map", headers=a, json={"graph_id": g["id"]}).status_code == 403
+    theirs = client.post(
+        "/api/v1/graphs",
+        headers=b,
+        json={
+            "local_id": "bmap1",
+            "title": "x",
+            "kind": "free",
+            "doc": {"version": 2, "nodes": [], "edges": []},
+        },
+    ).json()
+    assert _code(client.put(f"{url}/map", headers=t, json={"graph_id": theirs["id"]})) == "not_found"
+    got = client.put(f"{url}/map", headers=t, json={"graph_id": g["id"]}).json()
+    assert got["map"]["id"] == g["id"] and got["map"]["local_id"] == g["local_id"] and got["pending"] == 0
+    assert _code(client.put(f"{url}/map", headers=t, json={"graph_id": g["id"]})) == "has_map"
+    # the member is told the map, without the instructor's own id for it
+    seen = client.get(url, headers=a).json()["map"]
+    assert seen["id"] == g["id"] and "local_id" not in seen
+    # read: the class only
+    on = f"/api/v1/graphs/{g['id']}"
+    assert client.get(on, headers=t).json()["class"]["role"] == "instructor"
+    assert client.get(on, headers=a).json()["class"] == {
+        "lesson_id": lesson["id"],
+        "lesson_title": "ل",
+        "class_id": c["id"],
+        "class_name": "حلقة الفجر",
+        "role": "member",
+    }
+    for h in (b, {}):
+        r = client.get(on, headers=h)
+        assert r.status_code == 404 and _code(r) == "class_only"
+    assert client.get(f"{on}/comments", headers=b).status_code == 404
+    assert client.post(f"{on}/comments", headers=b, json={"body": "x"}).status_code == 404
+    # comments: anyone in the class may be mentioned, even before they have spoken; no one outside it
+    page = client.get(f"{on}/comments", headers=a).json()
+    t_id = next(p["id"] for p in page["people"] if p["name"].startswith("t-"))
+    r = client.post(
+        f"{on}/comments", headers=a, json={"body": "ما الفرق؟", "node_id": "root:حمد", "mentions": [t_id]}
+    )
+    assert r.status_code == 201, r.text
+    b_id = client.get("/api/v1/me", headers=b).json()["id"]
+    assert (
+        _code(client.post(f"{on}/comments", headers=a, json={"body": "x", "mentions": [b_id]}))
+        == "bad_mention"
+    )
+    # presence: a window outside the class is closed
+    with TestClient(app) as tc, tc.websocket_connect(f"{on}/presence") as ws:
+        ws.send_json({"type": "hello", "token": b["Authorization"].removeprefix("Bearer ")})
+        with pytest.raises(WebSocketDisconnect) as e:
+            ws.receive_json()
+        assert e.value.code == 4404
+    with TestClient(app) as tc, tc.websocket_connect(f"{on}/presence") as ws:
+        ws.send_json({"type": "hello", "token": a["Authorization"].removeprefix("Bearer ")})
+        assert any(p["name"].startswith("a-") for p in ws.receive_json()["people"])
+    # a lesson deleted takes its map's shared copy
+    client.delete(url, headers=t)
+    assert client.get(on, headers=t).status_code == 404
+
+
+def test_members_propose_the_instructor_decides_and_the_feed_says_what_changed(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """P9.3: a member proposes cards and links (what is on the map already is dropped); the instructor confirms or
+    declines; a waiting proposal is taken back by its author; the instructor's saves read as cards added, removed and
+    linked, a run of saves as one entry, a confirmed proposal's cards not as an edit; the map's comments beside them;
+    leaving takes a member's proposals, activity and comments."""
+    t, a = people["t"], people["a"]
+    c = _class(t)
+    _join(a, c["join_code"])
+    lesson = client.post(
+        f"/api/v1/classroom/classes/{c['id']}/lessons",
+        headers=t,
+        json={"title": "ل", "ranges": [{"surah": 1, "from": 1, "to": 7}]},
+    ).json()
+    url = f"/api/v1/classroom/lessons/{lesson['id']}"
+    g = _class_map(t)
+    # no map yet: nothing to propose on
+    card = {
+        "id": "root:رحم",
+        "position": {"x": 0, "y": 200},
+        "data": {"kind": "root", "ar": "ر ح م", "rootKey": "رحم"},
+    }
+    assert _code(client.post(f"{url}/proposals", headers=a, json={"cards": [card]})) == "no_map"
+    client.put(f"{url}/map", headers=t, json={"graph_id": g["id"]})
+    on = f"/api/v1/graphs/{g['id']}"
+    doc = client.get(on, headers=t).json()["doc"]
+    # the instructor edits: a card added, then in the same run another added and a link drawn — one entry
+    word = {"id": "lemma:hamd", "position": {"x": 0, "y": 400}, "data": {"kind": "lemma", "ar": "حَمْد"}}
+    r = client.put(on, headers=t, json={"doc": {**doc, "nodes": [*doc["nodes"], word]}, "base": 1})
+    assert r.status_code == 200, r.text
+    link = {"id": "e-hamd", "source": "root:حمد", "target": "lemma:hamd", "data": {"rel": "derives"}}
+    verse = {
+        "id": "verse:1:2",
+        "position": {"x": 300, "y": 400},
+        "data": {"kind": "verse", "verse": {"key": "1:2"}},
+    }
+    nodes2 = [*doc["nodes"], word, verse]
+    client.put(on, headers=t, json={"doc": {**doc, "nodes": nodes2, "edges": [link]}, "base": 2})
+    feed = client.get(f"{url}/activity", headers=a).json()["data"]
+    assert [x["kind"] for x in feed] == ["edited"]
+    assert [x["label"] for x in feed[0]["detail"]["added"]] == ["حَمْد", "1:2"] and feed[0]["detail"][
+        "linked"
+    ] == 1
+    # proposals: the instructor edits instead; what is on the map is dropped; a link needs its two ends
+    assert _code(client.post(f"{url}/proposals", headers=t, json={"cards": [card]})) == "instructor_edits"
+    on_map = {"id": "root:حمد", "data": {"kind": "root", "ar": "ح م د"}}
+    dangling = {"id": "e-x", "source": "root:رحم", "target": "lemma:nowhere"}
+    tie = {"id": "e-rhm", "source": "root:رحم", "target": "note:n1", "data": {}}
+    assert (
+        _code(client.post(f"{url}/proposals", headers=a, json={"cards": [on_map], "links": [dangling]}))
+        == "nothing_new"
+    )
+    assert _code(
+        client.post(f"{url}/proposals", headers=a, json={"cards": [{"id": "x", "data": {"kind": "spell"}}]})
+    ) == ("bad_proposal")
+    p = client.post(
+        f"{url}/proposals",
+        headers=a,
+        json={"base": 3, "cards": [on_map, card], "links": [tie, dangling], "note": "الرحمة"},
+    )
+    assert p.status_code == 201, p.text
+    p = p.json()
+    assert [x["id"] for x in p["cards"]] == ["root:رحم"] and [x["id"] for x in p["links"]] == ["e-rhm"]
+    assert p["by"]["me"] and p["status"] == "pending" and p["note"] == "الرحمة"
+    assert client.get(url, headers=t).json()["pending"] == 1
+    # another, taken back by its author: it leaves the feed too
+    q2 = client.post(
+        f"{url}/proposals",
+        headers=a,
+        json={"cards": [{**card, "id": "root:علم", "data": {"kind": "root", "ar": "ع ل م"}}]},
+    ).json()
+    assert client.delete(f"/api/v1/classroom/proposals/{q2['id']}", headers=t).status_code == 404
+    assert client.delete(f"/api/v1/classroom/proposals/{q2['id']}", headers=a).status_code == 204
+    # the instructor confirms; the member cannot decide
+    assert (
+        client.post(
+            f"/api/v1/classroom/proposals/{p['id']}/decide", headers=a, json={"decision": "confirmed"}
+        ).status_code
+        == 403
+    )
+    done = client.post(
+        f"/api/v1/classroom/proposals/{p['id']}/decide", headers=t, json={"decision": "confirmed"}
+    ).json()
+    assert done["status"] == "confirmed" and done["by"]["name"].startswith("a-")
+    assert (
+        _code(
+            client.post(
+                f"/api/v1/classroom/proposals/{p['id']}/decide", headers=t, json={"decision": "declined"}
+            )
+        )
+        == "decided"
+    )
+    # the instructor's editor takes the cards in and saves: a revision, not an edit of theirs in the feed
+    nodes3 = [*nodes2, card]
+    r = client.put(on, headers=t, json={"doc": {**doc, "nodes": nodes3, "edges": [link, tie]}, "base": 3})
+    assert r.json()["revision"] == 4
+    # a comment on a card
+    client.post(f"{on}/comments", headers=a, json={"body": "شكرا", "node_id": "root:رحم"})
+    feed = client.get(f"{url}/activity", headers=t).json()["data"]
+    assert [x["kind"] for x in feed] == ["commented", "confirmed", "proposed", "edited"]
+    assert feed[0]["detail"]["card"] == {"id": "root:رحم", "kind": "root", "label": "ر ح م"}
+    assert feed[1]["detail"]["for"].startswith("a-") and feed[1]["who"]["name"].startswith("t-")
+    assert feed[2]["detail"]["cards"] == [{"id": "root:رحم", "kind": "root", "label": "ر ح م"}]
+    assert [x["label"] for x in feed[3]["detail"]["added"]] == [
+        "حَمْد",
+        "1:2",
+    ]  # the link's save: no "ر ح م" here
+    # a page at a time
+    first = client.get(f"{url}/activity", headers=t, params={"limit": 2}).json()
+    rest = client.get(f"{url}/activity", headers=t, params={"before": first["next"]}).json()
+    assert [x["kind"] for x in first["data"] + rest["data"]] == [
+        "commented",
+        "confirmed",
+        "proposed",
+        "edited",
+    ]
+    # what the member sees of the proposals: theirs, decided
+    mine = client.get(f"{url}/proposals", headers=a).json()["data"]
+    assert [(x["status"], x["by"]["me"]) for x in mine] == [("confirmed", True)]
+    # leaving takes their proposals, activity and comments on the class's maps
+    client.delete(f"/api/v1/classroom/classes/{c['id']}/membership", headers=a)
+    assert client.get(f"{url}/proposals", headers=t).json()["data"] == []
+    assert [x["kind"] for x in client.get(f"{url}/activity", headers=t).json()["data"]] == [
+        "confirmed",
+        "edited",
+    ]
+    assert client.get(f"{on}/comments", headers=t).json()["data"] == []

@@ -254,3 +254,56 @@ def nudge(u: User, lesson_id: Id) -> ORJSONResponse:
 @router.get("/me/active", summary="The open lessons of my classes: the verses my reader counts for")
 def active(u: User) -> ORJSONResponse:
     return ok(classroom.active(u))
+
+
+# ─── the lesson's map (P9.3) ───────────────────────────────────────────────────
+
+
+class _Map(BaseModel):
+    graph_id: str = Field(max_length=40)
+
+
+class _Proposal(BaseModel):
+    base: int | None = None
+    cards: list[Any] = Field(max_length=200)
+    links: list[Any] = Field(default_factory=list, max_length=400)
+    note: str = Field("", max_length=500)
+
+
+class _Decision(BaseModel):
+    decision: str = Field(max_length=20)
+
+
+@router.put(
+    "/lessons/{lesson_id}/map", summary="Name one of my shared maps as the lesson's map (the class's only)"
+)
+def set_map(u: User, lesson_id: Id, body: _Map) -> ORJSONResponse:
+    return ok(classroom.set_map(u, lesson_id, body.graph_id))
+
+
+@router.get("/lessons/{lesson_id}/proposals", summary="What members propose for the lesson's map")
+def proposals(u: User, lesson_id: Id) -> ORJSONResponse:
+    return ok(classroom.proposals(u, lesson_id))
+
+
+@router.post(
+    "/lessons/{lesson_id}/proposals", summary="Propose cards and links for the lesson's map (a member)"
+)
+def propose(u: User, lesson_id: Id, body: _Proposal) -> ORJSONResponse:
+    return ok(classroom.propose(u, lesson_id, body.base, body.cards, body.links, body.note), status=201)
+
+
+@router.post("/proposals/{proposal_id}/decide", summary="Confirm a proposal into the map, or decline it")
+def decide(u: User, proposal_id: Id, body: _Decision) -> ORJSONResponse:
+    return ok(classroom.decide(u, proposal_id, body.decision))
+
+
+@router.delete("/proposals/{proposal_id}", summary="Take back a proposal of mine that waits")
+def withdraw(u: User, proposal_id: Id) -> Response:
+    classroom.withdraw(u, proposal_id)
+    return gone()
+
+
+@router.get("/lessons/{lesson_id}/activity", summary="What happened on the lesson's map, newest first")
+def activity(u: User, lesson_id: Id, before: str | None = None, limit: int = 30) -> ORJSONResponse:
+    return ok(classroom.activity(u, lesson_id, before, limit))

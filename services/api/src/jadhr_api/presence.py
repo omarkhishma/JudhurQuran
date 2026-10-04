@@ -192,6 +192,15 @@ def _owner_of(gid: str) -> str:
         return str(shared_maps._graph(conn, shared_maps._uuid(gid))["owner_id"])
 
 
+def _may_join(gid: str, u: dict[str, Any] | None) -> bool:
+    """A lesson's map is joined by its class only (P9.3)."""
+    try:
+        shared_maps.may_join(gid, u)
+        return True
+    except Refusal:
+        return False
+
+
 async def serve(ws: WebSocket, gid: str) -> None:
     """One window on a shared map: its hello (who it is, whether it edits), then its claims, until it closes."""
     await ws.accept()
@@ -213,6 +222,9 @@ async def serve(ws: WebSocket, gid: str) -> None:
         await ws.close(code=4400, reason="Say hello first.")
         return
     u = await asyncio.to_thread(_who, hello.get("token"))
+    if not await asyncio.to_thread(_may_join, gid, u):
+        await ws.close(code=4404, reason="This map is a class's.")
+        return
     is_owner = bool(u and str(u["id"]) == owner)
     editing = is_owner and bool(hello.get("editing"))
     # a window opened while another of the owner's already edits waits to be asked; the first one claims at once
