@@ -10,12 +10,14 @@ import { useAccount } from "@/lib/account/store";
 import { formatNumber } from "@/lib/format";
 import { upgrade } from "@/lib/graph/migrate";
 import { createGraph, loadGraph, putGraph } from "@/lib/graph/persist";
+import { useSharedPresence } from "@/lib/graph/presence";
 import { isGone, readShared, type SharedDoc } from "@/lib/graph/shared";
 import type { GraphEdge, GraphNode } from "@/lib/graph/types";
 import { translitOn, useGraphUi } from "@/lib/graph/uiPrefs";
 import { CommentsPanel, SharedMapContext, useMapComments } from "./Comments";
 import { Details, DetailsRail } from "./Details";
 import { GraphCanvas, useCanvasTools } from "./GraphCanvas";
+import { PresenceBlock } from "./Presence";
 
 type Loaded = SharedDoc & { nodes: GraphNode[]; edges: GraphEdge[] };
 
@@ -107,6 +109,8 @@ function SharedHeader({ first, newer, onShowNewer, onComments }: { first: Loaded
   const detailsOpen = useGraphUi((u) => u.detailsOpen);
   const setUi = useGraphUi((u) => u.set);
   const comments = useMapComments(first.id);
+  // who else is on the map now, the owner among them when they edit it (P8.6)
+  const { presence } = useSharedPresence(first.id, false);
   const open = (comments.data?.data ?? []).filter((c) => !c.parent_id && !c.resolved_at && !c.deleted).length;
   const title = first.title || t("untitled");
   async function keepCopy() {
@@ -130,6 +134,7 @@ function SharedHeader({ first, newer, onShowNewer, onComments }: { first: Loaded
           <h1 className="truncate text-[15px] font-semibold">{title}</h1>
           <p className="truncate text-[11.5px] text-t3">{first.owner.name ? t("sharedBy", { name: first.owner.name }) : t("sharedByReader")} · {t("sharedReadOnly")}</p>
         </div>
+        {presence && <PresenceBlock presence={presence} />}
         <span className="shared-spacer flex-1" />
         <div className="seg-group shrink-0">
           <button type="button" className="seg" onClick={tools.tidy} title={t("tidyHint")}>{t("tidy")}</button>

@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { SignedOut } from "@/lib/account/store";
 import { keepVersion } from "@/lib/graph/history";
 import { createGraph, fileBase, GRAPHS_SYNCED_EVENT, loadGraph, markShared, putGraph, saveGraphOver, storedAt } from "@/lib/graph/persist";
+import { useSharedPresence, useTabLock, type Presence } from "@/lib/graph/presence";
 import { isGone, isNewer, readShared, saveShared } from "@/lib/graph/shared";
 import type { GraphDoc, GraphEdge, GraphNode, SharedRef } from "@/lib/graph/types";
 import { cnt, formatNumber } from "@/lib/format";
@@ -21,6 +22,7 @@ import { EditorHeader } from "./EditorHeader";
 import { EditorHelp } from "./EditorHelp";
 import { GraphCanvas, type CanvasTools } from "./GraphCanvas";
 import { Library } from "./Library";
+import { PresenceBlock } from "./Presence";
 import { ShareDialog } from "./Sharing";
 
 /** What autosave compares: the map as the reader made it — not the sizes xyflow measures, nor what is selected. */
@@ -35,6 +37,24 @@ export function GraphEditor({ id, from }: { id: string; from?: MapOrigin }) {
   // read afresh on every opening — a copy kept from an earlier visit would be written back over newer work (F1)
   const q = useQuery({ queryKey: ["graph", id], queryFn: async () => (await loadGraph(id)) ?? null, gcTime: 0, staleTime: Infinity, refetchOnWindowFocus: false, refetchOnReconnect: false });
   const [notice, setNotice] = useState<string | null>(null);
+  // the soft lock (P8.6, D5): one window edits a map; another is told and may take it. Between this browser's tabs
+  // for any map; for a shared one also across the owner's devices, with who else is on it
+  const [sharedId, setSharedId] = useState<string | null>(null);
+  const gid = sharedId ?? q.data?.shared?.id ?? null;
+  const tab = useTabLock(id);
+  const { presence, take: takeShared } = useSharedPresence(gid, true);
+  const editor = presence?.editor ?? tab.editor;
+  const editorRef = useRef(editor);
+  const refetch = q.refetch;
+  // the edit regained (the other window closed, or this one took it): the latest copy is read before anything is
+  // written, so nothing the other window saved is written over
+  useEffect(() => {
+    if (editorRef.current === "elsewhere" && editor === "you") void refetch();
+    editorRef.current = editor;
+  }, [editor, refetch]);
+  // the window that edits saves: this one follows
+  const followSaves = tab.onSaved;
+  useEffect(() => followSaves(() => editorRef.current === "elsewhere" && void refetch()), [followSaves, refetch]);
   if (q.isPending) return <p className="p-6 text-t3">…</p>;
   if (!q.data) return <MissingMap id={id} refetch={() => void q.refetch()} />;
   return (
@@ -47,6 +67,14 @@ export function GraphEditor({ id, from }: { id: string; from?: MapOrigin }) {
         await q.refetch();
         setNotice(quiet ? t("reloadedNewer") : null);
       }}
+      locked={editor === "elsewhere"}
+      onTake={() => {
+        tab.take();
+        takeShared();
+      }}
+      presence={gid ? presence : null}
+      onSaved={tab.saved}
+      onSharedChange={setSharedId}
     />
   );
 }
@@ -78,8 +106,33 @@ type Status = "saved" | "saving" | "unsaved" | "newer" | "gone" | "sharedNewer";
 /** The shared copy's state: as saved here, being sent, behind (no connection, or signed out). */
 type Push = "idle" | "pushing" | "failed" | "signedOut";
 
-function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapOrigin; notice: string | null; reload: (quiet: boolean) => Promise<void> }) {
+function EditorInner({
+  doc,
+  from,
+  notice,
+  reload,
+  locked,
+  onTake,
+  presence,
+  onSaved,
+  onSharedChange,
+}: {
+  doc: GraphDoc;
+  from?: MapOrigin;
+  notice: string | null;
+  reload: (quiet: boolean) => Promise<void>;
+  /** another window edits this map: this one shows it and saves nothing (P8.6) */
+  locked: boolean;
+  onTake: () => void;
+  presence: Presence | null;
+  onSaved: () => void;
+  onSharedChange: (id: string | null) => void;
+}) {
   const t = useTranslations("graph");
+  const lockedRef = useRef(locked);
+  useEffect(() => {
+    lockedRef.current = locked;
+  }, [locked]);
   const router = useRouter();
   const [title, setTitle] = useState(doc.title);
   // the title as typed, read by a save scheduled before the next render
@@ -122,16 +175,18 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
     setStatus(s);
     if (s !== "saved") setFresh(null);
   }, []);
-  const halted = useCallback(() => statusRef.current === "newer" || statusRef.current === "gone" || statusRef.current === "sharedNewer", []);
+  const halted = useCallback(() => lockedRef.current || statusRef.current === "newer" || statusRef.current === "gone" || statusRef.current === "sharedNewer", []);
 
   /** The map's link to its shared copy, set or taken off, kept in this browser's copy (and so synced). */
   const setShared = useCallback(
     async (s: SharedRef | null) => {
       sharedRef.current = s;
       setSharedState(s);
+      onSharedChange(s?.id ?? null);
       const out = await inLane(() => markShared(doc.id, s, base.current));
       if ("saved" in out) base.current = out.saved;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [doc.id, inLane],
   );
 
@@ -188,6 +243,8 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
     if ("conflict" in out) return show(out.conflict);
     base.current = out.saved;
     savedContent.current = content;
+    // the other windows on this map follow (P8.6)
+    onSaved();
     // a shared map's history is the server's; a private one's is kept here
     if (sharedRef.current) void pushShared();
     else void keepVersion(doc.id, title || t("untitled"), nodes, edges);
@@ -198,7 +255,7 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
       timer.current = setTimeout(() => void writeRef.current(), 800);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, t, show, inLane, pushShared]);
+  }, [doc, t, show, inLane, pushShared, onSaved]);
 
   // autosave after 800 ms of quiet; a change that is not the reader's (a card measured, one selected) is no change
   const persist = useCallback(
@@ -357,8 +414,8 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
       <GraphCanvas
         initialNodes={doc.nodes}
         initialEdges={doc.edges}
-        autoLayout={!!doc.pendingLayout}
-        editable
+        autoLayout={!!doc.pendingLayout && !locked}
+        editable={!locked}
         title={title}
         translit={translit}
         onChange={(nodes, edges) => {
@@ -390,6 +447,8 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
                     {status === "saved" ? fresh ?? t("saved") : status === "saving" ? t("saving") : t("unsaved")}
                   </span>
                   {where && !shared && <span className="hidden shrink-0 text-[12px] text-t3 xl:inline">{t(where === "account" ? "savedAccount" : "localOnly")}</span>}
+                  {/* who is on the shared map now (EDT-014) */}
+                  {presence && <PresenceBlock presence={presence} />}
                   {/* the shared copy: following each save, or behind and caught up when it can be */}
                   {shared && (
                     <span className="shared-pill shrink-0 text-[12px]" role="status">
@@ -415,6 +474,12 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
               onDetails={() => setUi({ detailsOpen: !detailsOpen })}
               onHelp={() => setHelp(true)}
             />
+            {locked && (
+              <div className="graph-lock" role="status">
+                <p className="min-w-0 flex-1 text-[13px] text-t1">{t("lockedElsewhere")}</p>
+                <button type="button" className="btn btn-primary" onClick={onTake}>{t("editHere")}</button>
+              </div>
+            )}
             {conflict && (
               <div className="graph-conflict flex flex-wrap items-center gap-2 border-b border-line px-3 py-2" role="alert">
                 <p className="min-w-0 basis-full text-[13px] text-t1 sm:flex-1 sm:basis-auto">{t(status === "gone" ? "conflictGone" : status === "sharedNewer" ? "conflictShared" : "conflictNewer")}</p>
@@ -430,7 +495,8 @@ function EditorInner({ doc, from, notice, reload }: { doc: GraphDoc; from?: MapO
             )}
           </>
         }
-        start={<Library kind={doc.kind} onPick={() => {}} pendingDrop={pendingDrop} setPendingDrop={setPendingDrop} onHelp={() => setHelp(true)} />}
+        // the library adds to the map: not while another window edits it
+        start={locked ? undefined : <Library kind={doc.kind} onPick={() => {}} pendingDrop={pendingDrop} setPendingDrop={setPendingDrop} onHelp={() => setHelp(true)} />}
         end={detailsOpen ? <Details title={title} /> : <DetailsRail />}
       />
       <EditorHelp open={help} onClose={() => setHelp(false)} />

@@ -1372,7 +1372,15 @@
     "myTopicAdd": "أضف موضوعك «{name}» بآياته",
     "myTopicLink": "اجمعها تحت موضوعك «{name}»",
     "doAddMyTopic": "أضف موضوعك «{name}»",
-    "verseMyTopics": "موضوعاتك التي تضم هذه الآية"
+    "verseMyTopics": "موضوعاتك التي تضم هذه الآية",
+    "live": "مباشر",
+    "presenceYou": "أنت",
+    "presenceUnnamed": "قارئ",
+    "presenceEditing": "يحررها",
+    "presenceGuests": "{count, plural, one {زائر واحد} two {زائران} few {{n} زوار} many {{n} زائرًا} other {{n} زائر}}",
+    "presenceLabel": "على الخريطة الآن: {names}",
+    "lockedElsewhere": "هذه الخريطة مفتوحة للتحرير في نافذة أخرى؛ تعرض هنا للقراءة، وتتبع ما يحفظ هناك.",
+    "editHere": "حرر هنا"
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",

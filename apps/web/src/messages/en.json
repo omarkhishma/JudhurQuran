@@ -1372,7 +1372,15 @@
     "myTopicAdd": "Add your topic «{name}» with its verses",
     "myTopicLink": "Gather it under your topic «{name}»",
     "doAddMyTopic": "Add your topic «{name}»",
-    "verseMyTopics": "Your topics that hold this verse"
+    "verseMyTopics": "Your topics that hold this verse",
+    "live": "Live",
+    "presenceYou": "You",
+    "presenceUnnamed": "A reader",
+    "presenceEditing": "editing",
+    "presenceGuests": "{count, plural, one {one visitor} other {{n} visitors}}",
+    "presenceLabel": "On the map now: {names}",
+    "lockedElsewhere": "This map is open for editing in another window; it is shown here to read, and follows what is saved there.",
+    "editHere": "Edit here"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

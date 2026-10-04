@@ -6221,3 +6221,54 @@ a.wotd-pill:hover {
     gap: 4px;
   }
 }
+
+/* Presence on a shared map (P8.6; EDT-014, EDT-296, EDT-297): «مباشر», then overlapping circles */
+.presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.presence-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--t3);
+}
+.presence-live .dot {
+  width: 6px;
+  height: 6px;
+}
+.presence-stack {
+  display: inline-flex;
+  align-items: center;
+}
+.presence-avatar {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--panel);
+  background: color-mix(in srgb, var(--tint, var(--t3)) 24%, var(--card));
+  color: var(--t1);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+.presence-avatar + .presence-avatar {
+  margin-inline-start: -7px;
+}
+.presence-avatar.is-guests {
+  --tint: var(--t3);
+  font-size: 10px;
+}
+.graph-lock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--ring) 8%, var(--panel));
+}
