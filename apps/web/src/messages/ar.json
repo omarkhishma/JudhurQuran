@@ -61,7 +61,8 @@
     "ask": "اسأل",
     "contribute": "ساهم",
     "dictionary": "المعجم",
-    "hadith": "الحديث"
+    "hadith": "الحديث",
+    "books": "الكتب"
   },
   "hub": {
     "rootOfDay": "جذر اليوم",
@@ -188,6 +189,10 @@
       "hadith": {
         "title": "الحديث",
         "purpose": "الكتب الستة والموطأ، بأسانيدها ورجالها وشروحها"
+      },
+      "books": {
+        "title": "الكتب",
+        "purpose": "سبعة وثلاثون كتابًا من التراث، كل كلمة فيها تفتح جذرها وكل فقرة بإحالتها"
       }
     },
     "nameGloss": "",
@@ -455,7 +460,6 @@
     "kind_surahs": "سور",
     "facetSource": "المصدر",
     "sourceQuran": "القرآن الكريم",
-    "sourcesNext": "الكتب تضاف إلى البحث حين تدخل المكتبة.",
     "clearLetters": "مسح",
     "totalN": "{count, plural, one {نتيجة واحدة} two {نتيجتان} few {{n} نتائج} many {{n} نتيجة} other {{n} نتيجة}}",
     "understoodAs": "فُهِم على أنه",
@@ -506,7 +510,9 @@
     "dictRootLexica": "{count, plural, one {في معجم واحد} two {في معجمين} few {في {n} معاجم} many {في {n} معجما} other {في {n} معجم}}",
     "sourceHadith": "كتب الحديث",
     "sectionHadith": "في كتب الحديث",
-    "hadithIn": "{book}، الحديث {ref}"
+    "hadithIn": "{book}، الحديث {ref}",
+    "sourceBooks": "كتب التراث",
+    "sectionBooks": "في كتب التراث"
   },
   "footer": {
     "label": "روابط الموقع",
@@ -2397,7 +2403,10 @@
     "entryFailed": "تعذّر الوصول إلى هذا الموضع.",
     "filterHadith": "الحديث",
     "kindHadith": "كتاب حديث",
-    "hadithMeta": "{count, plural, one {حديث واحد} two {حديثان} few {{n} أحاديث} many {{n} حديثًا} other {{n} حديث}}"
+    "hadithMeta": "{count, plural, one {حديث واحد} two {حديثان} few {{n} أحاديث} many {{n} حديثًا} other {{n} حديث}}",
+    "filterBooks": "الكتب",
+    "kindBook": "كتاب تراث",
+    "bookMeta": "{count, plural, one {كلمة واحدة} two {كلمتان} few {{n} كلمات} many {{n} كلمة} other {{n} كلمة}}"
   },
   "account": {
     "signIn": "دخول",
@@ -3636,5 +3645,73 @@
     "credit": "{attribution}",
     "prevBab": "الباب السابق",
     "nextBab": "الباب التالي"
+  },
+  "books": {
+    "title": "الكتب",
+    "homeTitle": "كتب التراث",
+    "homeLead": "سبعة وثلاثون كتابًا من أمهات التراث العربي في التفسير واللغة والنحو والأدب والتاريخ والفقه والحديث، من نسخ مدونة OpenITI المنقحة: نص المؤلف وحده، بعد أن نُزعت منه أرقام حواشي المحقق وإحالاته إلى الآيات بقواعد طُبقت على الكتب كلها. وكل كلمة فيه تفتح جذرها في القرآن والمعاجم، وكل فقرة تأتي بإحالتها.",
+    "author": "{author} (ت {death}هـ)",
+    "words": "{count, plural, zero {لا كلمات} one {كلمة واحدة} two {كلمتان} few {{n} كلمات} many {{n} كلمة} other {{n} كلمة}}",
+    "paragraphs": "{count, plural, zero {لا فقرات} one {فقرة واحدة} two {فقرتان} few {{n} فقرات} many {{n} فقرة} other {{n} فقرة}}",
+    "sections": "{count, plural, zero {لا أقسام} one {قسم واحد} two {قسمان} few {{n} أقسام} many {{n} قسمًا} other {{n} قسم}}",
+    "pagesCited": "يحال إلى صفحات المطبوع",
+    "pagesNotCited": "يحال إلى القسم والفقرة",
+    "pagesCitedNote": "اجتازت أرقام الصفحات في هذه النسخة فحص المطابقة للطبعة، فتذكر الإحالة المجلد والصفحة.",
+    "pagesNotCitedNote": "لم تجتز أرقام الصفحات في هذه النسخة فحص المطابقة للطبعة، فتذكر الإحالة القسم وترتيب الفقرة فيه.",
+    "pagesWhy": "السبب: {why}",
+    "genre_tafsir": "تفسير وعلوم القرآن",
+    "genre_grammar": "نحو وصرف",
+    "genre_lexicology": "لغة",
+    "genre_adab": "أدب",
+    "genre_history": "تاريخ",
+    "genre_fiqh": "فقه",
+    "genre_hadith": "حديث",
+    "filterLabel": "الموضوع",
+    "filterAll": "الكل",
+    "filterNone": "بلا تصنيف في المصدر",
+    "edition": "الطبعة: {edition}",
+    "noEdition": "لم تذكر النسخة طبعتها.",
+    "authorFull": "اسمه كاملًا: {name}",
+    "contents": "الفهرس",
+    "opening": "ما قبل الباب الأول",
+    "pagesRun": "الصفحات من {from}",
+    "pagesRunVolume": "المجلد {v}، الصفحات من {from}",
+    "volumePage": "{v}/{p}",
+    "page": "ص {p}",
+    "editorBracket": "بين قوسي المحقق: زيادة منه أو تفسير، كما طبعه",
+    "editorNumber": "رقم الفقرة في طبعة المحقق",
+    "versesReferred": "الآيات المحال إليها:",
+    "copyCite": "انسخ الإحالة",
+    "copied": "نُسخت",
+    "paragraphLink": "رابط الفقرة",
+    "openParagraph": "رابط الفقرة: {cite}",
+    "paragraphTitle": "{book}، {cite}",
+    "inChapter": "في {chapter}",
+    "openChapter": "افتح القسم",
+    "prevParagraph": "الفقرة السابقة",
+    "nextParagraph": "الفقرة التالية",
+    "prevChapter": "القسم السابق",
+    "nextChapter": "القسم التالي",
+    "prevPage": "الصفحة السابقة",
+    "nextPage": "الصفحة التالية",
+    "pageOf": "صفحة {page} من {pages}",
+    "subsections": "ما تحته",
+    "wordHint": "انقر كلمة من النص لترى جذرها.",
+    "citeTitle": "الإحالة",
+    "citeKey": "المفتاح الثابت",
+    "searchLabel": "ابحث في الكتب",
+    "searchPlaceholder": "كلمات من نص كتاب",
+    "searchGo": "ابحث",
+    "rulesTitle": "ما نزع من النص وما بقي",
+    "rulesNote": "طبقت القواعد نفسها على كل كتاب: نزعت أرقام الحواشي، ونزعت إحالات المحقق إلى الآيات وصارت روابط، وبقي ما بين قوسيه كما طبعه معلَّمًا بأنه منه، وبقيت أرقام الآيات بعد كلماتها. ولم يُزد على نص المؤلف شيء.",
+    "why_card": "تنص بطاقة النسخة على أن ترقيم صفحاتها غير موافق للمطبوع",
+    "why_markers": "فيها {n} من علامات الصفحات فقط",
+    "why_unknown": "{n} من {of} علامة صفحة خارج الترتيب",
+    "why_backs": "يرجع ترقيم صفحاتها {n} مرة",
+    "why_median": "عدد كلمات الصفحة فيها نحو {n}، وهو خارج المعتاد",
+    "why_turath": "وافقت طبعة تراث المصورة في {n} من {of} صفحات اختُبرت",
+    "pagesByNumber": "يحال إلى أرقام فقرات المحقق",
+    "pagesByNumberNote": "لم تجتز أرقام الصفحات في هذه النسخة فحص المطابقة للطبعة، والمحقق يرقّم فقراتها، فتذكر الإحالة رقم الفقرة في ترقيمه.",
+    "versionLabel": "النسخة:"
   }
 }

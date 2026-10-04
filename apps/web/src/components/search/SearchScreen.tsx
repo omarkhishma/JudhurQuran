@@ -9,6 +9,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic } from "@/lib/arabic/normalize";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
+import { paragraphHref } from "@/lib/books";
 import { type TextHit, hadithHref, refText, unnumbered } from "@/lib/hadith";
 import { searchMyTexts } from "@/lib/library/searchTexts";
 import { getJSON } from "@/lib/reader/api";
@@ -37,12 +38,14 @@ export type SearchPayload = {
     dict_roots?: DictRootHit[];
     // the texts beyond the Quran (P11.4a): a hadith whose words hold the query, with its collection and kitāb
     texts?: TextHit[];
+    // the classical books (P11.3): a paragraph whose words hold the query, with its book and section
+    books?: TextHit[];
   };
-  totals?: Partial<Record<"verses" | "lemmas" | "roots" | "patterns" | "surahs" | "dictionary" | "words" | "texts", number>>;
+  totals?: Partial<Record<"verses" | "lemmas" | "roots" | "patterns" | "surahs" | "dictionary" | "words" | "texts" | "books", number>>;
 };
 
 const KINDS = ["verses", "words", "roots", "patterns", "surahs"] as const;
-const SOURCES = ["dictionary", "hadith", "mine"] as const;
+const SOURCES = ["dictionary", "hadith", "books", "mine"] as const;
 type Kind = (typeof KINDS)[number] | (typeof SOURCES)[number];
 const ALL: Kind[] = [...KINDS, ...SOURCES];
 const EXAMPLES = ["الرحمن", "ك ت ب", "2:255", "الصلاة", "مَفْعُول", "s-b-r", "mercy"];
@@ -85,7 +88,7 @@ const verseRowsOf = (d: SearchPayload): VerseRow[] =>
  * One kind, paged (SRC-12, 21, 23): the first page comes with the search, each "show more" reveals `step`
  * more and asks the API for the next page when the loaded rows run out. Counts are the matches, not the rows.
  */
-function usePaged<T>(dq: string, only: "verses" | "lemmas" | "dictionary" | "texts", first: T[], total: number, pick: (d: SearchPayload) => T[], key: (x: T) => string, step: number) {
+function usePaged<T>(dq: string, only: "verses" | "lemmas" | "dictionary" | "texts" | "books", first: T[], total: number, pick: (d: SearchPayload) => T[], key: (x: T) => string, step: number) {
   const [state, setState] = useState({ dq, shown: step });
   const shown = state.dq === dq ? state.shown : step;
   const pages = Math.max(0, Math.ceil((Math.min(shown, total) - first.length) / PAGE));
@@ -183,6 +186,8 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
   const dict = usePaged(dq, "dictionary", firstDict, totals.dictionary ?? firstDict.length, (d) => d.results.dictionary ?? [], (x) => String(x.entry_id), 5);
   const firstTexts = useMemo(() => r?.texts ?? [], [r]);
   const hadith = usePaged(dq, "texts", firstTexts, totals.texts ?? firstTexts.length, (d) => d.results.texts ?? [], (x) => x.uri, 10);
+  const firstBooks = useMemo(() => r?.books ?? [], [r]);
+  const books = usePaged(dq, "books", firstBooks, totals.books ?? firstBooks.length, (d) => d.results.books ?? [], (x) => x.uri, 10);
   const patterns = r?.patterns ?? [];
   const surahs = r?.surahs ?? [];
   const mineHits = dq ? (mine.data?.hits ?? []) : [];
@@ -194,6 +199,7 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
     surahs: surahs.length,
     dictionary: dict.total + (r?.dict_roots?.length ?? 0),
     hadith: hadith.total,
+    books: books.total,
     mine: dq ? (mine.data?.total ?? 0) : 0,
   };
   const total = ALL.reduce((a, k) => a + (kinds[k] ? counts[k] : 0), 0); // only what is shown (SRC-26)
@@ -236,9 +242,9 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
         {facetRow("verses", t("sourceQuran"))}
         {facetRow("dictionary", t("sourceDictionaries"))}
         {facetRow("hadith", t("sourceHadith"))}
+        {facetRow("books", t("sourceBooks"))}
         {facetRow("mine", t("sourceMine"))}
         <p className="text-[11px] leading-relaxed text-t3">{t("sourceMineNote")}</p>
-        <p className="text-[11px] leading-relaxed text-t3">{t("sourcesNext")}</p>
       </fieldset>
       <fieldset className="flex flex-col gap-1.5">
         <legend className="label-caps mb-1">{t("rootBuilder")}</legend>
@@ -540,6 +546,34 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
                 ))}
               </ul>
               <More paged={hadith} />
+            </ResultGroup>
+          )}
+          {kinds.books && books.rows.length > 0 && (
+            <ResultGroup title={t("sectionBooks")} n={books.total}>
+              <ul className="flex flex-col gap-2">
+                {books.rows.map((h) => (
+                  <li key={h.uri}>
+                    <Link href={paragraphHref(h.text.slug, h.ref)} className="result-row">
+                      <span className="dot" style={{ background: "var(--c-desc)" }} />
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="line-clamp-2 ar-classical text-[16px] leading-[1.8] text-t1" lang="ar" dir="rtl">
+                          {h.excerpt ? <Highlight text={h.excerpt} /> : `${h.start}…`}
+                        </span>
+                        <span className="text-[11.5px] text-t3">
+                          <bdi lang="ar">{h.text.title_ar}</bdi>
+                          {h.chapter.title_ar && (
+                            <>
+                              {" — "}
+                              <bdi lang="ar">{h.chapter.title_ar}</bdi>
+                            </>
+                          )}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <More paged={books} />
             </ResultGroup>
           )}
           {kinds.mine && mineHits.length > 0 && (

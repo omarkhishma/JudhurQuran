@@ -16,6 +16,8 @@ export const NAV_ITEMS = [
   { href: "/dictionary", key: "dictionary", match: ["/dictionary"] },
   // the hadith collections (P11.2): the Six Books and the Muwaṭṭaʾ, their chains and narrators
   { href: "/hadith", key: "hadith", match: ["/hadith"] },
+  // the classical books (P11.3): the shelf's 37 books, every word open to its reading, every paragraph cited
+  { href: "/books", key: "books", match: ["/books"] },
   { href: "/concordance", key: "concordance", match: ["/concordance", "/roots"] },
   { href: "/analyse", key: "analyser", match: ["/analyse"] },
   { href: "/graph", key: "graph", match: ["/graph", "/g", "/split"] },

@@ -89,10 +89,11 @@ test("the doors count from the data, and every surface is listed with its purpos
   await expect(doors.getByRole("link", { name: /ابحث في المعجم/ })).toContainText(`${roots} و${lemmas}`);
   await expect(doors.getByRole("link", { name: /ابحث في المعجم/ })).toContainText(arCount(lexica, { one: "معجم واحد", two: "معجمان", few: "# معاجم", many: "# معجمًا", other: "# معجم" }));
   const tiles = page.locator(".hub-tile");
-  await expect(tiles).toHaveCount(22);
-  // the dictionary as its own surface (P11.1), and the hadith collections (P11.2)
+  await expect(tiles).toHaveCount(23);
+  // the dictionary as its own surface (P11.1), the hadith collections (P11.2) and the classical books (P11.3)
   await expect(page.locator('a.hub-tile[href="/dictionary"]')).toContainText("المعجم");
   await expect(page.locator('a.hub-tile[href="/hadith"]')).toContainText("الحديث");
+  await expect(page.locator('a.hub-tile[href="/books"]')).toContainText("الكتب");
   for (const tile of await tiles.all()) await expect(tile.locator(".hub-tile-purpose")).not.toBeEmpty();
   await expect(page.locator('.hub-tile[data-building] .hub-tile-phase').first()).toContainText("قيد البناء");
   const hrefs = await page.locator("a.hub-tile").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));

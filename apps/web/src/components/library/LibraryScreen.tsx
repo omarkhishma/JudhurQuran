@@ -12,10 +12,10 @@ import { getJSON } from "@/lib/reader/api";
 import { usePersonal } from "@/lib/reader/store";
 import { AddTextSheet } from "./AddTextSheet";
 
-export type TextCard = { slug: string; kind: string; title_ar: string; title_en: string; meta_ar: string | null; meta_en: string | null; chapter_count: number; passage_count: number; token_count: number; lemma_count: number | null; function_lemmas?: string[] };
+export type TextCard = { slug: string; kind: string; title_ar: string; title_en: string; author_ar?: string | null; meta_ar: string | null; meta_en: string | null; chapter_count: number; passage_count: number; token_count: number; lemma_count: number | null; function_lemmas?: string[] };
 type Division = { number: number; key: string; surah: number; ayah: number; page: number; name_ar: string; name_translit: string };
 type SurahRow = { number: number; name_ar: string; name_translit: string; verse_count: number; revelation_place: string };
-type Filter = "all" | "quran" | "hadith" | "mine";
+type Filter = "all" | "quran" | "hadith" | "books" | "mine";
 
 const pctFmt = (locale: string) => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { style: "percent", maximumFractionDigits: 0 });
 
@@ -44,6 +44,8 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
   const quran = texts.find((x) => x.kind === "quran");
   // the hadith collections (P11.2), each opening its own pages
   const hadith = texts.filter((x) => x.kind === "hadith");
+  // the classical books (P11.3), each opening its contents
+  const books = texts.filter((x) => x.kind === "book");
   // known content words only, the measure the reader's own texts use (LIB-11): particles and pronouns out
   const knownQuran = useMemo(() => {
     const fn = new Set(quran?.function_lemmas ?? []);
@@ -69,11 +71,13 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
     { value: "all", label: t("filterAll") },
     ...(quran ? [{ value: "quran" as const, label: t("filterQuran") }] : []),
     ...(hadith.length ? [{ value: "hadith" as const, label: t("filterHadith") }] : []),
+    ...(books.length ? [{ value: "books" as const, label: t("filterBooks") }] : []),
     ...(userTexts.length ? [{ value: "mine" as const, label: t("filterMine", { n: formatNumber(userTexts.length, locale) }) }] : []),
   ];
   const shown =
     (filter === "all" || filter === "quran" ? [quran].filter(Boolean).length : 0) +
     (filter === "all" || filter === "hadith" ? hadith.length : 0) +
+    (filter === "all" || filter === "books" ? books.length : 0) +
     (filter === "all" || filter === "mine" ? userTexts.length : 0);
 
   return (
@@ -132,6 +136,20 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
                   <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{x.title_ar}</span>
                   {locale !== "ar" && <span className="text-[12.5px] text-t2">{x.title_en}</span>}
                   <span className="text-[12px] text-t3">{t("hadithMeta", cnt(x.passage_count, locale))}</span>
+                </Link>
+              </li>
+            ))}
+          {(filter === "all" || filter === "books") &&
+            books.map((x) => (
+              <li key={x.slug}>
+                <Link href={`/books/${x.slug}`} className="book-card">
+                  <span className="book-cover is-book" aria-hidden="true" />
+                  <span className="book-kind">{t("kindBook")}</span>
+                  <span className="ar-classical line-clamp-2 text-[19px]" lang="ar" dir="rtl">{x.title_ar}</span>
+                  {locale !== "ar" && <span className="text-[12.5px] text-t2">{x.title_en}</span>}
+                  <span className="text-[12px] text-t3">
+                    <bdi lang="ar">{x.author_ar}</bdi> • {t("bookMeta", cnt(x.token_count, locale))}
+                  </span>
                 </Link>
               </li>
             ))}

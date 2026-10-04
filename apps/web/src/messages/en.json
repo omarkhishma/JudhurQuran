@@ -61,7 +61,8 @@
     "ask": "Ask",
     "contribute": "Contribute",
     "dictionary": "Dictionary",
-    "hadith": "Hadith"
+    "hadith": "Hadith",
+    "books": "Books"
   },
   "hub": {
     "rootOfDay": "Root of the day",
@@ -188,6 +189,10 @@
       "hadith": {
         "title": "Hadith",
         "purpose": "The Six Books and the Muwaṭṭaʾ, with their chains, narrators and explanations"
+      },
+      "books": {
+        "title": "Books",
+        "purpose": "Thirty-seven classical books: every word opens its root, every paragraph comes cited"
       }
     },
     "nameGloss": "jadhr, “root”",
@@ -455,7 +460,6 @@
     "kind_surahs": "Sūras",
     "facetSource": "Source",
     "sourceQuran": "The Quran",
-    "sourcesNext": "Books join the search as the library grows.",
     "clearLetters": "Clear",
     "totalN": "{count, plural, one {{n} result} other {{n} results}}",
     "understoodAs": "Understood as",
@@ -506,7 +510,9 @@
     "dictRootLexica": "{count, plural, one {In one lexicon} other {In {n} lexica}}",
     "sourceHadith": "The hadith collections",
     "sectionHadith": "In the hadith collections",
-    "hadithIn": "{book}, hadith {ref}"
+    "hadithIn": "{book}, hadith {ref}",
+    "sourceBooks": "Classical books",
+    "sectionBooks": "In the classical books"
   },
   "footer": {
     "label": "Site links",
@@ -2397,7 +2403,10 @@
     "entryFailed": "That place could not be reached.",
     "filterHadith": "Hadith",
     "kindHadith": "Hadith collection",
-    "hadithMeta": "{count, plural, one {# hadith} other {{n} hadith}}"
+    "hadithMeta": "{count, plural, one {# hadith} other {{n} hadith}}",
+    "filterBooks": "Books",
+    "kindBook": "Classical book",
+    "bookMeta": "{count, plural, one {# word} other {{n} words}}"
   },
   "account": {
     "signIn": "Sign in",
@@ -3636,5 +3645,73 @@
     "credit": "{attribution}",
     "prevBab": "Previous bāb",
     "nextBab": "Next bāb"
+  },
+  "books": {
+    "title": "Books",
+    "homeTitle": "Classical books",
+    "homeLead": "Thirty-seven classical Arabic books — Quranic sciences, language, grammar, literature, history, law and hadith — from OpenITI's corrected versions: the author's text alone, the editor's footnote markers and verse references taken out by rules applied to every book. Every word opens its root in the Quran and the dictionaries; every paragraph comes with its citation.",
+    "author": "{author} (d. {death} AH)",
+    "words": "{count, plural, one {# word} other {{n} words}}",
+    "paragraphs": "{count, plural, one {# paragraph} other {{n} paragraphs}}",
+    "sections": "{count, plural, one {# section} other {{n} sections}}",
+    "pagesCited": "Cited by printed page",
+    "pagesNotCited": "Cited by section and paragraph",
+    "pagesCitedNote": "This version's page numbers passed the check against the print, so a citation gives the volume and page.",
+    "pagesNotCitedNote": "This version's page numbers did not pass the check against the print, so a citation gives the section and the paragraph's place in it.",
+    "pagesWhy": "Why: {why}",
+    "genre_tafsir": "Quranic exegesis",
+    "genre_grammar": "Grammar",
+    "genre_lexicology": "Lexicology",
+    "genre_adab": "Literature",
+    "genre_history": "History",
+    "genre_fiqh": "Law",
+    "genre_hadith": "Hadith",
+    "filterLabel": "Subject",
+    "filterAll": "All",
+    "filterNone": "Unclassified in the source",
+    "edition": "Edition: {edition}",
+    "noEdition": "The version does not name its edition.",
+    "authorFull": "Full name: {name}",
+    "contents": "Contents",
+    "opening": "Before the first chapter",
+    "pagesRun": "Pages from {from}",
+    "pagesRunVolume": "Volume {v}, pages from {from}",
+    "volumePage": "{v}/{p}",
+    "page": "p. {p}",
+    "editorBracket": "In the editor's brackets: his addition or gloss, as printed",
+    "editorNumber": "The paragraph's number in the editor's edition",
+    "versesReferred": "Verses referred to:",
+    "copyCite": "Copy citation",
+    "copied": "Copied",
+    "paragraphLink": "Paragraph link",
+    "openParagraph": "Paragraph link: {cite}",
+    "paragraphTitle": "{book}, {cite}",
+    "inChapter": "In {chapter}",
+    "openChapter": "Open the section",
+    "prevParagraph": "Previous paragraph",
+    "nextParagraph": "Next paragraph",
+    "prevChapter": "Previous section",
+    "nextChapter": "Next section",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "pageOf": "Page {page} of {pages}",
+    "subsections": "Within it",
+    "wordHint": "Choose a word of the text to see its root.",
+    "citeTitle": "Citation",
+    "citeKey": "Stable key",
+    "searchLabel": "Search the books",
+    "searchPlaceholder": "Words from a book",
+    "searchGo": "Search",
+    "rulesTitle": "What was taken out and what was kept",
+    "rulesNote": "The same rules ran on every book: footnote markers taken out; the editor's references to verses taken out and made links; what stands in his brackets kept as printed and marked as his; verse numbers after their words kept. Nothing was added to the author's text.",
+    "why_card": "the version's card says its page numbers do not follow the print",
+    "why_markers": "it has only {n} page markers",
+    "why_unknown": "{n} of {of} page markers are out of order",
+    "why_backs": "its page numbers step back {n} times",
+    "why_median": "its pages hold about {n} words, outside what a page holds",
+    "why_turath": "turath's scanned print agrees on {n} of {of} sampled pages",
+    "pagesByNumber": "Cited by the editor's paragraph numbers",
+    "pagesByNumberNote": "This version's page numbers did not pass the check against the print, and its editor numbers the paragraphs, so a citation gives his paragraph number.",
+    "versionLabel": "Version:"
   }
 }
