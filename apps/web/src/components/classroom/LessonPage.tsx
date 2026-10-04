@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { Fragment, useState, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { useAccount } from "@/lib/account/store";
@@ -12,6 +13,7 @@ import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { SAJDA, splitFurniture } from "@/lib/reader/verseText";
 import type { Verse, WordLite } from "@/lib/types";
+import { LessonMap } from "./LessonMap";
 import { NoteLine, useClassError, useFmt, useSurahNames } from "./shared";
 
 const LAYERS: Layer[] = ["lookup", "note", "confirm", "struggle"];
@@ -93,6 +95,39 @@ function Head({ lesson }: { lesson: LessonOut }) {
   );
 }
 
+type LessonTab = "class" | "map";
+
+/** The lesson's two views — how the class read it (a member: the lesson) and its map — kept in the address. */
+function useLessonTab(): [LessonTab, (t: LessonTab) => void] {
+  const sp = useSearchParams();
+  const [tab, setTab] = useState<LessonTab>(sp.get("tab") === "map" ? "map" : "class");
+  return [
+    tab,
+    (next) => {
+      setTab(next);
+      const u = new URL(window.location.href);
+      if (next === "map") u.searchParams.set("tab", "map");
+      else u.searchParams.delete("tab");
+      window.history.replaceState(null, "", u);
+    },
+  ];
+}
+
+function LessonTabs({ tab, onTab, teach, pending }: { tab: LessonTab; onTab: (t: LessonTab) => void; teach: boolean; pending: number }) {
+  const t = useTranslations("classroom");
+  const fmt = useFmt();
+  return (
+    <div className="lesson-tabs" role="tablist" aria-label={t("lessonViews")}>
+      {(["class", "map"] as const).map((x) => (
+        <button key={x} type="button" role="tab" id={`lt-${x}`} aria-selected={tab === x} aria-controls="lesson-view" className="lesson-tab" onClick={() => onTab(x)}>
+          {t(x === "map" ? "tabMap" : teach ? "tabClass" : "tabLesson")}
+          {x === "map" && teach && pending > 0 && <span className="side-count" aria-label={t("pendingCount", { n: fmt(pending) })}>{fmt(pending)}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** The lesson's verses, read in batches the API allows. */
 function useLessonVerses(lesson: LessonOut, enabled = true) {
   return useQuery({
@@ -121,59 +156,68 @@ function TeachLesson({ lesson }: { lesson: LessonOut }) {
   const words = wordsOf(verses.data);
   const shown: Layer = view === "matrix" && layer === "note" ? "lookup" : layer;
   const focusWord = focus ? words.get(focus) : undefined;
+  const [tab, setTab] = useLessonTab();
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-5 px-4 py-6">
+    // the map's editor needs the room its header is made for
+    <div className={"mx-auto flex w-full flex-col gap-5 px-4 py-6 " + (tab === "map" ? "max-w-[1600px]" : "max-w-[1200px]")}>
       <Head lesson={lesson} />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <section className="flex min-w-0 flex-col gap-4" aria-labelledby="text-h">
-          <h2 id="text-h" className="sr-only">{t("assignment")}</h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="seg-group" role="group" aria-label={t("view")}>
-              {(["text", "matrix"] as const).map((v) => (
-                <button key={v} type="button" className="seg" aria-pressed={view === v} onClick={() => setView(v)}>
-                  {t(`view_${v}`)}
-                </button>
-              ))}
-            </div>
-            <div className="seg-group" role="group" aria-label={t("layer")}>
-              {(view === "matrix" ? MATRIX_LAYERS : LAYERS).map((l) => (
-                <button key={l} type="button" className="seg" aria-pressed={shown === l} onClick={() => setLayer(l)}>
-                  {t(`layer_${l}`)}
-                </button>
-              ))}
-            </div>
-          </div>
-          {h && <Legend layer={shown} few={h.few} matrix={view === "matrix"} />}
-          {h && !h.floor_met && (
-            <p className="rounded-lg border border-line bg-card-2 p-3 text-[13px] leading-relaxed text-t1" role="status">
-              {t("floorNotMet", { floor: formatNumber(h.floor, locale), n: formatNumber(h.members, locale) })}
-            </p>
-          )}
-          {heat.isError && <p role="alert" className="text-[13px] text-t2">{t("failed")}</p>}
-          {view === "text" ? (
-            verses.isPending ? (
-              <span className="block h-48 animate-pulse rounded-xl bg-card-2" aria-hidden="true" />
-            ) : verses.isError ? (
-              <p role="alert" className="text-[13px] text-t2">{t("failed")}</p>
-            ) : (
-              <div className="flex flex-col gap-5">
-                {(verses.data ?? []).map((v) => (
-                  <HeatVerse key={v.key} v={v} heat={h} layer={shown} focus={focus} onFocus={setFocus}>
-                    {focusWord && h && focus?.startsWith(`${v.key}:`) && <FocusCard lessonId={lesson.id} word={focusWord} heat={h} onClose={() => setFocus(null)} />}
-                  </HeatVerse>
+      <LessonTabs tab={tab} onTab={setTab} teach pending={lesson.pending} />
+      {tab === "map" ? (
+        <div id="lesson-view" role="tabpanel" aria-labelledby="lt-map">
+          <LessonMap lesson={lesson} teach notes={<LessonNotes lesson={lesson} words={words} />} />
+        </div>
+      ) : (
+        <div id="lesson-view" role="tabpanel" aria-labelledby="lt-class" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <section className="flex min-w-0 flex-col gap-4" aria-labelledby="text-h">
+            <h2 id="text-h" className="sr-only">{t("assignment")}</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="seg-group" role="group" aria-label={t("view")}>
+                {(["text", "matrix"] as const).map((v) => (
+                  <button key={v} type="button" className="seg" aria-pressed={view === v} onClick={() => setView(v)}>
+                    {t(`view_${v}`)}
+                  </button>
                 ))}
               </div>
-            )
-          ) : (
-            <MatrixView lesson={lesson} layer={shown} verses={verses.data} heat={h} />
-          )}
-        </section>
-        <section className="flex flex-col gap-4" aria-label={t("classPanel")}>
-          {h && <ClassPanel lessonId={lesson.id} heat={h} open={lesson.open} />}
-          <LessonNotes lesson={lesson} words={words} />
-          <p className="text-[12px] leading-relaxed text-t3">{t(h?.minors ? "panelFootMinors" : "panelFoot", { floor: formatNumber(h?.floor ?? 5, locale), few: formatNumber(h?.few ?? 3, locale) })}</p>
-        </section>
-      </div>
+              <div className="seg-group" role="group" aria-label={t("layer")}>
+                {(view === "matrix" ? MATRIX_LAYERS : LAYERS).map((l) => (
+                  <button key={l} type="button" className="seg" aria-pressed={shown === l} onClick={() => setLayer(l)}>
+                    {t(`layer_${l}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {h && <Legend layer={shown} few={h.few} matrix={view === "matrix"} />}
+            {h && !h.floor_met && (
+              <p className="rounded-lg border border-line bg-card-2 p-3 text-[13px] leading-relaxed text-t1" role="status">
+                {t("floorNotMet", { floor: formatNumber(h.floor, locale), n: formatNumber(h.members, locale) })}
+              </p>
+            )}
+            {heat.isError && <p role="alert" className="text-[13px] text-t2">{t("failed")}</p>}
+            {view === "text" ? (
+              verses.isPending ? (
+                <span className="block h-48 animate-pulse rounded-xl bg-card-2" aria-hidden="true" />
+              ) : verses.isError ? (
+                <p role="alert" className="text-[13px] text-t2">{t("failed")}</p>
+              ) : (
+                <div className="flex flex-col gap-5">
+                  {(verses.data ?? []).map((v) => (
+                    <HeatVerse key={v.key} v={v} heat={h} layer={shown} focus={focus} onFocus={setFocus}>
+                      {focusWord && h && focus?.startsWith(`${v.key}:`) && <FocusCard lessonId={lesson.id} word={focusWord} heat={h} onClose={() => setFocus(null)} />}
+                    </HeatVerse>
+                  ))}
+                </div>
+              )
+            ) : (
+              <MatrixView lesson={lesson} layer={shown} verses={verses.data} heat={h} />
+            )}
+          </section>
+          <section className="flex flex-col gap-4" aria-label={t("classPanel")}>
+            {h && <ClassPanel lessonId={lesson.id} heat={h} open={lesson.open} />}
+            <LessonNotes lesson={lesson} words={words} />
+            <p className="text-[12px] leading-relaxed text-t3">{t(h?.minors ? "panelFootMinors" : "panelFoot", { floor: formatNumber(h?.floor ?? 5, locale), few: formatNumber(h?.few ?? 3, locale) })}</p>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
@@ -585,96 +629,115 @@ function LearnLesson({ lesson }: { lesson: LessonOut }) {
   const words = wordsOf(verses.data);
   const [said, setSaid] = useState("");
   const done = !!lesson.mine?.finished_on;
+  const [tab, setTab] = useLessonTab();
+  const instructorNotes = pack.data?.notes.length ? (
+    <ul className="flex flex-col gap-1.5 text-[13.5px] text-t1">
+      {pack.data.notes.map((n, i) => (
+        <li key={i}>
+          <NoteLine n={n} />
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p className="text-[12.5px] text-t3">{t("lessonNotesNoneMember")}</p>
+  );
+  if (tab === "map")
+    return (
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-5 px-4 py-6">
+        <Head lesson={lesson} />
+        <LessonTabs tab={tab} onTab={setTab} teach={false} pending={0} />
+        <div id="lesson-view" role="tabpanel" aria-labelledby="lt-map">
+          <LessonMap lesson={lesson} teach={false} notes={instructorNotes} />
+        </div>
+      </div>
+    );
   return (
     <div className="mx-auto flex w-full max-w-[860px] flex-col gap-5 px-4 py-6">
       <Head lesson={lesson} />
-      {lesson.mine?.nudged && <p className="rounded-lg border border-line bg-card-2 p-3 text-[13px] text-t1">{t("nudgedNote")}</p>}
-      <div className="flex flex-wrap items-center gap-2">
-        {lesson.ranges.map((r, i) => (
-          <Link key={i} href={`/quran/${r.surah}/${r.from}`} className="btn btn-primary">{t("readRange", { range: rangesLine([r], names, fmt) })}</Link>
-        ))}
-        {lesson.open && (
-          <button
-            type="button"
-            className="btn"
-            aria-pressed={done}
-            onClick={async () => {
-              try {
-                await setFinished(lesson.id, !done);
-                await qc.invalidateQueries({ queryKey: ["lesson", lesson.id] });
-                setSaid(t(done ? "unfinishedSaid" : "finishedSaid"));
-              } catch (e) {
-                setSaid(fail(e));
-              }
-            }}
-          >
-            {t("markFinished")}
-          </button>
-        )}
-        {done && <span className="state-chip is-approved">{t("finished")}</span>}
-        <span role="status" className="text-[12.5px] text-t2">{said}</span>
-      </div>
-      {lesson.roots.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="label-caps">{t("roots")}</span>
-          {lesson.roots.map((r) => (
-            <Link key={r.key} href={`/roots/${encodeURIComponent(r.key)}`} className="chip ar-classical text-[15px]" lang="ar">{r.spaced}</Link>
+      <LessonTabs tab={tab} onTab={setTab} teach={false} pending={0} />
+      <div id="lesson-view" role="tabpanel" aria-labelledby="lt-class" className="flex flex-col gap-5">
+        {lesson.mine?.nudged && <p className="rounded-lg border border-line bg-card-2 p-3 text-[13px] text-t1">{t("nudgedNote")}</p>}
+        <div className="flex flex-wrap items-center gap-2">
+          {lesson.ranges.map((r, i) => (
+            <Link key={i} href={`/quran/${r.surah}/${r.from}`} className="btn btn-primary">{t("readRange", { range: rangesLine([r], names, fmt) })}</Link>
           ))}
+          {lesson.open && (
+            <button
+              type="button"
+              className="btn"
+              aria-pressed={done}
+              onClick={async () => {
+                try {
+                  await setFinished(lesson.id, !done);
+                  await qc.invalidateQueries({ queryKey: ["lesson", lesson.id] });
+                  setSaid(t(done ? "unfinishedSaid" : "finishedSaid"));
+                } catch (e) {
+                  setSaid(fail(e));
+                }
+              }}
+            >
+              {t("markFinished")}
+            </button>
+          )}
+          {done && <span className="state-chip is-approved">{t("finished")}</span>}
+          <span role="status" className="text-[12.5px] text-t2">{said}</span>
         </div>
-      )}
-      {pack.data && pack.data.notes.length > 0 && (
-        <section aria-labelledby="inotes-h" className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
-          <h2 id="inotes-h" className="text-[15px] font-semibold">{t("lessonNotes")}</h2>
-          <ul className="flex flex-col gap-1.5 text-[13.5px] text-t1">
-            {pack.data.notes.map((n, i) => (
-              <li key={i}>
-                <NoteLine n={n} />
-              </li>
+        {lesson.roots.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="label-caps">{t("roots")}</span>
+            {lesson.roots.map((r) => (
+              <Link key={r.key} href={`/roots/${encodeURIComponent(r.key)}`} className="chip ar-classical text-[15px]" lang="ar">{r.spaced}</Link>
             ))}
-          </ul>
-        </section>
-      )}
-      <section aria-labelledby="mine-h" className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
-        <h2 id="mine-h" className="text-[15px] font-semibold">{t("mineTitle")}</h2>
-        <p className="text-[12.5px] leading-relaxed text-t2">{t(lesson.class?.minors ? "mineLeadMinors" : "mineLead")}</p>
-        {mine.isPending ? (
-          <span className="block h-10 animate-pulse rounded-lg bg-card-2" aria-hidden="true" />
-        ) : mine.data?.counts.length ? (
-          <table className="mine-table text-[13px]">
-            <caption className="sr-only">{t("mineTitle")}</caption>
-            <thead>
-              <tr>
-                <th scope="col">{t("mineWhere")}</th>
-                <th scope="col">{t("mineKind")}</th>
-                <th scope="col">{t("mineCount")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mine.data.counts.map((c, i) => {
-                const verse = c.location.endsWith(":0");
-                const w = verse ? undefined : words.get(c.location);
-                return (
-                  <tr key={i}>
-                    <td>
-                      {w && <span className="quran me-2 text-[18px]" lang="ar" dir="rtl">{w.text_uthmani}</span>}
-                      <span className="mono text-[11.5px] text-t3" dir="ltr">{verseRef(verse ? c.location.slice(0, -2) : c.location, locale)}</span>
-                    </td>
-                    <td>{verse && c.kind === "note" ? t("noteOnVerse") : t(`layer_${c.kind}`)}</td>
-                    <td className="mono">{formatNumber(c.n, locale)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-[12.5px] text-t3">{t("mineNone")}</p>
+          </div>
         )}
-        <p className="text-[12.5px] text-t2">
-          {t("mineMinutes", { n: formatNumber(lesson.mine?.minutes ?? 0, locale) })}
-          {lesson.mine?.opened_on && ` · ${t("mineOpened", { day: day(lesson.mine.opened_on, locale) })}`}
-        </p>
-        <Link href={`/classroom/${lesson.class_id}`} className="self-start text-[12.5px] underline-offset-2 hover:underline">{t("mineChoices")}</Link>
-      </section>
+        {pack.data && pack.data.notes.length > 0 && (
+          <section aria-labelledby="inotes-h" className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
+            <h2 id="inotes-h" className="text-[15px] font-semibold">{t("lessonNotes")}</h2>
+            {instructorNotes}
+          </section>
+        )}
+        <section aria-labelledby="mine-h" className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4">
+          <h2 id="mine-h" className="text-[15px] font-semibold">{t("mineTitle")}</h2>
+          <p className="text-[12.5px] leading-relaxed text-t2">{t(lesson.class?.minors ? "mineLeadMinors" : "mineLead")}</p>
+          {mine.isPending ? (
+            <span className="block h-10 animate-pulse rounded-lg bg-card-2" aria-hidden="true" />
+          ) : mine.data?.counts.length ? (
+            <table className="mine-table text-[13px]">
+              <caption className="sr-only">{t("mineTitle")}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t("mineWhere")}</th>
+                  <th scope="col">{t("mineKind")}</th>
+                  <th scope="col">{t("mineCount")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mine.data.counts.map((c, i) => {
+                  const verse = c.location.endsWith(":0");
+                  const w = verse ? undefined : words.get(c.location);
+                  return (
+                    <tr key={i}>
+                      <td>
+                        {w && <span className="quran me-2 text-[18px]" lang="ar" dir="rtl">{w.text_uthmani}</span>}
+                        <span className="mono text-[11.5px] text-t3" dir="ltr">{verseRef(verse ? c.location.slice(0, -2) : c.location, locale)}</span>
+                      </td>
+                      <td>{verse && c.kind === "note" ? t("noteOnVerse") : t(`layer_${c.kind}`)}</td>
+                      <td className="mono">{formatNumber(c.n, locale)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-[12.5px] text-t3">{t("mineNone")}</p>
+          )}
+          <p className="text-[12.5px] text-t2">
+            {t("mineMinutes", { n: formatNumber(lesson.mine?.minutes ?? 0, locale) })}
+            {lesson.mine?.opened_on && ` · ${t("mineOpened", { day: day(lesson.mine.opened_on, locale) })}`}
+          </p>
+          <Link href={`/classroom/${lesson.class_id}`} className="self-start text-[12.5px] underline-offset-2 hover:underline">{t("mineChoices")}</Link>
+        </section>
+      </div>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { ThemeToggle } from "@/components/shell/ThemeToggle";
 import { Link, useRouter } from "@/i18n/navigation";
-import { useAccount } from "@/lib/account/store";
+import { ApiError, useAccount } from "@/lib/account/store";
 import { formatNumber } from "@/lib/format";
 import { upgrade } from "@/lib/graph/migrate";
 import { createGraph, loadGraph, putGraph } from "@/lib/graph/persist";
@@ -18,6 +18,7 @@ import { CommentsPanel, SharedMapContext, useMapComments } from "./Comments";
 import { Details, DetailsRail } from "./Details";
 import { GraphCanvas, useCanvasTools } from "./GraphCanvas";
 import { PresenceBlock } from "./Presence";
+import { SplitReceiver } from "./SplitReceiver";
 
 type Loaded = SharedDoc & { nodes: GraphNode[]; edges: GraphEdge[] };
 
@@ -55,6 +56,18 @@ export function SharedMapView({ id }: { id: string }) {
     };
   }, [data?.owner.mine, data?.local_id, router]);
   if (q.isPending || (data?.owner.mine && ownerHere !== "none")) return <p className="p-6 text-t3">…</p>;
+  // a lesson's map (P9.3): its class reads it, signed in — said as such, never as a map no longer shared
+  if (!data && q.error instanceof ApiError && q.error.code === "class_only")
+    return (
+      <div className="mx-auto flex max-w-[560px] flex-1 flex-col items-start justify-center gap-3 px-4 py-16">
+        <h1 className="text-[20px] font-semibold">{t("classMapOnly")}</h1>
+        <p className="text-[14px] leading-relaxed text-t2">{t("classMapOnlyBody")}</p>
+        <div className="flex flex-wrap gap-2">
+          {!session && <Link href={`/signin?next=${encodeURIComponent(`/graph/shared/${id}`)}`} className="btn btn-primary">{t("classMapSignIn")}</Link>}
+          <Link href="/classroom" className="btn">{t("classroomLink")}</Link>
+        </div>
+      </div>
+    );
   if (!data)
     return (
       <div className="mx-auto flex max-w-[560px] flex-1 flex-col items-start justify-center gap-3 px-4 py-16">
@@ -91,6 +104,8 @@ function Viewer({ data, onShowNewer }: { data: Loaded; onShowNewer: () => void }
           header={<SharedHeader first={first} newer={data.revision > first.revision} onShowNewer={onShowNewer} onComments={() => setSheet(true)} />}
           end={
             <>
+              {/* framed in a lesson's page (P9.3): says it is here, finds a card, hands the map over */}
+              <SplitReceiver readOnly />
               {detailsOpen ? <Details title={first.title} /> : <DetailsRail />}
               {sheet && <CommentsSheet onClose={() => setSheet(false)} />}
             </>
@@ -132,7 +147,9 @@ function SharedHeader({ first, newer, onShowNewer, onComments }: { first: Loaded
         </Link>
         <div className="shared-title min-w-0">
           <h1 className="truncate text-[15px] font-semibold">{title}</h1>
-          <p className="truncate text-[11.5px] text-t3">{first.owner.name ? t("sharedBy", { name: first.owner.name }) : t("sharedByReader")} · {t("sharedReadOnly")}</p>
+          <p className="truncate text-[11.5px] text-t3">
+            {first.class ? t("classMapOf", { lesson: first.class.lesson_title, class: first.class.class_name }) : `${first.owner.name ? t("sharedBy", { name: first.owner.name }) : t("sharedByReader")} · ${t("sharedReadOnly")}`}
+          </p>
         </div>
         {presence && <PresenceBlock presence={presence} />}
         <span className="shared-spacer flex-1" />

@@ -21,6 +21,8 @@ export type SharedDoc = {
   owner: { name: string | null; mine: boolean };
   /** the owner's own id for the map in their browser: given to the owner only */
   local_id?: string;
+  /** a lesson's map (P9.3): read by its class only */
+  class?: { lesson_id: string; lesson_title: string; class_id: string; class_name: string; role: "instructor" | "member" };
 };
 
 export type SharedRow = Omit<SharedDoc, "doc" | "doc_version"> & { open: number; unread: number; mentions: number };

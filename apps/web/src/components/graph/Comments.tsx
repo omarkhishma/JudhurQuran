@@ -258,8 +258,9 @@ function Body({ c }: { c: Comment }) {
 }
 
 /** The box (EDT-192): where the comment goes, the words, @ to mention, Enter to send (Shift+Enter: a new line); the
- * canvas's keys stay out of it. */
-function Composer({ gid, people, tools, anchor, parent, onDone, autoFocus }: { gid: string; people: Person[]; tools: CanvasTools; anchor?: GraphNode | null; parent?: Comment; onDone?: () => void; autoFocus?: boolean }) {
+ * canvas's keys stay out of it. Outside the canvas (a lesson's feed, P9.3) it comments on the whole map, `hint`
+ * saying so. */
+export function Composer({ gid, people, tools, anchor, parent, onDone, autoFocus, hint, onSent }: { gid: string; people: Person[]; tools?: CanvasTools; anchor?: GraphNode | null; parent?: Comment; onDone?: () => void; autoFocus?: boolean; hint?: string; onSent?: () => void }) {
   const t = useTranslations("graph");
   const terr = useTranslations("account");
   const qc = useQueryClient();
@@ -302,12 +303,13 @@ function Composer({ gid, people, tools, anchor, parent, onDone, autoFocus }: { g
         body,
         parent_id: parent?.id ?? null,
         node_id: parent ? null : (anchor?.id ?? null),
-        anchor: parent || !anchor ? "" : tools.cardName(anchor.id),
+        anchor: parent || !anchor ? "" : (tools?.cardName(anchor.id) ?? anchor.id),
         mentions: picked.filter((p) => body.includes(`@${p.name}`)).map((p) => p.id),
       });
       setText("");
       setPicked([]);
       await qc.invalidateQueries({ queryKey: KEY(gid) });
+      onSent?.();
       onDone?.();
     } catch (e) {
       setError(terr(`err.${errorKind(e)}`));
@@ -315,7 +317,7 @@ function Composer({ gid, people, tools, anchor, parent, onDone, autoFocus }: { g
       setBusy(false);
     }
   }
-  const target = parent ? t("replyTo", { who: parent.author?.name ?? t("aReader") }) : anchor ? t("anchoredTo", { kind: t(META[anchor.data.kind].label), card: tools.cardName(anchor.id) }) : t("anchorHint");
+  const target = parent ? t("replyTo", { who: parent.author?.name ?? t("aReader") }) : anchor ? t("anchoredTo", { kind: t(META[anchor.data.kind].label), card: tools?.cardName(anchor.id) ?? anchor.id }) : (hint ?? t("anchorHint"));
   return (
     <form
       className={"comment-composer" + (parent ? " is-reply" : "")}

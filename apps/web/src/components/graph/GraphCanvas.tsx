@@ -461,11 +461,13 @@ function CanvasInner({
           taken.push({ ...spot, w, h });
           return { ...n, position: spot };
         });
-      if (!fresh.length) return;
       const eids = new Set(edges.map((e) => e.id));
-      commit(label, [...nodes, ...fresh], [...edges, ...newEdges.filter((e) => !eids.has(e.id))]);
+      // links alone (a proposal linking two cards already here) are a step too
+      const wires = newEdges.filter((e) => !eids.has(e.id));
+      if (!fresh.length && !wires.length) return;
+      commit(label, [...nodes, ...fresh], [...edges, ...wires]);
       // a card dropped stays where it was put; one placed by the editor is brought into view
-      if (!at) reveal(fresh[0].position, sizeOf(fresh[0]).w, sizeOf(fresh[0]).h);
+      if (!at && fresh[0]) reveal(fresh[0].position, sizeOf(fresh[0]).w, sizeOf(fresh[0]).h);
     },
     [nodes, edges, commit, rf, reveal],
   );

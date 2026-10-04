@@ -1,6 +1,7 @@
 "use client";
 
 import { authFetch } from "@/lib/account/store";
+import type { GraphEdge, GraphNode } from "@/lib/graph/types";
 
 /**
  * The classroom's API (P9, research 16): classes and lessons, joining with consent, a lesson as a file. The server
@@ -20,6 +21,10 @@ export type LessonOut = {
   due_at: string | null;
   open_until: string;
   open: boolean;
+  /** the lesson's map (P9.3): a map its instructor shares, the class's only; their own id for it to them alone */
+  map: LessonMap | null;
+  /** proposals waiting for the instructor */
+  pending: number;
   mine?: { opened_on: string | null; finished_on: string | null; minutes: number; nudged: boolean };
   class?: { id: string; name: string; minors: boolean; role: "instructor" | "member" };
 };
@@ -155,3 +160,54 @@ export const sendNudge = (id: string) => authFetch<{ sent: number }>(`${L(id)}/n
 
 /** The verse keys a lesson covers, in the mushaf's order. */
 export const lessonKeys = (ranges: Range[]) => ranges.flatMap((r) => Array.from({ length: r.to - r.from + 1 }, (_, i) => `${r.surah}:${r.from + i}`));
+
+// ─── the lesson's map (P9.3) ─────────────────────────────────────────────────
+
+export type LessonMap = { id: string; revision: number; cards: number; title: string; local_id?: string };
+export type CardKind = "root" | "pattern" | "lemma" | "verse" | "note" | "frame";
+/** A card as a feed or a proposal names it: its kind and its name. */
+export type CardRef = { id: string; kind: CardKind; label: string };
+export type Proposal = {
+  id: string;
+  by: { name: string | null; me: boolean };
+  cards: GraphNode[];
+  links: GraphEdge[];
+  note: string;
+  status: "pending" | "confirmed" | "declined";
+  base_revision: number;
+  created_at: string;
+  decided_at: string | null;
+};
+export type FeedItem = {
+  id: string;
+  kind: "edited" | "proposed" | "confirmed" | "declined" | "commented";
+  who: { name: string | null; me: boolean };
+  at: string;
+  detail: {
+    added?: CardRef[];
+    removed?: CardRef[];
+    linked?: number;
+    unlinked?: number;
+    proposal?: string;
+    cards?: CardRef[];
+    links?: number;
+    for?: string | null;
+    body?: string;
+    reply?: boolean;
+    card?: CardRef | null;
+  };
+};
+
+export const setLessonMap = (id: string, graphId: string) => authFetch<LessonOut>(`${L(id)}/map`, json({ graph_id: graphId }, "PUT"));
+export const getProposals = (id: string) => authFetch<{ data: Proposal[] }>(`${L(id)}/proposals`);
+export const sendProposal = (id: string, p: { base: number; cards: GraphNode[]; links: GraphEdge[]; note: string }) => authFetch<Proposal>(`${L(id)}/proposals`, json(p));
+export const decideProposal = (pid: string, decision: "confirmed" | "declined") => authFetch<Proposal>(`${base}/proposals/${encodeURIComponent(pid)}/decide`, json({ decision }));
+export const withdrawProposal = (pid: string) => gone(`${base}/proposals/${encodeURIComponent(pid)}`);
+export const getActivity = (id: string, before?: string | null) => authFetch<{ data: FeedItem[]; next: string | null }>(`${L(id)}/activity${before ? `?before=${encodeURIComponent(before)}` : ""}`);
+
+/** A card as a proposal or the feed names it, read from the card itself (as the server does). */
+export function cardRef(n: GraphNode): CardRef {
+  const d = n.data;
+  const kinds: CardKind[] = ["root", "pattern", "lemma", "verse", "note", "frame"];
+  return { id: n.id, kind: kinds.includes(d.kind as CardKind) ? (d.kind as CardKind) : "note", label: (d.ar || d.verse?.key || d.title || d.text || "").trim().slice(0, 80) };
+}

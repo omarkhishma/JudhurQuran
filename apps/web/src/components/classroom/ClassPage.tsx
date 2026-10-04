@@ -146,6 +146,12 @@ function LessonRow({ lesson, teach }: { lesson: LessonOut; teach: boolean }) {
         {!lesson.open && <span className="state-chip">{t("closed")}</span>}
         {lesson.mine?.finished_on && <span className="state-chip is-approved">{t("finished")}</span>}
         {lesson.mine?.nudged && <span className="state-chip is-review">{t("nudged")}</span>}
+        {lesson.map && (
+          <Link href={`/classroom/lesson/${lesson.id}?tab=map`} className="state-chip hover:underline">
+            {t("mapChip")}
+          </Link>
+        )}
+        {teach && lesson.pending > 0 && <span className="state-chip is-review">{t("mapPendingChip", { n: fmt(lesson.pending) })}</span>}
       </div>
       <p className="text-[14px] text-t1">{rangesLine(lesson.ranges, names, fmt)}</p>
       {lesson.roots.length > 0 && (

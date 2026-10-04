@@ -11,7 +11,7 @@ import { cnt } from "@/lib/format";
 import { listVersions } from "@/lib/graph/history";
 import { upgrade } from "@/lib/graph/migrate";
 import { encodeShare } from "@/lib/graph/persist";
-import { shareMap, sharedPath, sharedRevision, sharedRevisions, stopSharing } from "@/lib/graph/shared";
+import { readShared, shareMap, sharedPath, sharedRevision, sharedRevisions, stopSharing } from "@/lib/graph/shared";
 import type { GraphDoc, SharedRef } from "@/lib/graph/types";
 import { useSharedMap } from "./Comments";
 import type { CanvasTools } from "./GraphCanvas";
@@ -54,6 +54,8 @@ export function ShareDialog({ open, onClose, doc, shared, onShared, onStopped }:
     }
   }
   const link = shared ? absolute(sharedPath(shared.id)) : "";
+  // a lesson's map (P9.3) is its class's: the dialog says so
+  const ofClass = useQuery({ queryKey: ["shared-class", shared?.id], queryFn: () => readShared(shared!.id).then((d) => d.class ?? null), enabled: open && !!shared && !!session, staleTime: 60_000 });
   return (
     <Dialog open={open} onClose={onClose} label={t("shareTitle")} width={520}>
       <div className="flex flex-col gap-4 p-4">
@@ -90,6 +92,11 @@ export function ShareDialog({ open, onClose, doc, shared, onShared, onStopped }:
                 <button type="button" className="btn" onClick={() => void copy(link).then((ok) => setSaid(ok ? t("shareLinkCopied") : null))}>{t("copyLink")}</button>
               </div>
               <p className="text-[12px] text-t3">{t("shareLive")}</p>
+              {ofClass.data && (
+                <p className="rounded-lg border border-line bg-card-2 p-2.5 text-[12.5px] leading-relaxed text-t1" dir="auto">
+                  {t("shareClassMap", { lesson: ofClass.data.lesson_title, class: ofClass.data.class_name })}
+                </p>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 <Link href={sharedPath(shared.id)} className="btn text-[12.5px]" target="_blank">{t("shareSeeAsOthers")}</Link>
                 {asking ? (
