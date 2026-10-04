@@ -62,10 +62,9 @@ def release(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[tuple[s
     folder = tmp_path / version
     folder.mkdir()
     _write(folder, version)
-    monkeypatch.setenv("JADHR_RELEASE_DIR", str(tmp_path))
-    get_settings.cache_clear()
+    # the cached settings patched, not rebuilt: a rebuilt one would drop conftest's test-wide overrides
+    monkeypatch.setattr(get_settings(), "release_dir", str(tmp_path))
     yield version, folder
-    get_settings.cache_clear()
     with accounts.tx() as conn:
         conn.exec_driver_sql(
             "alter table releases.dataset_releases disable trigger dataset_releases_immutable"

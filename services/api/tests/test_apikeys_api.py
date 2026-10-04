@@ -82,13 +82,10 @@ def test_ten_keys_at_most(reader: dict[str, str]) -> None:
 
 
 def test_the_public_limit_is_kept(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("JADHR_PUBLIC_RATE_PER_MINUTE", "3")
-    get_settings.cache_clear()
-    try:
-        tight = TestClient(create_app())
-        seen = [tight.get(ROOT, headers={"X-Forwarded-For": "203.0.113.9"}) for _ in range(4)]
-    finally:
-        get_settings.cache_clear()
+    # the cached settings patched, not rebuilt: a rebuilt one would drop conftest's test-wide overrides
+    monkeypatch.setattr(get_settings(), "public_rate_per_minute", 3)
+    tight = TestClient(create_app())
+    seen = [tight.get(ROOT, headers={"X-Forwarded-For": "203.0.113.9"}) for _ in range(4)]
     assert [r.status_code for r in seen] == [200, 200, 200, 429]
     assert [r.headers["ratelimit-remaining"] for r in seen] == ["2", "1", "0", "0"]
     assert int(seen[3].headers["retry-after"]) > 0 and seen[3].json()["error"]["code"] == "rate_limited"
