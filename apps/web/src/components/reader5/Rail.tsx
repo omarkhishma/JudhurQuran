@@ -6,7 +6,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link, useRouter } from "@/i18n/navigation";
 import { normalize } from "@/lib/arabic/normalize";
+import { paragraphHref } from "@/lib/books";
+import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber } from "@/lib/format";
+import { hadithHref, refText } from "@/lib/hadith";
+import { listTexts, userUri } from "@/lib/library/texts";
 import { getJSON, useSurahRoots } from "@/lib/reader/api";
 import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
 import type { ChapterInfo } from "./ReaderShell";
@@ -16,14 +20,15 @@ type SurahRow = { number: number; name_ar: string; name_translit: string; name_e
 
 /**
  * The rail (design 03 §3.4, adapted per RDR-541): the sūra index with juzʾ navigation in place of the
- * prototype's library + chapters, and the roots of this sūra — a tap underlines every word built on it.
+ * prototype's library + chapters, and the roots of this sūra — a tap underlines every word built on it. Its texts
+ * view lists every text as the prototype's books list does (RDR-063): the hadith, the books and the reader's own.
  */
 const ROOTS_FIRST = 60;
 
 export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; overlay: boolean; onNavigate: () => void }) {
   const t = useTranslations("rd");
   const locale = useLocale();
-  const [view, setView] = useState<"surahs" | "juz" | "page">("surahs");
+  const [view, setView] = useState<"surahs" | "juz" | "page" | "texts">("surahs");
   const [q, setQ] = useState("");
   const list = useRef<HTMLUListElement>(null);
   const surahs = useQuery({ queryKey: ["surahs"], queryFn: () => getJSON<{ data: SurahRow[] }>("/surahs"), staleTime: Infinity });
@@ -75,8 +80,10 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
           { value: "surahs", label: t("viewSurahs") },
           { value: "juz", label: t("viewJuz") },
           { value: "page", label: t("viewPage") },
+          { value: "texts", label: t("viewTexts") },
         ]}
       />
+      {view === "texts" && <TextsList onNavigate={onNavigate} />}
       {view === "juz" && <JuzList chapter={chapter} onNavigate={onNavigate} />}
       {view === "page" && <PageJump onNavigate={onNavigate} />}
       {view === "surahs" && (
@@ -168,6 +175,97 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
         </button>
       )}
     </aside>
+  );
+}
+
+type TextRow = { slug: string; kind: string; title_ar: string; title_en: string };
+
+/**
+ * Every text (RDR-063, adapted): the Quran, which this reader reads; the hadith collections, the books and the
+ * reader's own texts, each opening in its own reader with the word panel beside it (P11.3) — so choosing one leaves
+ * this sūra, its selection and its drawers behind (RDR-064) — and, where the reader stopped in one, the way back.
+ */
+function TextsList({ onNavigate }: { onNavigate: () => void }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const client = useIsClient();
+  const texts = useQuery({ queryKey: ["texts"], queryFn: () => getJSON<{ data: TextRow[] }>("/texts"), staleTime: Infinity });
+  const mine = useQuery({ queryKey: ["user-texts"], queryFn: listTexts, enabled: client });
+  const progress = usePersonal((s) => s.progress);
+  const name = (x: TextRow) => (locale === "ar" ? x.title_ar : x.title_en);
+  type Row = { key: string; href: string; title: string; ar: boolean; back?: { href: string; label: string } };
+  const all = texts.data?.data ?? [];
+  const groups: { label: string; rows: Row[] }[] = [
+    {
+      label: t("textsHadith"),
+      rows: all
+        .filter((x) => x.kind === "hadith")
+        .map((x) => {
+          const at = progress[`hadith:${x.slug}`];
+          return { key: x.slug, href: `/hadith/${x.slug}`, title: name(x), ar: locale === "ar", back: at?.ref ? { href: hadithHref(x.slug, at.ref), label: t("stoppedAtRef", { ref: refText(at.ref, locale) }) } : undefined };
+        }),
+    },
+    {
+      label: t("textsBooks"),
+      rows: all
+        .filter((x) => x.kind === "book")
+        .map((x) => {
+          const at = progress[`book:${x.slug}`];
+          return { key: x.slug, href: `/books/${x.slug}`, title: name(x), ar: locale === "ar", back: at?.ref ? { href: paragraphHref(x.slug, at.ref), label: at.label ? t("stoppedAtLabel", { label: at.label }) : t("stoppedHere") } : undefined };
+        }),
+    },
+    {
+      label: t("textsMine"),
+      rows: (mine.data ?? []).map((x) => {
+        const at = progress[userUri(x.id)];
+        // the reader's own titles are theirs, in the script they wrote them
+        return { key: x.id, href: `/library/text/${x.id}`, title: x.title, ar: true, back: at && at.passage > 1 ? { href: `/library/text/${x.id}#p${at.passage}`, label: t("stoppedAtPassage", { n: formatNumber(at.passage, locale) }) } : undefined };
+      }),
+    },
+  ];
+  if (texts.isError) return <p className="px-2 text-[12px] text-bad" role="alert">{t("loadFailed")}</p>;
+  if (!texts.data) return <div className="h-40 animate-pulse rounded-lg bg-card-2" />;
+  return (
+    <nav className="flex flex-col gap-3" aria-label={t("viewTexts")}>
+      <ul className="rail-list">
+        <li>
+          <span className="rail-row" aria-current="page">
+            <span className="ar-classical text-[15px] leading-[1.5]" lang="ar">{t("textsQuran")}</span>
+          </span>
+        </li>
+      </ul>
+      {groups.map((g) =>
+        g.rows.length ? (
+          <section key={g.label} className="flex flex-col gap-1" aria-label={g.label}>
+            <p className="label-caps">{g.label}</p>
+            <ul className="rail-list">
+              {g.rows.map((r) => (
+                <li key={r.key}>
+                  <Link href={r.href} className="rail-row" onClick={onNavigate}>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className={(r.ar ? "ar-classical text-[15px] leading-[1.5]" : "text-[13px]") + " truncate"} lang={r.ar ? "ar" : "en"} dir="auto">
+                        {r.title}
+                      </span>
+                    </span>
+                  </Link>
+                  {r.back && (
+                    <Link href={r.back.href} className="rail-resume ps-2 hover:text-t1" onClick={onNavigate}>
+                      <span className="dot" style={{ background: "var(--c-root)" }} />
+                      {r.back.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null,
+      )}
+      {client && mine.data?.length === 0 && (
+        <Link href="/library?add=1" className="text-[12px] text-t3 hover:text-t1" onClick={onNavigate}>
+          {t("textsAddMine")}
+        </Link>
+      )}
+    </nav>
   );
 }
 

@@ -2343,7 +2343,17 @@
     "classicalLink": "ما في كتب الصرف",
     "classicalLinkTitle": "ما تقوله كتب الصرف في وزن {p}، بنصّها",
     "prefMarks": "التشكيل في المعاجم والحديث والكتب ونصوصك",
-    "prefMarksHint": "نص المصحف يبقى بتشكيله كاملًا دائمًا"
+    "prefMarksHint": "نص المصحف يبقى بتشكيله كاملًا دائمًا",
+    "viewTexts": "النصوص",
+    "textsQuran": "القرآن الكريم",
+    "textsHadith": "كتب الحديث",
+    "textsBooks": "كتب التراث",
+    "textsMine": "نصوصك",
+    "textsAddMine": "أضف نصًّا من عندك ←",
+    "stoppedAtRef": "توقفت عند الحديث {ref}",
+    "stoppedAtLabel": "توقفت عند: {label}",
+    "stoppedHere": "تابع من حيث توقفت",
+    "stoppedAtPassage": "توقفت عند المقطع {n}"
   },
   "board": {
     "reviewed": "راجعته هيئة التحرير",

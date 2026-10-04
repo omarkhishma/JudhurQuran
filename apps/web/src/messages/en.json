@@ -2343,7 +2343,17 @@
     "classicalLink": "In the books of sarf",
     "classicalLinkTitle": "What the books of sarf say on the pattern {p}, in their words",
     "prefMarks": "Vowel marks in the dictionaries, hadith, books and your texts",
-    "prefMarksHint": "The mushaf always keeps all of its marks"
+    "prefMarksHint": "The mushaf always keeps all of its marks",
+    "viewTexts": "Texts",
+    "textsQuran": "The Quran",
+    "textsHadith": "Hadith",
+    "textsBooks": "Classical books",
+    "textsMine": "Your texts",
+    "textsAddMine": "Add a text of your own →",
+    "stoppedAtRef": "Stopped at hadith {ref}",
+    "stoppedAtLabel": "Stopped at: {label}",
+    "stoppedHere": "Continue where you stopped",
+    "stoppedAtPassage": "Stopped at passage {n}"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
