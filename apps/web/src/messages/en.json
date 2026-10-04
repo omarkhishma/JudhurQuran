@@ -3407,7 +3407,7 @@
     "published": "published {day}",
     "notPublished": "not published yet",
     "rows": "{n} rows",
-    "heldWhy": "Held until the owner decides: {why} ({decision}).",
+    "heldWhy": "Not published yet: <why>{text}</why>.",
     "manifest": "The manifest as built, with every file's hash",
     "excludedTitle": "Left out of the release ({n}), and why",
     "table_verses": "Verses",

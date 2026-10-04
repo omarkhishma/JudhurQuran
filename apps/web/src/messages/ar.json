@@ -3407,7 +3407,7 @@
     "published": "نشر {day}",
     "notPublished": "لم ينشر بعد",
     "rows": "{n} صفا",
-    "heldWhy": "محجوز حتى يقرر المالك: {why} ({decision}).",
+    "heldWhy": "لم ينشر بعد: <why>{text}</why>.",
     "manifest": "البيان كما بني، ومعه بصمة كل ملف",
     "excludedTitle": "ما ترك خارج الإصدار ({n}) ولماذا",
     "table_verses": "الآيات",

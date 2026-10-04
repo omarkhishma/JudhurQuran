@@ -7,7 +7,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Changelog } from "@/components/contrib/Changelog";
 import { Link } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
-import { CITE_FORMATS, citation, getMeta, getPublicIndex, getRelease, getReleases, getSources, releaseAddress, type CiteFormat, type Release, type ReleaseFile } from "@/lib/dataset";
+import { CITE_FORMATS, citation, getMeta, getPublicIndex, getRelease, getReleases, getSources, releaseAddress, type CiteFormat, type Hold, type Release, type ReleaseFile } from "@/lib/dataset";
 import { formatNumber } from "@/lib/format";
 
 type Tab = "dataset" | "api";
@@ -138,6 +138,15 @@ const formatLabel = (f: string | null) => FORMAT_LABEL[f ?? ""] ?? (f ?? "").toU
 const TABLES = ["verses", "words", "lemmas", "roots", "segments", "lexicon_quran", "lexicon_lane"] as const;
 type Table = (typeof TABLES)[number];
 
+/** Why a file is held, in the reader's language: the manifest says it in English and in Arabic; a hold without the
+ * Arabic shows the English, isolated so its punctuation stays in place. */
+function HoldWhy({ hold, id }: { hold: Hold | undefined; id: string }) {
+  const t = useTranslations("dataset");
+  const locale = useLocale();
+  if (locale === "ar" && hold?.why_ar) return <>{t.rich("heldWhy", { text: hold.why_ar, why: (c) => <>{c}</> })}</>;
+  return <>{t.rich("heldWhy", { text: hold?.why ?? id, why: (c) => (locale === "ar" ? <bdi dir="ltr" lang="en">{c}</bdi> : <>{c}</>) })}</>;
+}
+
 /** A release (DAT-07…13): its files by format, each with its size and sha256 — downloadable once published and not
  * held; a held file says why, and who decides. */
 function ReleaseCard({ r, latest }: { r: Release; latest: boolean }) {
@@ -185,11 +194,15 @@ function ReleaseCard({ r, latest }: { r: Release; latest: boolean }) {
             </div>
             {files[0].held && (
               <p className="text-[12px] leading-relaxed text-t2">
-                {t("heldWhy", { why: r.publication_hold.find((h) => h.id === files[0].held)?.why ?? "", decision: r.publication_hold.find((h) => h.id === files[0].held)?.decision ?? "" })}
+                <HoldWhy hold={r.publication_hold.find((h) => h.id === files[0].held)} id={files[0].held} />
               </p>
             )}
-            <p className="mono break-all text-[10.5px] text-t3" dir="ltr">
-              {files.map((f) => `${f.path} sha256:${f.sha256.slice(0, 16)}…`).join("  ")}
+            <p className="mono flex flex-wrap gap-x-3 text-[10.5px] text-t3" dir="ltr">
+              {files.map((f) => (
+                <span key={f.path} className="whitespace-nowrap">
+                  {f.path} sha256:{f.sha256.slice(0, 16)}…
+                </span>
+              ))}
             </p>
           </li>
         ))}
@@ -206,9 +219,13 @@ function ReleaseCard({ r, latest }: { r: Release; latest: boolean }) {
         <details className="text-[12px] text-t2">
           <summary className="cursor-pointer text-t3">{t("excludedTitle", { n: formatNumber(r.excluded.length, locale) })}</summary>
           <ul className="mt-1 flex list-disc flex-col gap-1 ps-5">
-            {r.excluded.map((e, i) => (
-              <li key={i} dir="auto">{`${e.data} — ${e.reason}`}</li>
-            ))}
+            {r.excluded.map((e, i) =>
+              locale === "ar" && e.data_ar && e.reason_ar ? (
+                <li key={i}>{`${e.data_ar} — ${e.reason_ar}`}</li>
+              ) : (
+                <li key={i} dir="ltr" lang="en">{`${e.data} — ${e.reason}`}</li>
+              ),
+            )}
           </ul>
         </details>
       )}

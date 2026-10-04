@@ -71,7 +71,6 @@ TANZIL_META_NOTICE = (
     "juz, hizb_quarter and sajda: Tanzil Quran metadata (quran-data.xml), (C) 2008-2009 Tanzil.info, "
     "license cc-by — https://tanzil.net"
 )
-# Publication is the owner's call; these hold it until the named decisions are taken (research 07).
 FORMAT_NOTES = {
     "jsonl": "JSON Lines: one record per line, UTF-8.",
     "csv": "RFC 4180: comma-separated, CRLF between records, a header row; a field with a comma, a quote or a line break quoted and its quotes doubled; UTF-8 without a byte-order mark. Nested values (segments, features) are JSON in their field.",
@@ -81,19 +80,24 @@ FORMAT_NOTES = {
     "keys": "A word is keyed surah:ayah:word, a segment surah:ayah:word:segment, a verse surah:ayah, a root by its letters.",
 }
 
+# Publication is the owner's call; the holds keep it until the named decisions are taken (research 07).
+# Each hold and each exclusion says why in English and in Arabic (shown on the data page in the reader's language),
+# in words that stand on their own; who decides is in "decision", for the owner (docs/PLAN.md decisions).
 PUBLICATION_HOLD = [
     {
         "id": "qac",
         "tables": ["words", "segments", "lemmas", "roots", "lexicon_quran"],
         "data": "words, segments, lemmas and roots files and the Quranic lexicon (data derived from the Quranic Arabic Corpus)",
-        "why": "the corpus permits verbatim copies only, its FAQ speaks of non-commercial use, and the text column is CC BY-ND",
+        "why": "the corpus permits verbatim copies only, its FAQ speaks of non-commercial use, and its text is CC BY-ND, which allows no changes; its maintainers will be asked first",
+        "why_ar": "المدونة القرآنية اللغوية تجيز النسخ الحرفي وحده، وصفحة أسئلتها تذكر الاستعمال غير التجاري، ونصها بترخيص CC BY-ND الذي لا يجيز التعديل؛ سنسأل القائمين عليها أولا",
         "decision": "D19 (ask the corpus maintainers) and D2",
     },
     {
         "id": "kfgqpc",
         "tables": ["verses"],
         "data": "verses file (KFGQPC Unicode data)",
-        "why": "the Complex's published terms describe the mushaf files; redistribution of the Unicode data is to be confirmed",
+        "why": "the Complex's published terms describe the mushaf files; whether they allow its Unicode text to be redistributed will be asked of the Complex",
+        "why_ar": "شروط مجمع الملك فهد المنشورة تصف ملفات المصحف، وسنسأل المجمع أتجيز إعادة نشر نصه بترميز Unicode أم لا",
         "decision": "D19 (ask the Complex)",
     },
 ]
@@ -101,39 +105,57 @@ PUBLICATION_HOLD = [
 EXCLUDED = [
     {
         "data": "root variants from the mustafa0x corrected fork",
-        "reason": "the repository has no licence; it is shown on the site only as a cited cross-check",
+        "data_ar": "الجذور البديلة من النسخة المصححة التي نشرها mustafa0x",
+        "reason": "the repository has no licence; the site shows it only as a cited cross-check",
+        "reason_ar": "مستودعها بلا ترخيص، فلا يعرضها الموقع إلا للمقارنة مع ذكر مصدرها",
     },
     {
         "data": "lemma glosses and root variants from the corpus author's revision (qac-v2)",
-        "reason": "the data repository (kaisdukes/quranic-corpus-api) carries no licence; shown on the site as a credited cross-check until the author is asked (D19)",
+        "data_ar": "معاني المداخل والجذور البديلة من مراجعة مؤلف المدونة القرآنية اللغوية",
+        "reason": "the data repository (kaisdukes/quranic-corpus-api) carries no licence; the site shows it, credited, as a cross-check until its author is asked",
+        "reason_ar": "مستودع بياناتها بلا ترخيص، فيعرضها الموقع للمقارنة منسوبة إلى مؤلفها حتى يسأل",
     },
     {
         "data": "word-by-word English glosses and transliteration",
-        "reason": "the corpus terms allow display with credit and a link; bulk redistribution is ambiguous",
+        "data_ar": "الترجمة الإنجليزية كلمة كلمة ونقحرتها اللاتينية",
+        "reason": "the corpus's terms allow display with credit and a link; whether they allow redistributing them whole is unclear",
+        "reason_ar": "تجيز شروط المدونة عرضها مع ذكرها ورابط إليها، ولا يتبين منها جواز إعادة نشرها كاملة",
     },
     {
         "data": "classical lexica (Kitab al-Ayn, Tahdhib al-Lugha, al-Sihah, Maqayis, al-Mufradat with its sub-entries and senses, Lisan al-Arab, al-Qamus al-Muhit, Taj al-Arus, Ibn Qutaybah)",
-        "reason": "the digital text is display-only (research 02); Lane's Lexicon (CC BY-SA 3.0 US) is in this release as lexicon_lane",
+        "data_ar": "المعاجم العربية القديمة: العين، وتهذيب اللغة، والصحاح، ومقاييس اللغة، والمفردات بفروعها ومعانيها، ولسان العرب، والقاموس المحيط، وتاج العروس، وغريب ابن قتيبة",
+        "reason": "their digital texts are for display only; Lane's Lexicon (CC BY-SA 3.0 US) is in this release as lexicon_lane",
+        "reason_ar": "نصوصها الرقمية للعرض وحده؛ أما معجم لين فبترخيص CC BY-SA 3.0 US وهو في هذا الإصدار",
     },
     {
         "data": "al-Muyassar fi Gharib al-Qur'an (KFGQPC) meanings per word",
-        "reason": "the Complex offers the file for display in applications; redistribution is not addressed (research 07, D19)",
+        "data_ar": "معاني الكلمات من الميسر في غريب القرآن الكريم (مجمع الملك فهد)",
+        "reason": "the Complex offers the file for display in applications; its terms do not address redistribution",
+        "reason_ar": "يتيح المجمع الملف للعرض في التطبيقات، ولا تتناول شروطه إعادة نشره",
     },
     {
         "data": "pattern catalog, particle entries and relation seeds (al-Shafiya, al-Kafiya, al-Radi, Mughni al-Labib, al-Jana al-Dani, the wujuh, furuq and addad works)",
-        "reason": "OpenITI texts under CC BY-NC-SA 4.0, whose share-alike would bind the whole release; shown on the site with credit",
+        "data_ar": "فهرس الأوزان ومداخل الحروف وبذور العلاقات: الشافية، والكافية، وشرح الرضي، ومغني اللبيب، والجنى الداني، وكتب الوجوه والفروق والأضداد",
+        "reason": "OpenITI texts under CC BY-NC-SA 4.0, whose share-alike would bind the whole release; the site shows them with credit",
+        "reason_ar": "نصوص OpenITI بترخيص CC BY-NC-SA 4.0 الذي يلزم شرط المشاركة بالمثل فيه الإصدار كله؛ ويعرضها الموقع مع ذكر مصادرها",
     },
     {
         "data": "Quran knowledge layers (sura cards, Makki/Madani notes, occasions of revelation, cross-references, entity candidates)",
-        "reason": "each source keeps its own terms (Tafsir Center CC BY 4.0, OpenITI CC BY-NC-SA, Tanzil, Wikidata CC0); shown on the site with credit, see data/licences.yaml",
+        "data_ar": "طبقات المعرفة القرآنية: بطاقات السور، والمكي والمدني، وأسباب النزول، والإحالات بين الآيات، والكيانات المقترحة",
+        "reason": "each source keeps its own terms (Tafsir Center CC BY 4.0, OpenITI CC BY-NC-SA, Tanzil, Wikidata CC0); the site shows them with credit",
+        "reason_ar": "لكل مصدر شروطه: مركز تفسير بترخيص CC BY 4.0 ونصوص OpenITI بترخيص CC BY-NC-SA وتنزيل وويكي بيانات بترخيص CC0 الحر؛ ويعرضها الموقع مع ذكر مصادرها",
     },
     {
         "data": "tafsir and translations",
-        "reason": "each is published by its own source under its own terms (QuranEnc, QUL) — see data/works.yaml",
+        "data_ar": "التفاسير والترجمات",
+        "reason": "each is published by its own source under its own terms (QuranEnc, QUL)",
+        "reason_ar": "ينشر كلا منها مصدره بشروطه، كموسوعة القرآن الكريم والمكتبة القرآنية الشاملة",
     },
     {
         "data": "recitation audio and timings",
+        "data_ar": "التلاوات الصوتية وتوقيتات كلماتها",
         "reason": "served by EveryAyah (CC BY-NC) and quran-align (CC BY 4.0)",
+        "reason_ar": "تقدم التلاوات من EveryAyah بترخيص CC BY-NC، والتوقيتات من مشروع quran-align بترخيص CC BY 4.0 المفتوح",
     },
 ]
 

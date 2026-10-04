@@ -8,7 +8,7 @@ import { getJSON } from "@/lib/reader/api";
  */
 
 export type ReleaseFile = { path: string; table: string | null; format: string | null; rows: number; bytes: number; sha256: string; notice: string | null; held: string | null; available: boolean; url: string };
-export type Hold = { id?: string; tables?: string[]; data: string; why: string; decision: string };
+export type Hold = { id?: string; tables?: string[]; data: string; why: string; why_ar?: string; decision: string };
 export type ReleaseSummary = {
   version: string;
   dataset: string;
@@ -24,7 +24,7 @@ export type Release = ReleaseSummary & {
   files: ReleaseFile[];
   sources: { id: string; title_en: string; url: string; license: string; attribution_en: string }[];
   publication_hold: Hold[];
-  excluded: { data: string; reason: string }[];
+  excluded: { data: string; reason: string; data_ar?: string; reason_ar?: string }[];
   manifest_url: string;
   data_counts: Record<string, number> | null;
 };

@@ -127,6 +127,19 @@ def test_release_labels_every_layer_by_its_real_source(tmp_path: Path) -> None:
     root_cols = json.loads((tmp_path / "roots.jsonl").read_text(encoding="utf-8").splitlines()[0])
     assert not {"gist_ar", "gist_source", "gloss_en"} & set(root_cols)
     assert m["publication_hold"] and all(h["decision"] for h in m["publication_hold"])
+    # each hold and each exclusion says why in English and in Arabic, in words that stand on their own: no decision
+    # codes, research notes or repository paths (who decides is in "decision", for the owner)
+    import re
+
+    arabic = re.compile(r"[\u0621-\u064a]")
+    internal = re.compile(r"\bD\d+\b|research \d|data/|docs/")
+    for h in m["publication_hold"]:
+        assert arabic.search(h["why_ar"]) and not internal.search(h["why"] + h["why_ar"]), h["id"]
+    for e in m["excluded"]:
+        assert arabic.search(e["data_ar"]) and arabic.search(e["reason_ar"]), e["data"]
+        assert not internal.search(" ".join((e["data"], e["reason"], e["data_ar"], e["reason_ar"]))), e[
+            "data"
+        ]
     # Lane: Perseus's statement as Perseus's header writes it, the source credited, the notice on every file
     with tarfile.open(REPO / "data/raw/lexica/laneslexicon-lexicon_xml/lexicon_xml-f3c19fb.tar.gz") as tar:
         member = next(x for x in tar.getmembers() if x.name.endswith("/_0.xml"))

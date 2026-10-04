@@ -22,6 +22,13 @@ test("the dataset tab: counts from the data, releases with their holds, the chan
   const rel = page.getByRole("region", { name: "الإصدارات" }).or(page.locator("section").filter({ has: page.getByRole("heading", { name: "الإصدارات" }) }));
   if (releases.data.length) {
     await expect(page.locator(".release-card").first()).toContainText(`v${releases.data[0].version}`);
+    // a hold is told in the reader's language, without our decision codes; each file's path and hash stay whole
+    const card = page.locator(".release-card").first();
+    if ((await card.locator(".format-chip").count()) > 0) {
+      await expect(card.getByText("لم ينشر بعد", { exact: false }).first()).toBeVisible();
+      await expect(card).not.toContainText(/D19|the corpus permits|Held until/);
+    }
+    await expect(card.locator("span.whitespace-nowrap", { hasText: "sha256:" }).first()).toBeVisible();
   } else {
     await expect(rel.first()).toContainText("لم يسجل إصدار بعد.");
   }
