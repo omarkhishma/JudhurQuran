@@ -158,3 +158,33 @@ def test_release_labels_every_layer_by_its_real_source(tmp_path: Path) -> None:
     assert "Tanzil Quran Text" in next(
         f["notice"] for f in m["files"] if f["path"] == "lexicon_quran.lmf.xml"
     )
+
+
+def test_a_release_says_what_changed_since_the_one_before(tmp_path: Path) -> None:
+    """B51: a release after the first counts, table by table, the rows added, removed and changed since the release
+    before it — matched by their keys — and lists their keys, never their content."""
+    from jadhr_pipeline.release import changes, previous_release
+
+    build = REPO / "data/build/2026.10.0/verses.jsonl"
+    verses = [json.loads(line) for line in build.read_text(encoding="utf-8").splitlines()]
+    prev = tmp_path / "2026.9.0"
+    prev.mkdir()
+    (prev / "MANIFEST.json").write_text("{}", encoding="utf-8")
+    rows = [{k: v[k] for k in ("key", "surah", "ayah", "text_qpc")} for v in verses]
+    old = [dict(r) for r in rows[1:]]  # 1:1 was not there
+    old[0]["text_qpc"] += " "  # 1:2 has changed since
+    old.append({"key": "999:1", "surah": 999, "ayah": 1, "text_qpc": "x"})  # gone now
+    (prev / "verses.jsonl").write_text(
+        "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in old), "utf-8"
+    )
+    (tmp_path / "notes").mkdir()  # not a release: ignored
+    assert previous_release("2026.10.0", tmp_path) == prev and previous_release("2026.9.0", tmp_path) is None
+    summary, keyed = changes(prev, {"verses": rows, "roots": [{"key": "علم"}]})
+    assert summary["verses"] == {"added": 1, "removed": 1, "changed": 1}
+    assert summary["roots"] == {"added": 1, "removed": 0, "changed": 0, "new_table": True}
+    assert {(x["key"], x["change"]) for x in keyed if x["table"] == "verses"} == {
+        ("1:1", "added"),
+        ("999:1", "removed"),
+        ("1:2", "changed"),
+    }
+    assert all(set(x) == {"table", "key", "change"} for x in keyed)

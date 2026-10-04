@@ -144,7 +144,7 @@ const FORMAT_ORDER = ["jsonl", "csv", "tei", "lmf", "xml", "txt"];
 /** A format's name as its readers know it (research 19): TEI Lex-0 for dictionaries, LMF (ISO 24613-4) for NLP. */
 const FORMAT_LABEL: Record<string, string> = { jsonl: "JSONL", csv: "CSV", tei: "TEI Lex-0", lmf: "LMF", xml: "XML", txt: "TXT" };
 const formatLabel = (f: string | null) => FORMAT_LABEL[f ?? ""] ?? (f ?? "").toUpperCase();
-const TABLES = ["verses", "words", "lemmas", "roots", "segments", "lexicon_quran", "lexicon_lane"] as const;
+const TABLES = ["verses", "words", "lemmas", "roots", "segments", "lexicon_quran", "lexicon_lane", "changes"] as const;
 type Table = (typeof TABLES)[number];
 
 /** Why a file is held, in the reader's language: the manifest says it in English and in Arabic; a hold without the
@@ -154,6 +154,32 @@ function HoldWhy({ hold, id }: { hold: Hold | undefined; id: string }) {
   const locale = useLocale();
   if (locale === "ar" && hold?.why_ar) return <>{t.rich("heldWhy", { text: hold.why_ar, why: (c) => <>{c}</> })}</>;
   return <>{t.rich("heldWhy", { text: hold?.why ?? id, why: (c) => (locale === "ar" ? <bdi dir="ltr" lang="en">{c}</bdi> : <>{c}</>) })}</>;
+}
+
+/** What changed since the release before (B51): table by table, the rows added, removed and changed — a researcher
+ * who cited the last release sees what moving to this one means. */
+function Changes({ changes }: { changes: NonNullable<Release["changes"]> }) {
+  const t = useTranslations("dataset");
+  const locale = useLocale();
+  const n = (x: number) => formatNumber(x, locale);
+  const moved = Object.entries(changes.tables).filter(([, c]) => c.added + c.removed + c.changed > 0);
+  const label = (table: string) => (TABLES.includes(table as Table) ? t(`table_${table as Table}`) : table);
+  return (
+    <div className="flex flex-col gap-1 text-[12.5px] text-t2">
+      <p className="font-medium text-t1">{t.rich("changesSince", { from: changes.from, v: (c) => <bdi dir="ltr" className="mono">{c}</bdi> })}</p>
+      {moved.length === 0 ? (
+        <p>{t("changesNone")}</p>
+      ) : (
+        <ul className="flex flex-col gap-0.5">
+          {moved.map(([table, c]) => (
+            <li key={table}>
+              {c.new_table ? t("changesNew", { table: label(table), added: n(c.added) }) : t("changesTable", { table: label(table), added: n(c.added), removed: n(c.removed), changed: n(c.changed) })}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 /** A release (DAT-07…13): its files by format, each with its size and sha256 — downloadable once published and not
@@ -179,6 +205,7 @@ function ReleaseCard({ r, latest }: { r: Release; latest: boolean }) {
           </a>
         )}
       </div>
+      {r.changes && <Changes changes={r.changes} />}
       <ul className="flex flex-col gap-2">
         {[...byTable.entries()].map(([table, files]) => (
           <li key={table} className="flex flex-col gap-1.5 rounded-lg border border-line bg-card px-3 py-2">

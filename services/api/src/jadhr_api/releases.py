@@ -161,6 +161,8 @@ def _out(r: dict[str, Any], full: bool) -> dict[str, Any]:
             "copyright_notices": m.get("copyright_notices", {}),
             "publication_hold": m.get("publication_hold", []),
             "excluded": m.get("excluded", []),
+            # what changed since the release before (B51); absent for the first
+            "changes": m.get("changes"),
             "manifest_url": f"/api/v1/releases/{r['version']}/manifest",
         }
     return out

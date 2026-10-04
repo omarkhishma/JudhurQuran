@@ -27,6 +27,8 @@ export type Release = ReleaseSummary & {
   excluded: { data: string; reason: string; data_ar?: string; reason_ar?: string }[];
   manifest_url: string;
   data_counts: Record<string, number> | null;
+  /** what changed since the release before this one (B51); null for the first */
+  changes: { from: string; tables: Record<string, { added: number; removed: number; changed: number; new_table?: boolean }>; file: string } | null;
 };
 export type Source = { id: string; title_ar: string; title_en: string; url: string; license: string; role?: string; role_ar?: string };
 export type PublicIndex = {

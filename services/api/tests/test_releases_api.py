@@ -55,6 +55,7 @@ def _write(folder: Path, version: str) -> dict:
             {"id": "qac", "tables": ["words"], "why": "asked of the corpus", "decision": "D19"}
         ],
         "excluded": [],
+        "changes": {"from": "2026.9.0", "tables": {"roots": {"added": 1, "removed": 0, "changed": 0}}},
     }
     (folder / "MANIFEST.json").write_text(json.dumps(m, ensure_ascii=False), encoding="utf-8")
     return m
@@ -100,6 +101,7 @@ def test_a_release_is_recorded_once_read_by_anyone_and_its_files_served_once_pub
         ("lexicon_lane.tei.xml", None, False),
     ]
     assert one["publication_hold"][0]["decision"] == "D19" and one["doi"] is None
+    assert one["changes"]["from"] == "2026.9.0" and one["changes"]["tables"]["roots"]["added"] == 1
     # the manifest, byte for byte, with the hash the record keeps
     man = client.get(f"/api/v1/releases/{version}/manifest")
     assert man.content == (folder / "MANIFEST.json").read_bytes()

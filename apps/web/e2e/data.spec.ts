@@ -158,3 +158,27 @@ test("exit ◆ P10.4: a citation copied from the site resolves to an immutable a
     }
   }
 });
+
+async function latestRelease(page: import("@playwright/test").Page) {
+  const releases = (await (await page.request.get("/api/v1/releases")).json()) as { data: { version: string }[] };
+  expect(releases.data.length).toBeGreaterThan(0);
+  const v = releases.data[0].version;
+  const rel = (await (await page.request.get(`/api/v1/releases/${v}`)).json()) as { files: { path: string; available: boolean }[]; changes: unknown };
+  return { v, rel };
+}
+
+test("a release after the first says what changed since the one before (B51)", async ({ page }) => {
+  const { v, rel } = await latestRelease(page);
+  // the first release has nothing to compare; a later one is shown as the API would give it
+  expect(rel.changes ?? null).toBeNull();
+  await page.route(`**/api/v1/releases/${v}`, async (route) => {
+    const body = (await (await route.fetch()).json()) as Record<string, unknown>;
+    await route.fulfill({ json: { ...body, changes: { from: "2026.9.0", file: "changes.jsonl", tables: { verses: { added: 1, removed: 2, changed: 3 }, roots: { added: 0, removed: 0, changed: 0 }, lexicon_lane: { added: 5304, removed: 0, changed: 0, new_table: true } } } } });
+  });
+  await page.goto("/data");
+  const card = page.locator(".release-card").first();
+  await expect(card.getByText("منذ الإصدار v2026.9.0:")).toBeVisible();
+  await expect(card.getByText("الآيات: أضيف ١، وحذف ٢، وتغير ٣")).toBeVisible();
+  await expect(card.getByText("معجم لين العربي الإنجليزي: جديد في هذا الإصدار، ٥٬٣٠٤ صفا")).toBeVisible();
+  await expect(card.getByText(/^الجذور:/)).toHaveCount(0);
+});

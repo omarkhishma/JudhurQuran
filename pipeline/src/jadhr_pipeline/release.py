@@ -78,6 +78,7 @@ FORMAT_NOTES = {
     "tei": "TEI Lex-0 0.9.5 (https://lex-0.org), UTF-8, validated against its schema when the release is built. lexicon_quran: each root a word family (entry type=wordFamily) holding its lemmas (type=mainEntry) with their pattern (form type=scheme, resp=#jadhr) and grammar; a lemma without a root an entry of its own. lexicon_lane: each of Lane's root articles a word family with its text as one sense.",
     "lmf": "LMF in its ISO 24613-4 TEI serialisation (teiCorpus type=lexicalResource holding one TEI type=lexicon), UTF-8, validated against its schema when the release is built. lexicon_quran: one entry per lemma, its root a form typed root, every word form the Quran attests (form type=inflected) with its inflection and its count (n). lexicon_lane: one entry per root article, its text one sense.",
     "keys": "A word is keyed surah:ayah:word, a segment surah:ayah:word:segment, a verse surah:ayah, a root by its letters.",
+    "changes": "changes.jsonl (from the second release on): one line per row added, removed or changed since the release before — table, key, change — the keys only; MANIFEST.json counts them under changes, table by table.",
 }
 
 # Publication is the owner's call; the holds keep it until the named decisions are taken (research 07).
@@ -158,6 +159,64 @@ EXCLUDED = [
         "reason_ar": "تقدم التلاوات من EveryAyah بترخيص CC BY-NC، والتوقيتات من مشروع quran-align بترخيص CC BY 4.0 المفتوح",
     },
 ]
+
+
+# a table's rows are the same row across releases when their keys are equal (FORMAT_NOTES["keys"])
+TABLE_KEYS = {
+    "verses": "key",
+    "words": "location",
+    "segments": "segment",
+    "lemmas": "id",
+    "roots": "key",
+    lexicon_xml.LANE: "id",
+}
+
+
+def _version_key(version: str) -> tuple[int, ...]:
+    return tuple(int(x) for x in version.split("."))
+
+
+def previous_release(version: str, root: Path) -> Path | None:
+    """The newest release folder before this version, with its manifest: what this release's changes are counted
+    from (B51). None for the first release."""
+    if not root.is_dir():
+        return None
+    before = [
+        d
+        for d in root.iterdir()
+        if d.is_dir()
+        and (d / "MANIFEST.json").is_file()
+        and all(x.isdigit() for x in d.name.split("."))
+        and len(d.name.split(".")) == 3
+        and _version_key(d.name) < _version_key(version)
+    ]
+    return max(before, key=lambda d: _version_key(d.name)) if before else None
+
+
+def changes(
+    prev: Path, tables: dict[str, list[dict[str, Any]]]
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Table by table, the rows added, removed and changed since the previous release, matched by their keys: the
+    counts for the manifest, and the keys themselves (never the rows) for changes.jsonl."""
+    summary: dict[str, Any] = {}
+    out: list[dict[str, Any]] = []
+    for name, key in TABLE_KEYS.items():
+        old_file = prev / f"{name}.jsonl"
+        if name not in tables and not old_file.is_file():
+            continue
+        canon = lambda r: json.dumps(r, ensure_ascii=False, sort_keys=True)  # noqa: E731
+        old = {str(r[key]): canon(r) for r in _jsonl(old_file)} if old_file.is_file() else {}
+        new = {str(r[key]): canon(r) for r in tables.get(name, [])}
+        found = {
+            "added": [k for k in new if k not in old],
+            "removed": [k for k in old if k not in new],
+            "changed": [k for k in new if k in old and new[k] != old[k]],
+        }
+        summary[name] = {c: len(ks) for c, ks in found.items()} | (
+            {"new_table": True} if not old_file.is_file() else {}
+        )
+        out += [{"table": name, "key": k, "change": c} for c, ks in found.items() for k in ks]
+    return summary, out
 
 
 def _jsonl(path: Path) -> list[dict[str, Any]]:
@@ -350,6 +409,26 @@ def build_release(version: str, out: Path | None = None, force: bool = False) ->
                 "notice": xml_notice[(x["table"], x["format"])],
             }
         )
+    # what changed since the release before this one (B51): counted here, keyed in changes.jsonl
+    prev = previous_release(version, out.parent)
+    changed: dict[str, Any] | None = None
+    if prev is not None:
+        summary, rows_changed = changes(prev, {name: rows for name, rows, _, _ in tables})
+        data = "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows_changed).encode("utf-8")
+        (out / "changes.jsonl").write_bytes(data)
+        files.append(
+            {
+                "path": "changes.jsonl",
+                "table": "changes",
+                "format": "jsonl",
+                "held": None,
+                "rows": len(rows_changed),
+                "bytes": len(data),
+                "sha256": hashlib.sha256(data).hexdigest(),
+                "notice": f"The keys of the rows added, removed or changed since release {prev.name}, table by table; the rows themselves are in their tables.",
+            }
+        )
+        changed = {"from": prev.name, "tables": summary, "file": "changes.jsonl"}
     manifest = {
         "dataset": "jadhr-quran",
         "version": version,
@@ -375,6 +454,7 @@ def build_release(version: str, out: Path | None = None, force: bool = False) ->
         "publication_hold": PUBLICATION_HOLD,
         "excluded": EXCLUDED,
         "format_notes": FORMAT_NOTES,
+        **({"changes": changed} if changed else {}),
     }
     (out / "MANIFEST.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     return manifest
