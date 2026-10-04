@@ -317,6 +317,8 @@ The design's panel stands on content that the prototype faked: every sense list,
 - P9.2 Heat-map (lookups/notes/time; confirmed/struggling), class stats, most looked-up roots, lesson notes, nudges.
 - P9.3 Shared workspace mounting the real editor, activity feed in the product's own vocabulary, instructor confirmation per card.
 - P9.4 Exit ◆: journey F with a test cohort.
+- Baseline 2026-10-04 (research 16, at 26d6547): 57 items, all open — `/classroom` is a skeleton; accounts, the instructor role, shared maps and presence exist; nothing of a reader's study reaches the server. The privacy model comes first (research 16 §2): joining is the learner's act, told beforehand what the instructor sees; only the lessons' verses while a lesson is open; counts per word and day, never a trail or a note's words; aggregates above a floor of five members, a learner's own detail only by their opt-in; a class for minors with no per-learner detail; events deleted 90 days after the due date. Build order:
+  - P9.1a Classes and lessons, API · P9.1b Classes and lessons, web · P9.2a The learner's signals from the reader · P9.2b The instructor's views (passage heat, class panel, lesson notes, nudges; the matrix) · P9.3 The shared map per lesson (proposals confirmed by the instructor, the activity feed, comments, presence) · P9.4 Exit.
 
 ### P10 · Data & API — the scholarly surface 🔒 D2, D14 (inventory DAT)
 - P10.1 Release pipeline: JSON, CSV, TEI, LMF artefacts — real TEI and LMF, validated against their schemas (the prototype's are JSON with another extension) — versioned, immutable, archived with a DOI; only redistributable layers; no invented "used by" numbers or timings.
