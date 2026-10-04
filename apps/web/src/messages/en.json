@@ -2385,7 +2385,14 @@
     "deckShapeSub": "the mould this word was poured into",
     "embedLink": "Embed…",
     "embedTitle": "Published maps can be framed on any site: make this entry a map and publish it",
-    "noDoors": "No door from this word: no other word of its root, no other place in the Quran, no recorded pattern."
+    "noDoors": "No door from this word: no other word of its root, no other place in the Quran, no recorded pattern.",
+    "secCommentary": "In the books of tafsir",
+    "booksN": "{count, plural, one {one book} other {{n} books}}",
+    "commentaryNone": "No heading in the library's tafsir books names this verse.",
+    "commentaryParagraph": "The paragraph",
+    "commentarySection": "{count, plural, one {The section (one paragraph)} other {The section ({n} paragraphs)}}",
+    "commentaryMore": "{count, plural, one {and one more section of the book on the verse} other {and {n} more sections of the book on the verse}}",
+    "commentaryHow": "Sections are tied to the verse by the books' own headings, a rule for each book; the text is quoted as it is."
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

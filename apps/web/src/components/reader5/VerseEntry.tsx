@@ -12,6 +12,7 @@ import { useAudio } from "@/lib/store/audio";
 import { TafsirSection } from "./TafsirSection";
 import { Backlinks } from "@/components/notebook/Backlinks";
 import { NoteDrawer, RootsDrawer } from "./VerseDrawer";
+import { VerseCommentary } from "./VerseCommentary";
 import { VerseKnowledgeSections, VerseLayer } from "./VerseKnowledge";
 import { VerseSigns } from "./MushafSigns";
 import { VerseVocabulary } from "./Vocabulary";
@@ -51,6 +52,8 @@ export function VerseEntry({ verseKey }: { verseKey: string }) {
         <div className="layer-head"><span className="text-[13.5px] font-medium">{t("tafsir")}</span></div>
         <TafsirSection verseKey={verseKey} />
       </section>
+      {/* the classical commentaries, one step from the verse (B55) */}
+      <VerseCommentary verseKey={verseKey} />
       <VerseKnowledgeSections verseKey={verseKey} />
       <VerseSigns verseKey={verseKey} />
       <VerseLayer title={t("drawer_roots")} defaultOpen={false}>

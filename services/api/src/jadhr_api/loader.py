@@ -73,6 +73,8 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
     ("root_texts", "root_texts.jsonl", ["root", "text_id", "sure", "possible"], set()),
     # the Quranic lemmas each text uses where sure, for "words known" on the shelf (LIB-Q08)
     ("text_lemmas", "text_lemmas.jsonl", ["text_id", "lemma_id"], set()),
+    # B55: the verses a tafsir book's section comments on, by the book's own heading
+    ("verse_commentary", "verse_commentary.jsonl", ["id", "verse_id", "text_id", "chapter_id", "rule"], set()),
     # the catalogue: the works the D9 gate lets in, each linked to where its text is read (P11.3a)
     ("catalogue_works", "catalogue_works.jsonl", ["id", "version", "work", "author_uri", "death_ah", "before_islam",
                                                   "era_year", "title_ar", "title_lat", "author_ar", "author_lat",
@@ -296,6 +298,7 @@ TRUNCATE_ORDER = [
     "catalogue_works",
     "root_texts",
     "text_lemmas",
+    "verse_commentary",
     "hadeethenc_links",
     "hadeethenc_items",
     "narrator_links",

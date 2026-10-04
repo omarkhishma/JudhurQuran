@@ -714,6 +714,13 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         generic["text_forms"] = extra["text_forms"]
         generic["root_texts"] = extra["root_texts"]
         generic["text_lemmas"] = extra["text_lemmas"]
+        # B55: the verses each tafsir book's sections comment on, read from the books' own headings
+        from .ecosystem.commentary import map_commentary
+
+        generic["verse_commentary"], report["commentary"] = map_commentary(
+            extra["texts"], extra["chapters"], verses_out, surahs_out
+        )
+        stage("commentary")
         # the texts on the timeline (P11.2, P3.5): each by its compiler's death year, after the Quran
         generic["corpora"] = generic.get("corpora", []) + [
             {

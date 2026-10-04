@@ -538,3 +538,78 @@ def hadeethenc_item(conn: Connection, item_id: int) -> dict[str, Any] | None:
     )
     it["source"] = _source(conn, "hadeethenc")
     return it
+
+
+def _cut(text: str, n: int) -> str:
+    t = " ".join(text.split())
+    return t if len(t) <= n else t[:n].rsplit(" ", 1)[0] + " …"
+
+
+def verse_commentary(conn: Connection, key: str, per_book: int = 3) -> dict[str, Any] | None:
+    """A verse in the tafsir books on the shelf (PLAN B55): for each book, in the library's order, the sections whose
+    own heading names the verse (by the book's rule, ``content.verse_commentary``), each with the opening of its first
+    paragraph verbatim, that paragraph's citation and how many paragraphs the section holds; with the source and its
+    licence, once."""
+    v = one(conn, "select id, key from content.verses where key = :k", {"k": key})
+    if v is None:
+        return None
+    found = rows(
+        conn,
+        """select vc.text_id, vc.rule, c.id as chapter_id, c.ordinal, c.title_ar
+             from content.verse_commentary vc join content.chapters c on c.id = vc.chapter_id
+             join content.texts t on t.id = vc.text_id
+            where vc.verse_id = :v order by t.sort_order, c.id""",
+        {"v": v["id"]},
+    )
+    by_text: dict[int, list[dict[str, Any]]] = {}
+    for r in found:
+        by_text.setdefault(r["text_id"], []).append(r)
+    texts = {
+        t["id"]: t
+        for t in rows(
+            conn,
+            """select t.*, s.license, s.license_url, s.attribution_ar, s.attribution_en
+                 from content.texts t left join content.sources s on s.id = t.source_id where t.id = any(:ids)""",
+            {"ids": list(by_text)},
+        )
+    }
+    out = []
+    for tid, secs in by_text.items():
+        t = texts[tid]
+        sections = []
+        for s in secs[:per_book]:
+            p = one(
+                conn,
+                """select id, ref, ordinal, ar_full, meta from content.passages
+                    where chapter_id = :c order by ordinal limit 1""",
+                {"c": s["chapter_id"]},
+            )
+            count = one(
+                conn,
+                "select count(*)::int as n from content.passages where chapter_id = :c",
+                {"c": s["chapter_id"]},
+            )
+            sections.append(
+                {
+                    "ordinal": s["ordinal"],
+                    "heading": s["title_ar"],
+                    "rule": s["rule"],
+                    "passages": count["n"] if count else 0,
+                    "first": {
+                        "ref": p["ref"],
+                        "excerpt": _cut(p["ar_full"] or "", 600),
+                        "cite": cite(t, p, s["ordinal"], s["title_ar"]),
+                    }
+                    if p
+                    else None,
+                }
+            )
+        out.append(
+            {
+                "text": _text_head(t),
+                "sections": sections,
+                "total": len(secs),
+                "source": {k: t[k] for k in ("license", "license_url", "attribution_ar", "attribution_en")},
+            }
+        )
+    return {"key": v["key"], "data": out}
