@@ -48,7 +48,10 @@ export type RelationRow = {
   verses: string[];
   locator: string;
 };
-export type TargetRow = { key: string; label: string; sub: string; occurrences?: number; state: Exclude<State, "all">; source_status?: string; relation?: RelationRow };
+/** A topic layer's row (P8.3b): the verse in the mushaf's text, and the topic — or QSAC's tag — where its source
+ * places it. */
+export type TopicLayerRow = { verse_key: string; verse_text: string; topic_id: string; name: string; description: string | null; parent_ar: string | null; parent_en: string | null; grand_en: string | null };
+export type TargetRow = { key: string; label: string; sub: string; occurrences?: number; state: Exclude<State, "all">; source_status?: string; relation?: RelationRow; topic?: TopicLayerRow };
 
 export type EntryPage = {
   kind: Kind;
@@ -87,7 +90,8 @@ export const decideEntry = (id: string, decision: "approve" | "changes", note: s
 export type Work = { id: string; title_ar: string; title_en: string };
 export const getWorks = () => authFetch<{ data: Work[] }>("/editorial/works");
 export const getAwaiting = () => authFetch<{ data: Entry[] }>("/editorial/awaiting");
-export type Ends = { root?: string; target_root?: string };
+/** A relation's end mapped to another root (P8.4), or a QSAC tag's verse placed under an Arabic topic (P8.3b). */
+export type Ends = { root?: string; target_root?: string; topic?: string };
 export type VerdictItem = { row: string; verdict: "reviewed" | "corrected" | "rejected"; note?: string; correction?: string; ends?: Ends };
 export const saveVerdicts = (layer: Layer, items: VerdictItem[], submit: boolean) =>
   authFetch<{ data: Entry[] }>("/editorial/verdicts", { method: "POST", body: JSON.stringify({ layer, items, submit }) });

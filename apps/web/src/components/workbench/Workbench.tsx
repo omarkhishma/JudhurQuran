@@ -113,7 +113,8 @@ export function Workbench({ initial }: { initial: Place }) {
         })}
         </div>
       </nav>
-      <main className="workbench-main" id="workbench-main">
+      {/* the page's main landmark is the site's; the workbench's own column is a part of it */}
+      <div className="workbench-main" id="workbench-main">
         {place.kind === "verdict" && !place.layer ? (
           <Awaiting onOpen={(kind, target) => setPlace({ kind, target, state: "all", q: "", layer: kind === "verdict" ? (target.split(":")[0] as Layer) : undefined })} />
         ) : place.kind === "verdict" && place.layer && !place.target ? (
@@ -123,7 +124,7 @@ export function Workbench({ initial }: { initial: Place }) {
         ) : (
           <TargetList place={place} counts={w?.kinds.find((x) => x.kind === place.kind)} onPlace={(p) => setPlace((x) => ({ ...x, ...p }))} />
         )}
-      </main>
+      </div>
     </div>
   );
 }
@@ -188,6 +189,12 @@ function TargetList({ place, counts, onPlace }: { place: Place; counts?: { total
         {counts && <span className="text-[12.5px] text-t3">{t("inForceOf", { done: formatNumber(counts.approved, locale), total: formatNumber(counts.total, locale) })}</span>}
       </div>
       <p className="text-[12.5px] leading-relaxed text-t3">{t(`kindLead_${place.kind}`)}</p>
+      {place.kind === "topic" && (
+        // a topic of the board's own: a new key, named and sourced on its page (P8.3b)
+        <button type="button" className="btn self-start" onClick={() => onPlace({ target: `board:${crypto.randomUUID().replace(/-/g, "").slice(0, 10)}` })}>
+          {t("newTopic")}
+        </button>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <div className="seg-group" role="group" aria-label={t("state")}>
           {STATES.map((s) => (

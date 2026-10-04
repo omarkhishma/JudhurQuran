@@ -5,7 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { ApiError } from "@/lib/account/store";
 import { decideEntry, discardEntry, getEntry, getWorks, saveEntry, submitEntry, withdrawEntry, type Entry, type EntryPage, type Kind, type Source } from "@/lib/editorial";
-import { cnt, formatNumber } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
+import { TopicPicker } from "./TopicPicker";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Value = any;
@@ -26,6 +27,9 @@ function blank(kind: Kind, page: EntryPage): Value {
       return { senses: [] };
     case "glossary":
       return { body_ar: page.target.body_ar ?? "", body_en: page.target.body_en ?? "" };
+    case "topic":
+      // the source's name and place kept until the board writes its own
+      return { name_ar: "", name_en: "", under: "" };
     default:
       return { verdict: "reviewed", note: "" };
   }
@@ -80,7 +84,7 @@ export function EntryView({ kind, target, onBack }: { kind: Kind; target: string
     <article className="flex flex-col gap-4" aria-labelledby="entry-h">
       <button type="button" className="btn self-start text-[12.5px]" onClick={onBack}>{t("back")}</button>
       <header className="flex flex-wrap items-baseline gap-3">
-        <h2 id="entry-h" className="ar-classical text-[30px] leading-[1.3] text-t1" lang="ar">{tg.label}</h2>
+        <h2 id="entry-h" className="ar-classical text-[30px] leading-[1.3] text-t1" lang="ar" dir="auto">{tg.label || (kind === "topic" ? t("newTopic") : "")}</h2>
         {tg.translit && <span className="mono text-[13px] text-t3" dir="ltr">{tg.translit}</span>}
         <span className="text-[12.5px] text-t3">{t(`kind_${kind}`)}</span>
         {tg.occurrences != null && kind !== "glossary" && <span className="text-[12.5px] text-t3">{t("occurrences", { n: formatNumber(tg.occurrences, locale) })}</span>}
@@ -220,6 +224,13 @@ function ValueView({ kind, value, sources }: { kind: Kind; value: Value; sources
           {value.body_en && <p className="text-[13px] leading-relaxed text-t1" lang="en" dir="ltr">{value.body_en}</p>}
         </>
       )}
+      {kind === "topic" && (
+        <>
+          {value.name_ar ? <p className="text-[16px] text-t1" lang="ar" dir="rtl">{value.name_ar}</p> : <p className="text-[12.5px] text-t3">{t("topicNameKept")}</p>}
+          {value.name_en && <p className="text-[13px] text-t2" lang="en" dir="ltr">{value.name_en}</p>}
+          <p className="text-[12.5px] text-t2">{value.under === "top" ? t("topicAtTop") : value.under ? <>{t("placedUnder")} <TopicName id={value.under} /></> : t("topicWhereSource")}</p>
+        </>
+      )}
       {kind === "verdict" && (
         <p className="text-[13.5px] text-t1">
           {t(`verdict_${value.verdict}`)}
@@ -227,7 +238,14 @@ function ValueView({ kind, value, sources }: { kind: Kind; value: Value; sources
           {value.correction && <span className="block text-t1" dir="auto">{value.correction}</span>}
           {value.ends && (
             <span className="block text-[12.5px] text-t2">
-              {Object.entries(value.ends as Record<string, string>).map(([end, root]) => t(end === "root" ? "remappedFirst" : "remappedSecond", { root: [...root].join(" ") })).join(" · ")}
+              {value.ends.topic ? (
+                <>
+                  {t("remappedTopic", { topic: "" })}
+                  <TopicName id={value.ends.topic} />
+                </>
+              ) : (
+                Object.entries(value.ends as Record<string, string>).map(([end, root]) => t(end === "root" ? "remappedFirst" : "remappedSecond", { root: [...root].join(" ") })).join(" · ")
+              )}
             </span>
           )}
         </p>
@@ -296,6 +314,7 @@ function Form({ kind, page, value, sources, onValue, onSources }: { kind: Kind; 
         </>
       )}
       {kind === "sense_list" && <SensesForm value={value} onValue={onValue} />}
+      {kind === "topic" && <TopicForm page={page} value={value} onValue={onValue} />}
       {kind === "glossary" && (
         <>
           <label className="flex flex-col gap-1 text-[12px] text-t3">
@@ -389,13 +408,13 @@ function Candidates({ kind, page, canUse, onCite, onUse }: { kind: Kind; page: E
   const c = page.candidates;
   const cite = (s: Source) =>
     canUse ? (
-      <button type="button" className="chip text-[11px]" onClick={() => onCite(s)}>
+      <button type="button" className="chip self-start text-[11px]" onClick={() => onCite(s)}>
         {t("cite")}
       </button>
     ) : null;
   const use = (v: (old: Value) => Value, s: Source) =>
     canUse ? (
-      <button type="button" className="chip text-[11px]" onClick={() => onUse(v, s)}>
+      <button type="button" className="chip self-start text-[11px]" onClick={() => onUse(v, s)}>
         {t("use")}
       </button>
     ) : null;
@@ -461,7 +480,7 @@ function Candidates({ kind, page, canUse, onCite, onUse }: { kind: Kind; page: E
           <figure key={m.id} className="cand">
             <figcaption>{t("candMufradat")} · {m.headword_ar}{m.page_ref ? ` · ${m.page_ref}` : ""}</figcaption>
             <blockquote className="ar-classical line-clamp-6 text-[14px] leading-[1.9]" lang="ar">{m.text_ar}</blockquote>
-            {canUse && <button type="button" className="chip text-[11px]" onClick={() => addSense(m.text_ar, { work: "mufradat", ref: m.page_ref ?? m.id, quote: m.text_ar })}>{t("useAsSense")}</button>}
+            {canUse && <button type="button" className="chip self-start text-[11px]" onClick={() => addSense(m.text_ar, { work: "mufradat", ref: m.page_ref ?? m.id, quote: m.text_ar })}>{t("useAsSense")}</button>}
           </figure>
         ))}
         {c.muyassar?.length > 0 && (
@@ -499,6 +518,7 @@ function Candidates({ kind, page, canUse, onCite, onUse }: { kind: Kind; page: E
       </div>
     );
   }
+  if (kind === "topic") return <TopicCandidates c={c} cite={cite} />;
   if (kind === "glossary")
     return (
       <div className="cand">
@@ -524,5 +544,155 @@ function Article({ title, body, cut, lang, cite }: { title: string; body: string
       </blockquote>
       {cite}
     </figure>
+  );
+}
+
+/** A topic's name as the workbench lists it, read by its id (P8.3b). */
+function TopicName({ id }: { id: string }) {
+  const q = useQuery({ queryKey: ["editorial-entry", "topic", id], queryFn: () => getEntry("topic", id), staleTime: 5 * 60_000 });
+  return (
+    <span className="font-medium" lang="ar" dir="auto">
+      {q.data?.target.label || id}
+    </span>
+  );
+}
+
+/** The board's work on a heading (P8.3b): its Arabic name (empty keeps a Quranpedia topic's own), an English name,
+ * and its place — where its source puts it, at the top, or under a topic the board works on. */
+function TopicForm({ page, value, onValue }: { page: EntryPage; value: Value; onValue: (v: Value) => void }) {
+  const t = useTranslations("workbench");
+  const [label, setLabel] = useState("");
+  // "under a topic" chosen before one is picked
+  const [picking, setPicking] = useState(false);
+  const tg = page.target;
+  const fromSource = tg.source_id === "quranpedia-topics";
+  const placed = !!value.under && value.under !== "top";
+  const place = placed || picking ? "under" : value.under === "top" || !fromSource ? "top" : "source";
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="flex flex-col gap-1 text-[12px] text-t3">
+        {t("topicNameAr")}
+        <input className="field-input text-[15px]" value={value.name_ar} maxLength={200} onChange={(e) => onValue({ ...value, name_ar: e.target.value })} dir="rtl" lang="ar" placeholder={fromSource ? (tg.name_ar ?? "") : ""} />
+        {fromSource && <span className="text-[11.5px]">{t("topicNameKeepHint", { name: tg.name_ar ?? "" })}</span>}
+        {tg.source_id === "labeaume" && <span className="text-[11.5px]" lang="fr" dir="ltr">{tg.name_fr} — {tg.source_ref}</span>}
+      </label>
+      <label className="flex flex-col gap-1 text-[12px] text-t3">
+        {t("topicNameEn")}
+        <input className="field-input" value={value.name_en} maxLength={200} onChange={(e) => onValue({ ...value, name_en: e.target.value })} dir="ltr" lang="en" />
+      </label>
+      <fieldset className="flex flex-col gap-1.5">
+        <legend className="mb-1 text-[12px] text-t3">{t("topicPlace")}</legend>
+        <div className="flex flex-wrap gap-3 text-[12.5px]">
+          {fromSource && (
+            <label className="flex items-center gap-1.5">
+              <input
+                type="radio"
+                name="topic-place"
+                checked={place === "source"}
+                onChange={() => {
+                  setPicking(false);
+                  onValue({ ...value, under: "" });
+                }}
+              />
+              {t("topicWhereSource")}
+            </label>
+          )}
+          <label className="flex items-center gap-1.5">
+            <input
+              type="radio"
+              name="topic-place"
+              checked={place === "top"}
+              onChange={() => {
+                setPicking(false);
+                onValue({ ...value, under: fromSource ? "top" : "" });
+              }}
+            />
+            {t("topicAtTop")}
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input type="radio" name="topic-place" checked={place === "under"} onChange={() => setPicking(true)} />
+            {t("topicUnder")}
+          </label>
+        </div>
+        {place === "under" && (
+          <TopicPicker
+            value={placed ? value.under : ""}
+            label={label}
+            exclude={String(tg.key)}
+            onPick={(id, l) => {
+              setLabel(l);
+              onValue({ ...value, under: id });
+            }}
+          />
+        )}
+      </fieldset>
+    </div>
+  );
+}
+
+/** What the sources say of a heading: La Beaume's chapter as printed (cited in one click), where Quranpedia places
+ * its topic, its sub-topics and first verses, QSAC's machine tags on them (a hint, never a name), and what the board
+ * has placed under it. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function TopicCandidates({ c, cite }: { c: Record<string, any>; cite: (s: Source) => React.ReactNode }) {
+  const t = useTranslations("workbench");
+  const locale = useLocale();
+  const none = !c.chapter && !c.chain?.length && !c.subtopics?.length && !c.verses?.length && !c.placed_here?.length;
+  return (
+    <div className="flex flex-col gap-3">
+      {c.chapter && (
+        <figure className="cand">
+          <figcaption>{t("candChapter")}</figcaption>
+          <blockquote className="text-[15px]" lang="fr" dir="ltr">
+            {c.chapter.title_fr} — {c.chapter.ref}
+          </blockquote>
+          {cite({ work: "labeaume", ref: c.chapter.ref, quote: c.chapter.title_fr })}
+        </figure>
+      )}
+      {c.chain?.length > 0 && (
+        <div className="cand">
+          <p className="cand-h">{t("candChain")}</p>
+          <p className="text-[13.5px]" lang="ar">{(c.chain as { name_ar: string }[]).map((x) => x.name_ar).join(" › ")}</p>
+        </div>
+      )}
+      {c.subtopics?.length > 0 && (
+        <div className="cand">
+          <p className="cand-h">{t("candSubtopics")}</p>
+          <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[13px]">
+            {(c.subtopics as { id: string; name_ar: string; verse_count: number }[]).map((x) => (
+              <li key={x.id} lang="ar">
+                {x.name_ar} <span className="mono text-[11px] text-t3">{formatNumber(x.verse_count, locale)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {c.verses?.length > 0 && (
+        <div className="cand">
+          <p className="cand-h">{t("candTopicVerses")}</p>
+          <p className="mono text-[12px] text-t2">{(c.verses as string[]).map((k) => verseRef(k, locale)).join("، ")}</p>
+        </div>
+      )}
+      {c.qsac?.length > 0 && (
+        <div className="cand">
+          <p className="cand-h">{t("candQsac")}</p>
+          <ul className="flex flex-col gap-0.5 text-[12.5px]" dir="ltr" lang="en">
+            {(c.qsac as { tag: string; category: string | null; verses: number }[]).map((x) => (
+              <li key={x.tag}>
+                {x.tag}
+                {x.category && <span className="text-t3"> — {x.category}</span>} <span className="mono text-[11px] text-t3">{formatNumber(x.verses, locale)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {c.placed_here?.length > 0 && (
+        <div className="cand">
+          <p className="cand-h">{t("candPlacedHere")}</p>
+          <p className="text-[13px]" lang="ar">{(c.placed_here as { id: string; name: string }[]).map((x) => x.name).join("، ")}</p>
+        </div>
+      )}
+      {none && <p className="text-[12.5px] text-t3">{t("candNone")}</p>}
+    </div>
   );
 }

@@ -4,11 +4,12 @@ import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { ApiError } from "@/lib/account/store";
-import { decideMany, getAwaiting, getTargets, saveVerdicts, STATES, type Ends, type Layer, type RelationRow, type State, type VerdictItem } from "@/lib/editorial";
+import { decideMany, getAwaiting, getTargets, saveVerdicts, STATES, type Ends, type Layer, type RelationRow, type State, type TopicLayerRow, type VerdictItem } from "@/lib/editorial";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
+import { TopicPicker } from "./TopicPicker";
 import type { Place } from "./Workbench";
 
-type Mark = { verdict: VerdictItem["verdict"]; note: string; correction: string; ends: Ends };
+type Mark = { verdict: VerdictItem["verdict"]; note: string; correction: string; ends: Ends; topicLabel?: string };
 /** A root as an editor types it — "ع ر ف" or "عرف" — as the corpus keys it. */
 const rootKey = (s: string) => s.replace(/[\s\u0640]+/g, "");
 const remapped = (m: Mark) => Object.values(m.ends).some((v) => v && rootKey(v));
@@ -39,7 +40,13 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
   const mineToDecide = (waiting.data?.data ?? []).filter((e) => e.kind === "verdict" && e.target.startsWith(`${layer}:`));
   const rows = list.data?.pages.flatMap((p) => p.data) ?? [];
   const total = list.data?.pages[0]?.total ?? 0;
-  const marked = Object.entries(marks).filter(([, m]) => m.verdict === "reviewed" || (m.note.trim() && (m.verdict !== "corrected" || m.correction.trim() || remapped(m))));
+  // QSAC's tags (P8.3b): a verse is placed under an Arabic topic — a correction naming it, its reason optional — or
+  // the tag is rejected with why; never accepted as QSAC's English tag
+  const placing = layer === "topic_candidates";
+  const choices = placing ? (["corrected", "rejected"] as const) : (["reviewed", "corrected", "rejected"] as const);
+  const marked = Object.entries(marks).filter(([, m]) =>
+    placing ? (m.verdict === "corrected" ? !!m.ends.topic : !!m.note.trim()) : m.verdict === "reviewed" || (m.note.trim() && (m.verdict !== "corrected" || m.correction.trim() || remapped(m))),
+  );
 
   async function run(fn: () => Promise<unknown>, done: string) {
     setBusy(true);
@@ -98,7 +105,7 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
           return (
             <li key={r.key} className="workbench-box">
               <div className="flex flex-wrap items-baseline gap-2">
-                <button type="button" className="ar-classical text-[17px] text-t1 hover:underline" lang="ar" onClick={() => onPlace({ target: r.key })}>
+                <button type="button" className={placing ? "text-[14px] font-medium text-t1 hover:underline" : "ar-classical text-[17px] text-t1 hover:underline"} lang={placing ? "en" : "ar"} dir="auto" onClick={() => onPlace({ target: r.key })}>
                   {r.label || id}
                 </button>
                 <span className="mono text-[11px] text-t3" dir="ltr">{id}</span>
@@ -106,14 +113,14 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
                 <span className={`state-chip is-${r.state}`}>{t(`state_${r.state}`)}</span>
               </div>
               {r.relation && <RelationHead rel={r.relation} />}
-              {r.sub && <p className="ar-classical line-clamp-4 text-[14px] leading-[1.9] text-t2" lang="ar" dir="rtl">{r.sub}</p>}
+              {r.topic ? <TopicHead row={r.topic} placing={placing} /> : r.sub && <p className="ar-classical line-clamp-4 text-[14px] leading-[1.9] text-t2" lang="ar" dir="rtl">{r.sub}</p>}
               {r.relation && r.relation.verses.length > 0 && (
                 <p className="text-[11.5px] text-t3">{t("relVerses", { ...cnt(r.relation.verses.length, locale), list: r.relation.verses.slice(0, 6).map((v) => verseRef(v, locale)).join("، ") })}</p>
               )}
               {free && (
                 <div className="flex flex-col gap-1.5">
                   <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("verdict")}>
-                    {(["reviewed", "corrected", "rejected"] as const).map((v) => (
+                    {choices.map((v) => (
                       <button
                         key={v}
                         type="button"
@@ -122,14 +129,17 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
                         className={"chip" + (m?.verdict === v ? " is-on" : "")}
                         onClick={() => setMarks((x) => (x[id]?.verdict === v ? Object.fromEntries(Object.entries(x).filter(([k]) => k !== id)) : { ...x, [id]: { verdict: v, note: x[id]?.note ?? "", correction: x[id]?.correction ?? "", ends: x[id]?.ends ?? {} } }))}
                       >
-                        {t(`verdict_${v}`)}
+                        {t(placing && v === "corrected" ? "verdict_placed" : `verdict_${v}`)}
                       </button>
                     ))}
                   </div>
-                  {m && m.verdict !== "reviewed" && (
-                    <input className="field-input" value={m.note} onChange={(e) => setMarks((x) => ({ ...x, [id]: { ...m, note: e.target.value } }))} placeholder={t("why")} aria-label={t("why")} dir="auto" />
+                  {m && placing && m.verdict === "corrected" && (
+                    <TopicPicker value={m.ends.topic ?? ""} label={m.topicLabel} onPick={(topic, label) => setMarks((x) => ({ ...x, [id]: { ...m, ends: { topic }, topicLabel: label } }))} />
                   )}
-                  {m?.verdict === "corrected" && (
+                  {m && m.verdict !== "reviewed" && (
+                    <input className="field-input" value={m.note} onChange={(e) => setMarks((x) => ({ ...x, [id]: { ...m, note: e.target.value } }))} placeholder={t(placing && m.verdict === "corrected" ? "whyOptional" : "why")} aria-label={t(placing && m.verdict === "corrected" ? "whyOptional" : "why")} dir="auto" />
+                  )}
+                  {m?.verdict === "corrected" && !placing && (
                     <textarea className="field-input min-h-[52px]" value={m.correction} onChange={(e) => setMarks((x) => ({ ...x, [id]: { ...m, correction: e.target.value } }))} placeholder={t("correction")} aria-label={t("correction")} dir="auto" />
                   )}
                   {m?.verdict === "corrected" && r.relation && (
@@ -177,6 +187,7 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
                   layer,
                   marked.map(([row, m]) => {
                     const ends = Object.fromEntries(Object.entries(m.ends).map(([k, v]) => [k, rootKey(v ?? "")]).filter(([, v]) => v));
+                    if (placing) return { row, verdict: m.verdict, ...(m.note.trim() ? { note: m.note.trim() } : {}), ...(m.verdict === "corrected" ? { ends: { topic: m.ends.topic } } : {}) };
                     return { row, verdict: m.verdict, ...(m.note.trim() ? { note: m.note.trim() } : {}), ...(m.verdict === "corrected" ? { correction: m.correction.trim() } : {}), ...(m.verdict === "corrected" && Object.keys(ends).length ? { ends } : {}) };
                   }),
                   true,
@@ -216,5 +227,27 @@ function RelationHead({ rel }: { rel: RelationRow }) {
       )}
       {rel.sense_label_ar && <span className="text-t2">— {rel.sense_label_ar}</span>}
     </p>
+  );
+}
+
+/** A topic layer's row (P8.3b): where the source places the topic — or, for QSAC's tag, its domain and category with
+ * QSAC's description — and the verse in the mushaf's text. */
+function TopicHead({ row, placing }: { row: TopicLayerRow; placing: boolean }) {
+  const locale = useLocale();
+  return (
+    <div className="flex flex-col gap-1">
+      {placing ? (
+        <p className="text-[12px] text-t3" dir="ltr" lang="en">
+          {[row.grand_en, row.parent_en].filter(Boolean).join(" › ")}
+          {row.description ? ` — ${row.description}` : ""}
+        </p>
+      ) : (
+        row.parent_ar && <p className="text-[12px] text-t3" lang="ar">{row.parent_ar}</p>
+      )}
+      <p className="flex items-baseline gap-2">
+        <span className="mono shrink-0 text-[11px] text-t3">{verseRef(row.verse_key, locale)}</span>
+        <span className="quran line-clamp-3 text-[19px] leading-[2] text-t1" lang="ar" dir="rtl">{row.verse_text}</span>
+      </p>
+    </div>
   );
 }

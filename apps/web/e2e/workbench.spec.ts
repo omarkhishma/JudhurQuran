@@ -1,9 +1,6 @@
-import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
-import { type Browser, expect, type Page, test } from "@playwright/test";
-import { followSignInLink } from "./helpers";
+import { expect, test } from "@playwright/test";
+import { clean, drop, expire, person, tag } from "./board";
 
 /**
  * The editorial workbench (P3.0, research 14): the board's only — a member is told what it is and who it is for;
@@ -11,59 +8,6 @@ import { followSignInLink } from "./helpers";
  * it and it is in force; the author can never approve their own; verdicts on a book's rows go in batches. Real
  * accounts through the development outbox; roles given by the command the runbook names.
  */
-
-const ROOT = path.resolve(__dirname, "../../..");
-const DB = process.env.E2E_DATABASE_URL ?? "postgresql://jadhr:jadhr@127.0.0.1:5442/jadhr";
-const tag = () => `${test.info().project.name}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-const role = (email: string, r: string) => execFileSync("uv", ["run", "python", "-m", "jadhr_api.roles", email, r, "e2e workbench"], { cwd: ROOT, stdio: "pipe" });
-
-/** The test's own editorial work, removed so the reader never shows it. */
-function clean(emails: string[]) {
-  const psql = process.env.E2E_PSQL ?? (existsSync("/opt/homebrew/opt/postgresql@17/bin/psql") ? "/opt/homebrew/opt/postgresql@17/bin/psql" : "psql");
-  const list = emails.map((e) => `'${e}'`).join(",");
-  execFileSync(psql, [DB, "-q", "-c", `delete from editorial.entries where author_id in (select id from accounts.users where email in (${list}));`], { stdio: "pipe" });
-}
-
-/**
- * An approval expires the cached pages of the web the API is configured to tell (JADHR_WEB_REVALIDATE_URL); the web
- * under test may be another, so a test that reads a page after an approval, or leaves one behind it, expires it too.
- */
-async function expire(page: Page) {
-  const secret = process.env.E2E_REVALIDATE_SECRET;
-  const r = await page.request.post("/api/revalidate", { headers: secret ? { Authorization: `Bearer ${secret}` } : {} });
-  expect(r.status(), "start the web under test with JADHR_REVALIDATE_SECRET and pass the same value as E2E_REVALIDATE_SECRET").toBe(200);
-}
-
-type Person = { page: Page; h: Record<string, string>; email: string };
-
-async function person(browser: Browser, email: string, r?: string): Promise<Person> {
-  const page = await (await browser.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
-  await page.addInitScript(() => {
-    if (sessionStorage.getItem("e2e-seeded")) return;
-    sessionStorage.setItem("e2e-seeded", "1");
-    if (!localStorage.getItem("jadhr-personal")) localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 }));
-  });
-  await page.request.post("/api/v1/auth/email", { data: { email, return_to: "/workbench", locale: "ar" } });
-  let link = "";
-  await expect
-    .poll(async () => {
-      const m = ((await (await page.request.get(`/api/v1/auth/dev/outbox?email=${encodeURIComponent(email)}`)).json()) as { messages: { link: string }[] }).messages;
-      return (link = m.at(-1)?.link ?? "");
-    })
-    .not.toBe("");
-  const u = new URL(link);
-  await followSignInLink(page, u.pathname + u.search);
-  await expect(page).toHaveURL(/\/workbench/);
-  const h = { Authorization: `Bearer ${await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-auth") ?? "{}").state?.session)}` };
-  if (r) role(email, r);
-  return { page, h, email };
-}
-
-async function drop(p: Person) {
-  const c = (await (await p.page.request.post("/api/v1/me/delete", { headers: p.h })).json().catch(() => ({}))) as { confirm?: string };
-  if (c.confirm) await p.page.request.post("/api/v1/me/delete/confirm", { headers: p.h, data: { confirm: c.confirm } });
-  await p.page.context().close();
-}
 
 test("the workbench is the board's: signed out it asks for a sign-in, a member is told what it is and who it is for (P3.0)", async ({ page, browser, isMobile }) => {
   test.skip(isMobile, "the accounts are made in desktop windows");
