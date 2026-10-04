@@ -51,6 +51,7 @@ from . import (
     routes_me,
     routes_narrators,
     routes_public,
+    routes_published,
     routes_releases,
     topics,
 )
@@ -1337,6 +1338,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_contrib.router)
     app.include_router(routes_editorial.router)
     app.include_router(routes_graphs.router)
+    app.include_router(routes_published.router)
     app.include_router(routes_classroom.router)
     app.include_router(routes_releases.router)
     app.include_router(routes_public.router)

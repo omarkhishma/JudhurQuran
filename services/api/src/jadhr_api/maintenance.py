@@ -14,6 +14,8 @@ from sqlalchemy import text
 
 from .accounts import q, tx
 from .contrib import forget
+from .published import forget as forget_published
+from .shared_maps import forget as forget_maps
 
 
 def reapply_deletions() -> int:
@@ -22,6 +24,8 @@ def reapply_deletions() -> int:
         n = 0
         for uid in ids:
             forget(conn, uid)
+            forget_maps(conn, uid)
+            forget_published(conn, uid)
             n += conn.execute(text("delete from accounts.users where id = :u"), {"u": uid}).rowcount
     return n
 

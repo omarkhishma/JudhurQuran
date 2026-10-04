@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 
-from . import accounts, apikeys, classroom, contrib, oidc, shared_maps, sync
+from . import accounts, apikeys, classroom, contrib, oidc, published, shared_maps, sync
 from .settings import get_settings
 
 router = APIRouter(prefix="/api/v1")
@@ -173,6 +173,7 @@ def export(u: User) -> ORJSONResponse:
             **sync.export(u),
             "contributions": contrib.export_for(u),
             **shared_maps.export_for(u),
+            **published.export_for(u),
             **classroom.export_for(u),
             **apikeys.export_for(u),
         },
