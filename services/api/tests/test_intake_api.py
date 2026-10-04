@@ -7,6 +7,7 @@ from __future__ import annotations
 import io
 import os
 import threading
+import time
 from collections.abc import Iterator
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -90,6 +91,19 @@ def test_a_pdf_comes_back_page_by_page() -> None:
 def site() -> Iterator[str]:
     class Page(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
+            if self.path == "/slow":
+                # a byte now and then, for as long as it is let: each read waits less than its timeout
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                for _ in range(40):
+                    try:
+                        self.wfile.write(b"<p>")
+                        self.wfile.flush()
+                    except OSError:
+                        return
+                    time.sleep(0.25)
+                return
             if self.path == "/moved":
                 self.send_response(302)
                 self.send_header("Location", "/article")
@@ -134,6 +148,75 @@ def test_an_address_off_the_public_internet_is_refused() -> None:
         ("http://10.0.0.1/", "not_public"),
         ("http://169.254.169.254/latest/meta-data", "not_public"),
         ("http://[::1]/", "not_public"),
+        # shared address space (carrier NAT, Tailscale, a cloud's metadata at 100.100.100.200), IPv4 inside IPv6,
+        # the documentation ranges: none of them the global internet (security review L1)
+        ("http://100.100.100.200/", "not_public"),
+        ("http://[::ffff:127.0.0.1]/", "not_public"),
+        ("http://[::ffff:10.0.0.1]/", "not_public"),
+        ("http://192.0.2.1/", "not_public"),
+        ("http://198.18.0.1/", "not_public"),
     ):
         r = client.post("/api/v1/intake/url", json={"url": url})
         assert r.status_code == 422 and r.json()["error"]["code"] == code, url
+
+
+def test_the_request_goes_to_the_address_checked() -> None:
+    """Security review L2: the name is resolved once, checked, and the request sent to that address with the name as
+    its Host and its TLS name — never resolved again by the client (DNS rebinding), never through a proxy."""
+    t = intake._target("http://localhost:8080/a?b=1", allow_private=True)
+    assert t.url in ("http://127.0.0.1:8080/a?b=1", "http://[::1]:8080/a?b=1")
+    assert (t.host, t.sni) == ("localhost:8080", "localhost")
+    t = intake._target("https://localhost/x", allow_private=True)
+    assert t.url.split("/x")[0] in ("https://127.0.0.1:443", "https://[::1]:443") and t.host == "localhost"
+    try:
+        intake._target("http://localhost/x", allow_private=False)
+        raise AssertionError("loopback fetched")
+    except intake.IntakeError as e:
+        assert e.code == "not_public"
+
+
+def test_a_slow_site_is_given_up_on_in_time(site: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Security review M2: a site sending a byte every few seconds no longer holds a thread for hours."""
+    monkeypatch.setattr(get_settings(), "intake_allow_private", True)
+    monkeypatch.setattr(intake, "URL_SECONDS", 1.0)
+    began = time.monotonic()
+    r = client.post("/api/v1/intake/url", json={"url": f"{site}/slow"})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "too_slow"
+    assert time.monotonic() - began < 3
+
+
+def test_one_intake_at_a_time_per_address_and_a_few_per_worker(
+    site: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(get_settings(), "intake_allow_private", True)
+    # the test client's requests come from "testclient": one of its intakes still being read
+    with intake.slot("testclient"):
+        r = client.post("/api/v1/intake/url", json={"url": f"{site}/article"})
+        assert r.status_code == 429 and r.json()["error"]["code"] == "busy"
+    assert client.post("/api/v1/intake/url", json={"url": f"{site}/article"}).status_code == 200
+    # the worker's slots all taken by others
+    monkeypatch.setattr(intake, "_SLOTS", threading.BoundedSemaphore(1))
+    with intake.slot("another reader"):
+        r = client.post("/api/v1/intake/url", json={"url": f"{site}/article"})
+        assert r.status_code == 429 and r.json()["error"]["code"] == "busy"
+
+
+def test_a_pdf_is_read_apart_and_within_limits(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Security review M2: the PDF is read in a process of its own, killed at its deadline; one that dies under its
+    limits of CPU or memory is refused as too heavy."""
+    pdf = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF"
+    monkeypatch.setattr(intake, "PDF_SECONDS", 0.001)
+    r = client.post("/api/v1/intake/pdf", files={"file": ("x.pdf", pdf, "application/pdf")})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "too_slow"
+    monkeypatch.setattr(intake, "PDF_SECONDS", 60.0)
+    monkeypatch.setattr(
+        intake, "PDF_CPU_SECONDS", "not a number"
+    )  # the process ends in an error, as a killed one
+    r = client.post("/api/v1/intake/pdf", files={"file": ("x.pdf", pdf, "application/pdf")})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "too_heavy"
+
+
+def test_the_pdf_process_reads_and_refuses_as_the_api_did() -> None:
+    from jadhr_api import pdftext
+
+    assert pdftext.read(b"not a pdf at all", 10)["error"] == "not_pdf"

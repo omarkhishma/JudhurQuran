@@ -1052,21 +1052,27 @@ _INTAKE_REFUSALS = {
     "not_pdf": "That file is not a PDF we can read.",
     "encrypted": "The PDF is locked.",
     "too_many_pages": "The PDF has too many pages.",
+    "too_slow": "The text took too long to read.",
+    "too_heavy": "The file takes more work to read than we allow.",
+    "busy": "A text is being read for you already, or too many at once; try again in a moment.",
 }
 
 
 def _refuse(e: intake.IntakeError) -> Refusal:
-    return Refusal(422, e.code, _INTAKE_REFUSALS.get(e.code, "The text could not be read."))
+    return Refusal(
+        429 if e.code == "busy" else 422, e.code, _INTAKE_REFUSALS.get(e.code, "The text could not be read.")
+    )
 
 
 @router.post(
     "/intake/url",
     summary="A web page's main text, for the reader's library (fetched, handed back, never stored)",
 )
-def intake_url(body: _UrlIntake) -> Response:
+def intake_url(body: _UrlIntake, request: Request) -> Response:
     # the reader's address and the page stay out of every log and cache (D9a): in a body, answered no-store
     try:
-        out = intake.from_url(body.url, get_settings().intake_allow_private)
+        with intake.slot(client_key(request)):
+            out = intake.from_url(body.url, get_settings().intake_allow_private)
     except intake.IntakeError as e:
         raise _refuse(e) from e
     return ORJSONResponse(out, headers={"Cache-Control": "no-store"})
@@ -1076,12 +1082,13 @@ def intake_url(body: _UrlIntake) -> Response:
     "/intake/pdf",
     summary="A PDF's pages told apart — a text layer, one in visual order, a broken one, a scan — never stored",
 )
-def intake_pdf(file: UploadFile) -> Response:
+def intake_pdf(file: UploadFile, request: Request) -> Response:
     data = file.file.read(intake.PDF_BYTES + 1)
     with connect() as conn:
         lex = intake.lexicon(conn)
     try:
-        out = intake.from_pdf(data, file.filename or "", lex)
+        with intake.slot(client_key(request)):
+            out = intake.from_pdf(data, file.filename or "", lex)
     except intake.IntakeError as e:
         raise _refuse(e) from e
     return ORJSONResponse(out, headers={"Cache-Control": "no-store"})
@@ -1333,9 +1340,7 @@ def create_app() -> FastAPI:
                 return error(411, "length_required", "Send the length of the body.")
             if int(length) > MAX_BODY:
                 return error(413, "too_large", "That body is too large.")
-        ip = (
-            request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")
-        ).split(",")[0]
+        ip = client_key(request)
         now = time.monotonic()
         _forget_idle(now)
         # the public API (P10.2b): a key reads at its own limit, an address without one at the public limit; both

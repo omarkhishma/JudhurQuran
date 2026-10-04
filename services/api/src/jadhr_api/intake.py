@@ -1,21 +1,32 @@
 """Text intake (PLAN P11.3c, D9a): a reader's own text from a web page or a PDF, read on the server and handed back —
 never stored, logged or cached; the text then lives in the reader's browser like a pasted one.
 
-* A web page: fetched by us only at a public address (no private, loopback or link-local address, at every redirect
-  and again at the address actually reached; http and https on their usual ports), at most ``URL_BYTES`` in
-  ``URL_SECONDS``; its main text read by trafilatura, the direction controls taken out, NFC.
+* A web page: fetched by us only at an address on the global internet (no private, loopback, link-local or shared
+  address — at every redirect, each name resolved once and the request sent to the address checked; http and https on
+  their usual ports; no proxy from the environment), at most ``URL_BYTES`` within ``URL_SECONDS`` in all; its main
+  text read by trafilatura, the direction controls taken out, NFC.
 * A PDF: each page's text layer read by pypdf and told what it is — ``text`` (a sound layer), ``reversed`` (a layer in
   visual order, turned back: its words, read backwards, are found far more often in our forms), ``broken`` (private-use
   characters standing for letters, letters spaced apart, or words no text holds) or ``scan`` (no text to speak of: an
-  image, for OCR). The Arabic presentation forms are folded to letters; no vowel is ever added."""
+  image, for OCR). The Arabic presentation forms are folded to letters; no vowel is ever added. The file is read in a
+  process of its own under limits of time, CPU and memory (``jadhr_api.pdftext``).
+
+Both hold a thread of the pool every route shares while they wait, so one address reads one at a time and a worker
+``AT_ONCE`` in all (security review M2)."""
 
 from __future__ import annotations
 
-import io
 import ipaddress
+import json
 import re
 import socket
+import subprocess
+import sys
+import threading
+import time
 import unicodedata
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import urljoin, urlsplit
@@ -27,9 +38,14 @@ from sqlalchemy import Connection
 from .db import rows
 
 URL_BYTES = 3_000_000
-URL_SECONDS = 10.0
+URL_SECONDS = 15.0  # the whole fetch: every hop and every byte
+URL_READ_SECONDS = 5.0  # one wait on the site: to connect, or for the next bytes
 PDF_BYTES = 40_000_000
 PDF_PAGES = 1500
+PDF_SECONDS = 60.0  # the whole reading, killed after
+PDF_CPU_SECONDS = 50
+PDF_MEMORY = 1_500_000_000
+AT_ONCE = 4  # intakes one API worker reads at the same time
 USER_AGENT = "Jadhr/1.0 (text intake; a reader's own request)"
 
 # direction controls: a page's markup, never its words
@@ -48,6 +64,30 @@ class IntakeError(Exception):
         self.code = code
 
 
+_SLOTS = threading.BoundedSemaphore(AT_ONCE)
+_READING: set[str] = set()
+_READING_LOCK = threading.Lock()
+
+
+@contextmanager
+def slot(address: str) -> Iterator[None]:
+    """One intake at a time for an address, ``AT_ONCE`` for the worker: otherwise refused as busy, at once."""
+    with _READING_LOCK:
+        if address in _READING:
+            raise IntakeError("busy")
+        _READING.add(address)
+    try:
+        if not _SLOTS.acquire(blocking=False):
+            raise IntakeError("busy")
+        try:
+            yield
+        finally:
+            _SLOTS.release()
+    finally:
+        with _READING_LOCK:
+            _READING.discard(address)
+
+
 def clean(text: str) -> str:
     """No direction controls, NFC, no run of blank lines longer than one."""
     text = unicodedata.normalize("NFC", _BIDI.sub("", text))
@@ -58,50 +98,77 @@ def clean(text: str) -> str:
 
 
 def _is_public(address: str) -> bool:
-    ip = ipaddress.ip_address(address)
-    return not (
-        ip.is_private
-        or ip.is_loopback
-        or ip.is_link_local
-        or ip.is_multicast
-        or ip.is_reserved
-        or ip.is_unspecified
-    )
+    """An address on the global internet only: not private, loopback, link-local, shared (100.64.0.0/10 — carrier
+    NAT, Tailscale, some clouds' metadata), reserved, multicast or unspecified; an IPv4 address inside IPv6 is judged
+    as itself."""
+    ip = ipaddress.ip_address(address.split("%")[0])
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return ip.is_global and not ip.is_multicast
 
 
-def _public(host: str, allow_private: bool) -> None:
-    """Refuse a host that resolves to an address not on the public internet (SSRF)."""
+def _resolve(host: str, port: int, allow_private: bool) -> str:
+    """The one address a host is fetched at: resolved once and checked, and the request sent there — so a name cannot
+    answer a public address to the check and a private one to the request (DNS rebinding)."""
     try:
-        infos = socket.getaddrinfo(host, None)
-    except socket.gaierror as e:
+        infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+    except (socket.gaierror, UnicodeError) as e:
         raise IntakeError("unreachable", str(e)) from e
-    if not allow_private and not all(_is_public(info[4][0]) for info in infos):
+    addresses = [str(info[4][0]) for info in infos]
+    if not addresses:
+        raise IntakeError("unreachable", host)
+    if not allow_private and not all(_is_public(a) for a in addresses):
         raise IntakeError("not_public", host)
+    return addresses[0]
 
 
-def _check(url: str, allow_private: bool) -> None:
+@dataclass
+class _Target:
+    url: str  # the address checked, in the place of the name
+    host: str  # the Host header: the name, with its port when not the scheme's own
+    sni: str  # the name TLS is asked for and the certificate checked against
+
+
+def _target(url: str, allow_private: bool) -> _Target:
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.hostname:
         raise IntakeError("bad_url")
     if parts.username or parts.password:
         raise IntakeError("bad_url")
-    _public(parts.hostname, allow_private)
-    if parts.port not in (None, 80, 443) and not allow_private:
+    try:
+        given = parts.port
+    except ValueError as e:
+        raise IntakeError("bad_url") from e
+    usual = 443 if parts.scheme == "https" else 80
+    port = given or usual
+    # an address off the public internet is named as such, whatever its port
+    ip = _resolve(parts.hostname, port, allow_private)
+    if port not in (80, 443) and not allow_private:
         raise IntakeError("bad_url")
+    name = f"[{parts.hostname}]" if ":" in parts.hostname else parts.hostname
+    pinned = parts._replace(netloc=f"[{ip}]:{port}" if ":" in ip else f"{ip}:{port}").geturl()
+    return _Target(pinned, name if port == usual else f"{name}:{port}", parts.hostname)
 
 
 def fetch(url: str, allow_private: bool = False) -> tuple[str, str]:
     """The page's HTML and the address it ended at, each hop checked; no cookie kept, nothing stored."""
     url = url.strip()
+    deadline = time.monotonic() + URL_SECONDS
     with httpx.Client(
-        timeout=URL_SECONDS, follow_redirects=False, headers={"User-Agent": USER_AGENT, "Accept": "text/html"}
+        timeout=URL_READ_SECONDS,
+        follow_redirects=False,
+        trust_env=False,  # no proxy from the environment: the address checked is the address asked
+        headers={"User-Agent": USER_AGENT, "Accept": "text/html"},
     ) as client:
         for _ in range(4):
-            _check(url, allow_private)
+            if time.monotonic() > deadline:
+                raise IntakeError("too_slow")
+            t = _target(url, allow_private)
             try:
-                with client.stream("GET", url) as r:
-                    # the address actually reached, checked again before a byte is read: a name that resolved to a
-                    # public address for the check and to a private one for the request (DNS rebinding) is refused
+                with client.stream(
+                    "GET", t.url, headers={"Host": t.host}, extensions={"sni_hostname": t.sni}
+                ) as r:
+                    # the address reached, checked again before a byte is read
                     stream = r.extensions.get("network_stream")
                     peer = stream.get_extra_info("server_addr") if stream else None
                     if peer and not allow_private and not _is_public(peer[0]):
@@ -119,7 +186,12 @@ def fetch(url: str, allow_private: bool = False) -> tuple[str, str]:
                         body += chunk
                         if len(body) > URL_BYTES:
                             raise IntakeError("too_large")
+                        # a site that sends a byte now and then holds a thread for as long as it likes
+                        if time.monotonic() > deadline:
+                            raise IntakeError("too_slow")
                     return body.decode(r.encoding or "utf-8", errors="replace"), url
+            except httpx.TimeoutException as e:
+                raise IntakeError("too_slow", type(e).__name__) from e
             except httpx.HTTPError as e:
                 raise IntakeError("fetch_failed", type(e).__name__) from e
         raise IntakeError("fetch_failed", "too many redirects")
@@ -205,32 +277,35 @@ def triage(raw: str, n: int, lex: frozenset[str]) -> Page:
 
 
 def from_pdf(data: bytes, name: str, lex: frozenset[str]) -> dict[str, Any]:
-    """Each page of a PDF told what it is, the text of those that hold one; nothing kept."""
-    from pypdf import PdfReader
-    from pypdf.errors import PdfReadError
-
+    """Each page of a PDF told what it is, the text of those that hold one; nothing kept. The file is read in a
+    process of its own (``jadhr_api.pdftext``), killed at ``PDF_SECONDS``."""
     if len(data) > PDF_BYTES:
         raise IntakeError("too_large")
     try:
-        reader = PdfReader(io.BytesIO(data))
-        if reader.is_encrypted:
-            raise IntakeError("encrypted")
-        count = len(reader.pages)
-    except PdfReadError as e:
-        raise IntakeError("not_pdf", str(e)) from e
-    if count > PDF_PAGES:
-        raise IntakeError("too_many_pages", str(count))
-    pages = []
-    for i, page in enumerate(reader.pages, start=1):
-        try:
-            raw = page.extract_text() or ""
-        except Exception:  # a page pypdf cannot read is a page for OCR, not a failed upload
-            raw = ""
-        pages.append(triage(raw, i, lex))
-    try:
-        title = clean(str((reader.metadata or {}).get("/Title") or ""))
-    except Exception:
-        title = ""
+        done = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "jadhr_api.pdftext",
+                str(PDF_PAGES),
+                str(PDF_CPU_SECONDS),
+                str(PDF_MEMORY),
+            ],
+            input=data,
+            capture_output=True,
+            timeout=PDF_SECONDS,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as e:
+        raise IntakeError("too_slow") from e
+    if done.returncode != 0:
+        # killed by its CPU limit, or out of the memory it may use
+        raise IntakeError("too_heavy", done.stderr.decode(errors="replace")[-300:])
+    out = json.loads(done.stdout)
+    if out.get("error"):
+        raise IntakeError(out["error"], out.get("detail", ""))
+    pages = [triage(raw, i, lex) for i, raw in enumerate(out["pages"], start=1)]
+    title = clean(out.get("title") or "")
     return {
         "title": title or re.sub(r"\.pdf$", "", name, flags=re.IGNORECASE),
         "pages": [p.__dict__ for p in pages],
