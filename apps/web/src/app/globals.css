@@ -7022,6 +7022,9 @@ a.wotd-pill:hover {
   .hadith-panel {
     position: sticky;
     top: 76px;
+    /* a word's places in the text make it long: it scrolls within the window, its head always in view */
+    max-height: calc(100vh - 92px);
+    overflow-y: auto;
   }
 }
 /* on a phone the panel rises from the foot of the screen once a word is chosen */

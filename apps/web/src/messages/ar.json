@@ -2623,7 +2623,10 @@
     "continueHadith": "الحديث {ref}",
     "continueBook": "حيث وقفت",
     "wordHint": "انقر كلمة من نصك لترى جذرها وقراءتها.",
-    "reviewInAnalyser": "راجع قراءتها في المحلّل"
+    "reviewInAnalyser": "راجع قراءتها في المحلّل",
+    "inTextTitle": "في هذا النص",
+    "inTextCount": "{count, plural, one {ترد مرة واحدة في نصك} two {ترد مرتين في نصك} few {ترد {n} مرات في نصك} many {ترد {n} مرة في نصك} other {ترد {n} مرة في نصك}}، بمدخلها المعجمي نفسه.",
+    "inTextPassage": "المقطع {n}"
   },
   "account": {
     "signIn": "دخول",
@@ -3862,7 +3865,12 @@
     "allHisRecords": "أحاديثه",
     "credit": "{attribution}",
     "prevBab": "الباب السابق",
-    "nextBab": "الباب التالي"
+    "nextBab": "الباب التالي",
+    "inTextTitle": "في هذا الكتاب",
+    "inTextCount": "{count, plural, one {موضع واحد} two {موضعان} few {{n} مواضع} many {{n} موضعًا} other {{n} موضع}} لـ«{ar}» في {title} تقرؤه القواعد على صورته القرآنية.",
+    "inTextNone": "لا ترد «{ar}» في {title}؛ هذه مواضعها في غيره.",
+    "inTextHadith": "{book}، الحديث {ref}",
+    "inTextRoot": "كل مواضع الجذر في هذا الكتاب"
   },
   "books": {
     "title": "الكتب",

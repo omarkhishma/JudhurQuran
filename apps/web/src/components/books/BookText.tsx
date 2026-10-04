@@ -171,6 +171,7 @@ export function BookText({
         onClose={() => setSelected(null)}
         hint={t("wordHint")}
         place={chosen && title ? { href: paragraphHref(slug, chosen.ref), label: title } : null}
+        text={slug}
       />
     </div>
   );

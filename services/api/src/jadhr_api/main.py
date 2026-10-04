@@ -361,6 +361,12 @@ def word(
         None, description="a Quran location (2:255:3): adds that occurrence's grammar and glosses"
     ),
     limit: int = Query(12, ge=0, le=50, description="attestations returned inline"),
+    in_text: str | None = Query(
+        None,
+        max_length=80,
+        pattern="^[a-z0-9-]+$",
+        description="a hadith collection or a book (its slug): adds the word's places in it as `in_text`",
+    ),
 ) -> Response:
     with connect() as conn:
         if _LOCATION.match(ident):
@@ -373,7 +379,27 @@ def word(
         payload = lexicon.word_payload(conn, ident, at, limit)
         if payload is None:
             raise not_found("word")
+        if in_text is not None:
+            # the panel's "In this text" for a word read in a hadith or a book (P1.3, RDR-268…271)
+            payload["in_text"] = rootlife.lemma_in_text(conn, ident, in_text)
         return cached(request, payload)
+
+
+@router.get(
+    "/texts/{text}/words/{slug}",
+    summary="A Quranic word in one hadith collection or book: its places there, or in the texts that hold it",
+)
+def word_in_text(
+    request: Request,
+    text: Annotated[str, Path(max_length=80, pattern="^[a-z0-9-]+$")],
+    slug: Annotated[str, Path(max_length=80)],
+    limit: Annotated[int, Query(ge=1, le=20)] = 5,
+) -> Response:
+    with connect() as conn:
+        out = rootlife.lemma_in_text(conn, slug, text, limit)
+        if out is None:
+            raise not_found("word or text")
+        return cached(request, out)
 
 
 @router.get(

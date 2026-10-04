@@ -1,11 +1,15 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { Link } from "@/i18n/navigation";
 import { dictHref } from "@/lib/dictionary";
-import type { Form } from "@/lib/hadith";
+import { cnt } from "@/lib/format";
+import { type Form, refText } from "@/lib/hadith";
+import { getJSON } from "@/lib/reader/api";
 import { usePersonal } from "@/lib/reader/store";
+import { type RootHit, hitHref, rootTextsHref } from "@/lib/rootlife";
 
 /**
  * A word's reading beside a text beyond the Quran (P11.4a), shared by the hadith and the books: how the rules read it
@@ -23,6 +27,7 @@ export function WordPanel({
   ref,
   hint,
   place,
+  text,
   children,
 }: {
   word: string | null;
@@ -32,8 +37,11 @@ export function WordPanel({
   hint?: string;
   /** the hadith or the book paragraph the word is read in (SHL-Q09): the hub's strip leads back to it */
   place?: { href: string; label: string } | null;
-  /** what the page adds for this word: the Analyser, for a word of the reader's text read by a rule */
+  /** what the page adds for this word: the Analyser, for a word of the reader's text read by a rule; the word's places
+   * in the reader's text */
   children?: React.ReactNode;
+  /** the hadith collection or the book the word is read in (its slug): the word's places in it (P1.3 ?in_text=) */
+  text?: string;
 }) {
   const t = useTranslations("hadith");
   const locale = useLocale();
@@ -76,6 +84,7 @@ export function WordPanel({
                 {first?.lemma && <Link href={`/read?w=${encodeURIComponent(first.lemma.slug)}`} className="btn">{t("lemmaInQuran")}</Link>}
               </p>
               {children}
+              {text && first?.lemma && <InThisText text={text} slug={first.lemma.slug} dictRoot={first.dict_root ?? null} />}
               {form.readings.length > 1 && (
                 <div className="flex flex-col gap-1.5">
                   <p className="text-[12.5px] text-t3">{t("otherReadings")}</p>
@@ -95,5 +104,53 @@ export function WordPanel({
         </div>
       )}
     </aside>
+  );
+}
+
+type InText = { lemma: { slug: string; ar: string }; text: { slug: string; kind: string; title_ar: string; title_en: string }; total: number; data: RootHit[]; siblings: RootHit[] };
+
+/** A Quranic word in the collection or the book it is read in (P1.3 ?in_text=, the panel's "In this text", RDR-268…271):
+ * how many places the rules surely read it in there, the first of them with the word in its line; where the text has
+ * none, its places in the texts that hold it. */
+function InThisText({ text, slug, dictRoot }: { text: string; slug: string; dictRoot: string | null }) {
+  const t = useTranslations("hadith");
+  const locale = useLocale();
+  const q = useQuery({ queryKey: ["in-text", text, slug], queryFn: () => getJSON<InText>(`/texts/${text}/words/${encodeURIComponent(slug)}?limit=3`), staleTime: Infinity });
+  if (q.isError) return null;
+  if (!q.data) return <div className="h-12 animate-pulse rounded-lg bg-card-2" />;
+  const d = q.data;
+  const title = locale === "ar" ? d.text.title_ar : d.text.title_en;
+  const rows = d.total ? d.data : d.siblings;
+  const where = (h: RootHit) => (h.text.kind === "hadith" ? t("inTextHadith", { book: locale === "ar" ? h.text.title_ar : h.text.title_en, ref: refText(h.ref, locale) }) : locale === "ar" ? h.text.title_ar : h.text.title_en);
+  return (
+    <section className="flex flex-col gap-1.5 border-t border-line pt-3" aria-label={t("inTextTitle")} data-testid="in-this-text">
+      <p className="text-[13px] font-medium">{t("inTextTitle")}</p>
+      <p className="text-[12.5px] text-t2">{d.total ? t("inTextCount", { ...cnt(d.total, locale), ar: d.lemma.ar, title }) : t("inTextNone", { ar: d.lemma.ar, title })}</p>
+      {rows.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {rows.map((h) => (
+            <li key={h.uri}>
+              <Link href={hitHref(h)} className="flex flex-col gap-0.5 rounded-md px-1.5 py-1 hover:bg-card-2">
+                {h.kwic && (
+                  <span className="ar-classical text-[15px] leading-[1.8]" lang="ar" dir="rtl">
+                    <span className="text-t2">{h.kwic.before}</span>
+                    <mark className="kwic-word">{h.kwic.word}</mark>
+                    <span className="text-t2">{h.kwic.after}</span>
+                  </span>
+                )}
+                <span className="text-[11px] text-t3">
+                  <bdi>{where(h)}</bdi>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      {d.total > d.data.length && dictRoot && (
+        <Link href={rootTextsHref(dictRoot, { text: d.text.slug })} className="text-[12px] text-ring hover:underline">
+          {t("inTextRoot")}
+        </Link>
+      )}
+    </section>
   );
 }

@@ -7,7 +7,7 @@ import { WordPanel } from "@/components/text/WordPanel";
 import { MarksToggle } from "@/components/ui/MarksToggle";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
-import { formatNumber } from "@/lib/format";
+import { cnt, formatNumber } from "@/lib/format";
 import type { Form } from "@/lib/hadith";
 import { deleteText, loadText, rootShown, saveText, userUri } from "@/lib/library/texts";
 import { words } from "@/lib/library/segment";
@@ -49,6 +49,21 @@ export function UserTextReader({ id }: { id: string }) {
   const panel = useRef<HTMLElement>(null);
   const chosen = selected ? (tokens[selected.p]?.[selected.w] ?? null) : null;
   const form = useQuery({ queryKey: ["user-form", chosen?.word], queryFn: () => readForm(chosen!.word), enabled: !!chosen, staleTime: Infinity });
+  // the chosen word's other places in this text, by its lemma as the text was read (P1.3 "In this text", RDR-268)
+  const places = (() => {
+    if (!selected || !read.data) return null;
+    const at = tokens.slice(0, selected.p).reduce((n, ws) => n + ws.length, 0) + selected.w;
+    const lemma = read.data[at]?.r?.lemma;
+    if (!lemma || read.data[at]?.r?.kind === "particle") return null;
+    const out: { p: number; before: string; word: string; after: string }[] = [];
+    let k = 0;
+    tokens.forEach((ws, pi) =>
+      ws.forEach((w, wi) => {
+        if (read.data![k++]?.r?.lemma === lemma) out.push({ p: pi + 1, before: ws.slice(Math.max(0, wi - 5), wi).map((x) => x.surface).join(" "), word: w.surface, after: ws.slice(wi + 1, wi + 6).map((x) => x.surface).join(" ") });
+      }),
+    );
+    return out;
+  })();
   const position = usePersonal((s) => s.progress[userUri(id)]);
   const setProgress = usePersonal((s) => s.setProgress);
   const ready = !!doc.data;
@@ -227,6 +242,26 @@ export function UserTextReader({ id }: { id: string }) {
             <Link href={`/analyse?q=${encodeURIComponent(chosen.word)}`} className="btn self-start">
               {t("reviewInAnalyser")}
             </Link>
+          )}
+          {places && places.length > 0 && (
+            <section className="flex flex-col gap-1.5 border-t border-line pt-3" aria-label={t("inTextTitle")} data-testid="in-this-text">
+              <p className="text-[13px] font-medium">{t("inTextTitle")}</p>
+              <p className="text-[12.5px] text-t2">{t("inTextCount", cnt(places.length, locale))}</p>
+              <ul className="flex flex-col gap-1.5">
+                {places.slice(0, 3).map((x, n) => (
+                  <li key={n}>
+                    <a href={`#p${x.p}`} className="flex flex-col gap-0.5 rounded-md px-1.5 py-1 hover:bg-card-2">
+                      <span className="ar-classical text-[15px] leading-[1.8]" lang="ar" dir="rtl">
+                        <span className="text-t2">{shown(x.before)} </span>
+                        <mark className="kwic-word">{shown(x.word)}</mark>
+                        <span className="text-t2"> {shown(x.after)}</span>
+                      </span>
+                      <span className="text-[11px] text-t3">{t("inTextPassage", { n: formatNumber(x.p, locale) })}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
         </WordPanel>
       </div>

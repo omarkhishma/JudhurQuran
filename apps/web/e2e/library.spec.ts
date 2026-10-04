@@ -55,6 +55,9 @@ test("adding a text: a live preview read against the Quran, saved privately, rea
   await page.locator(".user-passage button.pv-word.is-hit", { hasText: "العلم" }).click();
   await expect(panel.getByRole("link", { name: "الكلمة في القرآن" })).toHaveAttribute("href", /\/read\?w=ilm$/);
   await expect(panel.getByRole("link", { name: "الجذر في المعجم" })).toHaveAttribute("href", `/dictionary/${encodeURIComponent("علم")}`);
+  // and its places in this text (P1.3 "In this text"): once, in the first passage
+  await expect(panel.getByTestId("in-this-text")).toContainText("ترد مرة واحدة في نصك");
+  await expect(panel.getByTestId("in-this-text").getByRole("link")).toHaveAttribute("href", "#p1");
   // and it is the reader's last lookup, its place this passage of this text (SHL-Q09)
   const textId = page.url().split("/library/text/")[1];
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state?.context?.place)).toEqual({ href: `/library/text/${textId}#p1`, label: "نص للتجربة" });

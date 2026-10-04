@@ -2623,7 +2623,10 @@
     "continueHadith": "Hadith {ref}",
     "continueBook": "Where you stopped",
     "wordHint": "Choose a word of your text to see its root and its reading.",
-    "reviewInAnalyser": "Review its reading in the Analyser"
+    "reviewInAnalyser": "Review its reading in the Analyser",
+    "inTextTitle": "In this text",
+    "inTextCount": "{count, plural, one {Once in your text} other {{n} times in your text}}, as the same dictionary entry.",
+    "inTextPassage": "Passage {n}"
   },
   "account": {
     "signIn": "Sign in",
@@ -3862,7 +3865,12 @@
     "allHisRecords": "His hadith",
     "credit": "{attribution}",
     "prevBab": "Previous bāb",
-    "nextBab": "Next bāb"
+    "nextBab": "Next bāb",
+    "inTextTitle": "In this text",
+    "inTextCount": "{count, plural, one {One place} other {{n} places}} of «{ar}» in {title}, read by the rules in its Quranic form.",
+    "inTextNone": "«{ar}» is not in {title}; here are its places in others.",
+    "inTextHadith": "{book}, hadith {ref}",
+    "inTextRoot": "Every place of the root in this text"
   },
   "books": {
     "title": "Books",

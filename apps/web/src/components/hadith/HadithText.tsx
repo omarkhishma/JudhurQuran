@@ -22,6 +22,7 @@ export function HadithText({
   forms,
   chain,
   place,
+  text,
 }: {
   segments: Segment[];
   words: number[];
@@ -29,6 +30,8 @@ export function HadithText({
   chain: ChainLink[];
   /** this hadith's address and name, for the way back to it (SHL-Q09) */
   place?: { href: string; label: string };
+  /** the collection's slug: the chosen word's places in it */
+  text?: string;
 }) {
   const t = useTranslations("hadith");
   const locale = useLocale();
@@ -122,6 +125,7 @@ export function HadithText({
         form={selected === null ? null : (forms[String(words[selected])] ?? null)}
         onClose={() => setSelected(null)}
         place={place}
+        text={text}
       />
     </div>
   );
