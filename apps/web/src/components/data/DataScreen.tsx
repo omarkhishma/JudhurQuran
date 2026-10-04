@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Changelog } from "@/components/contrib/Changelog";
 import { Link } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
@@ -128,6 +128,7 @@ function Dataset() {
 
       <aside className="flex flex-col gap-4" aria-label={t("rail")}>
         <Cite release={current.data ?? null} />
+        {current.data && <CheckFile release={current.data} />}
         <Licences release={current.data ?? null} />
       </aside>
     </div>
@@ -322,6 +323,56 @@ function Cite({ release }: { release: Release | null }) {
           {said}
         </div>
       )}
+    </section>
+  );
+}
+
+/** Check a download (B53): the file's sha256 computed on this device — nothing is sent — and compared with the
+ * release's manifest. */
+function CheckFile({ release }: { release: Release }) {
+  const t = useTranslations("dataset");
+  const [said, setSaid] = useState<{ ok: boolean; path?: string; hash?: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const iso = (c: ReactNode) => (
+    <bdi dir="ltr" className="mono">
+      {c}
+    </bdi>
+  );
+  const check = async (file: File | undefined) => {
+    if (!file) return;
+    setBusy(true);
+    setSaid(null);
+    try {
+      const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+      const hex = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+      const f = release.files.find((x) => x.sha256 === hex);
+      setSaid(f ? { ok: true, path: f.path } : { ok: false, hash: hex.slice(0, 16) });
+    } catch {
+      setSaid({ ok: false });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4" aria-labelledby="check-h">
+      <h2 id="check-h" className="text-[15px] font-semibold">{t("checkTitle")}</h2>
+      <p className="text-[12.5px] leading-relaxed text-t3">{t("checkLead")}</p>
+      {/* a button in the page's language, not the browser's own control */}
+      <label className="btn self-start focus-within:ring-2 focus-within:ring-[var(--ring)]">
+        {t("checkPick")}
+        <input type="file" className="sr-only" disabled={busy} onChange={(e) => void check(e.target.files?.[0])} />
+      </label>
+      <p role="status" className={"text-[12.5px] leading-relaxed " + (said ? (said.ok ? "text-good" : "text-bad") : "")}>
+        {busy
+          ? t("checking")
+          : said == null
+            ? ""
+            : said.path
+              ? t.rich("checkOk", { path: said.path, version: release.version, c: iso })
+              : said.hash
+                ? t.rich("checkNo", { version: release.version, hash: said.hash, c: iso })
+                : t("checkFailed")}
+      </p>
     </section>
   );
 }

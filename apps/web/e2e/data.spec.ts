@@ -192,3 +192,15 @@ test("the dataset described to search engines: a schema.org Dataset with every l
   expect(JSON.stringify(ld!.license)).toContain("creativecommons.org/licenses/by-sa/4.0");
   expect((ld!.distribution as unknown[]).length).toBe(rel.files.filter((f) => f.available).length);
 });
+
+test("a download checked on this device against the manifest (B53)", async ({ page }) => {
+  const { v } = await latestRelease(page);
+  await page.goto("/data");
+  const { readFileSync } = await import("node:fs");
+  const roots = readFileSync(`../../data/release/${v}/roots.csv`);
+  const check = page.getByLabel("اختر ملفا من هذا الإصدار");
+  await check.setInputFiles({ name: "jadhr-roots.csv", mimeType: "text/csv", buffer: roots });
+  await expect(page.getByText(`هذا الملف roots.csv من الإصدار v${v} كما هو حرفا بحرف.`)).toBeVisible();
+  await check.setInputFiles({ name: "x.csv", mimeType: "text/csv", buffer: Buffer.concat([roots, Buffer.from(" ")]) });
+  await expect(page.getByText(`لا ملف في الإصدار v${v} بهذه البصمة`, { exact: false })).toBeVisible();
+});
