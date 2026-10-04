@@ -22,6 +22,7 @@ from typing import Any
 
 from sqlalchemy import Connection, text
 
+from . import plain
 from .accounts import q, q1, tx
 from .contrib import BOARD
 from .refusal import Refusal
@@ -83,7 +84,7 @@ def _slug(raw: str) -> str:
 
 
 def _str(v: Any, most: int) -> str:
-    return " ".join(v.split())[:most] if isinstance(v, str) else ""
+    return " ".join(plain.text(v).split())[:most] if isinstance(v, str) else ""
 
 
 def counts(doc: dict[str, Any]) -> dict[str, Any]:
@@ -145,7 +146,7 @@ def changes(before: dict[str, Any], after: dict[str, Any]) -> dict[str, Any]:
 
 def _content(title: Any, description: Any, kind: Any, raw: Any) -> dict[str, Any]:
     doc, _ = checked_doc(raw)
-    t = _str(title, 200)
+    t = plain.name(_str(title, 200)).strip()
     if not t:
         raise Refusal(422, "no_title", "A published map has a title.")
     return {

@@ -13,6 +13,7 @@ import time
 from datetime import UTC, date, datetime
 from typing import Any
 
+from . import plain
 from .accounts import q, q1, tx
 from .refusal import Refusal
 
@@ -48,7 +49,7 @@ def keys(u: dict[str, Any]) -> dict[str, Any]:
 
 def create(u: dict[str, Any], name: Any) -> dict[str, Any]:
     """A new key: its whole value is in this answer and nowhere else, ever."""
-    label = name.strip()[:80] if isinstance(name, str) else ""
+    label = plain.name(name).strip()[:80] if isinstance(name, str) else ""
     if not label:
         raise Refusal(422, "empty", "Name the key: what will use it?")
     if u.get("blocked_at"):

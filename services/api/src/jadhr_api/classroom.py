@@ -18,6 +18,7 @@ from typing import Any
 
 from sqlalchemy import Connection
 
+from . import plain
 from .accounts import q, q1, tx
 from .db import connect, rows
 from .refusal import Refusal
@@ -42,7 +43,7 @@ def _uuid(raw: str, what: str = "class") -> str:
 
 
 def _str(v: Any, most: int, *, need: bool = False, field: str = "text") -> str:
-    s = v.strip() if isinstance(v, str) else ""
+    s = plain.text(v).strip() if isinstance(v, str) else ""
     if need and not s:
         raise Refusal(422, "empty", f"The {field} cannot be empty.")
     if len(s) > most:
@@ -165,7 +166,7 @@ def create(u: dict[str, Any], name: Any, minors: Any) -> dict[str, Any]:
                values (:u, :n, :m, :k) returning *""",
             {
                 "u": u["id"],
-                "n": _str(name, 120, need=True, field="class's name"),
+                "n": plain.name(_str(name, 120, need=True, field="class's name")),
                 "m": bool(minors),
                 "k": _code(conn),
             },
@@ -206,7 +207,7 @@ def update(
         c = _own(conn, u, cid)
         sets: dict[str, Any] = {}
         if name is not None:
-            sets["name"] = _str(name, 120, need=True, field="class's name")
+            sets["name"] = plain.name(_str(name, 120, need=True, field="class's name"))
         if minors is not None:
             sets["minors"] = bool(minors)
         if archived is not None:
@@ -508,7 +509,7 @@ def add_lesson(u: dict[str, Any], cid: str, title: Any, ranges: Any, roots: Any,
                values (:c, :t, cast(:r as jsonb), :k, :d) returning *""",
             {
                 "c": c["id"],
-                "t": _str(title, 160, need=True, field="lesson's title"),
+                "t": plain.name(_str(title, 160, need=True, field="lesson's title")),
                 "r": json.dumps(_ranges(ranges)),
                 "k": _roots(roots),
                 "d": _due(due),
@@ -581,7 +582,7 @@ def update_lesson(
         _own(conn, u, str(lesson["class_id"]))
         sets: dict[str, Any] = {}
         if title is not None:
-            sets["title"] = _str(title, 160, need=True, field="lesson's title")
+            sets["title"] = plain.name(_str(title, 160, need=True, field="lesson's title"))
         if ranges is not None:
             sets["ranges"] = json.dumps(_ranges(ranges))
         if roots is not None:
@@ -1242,7 +1243,7 @@ def _card(n: Any) -> dict[str, Any]:
     kind = d.get("kind") if d.get("kind") in CARD_KINDS else "note"
     verse: dict[str, Any] = d["verse"] if isinstance(d.get("verse"), dict) else {}
     label = d.get("ar") or verse.get("key") or d.get("title") or d.get("text") or ""
-    return {"id": str(n.get("id", ""))[:200], "kind": kind, "label": str(label).strip()[:80]}
+    return {"id": str(n.get("id", ""))[:200], "kind": kind, "label": plain.text(str(label)).strip()[:80]}
 
 
 def map_gate(conn: Connection, graph_id: Any, viewer: dict[str, Any] | None) -> dict[str, Any] | None:

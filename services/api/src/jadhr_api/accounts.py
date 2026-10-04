@@ -29,6 +29,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from fastapi import Header, HTTPException
 from sqlalchemy import Connection, Engine, create_engine, text
 
+from . import plain
 from .refusal import Refusal
 from .settings import get_settings
 
@@ -374,8 +375,6 @@ def me(u: dict[str, Any]) -> dict[str, Any]:
 ALLOWED_SETTINGS = {"sync_journal": bool, "share_lookups": bool}
 
 
-# characters that change the direction of the text around them: in a name they would turn a credit line around
-_BIDI_CONTROLS = re.compile("[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]")
 # a name is shown in the public queue and on credits: it may not pass for the site or its offices (audit 12 F16)
 _RESERVED_NAMES = (
     "هيئة التحرير", "هيئة تحرير", "المحررون", "المحرر", "محرر", "الإدارة", "إدارة", "المشرف", "مشرف", "المراجع",
@@ -394,7 +393,7 @@ def update_me(u: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
     fields: dict[str, Any] = {}
     for k in ("display_name", "affiliation", "orcid"):
         if k in patch:
-            v = _BIDI_CONTROLS.sub("", patch[k] or "").strip()
+            v = plain.name(patch[k] or "").strip()
             if k == "display_name" and v and _reserved(v):
                 raise Refusal(422, "name_reserved", "That name is the site's or one of its offices'.")
             fields[k] = v[:120] or None

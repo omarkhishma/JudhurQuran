@@ -23,7 +23,7 @@ from typing import Any
 from jadhr_arabic import normalize
 from sqlalchemy import Connection
 
-from . import board, lexicon
+from . import board, lexicon, plain
 from .accounts import q, q1, tx
 from .db import connect, one, rows
 from .refusal import Refusal
@@ -123,7 +123,7 @@ def _uuid(raw: str) -> str:
 
 
 def _str(v: Any, most: int, *, need: bool = False) -> str:
-    s = v.strip() if isinstance(v, str) else ""
+    s = plain.text(v).strip() if isinstance(v, str) else ""
     if need and not s:
         raise Refusal(422, "empty", "This field cannot be empty.")
     if len(s) > most:

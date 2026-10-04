@@ -17,7 +17,7 @@ from typing import Any
 
 from sqlalchemy import Connection, text
 
-from . import content
+from . import content, plain
 from .accounts import q, q1, tx
 from .db import connect, one, rows
 from .refusal import Refusal
@@ -80,8 +80,8 @@ def clean_sources(raw: list[Any]) -> list[dict[str, Any]]:
             s = {"work": s, "ref": ""}
         if not isinstance(s, dict):
             raise Refusal(422, "source_shape", "Each source names a work and, where it can, a place in it.")
-        work = str(s.get("work") or "").strip()[:40]
-        ref = str(s.get("ref") or "").strip()[:200]
+        work = plain.text(str(s.get("work") or "")).strip()[:40]
+        ref = plain.text(str(s.get("ref") or "")).strip()[:200]
         if work not in works and work not in ("quran", "grammar", "other"):
             raise Refusal(422, "unknown_source", f"Unknown source {work!r}.")
         if work == "quran":
@@ -214,7 +214,7 @@ def propose(u: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     target = _validate_target(kind, lemma, ordinal, body.get("location"), field)
     location = target["location"]
     current = target["current"]
-    proposed = body["text"].strip()
+    proposed = plain.text(body["text"]).strip()
     if kind in ("edit", "gloss", "morphology") and proposed == current.strip():
         raise Refusal(422, "same_wording", "The wording is the same as the current one.")
     sources = clean_sources(body.get("sources") or [])
@@ -486,7 +486,7 @@ def decide(u: dict[str, Any], pid: str, decision: str, note: str | None) -> dict
     if u["role"] not in REVIEWERS:
         raise Refusal(403, "not_reviewer", "Only reviewers decide on proposals.")
     pid = _uuid(pid)
-    note = (note or "").strip()[:2000] or None
+    note = plain.text(note or "").strip()[:2000] or None
     with tx() as conn:
         _check_active(conn, u)
         p = q1(
@@ -685,7 +685,7 @@ def report(u: dict[str, Any], pid: str, reason: str) -> dict[str, Any]:
                 """insert into contributions.reports (proposal_id, reporter_id, reason) values (cast(:id as uuid), :u, :r)
                    on conflict do nothing"""
             ),
-            {"id": pid, "u": u["id"], "r": reason.strip()[:1000]},
+            {"id": pid, "u": u["id"], "r": plain.text(reason).strip()[:1000]},
         )
     return {"reported": True}
 
@@ -701,7 +701,7 @@ def revert(u: dict[str, Any], merge_id: str, note: str) -> dict[str, Any]:
             conn,
             """update contributions.merges set reverted_at = now(), reverted_by = :u, revert_note = :n
                where id = cast(:id as uuid) and reverted_at is null returning id, proposal_id""",
-            {"id": merge_id, "u": u["id"], "n": note.strip()[:2000] or None},
+            {"id": merge_id, "u": u["id"], "n": plain.text(note).strip()[:2000] or None},
         )
         if m is None:
             raise Refusal(409, "not_revertible", "No such merge, or it is already reverted.")
@@ -918,7 +918,7 @@ def resolve_report(u: dict[str, Any], rid: int, outcome: str, note: str | None) 
             """update contributions.reports set resolved_at = now(), resolved_by = :u, outcome = :o,
                       resolution_note = :n
                where id = :id and resolved_at is null returning proposal_id""",
-            {"u": u["id"], "o": outcome, "n": (note or "").strip()[:2000] or None, "id": rid},
+            {"u": u["id"], "o": outcome, "n": plain.text(note or "").strip()[:2000] or None, "id": rid},
         )
         if r is None:
             raise Refusal(409, "not_open_report", "No such report, or it is already resolved.")

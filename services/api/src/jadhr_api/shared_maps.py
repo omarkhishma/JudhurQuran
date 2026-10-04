@@ -21,7 +21,7 @@ from typing import Any
 
 from sqlalchemy import Connection, text
 
-from . import classroom
+from . import classroom, plain
 from .accounts import now, q, q1, tx
 from .refusal import Refusal
 
@@ -44,7 +44,7 @@ def _uuid(raw: Any, what: str = "map") -> str:
 
 
 def _str(v: Any, most: int) -> str:
-    return v.strip()[:most] if isinstance(v, str) else ""
+    return plain.text(v).strip()[:most] if isinstance(v, str) else ""
 
 
 def _doc(raw: Any) -> tuple[dict[str, Any], int]:
@@ -176,7 +176,7 @@ def share(u: dict[str, Any], local_id: str, title: str, kind: str, raw: Any) -> 
                 {
                     "u": u["id"],
                     "l": local_id,
-                    "t": _str(title, 200),
+                    "t": plain.name(_str(title, 200)),
                     "k": _kind(kind),
                     "d": json.dumps(doc, ensure_ascii=False),
                     "c": cards,
@@ -227,7 +227,7 @@ def save(
                  revision = revision + 1, updated_at = now() where id = :g returning *""",
             {
                 "g": g["id"],
-                "t": _str(title, 200) if title is not None else g["title"],
+                "t": plain.name(_str(title, 200)) if title is not None else g["title"],
                 "k": _kind(kind) if kind is not None else g["kind"],
                 "d": json.dumps(doc, ensure_ascii=False),
                 "c": cards,
@@ -428,7 +428,7 @@ def comment(
 ) -> dict[str, Any]:
     if u.get("blocked_at"):
         raise Refusal(403, "blocked", "This account cannot comment.")
-    words = body.strip() if isinstance(body, str) else ""
+    words = plain.text(body).strip() if isinstance(body, str) else ""
     if not words:
         raise Refusal(422, "empty", "Write the comment first.")
     if len(words) > 2000:
