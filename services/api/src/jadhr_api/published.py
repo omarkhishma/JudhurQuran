@@ -455,7 +455,13 @@ def _rows(conn: Connection, where: str, params: dict[str, Any], offset: int, lim
              where {where} order by p.updated_at desc offset :o limit :l""",
         {**params, "o": offset, "l": limit},
     )
-    total = q1(conn, f"select count(*)::int as n from graphs.published p where {where}", params)
+    total = q1(
+        conn,
+        f"""select count(*)::int as n from graphs.published p
+              join graphs.published_versions v on v.slug = p.slug and v.version = p.latest
+              left join accounts.users u on u.id = p.owner_id where {where}""",
+        params,
+    )
     return {"rows": rows, "total": total["n"] if total else 0}
 
 
@@ -478,8 +484,55 @@ def _row(r: dict[str, Any], own: bool = False) -> dict[str, Any]:
     return out
 
 
-def gallery(offset: int, limit: int, by: str | None) -> dict[str, Any]:
-    """The published maps, the latest first; with `by`, the other maps of that map's author."""
+def _root_key(raw: str) -> str | None:
+    """The Quran's root a typed root names (علم, ع ل م, ʿ-l-m, the dictionary's ءخذ for أخذ), or nothing."""
+    from . import content
+    from .db import connect
+
+    with connect() as conn:
+        r = content.resolve_root(conn, raw)
+    return r["key"] if r else None
+
+
+def _holding(key: str) -> tuple[str, dict[str, Any]]:
+    """Maps whose latest version holds the root: its card, or a word card of it (B60)."""
+    return (
+        "(v.doc->'nodes' @> cast(:card as jsonb) or v.doc->'nodes' @> cast(:word as jsonb))",
+        {
+            "card": json.dumps([{"id": f"root:{key}"}], ensure_ascii=False),
+            "word": json.dumps([{"data": {"rootKey": key}}], ensure_ascii=False),
+        },
+    )
+
+
+def gallery(
+    offset: int, limit: int, by: str | None, root: str | None = None, query: str | None = None
+) -> dict[str, Any]:
+    """The published maps, the latest first; with `by`, the other maps of that map's author; with `root`, the maps
+    holding that root; with `query`, those whose title, description or author's name holds it, or that hold the root
+    it names (B60)."""
+    if root is not None:
+        key = _root_key(root)
+        if key is None:
+            return {"data": [], "total": 0}
+        where, params = _holding(key)
+        with tx() as conn:
+            got = _rows(conn, where, params, offset, limit)
+        return {"data": [_row(r) for r in got["rows"]], "total": got["total"], "root": key}
+    if query is not None and query.strip():
+        words = " ".join(query.split())[:80]
+        where = "(v.title ilike :q or v.description ilike :q or u.display_name ilike :q)"
+        # what the reader typed, never a pattern of theirs
+        literal = words.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        params: dict[str, Any] = {"q": f"%{literal}%"}
+        key = _root_key(words) if len(words) <= 20 else None
+        if key:
+            hold, extra = _holding(key)
+            where = f"({where} or {hold})"
+            params |= extra
+        with tx() as conn:
+            got = _rows(conn, where, params, offset, limit)
+        return {"data": [_row(r) for r in got["rows"]], "total": got["total"]}
     with tx() as conn:
         if by:
             owner = q1(conn, "select owner_id from graphs.published where slug = :s", {"s": slugify(by)})

@@ -60,14 +60,18 @@ class _Resolve(BaseModel):
 
 
 @router.get(
-    "/published", summary="Published maps, the latest first; with `by`, the other maps of that map's author"
+    "/published",
+    summary="Published maps, the latest first; with `by` that map's author's others, `root` those holding a root, "
+    "`q` those whose title, description, author or root matches",
 )
 def gallery(
     offset: int = Query(0, ge=0, le=100_000),
     limit: int = Query(published.PAGE, ge=1, le=100),
     by: str | None = Query(None, max_length=240),
+    root: str | None = Query(None, max_length=20),
+    q: str | None = Query(None, max_length=80),
 ) -> ORJSONResponse:
-    return ok(published.gallery(offset, limit, by))
+    return ok(published.gallery(offset, limit, by, root, q))
 
 
 @router.get("/published/check", summary="Whether an address is free for a map, and a free one near it")

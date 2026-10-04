@@ -395,3 +395,48 @@ def test_a_version_says_what_it_changed_in_the_one_before(people: dict, tag: str
     assert "changes" not in v1
     # version 1 read by its number says nothing changed before it
     assert client.get(f"/api/v1/published/{slug}", params={"v": 1}).json()["changes"] is None
+
+
+def test_the_maps_holding_a_root_and_the_gallery_searched(people: dict, tag: str) -> None:
+    """B60: a root's maps, by its card or a word card of it; the gallery searched by title, author and root."""
+    a = people["a"]
+    # a root's card as the editor makes it: its id and its key
+    ilm = {
+        "version": 2,
+        "nodes": [
+            {
+                "id": "root:علم",
+                "position": {"x": 0, "y": 0},
+                "data": {"kind": "root", "ar": "ع ل م", "rootKey": "علم"},
+            }
+        ],
+        "edges": [],
+    }
+    one = _publish(a, f"holds-ilm-{tag}", local="h1", title=f"خريطة العلم {tag}", doc=ilm)
+    doc = {
+        "version": 2,
+        "nodes": [
+            {
+                "id": "lemma:rahma",
+                "position": {"x": 0, "y": 0},
+                "data": {"kind": "lemma", "ar": "رَحْمَة", "rootKey": "رحم"},
+            }
+        ],
+        "edges": [],
+    }
+    two = _publish(a, f"holds-rhm-{tag}", local="h2", title=f"خريطة الرحمة {tag}", doc=doc)
+
+    def slugs(**params: str) -> set[str]:
+        got = client.get("/api/v1/published", params={"limit": 100, **params}).json()
+        return {m["slug"] for m in got["data"] if tag in m["slug"]}
+
+    assert slugs(root="علم") == {one["slug"]}
+    assert slugs(root="ع ل م") == {one["slug"]}
+    assert slugs(root="رحم") == {two["slug"]}
+    assert client.get("/api/v1/published", params={"root": "قبعثر"}).json() == {"data": [], "total": 0}
+    # by title, by its author's name, by the root it holds
+    assert slugs(q=f"الرحمة {tag}") == {two["slug"]}
+    assert slugs(q=f"a-{tag}") == {one["slug"], two["slug"]}
+    assert slugs(q="رحم") >= {two["slug"]}
+    # what is typed is read as typed
+    assert slugs(q="%") == set()

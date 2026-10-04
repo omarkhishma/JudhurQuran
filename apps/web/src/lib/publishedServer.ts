@@ -25,8 +25,9 @@ export async function loadPublished(rawSlug: string, version?: number): Promise<
   return { map: (await r.json()) as PublishedMap };
 }
 
-export async function loadGallery(offset: number, limit: number, by?: string): Promise<{ data: PublishedRow[]; total: number }> {
-  const q = new URLSearchParams({ offset: String(offset), limit: String(limit), ...(by ? { by } : {}) });
+export async function loadGallery(offset: number, limit: number, by?: string, filter: { root?: string; q?: string } = {}): Promise<{ data: PublishedRow[]; total: number; root?: string }> {
+  // `root`: the maps holding a root; `q`: those whose title, description, author or root matches (B60)
+  const q = new URLSearchParams({ offset: String(offset), limit: String(limit), ...(by ? { by } : {}), ...(filter.root ? { root: filter.root } : {}), ...(filter.q ? { q: filter.q } : {}) });
   const r = await fetch(`${API_ORIGIN}/api/v1/published?${q}`, { cache: "no-store", headers: HEADERS });
   if (!r.ok) throw new Error(`API /published → HTTP ${r.status}`);
   return r.json();

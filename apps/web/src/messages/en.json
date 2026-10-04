@@ -1583,7 +1583,18 @@
     "changedSince": "What changed since version {v}",
     "changedAddedList": "Added:",
     "changedRemovedList": "Removed:",
-    "changedMore": "{count, plural, one {and one more} other {and {n} more}}"
+    "changedMore": "{count, plural, one {and one more} other {and {n} more}}",
+    "rootMapsTitle": "Published maps holding this root",
+    "rootMapsLead": "{count, plural, one {One map readers published holds the root {root}} other {{n} maps readers published hold the root {root}, the latest first}}.",
+    "rootMapsAll": "{count, plural, one {The map} other {All the maps ({n})}}",
+    "rootMapsNone": "No published map holds this root yet.",
+    "rootMapsDraw": "Draw the root {root}'s map",
+    "gallerySearch": "Search the maps",
+    "gallerySearchLabel": "A title, an author's name or a root",
+    "gallerySearchGo": "Search",
+    "galleryRoot": "Maps holding the root {root}",
+    "galleryQuery": "Results for «{q}»",
+    "galleryClear": "All the maps"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

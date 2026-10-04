@@ -1583,7 +1583,18 @@
     "changedSince": "ما تغيّر منذ الإصدار {v}",
     "changedAddedList": "أُضيف:",
     "changedRemovedList": "حُذف:",
-    "changedMore": "{count, plural, one {وواحدة أخرى} two {واثنتان أخريان} few {و{n} أخرى} many {و{n} أخرى} other {و{n} أخرى}}"
+    "changedMore": "{count, plural, one {وواحدة أخرى} two {واثنتان أخريان} few {و{n} أخرى} many {و{n} أخرى} other {و{n} أخرى}}",
+    "rootMapsTitle": "خرائط منشورة تحمل هذا الجذر",
+    "rootMapsLead": "{count, plural, one {خريطة واحدة نشرها قرّاء تحمل الجذر {root}} two {خريطتان نشرهما قرّاء تحملان الجذر {root}} few {{n} خرائط نشرها قرّاء تحمل الجذر {root}، أحدثها أولًا} many {{n} خريطة نشرها قرّاء تحمل الجذر {root}، أحدثها أولًا} other {{n} خريطة نشرها قرّاء تحمل الجذر {root}، أحدثها أولًا}}.",
+    "rootMapsAll": "{count, plural, one {الخريطة} two {الخريطتان} few {كل الخرائط ({n})} many {كل الخرائط ({n})} other {كل الخرائط ({n})}}",
+    "rootMapsNone": "لم تُنشر بعدُ خريطة تحمل هذا الجذر.",
+    "rootMapsDraw": "ارسم خريطة الجذر {root}",
+    "gallerySearch": "ابحث في الخرائط",
+    "gallerySearchLabel": "عنوان، أو اسم صاحبها، أو جذر",
+    "gallerySearchGo": "ابحث",
+    "galleryRoot": "الخرائط التي تحمل الجذر {root}",
+    "galleryQuery": "نتائج «{q}»",
+    "galleryClear": "كل الخرائط"
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",

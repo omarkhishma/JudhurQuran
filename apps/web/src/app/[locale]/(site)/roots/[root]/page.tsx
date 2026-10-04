@@ -14,6 +14,7 @@ import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { sourceLine } from "@/lib/reader/board";
 import { Term } from "@/components/terms/Term";
 import { localized } from "@/lib/seo";
+import { RootMaps } from "@/components/graph/RootMaps";
 import { RootInTexts } from "@/components/rootlife/RootInTexts";
 import { dictHrefOfQuranRoot } from "@/lib/dictionary";
 import type { RootInTexts as RootInTextsData } from "@/lib/rootlife";
@@ -246,6 +247,8 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
       </section>
 
       {inTexts && <RootInTexts data={inTexts} />}
+      {/* the readers' published maps holding it (B60) */}
+      <RootMaps rootKey={r.key} spaced={r.spaced} />
 
       {(r.variants.length > 0 || r.also_attributed.length > 0) && (
         <section className="mt-10" aria-labelledby="variants">

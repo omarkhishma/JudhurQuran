@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { permanentRedirect } from "next/navigation";
 import { DictionaryLexicon } from "@/components/dictionary/DictionaryLexicon";
+import { RootMaps } from "@/components/graph/RootMaps";
 import { RootInTexts } from "@/components/rootlife/RootInTexts";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 import { Link } from "@/i18n/navigation";
@@ -109,6 +110,8 @@ export default async function DictionaryRootPage({ params }: PageProps<"/[locale
       )}
 
       {inTexts && <RootInTexts data={inTexts} />}
+      {/* the readers' published maps holding it, when it is the Quran's: maps are drawn from the Quran's roots (B60) */}
+      {r.quran && <RootMaps rootKey={r.quran.key} spaced={r.quran.spaced} />}
 
       <nav className="mt-10 flex flex-wrap justify-between gap-2 border-t border-line pt-4 text-[13px]" aria-label={t("leaf")}>
         {r.prev ? (

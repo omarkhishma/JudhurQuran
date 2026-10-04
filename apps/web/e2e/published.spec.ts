@@ -366,3 +366,38 @@ test("a version says what it changed in the one before: on its page, by kind and
     await o.page.context().close();
   }
 });
+
+test("a root's pages list the published maps holding it, and the gallery is searched by title, author and root (B60)", async ({ browser, page }) => {
+  test.setTimeout(120_000);
+  const t = tag();
+  const o = await person(browser, `e2e-pub-r-${t}@example.org`);
+  try {
+    const m = await publishVia(o, `root-maps-${t}`, `خريطة جذر ${t}`);
+    // the Quran's root page and the dictionary's: the map among the latest holding the root
+    for (const path of [`/roots/${enc("علم")}`, `/dictionary/${enc("علم")}`]) {
+      await page.goto(path);
+      const maps = page.getByTestId("root-maps");
+      await expect(maps.getByRole("heading", { name: "خرائط منشورة تحمل هذا الجذر" })).toBeVisible();
+      await expect(maps.locator(".pub-row", { hasText: m.title })).toBeVisible();
+    }
+    // the gallery: the maps holding the root, then a search by the map's title
+    await page.goto(`/g?root=${enc("علم")}`);
+    await expect(page.getByText("الخرائط التي تحمل الجذر ع ل م")).toBeVisible();
+    await expect(page.locator(".pub-row", { hasText: m.title })).toBeVisible();
+    await page.goto("/g");
+    await page.getByRole("searchbox", { name: "عنوان، أو اسم صاحبها، أو جذر" }).fill(`جذر ${t}`);
+    await page.getByRole("button", { name: "ابحث", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/g\\?q=`));
+    await expect(page.locator(".pub-row")).toHaveCount(1);
+    await expect(page.locator(".pub-row")).toContainText(m.title);
+    // a root no map holds (زمهر, as the API says) says so and offers to draw its map
+    expect((await (await page.request.get(`/api/v1/published?root=${enc("زمهر")}`)).json()).total).toBe(0);
+    await page.goto(`/roots/${enc("زمهر")}`);
+    const none = page.getByTestId("root-maps");
+    await expect(none).toContainText("لم تُنشر بعدُ خريطة تحمل هذا الجذر.");
+    await expect(none.getByRole("link", { name: /ارسم خريطة الجذر/ })).toHaveAttribute("href", `/graph/root/${enc("زمهر")}`);
+  } finally {
+    free(t);
+    await o.page.context().close();
+  }
+});
