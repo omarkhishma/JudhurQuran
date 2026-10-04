@@ -3339,6 +3339,12 @@
     "doMerge": "اقتراح {name}",
     "lessonNotesNoneMember": "لا ملاحظة من المعلم بعد.",
     "mapChip": "خريطة",
-    "mapPendingChip": "{n} تنتظر تأكيدك"
+    "mapPendingChip": "{n} تنتظر تأكيدك",
+    "translationBy": "الترجمة: {title}",
+    "verseLooked": "{count, plural, one {كلمة واحدة} two {كلمتان} few {{n} كلمات} many {{n} كلمة} other {{n} كلمة}}، بحث الصف عن {looked}",
+    "focusLookup": "{learners} {count, plural, one {من طالب واحد} two {من طالبين} few {من {n} طلاب} many {من {n} طالبا} other {من {n} طالب}}، والمتوسط {avg} لكل واحد",
+    "worthPause": "تستحق وقفة في الدرس.",
+    "footnotes": "حواشي الترجمة",
+    "verseLookedNone": "{count, plural, one {كلمة واحدة} two {كلمتان} few {{n} كلمات} many {{n} كلمة} other {{n} كلمة}}، لم يبحث الصف عن شيء منها"
   }
 }

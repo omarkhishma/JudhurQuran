@@ -6,13 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { Fragment, useState, type ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { useAccount } from "@/lib/account/store";
-import { addNote, editNote, getHeat, getLesson, getMatrix, getMine, getNotes, getPack, lessonKeys, rangesLine, removeNote, sendNudge, type Cell, type Heat, type Layer, type LessonOut, type LessonNote } from "@/lib/classroom";
+import { addNote, editNote, getHeat, getLesson, getMatrix, getMine, getNotes, getPack, rangesLine, removeNote, sendNudge, type Cell, type Heat, type Layer, type LessonOut, type LessonNote } from "@/lib/classroom";
 import { setFinished } from "@/lib/classroomSignals";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
-import { getJSON } from "@/lib/reader/api";
+import { getJSON, useWordAt } from "@/lib/reader/api";
+import { usePrefs } from "@/lib/reader/store";
 import { SAJDA, splitFurniture } from "@/lib/reader/verseText";
-import type { Verse, WordLite } from "@/lib/types";
+import type { SurahPayload, Verse, WordLite } from "@/lib/types";
 import { LessonMap } from "./LessonMap";
 import { NoteLine, useClassError, useFmt, useSurahNames } from "./shared";
 
@@ -128,19 +129,24 @@ function LessonTabs({ tab, onTab, teach, pending }: { tab: LessonTab; onTab: (t:
   );
 }
 
-/** The lesson's verses, read in batches the API allows. */
-function useLessonVerses(lesson: LessonOut, enabled = true) {
+/** The lesson's verses, a range at a time, with the translation the reader shows in the reader when they show one
+ * (CLS-11; on in English by default, as there). */
+function useLessonVerses(lesson: LessonOut, enabled = true, translation: string | null = null) {
   return useQuery({
-    queryKey: ["lesson-verses", JSON.stringify(lesson.ranges)],
+    queryKey: ["lesson-verses", JSON.stringify(lesson.ranges), translation],
     queryFn: async () => {
-      const keys = lessonKeys(lesson.ranges);
-      const out: Verse[] = [];
-      for (let i = 0; i < keys.length; i += 50) out.push(...(await getJSON<{ data: Verse[] }>(`/verses?keys=${encodeURIComponent(keys.slice(i, i + 50).join(","))}`)).data);
-      return out;
+      const parts = await Promise.all(lesson.ranges.map((r) => getJSON<SurahPayload>(`/surahs/${r.surah}?start=${r.from}&end=${r.to}${translation ? `&translation=${encodeURIComponent(translation)}` : ""}`)));
+      return { verses: parts.flatMap((p) => p.verses), work: parts.find((p) => p.translation)?.translation ?? null };
     },
     staleTime: Infinity,
     enabled,
   });
+}
+function useTranslationShown(): string | null {
+  const locale = useLocale();
+  const on = usePrefs((p) => p.translationLine) ?? locale !== "ar";
+  const work = usePrefs((p) => p.translation);
+  return on ? work : null;
 }
 const wordsOf = (verses: Verse[] | undefined) => new Map((verses ?? []).flatMap((v) => v.words.map((w) => [w.location, w] as const)));
 
@@ -151,11 +157,12 @@ function TeachLesson({ lesson }: { lesson: LessonOut }) {
   const [view, setView] = useState<"text" | "matrix">("text");
   const [focus, setFocus] = useState<string | null>(null);
   const heat = useQuery({ queryKey: ["heat", lesson.id], queryFn: () => getHeat(lesson.id), refetchOnWindowFocus: true, refetchInterval: 60_000 });
-  const verses = useLessonVerses(lesson);
+  const verses = useLessonVerses(lesson, true, useTranslationShown());
   const h = heat.data;
-  const words = wordsOf(verses.data);
+  const words = wordsOf(verses.data?.verses);
   const shown: Layer = view === "matrix" && layer === "note" ? "lookup" : layer;
   const focusWord = focus ? words.get(focus) : undefined;
+  const work = verses.data?.work;
   const [tab, setTab] = useLessonTab();
   return (
     // the map's editor needs the room its header is made for
@@ -164,7 +171,7 @@ function TeachLesson({ lesson }: { lesson: LessonOut }) {
       <LessonTabs tab={tab} onTab={setTab} teach pending={lesson.pending} />
       {tab === "map" ? (
         <div id="lesson-view" role="tabpanel" aria-labelledby="lt-map">
-          <LessonMap lesson={lesson} teach notes={<LessonNotes lesson={lesson} words={words} />} />
+          <LessonMap lesson={lesson} teach notes={<LessonNotes lesson={lesson} words={words} heat={h} />} />
         </div>
       ) : (
         <div id="lesson-view" role="tabpanel" aria-labelledby="lt-class" className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -200,20 +207,21 @@ function TeachLesson({ lesson }: { lesson: LessonOut }) {
                 <p role="alert" className="text-[13px] text-t2">{t("failed")}</p>
               ) : (
                 <div className="flex flex-col gap-5">
-                  {(verses.data ?? []).map((v) => (
-                    <HeatVerse key={v.key} v={v} heat={h} layer={shown} focus={focus} onFocus={setFocus}>
+                  {work && <p className="text-[11.5px] text-t3">{t("translationBy", { title: locale === "ar" ? work.title_ar : work.title_en })}</p>}
+                  {(verses.data?.verses ?? []).map((v) => (
+                    <HeatVerse key={v.key} v={v} heat={h} layer={shown} focus={focus} same={focusWord?.lemma_slug ?? null} onFocus={setFocus}>
                       {focusWord && h && focus?.startsWith(`${v.key}:`) && <FocusCard lessonId={lesson.id} word={focusWord} heat={h} onClose={() => setFocus(null)} />}
                     </HeatVerse>
                   ))}
                 </div>
               )
             ) : (
-              <MatrixView lesson={lesson} layer={shown} verses={verses.data} heat={h} />
+              <MatrixView lesson={lesson} layer={shown} verses={verses.data?.verses} heat={h} />
             )}
           </section>
           <section className="flex flex-col gap-4" aria-label={t("classPanel")}>
             {h && <ClassPanel lessonId={lesson.id} heat={h} open={lesson.open} />}
-            <LessonNotes lesson={lesson} words={words} />
+            <LessonNotes lesson={lesson} words={words} heat={h} />
             <p className="text-[12px] leading-relaxed text-t3">{t(h?.minors ? "panelFootMinors" : "panelFoot", { floor: formatNumber(h?.floor ?? 5, locale), few: formatNumber(h?.few ?? 3, locale) })}</p>
           </section>
         </div>
@@ -250,17 +258,21 @@ function Legend({ layer, few, matrix }: { layer: Layer; few: number; matrix: boo
 
 /** One verse in the mushaf's text, each word a button with the class's heat under it (never on its letters); a note
  * is written on a verse, so the notes' heat sits under the whole verse. */
-function HeatVerse({ v, heat, layer, focus, onFocus, children }: { v: Verse; heat: Heat | undefined; layer: Layer; focus: string | null; onFocus: (loc: string | null) => void; children: ReactNode }) {
+function HeatVerse({ v, heat, layer, focus, same, onFocus, children }: { v: Verse; heat: Heat | undefined; layer: Layer; focus: string | null; same: string | null; onFocus: (loc: string | null) => void; children: ReactNode }) {
   const t = useTranslations("classroom");
   const locale = useLocale();
   const say = useCellText();
   const few = heat?.few ?? 3;
   const verseCell = heat?.words[`${v.key}:0`]?.note;
   const layerName = t(`layer_${layer}`);
+  const byPos = new Map(v.words.map((w) => [w.position, w]));
+  // the verse's line (CLS-09): its words, and how many of them the class looked up — once there is a number to say
+  const looked = v.words.filter((w) => heat?.words[w.location]?.lookup).length;
   return (
     <article className="flex flex-col gap-1" aria-labelledby={`v-${v.key}`}>
       <div className="flex flex-wrap items-baseline gap-x-3 text-[11.5px] text-t3">
         <span id={`v-${v.key}`} className="mono" dir="ltr">{verseRef(v.key, locale)}</span>
+        {heat?.floor_met && layer !== "note" && <span>{t(looked ? "verseLooked" : "verseLookedNone", { ...cnt(v.words.length, locale), looked: formatNumber(looked, locale) })}</span>}
         {layer === "note" && <span>{`${t("noteOnVerse")}: ${say(verseCell, "note", few)}`}</span>}
       </div>
       <p className="quran class-verse" dir="rtl" lang="ar" data-heat={layer === "note" ? level(verseCell, "note") || undefined : undefined}>
@@ -270,6 +282,8 @@ function HeatVerse({ v, heat, layer, focus, onFocus, children }: { v: Verse; hea
           const cell = layer === "note" ? undefined : heat?.words[loc]?.[layer];
           const lv = level(cell, layer);
           const { word, sajda } = splitFurniture(tk.text);
+          const w = byPos.get(tk.word_from);
+          const said = layer === "note" ? undefined : `${layerName}: ${say(cell, layer, few)}`;
           return (
             <Fragment key={tk.position}>
               <button
@@ -277,8 +291,11 @@ function HeatVerse({ v, heat, layer, focus, onFocus, children }: { v: Verse; hea
                 className="heat-w"
                 data-heat={lv || undefined}
                 data-w={loc}
+                // every occurrence of the word in focus is marked with it (CLS-12)
+                data-same={same && focus !== loc && w?.lemma_slug === same ? "" : undefined}
                 aria-pressed={focus === loc}
-                aria-label={layer === "note" ? word : `${word} — ${layerName}: ${say(cell, layer, few)}`}
+                aria-label={said ? `${word} — ${said}` : word}
+                title={said ? `${said}${w?.translit ? ` · ${w.translit}` : ""}` : (w?.translit ?? undefined)}
                 onClick={() => onFocus(focus === loc ? null : loc)}
               >
                 {word}
@@ -292,6 +309,18 @@ function HeatVerse({ v, heat, layer, focus, onFocus, children }: { v: Verse; hea
           {v.number_text}
         </span>
       </p>
+      {v.translation?.text && (
+        <p className="text-[14px] leading-relaxed text-t2" dir="auto">
+          {v.translation.text}
+        </p>
+      )}
+      {/* the translation as published: its marks refer to its own footnotes, as in the reader */}
+      {v.translation?.footnotes && (
+        <details className="text-[12.5px] text-t2">
+          <summary className="cursor-pointer text-t3">{t("footnotes")}</summary>
+          <p className="mt-1 whitespace-pre-line" dir="auto">{v.translation.footnotes}</p>
+        </details>
+      )}
       {children}
     </article>
   );
@@ -309,6 +338,12 @@ function FocusCard({ lessonId, word, heat, onClose }: { lessonId: string; word: 
   const inNotes = notes.data?.data.some((n) => n.location === word.location);
   const cells = heat.words[word.location] ?? {};
   const verse = word.location.split(":").slice(0, 2).join(":");
+  // its part of speech and shape, as the reader's entry gives them (CLS-14)
+  const detail = useWordAt(word.location).data;
+  const label = (x: { ar?: string | null; en?: string | null } | undefined) => (x ? (locale === "ar" ? x.ar : x.en) : null);
+  const looked = cells.lookup;
+  // looked up by how many of the class, how often on average (CLS-13)
+  const lookupLine = looked && "learners" in looked ? t("focusLookup", { learners: formatNumber(looked.learners, locale), ...cnt(heat.members, locale), avg: new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { maximumFractionDigits: 1 }).format(looked.total / looked.learners) }) : null;
   return (
     <section className="focus-card flex flex-col gap-2 rounded-xl border border-line-2 bg-card p-4" aria-label={t("focusCard", { word: word.text_uthmani })} onKeyDown={(e) => e.key === "Escape" && onClose()}>
       <div className="flex items-start justify-between gap-2">
@@ -322,12 +357,16 @@ function FocusCard({ lessonId, word, heat, onClose }: { lessonId: string; word: 
           {LAYERS.map((l) => (
             <Fragment key={l}>
               <dt className="text-t3">{l === "note" ? t("noteOnVerse") : t(`layer_${l}`)}</dt>
-              <dd className="text-t1">{say(l === "note" ? heat.words[`${verse}:0`]?.note : cells[l], l, heat.few)}</dd>
+              <dd className="text-t1">{l === "lookup" && lookupLine ? lookupLine : say(l === "note" ? heat.words[`${verse}:0`]?.note : cells[l], l, heat.few)}</dd>
             </Fragment>
           ))}
         </dl>
       )}
+      {heat.floor_met && level(looked, "lookup") === 3 && <p className="text-[12.5px] font-medium text-root">{t("worthPause")}</p>}
       <p className="flex flex-wrap items-baseline gap-x-2 text-[12.5px] text-t2">
+        {label(detail?.features.pos) && <span>{label(detail?.features.pos)}</span>}
+        {detail?.features.verb_form && <span className="ar-classical text-[15px]" lang="ar">{detail.features.verb_form.pattern}</span>}
+        {label(detail?.features.derivation) && <span>{label(detail?.features.derivation)}</span>}
         {word.lemma && <span className="ar-classical text-[16px]" lang="ar">{word.lemma}</span>}
         {word.root ? (
           <Link href={`/roots/${encodeURIComponent(word.root)}`} className="underline-offset-2 hover:underline">
@@ -462,8 +501,9 @@ function Tile({ label, value }: { label: string; value: string }) {
 
 /** The lesson notes (CLS-19, 20): a word, a root or a line; reworded, moved, removed. They travel with the lesson's
  * file, so the class reads them too. */
-function LessonNotes({ lesson, words }: { lesson: LessonOut; words: Map<string, WordLite> }) {
+function LessonNotes({ lesson, words, heat }: { lesson: LessonOut; words: Map<string, WordLite>; heat?: Heat }) {
   const t = useTranslations("classroom");
+  const say = useCellText();
   const fail = useClassError();
   const locale = useLocale();
   const qc = useQueryClient();
@@ -506,7 +546,10 @@ function LessonNotes({ lesson, words }: { lesson: LessonOut; words: Map<string, 
                   <button type="submit" className="btn">{t("save")}</button>
                 </form>
               ) : (
-                <NoteLine n={n} word={n.location ? words.get(n.location)?.text_uthmani : undefined} />
+                <>
+                  <NoteLine n={n} word={n.location ? words.get(n.location)?.text_uthmani : undefined} />
+                  {n.location && heat?.floor_met && <span className="text-[11.5px] text-t3">{`${t("layer_lookup")}: ${say(heat.words[n.location]?.lookup, "lookup", heat.few)}`}</span>}
+                </>
               )}
               <div className="flex items-center gap-1">
                 <button type="button" className="note-act" onClick={() => setEditing(editing?.id === n.id ? null : { id: n.id, text: n.text })}>{t(editing?.id === n.id ? "cancel" : "noteEdit")}</button>
@@ -626,7 +669,7 @@ function LearnLesson({ lesson }: { lesson: LessonOut }) {
   const mine = useQuery({ queryKey: ["lesson-mine", lesson.id], queryFn: () => getMine(lesson.id) });
   const pack = useQuery({ queryKey: ["lesson-pack", lesson.id], queryFn: () => getPack(lesson.id) });
   const verses = useLessonVerses(lesson, !!mine.data?.counts.length);
-  const words = wordsOf(verses.data);
+  const words = wordsOf(verses.data?.verses);
   const [said, setSaid] = useState("");
   const done = !!lesson.mine?.finished_on;
   const [tab, setTab] = useLessonTab();

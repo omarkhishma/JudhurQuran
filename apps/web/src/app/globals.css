@@ -6457,6 +6457,10 @@ a.wotd-pill:hover {
   background: transparent;
   box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c-root) 55%, transparent);
 }
+/* every occurrence of the word in focus (CLS-12): underlined in the root's colour */
+.heat-w[data-same] {
+  box-shadow: inset 0 -2px 0 var(--c-root);
+}
 .heat-w[aria-pressed="true"] {
   box-shadow: inset 0 -2px 0 var(--c-root), 0 0 0 1.5px var(--c-root);
 }

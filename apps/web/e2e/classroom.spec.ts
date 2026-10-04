@@ -220,6 +220,14 @@ test("an instructor reads the class's heat above the floor, keeps lesson notes a
     await expect(page.locator('[data-w="1:5:2"]')).toHaveAttribute("aria-label", /من أقل من ٣ طلاب، فلا يذكر العدد/);
     const ink = (sel: string) => page.locator(sel).evaluate((e) => getComputedStyle(e).color);
     expect(await ink('[data-w="1:2:3"]')).toBe(await ink('[data-w="1:1:1"]'));
+    // a word says its numbers on hover (CLS-10); a verse says how many of its words the class looked up (CLS-09)
+    await expect(rabb).toHaveAttribute("title", /^البحث: ٣ طلاب، ١٢ مرة · /);
+    await expect(page.locator("article").filter({ has: page.locator('[data-w="1:2:1"]') })).toContainText("٤ كلمات، بحث الصف عن ١");
+    // a word in focus marks its other occurrences (CLS-12): ٱلرَّحْمَٰنِ in 1:1 and in 1:3
+    await page.locator('[data-w="1:1:3"]').click();
+    await expect(page.locator('[data-w="1:3:1"]')).toHaveAttribute("data-same", "");
+    await expect(page.locator('[data-w="1:2:3"]')).not.toHaveAttribute("data-same", /.*/);
+    await page.locator('[data-w="1:1:3"]').click();
     // the class panel: computed, never sample numbers
     const panel = page.getByRole("region", { name: "الصف في هذا الدرس" });
     await expect(panel.getByRole("heading", { name: "الصف · ٥ طلاب" })).toBeVisible();
@@ -232,7 +240,10 @@ test("an instructor reads the class's heat above the floor, keeps lesson notes a
     // a word's card, and the word into the lesson notes; a line of the instructor's own, moved first
     await rabb.click();
     const card = page.getByRole("region", { name: /^الكلمة / });
-    await expect(card).toContainText("٣ طلاب، ١٢ مرة");
+    // looked up by how many of the class, how often each (CLS-13); its part of speech, and a word worth a pause (CLS-14)
+    await expect(card).toContainText("٣ من ٥ طلاب، والمتوسط ٤ لكل واحد");
+    await expect(card).toContainText("تستحق وقفة في الدرس.");
+    await expect(card).toContainText("اسم");
     await expect(card).toContainText("٣ طلاب، ٣ ملاحظات");
     await card.getByRole("button", { name: "أضفها إلى ملاحظات الدرس" }).click();
     await expect(card.getByRole("button", { name: "في ملاحظات الدرس" })).toBeDisabled();
@@ -243,6 +254,8 @@ test("an instructor reads the class's heat above the floor, keeps lesson notes a
     await expect(notes).toHaveCount(2);
     await notes.nth(1).getByRole("button", { name: "انقلها أعلى" }).click();
     await expect(notes.nth(0)).toContainText("نقف عند الربوبية");
+    // a noted word says what the class did with it (CLS-19)
+    await expect(notes.nth(1)).toContainText("البحث: ٣ طلاب، ١٢ مرة");
     // the notes' layer sits on the verse, not a word
     await page.getByRole("group", { name: "الطبقة" }).getByRole("button", { name: "الملاحظات" }).click();
     await expect(page.locator("article").filter({ has: page.locator('[data-w="1:2:1"]') })).toContainText("الملاحظات على الآية: ٣ طلاب، ٣ ملاحظات");
@@ -260,6 +273,12 @@ test("an instructor reads the class's heat above the floor, keeps lesson notes a
     await table.getByRole("button", { name: new RegExp(`ليلى ${t.slice(-4)} · ر ب ب: ٤`) }).click();
     await expect(page.getByRole("region", { name: "الطالب والجذر" })).toContainText("كلمات الجذر في الدرس");
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
+
+    // in English the verses carry the reader's translation, credited (CLS-11)
+    await page.goto(`/en/classroom/lesson/${lesson.id}`);
+    await expect(page.getByText(/^Translation: /)).toBeVisible();
+    await expect(page.locator("article").filter({ has: page.locator('[data-w="1:1:1"]') })).toContainText(/In the name of All[aā]h/);
+    await page.goto(`/classroom/lesson/${lesson.id}`);
 
     // the member: reminded, the notes, what their reader sent, finished by their word
     const lp = learner.page;
