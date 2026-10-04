@@ -26,6 +26,7 @@ Every reading names a lemma, root and pattern some source gives; nothing is gues
 
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 
@@ -273,3 +274,13 @@ def analyse(v: Vocabulary, word: str) -> Analysis:
                     return cand
                 best = cand
     return best or Analysis("none", 0.0)
+
+
+# one tokeniser for every text, shared by the pipeline (which stores a form id per word) and the API (which gives a
+# passage's words back with their spans): a run of Arabic letters and the marks on them
+_WORD = re.compile("[ء-غف-يٱ-ۓً-ٰٟۖ-ۭ]+")
+
+
+def word_spans(text: str) -> list[tuple[int, int]]:
+    """Where each word of a text begins and ends, in order."""
+    return [(m.start(), m.end()) for m in _WORD.finditer(text)]
