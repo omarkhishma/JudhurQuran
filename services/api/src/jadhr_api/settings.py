@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     search_url: str | None = "http://localhost:9201"
     search_timeout: float = 3.0
 
+    # ─── Releases (P10.1b) ──────────────────────────────────────────────────────
+    # where built releases live (data/release/<version>/MANIFEST.json and its files); a relative path is from the repo
+    release_dir: str = "data/release"
+
     # ─── Accounts and sync (P6, D3) ────────────────────────────────────────────
     # where the web app lives, for the links in sign-in e-mails
     public_web_url: str = "http://localhost:3210"

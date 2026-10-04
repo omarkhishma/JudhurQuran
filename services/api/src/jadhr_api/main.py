@@ -45,6 +45,7 @@ from . import (
     routes_editorial,
     routes_graphs,
     routes_me,
+    routes_releases,
     topics,
 )
 from .db import connect, one
@@ -1117,6 +1118,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_editorial.router)
     app.include_router(routes_graphs.router)
     app.include_router(routes_classroom.router)
+    app.include_router(routes_releases.router)
     return app
 
 

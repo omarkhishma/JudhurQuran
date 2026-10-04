@@ -3,7 +3,10 @@
     uv run python -m jadhr_pipeline.release            # data/build/<version> → data/release/<version>
 
 Only data whose licence allows redistribution goes in; everything left out is listed in MANIFEST.json
-with the reason. Every file carries its sha256 and row count. Publishing the release is the owner's call.
+with the reason. Every file carries its sha256 and row count, its format and table, and the hold it is under if
+any: a held file is listed with its reason and never served (the API, P10.1b). A release is built once — its
+manifest is final; a folder that has one is rebuilt only with --force, before it is recorded. Publishing the
+release is the owner's call.
 """
 
 from __future__ import annotations
@@ -68,11 +71,15 @@ TANZIL_META_NOTICE = (
 # Publication is the owner's call; these hold it until the named decisions are taken (research 07).
 PUBLICATION_HOLD = [
     {
+        "id": "qac",
+        "tables": ["words", "lemmas", "roots"],
         "data": "words, lemmas and roots files (data derived from the Quranic Arabic Corpus)",
         "why": "the corpus permits verbatim copies only, its FAQ speaks of non-commercial use, and the text column is CC BY-ND",
         "decision": "D19 (ask the corpus maintainers) and D2",
     },
     {
+        "id": "kfgqpc",
+        "tables": ["verses"],
         "data": "verses file (KFGQPC Unicode data)",
         "why": "the Complex's published terms describe the mushaf files; redistribution of the Unicode data is to be confirmed",
         "decision": "D19 (ask the Complex)",
@@ -133,10 +140,20 @@ def _csv(rows: list[dict[str, Any]], columns: list[str]) -> str:
     return buf.getvalue()
 
 
-def build_release(version: str) -> dict[str, Any]:
+class Built(Exception):
+    """A release folder that already has its manifest: a release is built once."""
+
+
+def build_release(version: str, out: Path | None = None, force: bool = False) -> dict[str, Any]:
     src = REPO / "data/build" / version
-    out = REPO / "data/release" / version
+    out = out or REPO / "data/release" / version
+    if (out / "MANIFEST.json").exists() and not force:
+        raise Built(f"{out} has its manifest: a release is built once (--force before it is recorded)")
     out.mkdir(parents=True, exist_ok=True)
+    # a rebuild leaves nothing of the last one behind
+    for stale in out.iterdir():
+        if stale.is_file():
+            stale.unlink()
     report = json.loads((src / "report.json").read_text(encoding="utf-8"))
     sources = {
         s["id"]: s
@@ -211,6 +228,7 @@ def build_release(version: str) -> dict[str, Any]:
         ("lemmas", lemma_rows, list(lemma_rows[0]), f"{QAC_NOTICE} Patterns (wazn): derived by this project, see docs/DECISIONS.md."),
         ("roots", root_rows, list(root_rows[0]), QAC_NOTICE),
     ]  # fmt: skip
+    held = {t: h["id"] for h in PUBLICATION_HOLD for t in h["tables"]}
     files = []
     for name, rows, cols, notice in tables:
         for ext, body in (
@@ -222,6 +240,9 @@ def build_release(version: str) -> dict[str, Any]:
             files.append(
                 {
                     "path": f"{name}.{ext}",
+                    "table": name,
+                    "format": ext,
+                    "held": held.get(name),
                     "rows": len(rows),
                     "bytes": len(data),
                     "sha256": hashlib.sha256(data).hexdigest(),
@@ -249,7 +270,13 @@ def build_release(version: str) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     args = argv if argv is not None else sys.argv[1:]
-    m = build_release(args[0] if args else "2026.10.0")
+    force = "--force" in args
+    names = [a for a in args if not a.startswith("--")]
+    try:
+        m = build_release(names[0] if names else "2026.10.0", force=force)
+    except Built as e:
+        print(e, file=sys.stderr)
+        return 1
     print(
         json.dumps(
             {"version": m["version"], "files": [(f["path"], f["rows"]) for f in m["files"]]},

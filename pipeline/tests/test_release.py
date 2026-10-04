@@ -6,12 +6,13 @@ import hashlib
 import json
 from pathlib import Path
 
-from jadhr_pipeline.release import REPO, build_release
+import pytest
+from jadhr_pipeline.release import REPO, Built, build_release
 
 
-def test_release_matches_its_manifest_and_the_build() -> None:
-    m = build_release("2026.10.0")
-    out = REPO / "data/release/2026.10.0"
+def test_release_matches_its_manifest_and_the_build(tmp_path: Path) -> None:
+    out = tmp_path / "2026.10.0"
+    m = build_release("2026.10.0", out)
     for f in m["files"]:
         assert hashlib.sha256((out / f["path"]).read_bytes()).hexdigest() == f["sha256"], f["path"]
     rows = {f["path"]: f["rows"] for f in m["files"]}
@@ -23,12 +24,23 @@ def test_release_matches_its_manifest_and_the_build() -> None:
     ]
     assert hashlib.sha256("\n".join(text).encode()).hexdigest() == m["text_sha256"]
     assert {e["data"] for e in m["excluded"]} and all(e["reason"] for e in m["excluded"])
+    # each file says its table, format and hold; a built release is not built again unless forced
+    assert {(f["table"], f["format"], f["held"]) for f in m["files"] if f["table"] == "verses"} == {
+        ("verses", "jsonl", "kfgqpc"),
+        ("verses", "csv", "kfgqpc"),
+    }
+    assert {f["held"] for f in m["files"] if f["table"] != "verses"} == {"qac"}
+    with pytest.raises(Built):
+        build_release("2026.10.0", out)
+    (out / "stray.txt").write_text("left from an earlier build")
+    build_release("2026.10.0", out, force=True)
+    assert not (out / "stray.txt").exists()
 
 
-def test_release_labels_every_layer_by_its_real_source() -> None:
+def test_release_labels_every_layer_by_its_real_source(tmp_path: Path) -> None:
     """Research 07: the corpus block verbatim, the corpus's Tanzil text not labelled KFGQPC, Tanzil's
     metadata credited, unlicensed qac-v2 data left out, and publication held for the owner's decisions."""
-    m = build_release("2026.10.0")
+    m = build_release("2026.10.0", tmp_path)
     raw = (REPO / "data/raw/qac/quranic-corpus-morphology-0.4.txt").read_text(encoding="utf-8")
     header = "\n".join(
         line.removeprefix("#").removeprefix("  ").rstrip()
@@ -43,13 +55,9 @@ def test_release_labels_every_layer_by_its_real_source() -> None:
     assert "Tanzil" in notice["verses"] and "KFGQPC" in notice["verses"]
     assert "may not be modified or sold" not in json.dumps(m, ensure_ascii=False)
     assert not any(f["path"].startswith("root_variants") for f in m["files"])
-    lemma_cols = json.loads(
-        (REPO / "data/release/2026.10.0/lemmas.jsonl").read_text(encoding="utf-8").splitlines()[0]
-    )
+    lemma_cols = json.loads((tmp_path / "lemmas.jsonl").read_text(encoding="utf-8").splitlines()[0])
     assert "gloss_en" not in lemma_cols
     # a root's gist is Maqāyīs's own words (display-only, D22): never in the bulk release
-    root_cols = json.loads(
-        (REPO / "data/release/2026.10.0/roots.jsonl").read_text(encoding="utf-8").splitlines()[0]
-    )
+    root_cols = json.loads((tmp_path / "roots.jsonl").read_text(encoding="utf-8").splitlines()[0])
     assert not {"gist_ar", "gist_source", "gloss_en"} & set(root_cols)
     assert m["publication_hold"] and all(h["decision"] for h in m["publication_hold"])
