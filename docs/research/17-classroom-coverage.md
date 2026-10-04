@@ -113,4 +113,4 @@ Journey F (design 01 §1.5): **done** — `journey-f.spec.ts`, desktop and phone
 
 - The owner: whether a class for minors with a parent's agreement asked on screen is enough before launch (CLS-Q02, research 16 §6).
 - The owner: P8.5 (publishing), the public way out for a class's map (CLS-Q06).
-- Noted, not a CLS item: the feed is read again every half minute and on focus rather than pushed; the presence socket could carry it (proposal B47 in PLAN §8).
+- Since the audit: the feed and the proposals are told at once over the map's socket (B47), the half-minute reading kept as the fallback; a member drafting on their own copy is not on the class's socket and keeps the fallback.

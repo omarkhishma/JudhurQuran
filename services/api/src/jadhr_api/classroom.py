@@ -1341,12 +1341,14 @@ def map_saved(conn: Connection, before: dict[str, Any], after: dict[str, Any], u
         }
         if not (detail["added"] or detail["removed"] or detail["linked"] or detail["unlinked"]):
             q(conn, "delete from classroom.activity where id = :a returning id", {"a": last["id"]})
+            _tell(conn, lesson["id"])
             return
         q(
             conn,
             "update classroom.activity set detail = cast(:d as jsonb), at = now() where id = :a returning id",
             {"d": json.dumps(detail, ensure_ascii=False), "a": last["id"]},
         )
+        _tell(conn, lesson["id"])
         return
     _log(
         conn,
@@ -1355,6 +1357,15 @@ def map_saved(conn: Connection, before: dict[str, Any], after: dict[str, Any], u
         "edited",
         {"added": added[:200], "removed": removed[:200], "linked": linked, "unlinked": unlinked},
     )
+
+
+def _tell(conn: Connection, lesson_id: Any) -> None:
+    """The windows on the lesson's map are told its activity or proposals changed (B47)."""
+    from . import presence
+
+    g = q1(conn, "select graph_id from classroom.lessons where id = :l", {"l": lesson_id})
+    if g and g["graph_id"]:
+        presence.tell_changed(conn, g["graph_id"])
 
 
 def _log(conn: Connection, lesson_id: Any, who: Any, kind: str, detail: dict[str, Any]) -> None:
@@ -1372,6 +1383,7 @@ def _log(conn: Connection, lesson_id: Any, who: Any, kind: str, detail: dict[str
            returning id""",
         {"l": lesson_id},
     )
+    _tell(conn, lesson_id)
 
 
 def set_map(u: dict[str, Any], lid: str, graph_id: Any) -> dict[str, Any]:
@@ -1594,6 +1606,7 @@ def withdraw(u: dict[str, Any], pid: str) -> None:
                  and detail->>'proposal' = :p returning id""",
             {"l": p["lesson_id"], "p": str(p["id"])},
         )
+        _tell(conn, p["lesson_id"])
 
 
 def activity(u: dict[str, Any], lid: str, before: Any = None, limit: Any = 30) -> dict[str, Any]:

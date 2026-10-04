@@ -92,6 +92,11 @@ class Hub:
             "editor": None if not editor else "you" if editor["conn"] == conn else "elsewhere",
         }
 
+    async def changed(self, gid: str) -> None:
+        for ws in list(self.sockets.get(gid, {}).values()):
+            with contextlib.suppress(Exception):
+                await ws.send_json({"type": "changed"})
+
     async def broadcast(self, gid: str) -> None:
         for conn, ws in list(self.sockets.get(gid, {}).items()):
             with contextlib.suppress(Exception):
@@ -111,11 +116,15 @@ class Hub:
             await asyncio.to_thread(notify)
 
     async def heard(self, raw: str) -> None:
-        """Another worker's word on a map: kept with the time it came, and passed to this worker's windows."""
+        """Another worker's word on a map: kept with the time it came, and passed to this worker's windows. Or the
+        map's content changed (a comment, a lesson's proposal or activity, B47): its windows are told to look again."""
         try:
             m = json.loads(raw)
+            if m.get("k") == "changed":
+                await self.changed(str(m["g"]))
+                return
             w, gid, es = str(m["w"]), str(m["g"]), list(m["e"])
-        except (ValueError, KeyError, TypeError):
+        except (ValueError, KeyError, TypeError, AttributeError):
             return
         if w == WORKER:
             return
@@ -262,3 +271,13 @@ async def serve(ws: WebSocket, gid: str) -> None:
         leaving.add_done_callback(hub.leaving.discard)
         with contextlib.suppress(asyncio.CancelledError):
             await asyncio.shield(leaving)
+
+
+def tell_changed(conn: Any, gid: Any) -> None:
+    """Within a writing transaction: every worker tells its windows on the map, once the change is committed, that the
+    map's comments or its lesson's proposals and activity changed (B47). Nothing is kept."""
+    accounts.q(
+        conn,
+        "select pg_notify(:ch, :body) as sent",
+        {"ch": CHANNEL, "body": json.dumps({"k": "changed", "g": str(gid)})},
+    )

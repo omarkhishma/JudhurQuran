@@ -15,6 +15,10 @@ export type Presence = { people: Person[]; guests: number; editor: "you" | "else
 
 /** Who is on a shared map, kept up to date while the window is open; `editing` says this window means to edit (the
  * owner's editor) rather than read. `take` claims the map for this window. */
+/** Said on this window when the server tells a shared map's windows that its content changed (B47); the detail is the
+ * map's id. */
+export const MAP_CHANGED = "jadhr:map-changed";
+
 export function useSharedPresence(gid: string | null, editing: boolean): { presence: Presence | null; take: () => void } {
   const session = useAccount((s) => s.session);
   const [presence, setPresence] = useState<Presence | null>(null);
@@ -35,6 +39,8 @@ export function useSharedPresence(gid: string | null, editing: boolean): { prese
         try {
           const m = JSON.parse(String(e.data)) as Presence & { type: string };
           if (m.type === "presence") setPresence({ people: m.people, guests: m.guests, editor: m.editor });
+          // the map's comments, or its lesson's proposals and activity, changed (B47): whoever shows them looks again
+          else if (m.type === "changed") window.dispatchEvent(new CustomEvent(MAP_CHANGED, { detail: gid }));
         } catch {}
       };
       ws.onclose = (e) => {

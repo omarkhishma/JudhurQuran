@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { verseRef } from "@/lib/format";
 import { lemmaId, rootId, verseId } from "@/lib/graph/build";
+import { MAP_CHANGED } from "@/lib/graph/presence";
 import { cleanGraph } from "@/lib/graph/sanitize";
 import { rootCards, verseCards, wordCards } from "@/lib/graph/seed";
 import type { GraphEdge, GraphNode } from "@/lib/graph/types";
@@ -25,7 +26,9 @@ export type SplitMessage =
   | { type: "jadhr:merged"; ref: string; cards: number }
   | { type: "jadhr:merge-refused"; ref: string; reason: "locked" }
   | { type: "jadhr:get-doc"; ref: string }
-  | { type: "jadhr:doc"; ref: string; nodes: GraphNode[]; edges: GraphEdge[] };
+  | { type: "jadhr:doc"; ref: string; nodes: GraphNode[]; edges: GraphEdge[] }
+  // the map's content changed on the server (B47): the page holding it looks again at what it shows of it
+  | { type: "jadhr:changed" };
 
 const SLUG = /^[\p{L}\p{N}_.'-]{1,80}$/u;
 const PLACE = /^\d{1,3}:\d{1,3}:\d{1,3}$/;
@@ -129,6 +132,13 @@ export function SplitReceiver({ readOnly = false, saveNow }: { readOnly?: boolea
     reply({ type: "jadhr:ready", editor: !readOnly && live.current.editable });
     return () => window.removeEventListener("message", on);
   }, [t, locale, readOnly]);
+  // the server said the map's content changed (B47): passed on to the page that holds this one
+  useEffect(() => {
+    if (window.parent === window) return;
+    const on = () => window.parent.postMessage({ type: "jadhr:changed" } satisfies SplitMessage, location.origin);
+    window.addEventListener(MAP_CHANGED, on);
+    return () => window.removeEventListener(MAP_CHANGED, on);
+  }, []);
   // the page is told when this window starts or stops editing (another window took the map, or gave it back)
   const editable = tools.editable;
   useEffect(() => {

@@ -77,15 +77,20 @@ function MakeMap({ lesson }: { lesson: LessonOut }) {
 }
 
 /** The frame and what it says: whether it edits, and its answers to what it was asked. */
-function useFrame(ref: RefObject<HTMLIFrameElement | null>) {
+function useFrame(ref: RefObject<HTMLIFrameElement | null>, onChanged?: () => void) {
   // null: not said yet; true: an editor that edits now; false: a map read, or an editor another window holds
   const [editor, setEditor] = useState<boolean | null>(null);
   const waiting = useRef(new Map<string, (m: SplitMessage | null) => void>());
+  const changed = useRef(onChanged);
+  useEffect(() => {
+    changed.current = onChanged;
+  });
   useEffect(() => {
     const on = (e: MessageEvent) => {
       if (e.origin !== location.origin || !ref.current || e.source !== ref.current.contentWindow) return;
       const m = e.data as SplitMessage;
       if (m?.type === "jadhr:ready") setEditor(!!m.editor);
+      if (m?.type === "jadhr:changed") changed.current?.();
       const id = (m as { ref?: unknown })?.ref;
       if (typeof id === "string" && waiting.current.has(id)) {
         waiting.current.get(id)!(m);
@@ -130,7 +135,11 @@ function MapRoom({ lesson, teach, notes, gid }: { lesson: LessonOut; teach: bool
   const t = useTranslations("classroom");
   const locale = useLocale();
   const frameRef = useRef<HTMLIFrameElement>(null);
-  const frame = useFrame(frameRef);
+  const qc = useQueryClient();
+  // the server said the map changed (B47, through the frame): the feed, the proposals and the map's topics look again
+  const frame = useFrame(frameRef, () => {
+    for (const k of [["activity", lesson.id], ["proposals", lesson.id], ["lesson-map-doc", gid], ["lesson", lesson.id]]) void qc.invalidateQueries({ queryKey: k });
+  });
   const draft = readDraft(useLocalStorage(DRAFT(lesson.id)), gid);
   // a member with a draft works on it in the frame, or looks at the class's map again
   const [onDraft, setOnDraft] = useState(true);

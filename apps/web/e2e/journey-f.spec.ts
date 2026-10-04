@@ -123,8 +123,9 @@ test("journey F: a class taught — a lesson assigned, the class's heat read, th
       .toBe(3);
     await lp.getByRole("button", { name: "أرسل اقتراحي" }).click();
     await expect(lp.getByRole("region", { name: "اقتراحك" })).toHaveCount(0);
-    // the instructor's feed shows it on its own (it is read again every half minute)
-    await expect(tp.getByRole("list", { name: "النشاط" })).toContainText(`${lname} · اقتراح ر ب ب`, { timeout: 45_000 });
+    // the instructor's feed shows it on its own, told at once over the map's socket (B47) — well within the half
+    // minute it is otherwise read again in
+    await expect(tp.getByRole("list", { name: "النشاط" })).toContainText(`${lname} · اقتراح ر ب ب`, { timeout: 8_000 });
     await tp.getByRole("tab", { name: /الاقتراحات/ }).click();
     await tp.locator(".proposal").filter({ hasText: lname }).getByRole("button", { name: "أكّد" }).click();
     await expect(tf.locator(".react-flow__node").filter({ hasText: "ر ب ب" })).toHaveCount(1);

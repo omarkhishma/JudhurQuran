@@ -770,3 +770,32 @@ def test_a_lesson_is_copied_into_another_class_and_an_archived_class_takes_none(
         json={"title": "x", "ranges": [{"surah": 1, "from": 1, "to": 2}]},
     )
     assert _code(r) == "archived"
+
+
+def test_the_windows_on_a_lessons_map_are_told_when_it_changes(people: dict[str, dict[str, str]]) -> None:
+    """B47: a comment, a proposal and a decision on a lesson's map are told at once to the windows on the map (a
+    "changed" message over the presence socket), so the feed and the proposals change without waiting."""
+    from test_presence_api import _until
+
+    t, a = people["t"], people["a"]
+    c = _class(t)
+    _join(a, c["join_code"])
+    lesson = client.post(
+        f"/api/v1/classroom/classes/{c['id']}/lessons",
+        headers=t,
+        json={"title": "ل", "ranges": [{"surah": 1, "from": 1, "to": 7}]},
+    ).json()
+    url = f"/api/v1/classroom/lessons/{lesson['id']}"
+    g = _class_map(t)
+    client.put(f"{url}/map", headers=t, json={"graph_id": g["id"]})
+    on = f"/api/v1/graphs/{g['id']}"
+    card = {"id": "root:رحم", "data": {"kind": "root", "ar": "ر ح م"}}
+    with TestClient(app) as tc, tc.websocket_connect(f"{on}/presence") as ws:
+        ws.send_json({"type": "hello", "token": a["Authorization"].removeprefix("Bearer ")})
+        _until(ws, lambda m: m["type"] == "presence")
+        tc.post(f"{on}/comments", headers=t, json={"body": "نبدأ بالحمد"})
+        _until(ws, lambda m: m["type"] == "changed")
+        p = tc.post(f"{url}/proposals", headers=a, json={"cards": [card]}).json()
+        _until(ws, lambda m: m["type"] == "changed")
+        tc.post(f"/api/v1/classroom/proposals/{p['id']}/decide", headers=t, json={"decision": "declined"})
+        _until(ws, lambda m: m["type"] == "changed")

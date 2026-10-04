@@ -2,10 +2,11 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { createContext, useContext, useId, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import { create } from "zustand";
 import { Icon } from "@/components/Icon";
 import { Link, usePathname } from "@/i18n/navigation";
+import { MAP_CHANGED } from "@/lib/graph/presence";
 import { errorKind } from "@/lib/account/errors";
 import { useAccount } from "@/lib/account/store";
 import { cnt, formatNumber } from "@/lib/format";
@@ -40,9 +41,17 @@ export const useDetailsTab = create<{ tab: DetailsTab; focus: { id: string; at: 
 
 const KEY = (gid: string) => ["graph-comments", gid] as const;
 
-/** A shared map's comments for the signed-in reader, asked again every half minute and on returning to the page. */
+/** A shared map's comments for the signed-in reader, asked again every half minute and on returning to the page — and
+ * at once when the server says they changed (B47). */
 export function useMapComments(gid: string | null) {
   const session = useAccount((s) => s.session);
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!gid) return;
+    const on = (e: Event) => (e as CustomEvent<string>).detail === gid && void qc.invalidateQueries({ queryKey: KEY(gid) });
+    window.addEventListener(MAP_CHANGED, on);
+    return () => window.removeEventListener(MAP_CHANGED, on);
+  }, [gid, qc]);
   return useQuery({ queryKey: KEY(gid ?? ""), queryFn: () => getComments(gid!), enabled: !!gid && !!session, refetchInterval: 30_000, refetchOnWindowFocus: true, staleTime: 5_000 });
 }
 

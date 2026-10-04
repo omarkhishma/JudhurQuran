@@ -323,6 +323,13 @@ def mine(u: dict[str, Any]) -> dict[str, Any]:
 # ─── comments ────────────────────────────────────────────────────────────────
 
 
+def _tell(conn: Connection, gid: Any) -> None:
+    """The windows on the map are told its comments changed, once this is committed (B47)."""
+    from . import presence
+
+    presence.tell_changed(conn, gid)
+
+
 def _people(conn: Connection, g: dict[str, Any]) -> dict[str, str | None]:
     """Who has spoken on the map — its owner and everyone who commented — by id, with their names; on a lesson's
     map, everyone in the class."""
@@ -461,6 +468,7 @@ def comment(
             },
         )
         assert c is not None
+        _tell(conn, g["id"])
         # writing is reading: what came before is no longer new to the writer
         conn.execute(
             text(
@@ -501,6 +509,7 @@ def resolve(u: dict[str, Any], cid: str, resolved: bool) -> dict[str, Any]:
             {"c": c["id"], "u": u["id"]},
         )
         assert done is not None
+        _tell(conn, g["id"])
         return _comment_out(done, g, u, _people(conn, g))
 
 
@@ -525,6 +534,7 @@ def delete_comment(u: dict[str, Any], cid: str) -> None:
         if u["id"] not in (g["owner_id"], c["author_id"]):
             raise Refusal(403, "not_allowed", "The map's owner or the comment's author deletes it.")
         _drop(conn, [c["id"]])
+        _tell(conn, g["id"])
         # a mark with no replies left under it has nothing left to hold
         if c["parent_id"]:
             conn.execute(
