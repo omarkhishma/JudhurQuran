@@ -1,0 +1,70 @@
+# Topic sources (PLAN P8.3, research 06 Part 3, decision D29). A topic is a heading a source gives with the verses it
+# gathers under it; each verse–topic link carries its source and the source's version. Nothing here is ours: the
+# editorial taxonomy (La Beaume's public-domain top level merged with Quranpedia's roots) is the editorial board's to
+# build in the workbench, from these.
+#
+# - Quranpedia's Arabic topic tree: human-made, hierarchical (four levels), credited with its version on every
+#   answer that carries it (D29: our API republishes it in part). Shown to readers, said to be Quranpedia's.
+# - QSAC: English, labelled with a language model, every verse covered; only editor-side candidates (D29, L2) —
+#   `shown: false`. Its verse text and English translation columns are never read (L1; the translation is not ours
+#   to republish).
+#
+# Each file is sha256-pinned; the build refuses a file that differs. Paths are relative to data/raw/.
+
+sources:
+  - id: quranpedia-topics
+    title_ar: الموضوعات القرآنية — الموسوعة القرآنية
+    title_en: Quranic topics — Quranpedia
+    publisher_ar: الموسوعة القرآنية (quranpedia.net)
+    publisher_en: Quranpedia.net
+    language: ar
+    method: human-made, not stated by the publisher (research 06)
+    version: "2026-10-03"
+    generated_at: "2026-10-03T06:00:47+00:00"
+    url: https://quranpedia.net/topics
+    dump_url: https://api.quranpedia.net/dumps
+    changes_url: https://quranpedia.net/api/v1/changes?since=2026-10-03
+    files:
+      index:
+        path: quranpedia-topics/2026-10-03/topics-index.json.gz
+        sha256: 277b1e32ab0fc75cdeeefaa9236185b4f5363785dcd39b3cdf3732e082cb6027
+      per_verse:
+        path: quranpedia-topics/2026-10-03/topics.json.gz
+        sha256: 46344795eab0c69e8a8bdb2a521f7f987f81d51b612878cabb1e41cbf5740735
+      manifest:
+        path: quranpedia-topics/2026-10-03/manifest.json
+        sha256: 738416b37ecb125cf2a9deeb737a206ae7aeaa11bebdf3ad3a783edc066e4a1e
+      licence:
+        path: quranpedia-topics/2026-10-03/LICENSE.md
+        sha256: 784d33f90a3159d685d9a66e6460389e7d4595f0b7e2f2be98bf0eca041fd75b
+    licence: Quranpedia.net Data License (version 2026-10-01)
+    licence_url: https://api.quranpedia.net/dumps/LICENSE.md
+    shown: true
+    attribution_ar: "المصدر: الموسوعة القرآنية (quranpedia.net)، الموضوعات القرآنية، إصدار البيانات 2026-10-03."
+    attribution_en: "Source: Quranpedia.net, Quranic topics, data version 2026-10-03."
+
+  - id: qsac
+    title_ar: مدونة التعليق الدلالي على القرآن (QSAC)
+    title_en: QSAC — Quran Semantic Annotation Corpus
+    publisher_ar: أحمد بلال
+    publisher_en: Ahmad Bilal
+    language: en
+    method: labelled with a language model and checked by its author (README); not peer-reviewed
+    version: 84c698543aa5aa591f64e0ce6705979b4270a9a8
+    generated_at: "2026-03-21T06:17:37+00:00"
+    url: https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus
+    files:
+      links:
+        path: qsac/84c698543aa5aa591f64e0ce6705979b4270a9a8/data/qsac-dataset.csv
+        sha256: e242e15533eea643a5181006501d56fb95b8674362e7b18ea16c08793471b7a2
+      ontology:
+        path: qsac/84c698543aa5aa591f64e0ce6705979b4270a9a8/data/qsac-ontology.json
+        sha256: 95637f6ee8be5d7eb234820a2149805eae51e43d5526343290cca51fec2a7524
+      licence:
+        path: qsac/84c698543aa5aa591f64e0ce6705979b4270a9a8/LICENSE
+        sha256: e1df8ce74dbd86e1e597ffcfbf43a60887767406ba791fcf9605bbdcef6cda8e
+    licence: CC BY 4.0
+    licence_url: https://creativecommons.org/licenses/by/4.0/
+    shown: false
+    attribution_ar: "المصدر: أحمد بلال، مدونة التعليق الدلالي على القرآن QSAC (2026)، برخصة CC BY 4.0؛ وُسمت الآيات بنموذج لغوي."
+    attribution_en: "Source: Ahmad Bilal, QSAC — Quran Semantic Annotation Corpus (2026), CC BY 4.0; verses labelled with a language model."

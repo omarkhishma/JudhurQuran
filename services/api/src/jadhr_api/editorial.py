@@ -69,6 +69,15 @@ LAYERS: dict[str, dict[str, str]] = {
         "text": "coalesce(text_ar, '')",
         "order": "source_id, id",
     },
+    # Quranpedia's verse–topic links (P8.3): a verdict per link — reviewed, or rejected and left out
+    "topic_links": {
+        "table": """(select l.id, l.verse_key, l.topic_id, t.name_ar, 'extracted' as status
+                    from content.topic_links l join content.topics t on t.id = l.topic_id
+                    where l.source_id = 'quranpedia-topics') topic_links""",
+        "label": "name_ar",
+        "text": "verse_key",
+        "order": "topic_id, split_part(verse_key, ':', 1)::int, split_part(verse_key, ':', 2)::int",
+    },
     "entity_candidates": {
         "table": "content.entity_candidates",
         "label": "name_ar",

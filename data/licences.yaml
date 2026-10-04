@@ -3078,3 +3078,74 @@ licences:
   - The author died 458 AH / 1066 CE (public domain). The edition is Khalīl Ibrāhīm Jaffāl's (Dār Iḥyāʾ al-Turāth al-ʿArabī, Beirut, 1417/1996); OpenITI flags JK000849 primary and removed the paratext in its Clean operation.
   - The reading is loose (a hand count of 25 found about 20 right before metalanguage was excluded), which is why the rows wait for the board before readers see them.
   - Display, once reviewed, is what D18 approved (non-commercial, with attribution); anything shared stays CC BY-NC-SA 4.0 and out of a commercial launch (D2).
+- id: quranpedia-topics
+  registry: data/topics.yaml
+  urls_checked:
+  - https://api.quranpedia.net/dumps/LICENSE.md
+  - https://api.quranpedia.net/dumps/manifest.json
+  - https://api.quranpedia.net/dumps/topics-index.json.gz
+  - https://api.quranpedia.net/dumps/topics.json.gz
+  fetched: '2026-10-04'
+  page_sha256:
+    https://api.quranpedia.net/dumps/LICENSE.md: 784d33f90a3159d685d9a66e6460389e7d4595f0b7e2f2be98bf0eca041fd75b
+    https://api.quranpedia.net/dumps/manifest.json: 738416b37ecb125cf2a9deeb737a206ae7aeaa11bebdf3ad3a783edc066e4a1e
+    https://api.quranpedia.net/dumps/topics-index.json.gz: 277b1e32ab0fc75cdeeefaa9236185b4f5363785dcd39b3cdf3732e082cb6027
+    https://api.quranpedia.net/dumps/topics.json.gz: 46344795eab0c69e8a8bdb2a521f7f987f81d51b612878cabb1e41cbf5740735
+  clauses:
+  - topic: redistribution
+    quote: Free to use inside apps, websites, bots, and research tools — no attribution required (a visible link to https://quranpedia.net is appreciated).
+    url: https://api.quranpedia.net/dumps/LICENSE.md
+  - topic: attribution
+    quote: 'Republishing this data — in full or in part — as a downloadable database or dataset requires: (1) crediting Quranpedia.net as the source with a link, and (2) stating this dump''s version.'
+    url: https://api.quranpedia.net/dumps/LICENSE.md
+  - topic: other
+    quote: The content is continuously corrected. Keep any copy current via `https://quranpedia.net/api/v1/changes?since=<version>` — distributing outdated Quranic text is the distributor's responsibility.
+    url: https://api.quranpedia.net/dumps/LICENSE.md
+  - topic: other
+    quote: Translations and contemporary works remain the intellectual property of their respective authors and publishers.
+    url: https://api.quranpedia.net/dumps/LICENSE.md
+  - topic: other
+    quote: '"version": "2026-10-03"'
+    url: https://api.quranpedia.net/dumps/manifest.json
+  our_use: 'Shown to readers: Quranpedia''s Arabic topic tree from its dump of 2026-10-03 — 6,100 topics in four levels and 19,117 verse–topic links over 3,673 verses — read whole (pipeline/src/jadhr_pipeline/topics.py; tables topic_sources, topics, topic_links), names verbatim. Served by GET /api/v1/topics, /topics/{id}, /topics/coverage and /verses/{key}/topics, every answer carrying the credit with a link and the dump''s version (D29: our API counts as republishing in part); shown in the map editor''s topic maps and the verse''s Meaning, credited. The editorial board may reject a link in the workbench, which leaves it out. Not in the bulk release.'
+  status: attention
+  notes:
+  - Terms read 2026-10-04 from LICENSE.md version 2026-10-01 (784d33f9…) beside the dump's manifest of 2026-10-03 (738416b3…); the two files match the manifest's sha256.
+  - The publisher does not name a source for the topic index (research 06); D19's question to Quranpedia — where the index comes from, and commercial use — goes out under the owner's name and is not sent.
+  - Commercial use is not prohibited by the terms, nor stated; the non-commercial launch (D2) does not wait on it.
+  - 'The data is corrected continuously: a later release re-fetches the dump and states its new version; the changes endpoint is not polled.'
+- id: qsac
+  registry: data/topics.yaml
+  urls_checked:
+  - https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/LICENSE
+  - https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/README.md
+  - https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/data/qsac-dataset.csv
+  - https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/data/qsac-ontology.json
+  fetched: '2026-10-04'
+  page_sha256:
+    ? https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/LICENSE
+    : e1df8ce74dbd86e1e597ffcfbf43a60887767406ba791fcf9605bbdcef6cda8e
+    ? https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/README.md
+    : 475658f5f4366598796b6521ca56b190d499ac02d5bcbedebc8a0d63f595cebf
+    ? https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/data/qsac-dataset.csv
+    : e242e15533eea643a5181006501d56fb95b8674362e7b18ea16c08793471b7a2
+    ? https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/data/qsac-ontology.json
+    : 95637f6ee8be5d7eb234820a2149805eae51e43d5526343290cca51fec2a7524
+  clauses:
+  - topic: redistribution
+    quote: DATA LICENSE — Creative Commons Attribution 4.0 International (CC BY 4.0)
+    url: https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/LICENSE
+  - topic: other
+    quote: 'Applies to: data/qsac-dataset.csv, data/qsac-ontology.json'
+    url: https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/LICENSE
+  - topic: attribution
+    quote: Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
+    url: https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/LICENSE
+  - topic: other
+    quote: The annotation process used LLM-assisted labeling guided by the QSAC ontology, which defines tags with primary and secondary keyword sets to minimise ambiguity and embedding overlap.
+    url: https://huggingface.co/datasets/ahmadbilal-dev/quran-semantic-annotation-corpus/resolve/84c698543aa5aa591f64e0ce6705979b4270a9a8/README.md
+  our_use: 'Editor-side only (D29, L2): QSAC''s ontology (18 domains, 70 categories, 338 tags) and its 16,306 verse tags over all 6,236 verses, read from the files at revision 84c69854 (pipeline/src/jadhr_pipeline/topics.py; tables topic_sources with shown false, topics, topic_links). The CSV''s verse text and English translation columns are never read (L1; the translation is not ours to republish). No reader sees these tags; the API does not serve them; they are kept for the editorial board''s taxonomy work. Not in the bulk release.'
+  status: ok
+  notes:
+  - Terms read 2026-10-04 from the LICENSE at the pinned revision (e1df8ce7…); the Kaggle copy is labelled MIT (research 06), and both are permissive.
+  - Labelled with a language model by one author and not peer-reviewed (README), which is why readers never see it (L2, D29).

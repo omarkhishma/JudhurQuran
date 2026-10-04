@@ -22,6 +22,7 @@ from .meanings import build_gharib, build_mufradat
 from .particles import build_particles
 from .patterns_catalog import build_pattern_catalog
 from .relations import build_relations
+from .topics import build_topics
 
 SOURCE_FIELDS = (
     "id",
@@ -56,6 +57,7 @@ def build_layers(
     particles_registry: Path | None = None,
     loanwords_registry: Path | None = None,
     collections_registry: Path | None = None,
+    topics_registry: Path | None = None,
 ) -> dict[str, Any]:
     """Build the layers into ``out`` and merge their reports into ``out/report.json``: the Quran knowledge
     layers, the relation seeds and, when its registry is given, the pattern catalog (P3.3)."""
@@ -119,6 +121,14 @@ def build_layers(
             _write(out, name, rows)
         report["collections"] = c_report
 
+    # P8.3 topics: Quranpedia's Arabic tree (shown, credited with its version) and QSAC (the board's only)
+    t_tables: dict[str, list[dict[str, Any]]] = {}
+    if topics_registry is not None:
+        t_tables, t_report = build_topics(raw, out, topics_registry)
+        for name, rows in t_tables.items():
+            _write(out, name, rows)
+        report["topics"] = t_report
+
     report["knowledge"] = k_report
     report["relations"] = r_report
     report.setdefault("counts", {}).update(
@@ -127,6 +137,7 @@ def build_layers(
         | {name: len(rows) for name, rows in p_tables.items()}
         | {name: len(rows) for name, rows in m_tables.items()}
         | {name: len(rows) for name, rows in c_tables.items()}
+        | {name: len(rows) for name, rows in t_tables.items()}
     )
     (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     return {
@@ -135,4 +146,5 @@ def build_layers(
         "patterns_catalog": {name: len(rows) for name, rows in p_tables.items()},
         "meanings": {name: len(rows) for name, rows in m_tables.items()},
         "collections": {name: len(rows) for name, rows in c_tables.items()},
+        "topics": {name: len(rows) for name, rows in t_tables.items()},
     }

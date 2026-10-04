@@ -119,6 +119,12 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
                                           "why_ar", "why_en", "rule", "item_count", "root_count", "occurrences",
                                           "coverage", "quote", "source"], {"rule", "quote", "source"}),
     ("collection_items", "collection_items.jsonl", ["collection_id", "ordinal", "lemma_id", "first_location"], set()),
+    ("topic_sources", "topic_sources.jsonl", ["id", "title_ar", "title_en", "publisher_ar", "publisher_en", "language",
+                                              "method", "version", "generated_at", "url", "licence", "licence_url",
+                                              "shown", "attribution_ar", "attribution_en", "file_sha256"], set()),
+    ("topics", "topics.jsonl", ["id", "source_id", "source_ref", "name_ar", "name_en", "description", "parent_id",
+                                "level", "verse_count", "name_norm"], set()),
+    ("topic_links", "topic_links.jsonl", ["id", "topic_id", "verse_key", "source_id", "version"], set()),
     ("mushaf_signs", "mushaf_signs.jsonl", ["id", "sort_order", "kind", "codepoints", "chars", "label_ar", "text_ar",
                                             "example_key", "example_token", "page", "occurrences", "source_id"],
      {"codepoints"}),
@@ -223,6 +229,9 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
 ]  # fmt: skip
 
 TRUNCATE_ORDER = [
+    "topic_links",
+    "topics",
+    "topic_sources",
     "collection_items",
     "collections",
     "particle_citations",

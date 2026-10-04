@@ -42,6 +42,7 @@ from . import (
     routes_editorial,
     routes_graphs,
     routes_me,
+    topics,
 )
 from .db import connect, one
 from .search import search as run_search
@@ -502,6 +503,44 @@ def root_relations(request: Request, root: str) -> Response:
         if not one(conn, "select 1 as x from content.roots where key = :k", {"k": root}):
             raise not_found("root")
         return cached(request, relations.of_root(conn, root))
+
+
+@router.get("/topics", summary="Topics: the top of the tree, a topic's sub-topics, or a search by name (credited)")
+def topics_browse(
+    request: Request,
+    parent: str | None = Query(None, max_length=40),
+    q: str | None = Query(None, max_length=80),
+    limit: int = Query(40, ge=1, le=200),
+    offset: int = Query(0, ge=0, le=10000),
+) -> Response:
+    with connect() as conn:
+        return cached(request, topics.browse(conn, parent, q, limit, offset))
+
+
+@router.get("/topics/coverage", summary="How many verses of each sūra the topics gather")
+def topics_coverage(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, topics.coverage(conn))
+
+
+@router.get("/topics/{topic_id}", summary="A topic: the chain above it, its sub-topics and its verses (credited)")
+def topic(
+    request: Request,
+    topic_id: Annotated[str, Path(max_length=40)],
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0, le=10000),
+) -> Response:
+    with connect() as conn:
+        out = topics.topic(conn, topic_id, limit, offset)
+        if out is None:
+            raise not_found("topic")
+        return cached(request, out)
+
+
+@router.get("/verses/{key}/topics", summary="The topics a verse is gathered under (credited)")
+def verse_topics(request: Request, key: Annotated[str, Path(pattern=r"^\d{1,3}:\d{1,3}$")]) -> Response:
+    with connect() as conn:
+        return cached(request, topics.of_verse(conn, key))
 
 
 @router.get("/roots/{root}/shared", summary="The verses where two roots both occur, in the mushaf's order")
