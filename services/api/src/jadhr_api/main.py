@@ -42,6 +42,7 @@ from . import (
     path,
     relations,
     review,
+    rootlife,
     routes_classroom,
     routes_contrib,
     routes_dictionary,
@@ -487,6 +488,26 @@ def text_passage(
         if p is None:
             raise not_found("passage")
         return cached(request, p)
+
+
+@router.get(
+    "/roots/{key}/texts",
+    summary="A root's life in the hadith and the books: counts by text, the sure apart from the possible, its passages",
+)
+def root_texts(
+    request: Request,
+    key: Annotated[str, Path(max_length=20)],
+    kind: Annotated[str | None, Query(pattern="^(hadith|book)$")] = None,
+    text: Annotated[str | None, Query(max_length=80)] = None,
+    which: Annotated[str, Query(pattern="^(sure|possible|all)$")] = "sure",
+    offset: Annotated[int, Query(ge=0, le=100000)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> Response:
+    with connect() as conn:
+        out = rootlife.root_in_texts(conn, key, kind, text, which, offset, limit)
+        if out is None:
+            raise not_found("root")
+        return cached(request, out)
 
 
 @router.get(
