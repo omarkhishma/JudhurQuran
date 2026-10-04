@@ -293,6 +293,8 @@ test("an instructor reads the class's heat above the floor, keeps lesson notes a
     await expect(sheet.getByRole("heading", { level: 1 })).toHaveText("ربوبية الفاتحة");
     await expect(sheet.locator(".sheet-text .ayah-num")).toHaveCount(7);
     await expect(sheet.getByRole("region", { name: "ملاحظات المعلم" }).locator("li")).toHaveCount(2);
+    // its roots, as the lesson names them
+    await expect(sheet.getByRole("region", { name: "الجذور" })).toHaveText(/ح م د/);
     await expect(sheet).toContainText("مجمع الملك فهد");
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => v.id)).toEqual([]);
     await page.emulateMedia({ media: "print" });
@@ -320,10 +322,10 @@ test("an instructor reads the class's heat above the floor, keeps lesson notes a
     await expect(ownText.locator('[data-w="1:2:3"]')).toHaveAttribute("title", "البحث: ٤ مرات");
     await expect(ownText).toContainText("٤ كلمات، بحثت عن ١ منها");
     await expect(ownText.locator('[data-w="1:5:2"]')).not.toHaveAttribute("data-heat", /./);
-    const mine = lp.getByRole("table", { name: "ما أرسله قارئك لهذا الدرس" });
-    await expect(mine.getByRole("row").filter({ hasText: "البحث" })).toContainText("٤");
     // each of their words opens it in the reader, at its place
     await expect(ownText.locator('[data-w="1:2:3"]')).toHaveAttribute("href", "/word/1:2:3");
+    const mine = lp.getByRole("table", { name: "ما أرسله قارئك لهذا الدرس" });
+    await expect(mine.getByRole("row").filter({ hasText: "البحث" })).toContainText("٤");
     await expect(mine.getByRole("row").filter({ hasText: "الملاحظات على الآية" })).toContainText("١:٢");
     await lp.getByRole("button", { name: "أتممت الدرس" }).click();
     await expect(lp.getByRole("status").filter({ hasText: "سجل أنك أتممته." })).toBeVisible();
