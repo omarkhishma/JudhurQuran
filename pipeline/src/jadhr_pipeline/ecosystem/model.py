@@ -57,17 +57,6 @@ class Draft:
     passages: list[Passage] = field(default_factory=list)
 
 
-def _forms(drafts: list[Draft]) -> list[str]:
-    seen: dict[str, None] = {}
-    for d in drafts:
-        for p in d.passages:
-            for a, b in word_spans(p.text):
-                k = normalize(p.text[a:b]).replace(" ", "")
-                if k:
-                    seen.setdefault(k, None)
-    return list(seen)
-
-
 def _form_row(fid: int, norm: str, a: Analysis) -> dict[str, Any]:
     return {
         "id": fid,
@@ -92,12 +81,30 @@ def _form_row(fid: int, norm: str, a: Analysis) -> dict[str, Any]:
 def assemble(
     drafts: list[Draft], vocab: Vocabulary, *, text_id: int, chapter_id: int, passage_id: int, sort_order: int
 ) -> dict[str, list[dict[str, Any]]]:
-    """Rows for texts, chapters, passages and text_forms, ids starting where the Quran's end."""
-    forms = _forms(drafts)
-    analyses = {f: analyse(vocab, f) for f in forms}
-    form_id = {f: i for i, f in enumerate(forms, start=1)}
+    """Rows for texts, chapters, passages and text_forms, ids starting where the Quran's end. A form's id is the order
+    it is first met in; each spelling is normalised once and each form read once (15M words, 360k forms)."""
     out: dict[str, list[dict[str, Any]]] = {"texts": [], "chapters": [], "passages": [], "text_forms": []}
-    out["text_forms"] = [_form_row(form_id[f], f, analyses[f]) for f in forms]
+    form_id: dict[str, int] = {}
+    of_word: dict[str, int] = {}  # a word as written → its form's id, 0 where it holds no letters
+    # each form's first reading's root, and whether the rules are sure of it (True), found it possible (False) or
+    # neither (None)
+    rooted: list[tuple[str | None, bool | None]] = [(None, None)]
+
+    def form_of(word: str) -> int:
+        fid = of_word.get(word)
+        if fid is not None:
+            return fid
+        k = normalize(word).replace(" ", "")
+        fid = form_id.get(k, 0) if k else 0
+        if k and not fid:
+            fid = form_id[k] = len(form_id) + 1
+            an = analyse(vocab, k)
+            out["text_forms"].append(_form_row(fid, k, an))
+            root = an.readings[0].dict_root if an.readings else None
+            rooted.append((root, True if an.kind in SURE else False if an.kind in LOW else None))
+        of_word[word] = fid
+        return fid
+
     for d in drafts:
         tid = text_id
         text_id += 1
@@ -141,19 +148,20 @@ def assemble(
             skip = sorted((x, y) for k in ("names", "chain", "formulaic") for x, y in (p.meta.get(k) or []))
             starts = [x for x, _ in skip]
             for a, b in word_spans(p.text):
-                k = normalize(p.text[a:b]).replace(" ", "")
-                if not k:
-                    ids.append(0)
+                fid = form_of(p.text[a:b])
+                ids.append(fid)
+                if not fid:
                     continue
-                ids.append(form_id[k])
-                at = bisect_right(starts, a) - 1
-                if a < reported or (at >= 0 and a < skip[at][1]):
+                if a < reported:
                     continue
-                an = analyses[k]
-                root = an.readings[0].dict_root if an.readings else None
-                if root and an.kind in SURE:
+                if starts:
+                    at = bisect_right(starts, a) - 1
+                    if at >= 0 and a < skip[at][1]:
+                        continue
+                root, certain = rooted[fid]
+                if root and certain:
                     sure.setdefault(root, None)
-                elif root and an.kind in LOW:
+                elif root and certain is False:
                     low.setdefault(root, None)
             tokens += len(ids)
             out["passages"].append(

@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
+import time
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -185,6 +187,14 @@ def _verse_positions(meta: QuranMeta) -> dict[tuple[int, int], dict[str, Any]]:
 def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     report: dict[str, Any] = {"version": version, "findings": []}
+    started = [time.perf_counter()]
+
+    def stage(name: str) -> None:
+        """How long the step just done took, on stderr: where a build's time goes (not in the report, which a
+        rebuild of the same sources reproduces exactly)."""
+        now = time.perf_counter()
+        print(f"[build] {name}: {now - started[0]:.0f}s", file=sys.stderr, flush=True)
+        started[0] = now
 
     tanzil = parse_tanzil_txt(raw.tanzil_uthmani)
     simple = parse_tanzil_txt(raw.tanzil_simple_clean)
@@ -473,6 +483,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
     for v in verses_out:
         del v["tanzil_page"], v["tanzil_juz"], v["kfgqpc_juz"]
 
+    stage("quran")
     # P3.6: how common each verse's words are in the Quran (lexical_profile.py)
     from .lexical_profile import surah_profile, verse_profiles
 
@@ -557,6 +568,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             }
         )
 
+    stage("quran profiles and roots")
     generic: dict[str, list[dict[str, Any]]] = {}
     if raw.registry_dir:
         from .generic import build_generic, load_glossary
@@ -573,6 +585,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         else ([], [], {})
     )
     report["works"] = works_report
+    stage("generic and works")
 
     lex_works, lex_entries, gharib, lex_report = ([], [], [], {})
     dict_roots_out: list[dict[str, Any]] = []
@@ -633,6 +646,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
                 Counter((r["gist_source"] or {}).get("usul") for r in roots_out if r["gist_source"])
             ),
         }
+    stage("lexica")
     # P11.2a: the hadith collections as texts of the generic model, every word read once to its root (P11.4a)
     if raw.hadith_registry and generic.get("texts"):
         from .ecosystem.hadith import build_hadith
@@ -640,6 +654,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         from .ecosystem.vocab import vocabulary_from
 
         drafts, report["hadith"] = build_hadith(raw.root, raw.hadith_registry)
+        stage("hadith")
         vocab = vocabulary_from(words_out, roots_out, generic["patterns"], dict_roots_out)
         extra = assemble(
             drafts,
@@ -649,6 +664,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             passage_id=max(p["id"] for p in generic["passages"]) + 1,
             sort_order=max(t["sort_order"] for t in generic["texts"]) + 1,
         )
+        stage("texts assembled")
         for k in ("texts", "chapters", "passages"):
             generic[k] = generic[k] + extra[k]
         generic["text_forms"] = extra["text_forms"]
@@ -691,6 +707,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         generic["hadeethenc_items"] = hadeethenc.items(raw.root, he_spec)
         he_links, report["hadeethenc"] = hadeethenc.links(generic["hadeethenc_items"], records)
         generic["hadeethenc_links"] = [{"id": i, **x} for i, x in enumerate(he_links, start=1)]
+        stage("narrators and HadeethEnc")
         kinds = Counter(f["kind"] for f in extra["text_forms"])
         report["texts"] = {
             "texts": len(extra["texts"]),
@@ -707,6 +724,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
             raw.root, raw.recitations_registry, verse_tokens
         )
     report["recitations"] = rec_report
+    stage("recitations")
 
     report["lexica"] = {
         "works": len(lex_works),
@@ -744,6 +762,7 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         with (out_dir / f"{name}.jsonl").open("w", encoding="utf-8") as fh:
             for r in rows:
                 fh.write(json.dumps(r, ensure_ascii=False, separators=(",", ":")) + "\n")
+    stage("written")
 
     report.update(
         {

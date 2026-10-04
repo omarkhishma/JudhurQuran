@@ -97,13 +97,15 @@ class Split:
         }
 
 
+@lru_cache(maxsize=1 << 20)
+def _norm(raw: str) -> str:
+    """A token's matching key, once per spelling ("" for a mark)."""
+    mark = raw in PUNCT or raw in QUOTES or raw in DASHES or raw in "»()}"
+    return "" if mark else normalize(raw)
+
+
 def tokens(text: str) -> list[Tok]:
-    out = []
-    for m in _TOKEN.finditer(text):
-        raw = m.group()
-        mark = raw in PUNCT or raw in QUOTES or raw in DASHES or raw in "»()}"
-        out.append(Tok(raw, "" if mark else normalize(raw), m.start(), m.end()))
-    return out
+    return [Tok(m.group(), _norm(m.group()), m.start(), m.end()) for m in _TOKEN.finditer(text)]
 
 
 def _formula(t: Tok) -> bool:
@@ -617,6 +619,10 @@ FORMULAIC = [
 ]
 
 
+# the words a fixed formula opens with: the others are passed by without trying each formula
+_OPENS_FORMULA = frozenset(f[0] for f in FORMULAIC)
+
+
 def chain_words(
     text: str, s: Split | None, known: frozenset[str]
 ) -> tuple[list[tuple[int, int]], list[tuple[int, int]], list[tuple[int, int]]]:
@@ -647,9 +653,10 @@ def chain_words(
     for i, t in enumerate(ts):
         if not t.norm:
             continue
-        for f in FORMULAIC:
-            if _seq(ts, i, f):
-                blessings.append((t.start, ts[i + len(f) - 1].end))
+        if t.norm in _OPENS_FORMULA:
+            for f in FORMULAIC:
+                if _seq(ts, i, f):
+                    blessings.append((t.start, ts[i + len(f) - 1].end))
         if inside(t.start):
             continue
         j = p.marks(i + 1)
