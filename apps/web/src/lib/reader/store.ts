@@ -246,7 +246,10 @@ export const usePrefs = create<PrefsState>()(
 export type WordState = "new" | "learning" | "known";
 /** A step of the curiosity trail: a word (lemma slug), a verse (2:255) or a root (علم) — RDR-568. */
 export type TrailStep = { kind: "word" | "verse" | "root"; id: string; ts: number };
-export type ProgressEntry = { chapter: number; passage: number; at: number };
+/** Where the reader was in a text: the Quran's sūra and verse, a reader's text's passage; in a hadith collection or a
+ * book (LIB-Q03) also the record or paragraph read (``ref``) and the words that name the place (``label``: a kitāb's or
+ * a section's title). */
+export type ProgressEntry = { chapter: number; passage: number; at: number; ref?: string; label?: string };
 export type SavedTrail = { id: string; steps: TrailStep[]; ts: number };
 /** What the reader last looked up (RDR-441): read by the hub, the concordance and the shell. */
 /** What the reader looked up last (RDR-113): the word's slug and its Arabic, its root, the verse — and, for the split

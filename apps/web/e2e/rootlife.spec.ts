@@ -66,3 +66,17 @@ test("the concordance takes a source: the Quran's lines, the hadith's, the books
   await expect(page.locator("a[data-uri]").first()).toHaveAttribute("data-uri", hadith.data[0].uri);
   await axe(page);
 });
+
+test("the panel's timeline carries the hadith collections and the books by their compilers' death", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true, wordStates: {}, stars: {}, trail: [], progress: {}, proposals: [], savedTrails: [] }, version: 1 }));
+    localStorage.setItem("jadhr-prefs", JSON.stringify({ state: { layerOpen: { senses: false, family: false, patterns: false, lexica: false, timeline: true, usage: false } }, version: 2 }));
+  });
+  const w = (await (await page.request.get("/api/v1/words/ilm?limit=0")).json()) as { timeline: { corpora: { id: string; attests: boolean }[] } };
+  const texts = w.timeline.corpora.filter((c) => c.id !== "quran");
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  const lane = page.locator(".reader-panel, .reader-sheet").locator(".timeline-track.is-texts").first();
+  await expect(lane.locator(".timeline-corpus")).toHaveCount(texts.length);
+  await expect(lane.locator(".timeline-corpus.is-empty")).toHaveCount(texts.filter((c) => !c.attests).length);
+  await expect(page.locator(".reader-panel, .reader-sheet").getByRole("link", { name: "مواضعه فيها" }).first()).toHaveAttribute("href", `/dictionary/${encodeURIComponent("علم")}/texts`);
+});

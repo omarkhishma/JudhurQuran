@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BookText } from "@/components/books/BookText";
+import { RecordPlace } from "@/components/library/RecordPlace";
 import { Sources } from "@/components/hadith/Sources";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 import { Link } from "@/i18n/navigation";
@@ -86,6 +87,7 @@ export default async function BookParagraphPage({ params }: PageProps<"/[locale]
         {where && <Link href={chapterHref(slug, where.ordinal)} className="btn">{t("openChapter")}</Link>}
       </nav>
       <Sources sources={[p.source]} />
+      <RecordPlace text={`book:${slug}`} chapter={where?.ordinal ?? 0} at={p.ref} label={where?.title_ar ?? ""} />
     </div>
   );
 }

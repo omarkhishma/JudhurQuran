@@ -1678,7 +1678,7 @@
     "familyMeta": "{count, plural, one {صيغة واحدة} two {صيغتان} few {{n} صيغ} many {{n} صيغة} other {{n} صيغة}} • {count2, plural, one {وزن واحد} two {وزنان} few {{n2} أوزان} many {{n2} وزنًا} other {{n2} وزن}}",
     "shapesMeta": "{count, plural, =0 {لا أوزان على هذا الجذر} one {وزن واحد على هذا الجذر} two {وزنان على هذا الجذر} few {{n} أوزان على هذا الجذر} many {{n} وزنًا على هذا الجذر} other {{n} وزن على هذا الجذر}}",
     "dictsMeta": "{count, plural, =0 {لا معاجم لها مادة} one {معجم واحد له مادة} two {معجمان لهما مادة} few {{n} معاجم لها مادة} many {{n} معجمًا لها مادة} other {{n} معجم لها مادة}}",
-    "timelineMeta": "المعاجم والقرآن على خط الزمن",
+    "timelineMeta": "المعاجم والقرآن وكتب الحديث والتراث على خط الزمن",
     "usageMeta": "{count, plural, one {موضع واحد} two {موضعان} few {{n} مواضع} many {{n} موضعًا} other {{n} موضع}}",
     "sections": "أقسام المدخل",
     "suggestEdit": "اقترح تعديلًا",
@@ -2191,7 +2191,12 @@
     "lessonFinished": "قلت للمعلم إنك أتممت الدرس.",
     "lessonUnfinished": "لم يعد الدرس متمما.",
     "lessonFailed": "تعذر ذلك الآن.",
-    "openInDictionary": "افتحه في المعجم"
+    "openInDictionary": "افتحه في المعجم",
+    "textsLane": "كتب الحديث والتراث بتواريخ وفاة مصنفيها",
+    "textCount": "يرد الجذر في {n} من فقراته",
+    "textsSummary": "يرد الجذر في {n} من {of} كتابًا من كتب الحديث والتراث، أقدمها {first} ({year}م).",
+    "textsNone": "لا يرد هذا الجذر في كتب الحديث والتراث.",
+    "textsOpen": "مواضعه فيها"
   },
   "board": {
     "reviewed": "راجعته هيئة التحرير",
@@ -2452,7 +2457,9 @@
     "sourceUrl": "من صفحة الويب:",
     "sourcePdf": "من ملف PDF:",
     "pdfPick": "اختر ملف PDF",
-    "pdfAnother": "اختر ملفًا آخر"
+    "pdfAnother": "اختر ملفًا آخر",
+    "continueHadith": "الحديث {ref}",
+    "continueBook": "حيث وقفت"
   },
   "account": {
     "signIn": "دخول",

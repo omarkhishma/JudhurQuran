@@ -285,7 +285,9 @@ export type WordPayload = {
     min: number;
     max: number;
     dictionaries: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; death_hijri: number | null; death_ce: number; lang: string; has_article: boolean }[];
-    corpora: { id: string; label_ar: string; label_en: string; year: number; attests: boolean }[];
+    /** the Quran, then the hadith collections and the books by their compilers' death; a text attests the root where
+     * its passages hold it (count: the sure, possible apart) */
+    corpora: { id: string; label_ar: string; label_en: string; year: number; attests: boolean; kind?: string | null; count?: number; possible?: number }[];
     per_sense: null;
   };
   attestations: {

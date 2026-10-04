@@ -5,8 +5,10 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link, useRouter } from "@/i18n/navigation";
+import { paragraphHref } from "@/lib/books";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber } from "@/lib/format";
+import { hadithHref, refText } from "@/lib/hadith";
 import { listTexts, type UserTextMeta } from "@/lib/library/texts";
 import { getJSON } from "@/lib/reader/api";
 import { usePersonal } from "@/lib/reader/store";
@@ -66,6 +68,26 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
 
   const versesRead = client ? Object.entries(read).filter(([k]) => k.startsWith("quran:")).reduce((n, [, a]) => n + a, 0) : 0;
   const resume = client ? progress.quran : undefined;
+  // the latest place in a hadith collection or a book (LIB-Q03), when it is later than the Quran's
+  const textPlace = client
+    ? Object.entries(progress)
+        .filter(([k, v]) => (k.startsWith("hadith:") || k.startsWith("book:")) && v.ref)
+        .sort((a, b) => b[1].at - a[1].at)[0]
+    : undefined;
+  const placeText = textPlace ? texts.find((x) => x.slug === textPlace[0].split(":")[1]) : undefined;
+  const placeFirst = !!textPlace && !!placeText && (!resume || textPlace[1].at > resume.at);
+  // how many of each text's words the reader knows (LIB-Q08): the known words sent in a body, kept nowhere
+  const knownSlugs = useMemo(() => [...known].sort(), [known]);
+  const textKnown = useQuery({
+    queryKey: ["texts-known", knownSlugs.join(",")],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/texts/known", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lemmas: knownSlugs.slice(0, 10000) }) });
+      if (!res.ok) throw new Error(String(res.status));
+      return Object.fromEntries(((await res.json()) as { data: { slug: string; known: number; total: number }[] }).data.map((x) => [x.slug, x]));
+    },
+    enabled: client && (hadith.length > 0 || books.length > 0),
+    staleTime: 60_000,
+  });
   const resumeSurah = resume ? surahs.data?.data.find((s) => s.number === resume.chapter) : undefined;
   const filters: { value: Filter; label: string }[] = [
     { value: "all", label: t("filterAll") },
@@ -88,7 +110,34 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
         {filters.length > 1 && <Segmented label={t("filterLabel")} value={filter} onChange={setFilter} options={filters} />}
       </div>
 
-      {resume && resumeSurah && (
+      {placeFirst && textPlace && placeText && (
+        <section className="flex flex-col gap-2" aria-label={t("continue")}>
+          <p className="label-caps">{t("continue")}</p>
+          <Link
+            href={placeText.kind === "hadith" ? hadithHref(placeText.slug, textPlace[1].ref!) : paragraphHref(placeText.slug, textPlace[1].ref!)}
+            className="continue-card"
+          >
+            <span className={`book-cover ${placeText.kind === "hadith" ? "is-hadith" : "is-book"}`} aria-hidden="true" />
+            <span className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="ar-classical line-clamp-1 text-[20px]" lang="ar">{placeText.title_ar}</span>
+              <span className="text-[12px] text-t3">
+                {placeText.kind === "hadith" ? t("continueHadith", { ref: refText(textPlace[1].ref!, locale) }) : t("continueBook")}
+                {textPlace[1].label && (
+                  <>
+                    {" • "}
+                    <bdi lang="ar">{textPlace[1].label}</bdi>
+                  </>
+                )}
+                {" • "}
+                {new Date(textPlace[1].at).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long" })}
+              </span>
+            </span>
+            <span className="btn btn-primary">{t("resume")}</span>
+          </Link>
+        </section>
+      )}
+
+      {!placeFirst && resume && resumeSurah && (
         <section className="flex flex-col gap-2" aria-label={t("continue")}>
           <p className="label-caps">{t("continue")}</p>
           <Link href={`/quran/${resume.chapter}${resume.passage > 1 ? `#v${resume.passage}` : ""}`} className="continue-card">
@@ -136,6 +185,7 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
                   <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{x.title_ar}</span>
                   {locale !== "ar" && <span className="text-[12.5px] text-t2">{x.title_en}</span>}
                   <span className="text-[12px] text-t3">{t("hadithMeta", cnt(x.passage_count, locale))}</span>
+                  {textKnown.data?.[x.slug] && <KnownLine known={textKnown.data[x.slug].known} total={textKnown.data[x.slug].total} seen={0} />}
                 </Link>
               </li>
             ))}
@@ -150,6 +200,7 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
                   <span className="text-[12px] text-t3">
                     <bdi lang="ar">{x.author_ar}</bdi> • {t("bookMeta", cnt(x.token_count, locale))}
                   </span>
+                  {textKnown.data?.[x.slug] && <KnownLine known={textKnown.data[x.slug].known} total={textKnown.data[x.slug].total} seen={0} />}
                 </Link>
               </li>
             ))}

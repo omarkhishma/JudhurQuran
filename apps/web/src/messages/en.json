@@ -1678,7 +1678,7 @@
     "familyMeta": "{count, plural, one {{n} word} other {{n} words}} • {count2, plural, one {{n2} shape} other {{n2} shapes}}",
     "shapesMeta": "{count, plural, one {{n} shape on this root} other {{n} shapes on this root}}",
     "dictsMeta": "{count, plural, one {{n} says something} other {{n} say something}}",
-    "timelineMeta": "dictionaries and the Quran on one axis",
+    "timelineMeta": "The dictionaries, the Quran, the hadith and the books on one timeline",
     "usageMeta": "{count, plural, one {{n} place} other {{n} places}}",
     "sections": "Entry sections",
     "suggestEdit": "Suggest an edit",
@@ -2191,7 +2191,12 @@
     "lessonFinished": "You told the instructor you finished the lesson.",
     "lessonUnfinished": "The lesson is no longer marked finished.",
     "lessonFailed": "That could not be done just now.",
-    "openInDictionary": "Open in the dictionary"
+    "openInDictionary": "Open in the dictionary",
+    "textsLane": "The hadith collections and the books by their compilers' death",
+    "textCount": "the root in {n} of its passages",
+    "textsSummary": "The root is in {n} of the {of} hadith collections and books, the earliest {first} ({year} CE).",
+    "textsNone": "The root is in none of the hadith collections and books.",
+    "textsOpen": "Its passages there"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
@@ -2452,7 +2457,9 @@
     "sourceUrl": "From the web page:",
     "sourcePdf": "From the PDF:",
     "pdfPick": "Choose a PDF",
-    "pdfAnother": "Choose another file"
+    "pdfAnother": "Choose another file",
+    "continueHadith": "Hadith {ref}",
+    "continueBook": "Where you stopped"
   },
   "account": {
     "signIn": "Sign in",

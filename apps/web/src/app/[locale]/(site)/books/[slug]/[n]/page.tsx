@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BookText } from "@/components/books/BookText";
 import { chapterLabel } from "@/components/books/chapterLabel";
+import { RecordPlace } from "@/components/library/RecordPlace";
 import { Sources } from "@/components/hadith/Sources";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 import { Link } from "@/i18n/navigation";
@@ -128,6 +129,7 @@ export default async function BookChapterPage({ params, searchParams }: PageProp
         {ch.next && <Link href={chapterHref(slug, ch.next.ordinal)} className="btn">{t("nextChapter")}</Link>}
       </nav>
       <Sources sources={[b.source]} />
+      {ch.passages[0] && <RecordPlace text={`book:${slug}`} chapter={ch.chapter.ordinal} at={ch.passages[0].ref} label={name} />}
     </div>
   );
 }

@@ -1520,6 +1520,23 @@ button.type-chip:hover {
   border-radius: 2px;
   background: var(--c-sentence);
 }
+/* the texts' lane (P11.2): a text holding the root in the corpus colour, one without it hollow */
+.timeline-track.is-texts {
+  height: 22px;
+  margin-top: 4px;
+}
+.timeline-corpus.is-text {
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  margin-inline-start: -4px;
+  border-radius: 99px;
+  opacity: 0.85;
+}
+.timeline-corpus.is-text.is-empty {
+  background: var(--card);
+  box-shadow: 0 0 0 1px var(--line-2);
+}
 .timeline-axis {
   position: relative;
   height: 16px;

@@ -195,3 +195,25 @@ test("a text from a web page and from a PDF: read on our server, handed back, sa
   await expect(sheet.getByRole("status").filter({ hasText: "arabic-text.pdf" })).toBeVisible();
 });
 
+
+test("the last book read resumes from the shelf, and each hadith collection and book says how many of its words the reader knows (LIB-Q03, Q08)", async ({ page }) => {
+  const known = ["ilm", "kitab", "rahma", "qawl"];
+  // seeded once: the pages read during the test record their places over it
+  await page.addInitScript((v) => { if (!localStorage.getItem("jadhr-personal")) localStorage.setItem("jadhr-personal", JSON.stringify(v)); }, seed({
+    wordStates: Object.fromEntries(known.map((k) => [k, "known"])),
+    progress: { quran: { chapter: 18, passage: 10, at: Date.UTC(2026, 9, 1) }, "book:tabari-jamicbayan": { chapter: 2, passage: 0, ref: "40", label: "باب للتجربة", at: Date.UTC(2026, 9, 3) } },
+  }));
+  const counts = (await (await page.request.post("/api/v1/texts/known", { data: { lemmas: known } })).json()) as { data: { slug: string; known: number; total: number }[] };
+  const tabari = counts.data.find((x) => x.slug === "tabari-jamicbayan")!;
+  await page.goto("/library");
+  // the book read after the Quran is the one to resume
+  const cont = page.getByRole("region", { name: "تابع" });
+  await expect(cont.getByRole("link")).toHaveAttribute("href", "/books/tabari-jamicbayan/p/40");
+  await expect(cont).toContainText("باب للتجربة");
+  await page.getByRole("group", { name: "ما تعرضه" }).getByRole("button", { name: "الكتب" }).click();
+  await expect(page.locator('a.book-card[href="/books/tabari-jamicbayan"]')).toContainText(`تعرف ${ar(tabari.known)} من ${ar(tabari.total)} كلمة`);
+  // reading a hadith makes it the place to resume
+  await page.goto("/hadith/bukhari/7");
+  await page.goto("/library");
+  await expect(page.getByRole("region", { name: "تابع" }).getByRole("link")).toHaveAttribute("href", "/hadith/bukhari/7");
+});

@@ -15,7 +15,9 @@ import { TAG_TERM } from "@/lib/terms";
 import { useDebounced } from "@/lib/useDebounced";
 
 /** Quranic phrases and the design's sample (ANA-03, ANA-Q05); an āya reference loads that āya. */
-const TRY = ["وَقُل رَّبِّ زِدۡنِي عِلۡمٗا", "ذَٰلِكَ ٱلۡكِتَٰبُ لَا رَيۡبَۛ فِيهِۛ", "2:255", SAMPLE];
+// verses, a reference, the design's sample, and a hadith's words as a reader types them (ANA-Q05): read by the rules
+// the hadith are read by, not as the Quran's gold
+const TRY = ["وَقُل رَّبِّ زِدۡنِي عِلۡمٗا", "ذَٰلِكَ ٱلۡكِتَٰبُ لَا رَيۡبَۛ فِيهِۛ", "2:255", SAMPLE, "إنما الأعمال بالنيات"];
 type View = "table" | "interlinear";
 
 /** Confidence always with two decimals (ANA-16): ١٫٠٠، ٠٫٧٠. */

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Explanations } from "@/components/hadith/Explanations";
+import { RecordPlace } from "@/components/library/RecordPlace";
 import { Grades } from "@/components/hadith/Grades";
 import { HadithText } from "@/components/hadith/HadithText";
 import { Sources } from "@/components/hadith/Sources";
@@ -146,6 +147,7 @@ export default async function HadithPage({ params }: PageProps<"/[locale]/hadith
         {r.next && <Link href={hadithHref(c.slug, r.next)} className="btn" rel="next">{t("next")}</Link>}
       </nav>
       <Sources sources={[r.source, c.titles_source, r.narrators_source, r.explanations_source]} />
+      <RecordPlace text={`hadith:${c.slug}`} chapter={kitab?.ordinal ?? 0} at={r.ref} label={kitab?.title_ar ?? ""} />
     </div>
   );
 }
