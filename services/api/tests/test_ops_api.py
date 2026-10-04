@@ -6,13 +6,25 @@ from __future__ import annotations
 
 import threading
 import uuid
+from collections.abc import Iterator
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+import pytest
 from fastapi.testclient import TestClient
 from jadhr_api import ops
 from jadhr_api.accounts import q, tx
 from jadhr_api.main import app
 from sqlalchemy import text
+
+
+@pytest.fixture(autouse=True)
+def _leave_nothing() -> Iterator[None]:
+    """Each test's rows go when it ends: the counts are what an administrator reads (B61), not the tests' marks."""
+    with tx() as conn:
+        began = conn.execute(text("select clock_timestamp()")).scalar_one()
+    yield
+    with tx() as conn:
+        conn.execute(text("delete from ops.errors where first_at >= :t"), {"t": began})
 
 
 def _tag() -> str:
@@ -126,6 +138,12 @@ def test_what_could_be_a_readers_is_taken_out_of_a_message() -> None:
     assert ops.scrub("bad\x1b[31m red \u202e evil") == "bad [31m red   evil"
     assert ops.place_of("/x\x1b[2J") == "?" and ops.place_of("<script>") == "?"
     assert ops.place_of("/roots/%D8%B9?q=1") == "/roots/%D8%B9"
+    # a name from code stays; a reader's words in single quotes do not
+    assert ops.scrub("Cannot read properties of undefined (reading 'verses')") == (
+        "Cannot read properties of undefined (reading 'verses')"
+    )
+    assert ops.scrub("bad value 'عن العلم أصل' here") == "bad value '…' here"
+    assert ops.scrub("bad value 'aعلم' here") == "bad value '…' here"  # a name from code is ASCII
 
 
 def test_reports_are_bounded_by_kind_place_day_and_address(monkeypatch: object) -> None:

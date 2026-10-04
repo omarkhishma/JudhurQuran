@@ -65,7 +65,8 @@ _KIND = re.compile(r"[A-Za-z][A-Za-z0-9_.]{0,79}")
 _PLACE = re.compile(r"/[A-Za-z0-9_\-./:%~]*")
 _SCRUB = [
     (re.compile(r'"[^"]*"|“[^”]*”|«[^»]*»'), '"…"'),  # what a message quotes: a value, a reader's text
-    (re.compile(r"'[^']{2,}'"), "'…'"),
+    # a quoted name from code (reading 'verses') stays: it is the code's, and a fix needs it
+    (re.compile(r"'(?![A-Za-z_$][A-Za-z0-9_$]{0,39}')[^']{2,}'"), "'…'"),
     (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "<address>"),
     (re.compile(r"[?#][^\s]*"), ""),  # a query string or a fragment
     (re.compile(r"\d{5,}"), "<n>"),
