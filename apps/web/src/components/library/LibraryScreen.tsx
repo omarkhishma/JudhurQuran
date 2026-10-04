@@ -15,7 +15,7 @@ import { AddTextSheet } from "./AddTextSheet";
 export type TextCard = { slug: string; kind: string; title_ar: string; title_en: string; meta_ar: string | null; meta_en: string | null; chapter_count: number; passage_count: number; token_count: number; lemma_count: number | null; function_lemmas?: string[] };
 type Division = { number: number; key: string; surah: number; ayah: number; page: number; name_ar: string; name_translit: string };
 type SurahRow = { number: number; name_ar: string; name_translit: string; verse_count: number; revelation_place: string };
-type Filter = "all" | "quran" | "mine";
+type Filter = "all" | "quran" | "hadith" | "mine";
 
 const pctFmt = (locale: string) => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { style: "percent", maximumFractionDigits: 0 });
 
@@ -42,6 +42,8 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
   const known = useMemo(() => new Set(Object.entries(wordStates).filter(([, v]) => v === "known").map(([k]) => k)), [wordStates]);
   const seen = useMemo(() => new Set(sessions.flatMap((s) => s.words)), [sessions]);
   const quran = texts.find((x) => x.kind === "quran");
+  // the hadith collections (P11.2), each opening its own pages
+  const hadith = texts.filter((x) => x.kind === "hadith");
   // known content words only, the measure the reader's own texts use (LIB-11): particles and pronouns out
   const knownQuran = useMemo(() => {
     const fn = new Set(quran?.function_lemmas ?? []);
@@ -66,9 +68,13 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
   const filters: { value: Filter; label: string }[] = [
     { value: "all", label: t("filterAll") },
     ...(quran ? [{ value: "quran" as const, label: t("filterQuran") }] : []),
+    ...(hadith.length ? [{ value: "hadith" as const, label: t("filterHadith") }] : []),
     ...(userTexts.length ? [{ value: "mine" as const, label: t("filterMine", { n: formatNumber(userTexts.length, locale) }) }] : []),
   ];
-  const shown = (filter === "all" || filter === "quran" ? [quran].filter(Boolean).length : 0) + (filter === "all" || filter === "mine" ? userTexts.length : 0);
+  const shown =
+    (filter === "all" || filter === "quran" ? [quran].filter(Boolean).length : 0) +
+    (filter === "all" || filter === "hadith" ? hadith.length : 0) +
+    (filter === "all" || filter === "mine" ? userTexts.length : 0);
 
   return (
     <div className="library-screen">
@@ -104,7 +110,7 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
           <span className="text-[12px] text-t3">{t("shelfMeta", { texts: formatNumber(shown, locale), known: formatNumber(known.size, locale) })}</span>
         </div>
         <ul className="shelf">
-          {quran && filter !== "mine" && (
+          {quran && (filter === "all" || filter === "quran") && (
             <li>
               <Link href="/read" className="book-card">
                 <span className="book-cover is-quran" aria-hidden="true" />
@@ -117,18 +123,30 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
               </Link>
             </li>
           )}
-          {filter !== "quran" && client && mine.isLoading && (
+          {(filter === "all" || filter === "hadith") &&
+            hadith.map((x) => (
+              <li key={x.slug}>
+                <Link href={`/hadith/${x.slug}`} className="book-card">
+                  <span className="book-cover is-hadith" aria-hidden="true" />
+                  <span className="book-kind">{t("kindHadith")}</span>
+                  <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{x.title_ar}</span>
+                  {locale !== "ar" && <span className="text-[12.5px] text-t2">{x.title_en}</span>}
+                  <span className="text-[12px] text-t3">{t("hadithMeta", cnt(x.passage_count, locale))}</span>
+                </Link>
+              </li>
+            ))}
+          {(filter === "all" || filter === "mine") && client && mine.isLoading && (
             <li aria-hidden="true">
               <span className="book-card animate-pulse" />
             </li>
           )}
-          {filter !== "quran" &&
+          {(filter === "all" || filter === "mine") &&
             userTexts.map((x) => (
               <li key={x.id}>
                 <UserTextCard x={x} known={known} />
               </li>
             ))}
-          {filter !== "quran" && (
+          {(filter === "all" || filter === "mine") && (
             <li>
               <button type="button" className="add-tile" onClick={() => setAdding(true)}>
                 <span className="text-[26px] leading-none" aria-hidden="true">+</span>

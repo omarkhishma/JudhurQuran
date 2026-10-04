@@ -369,6 +369,8 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
             for x in explanations
         ],
         "explanations_source": _source(conn, "hadeethenc") if explanations else None,
+        # the narrators' entries are Ibn Ḥajar's (Taqrīb al-Tahdhīb): its credit wherever a name is linked
+        "narrators_source": _source(conn, "openiti-taqrib") if any(x["id"] for x in links) else None,
     }
 
 

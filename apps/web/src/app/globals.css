@@ -3226,6 +3226,9 @@ button.type-chip:hover {
 .book-cover.is-quran {
   background: linear-gradient(135deg, #177a44, #0d4a29);
 }
+.book-cover.is-hadith {
+  background: linear-gradient(135deg, #a8682c, #6b3f15);
+}
 .book-cover.is-mine {
   display: flex;
   align-items: center;
@@ -6824,4 +6827,122 @@ a.wotd-pill:hover {
   color: var(--t1);
   font-family: var(--font-classical), var(--font-mono);
   font-size: 15px;
+}
+
+/* ─── Hadith (P11.2): a record's isnād, matn and the collector's comment; its words open their reading ─── */
+.hadith-reader {
+  display: grid;
+  gap: 24px;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .hadith-reader {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+.hadith-text {
+  font-family: var(--font-classical);
+  line-height: 2.1;
+  color: var(--t1);
+}
+.hadith-text p {
+  margin: 0;
+}
+.hadith-text .hp-isnad,
+.hadith-text.hp-isnad,
+.hadith-text > .hp-isnad {
+  color: var(--t2);
+  font-size: 17px;
+}
+.hadith-text .hp-matn,
+.hadith-text.hp-matn {
+  font-size: 22px;
+  color: var(--t1);
+}
+.hadith-reader .hadith-text .hp-matn {
+  margin-top: 6px;
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid color-mix(in srgb, var(--c-sentence) 45%, transparent);
+}
+.hadith-text .hp-comment {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line-2);
+  color: var(--t3);
+  font-size: 16px;
+}
+.hadith-reader .hadith-text {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.hadith-text .w {
+  display: inline;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0.04em 0.08em;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration-line: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.42em;
+  transition: text-decoration-color 0.12s, background 0.1s;
+}
+.hadith-text .w:hover {
+  text-decoration-color: var(--t3);
+}
+.hadith-text .w:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.hadith-text .w.is-selected {
+  background: color-mix(in srgb, var(--ring) 22%, transparent);
+  box-shadow: inset 0 -2px 0 var(--ring);
+}
+.hadith-text .hp-name {
+  color: inherit;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--c-desc);
+  text-underline-offset: 0.42em;
+}
+.hadith-text a.hp-name:hover {
+  color: var(--t1);
+  text-decoration-color: var(--c-root);
+}
+.hadith-text .hp-name.is-open {
+  text-decoration-style: dashed;
+}
+.hadith-panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  padding: 16px;
+  outline: none;
+}
+@media (min-width: 1024px) {
+  .hadith-panel {
+    position: sticky;
+    top: 76px;
+  }
+}
+/* on a phone the panel rises from the foot of the screen once a word is chosen */
+@media (max-width: 1023px) {
+  .hadith-panel {
+    display: none;
+  }
+  .hadith-panel.is-open {
+    display: block;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+    max-height: 60vh;
+    overflow-y: auto;
+    border-radius: 16px 16px 0 0;
+    box-shadow: var(--sh-open);
+  }
 }

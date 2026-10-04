@@ -182,3 +182,17 @@ def test_a_hadith_carries_hadeethencs_explanation_of_the_number_it_cites() -> No
     for h in hidden:
         shown = get(f"/api/v1/texts/{h['slug']}/passages/{h['ref']}")["explanations"]
         assert all(e["status"] != "disagrees" for e in shown)
+
+
+def test_no_text_beyond_the_quran_holds_a_character_outside_the_bmp() -> None:
+    """The web slices a record's parts by the offsets the API counts (apps/web lib/hadith.ts, parts()): Python counts
+    code points, JavaScript UTF-16 units, the same only while no character lies outside the Basic Multilingual Plane."""
+    with connect() as conn:
+        astral = scalar(
+            conn,
+            """select count(*) from content.passages p join content.texts t on t.id = p.text_id
+                where t.kind <> 'quran' and p.ar_full ~ '[\\U00010000-\\U0010FFFF]'""",
+        )
+        # the check can fail: the same pattern finds an astral character when there is one
+        assert scalar(conn, "select '𝒜' ~ '[\\U00010000-\\U0010FFFF]'") is True
+    assert astral == 0
