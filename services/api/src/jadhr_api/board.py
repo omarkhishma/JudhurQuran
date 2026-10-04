@@ -17,7 +17,7 @@ from sqlalchemy import Connection
 
 from .db import connect, one, rows
 
-SMALL = ("root_gloss", "root_core", "pattern_function", "pattern_plain", "glossary")
+SMALL = ("root_gloss", "root_core", "pattern_function", "pattern_plain", "glossary", "topic")
 TTL = 30.0
 _cache: dict[str, tuple[float, dict[str, dict[str, Any]]]] = {}
 
@@ -72,6 +72,11 @@ def _all(conn: Connection, kind: str) -> dict[str, dict[str, Any]]:
     return found
 
 
+def every(conn: Connection, kind: str) -> dict[str, dict[str, Any]]:
+    """Every approved entry of a small kind, by target (the topic taxonomy is read whole, P8.3b)."""
+    return _all(conn, kind)
+
+
 # every work a board entry may cite, by the id the sources registry and the content tables give it
 _WORKS = """
     select id, title_ar, title_en from content.lexicon_works
@@ -81,6 +86,7 @@ _WORKS = """
     union all select id, title_ar, title_en from content.loanword_sources
     union all select id, title_ar, title_en from content.relation_sources
     union all select id, title_ar, title_en from content.knowledge_sources
+    union all select id, title_ar, title_en from content.topic_sources
     union all select id, title_ar, title_en from content.sources
 """
 _works: tuple[float, dict[str, dict[str, str]]] | None = None

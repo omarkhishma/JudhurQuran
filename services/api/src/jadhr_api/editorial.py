@@ -2,7 +2,7 @@
 
 The editorial board writes and decides here what only scholars can: a root's English gloss, a correction of Ibn
 Fāris's statement as cut, a pattern's function and its plain explanation, a word's sense list, the glossary's
-bodies, and a verdict on every row extracted from a book. Candidates are verbatim slices of cited sources or counts
+bodies, the topic taxonomy (P8.3b), and a verdict on every row extracted from a book. Candidates are verbatim slices of cited sources or counts
 from the corpus — the tool never suggests wording of its own (L2). An entry is in force only when an editor other
 than its author approves its current revision; the database refuses a self-decision and a second approval of one
 revision by one person (migration 0023). The work is keyed by stable keys and read beside the content, so a dataset
@@ -12,6 +12,7 @@ release never loses it; every save, submission and decision is logged.
 from __future__ import annotations
 
 import json
+import re
 import threading
 import urllib.error
 import urllib.request
@@ -19,6 +20,7 @@ import uuid
 from decimal import Decimal
 from typing import Any
 
+from jadhr_arabic import normalize
 from sqlalchemy import Connection
 
 from . import board, lexicon
@@ -27,7 +29,16 @@ from .db import connect, one, rows
 from .refusal import Refusal
 from .settings import get_settings
 
-KINDS = ("root_gloss", "root_core", "pattern_function", "pattern_plain", "sense_list", "glossary", "verdict")
+KINDS = (
+    "root_gloss",
+    "root_core",
+    "pattern_function",
+    "pattern_plain",
+    "sense_list",
+    "glossary",
+    "topic",
+    "verdict",
+)
 BOARD = {"editor", "admin"}
 OPEN = ("draft", "review", "changes")
 
@@ -77,6 +88,18 @@ LAYERS: dict[str, dict[str, str]] = {
         "label": "name_ar",
         "text": "verse_key",
         "order": "topic_id, split_part(verse_key, ':', 1)::int, split_part(verse_key, ':', 2)::int",
+    },
+    # QSAC's model-made tags on the verses Quranpedia leaves without a topic (P8.3b, D29): the board places a verse
+    # under an Arabic topic (a correction naming it) or rejects the tag; nothing of QSAC's reaches a reader otherwise
+    "topic_candidates": {
+        "table": """(select l.id, l.verse_key, l.topic_id, t.name_en, 'extracted' as status
+                    from content.topic_links l join content.topics t on t.id = l.topic_id
+                    where l.source_id = 'qsac' and not exists (
+                      select 1 from content.topic_links p
+                      where p.verse_key = l.verse_key and p.source_id = 'quranpedia-topics')) topic_candidates""",
+        "label": "name_en",
+        "text": "verse_key",
+        "order": "split_part(verse_key, ':', 1)::int, split_part(verse_key, ':', 2)::int, topic_id",
     },
     "entity_candidates": {
         "table": "content.entity_candidates",
@@ -164,6 +187,14 @@ def _value(kind: str, raw: Any) -> tuple[dict[str, Any], bool]:
                 raise Refusal(422, "empty", "Each sense is written in Arabic, in English, or both.")
             out_s.append({"ar": ar, "en": en, "sources": _sources(s.get("sources"), need=True)})
         return {"senses": out_s}, False
+    if kind == "topic":
+        # the board's Arabic name for a heading, and where it stands: "" as its source places it, "top", or a topic;
+        # whether it needs a source of its own depends on whose heading it is (_check_topic)
+        return {
+            "name_ar": _str(v.get("name_ar"), 200),
+            "name_en": _str(v.get("name_en"), 200),
+            "under": _str(v.get("under"), 60),
+        }, False
     if kind == "glossary":
         ar, en = _str(v.get("body_ar"), 4000), _str(v.get("body_en"), 4000)
         if not ar and not en:
@@ -176,16 +207,21 @@ def _value(kind: str, raw: Any) -> tuple[dict[str, Any], bool]:
         raw_ends = v.get("ends")
         ends: dict[str, Any] = raw_ends if isinstance(raw_ends, dict) else {}
         remap = {k: _str(ends.get(k), 20) for k in ("root", "target_root") if _str(ends.get(k), 20)}
+        # a QSAC tag's verse placed under an Arabic topic (P8.3b): the topic named says what the board decided
+        if _str(ends.get("topic"), 60):
+            remap["topic"] = _str(ends.get("topic"), 60)
         out_v: dict[str, Any] = {
             "verdict": verdict,
-            "note": _str(v.get("note"), 2000, need=verdict != "reviewed"),
+            "note": _str(v.get("note"), 2000, need=verdict != "reviewed" and "topic" not in remap),
         }
         if verdict == "corrected":
             # a relation's end mapped to another root is a correction of its own; words may say why
             out_v["correction"] = _str(v.get("correction"), 4000, need=not remap)
         if remap:
             if verdict != "corrected":
-                raise Refusal(422, "bad_value", "A root mapped anew is a correction.")
+                raise Refusal(
+                    422, "bad_value", "A root mapped anew, or a verse placed under a topic, is a correction."
+                )
             out_v["ends"] = remap
         return out_v, False
     raise Refusal(404, "not_found", "No such kind of entry.")
@@ -232,6 +268,8 @@ def _target(conn: Connection, kind: str, target: str) -> dict[str, Any]:
             "select key, label_ar as label, label_en, body_ar, body_en, category from content.glossary_terms where key = :k",
             {"k": target},
         )
+    elif kind == "topic":
+        t = _topic_target(conn, target)
     else:
         layer, row = _layer(target)
         spec = LAYERS[layer]
@@ -245,8 +283,107 @@ def _target(conn: Connection, kind: str, target: str) -> dict[str, Any]:
     return {k: float(v) if isinstance(v, Decimal) else v for k, v in t.items()}
 
 
+_BOARD_TOPIC = re.compile(r"^board:[a-z0-9]{6,16}$")
+# the headings the board works on: Quranpedia's (renamed or placed anew) and La Beaume's chapters (adopted)
+_TOPIC_SOURCES = ("quranpedia-topics", "labeaume")
+
+
+def _topic_target(conn: Connection, target: str) -> dict[str, Any] | None:
+    """A heading the board names or places: a source's (with its own name, place and verses) or one of its own."""
+    if target.startswith("board:"):
+        if not _BOARD_TOPIC.match(target):
+            return None
+        named = one(
+            conn,
+            """select value from editorial.entries where kind = 'topic' and target = :t and status <> 'retired'
+               order by (status = 'approved') desc, updated_at desc limit 1""",
+            {"t": target},
+        )
+        return {
+            "key": target,
+            "label": (named["value"].get("name_ar") if named else "") or "",
+            "source_id": "board",
+            "parent_id": None,
+            "verse_count": None,
+        }
+    return one(
+        conn,
+        """select t.id as key, coalesce(t.name_ar, t.name_fr, t.name_en) as label, t.name_ar, t.name_fr, t.source_id,
+                  t.source_ref, t.parent_id, t.level, t.verse_count, p.name_ar as parent_name
+           from content.topics t left join content.topics p on p.id = t.parent_id
+           where t.id = :k and t.source_id = any(:s)""",
+        {"k": target, "s": list(_TOPIC_SOURCES)},
+    )
+
+
+def _known_topic(conn: Connection, tid: str) -> None:
+    """A topic a verse or a heading may be placed under: a source's heading the board works on, or one of the
+    board's own that an entry names."""
+    if tid.startswith("board:"):
+        found = one(
+            conn,
+            "select 1 as x from editorial.entries where kind = 'topic' and target = :t and status <> 'retired' limit 1",
+            {"t": tid},
+        )
+    else:
+        found = one(
+            conn,
+            "select 1 as x from content.topics where id = :t and source_id = any(:s)",
+            {"t": tid, "s": list(_TOPIC_SOURCES)},
+        )
+    if not found:
+        raise Refusal(422, "unknown_topic", f"No topic {tid} to place it under.")
+
+
+def _parent_of(conn: Connection, tid: str, placed: dict[str, dict[str, Any]]) -> str | None:
+    """Where a topic stands with the board's places in force: as its source places it, at the top, or under another."""
+    v = placed.get(tid)
+    under = (v or {}).get("under") or ""
+    if under == "top":
+        return None
+    if under:
+        return under
+    if tid.startswith("board:"):
+        return None
+    r = one(conn, "select parent_id from content.topics where id = :t", {"t": tid})
+    return r["parent_id"] if r else None
+
+
+def _check_topic(
+    conn: Connection, t: dict[str, Any], value: dict[str, Any], sources: list[dict[str, str]]
+) -> None:
+    """A chapter adopted or a topic of the board's own is named in Arabic and rests on a source; a place is a topic
+    the board works on, never the topic itself or one beneath it."""
+    key, src = t["key"], t["source_id"]
+    if src in ("labeaume", "board") and not value["name_ar"]:
+        raise Refusal(422, "empty", "Name the topic in Arabic.")
+    if src in ("labeaume", "board") and not sources:
+        raise Refusal(422, "sources_required", "Name the source this heading rests on.")
+    if src == "quranpedia-topics" and value["name_ar"] == (t.get("name_ar") or ""):
+        value["name_ar"] = ""  # the source's own name kept: nothing renamed
+    under = value["under"]
+    if under in ("", "top"):
+        return
+    _known_topic(conn, under)
+    placed = {k: v["value"] for k, v in board.every(conn, "topic").items()} | {key: value}
+    seen, at = {key}, under
+    while at:
+        if at in seen:
+            raise Refusal(
+                422, "topic_cycle", "A topic cannot stand under itself or under a topic beneath it."
+            )
+        seen.add(at)
+        at = _parent_of(conn, at, placed)
+
+
 def _check_ends(conn: Connection, t: dict[str, Any], ends: dict[str, str]) -> None:
-    """A re-mapping only on a relation's row, only of an end it has, and only to a root the corpus holds."""
+    """A re-mapping only on a relation's row, only of an end it has, and only to a root the corpus holds; a placement
+    only of a QSAC tag's verse, under a topic the board works on."""
+    if "topic" in ends:
+        if t.get("layer") != "topic_candidates" or set(ends) != {"topic"}:
+            raise Refusal(422, "bad_value", "Only a QSAC tag's verse is placed under a topic.")
+        _known_topic(conn, ends["topic"])
+        return
     if t.get("layer") != "relation_candidates":
         raise Refusal(422, "bad_value", "Only a relation's ends are mapped anew.")
     if "target_root" in ends and not t.get("target_ar"):
@@ -329,6 +466,7 @@ _POOL = {
     "pattern_plain": "select count(*) from content.patterns",
     "sense_list": "select count(*) from content.lemmas",
     "glossary": "select count(*) from content.glossary_terms",
+    "topic": "select count(*) from content.topics where source_id in ('quranpedia-topics', 'labeaume')",
 }
 
 
@@ -408,6 +546,34 @@ _LISTS = {
 }
 
 
+def _topic_targets(conn: Connection, query: str) -> list[dict[str, Any]]:
+    """The headings of the taxonomy: the board's own first, then La Beaume's chapters in the book's order, then
+    Quranpedia's topics, those gathering the most verses first; a search folds the Arabic as every search does."""
+    folded = normalize(query) if query else ""
+    own = rows(
+        conn,
+        """select distinct on (target) target as key, coalesce(value->>'name_ar', '') as label
+           from editorial.entries where kind = 'topic' and target like 'board:%' and status <> 'retired'
+           order by target, (status = 'approved') desc, updated_at desc""",
+    )
+    items = [
+        {"key": o["key"], "label": o["label"], "sub": "", "occurrences": None}
+        for o in own
+        if not folded or folded in normalize(o["label"])
+    ]
+    items += rows(
+        conn,
+        f"""select t.id as key, coalesce(t.name_ar, t.name_fr) as label,
+                   case when t.source_id = 'labeaume' then t.source_ref else coalesce(p.name_ar, '') end as sub,
+                   t.verse_count as occurrences
+            from content.topics t left join content.topics p on p.id = t.parent_id
+            where t.source_id in ('quranpedia-topics', 'labeaume'){" and t.name_norm like :q" if folded else ""}
+            order by (t.source_id = 'labeaume') desc, t.level, t.verse_count desc, length(t.id), t.id""",
+        {"q": f"%{folded}%"} if folded else {},
+    )
+    return items
+
+
 def targets(
     u: dict[str, Any], kind: str, state: str, query: str, offset: int, limit: int, layer: str | None
 ) -> dict[str, Any]:
@@ -457,6 +623,26 @@ def targets(
                 }
                 for r in all_rows
             ]
+            if layer in ("topic_links", "topic_candidates"):
+                # the verse in the mushaf's text, and the topic or the tag as its source names and places it (P8.3b)
+                det = {
+                    r["id"]: r
+                    for r in rows(
+                        conn,
+                        f"""select l.id, l.verse_key, v.text_qpc as verse_text, t.id as topic_id,
+                                   coalesce(t.name_ar, t.name_en) as name, t.description, p.name_ar as parent_ar,
+                                   p.name_en as parent_en, g.name_en as grand_en
+                            from {spec["table"]} join content.topic_links l on l.id = {layer}.id
+                            join content.verses v on v.surah = split_part(l.verse_key, ':', 1)::int
+                                                 and v.ayah = split_part(l.verse_key, ':', 2)::int
+                            join content.topics t on t.id = l.topic_id
+                            left join content.topics p on p.id = t.parent_id
+                            left join content.topics g on g.id = p.parent_id""",
+                    )
+                }
+                for it in items:
+                    d = det[it["key"].split(":", 1)[1]]
+                    it["topic"] = {k: d[k] for k in d if k != "id"}
             if layer == "relation_candidates":
                 # a relation's two ends with the roots they were mapped to, the sense it names, its verses (P8.4)
                 rel = {
@@ -472,6 +658,8 @@ def targets(
                 for it in items:
                     r = rel[it["key"].split(":", 1)[1]]
                     it["relation"] = {k: r[k] for k in r if k != "id"}
+        elif kind == "topic":
+            items = _topic_targets(conn, query)
         else:
             sql, col = _LISTS[kind]
             where = f" where {col} ilike :q" if query else ""
@@ -561,7 +749,65 @@ def candidates(conn: Connection, kind: str, t: dict[str, Any]) -> dict[str, Any]
         }
     if kind == "glossary":
         return {"current": {"body_ar": t["body_ar"], "body_en": t["body_en"]}}
+    if kind == "topic":
+        return _topic_candidates(conn, t)
     return {"row": {k: v for k, v in t.items() if k not in ("label",)}}
+
+
+def _topic_candidates(conn: Connection, t: dict[str, Any]) -> dict[str, Any]:
+    """What the sources say of a heading: La Beaume's chapter as the book prints it, to cite; a Quranpedia topic's
+    chain, sub-topics and first verses, and the QSAC tags its verses carry (an English hint, never a name); the
+    headings the board has placed under it."""
+    out: dict[str, Any] = {"source_id": t["source_id"]}
+    if t["source_id"] == "labeaume":
+        out["chapter"] = {"work": "labeaume", "ref": t["source_ref"], "title_fr": t["name_fr"]}
+    if t["source_id"] == "quranpedia-topics":
+        out["chain"] = (
+            rows(
+                conn,
+                """with recursive up as (
+                 select id, name_ar, parent_id, 0 as d from content.topics where id = :p
+                 union all select x.id, x.name_ar, x.parent_id, up.d + 1 from content.topics x join up on x.id = up.parent_id)
+               select id, name_ar from up order by d desc""",
+                {"p": t["parent_id"]},
+            )
+            if t["parent_id"]
+            else []
+        )
+        out["subtopics"] = rows(
+            conn,
+            """select id, name_ar, verse_count from content.topics where parent_id = :id
+               order by verse_count desc, id limit 30""",
+            {"id": t["key"]},
+        )
+        out["verses"] = [
+            r["verse_key"]
+            for r in rows(
+                conn,
+                """select verse_key from content.topic_links where topic_id = :id
+                   order by split_part(verse_key, ':', 1)::int, split_part(verse_key, ':', 2)::int limit 12""",
+                {"id": t["key"]},
+            )
+        ]
+        out["qsac"] = rows(
+            conn,
+            """select q.name_en as tag, p.name_en as category, count(*)::int as verses
+               from content.topic_links a join content.topic_links b on b.verse_key = a.verse_key and b.source_id = 'qsac'
+               join content.topics q on q.id = b.topic_id left join content.topics p on p.id = q.parent_id
+               where a.topic_id = :id group by q.name_en, p.name_en order by verses desc, q.name_en limit 10""",
+            {"id": t["key"]},
+        )
+    placed = [k for k, v in board.every(conn, "topic").items() if v["value"].get("under") == t["key"]]
+    out["placed_here"] = rows(
+        conn,
+        "select id, coalesce(name_ar, name_fr) as name from content.topics where id = any(:i) order by id",
+        {"i": placed},
+    ) + [
+        {"id": k, "name": board.every(conn, "topic")[k]["value"]["name_ar"]}
+        for k in placed
+        if k.startswith("board:")
+    ]
+    return out
 
 
 def entry(u: dict[str, Any], kind: str, target: str) -> dict[str, Any]:
@@ -664,6 +910,10 @@ def save(u: dict[str, Any], kind: str, target: str, raw_value: Any, raw_sources:
         t = _target(conn, kind, target)
         if value.get("ends"):
             _check_ends(conn, t, value["ends"])
+        if t.get("layer") == "topic_candidates" and value["verdict"] != "rejected" and not value.get("ends"):
+            raise Refusal(422, "place_or_reject", "Place the verse under an Arabic topic, or reject the tag.")
+        if kind == "topic":
+            _check_topic(conn, t, value, sources)
     with tx() as conn:
         e = q1(
             conn,
@@ -772,6 +1022,16 @@ def decide(u: dict[str, Any], entry_id: str, decision: str, note: str | None) ->
             raise Refusal(403, "self_review", "An author does not decide on their own entry.")
         if e["status"] != "review":
             raise Refusal(409, "not_in_review", "Only work in review is decided.")
+        if (
+            decision == "approve"
+            and e["kind"] == "topic"
+            and (e["value"].get("under") or "") not in ("", "top")
+        ):
+            # the tree may have changed since it was written: an approval never makes a topic stand under itself
+            with connect() as c:
+                t = _topic_target(c, e["target"])
+                if t is not None:
+                    _check_topic(c, t, dict(e["value"]), e["sources"] or [{"work": "-", "ref": ""}])
         try:
             q(
                 conn,

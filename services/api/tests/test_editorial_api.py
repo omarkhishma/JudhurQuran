@@ -12,6 +12,7 @@ import pytest
 import sqlalchemy
 from fastapi.testclient import TestClient
 from jadhr_api import accounts, contrib, editorial
+from jadhr_api import board as board_
 from jadhr_api.main import app
 
 client = TestClient(app)
@@ -47,6 +48,8 @@ def board() -> Iterator[dict[str, dict[str, str]]]:
                 )
             accounts.q(conn, "delete from accounts.users where email = :e returning id", {"e": e})
             accounts.q(conn, "delete from accounts.login_tokens where email = :e returning email", {"e": e})
+    # what the board had in force is read afresh by the next test, not from this process's short-lived copy
+    board_.clear()
 
 
 def _uid(h: dict[str, str]) -> str:

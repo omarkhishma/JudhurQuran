@@ -8,6 +8,9 @@
 # - QSAC: English, labelled with a language model, every verse covered; only editor-side candidates (D29, L2) —
 #   `shown: false`. Its verse text and English translation columns are never read (L1; the translation is not ours
 #   to republish).
+# - La Beaume's Le Koran analysé (1878, public domain): its table of contents only — the 18 chapters the board may
+#   adopt as the taxonomy's top level, each under an Arabic name of the board's (P8.3b) — `shown: false`. The verses
+#   under each chapter are not imported: the text is OCR and its verse numbers differ from Hafs (research 06).
 #
 # Each file is sha256-pinned; the build refuses a file that differs. Paths are relative to data/raw/.
 
@@ -68,3 +71,23 @@ sources:
     shown: false
     attribution_ar: "المصدر: أحمد بلال، مدونة التعليق الدلالي على القرآن QSAC (2026)، برخصة CC BY 4.0؛ وُسمت الآيات بنموذج لغوي."
     attribution_en: "Source: Ahmad Bilal, QSAC — Quran Semantic Annotation Corpus (2026), CC BY 4.0; verses labelled with a language model."
+
+  - id: labeaume
+    title_ar: "Le Koran analysé — فهرس موضوعات القرآن لجول لابوم (1878)"
+    title_en: Le Koran analysé — Jules La Beaume's index of the Koran's subjects (1878)
+    publisher_ar: جول لابوم
+    publisher_en: Jules La Beaume
+    language: fr
+    method: the table of contents only, its 18 chapters as the book prints them (OCR of the archive.org scan); the verses under each are not read
+    version: "1878"
+    generated_at: null
+    url: https://archive.org/details/lekorananalyseda00labe
+    files:
+      text:
+        path: labeaume/lekorananalyseda00labe/lekorananalyseda00labe_djvu.txt
+        sha256: e57858c291cde34e8713cf7da0a9958e9ed75ca086b435f50157d07866f23b4b
+    licence: Public domain (Jules La Beaume died c. 1876; the translation he analyses is Kazimirski's, who died in 1887)
+    licence_url: https://archive.org/details/lekorananalyseda00labe
+    shown: false
+    attribution_ar: "عن: جول لابوم، Le Koran analysé (باريس: ميزونوف، 1878)، فهرس الفصول."
+    attribution_en: "After: Jules La Beaume, Le Koran analysé (Paris: Maisonneuve, 1878), table of chapters."

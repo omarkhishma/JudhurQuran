@@ -3,9 +3,11 @@
 Registry ``data/topics.yaml``. Quranpedia's Arabic tree is read from its versioned dump — every topic with its parent
 and the verses it lists — and checked against the dump's per-verse file; QSAC's tags from its ontology (domain ›
 category › tag) with the tags each verse carries, its verse text and English translation never read. Every link keeps
-its source; a source the reader is not shown (``shown: false``) is kept for the editorial board. Names are the
-source's own, verbatim: a stray mark in Quranpedia's spelling («الَّريش») is counted, not corrected — the board
-renames in the workbench. Coverage per sūra is reported.
+its source; a source the reader is not shown (``shown: false``) is kept for the editorial board. La Beaume's index
+(1878) gives only its 18 chapters, read from the scan's table of contents — the top level the board may adopt under
+Arabic names of its own (P8.3b); its verses are not read. Names are the source's own, verbatim: a stray mark in
+Quranpedia's spelling («الَّريش») is counted, not corrected — the board renames in the workbench. Coverage per sūra is
+reported.
 
 Entry point: ``build_topics(raw, out, registry)``.
 """
@@ -100,6 +102,8 @@ def build_topics(
             t, lk, rep = _quranpedia(sid, files, verses)
         elif sid == "qsac":
             t, lk, rep = _qsac(sid, files, verses)
+        elif sid == "labeaume":
+            t, lk, rep = _labeaume(sid, files)
         else:
             raise TopicsError(f"{sid}: no reader for this source")
         topics += t
@@ -115,9 +119,12 @@ def build_topics(
             "per_surah": {str(s): [by_surah.get(s, 0), per_surah[s]] for s in sorted(per_surah)},
         }
         report["sources"][sid] = rep
-    # what a search matches: the Arabic name folded as every Arabic search here is, an English one lower-cased
+    # what a search matches: the Arabic name folded as every Arabic search here is, another lower-cased
     for x in topics:
-        x["name_norm"] = normalize(x["name_ar"]) if x["name_ar"] else (x["name_en"] or "").lower()
+        x.setdefault("name_fr", None)
+        x["name_norm"] = (
+            normalize(x["name_ar"]) if x["name_ar"] else (x["name_en"] or x["name_fr"] or "").lower()
+        )
     ids = [x["id"] for x in topics]
     if len(ids) != len(set(ids)):
         raise TopicsError(f"duplicate topic ids: {[k for k, v in Counter(ids).items() if v > 1][:5]}")
@@ -297,3 +304,52 @@ def _qsac(
         "unknown": dict(unknown),
     }
     return topics, links, report
+
+
+# the book's own table of chapters, at its end: "Chapitre 1. Histoire 1", then "— 2. Mahomet 6" … "— 18. Progrès 772"
+_LB_ROW = re.compile(r"^(?:Chapitre|—)\s+(\S+)\.\s+(.+?)[\s.,]*?\s(\d+)\s*$")
+
+
+def _labeaume(
+    sid: str, files: dict[str, Path]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    """La Beaume's 18 chapters with the page each starts on, numbered by their place in the table: the OCR misreads
+    one printed number («— 0. Chrétiens» for 6), which is counted. No verses are read."""
+    lines = files["text"].read_text(encoding="utf-8").splitlines()
+    start = max(
+        i for i, x in enumerate(lines) if x.strip().startswith("TABLE  DES  CHAPITRES") and "KORAN" not in x
+    )
+    end = next(i for i in range(start, len(lines)) if lines[i].strip().startswith("Table  alphabétique"))
+    found = [m for m in (_LB_ROW.match(x.strip()) for x in lines[start:end]) if m]
+    if len(found) != 18:
+        raise TopicsError(f"{sid}: the table of chapters gives {len(found)} rows, not 18")
+    misread = 0
+    topics = []
+    for n, m in enumerate(found, 1):
+        printed, title, page = m.group(1), re.sub(r"\s+", " ", m.group(2)).strip(" .,"), int(m.group(3))
+        if printed != str(n):
+            misread += 1
+        topics.append(
+            {
+                "id": f"lb:{n}",
+                "source_id": sid,
+                "source_ref": f"chapitre {n}, p. {page}",
+                "name_ar": None,
+                "name_en": None,
+                "name_fr": title,
+                "description": None,
+                "parent_id": None,
+                "level": 0,
+                "verse_count": 0,
+            }
+        )
+    pages = [int(t["source_ref"].rsplit(" ", 1)[1]) for t in topics]
+    if pages != sorted(pages):
+        raise TopicsError(f"{sid}: the chapters' pages are out of order: {pages}")
+    report = {
+        "chapters": len(topics),
+        "numbers_misread": misread,
+        "first": topics[0]["name_fr"],
+        "last": topics[-1]["name_fr"],
+    }
+    return topics, [], report

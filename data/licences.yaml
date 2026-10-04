@@ -3149,3 +3149,27 @@ licences:
   notes:
   - Terms read 2026-10-04 from the LICENSE at the pinned revision (e1df8ce7…); the Kaggle copy is labelled MIT (research 06), and both are permissive.
   - Labelled with a language model by one author and not peer-reviewed (README), which is why readers never see it (L2, D29).
+- id: labeaume
+  registry: data/topics.yaml
+  urls_checked:
+  - https://archive.org/metadata/lekorananalyseda00labe
+  - https://archive.org/download/lekorananalyseda00labe/lekorananalyseda00labe_djvu.txt
+  fetched: '2026-10-04'
+  page_sha256:
+    https://archive.org/metadata/lekorananalyseda00labe: 8a831214403f48c4bb963bdb937ea43a07201424713203e942a7eafd87e71f0b
+    https://archive.org/download/lekorananalyseda00labe/lekorananalyseda00labe_djvu.txt: e57858c291cde34e8713cf7da0a9958e9ed75ca086b435f50157d07866f23b4b
+  clauses:
+  - topic: other
+    quote: '"creator":["La Beaume, Jules, 1806-ca 1876","Beberstein-Kazimirski, Albert de, 1808-1887"]'
+    url: https://archive.org/metadata/lekorananalyseda00labe
+  - topic: other
+    quote: '"date":"1878"'
+    url: https://archive.org/metadata/lekorananalyseda00labe
+  - topic: other
+    quote: Digitized by the Internet Archive in 2016
+    url: https://archive.org/download/lekorananalyseda00labe/lekorananalyseda00labe_djvu.txt
+  our_use: 'Editor-side only: the table of chapters at the end of the OCR text — 18 chapters, Histoire to Progrès, each with the page it starts on (pipeline/src/jadhr_pipeline/topics.py, _labeaume; table topics with source labeaume, shown false). The editorial board may adopt a chapter as a top-level topic under an Arabic name of its own (P8.3b); readers then see the board''s name with this book credited as its source. The verses under each chapter and the index of matters are not read (OCR, verse numbers differing from Hafs: research 06). Not in the bulk release.'
+  status: ok
+  notes:
+  - 'Public domain by age: La Beaume died about 1876 and Kazimirski, whose translation the book analyses, in 1887 (archive.org''s creator field); the scan carries no licence statement of its own.'
+  - archive.org's published SHA-1 of the text (3f7dbeca…) matched the download.

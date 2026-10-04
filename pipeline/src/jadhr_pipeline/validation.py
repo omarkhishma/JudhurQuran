@@ -190,6 +190,7 @@ def run(version: str = "2026.10.0") -> dict[str, Any]:
         "wazn": report.get("wazn_methods"),
         "english": report.get("english"),
         "glosses": glosses(raw, owner_glosses),
+        "topics": report.get("topics"),
     }
 
 
@@ -340,7 +341,56 @@ def render_markdown(r: dict[str, Any]) -> str:
         " matched nouns were reviewed by hand (DECISIONS). An expert review is still owed.",
         "",
     ]
+    L += _topics(r.get("topics"))
     return "\n".join(L) + "\n"
+
+
+def _topics(t: dict[str, Any] | None) -> list[str]:
+    """Topic sources and how much of the Quran each covers, sūra by sūra (PLAN P8.3, research 06 Part 3)."""
+    if not t:
+        return []
+    src = t["sources"]
+    qp, qs, lb = src.get("quranpedia-topics"), src.get("qsac"), src.get("labeaume")
+    L = ["## 6 · Topics", ""]
+    if qp:
+        c = qp["coverage"]
+        L.append(
+            f"- Quranpedia's Arabic tree (version {qp['version']}, shown to readers with its credit): {_n(qp['topics'])}"
+            f" topics in {len(qp['levels'])} levels ({', '.join(_n(v) for v in qp['levels'].values())}),"
+            f" {_n(qp['links'])} verse links over {_n(c['verses'])} of {_n(c['of'])} verses ({_pct(c['verses'], c['of'])});"
+            f" sūras 1–39: {c['surahs_1_39']} verses, sūras 40–114: {c['surahs_40_114']}; {c['surahs_without']} sūras"
+            f" with none. Its per-verse file gives {_n(qp['per_verse_file']['links'])} links:"
+            f" {qp['per_verse_file']['not_in_index']} missing from the index, {qp['per_verse_file']['index_not_in_file']}"
+            f" the other way. Names kept as spelled; {qp['names_with_stray_marks']} with a stray mark."
+        )
+    if qs:
+        c = qs["coverage"]
+        L.append(
+            f"- QSAC (revision {qs['version'][:8]}, labelled with a language model; the editorial board's only, never"
+            f" served): {_n(qs['topics'])} topics, {_n(qs['links'])} verse tags over {_n(c['verses'])} verses"
+            f" ({qs['tags_used']} tags used)."
+        )
+    if lb:
+        L.append(
+            f"- La Beaume's index (1878, the board's only): {lb['chapters']} chapters read from the table of contents,"
+            f" {lb['numbers_misread']} printed number misread by the OCR and numbered by its place; its verses not read."
+        )
+    if qp and qs:
+        a, b = qp["coverage"]["per_surah"], qs["coverage"]["per_surah"]
+        L += [
+            "",
+            "Verses with a topic, per sūra:",
+            "",
+            "| Sūra | Verses | Quranpedia | QSAC |",
+            "|---|---|---|---|",
+        ]
+        for k in sorted(a, key=int):
+            n = a[k][1]
+            L.append(
+                f"| {k} | {n} | {a[k][0]} ({_pct(a[k][0], n)}) | {b.get(k, [0])[0]} ({_pct(b.get(k, [0])[0], n)}) |"
+            )
+    L.append("")
+    return L
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -32,6 +32,7 @@ from . import (
     concordance,
     content,
     daily,
+    entities,
     hear,
     knowledge,
     lexicon,
@@ -351,7 +352,9 @@ def word(
         return cached(request, payload)
 
 
-@router.get("/words/{slug}/verses", summary="A lemma's verses, paged by verse, each with every place it takes there")
+@router.get(
+    "/words/{slug}/verses", summary="A lemma's verses, paged by verse, each with every place it takes there"
+)
 def word_verses(
     request: Request,
     slug: str,
@@ -505,7 +508,9 @@ def root_relations(request: Request, root: str) -> Response:
         return cached(request, relations.of_root(conn, root))
 
 
-@router.get("/topics", summary="Topics: the top of the tree, a topic's sub-topics, or a search by name (credited)")
+@router.get(
+    "/topics", summary="Topics: the top of the tree, a topic's sub-topics, or a search by name (credited)"
+)
 def topics_browse(
     request: Request,
     parent: str | None = Query(None, max_length=40),
@@ -523,7 +528,9 @@ def topics_coverage(request: Request) -> Response:
         return cached(request, topics.coverage(conn))
 
 
-@router.get("/topics/{topic_id}", summary="A topic: the chain above it, its sub-topics and its verses (credited)")
+@router.get(
+    "/topics/{topic_id}", summary="A topic: the chain above it, its sub-topics and its verses (credited)"
+)
 def topic(
     request: Request,
     topic_id: Annotated[str, Path(max_length=40)],
@@ -543,15 +550,53 @@ def verse_topics(request: Request, key: Annotated[str, Path(pattern=r"^\d{1,3}:\
         return cached(request, topics.of_verse(conn, key))
 
 
+@router.get(
+    "/entities", summary="Proper names the corpus tags, the most often named first, or a search (credited)"
+)
+def entities_browse(
+    request: Request,
+    q: str | None = Query(None, max_length=80),
+    limit: int = Query(40, ge=1, le=200),
+    offset: int = Query(0, ge=0, le=10000),
+) -> Response:
+    with connect() as conn:
+        return cached(request, entities.browse(conn, q, limit, offset))
+
+
+@router.get("/entities/{entity_id}", summary="A proper name with the verses it is named in (credited)")
+def entity(
+    request: Request,
+    entity_id: Annotated[int, Path(ge=1, le=1_000_000)],
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0, le=10000),
+) -> Response:
+    with connect() as conn:
+        out = entities.entity(conn, entity_id, limit, offset)
+        if out is None:
+            raise not_found("entity")
+        return cached(request, out)
+
+
+@router.get("/verses/{key}/entities", summary="The proper names a verse names (credited)")
+def verse_entities(request: Request, key: Annotated[str, Path(pattern=r"^\d{1,3}:\d{1,3}$")]) -> Response:
+    with connect() as conn:
+        return cached(request, entities.of_verse(conn, key))
+
+
 @router.get("/roots/{root}/shared", summary="The verses where two roots both occur, in the mushaf's order")
 def roots_shared(
-    request: Request, root: str, other: str = Query(..., alias="with", max_length=20), limit: int = Query(50, ge=1, le=500)
+    request: Request,
+    root: str,
+    other: str = Query(..., alias="with", max_length=20),
+    limit: int = Query(50, ge=1, le=500),
 ) -> Response:
     with connect() as conn:
         return cached(request, relations.shared(conn, root, other, limit))
 
 
-@router.get("/relations/{relation_id}", summary="One classical relation: in force, or extracted and said to be")
+@router.get(
+    "/relations/{relation_id}", summary="One classical relation: in force, or extracted and said to be"
+)
 def relation(request: Request, relation_id: Annotated[str, Path(max_length=80)]) -> Response:
     with connect() as conn:
         out = relations.one_relation(conn, relation_id)
@@ -560,9 +605,12 @@ def relation(request: Request, relation_id: Annotated[str, Path(max_length=80)])
         return cached(request, out)
 
 
-@router.get("/relations", summary="The relations in force among a set of roots, with the verses each pair shares")
+@router.get(
+    "/relations", summary="The relations in force among a set of roots, with the verses each pair shares"
+)
 def relations_among(
-    request: Request, roots: str = Query(..., max_length=600, description="comma-separated root keys, at most 50")
+    request: Request,
+    roots: str = Query(..., max_length=600, description="comma-separated root keys, at most 50"),
 ) -> Response:
     keys = [k.strip() for k in roots.split(",") if k.strip()][:50]
     with connect() as conn:
@@ -886,7 +934,9 @@ def lexicon_entry(request: Request, entry_id: int) -> Response:
 
 
 @router.get("/lemmas", summary="Lemmas by database id (up to 200), with their stable slugs")
-def lemmas(request: Request, ids: str = Query(..., max_length=2000, description="comma-separated ids")) -> Response:
+def lemmas(
+    request: Request, ids: str = Query(..., max_length=2000, description="comma-separated ids")
+) -> Response:
     try:
         wanted = list(dict.fromkeys(int(x) for x in ids.split(",") if x.strip()))
     except ValueError as exc:

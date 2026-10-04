@@ -69,6 +69,26 @@ def test_qsac_tags_without_its_text(built) -> None:
     assert src["qsac"]["shown"] is False and src["quranpedia-topics"]["shown"] is True
 
 
+def test_la_beaumes_chapters_from_the_table_of_contents(built) -> None:
+    """The 18 chapters as the book prints them, numbered by their place (the OCR misreads one number), each with the
+    page it starts on; no verse read, kept from readers."""
+    tables, report = built
+    lb = report["sources"]["labeaume"]
+    assert (lb["chapters"], lb["numbers_misread"], lb["first"], lb["last"]) == (18, 1, "Histoire", "Progrès")
+    rows = {t["id"]: t for t in tables["topics"] if t["source_id"] == "labeaume"}
+    assert list(rows) == [f"lb:{n}" for n in range(1, 19)]
+    assert (rows["lb:6"]["name_fr"], rows["lb:6"]["source_ref"]) == ("Chrétiens", "chapitre 6, p. 198")
+    assert (rows["lb:9"]["name_fr"], rows["lb:14"]["name_fr"]) == ("Koran", "Organisation sociale")
+    assert rows["lb:18"]["source_ref"] == "chapitre 18, p. 772" and rows["lb:3"]["name_norm"] == "prédication"
+    assert all(
+        t["name_ar"] is None and t["parent_id"] is None and t["verse_count"] == 0 for t in rows.values()
+    )
+    assert not [x for x in tables["topic_links"] if x["source_id"] == "labeaume"]
+    assert {s["id"]: s for s in tables["topic_sources"]}["labeaume"]["shown"] is False
+    # the other sources carry the column empty
+    assert all("name_fr" in t for t in tables["topics"])
+
+
 def test_a_file_that_differs_is_refused(tmp_path: Path) -> None:
     reg = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
     reg["sources"][0]["files"]["index"]["sha256"] = "0" * 64
