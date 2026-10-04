@@ -18,6 +18,7 @@ import { answerDeletions, runSync, setOwner, useSyncStatus } from "@/lib/sync/ru
 export function SyncPrompt() {
   const held = useSyncStatus((s) => s.held);
   const owner = useSyncStatus((s) => s.owner);
+  const first = useSyncStatus((s) => s.first);
   const stores = Object.entries(held).filter(([, n]) => (n ?? 0) > 0) as [StoreName, number][];
   return (
     <>
@@ -29,6 +30,7 @@ export function SyncPrompt() {
         </div>
       )}
       {owner && <OwnerQuestion key={owner} />}
+      {!owner && first && <OwnerQuestion key="first" first />}
     </>
   );
 }
@@ -54,7 +56,9 @@ function HeldDeletions({ store, n }: { store: StoreName; n: number }) {
   );
 }
 
-function OwnerQuestion() {
+/** Another account's records on this device (F8), or this browser's own on no account yet (`first`, M1): the
+ * question names the account they would go to, so a reader signed in by someone else's link sees whose it is. */
+function OwnerQuestion({ first = false }: { first?: boolean }) {
   const t = useTranslations("account");
   const user = useAccount((s) => s.user);
   const [open, setOpen] = useState(true);
@@ -62,6 +66,7 @@ function OwnerQuestion() {
   if (!user) return null;
   const add = () => {
     setOwner(user.id);
+    useSyncStatus.setState({ first: false });
     setOpen(false);
     void runSync();
   };
@@ -71,11 +76,11 @@ function OwnerQuestion() {
     window.location.reload();
   };
   return (
-    <Dialog open={open} onClose={() => setOpen(false)} label={t("ownerTitle")} width={520}>
+    <Dialog open={open} onClose={() => setOpen(false)} label={t(first ? "firstTitle" : "ownerTitle")} width={520}>
       <div className="flex flex-col gap-3 p-5">
-        <h2 className="text-[17px] font-semibold">{t("ownerTitle")}</h2>
+        <h2 className="text-[17px] font-semibold">{t(first ? "firstTitle" : "ownerTitle")}</h2>
         <p className="text-[13.5px] leading-relaxed text-t2">
-          {t.rich("ownerBody", {
+          {t.rich(first ? "firstBody" : "ownerBody", {
             email: () => (
               <bdi dir="ltr" className="whitespace-nowrap">
                 {user.email}
@@ -87,14 +92,16 @@ function OwnerQuestion() {
           <button type="button" className="btn btn-primary min-h-[40px] justify-center" disabled={busy} onClick={add}>
             {t("ownerAdd")}
           </button>
-          <button type="button" className="btn min-h-[40px] justify-center" disabled={busy} onClick={() => void fresh()}>
-            {t("ownerFresh")}
-          </button>
+          {!first && (
+            <button type="button" className="btn min-h-[40px] justify-center" disabled={busy} onClick={() => void fresh()}>
+              {t("ownerFresh")}
+            </button>
+          )}
           <div className="flex flex-wrap gap-2">
             <button type="button" className="btn min-h-[40px] flex-1 justify-center" disabled={busy} onClick={() => void exportLocalData()}>
               {t("ownerExport")}
             </button>
-            <button type="button" className="btn min-h-[40px] flex-1 justify-center" disabled={busy} onClick={() => void signOutHere().then(() => setOpen(false))}>
+            <button type="button" className="btn min-h-[40px] flex-1 justify-center" disabled={busy} onClick={() => void signOutHere().then(() => (useSyncStatus.setState({ owner: null, first: false }), setOpen(false)))}>
               {t("ownerSignOut")}
             </button>
           </div>

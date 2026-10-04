@@ -195,7 +195,8 @@ def mail_allowed(ip: str) -> bool:
         return True
 
 
-def request_link(email: str, return_to: str | None, locale: str) -> None:
+def request_link(email: str, return_to: str | None, locale: str, browser: str | None = None) -> None:
+    """A link for the address, remembering (hashed) the value the asking browser keeps, when it sent one."""
     s = get_settings()
     email = email.strip().lower()
     token = new_token()
@@ -209,10 +210,16 @@ def request_link(email: str, return_to: str | None, locale: str) -> None:
             return  # quietly: the answer never differs, so nobody learns anything from it
         conn.execute(
             text(
-                """insert into accounts.login_tokens (token_hash, email, return_to, expires_at)
-                   values (:h, :e, :r, now() + make_interval(mins => :m))"""
+                """insert into accounts.login_tokens (token_hash, email, return_to, browser_hash, expires_at)
+                   values (:h, :e, :r, :b, now() + make_interval(mins => :m))"""
             ),
-            {"h": hash_token(token), "e": email, "r": safe_return(return_to), "m": s.login_token_minutes},
+            {
+                "h": hash_token(token),
+                "e": email,
+                "r": safe_return(return_to),
+                "b": hash_token(browser) if browser else None,
+                "m": s.login_token_minutes,
+            },
         )
     prefix = "" if locale == "ar" else f"/{locale}"
     send_link(email, f"{s.public_web_url.rstrip('/')}{prefix}/auth/verify?token={token}", locale)
@@ -254,6 +261,22 @@ def user_by_email(conn: Connection, email: str) -> dict[str, Any]:
         u = q1(conn, "insert into accounts.users (email) values (:e) returning *", {"e": email})
     assert u is not None
     return u
+
+
+def peek_link(token: str, browsers: list[str]) -> dict[str, Any] | None:
+    """What a link would open, without using it: its address, and whether this browser is the one that asked for it.
+    Whoever holds the link can sign in to that address already, so naming it tells them nothing new."""
+    with tx() as conn:
+        t = q1(
+            conn,
+            """select email, browser_hash from accounts.login_tokens
+               where token_hash = :h and used_at is null and expires_at > now()""",
+            {"h": hash_token(token)},
+        )
+    if t is None:
+        return None
+    mine = {hash_token(b) for b in browsers}
+    return {"email": t["email"], "same_browser": t["browser_hash"] is not None and t["browser_hash"] in mine}
 
 
 def verify_link(token: str, device: str | None) -> dict[str, Any] | None:

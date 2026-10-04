@@ -70,6 +70,38 @@ def test_a_link_works_once_and_the_answer_never_tells_who_has_an_account(email: 
         )
 
 
+def test_a_link_names_its_address_before_it_is_used_and_knows_the_browser_that_asked(email: str) -> None:
+    """Security review M1: a link someone asked for their own address and sent to another reader would sign that
+    reader in to the asker's account; the page says whose account it opens, and when another browser asked for it."""
+    mine = "b" * 32
+    r = client.post("/api/v1/auth/email", json={"email": email, "locale": "en", "browser": mine})
+    assert r.status_code == 202
+    token = client.get("/api/v1/auth/dev/outbox", params={"email": email}).json()["messages"][-1]["link"]
+    token = token.split("token=")[1]
+    # looked at twice, by the asking browser and by another: named both times, and not used
+    assert client.post("/api/v1/auth/link", json={"token": token, "browsers": ["a" * 32, mine]}).json() == {
+        "email": email,
+        "same_browser": True,
+    }
+    assert client.post("/api/v1/auth/link", json={"token": token, "browsers": ["a" * 32]}).json() == {
+        "email": email,
+        "same_browser": False,
+    }
+    assert client.post("/api/v1/auth/link", json={"token": token}).json()["same_browser"] is False
+    assert client.post("/api/v1/auth/verify", json={"token": token}).status_code == 200
+    # a used link, and one that never was, name nothing
+    assert client.post("/api/v1/auth/link", json={"token": token}).status_code == 404
+    assert client.post("/api/v1/auth/link", json={"token": "z" * 43}).status_code == 404
+    # a link asked for without a browser value is never "the same browser"
+    plain = link_for(email)
+    assert (
+        client.post("/api/v1/auth/link", json={"token": plain, "browsers": [mine]}).json()["same_browser"]
+        is False
+    )
+    assert client.post("/api/v1/auth/link", json={"token": plain, "browsers": ["short"]}).status_code == 422
+    assert client.post("/api/v1/auth/link", json={"token": plain, "browsers": [mine] * 6}).status_code == 422
+
+
 def test_links_are_rate_limited_quietly_and_expire(email: str) -> None:
     for _ in range(5):
         client.post("/api/v1/auth/email", json={"email": email})

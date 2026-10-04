@@ -29,9 +29,22 @@ export type SyncStatus = {
   unreadable: StoreName[];
   /** another account's records are on this device: nothing syncs until the reader says what to do with them (F8) */
   owner: string | null;
+  /** this browser's own records, on no account yet: they go up only on the reader's word, which names the account
+   * (security review M1 — a sign-in link someone sent would otherwise carry them into the sender's account) */
+  first: boolean;
   error: string | null;
 };
-export const useSyncStatus = create<SyncStatus>(() => ({ state: "idle", last: null, tooLarge: [], full: 0, held: {}, unreadable: [], owner: null, error: null }));
+export const useSyncStatus = create<SyncStatus>(() => ({ state: "idle", last: null, tooLarge: [], full: 0, held: {}, unreadable: [], owner: null, first: false, error: null }));
+
+/** What a reader keeps of their own — notes, saved items, texts, maps, the journal, word states — as opposed to the
+ * choices of how pages look and the flags of a first visit, which say nothing about anyone. */
+function holdsOwn(locals: Partial<Record<StoreName, Local>>): boolean {
+  return Object.entries(locals).some(([store, l]) => {
+    if (!l || store === "prefs" || store === "audio") return false;
+    if (store === "personal") return [...l.keys()].some((k) => !k.startsWith("f:"));
+    return l.size > 0;
+  });
+}
 
 function loadState(user: string): SyncState {
   try {
@@ -169,11 +182,17 @@ async function once(touched: Set<StoreName>): Promise<void> {
   const locals = await readAll();
   // another account's records on this device are not taken into this one without the reader's word (F8)
   const owner = readOwner();
-  if (owner && owner !== user.id && !state.cursor && !Object.keys(state.shadow).length && Object.values(locals).some((l) => l && l.size > 0)) {
-    useSyncStatus.setState({ state: "idle", owner, error: null });
+  const fresh = !state.cursor && !Object.keys(state.shadow).length;
+  if (owner && owner !== user.id && fresh && Object.values(locals).some((l) => l && l.size > 0)) {
+    useSyncStatus.setState({ state: "idle", owner, first: false, error: null });
     return;
   }
-  useSyncStatus.setState({ state: "syncing", owner: null, error: null });
+  // nor are this browser's own records taken into the first account it signs in to without the reader's word (M1)
+  if (!owner && fresh && holdsOwn(locals)) {
+    useSyncStatus.setState({ state: "idle", owner: null, first: true, error: null });
+    return;
+  }
+  useSyncStatus.setState({ state: "syncing", owner: null, first: false, error: null });
 
   // records the reader asked to have back: forgotten as agreed, so the pull from the beginning writes them again
   const back = [...restoring].filter((s) => enabled.includes(s));

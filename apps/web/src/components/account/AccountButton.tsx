@@ -23,7 +23,7 @@ export function AccountButton({ className = "btn" }: { className?: string }) {
   const user = useAccount((s) => s.user);
   const sync = useSyncStatus((s) => s.state);
   // sync waits for the reader's word: deletions held, or another account's records on this device (F8, F11)
-  const waits = useSyncStatus((s) => !!s.owner || Object.keys(s.held).length > 0);
+  const waits = useSyncStatus((s) => !!s.owner || s.first || Object.keys(s.held).length > 0);
   const pathname = usePathname();
   // where the reader was when they asked, so the link brings them back there
   const [returnTo, setReturnTo] = useState<string | null>(null);

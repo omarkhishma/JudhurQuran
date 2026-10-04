@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
-import { finishOidc, type Provider, verifyLink } from "@/lib/account/actions";
+import { finishOidc, peekLink, type Provider, verifyLink } from "@/lib/account/actions";
 import { useAccount } from "@/lib/account/store";
 import { useIsClient } from "@/lib/client";
 import { SignInPanel } from "./SignInPanel";
@@ -36,14 +36,21 @@ export function SignInScreen({ returnTo }: { returnTo: string }) {
 
 /**
  * /auth/verify?token=…: the link from the e-mail. It is spent only when the reader presses the button (audit 11 F17):
- * a mail gateway that opens links to check them would otherwise use it up, and sign in on its own machine. Then back
- * where the reader was.
+ * a mail gateway that opens links to check them would otherwise use it up, and sign in on its own machine. Before the
+ * button the page names the account the link opens, and says so when another browser asked for it (security review
+ * M1): a link someone asked for their own address and sent to another reader would sign that reader in to the asker's
+ * account. Then back where the reader was.
  */
 export function VerifyScreen({ token }: { token: string | null }) {
   const t = useTranslations("account");
   const router = useRouter();
   const [state, setState] = useState<"ready" | "working" | "failed">("ready");
+  const [link, setLink] = useState<Awaited<ReturnType<typeof peekLink>> | undefined>(undefined);
+  useEffect(() => {
+    if (token) void peekLink(token).then(setLink);
+  }, [token]);
   if (!token) return <AuthStatus state="missing" message={t("verifyMissing")} />;
+  if (link === null) return <AuthStatus state="failed" message={t("verifyFailed")} />;
   if (state !== "ready") return <AuthStatus state={state} message={state === "failed" ? t("verifyFailed") : t("verifying")} />;
   async function go() {
     setState("working");
@@ -53,12 +60,27 @@ export function VerifyScreen({ token }: { token: string | null }) {
     if (to) router.replace(to);
     else setState("failed");
   }
+  const known = link && link !== "failed" ? link : null;
   return (
     <div className="auth-screen">
-      <div className="auth-card">
+      <div className="auth-card" aria-busy={link === undefined}>
         <h1 className="text-[17px] font-semibold leading-snug">{t("verifyTitle")}</h1>
+        {link === undefined && <span className="auth-spinner" aria-hidden="true" />}
+        {known && (
+          <div className="text-[14px] leading-relaxed">
+            <p>{t("verifyAs")}</p>
+            <p className="font-semibold [overflow-wrap:anywhere]">
+              <bdi dir="ltr">{known.email}</bdi>
+            </p>
+          </div>
+        )}
+        {known && !known.same_browser && (
+          <p className="auth-caution" role="note">
+            {t("verifyElsewhere")}
+          </p>
+        )}
         <p className="text-[13.5px] leading-relaxed text-t2">{t("verifyHelp")}</p>
-        <button type="button" className="btn btn-primary min-h-[44px] self-start" onClick={() => void go()}>
+        <button type="button" className="btn btn-primary min-h-[44px] self-start" disabled={link === undefined} onClick={() => void go()}>
           {t("verifyButton")}
         </button>
       </div>

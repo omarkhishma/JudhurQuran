@@ -37,6 +37,8 @@ class _EmailLink(BaseModel):
     email: str = Field(max_length=320)
     return_to: str | None = Field(None, max_length=300)
     locale: str = Field("ar", pattern="^(ar|en)$")
+    # a random value the asking browser keeps, so the link's page can tell it was opened elsewhere
+    browser: str | None = Field(None, min_length=20, max_length=100)
 
 
 @router.post(
@@ -53,8 +55,25 @@ def email_link(body: _EmailLink, request: Request) -> ORJSONResponse:
     )[0]
     if not accounts.mail_allowed(ip.strip()):
         raise HTTPException(status_code=429, detail="Too many sign-in links from here; try again later.")
-    accounts.request_link(body.email, body.return_to, body.locale)
+    accounts.request_link(body.email, body.return_to, body.locale, body.browser)
     return ok({"sent": True}, 202)
+
+
+class _Peek(BaseModel):
+    token: str = Field(min_length=20, max_length=100)
+    browsers: list[Annotated[str, Field(min_length=20, max_length=100)]] = Field(
+        default_factory=list, max_length=5
+    )
+
+
+@router.post("/auth/link", summary="What a sign-in link opens (its address), without using it")
+def peek(body: _Peek) -> ORJSONResponse:
+    out = accounts.peek_link(body.token, body.browsers)
+    if out is None:
+        raise HTTPException(
+            status_code=404, detail="This link has expired or was already used. Ask for a new one."
+        )
+    return ok(out)
 
 
 class _Verify(BaseModel):

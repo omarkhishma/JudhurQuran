@@ -4594,6 +4594,16 @@ a.wotd-pill:hover {
     animation: none;
   }
 }
+/* the link's page when another browser asked for the link (security review M1) */
+.auth-caution {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--amber) 8%, var(--card));
+  color: var(--t1);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
 
 /* ─── The dictionary sheet's controls 44 px, passage tools 40 (RDR-415, 586; e2e phone-targets.spec.ts) — outside
    the layers, as the phone rule below is, so the sheet's larger size wins over it ─── */

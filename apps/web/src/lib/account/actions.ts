@@ -16,10 +16,33 @@ export async function getProviders(): Promise<Providers> {
   return (await r.json()) as Providers;
 }
 
+// ─── which browser asked for a link: a random value kept here, so the link's page can tell it was opened elsewhere ───
+
+const ASKED_KEY = "jadhr-link-asked";
+const ASKED_FOR = 24 * 3600_000;
+
+function asked(): { v: string; at: number }[] {
+  try {
+    const list = JSON.parse(localStorage.getItem(ASKED_KEY) ?? "[]") as { v: string; at: number }[];
+    return Array.isArray(list) ? list.filter((a) => typeof a?.v === "string" && Date.now() - a.at < ASKED_FOR) : [];
+  } catch {
+    return [];
+  }
+}
+
+function remember(list: { v: string; at: number }[]): void {
+  try {
+    if (list.length) localStorage.setItem(ASKED_KEY, JSON.stringify(list.slice(-5)));
+    else localStorage.removeItem(ASKED_KEY);
+  } catch {}
+}
+
 /** The answer never says whether the address has an account: "sent" is all a reader learns. */
 export async function requestLink(email: string, returnTo: string, locale: string): Promise<"sent" | "invalid" | "unavailable" | "failed"> {
   try {
-    const r = await fetch("/api/v1/auth/email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, return_to: returnTo, locale }) });
+    const browser = random(24);
+    remember([...asked(), { v: browser, at: Date.now() }]);
+    const r = await fetch("/api/v1/auth/email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, return_to: returnTo, locale, browser }) });
     if (r.status === 202) return "sent";
     if (r.status === 422) return "invalid";
     if (r.status === 503) return "unavailable";
@@ -31,11 +54,24 @@ export async function requestLink(email: string, returnTo: string, locale: strin
 
 type SignedIn = { session: string; user: Account; return_to: string };
 
+/** What a link opens, without using it: its address, and whether this browser asked for it. null: used or expired. */
+export async function peekLink(token: string): Promise<{ email: string; same_browser: boolean } | null | "failed"> {
+  try {
+    const r = await fetch("/api/v1/auth/link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, browsers: asked().map((a) => a.v) }) });
+    if (r.status === 404) return null;
+    if (!r.ok) return "failed";
+    return (await r.json()) as { email: string; same_browser: boolean };
+  } catch {
+    return "failed";
+  }
+}
+
 /** A link from the e-mail, exchanged once for a session on this device. Returns where the reader was going. */
 export async function verifyLink(token: string): Promise<string | null> {
   const r = await fetch("/api/v1/auth/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, device: deviceName() }) });
   if (!r.ok) return null;
   const out = (await r.json()) as SignedIn;
+  remember([]);
   useAccount.getState().signIn(out.session, out.user);
   return out.return_to;
 }

@@ -2713,6 +2713,8 @@
     "ownerFresh": "Start with this account's data",
     "ownerExport": "Export it first",
     "ownerSignOut": "Sign out",
+    "firstTitle": "Add what this browser holds to this account?",
+    "firstBody": "This browser holds what no account has yet: your notebook, saved items, texts, maps and what you recorded of your reading. Add it to <email></email>? If you did not ask to sign in to this account, sign out: what is here stays on this device as it is.",
     "syncWaits": "sync is waiting for your answer",
     "store": {
       "saved": "Saved",
@@ -2738,6 +2740,8 @@
     },
     "verifyTitle": "Sign in on this browser",
     "verifyHelp": "Press the button to finish signing in. The link works once, and is used only when you press it.",
+    "verifyAs": "This link opens the account:",
+    "verifyElsewhere": "This link was asked for in another browser. Use it only if you asked for it yourself: anyone can ask for a link to their own address and send it to you, to sign you in to their account and read what you keep there.",
     "verifyButton": "Sign in"
   },
   "me": {

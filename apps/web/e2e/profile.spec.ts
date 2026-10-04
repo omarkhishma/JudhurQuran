@@ -138,6 +138,10 @@ test("signed in: the name credited, the journal synced only when turned on, this
   const email = `e2e-profile-${test.info().project.name}-${Date.now().toString(36)}@example.org`;
   await seed(page);
   await signIn(page, email);
+  // this browser's own records go to the account on the reader's word, which names it (security review M1)
+  const add = page.getByRole("dialog", { name: "أتضيف ما في هذا المتصفح إلى هذا الحساب؟" });
+  await expect(add).toContainText(email);
+  await add.getByRole("button", { name: "أضفه إلى هذا الحساب" }).click();
   const h = await bearer(page);
   // the name contributions are credited to; nothing public by default
   await page.getByLabel("الاسم الذي تُنسب إليه مساهماتك").fill("قارئ الاختبار");

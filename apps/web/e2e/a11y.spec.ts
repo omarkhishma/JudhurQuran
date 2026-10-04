@@ -104,7 +104,20 @@ const STATES: { name: string; path: string; act?: (page: Page) => Promise<void>;
       await page.getByRole("dialog").waitFor();
     },
   },
-  { name: "a sign-in link's page", path: "/auth/verify?token=not-a-real-token-but-shaped-like-one", act: async (page) => void (await page.getByRole("button", { name: "ادخل", exact: true }).waitFor()) },
+  {
+    // a real link, asked for elsewhere: the page names its account and warns (security review M1)
+    name: "a sign-in link's page",
+    path: "/signin",
+    act: async (page) => {
+      const email = `e2e-axe-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}@example.org`;
+      await page.request.post("/api/v1/auth/email", { data: { email, locale: "ar" } });
+      const m = ((await (await page.request.get(`/api/v1/auth/dev/outbox?email=${encodeURIComponent(email)}`)).json()) as { messages: { link: string }[] }).messages;
+      const u = new URL(m.at(-1)!.link);
+      await page.goto(u.pathname + u.search);
+      await page.locator(".auth-caution").waitFor();
+      await page.getByRole("button", { name: "ادخل", exact: true }).waitFor();
+    },
+  },
   { name: "the privacy page", path: "/privacy" },
   {
     name: "the sign-in sheet",

@@ -73,6 +73,11 @@ async function signIn(page: Page, email: string, from: "page" | "sheet" = "page"
   await expect(page.getByRole("link", { name: /^حسابي:/ })).toBeVisible();
 }
 
+/** This browser's own records go to the account on the reader's word, which names the account (security review M1). */
+async function addHere(page: Page): Promise<void> {
+  await page.getByRole("dialog", { name: "أتضيف ما في هذا المتصفح إلى هذا الحساب؟" }).getByRole("button", { name: "أضفه إلى هذا الحساب" }).click();
+}
+
 const bearer = async (page: Page) => ({ Authorization: `Bearer ${await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-auth") ?? "{}").state?.session)}` });
 
 async function records(page: Page, headers?: Record<string, string>): Promise<Rec[]> {
@@ -122,6 +127,11 @@ test("what a device holds joins the account on sign-in, and a second device gets
   await a.getByRole("dialog").getByRole("button", { name: "ليس الآن" }).click();
   await signIn(a, email, "sheet");
   await expect(a).toHaveURL(/\/$/);
+  // this browser's own records go to the account on the reader's word, which names the account (M1)
+  const add = a.getByRole("dialog", { name: "أتضيف ما في هذا المتصفح إلى هذا الحساب؟" });
+  await expect(add).toContainText(email);
+  expect(await records(a), "nothing goes up before the reader answers").toEqual([]);
+  await add.getByRole("button", { name: "أضفه إلى هذا الحساب" }).click();
 
   const want = ["saved/b:lemma:Eilom", "saved/n:quran:2:255", "notebook/n:n1", "review/c:علم", "prefs/size", "audio/speed", "audio/reciter", "analyse/علم|0", "personal/w:Eilom", "graphs/g:g1", "graphs/g:g2", "texts/x:t1"];
   await expect.poll(async () => (await records(a)).map((r) => `${r.store}/${r.key}`)).toEqual(expect.arrayContaining(want));
@@ -167,6 +177,7 @@ test("an edit travels both ways: the newer wins, the older is kept to restore, a
   const a = await device(browser, page, { notebook: { state: { notes: [NOTE] }, version: 1 } });
   await a.goto("/");
   await signIn(a, email);
+  await addHere(a);
   await expect.poll(async () => (await records(a)).map((r) => r.key)).toContain("n:n1");
   const b = await device(browser, null);
   await b.goto("/");
@@ -211,6 +222,7 @@ test("clearing this device signs it out first and never clears the account; a li
   await expect(other.getByRole("button", { name: "ادخل", exact: true })).toBeVisible();
   await followSignInLink(a, link);
   await expect(a.getByRole("link", { name: /^حسابي:/ })).toBeVisible();
+  await addHere(a);
   await expect.poll(async () => (await records(a)).map((r) => r.key)).toContain("b:lemma:Eilom");
 
   // the same link, pressed again: refused, with a way to ask for another
@@ -238,6 +250,7 @@ test("many deletions at once are held for the reader's word: brought back, or se
   const a = await device(browser, page, { saved: { state: { bookmarks: marks, notes: {}, history: [] }, version: 2 } });
   await a.goto("/");
   await signIn(a, email);
+  await addHere(a);
   await expect.poll(async () => (await records(a)).filter((r) => r.store === "saved").length).toBe(12);
   const emptied = () => a.evaluate(() => {
     const s = JSON.parse(localStorage.getItem("jadhr-saved") ?? "{}");
@@ -270,6 +283,7 @@ test("another account's data on a device is taken into a new account only on the
   const a = await device(browser, page, { saved: { state: { bookmarks: [{ kind: "lemma", key: "Eilom", label: "عِلْم", at: 1759000000000 }], notes: {}, history: [] }, version: 2 } });
   await a.goto("/");
   await signIn(a, first);
+  await addHere(a);
   await expect.poll(async () => (await records(a)).map((r) => r.key)).toContain("b:lemma:Eilom");
   const h1 = await bearer(a);
   // signed out as a sign-out leaves it (the session kept on the server here, to check and clean up after)
@@ -305,6 +319,41 @@ test("another account's data on a device is taken into a new account only on the
   }
 });
 
+test("a sign-in link someone else asked for names its account and warns, and this browser's own data goes to no account without the reader's word (security review M1)", async ({ browser, page }) => {
+  const asker = address();
+  // someone asks for a link to their own address, in their own browser, and sends it to the reader
+  const other = await device(browser, null);
+  const link = await askLink(other, asker);
+  await other.context().close();
+  const a = await device(browser, page, { saved: { state: { bookmarks: [{ kind: "lemma", key: "Eilom", label: "عِلْم", at: 1759000000000 }], notes: {}, history: [] }, version: 2 } });
+  await a.goto(link);
+  const card = a.locator(".auth-card");
+  await expect(card).toContainText(`يفتح هذا الرابط حساب:${asker}`);
+  await expect(card.getByRole("note")).toContainText("طُلب هذا الرابط من متصفح آخر");
+  await card.getByRole("button", { name: "ادخل", exact: true }).click();
+  const ask = a.getByRole("dialog", { name: "أتضيف ما في هذا المتصفح إلى هذا الحساب؟" });
+  await expect(ask).toContainText(asker);
+  expect(await records(a), "nothing goes up before the reader answers").toEqual([]);
+  await ask.getByRole("button", { name: "اخرج" }).click();
+  await expect(ask).toHaveCount(0);
+  await expect(a.getByRole("banner").getByRole("button", { name: "دخول" })).toBeVisible();
+  expect((await local(a, "jadhr-saved"))?.bookmarks?.length, "what is here stays here").toBe(1);
+  // the asker's account holds nothing of the reader's
+  const check = await device(browser, null);
+  await check.goto("/");
+  await signIn(check, asker);
+  expect((await records(check)).filter((r) => !r.key.startsWith("f:")), "only the checking browser's first-visit flags").toEqual([]);
+  await dropAccount(check);
+  await check.context().close();
+  // a link this browser asked for itself names its account with no warning
+  const mine = address();
+  const own = await askLink(a, mine);
+  await a.goto(own);
+  await expect(card).toContainText(`يفتح هذا الرابط حساب:${mine}`);
+  await expect(card.getByRole("note")).toHaveCount(0);
+  // (left unused: no account is made until a link is used, and it expires)
+});
+
 test("notes this browser cannot read are never shown as empty, written over or synced away (F11)", async ({ browser, page }) => {
   const email = address();
   const a = await device(browser, page);
@@ -312,6 +361,7 @@ test("notes this browser cannot read are never shown as empty, written over or s
   await a.goto("/");
   await a.reload(); // the notes seeded into IndexedDB are written by now
   await signIn(a, email);
+  await addHere(a);
   await expect.poll(async () => (await records(a)).map((r) => r.key)).toContain("n:n1");
   // from here this browser fails to read them
   await a.addInitScript(() => {

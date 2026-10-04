@@ -175,6 +175,8 @@ test("a proposal written signed out is kept, sign-in is asked for after it, and 
     await expect(form.getByText(`أُرسل إلى ${email}`)).toBeVisible();
     await followSignInLink(page, await link(page, email, 0));
     await expect(page).toHaveURL(/\/quran\/2/);
+    // where the reader read is theirs: it goes to the account on their word (security review M1)
+    await page.getByRole("dialog", { name: "أتضيف ما في هذا المتصفح إلى هذا الحساب؟" }).getByRole("button", { name: "أضفه إلى هذا الحساب" }).click();
     const h = { Authorization: `Bearer ${await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-auth") ?? "{}").state?.session)}` };
     await expect.poll(async () => ((await (await page.request.get("/api/v1/me/proposals", { headers: h })).json()) as { data: { text: string }[] }).data.map((p) => p.text)).toContain(text);
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state?.proposals?.length)).toBe(0);
