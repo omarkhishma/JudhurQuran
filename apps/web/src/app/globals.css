@@ -658,6 +658,18 @@ button:disabled {
   border-inline-end: 1px solid var(--line);
   overflow-y: auto;
 }
+/* the rail's four views share its width: each segment shrinks, none spills past the rail (RDR-063) */
+.reader-rail .seg-group {
+  display: flex;
+  width: 100%;
+}
+.reader-rail .seg-group .seg {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-inline: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .reader-rail.is-overlay {
   position: absolute;
   inset-block: 0;
