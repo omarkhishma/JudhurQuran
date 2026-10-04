@@ -75,7 +75,20 @@ test("each root carries its meaning; dictionary entries are found with their wor
   await page.goto(`/search?q=${encodeURIComponent("أمن")}`);
   const dict = group(page, "في المعاجم");
   await expect(dict.locator(".result-row").first()).toBeVisible();
-  await expect(dict.locator(`a[href="/roots/${encodeURIComponent("أمن")}#lexicon"]`).first()).toBeVisible();
+  // an article opens on its root's page in the dictionary, every lexicon beside it (P11.1)
+  await expect(dict.locator(`a[href="/dictionary/${encodeURIComponent("ءمن")}"]`).first()).toBeVisible();
+});
+
+test("a root outside the Quran is found in the dictionary, and a word inside its articles (P11.1)", async ({ page }) => {
+  await page.goto(`/search?q=${encodeURIComponent("قبعثر")}`);
+  const dict = group(page, "في المعاجم");
+  const chip = dict.getByRole("list", { name: "جذور في المعجم" }).getByRole("link", { name: /^قبعثر/ });
+  await expect(chip).toContainText("في ٥ معاجم");
+  await chip.click();
+  await expect(page).toHaveURL(new RegExp(`/dictionary/${encodeURIComponent("قبعثر")}$`));
+  // a word inside the articles (the camel calf al-Khalīl names) reaches the root's page
+  await page.goto(`/search?q=${encodeURIComponent("القبعثرى")}`);
+  await expect(group(page, "في المعاجم").locator(`a[href="/dictionary/${encodeURIComponent("قبعثر")}"]`).first()).toBeVisible();
 });
 
 test("the reader's own texts are searched in the browser (SRC-Q03)", async ({ page }) => {

@@ -495,7 +495,10 @@
     "kindPattern": "وزن",
     "noteWordLoc": "اضغط Enter لفتح الكلمة في موضعها",
     "goToWord": "افتح الكلمة في {ref}",
-    "rasmNote": "تُكتب في المصحف <mushaf></mushaf>: <term>رسم المصحف</term> يخالف الإملاء المعتاد في كلمات، ويُعثر على الكلمة بأيهما."
+    "rasmNote": "تُكتب في المصحف <mushaf></mushaf>: <term>رسم المصحف</term> يخالف الإملاء المعتاد في كلمات، ويُعثر على الكلمة بأيهما.",
+    "dictRoots": "جذور في المعجم",
+    "dictRootQuran": "في القرآن",
+    "dictRootLexica": "{count, plural, one {في معجم واحد} two {في معجمين} few {في {n} معاجم} many {في {n} معجما} other {في {n} معجم}}"
   },
   "footer": {
     "label": "روابط الموقع",

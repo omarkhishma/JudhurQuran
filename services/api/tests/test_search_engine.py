@@ -230,3 +230,17 @@ def test_the_same_search_can_be_asked_in_a_body_and_is_kept_nowhere() -> None:
     assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
     assert r.json()["detected"] == got["detected"] and r.json()["results"]["roots"] == got["results"]["roots"]
     assert c.post("/api/v1/search", json={"q": ""}).status_code == 422
+
+
+def test_the_dictionary_is_searched_beyond_the_quran() -> None:
+    """P11.1: a root the Quran does not have is found as typed and by its first letters; a word inside an article
+    finds the article, which names the dictionary root it is filed under."""
+    exact = search("قبعثر")["results"]["dict_roots"]
+    assert exact[0]["key"] == "قبعثر" and exact[0]["quran_root"] is None and exact[0]["lexica"] >= 3
+    assert "قبعثر" in {r["key"] for r in search("قبع")["results"]["dict_roots"]}
+    # as a lexicon prints the heading: its root, the Quran's here
+    assert search("سما")["results"]["dict_roots"][0]["key"] == "سمو"
+    word = search("القبعثرى")["results"]["dictionary"]
+    assert word and all(a["dict_root"] == "قبعثر" for a in word[:3])
+    # no dictionary roots for a verse reference
+    assert search("2:255")["results"].get("dict_roots", []) == []

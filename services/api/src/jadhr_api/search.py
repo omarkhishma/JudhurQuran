@@ -337,6 +337,7 @@ def search_pg(
         "words": [],
         "patterns": [],
         "dictionary": [],
+        "dict_roots": [],
     }
     totals: dict[str, int] = {}
     norm_q = normalize(q)
@@ -516,6 +517,16 @@ def search_pg(
         for w in results["words"]:
             w["lemma"] = lemma_display(w["lemma"])
 
+    # the dictionary's roots (P11.1): a root typed or a heading as a lexicon prints it, the Quran's or not
+    if has_arabic(q) and kind not in ("verse_ref", "word_loc", "juz", "hizb", "page", "surah"):
+        from .dictionary import keys_for
+
+        results["dict_roots"] = rows(
+            conn,
+            """select key, display, letters, quran_root, cardinality(lexica)::int as lexica
+               from content.dict_roots where key = any(:k) order by array_position(:k, key)""",
+            {"k": keys_for(q)[:6]},
+        )
     for k, v in results.items():
         totals.setdefault(k, len(v))
     if only in PAGED:

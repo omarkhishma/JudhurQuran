@@ -129,10 +129,12 @@ MAPPINGS: dict[str, dict[str, Any]] = {
         "era_year": INT,
     },
     "dict_articles": {
-        "entry_id": INT, "work_id": KW, "lang": KW, "root_key": KW, "headword": AR_FIELD,
+        "entry_id": INT, "work_id": KW, "lang": KW, "root_key": KW, "dict_roots": KW, "headword": AR_FIELD,
         "body": {"type": "text", "analyzer": "ar_bare", "fields": {"exact": {"type": "text", "analyzer": "ar_exact"}}},
         "body_en": {"type": "text", "analyzer": "english"}, "death_ce": INT,
     },
+    # the dictionary's roots (P11.1): every root the lexica file an article under, the Quran's and the others
+    "dict_roots": {"key": KW, "display": AR_FIELD, "first": KW, "letters": INT, "quran_root": KW, "lexica": INT},
 }  # fmt: skip
 
 PREFIX = "jadhr_"
@@ -313,8 +315,10 @@ def _occurrences(conn: Connection) -> Iterator[dict[str, Any]]:
 def _dict_articles(conn: Connection) -> Iterator[dict[str, Any]]:
     for e in rows(
         conn,
-        """select e.id, e.work_id, e.root_key, e.headword, e.body, w.lang, w.death_ce
-           from content.lexicon_entries e join content.lexicon_works w on w.id = e.work_id where e.displayable""",
+        # every article the dictionary files under a root (P11.1), not only those under the Quran's
+        """select e.id, e.work_id, e.root_key, e.dict_roots, e.headword, e.body, w.lang, w.death_ce
+           from content.lexicon_entries e join content.lexicon_works w on w.id = e.work_id
+           where e.displayable or cardinality(e.dict_roots) > 0""",
     ):
         doc = {
             "_id": e["id"],
@@ -322,11 +326,20 @@ def _dict_articles(conn: Connection) -> Iterator[dict[str, Any]]:
             "work_id": e["work_id"],
             "lang": e["lang"],
             "root_key": e["root_key"],
+            "dict_roots": e["dict_roots"],
             "headword": e["headword"],
             "death_ce": e["death_ce"],
         }
         doc["body_en" if e["lang"] == "en" else "body"] = e["body"]
         yield doc
+
+
+def _dict_roots(conn: Connection) -> Iterator[dict[str, Any]]:
+    for r in rows(
+        conn,
+        "select key, display, first, letters, quran_root, cardinality(lexica) as lexica from content.dict_roots",
+    ):
+        yield {"_id": r["key"], **r, "display": [r["display"], " ".join(r["display"])]}
 
 
 SOURCES = {
@@ -335,7 +348,11 @@ SOURCES = {
     "patterns": (_patterns, "select count(*) from content.patterns"),
     "passages": (_passages, "select count(*) from content.verses"),
     "occurrences": (_occurrences, "select count(*) from content.words"),
-    "dict_articles": (_dict_articles, "select count(*) from content.lexicon_entries where displayable"),
+    "dict_articles": (
+        _dict_articles,
+        "select count(*) from content.lexicon_entries where displayable or cardinality(dict_roots) > 0",
+    ),
+    "dict_roots": (_dict_roots, "select count(*) from content.dict_roots"),
 }
 
 

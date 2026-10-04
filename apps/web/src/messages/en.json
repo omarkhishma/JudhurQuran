@@ -495,7 +495,10 @@
     "kindPattern": "Pattern",
     "noteWordLoc": "press Enter to open the word there",
     "goToWord": "Open the word at {ref}",
-    "rasmNote": "The mushaf writes it <mushaf></mushaf>: its <term>spelling</term> differs from today's in some words, and either finds the word."
+    "rasmNote": "The mushaf writes it <mushaf></mushaf>: its <term>spelling</term> differs from today's in some words, and either finds the word.",
+    "dictRoots": "Roots in the dictionary",
+    "dictRootQuran": "In the Quran",
+    "dictRootLexica": "{count, plural, one {In one lexicon} other {In {n} lexica}}"
   },
   "footer": {
     "label": "Site links",

@@ -209,12 +209,19 @@ def search(
                 },
             },
         )
+        if not latin:
+            # a root by the letters it begins with (قبع… finds قبعثر), beside the exact ones the plan already has
+            add(
+                "dictroots",
+                "dict_roots",
+                {"query": {"match": {"display.prefix": {"query": q}}}, "sort": [{"lexica": "desc"}]},
+            )
         add(
             "dict",
             "dict_articles",
             {
                 "query": _dict_query(q, latin),
-                "_source": ["entry_id", "work_id", "root_key", "headword"],
+                "_source": ["entry_id", "work_id", "root_key", "dict_roots", "headword"],
                 "highlight": {
                     "fields": {
                         "body": {"fragment_size": 150, "number_of_fragments": 1},
@@ -232,6 +239,15 @@ def search(
         hits = res["hits"]["hits"]
         if name in _PLAN_KIND:
             totals[_PLAN_KIND[name]] = res["hits"]["total"]["value"]
+        if name == "dictroots":
+            have = {r["key"] for r in results.get("dict_roots", [])}
+            results["dict_roots"] = (results.get("dict_roots") or []) + [
+                {k: h["_source"][k] for k in ("key", "letters", "quran_root", "lexica")}
+                | {"display": h["_source"]["display"][0]}
+                for h in hits
+                if h["_source"]["key"] not in have
+            ][: max(0, 6 - len(have))]
+            continue
         if name in ("words", "family"):
             lemmas = [h for h in (_lemma_hit(conn, x["_source"], x.get("_score") or 0.0) for x in hits) if h]
             results["lemmas"] = lemmas
@@ -307,6 +323,8 @@ def search(
                     "work": works.get(h["_source"]["work_id"]),
                     "root_key": h["_source"]["root_key"],
                     "root_spaced": spaced.get(h["_source"]["root_key"]),
+                    # the dictionary root it is filed under, for its page there (P11.1)
+                    "dict_root": (h["_source"].get("dict_roots") or [None])[0],
                     "headword": h["_source"]["headword"],
                     "excerpt": (
                         (h.get("highlight", {}).get("body") or h.get("highlight", {}).get("body_en"))

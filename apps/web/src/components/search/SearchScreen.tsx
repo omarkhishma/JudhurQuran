@@ -16,7 +16,9 @@ import { useDebounced } from "@/lib/useDebounced";
 type Verse = { key: string; surah: number; ayah: number; text_qpc: string; text_imlaei: string; name_ar: string; name_translit: string };
 type Root = { key: string; letters?: string[]; spaced: string; translit: string; occurrences: number; lemma_count: number; verse_count?: number; gist_ar?: string | null; gloss_en?: string | null };
 type Lemma = { id: number; slug?: string; ar: string; envelope?: { translit: string }; translit?: string | null; pos: string; pos_label?: { ar: string; en: string }; occurrences: number; root: string | null; root_spaced?: string; gloss_en?: string | null; senses_en?: string[]; pattern?: string | null };
-type DictEntry = { entry_id: number; work: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; lang: string } | null; root_key: string | null; root_spaced: string | null; headword: string; excerpt: string | null };
+type DictEntry = { entry_id: number; work: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; lang: string } | null; root_key: string | null; root_spaced: string | null; dict_root?: string | null; headword: string; excerpt: string | null };
+/** A root of the dictionary (P11.1): the Quran's or not. */
+type DictRootHit = { key: string; display: string; letters: number; quran_root: string | null; lexica: number };
 type Passage = { uri: string; ref: string; text: { slug: string; kind: string }; verse?: Verse; highlight_ar?: string | null; highlight_en?: string | null; trans_en?: string | null };
 export type SearchPayload = {
   query: string;
@@ -31,6 +33,7 @@ export type SearchPayload = {
     patterns?: { slug: string; ar: { full: string; translit: string }; lemma_count: number; occurrences?: number; form_number?: number | null }[];
     passages?: Passage[];
     dictionary?: DictEntry[];
+    dict_roots?: DictRootHit[];
   };
   totals?: Partial<Record<"verses" | "lemmas" | "roots" | "patterns" | "surahs" | "dictionary" | "words", number>>;
 };
@@ -183,7 +186,7 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
     roots: rootsTotal,
     patterns: patterns.length,
     surahs: surahs.length,
-    dictionary: dict.total,
+    dictionary: dict.total + (r?.dict_roots?.length ?? 0),
     mine: dq ? (mine.data?.total ?? 0) : 0,
   };
   const total = ALL.reduce((a, k) => a + (kinds[k] ? counts[k] : 0), 0); // only what is shown (SRC-26)
@@ -467,8 +470,21 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
               </ul>
             </ResultGroup>
           )}
-          {kinds.dictionary && dict.rows.length > 0 && (
-            <ResultGroup title={t("sectionDictionary")} n={dict.total}>
+          {kinds.dictionary && (dict.rows.length > 0 || (r?.dict_roots?.length ?? 0) > 0) && (
+            <ResultGroup title={t("sectionDictionary")} n={dict.total + (r?.dict_roots?.length ?? 0)}>
+              {/* the roots themselves first: a page each in the dictionary, the Quran's or not (P11.1) */}
+              {(r?.dict_roots?.length ?? 0) > 0 && (
+                <ul className="mb-3 flex flex-wrap gap-2" aria-label={t("dictRoots")}>
+                  {r!.dict_roots!.map((x) => (
+                    <li key={x.key}>
+                      <Link href={`/dictionary/${encodeURIComponent(x.key)}`} className="chip min-h-[40px] gap-2">
+                        <span className="ar-classical text-[18px]" lang="ar">{x.display}</span>
+                        <span className="text-[11.5px] text-t3">{x.quran_root ? t("dictRootQuran") : t("dictRootLexica", cnt(x.lexica, locale))}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <ul className="flex flex-col gap-2">
                 {dict.rows.map((e) => {
                   const body = (
@@ -488,7 +504,9 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
                       {e.root_spaced && <span className="ar-classical shrink-0 text-[15px] text-root" lang="ar">{e.root_spaced}</span>}
                     </>
                   );
-                  return <li key={e.entry_id}>{e.root_key ? <Link href={`/roots/${encodeURIComponent(e.root_key)}#lexicon`} className="result-row">{body}</Link> : <div className="result-row">{body}</div>}</li>;
+                  // an article opens on its root's page in the dictionary, every lexicon's article beside it
+                  const href = e.dict_root ? `/dictionary/${encodeURIComponent(e.dict_root)}` : e.root_key ? `/roots/${encodeURIComponent(e.root_key)}#lexicon` : null;
+                  return <li key={e.entry_id}>{href ? <Link href={href} className="result-row">{body}</Link> : <div className="result-row">{body}</div>}</li>;
                 })}
               </ul>
               <More paged={dict} />
