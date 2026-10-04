@@ -69,10 +69,17 @@ TANZIL_META_NOTICE = (
     "license cc-by — https://tanzil.net"
 )
 # Publication is the owner's call; these hold it until the named decisions are taken (research 07).
+FORMAT_NOTES = {
+    "jsonl": "JSON Lines: one record per line, UTF-8.",
+    "csv": "RFC 4180: comma-separated, CRLF between records, a header row; a field with a comma, a quote or a line break quoted and its quotes doubled; UTF-8 without a byte-order mark. Nested values (segments, features) are JSON in their field.",
+    "unicode": "Every field is NFC except the texts carried from their sources exactly as they are: text_qpc (KFGQPC), text_uthmani and the segment forms (the corpus's Tanzil copy, also inside words' segments) and the lemma forms (lemmas.ar, words.lemma). Normalising them would reorder their combining marks, and the Quranic text is never altered.",
+    "keys": "A word is keyed surah:ayah:word, a segment surah:ayah:word:segment, a verse surah:ayah, a root by its letters.",
+}
+
 PUBLICATION_HOLD = [
     {
         "id": "qac",
-        "tables": ["words", "lemmas", "roots"],
+        "tables": ["words", "segments", "lemmas", "roots"],
         "data": "words, lemmas and roots files (data derived from the Quranic Arabic Corpus)",
         "why": "the corpus permits verbatim copies only, its FAQ speaks of non-commercial use, and the text column is CC BY-ND",
         "decision": "D19 (ask the corpus maintainers) and D2",
@@ -133,7 +140,8 @@ def _jsonl(path: Path) -> list[dict[str, Any]]:
 
 def _csv(rows: list[dict[str, Any]], columns: list[str]) -> str:
     buf = io.StringIO()
-    w = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore", lineterminator="\n")
+    # RFC 4180: CRLF between records; a field with a comma, a quote or a line break quoted, its quotes doubled
+    w = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore", lineterminator="\r\n")
     w.writeheader()
     for r in rows:
         w.writerow({k: ("" if r.get(k) is None else r[k]) for k in columns})
@@ -214,6 +222,30 @@ def build_release(version: str, out: Path | None = None, force: bool = False) ->
         }
         for x in lemmas.values()
     ]
+    # the morphology as a token table (DAT-Q05): one row per segment, keyed by its place surah:ayah:word:segment
+    segment_rows = [
+        {
+            "segment": f"{w['location']}:{g['index']}",
+            "location": w["location"],
+            "index": g["index"],
+            "kind": g["kind"],
+            "text": g["text"],
+            "tag": (g.get("label") or {}).get("tag")
+            or ((g.get("features") or {}).get("pos") or {}).get("tag"),
+            "features": json.dumps(
+                {
+                    k: v["tag"]
+                    for k, v in (g.get("features") or {}).items()
+                    if isinstance(v, dict) and "tag" in v
+                },
+                ensure_ascii=False,
+            ),
+            "lemma_buckwalter": g.get("lemma"),
+            "root": g.get("root"),
+        }
+        for w in words
+        for g in w["segments"]
+    ]
     root_rows = [
         {
             k: r[k]
@@ -225,6 +257,7 @@ def build_release(version: str, out: Path | None = None, force: bool = False) ->
     tables: list[tuple[str, list[dict[str, Any]], list[str], str]] = [
         ("verses", verse_rows, list(verse_rows[0]), f"{TEXT_NOTICE} {TANZIL_META_NOTICE}"),
         ("words", word_rows, list(word_rows[0]), f"{TANZIL_CORPUS_TEXT_NOTICE} {QAC_NOTICE}"),
+        ("segments", segment_rows, list(segment_rows[0]), f"{TANZIL_CORPUS_TEXT_NOTICE} {QAC_NOTICE}"),
         ("lemmas", lemma_rows, list(lemma_rows[0]), f"{QAC_NOTICE} Patterns (wazn): derived by this project, see docs/DECISIONS.md."),
         ("roots", root_rows, list(root_rows[0]), QAC_NOTICE),
     ]  # fmt: skip
@@ -263,6 +296,7 @@ def build_release(version: str, out: Path | None = None, force: bool = False) ->
         "copyright_notices": {"qac": QAC_COPYRIGHT},
         "publication_hold": PUBLICATION_HOLD,
         "excluded": EXCLUDED,
+        "format_notes": FORMAT_NOTES,
     }
     (out / "MANIFEST.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
     return manifest

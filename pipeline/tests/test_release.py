@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import csv
 import hashlib
+import io
 import json
+import unicodedata
 from pathlib import Path
 
 import pytest
@@ -16,8 +19,25 @@ def test_release_matches_its_manifest_and_the_build(tmp_path: Path) -> None:
     for f in m["files"]:
         assert hashlib.sha256((out / f["path"]).read_bytes()).hexdigest() == f["sha256"], f["path"]
     rows = {f["path"]: f["rows"] for f in m["files"]}
-    for table in ("verses", "words", "roots", "lemmas"):
+    for table in ("verses", "words", "roots", "lemmas", "segments"):
         assert rows[f"{table}.jsonl"] == rows[f"{table}.csv"] == m["counts"][table]
+    # RFC 4180: CRLF between records, and every record read back as written
+    for table in ("verses", "words", "roots", "lemmas", "segments"):
+        raw = (out / f"{table}.csv").read_bytes()
+        assert raw.count(b"\r\n") >= rows[f"{table}.csv"] and b"\n" not in raw.replace(b"\r\n", b""), table
+        back = list(csv.DictReader(io.StringIO(raw.decode("utf-8"), newline="")))
+        assert len(back) == rows[f"{table}.csv"], table
+    # the segment table keyed by place: every segment of the build, in order
+    first = json.loads((out / "segments.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    assert first["segment"] == "1:1:1:1" and first["location"] == "1:1:1" and first["kind"] == "prefix"
+    # the texts carried exactly from their sources; every other field NFC
+    verbatim = {"text_qpc", "text_uthmani", "text", "ar", "lemma", "segments"}  # segments: JSON of the forms
+    for table in ("verses", "words", "lemmas", "roots", "segments"):
+        for line in (out / f"{table}.jsonl").read_text(encoding="utf-8").splitlines()[:2000]:
+            for k, v in json.loads(line).items():
+                if isinstance(v, str) and k not in verbatim:
+                    assert unicodedata.is_normalized("NFC", v), (table, k)
+    assert "NFC" in m["format_notes"]["unicode"] and "RFC 4180" in m["format_notes"]["csv"]
     text = [
         json.loads(line)["text_qpc"]
         for line in Path(out / "verses.jsonl").read_text(encoding="utf-8").splitlines()
