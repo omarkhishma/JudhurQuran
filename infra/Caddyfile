@@ -16,6 +16,15 @@
 		}
 	}
 
+	# No body larger than the API reads (8 MB) reaches anyone; Apple's sign-in answer is a few kilobytes (security
+	# review L8).
+	request_body {
+		max_size 10MB
+	}
+	request_body /api/auth/apple {
+		max_size 64KB
+	}
+
 	# The public API goes straight to FastAPI; the web app's own /api/v1 rewrite is only a dev convenience.
 	handle /api/v1/* {
 		reverse_proxy api:8000
