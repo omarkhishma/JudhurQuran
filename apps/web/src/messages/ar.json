@@ -329,7 +329,9 @@
     "gradeLabel": "كيف تذكّرت العائلة؟",
     "easy": "عرفتها بلا تردد",
     "keys": "المسافة تكشف العائلة كلها، والأرقام من ١ إلى ٤ تقيّم.",
-    "revealedMeta": "{pos} • من {lemma} • {count, plural, one {مرة واحدة} two {مرتان} few {{n} مرات} many {{n} مرة} other {{n} مرة}} في القرآن"
+    "revealedMeta": "{pos} • من {lemma} • {count, plural, one {مرة واحدة} two {مرتان} few {{n} مرات} many {{n} مرة} other {{n} مرة}} في القرآن",
+    "hearHint": "استمع تلميحًا",
+    "hearHintTitle": "تلاوة الآية: تسمع فيها الكلمات المحجوبة"
   },
   "notebook": {
     "title": "دفتري",

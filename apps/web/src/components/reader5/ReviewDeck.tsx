@@ -12,6 +12,7 @@ import { useSurahRoots } from "@/lib/reader/api";
 import { useReader } from "@/lib/reader/store";
 import type { Ar } from "@/lib/reader/types";
 import { useMyRoots } from "@/lib/review/due";
+import { useAudio } from "@/lib/store/audio";
 import { dueOrder, type Grade, type ReviewCard, useReview } from "@/lib/store/review";
 import { useTranslitOn } from "@/lib/useTranslit";
 import type { ChapterInfo } from "./ReaderShell";
@@ -259,6 +260,8 @@ function ContextCard({ d, onGrade }: { d: RootReview; onGrade: (g: Grade) => voi
   const ar = locale === "ar";
   const translit = useTranslitOn();
   const c = d.context;
+  // the verse recited is the hint the design offers (RDR-569): the reciter says the words the blanks hide
+  const playVerse = useAudio((s) => s.playVerse);
   const [answers, setAnswers] = useState<string[]>(() => c.blanks.map(() => ""));
   const [checked, setChecked] = useState(false);
   const first = useRef<HTMLInputElement>(null);
@@ -284,6 +287,9 @@ function ContextCard({ d, onGrade }: { d: RootReview; onGrade: (g: Grade) => voi
         <div className="flex flex-wrap items-baseline gap-2">
           <span className="mono text-[11.5px] text-t3" dir="ltr">{verseRef(c.verse_key, locale)}</span>
           <span className="text-[11.5px] text-t3">{ar ? c.surah.name_ar : c.surah.name_translit}</span>
+          <button type="button" className="btn min-h-[40px] text-[12px]" onClick={() => void playVerse(c.verse_key)} title={t("hearHintTitle")}>
+            {t("hearHint")}
+          </button>
           <span className="flex-1" />
           <span className="ar-classical text-[15px] text-root" lang="ar">{t("contextCap", { root: d.root.spaced })}</span>
         </div>

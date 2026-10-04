@@ -3375,6 +3375,18 @@ button.type-chip:hover {
   font-size: 22px;
   scroll-margin-top: 72px;
 }
+/* an article opened by its identifier (P1.7a, /dictionary/<root>#dict:…): clear of the header, marked as the one asked for */
+.dict-anchor {
+  scroll-margin-top: 72px;
+  border-radius: 10px;
+}
+.dict-anchor:focus {
+  outline: none;
+}
+.dict-anchor.is-target {
+  box-shadow: 0 0 0 8px var(--sentence-wash);
+  background: var(--sentence-wash);
+}
 .user-passage:target {
   background: var(--sentence-wash);
   border-radius: 8px;
@@ -3417,18 +3429,6 @@ button.type-chip:hover {
 .user-passage button.pv-word.is-selected {
   background: color-mix(in srgb, var(--ring) 22%, transparent);
   box-shadow: inset 0 -2px 0 var(--ring);
-}
-/* an article opened by its identifier (P1.7a, /dictionary/<root>#dict:…): clear of the header, marked as the one asked for */
-.dict-anchor {
-  scroll-margin-top: 72px;
-  border-radius: 10px;
-}
-.dict-anchor:focus {
-  outline: none;
-}
-.dict-anchor.is-target {
-  box-shadow: 0 0 0 8px var(--sentence-wash);
-  background: var(--sentence-wash);
 }
 .match-badge {
   font-size: 11.5px;

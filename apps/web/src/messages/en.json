@@ -329,7 +329,9 @@
     "gradeLabel": "How well did you recall the family?",
     "easy": "Knew all at once",
     "keys": "Space reveals the whole family; 1 to 4 grade it.",
-    "revealedMeta": "{pos} • from {lemma} • {count, plural, one {once} other {{n} times}} in the Quran"
+    "revealedMeta": "{pos} • from {lemma} • {count, plural, one {once} other {{n} times}} in the Quran",
+    "hearHint": "Hear it as a hint",
+    "hearHintTitle": "The verse recited: you hear the hidden words in it"
   },
   "notebook": {
     "title": "Notebook",

@@ -112,3 +112,20 @@ test("the cite dialog leads to embedding through a published map (RDR-398, 450)"
   await embed.click();
   await expect(page).toHaveURL(/\/g$/);
 });
+
+test("in context, the verse recited is offered as a hint (RDR-569)", async ({ page }) => {
+  await page.addInitScript(() => {
+    if (localStorage.getItem("jadhr-personal")) return;
+    localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true, wordStates: {}, trail: [], progress: {}, proposals: [], savedTrails: [] }, version: 3 }));
+    localStorage.setItem("jadhr-saved", JSON.stringify({ state: { bookmarks: [{ kind: "lemma", key: "ilm", label: "ilm", at: 0 }], notes: {}, history: [] }, version: 2 }));
+  });
+  const d = await api<{ context: { verse_key: string } }>(page, `/roots/${encodeURIComponent("علم")}/review`);
+  await page.goto("/quran/1?mode=review");
+  const deck = page.getByRole("dialog", { name: "المراجعة" });
+  await deck.getByRole("button", { name: "في السياق" }).click();
+  const [res] = await Promise.all([
+    page.waitForResponse((r) => r.url().includes("/api/v1/recitations/") && r.ok()),
+    deck.getByRole("button", { name: "استمع تلميحًا" }).click(),
+  ]);
+  expect(res.url()).toMatch(new RegExp(`/surahs/${d.context.verse_key.split(":")[0]}`));
+});
