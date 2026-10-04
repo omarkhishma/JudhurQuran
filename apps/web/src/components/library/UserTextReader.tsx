@@ -3,11 +3,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { MarksToggle } from "@/components/ui/MarksToggle";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
 import { formatNumber } from "@/lib/format";
 import { deleteText, loadText, rootShown, saveText } from "@/lib/library/texts";
 import { words } from "@/lib/library/segment";
+import { useMarks } from "@/lib/reader/marks";
 import { usePersonal } from "@/lib/reader/store";
 import { isReview, readWords } from "./AddTextSheet";
 
@@ -18,6 +20,8 @@ import { isReview, readWords } from "./AddTextSheet";
  */
 export function UserTextReader({ id }: { id: string }) {
   const t = useTranslations("library");
+  // the vowel marks shown or hidden (D7): the reader's own text, never changed
+  const shown = useMarks();
   const locale = useLocale();
   const fmtC = (x: number) => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(x);
   const client = useIsClient();
@@ -149,7 +153,8 @@ export function UserTextReader({ id }: { id: string }) {
           {t("resumeText", { n: formatNumber(position.passage, locale), of: formatNumber(d.passages.length, locale) })}
         </a>
       )}
-      <div className="flex flex-wrap gap-3 text-[11.5px] text-t3">
+      <div className="flex flex-wrap items-center gap-3 text-[11.5px] text-t3">
+        <MarksToggle />
         <span className="pv-word is-hit">{t("legendHit")}</span>
         <span className="pv-word is-review">{t("legendReview")}</span>
         <span className="pv-word is-none">{t("legendNone")}</span>
@@ -161,7 +166,7 @@ export function UserTextReader({ id }: { id: string }) {
             // one index per word, taken before anything reads it: pending words had all shared key 0
             const k = i++;
             const r = read.data?.[k]?.r;
-            const word = `${w.surface} `;
+            const word = `${shown(w.surface)} `;
             if (!read.data) return <span key={k} className="pv-word is-pending">{word}</span>;
             if (isReview(r)) return <Link key={k} href={`/analyse?q=${encodeURIComponent(w.word)}`} className="pv-word is-review" title={t("tipReview", { root: rootShown(r) ?? "—", c: fmtC(r?.confidence ?? 0) })}>{word}</Link>;
             if (r && r.kind !== "none" && r.lemma) return <Link key={k} href={`/read?w=${encodeURIComponent(r.lemma)}`} className="pv-word is-hit" title={r.kind === "particle" ? t("tipParticle") : `${r.root_spaced ?? ""}${r.gloss_en ? ` — ${r.gloss_en}` : ""}`}>{word}</Link>;

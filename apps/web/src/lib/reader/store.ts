@@ -171,6 +171,7 @@ export type Prefs = {
   translationLine: boolean | null; // null → locale default
   muyassarLine: boolean; // al-Muyassar's plain Arabic explanation under each verse (Arabic UI option)
   imlaeiLine: boolean; // D7: the verse in standard spelling, labelled, under the mushaf text (never instead of it)
+  marks: boolean; // D7: the vowel marks of the dictionaries, the hadith, the books and the reader's texts — never the mushaf's
   tintRoot: boolean; // underline the open word's root family (RDR-038)
   grammarBand: boolean; // RDR-039
   wordStates: boolean; // D20: an opt-in study mode, off by default on the Quran
@@ -202,6 +203,7 @@ export const DEFAULT_PREFS: Prefs = {
   translationLine: null,
   muyassarLine: false,
   imlaeiLine: false,
+  marks: true,
   tintRoot: true,
   grammarBand: false,
   wordStates: false,

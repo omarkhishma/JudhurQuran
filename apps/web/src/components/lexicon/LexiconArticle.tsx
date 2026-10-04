@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 import type { LexiconEntrySummary, LexiconWork } from "@/lib/types";
 import { toArabicDigits } from "@/lib/format";
+import { useMarks } from "@/lib/reader/marks";
 
 /** One dictionary article: excerpt first, full verbatim body on demand, with its citation. The dictionary's pages
  * read the whole article from their own address (an article the Quran's pages do not show), and may say how the
@@ -24,6 +25,7 @@ export function LexiconArticle({
 }) {
   const t = useTranslations("lexicon");
   const locale = useLocale();
+  const shown = useMarks();
   const [full, setFull] = useState(false);
   const { data, isFetching } = useQuery({
     queryKey: ["lex-entry", entry.id],
@@ -46,7 +48,7 @@ export function LexiconArticle({
         dir={isArabic ? "rtl" : "ltr"}
         lang={isArabic ? "ar" : "en"}
       >
-        {body}
+        {shown(body)}
       </div>
       {truncated && (
         <button type="button" className="btn" onClick={() => setFull((v) => !v)} aria-expanded={full} disabled={isFetching}>

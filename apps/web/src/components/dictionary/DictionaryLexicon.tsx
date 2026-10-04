@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { LexiconArticle } from "@/components/lexicon/LexiconArticle";
+import { MarksToggle } from "@/components/ui/MarksToggle";
 import { Link } from "@/i18n/navigation";
 import { dictHref, type DictArticle, type DictRoot } from "@/lib/dictionary";
 import { formatNumber } from "@/lib/format";
@@ -54,9 +55,13 @@ export function DictionaryLexicon({ root }: { root: DictRoot }) {
         ))}
       </div>
       <div className="space-y-5 p-4 md:p-5" role="tabpanel">
-        <p className="text-[12.5px] text-t3">
-          {locale === "ar" ? (work.death_hijri ? `${work.author_ar} (ت ${formatNumber(work.death_hijri, locale)}هـ)` : work.author_ar) : `${work.author_en}${work.death_ce ? ` (d. ${work.death_ce} CE)` : ""}`}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[12.5px] text-t3">
+            {locale === "ar" ? (work.death_hijri ? `${work.author_ar} (ت ${formatNumber(work.death_hijri, locale)}هـ)` : work.author_ar) : `${work.author_en}${work.death_ce ? ` (d. ${work.death_ce} CE)` : ""}`}
+          </p>
+          {/* the articles' vowel marks shown or hidden (D7) */}
+          <MarksToggle />
+        </div>
         {work.articles.map((a) => (
           <LexiconArticle
             key={a.id}

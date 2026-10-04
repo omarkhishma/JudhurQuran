@@ -1,11 +1,13 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { type MouseEvent, useEffect, useRef, useState } from "react";
 import { WordPanel } from "@/components/text/WordPanel";
+import { MarksToggle } from "@/components/ui/MarksToggle";
 import { Link } from "@/i18n/navigation";
 import type { ChainLink, Form, Segment } from "@/lib/hadith";
 import { narratorHref } from "@/lib/hadith";
+import { useMarks } from "@/lib/reader/marks";
 
 type Part = "isnad" | "matn" | "comment";
 
@@ -26,6 +28,9 @@ export function HadithText({
   chain: ChainLink[];
 }) {
   const t = useTranslations("hadith");
+  const locale = useLocale();
+  // the vowel marks shown or hidden (D7): the reader's choice, the text itself never changed
+  const shown = useMarks();
   const [selected, setSelected] = useState<number | null>(null);
   const panel = useRef<HTMLElement>(null);
   const byOrdinal = new Map(chain.map((c) => [c.ordinal, c]));
@@ -67,7 +72,7 @@ export function HadithText({
         while (j < items.length && (items[j].n === n || (items[j].w === undefined && items[j + 1]?.n === n && name.length))) name.push(items[j++]);
         i = j - 1;
         const link = byOrdinal.get(n);
-        const text = name.map((x) => x.t).join("");
+        const text = shown(name.map((x) => x.t).join(""));
         out.push(
           link?.narrator ? (
             <Link key={`n${n}-${i}`} href={narratorHref(link.narrator.id)} className="hp-name" title={link.narrator.name}>
@@ -80,12 +85,12 @@ export function HadithText({
         continue;
       }
       if (s.w === undefined) {
-        out.push(<span key={i}>{s.t}</span>);
+        out.push(<span key={i}>{shown(s.t)}</span>);
         continue;
       }
       out.push(
         <button key={i} type="button" className={`w${selected === s.w ? " is-selected" : ""}`} data-w={s.w} aria-pressed={selected === s.w}>
-          {s.t}
+          {shown(s.t)}
         </button>,
       );
     }
@@ -95,6 +100,10 @@ export function HadithText({
   const label: Record<Part, string> = { isnad: t("isnad"), matn: t("matn"), comment: t("comment") };
   return (
     <div className="hadith-reader">
+      <div className="flex min-w-0 flex-col gap-2">
+      <div className="text-tools" lang={locale}>
+        <MarksToggle />
+      </div>
       <div className="hadith-text" dir="rtl" lang="ar" onClick={onClick}>
         {blocks.map((b, k) => (
           <div key={k} className={`hp-${b.part}`}>
@@ -102,6 +111,7 @@ export function HadithText({
             <p>{render(b.items)}</p>
           </div>
         ))}
+      </div>
       </div>
       <WordPanel
         ref={panel}

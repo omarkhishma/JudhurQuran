@@ -3,10 +3,12 @@
 import { useLocale, useTranslations } from "next-intl";
 import { type MouseEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import { WordPanel } from "@/components/text/WordPanel";
+import { MarksToggle } from "@/components/ui/MarksToggle";
 import { Link } from "@/i18n/navigation";
 import { type BookSegment, type Cite, type ParagraphMeta, paragraphHref, verseHref } from "@/lib/books";
 import { formatNumber, toArabicDigits } from "@/lib/format";
 import type { Form } from "@/lib/hadith";
+import { useMarks } from "@/lib/reader/marks";
 
 export type ReaderParagraph = {
   ref: string;
@@ -41,6 +43,8 @@ export function BookText({
   linkParagraphs?: boolean;
 }) {
   const t = useTranslations("books");
+  // the vowel marks shown or hidden (D7): the reader's choice, the text itself never changed
+  const shown = useMarks();
   const locale = useLocale();
   const [selected, setSelected] = useState<{ p: number; w: number } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -75,7 +79,7 @@ export function BookText({
     const on = selected?.p === i && selected.w === s.w;
     return (
       <button key={k} type="button" className={`w${on ? " is-selected" : ""}`} data-p={i} data-w={s.w} aria-pressed={on}>
-        {s.t}
+        {shown(s.t)}
       </button>
     );
   };
@@ -88,7 +92,7 @@ export function BookText({
       if (s.e) {
         const inside: ReactNode[] = [];
         let j = k;
-        for (; j < segs.length && segs[j].e; j++) inside.push(segs[j].w === undefined ? <span key={j}>{segs[j].t}</span> : word(segs[j], i, j));
+        for (; j < segs.length && segs[j].e; j++) inside.push(segs[j].w === undefined ? <span key={j}>{shown(segs[j].t)}</span> : word(segs[j], i, j));
         out.push(
           <span key={`e${k}`} className="bk-editor" title={t("editorBracket")}>
             {inside}
@@ -98,7 +102,7 @@ export function BookText({
         continue;
       }
       // the gap between a verse's two halves, where the version marks them
-      const piece = s.t.includes("\u2003") ? <span key={k} className="bk-hemi">{s.t}</span> : <span key={k}>{s.t}</span>;
+      const piece = s.t.includes("\u2003") ? <span key={k} className="bk-hemi">{shown(s.t)}</span> : <span key={k}>{shown(s.t)}</span>;
       out.push(s.w === undefined ? piece : word(s, i, k));
     }
     return out;
@@ -114,6 +118,10 @@ export function BookText({
 
   return (
     <div className="hadith-reader">
+      <div className="flex min-w-0 flex-col gap-2">
+      <div className="text-tools" lang={locale}>
+        <MarksToggle />
+      </div>
       <ol className="book-text" dir="rtl" lang="ar" onClick={onClick}>
         {paragraphs.map((p, i) => (
           <li key={p.ref} id={`p${p.ref}`} className="bk-para">
@@ -152,6 +160,7 @@ export function BookText({
           </li>
         ))}
       </ol>
+      </div>
       <WordPanel
         ref={panel}
         word={chosen ? (chosen.segments.find((s) => s.w === selected!.w)?.t ?? null) : null}

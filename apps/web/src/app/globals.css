@@ -7219,3 +7219,9 @@ a.wotd-pill:hover {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+/* the tools above a text that is not the mushaf (D7): its vowel marks shown or hidden */
+.text-tools {
+  display: flex;
+  justify-content: flex-end;
+}

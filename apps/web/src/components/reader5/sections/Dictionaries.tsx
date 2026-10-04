@@ -8,6 +8,7 @@ import { Term } from "@/components/terms/Term";
 import { Segmented } from "@/components/ui/Segmented";
 import { cnt, formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
+import { useMarks } from "@/lib/reader/marks";
 import { usePrefs, useReader } from "@/lib/reader/store";
 import type { DictEntry, DictWork, WordPayload } from "@/lib/reader/types";
 import { DICT_KIND } from "@/lib/lexica";
@@ -131,7 +132,9 @@ function ArticleEntry({ e, lang, expanded, onToggle, onCopied }: { e: DictEntry;
   const locale = useLocale();
   const setHandoff = useReader((s) => s.setHandoff);
   const full = useQuery({ queryKey: ["lex-entry", e.id], queryFn: () => getJSON<{ body: string }>(`/lexicon/entries/${e.id}`), enabled: expanded, staleTime: Infinity });
-  const text = expanded && full.data ? full.data.body : e.excerpt;
+  // the vowel marks shown or hidden (D7)
+  const shown = useMarks();
+  const text = shown(expanded && full.data ? full.data.body : e.excerpt);
   const truncated = e.length > e.excerpt.length;
   async function copy() {
     const body = full.data?.body ?? (await getJSON<{ body: string }>(`/lexicon/entries/${e.id}`)).body;
@@ -202,8 +205,9 @@ function Compare({ works }: { works: DictWork[] }) {
               <p className="text-[11px] text-t3">{deathLabel(w, locale, t)}</p>
               {w.entries.map((e) => (
                 <p key={e.id} className={w.lang === "en" ? "text-[12.5px] leading-relaxed text-t2" : "ar-classical text-[14px] leading-[1.95] text-t2"} lang={w.lang === "en" ? "en" : "ar"} dir={w.lang === "en" ? "ltr" : "rtl"}>
-                  {e.excerpt}
+                  {shown(e.excerpt)}
                 </p>
+  const shown = useMarks();
               ))}
             </div>
           );

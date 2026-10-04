@@ -34,7 +34,9 @@
     "rootsCount": "{count, plural, =0 {no roots} one {{n} root} other {{n} roots}}",
     "storageFailed": "This browser would not save: what you do lasts until you close the page. Export what is here to keep it.",
     "storageExport": "Export what is here",
-    "storageDismiss": "OK"
+    "storageDismiss": "OK",
+    "marks": "Vowel marks",
+    "marksHint": "Show or hide the vowel marks of the dictionaries, the hadith, the books and your texts; the mushaf always keeps all of its marks"
   },
   "nav": {
     "read": "Read",
@@ -2324,7 +2326,9 @@
     "textsSummary": "The root is in {n} of the {of} hadith collections and books, the earliest {first} ({year} CE).",
     "textsNone": "The root is in none of the hadith collections and books.",
     "textsOpen": "Its passages there",
-    "citeDataset": "Cite the whole dataset"
+    "citeDataset": "Cite the whole dataset",
+    "prefMarks": "Vowel marks in the dictionaries, hadith, books and your texts",
+    "prefMarksHint": "The mushaf always keeps all of its marks"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
