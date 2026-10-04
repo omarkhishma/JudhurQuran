@@ -2122,7 +2122,8 @@
     "topicMap": "Topic map",
     "topicBoardPlaced": "Placed by the editorial board after a suggestion of QSAC's machine labelling",
     "topicBoardNamed": "Named by the editorial board",
-    "entityMap": "Map of the name"
+    "entityMap": "Map of the name",
+    "topicsFromSources": "From the topic indexes"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

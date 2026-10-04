@@ -9,6 +9,7 @@ import { buildSeedGraph } from "@/lib/graph/seed";
 import { getJSON } from "@/lib/reader/api";
 import { usePersonal, useReader, verseRef } from "@/lib/reader/store";
 import { noteOn, useSaved } from "@/lib/store/saved";
+import { SourceTopics, useVerseTopics } from "./SourceTopics";
 
 export type DrawerTool = "roots" | "related" | "concordance" | "links" | "topic" | "note" | "graph";
 type VersePayload = { key: string; words: { location: string; root: string | null; lemma: string | null; lemma_slug?: string | null; text_uthmani: string }[] };
@@ -266,7 +267,8 @@ export function LinksDrawer({ verseKey }: { verseKey: string }) {
 }
 
 /** Topics (RDR-157, adapted per RDR-555): the reader's own topics — made here, a verse gathered under any
- * number of them; the prototype's five fixed labels are gone. */
+ * number of them; the prototype's five fixed labels are gone — and beneath them, apart, the topics the sources gather
+ * the verse under (P8.3), each opened as a map. */
 export function TopicDrawer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
   const me = verseRef(verseKey);
@@ -274,6 +276,7 @@ export function TopicDrawer({ verseKey }: { verseKey: string }) {
   const mine = usePersonal((s) => s.verseTopics[me]) ?? [];
   const addTopic = usePersonal((s) => s.addTopic);
   const toggle = usePersonal((s) => s.toggleVerseTopic);
+  const sourced = useVerseTopics(verseKey);
   const [draft, setDraft] = useState("");
   return (
     <div className="flex flex-col gap-2">
@@ -301,6 +304,12 @@ export function TopicDrawer({ verseKey }: { verseKey: string }) {
         <input value={draft} onChange={(e) => setDraft(e.target.value)} className="field h-9 max-w-[220px]" placeholder={t("topicNew")} aria-label={t("topicNew")} dir="auto" maxLength={60} />
         <button type="submit" className="btn" disabled={!draft.trim()}>{t("topicAdd")}</button>
       </form>
+      {sourced.data && (
+        <section className="mt-1 flex flex-col gap-1.5 border-t border-line pt-2" aria-label={t("topicsFromSources")}>
+          <p className="label-caps">{t("topicsFromSources")}</p>
+          <SourceTopics data={sourced.data} />
+        </section>
+      )}
     </div>
   );
 }

@@ -188,3 +188,25 @@ test("the reader's own topics on a map: their own notes with their verses, besid
   const axe = await new AxeBuilder({ page }).include(".graph-details").include(".library").analyze();
   expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((x) => x.target.join(" ")).slice(0, 3).join(" | ")}`)).toEqual([]);
 });
+
+test("a verse's Topic tool: the reader's own topics, and apart from them the topics the sources gather the verse under, each opened as a map (RDR-555, RDR-157, P8.3)", async ({ page, isMobile }) => {
+  await returning(page);
+  const vt = (await (await page.request.get("/api/v1/verses/1:2/topics")).json()) as { data: { id: string; name: string }[]; sources: Record<string, { version: string }> };
+  expect(vt.data.length).toBeGreaterThan(0);
+  await page.goto("/quran/1");
+  await page.locator('[data-verse-btn="1:2"]').click();
+  await page.locator('[data-verse="1:2"] [data-tool="topic"]').click();
+  const drawer = page.locator('[data-verse="1:2"] .drawer');
+  // the reader's own, as before, and the sources' in a section of their own
+  await expect(drawer).toContainText("لا مواضيع لك بعد");
+  const sourced = drawer.locator("section").filter({ hasText: "من فهارس الموضوعات" });
+  for (const x of vt.data) await expect(sourced).toContainText(x.name);
+  await expect(sourced).toContainText(`إصدار ${vt.sources["quranpedia-topics"].version}`);
+  const axe = await new AxeBuilder({ page }).include('[data-verse="1:2"] .drawer').analyze();
+  expect(axe.violations.map((v) => `${v.id}: ${v.nodes.map((x) => x.target.join(" ")).slice(0, 3).join(" | ")}`)).toEqual([]);
+  if (isMobile) return; // the map editor is the desktop's (P8.6a)
+  await sourced.getByRole("link", { name: "خريطة الموضوع" }).first().click();
+  await expect(page).toHaveURL(/\/graph\/edit\/[a-z0-9]+/, { timeout: 30_000 });
+  const id = page.url().split("/graph/edit/")[1].split(/[?#]/)[0];
+  await expect.poll(async () => (await storedGraph(page, id))?.nodes.some((n) => n.id === `topic:${vt.data[0].id}`), { timeout: 15_000 }).toBe(true);
+});
