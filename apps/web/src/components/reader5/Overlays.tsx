@@ -330,6 +330,10 @@ function CiteBody({ opened, chapter }: { opened: CiteTarget; chapter: ChapterInf
             {t("exportJson")}
           </button>
           <span className="flex-1" />
+          {/* embedding goes through a published map, which any site may frame (RDR-398, 450; P8.5) */}
+          <Link href="/g" className="text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" title={t("embedTitle")} onClick={() => setCite(null)}>
+            {t("embedLink")}
+          </Link>
           {/* the whole dataset, cited by its release (journey C) */}
           <Link href="/data#cite" className="text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setCite(null)}>
             {t("citeDataset")}

@@ -2354,7 +2354,9 @@
     "stoppedAtLabel": "Stopped at: {label}",
     "stoppedHere": "Continue where you stopped",
     "stoppedAtPassage": "Stopped at passage {n}",
-    "deckShapeSub": "the mould this word was poured into"
+    "deckShapeSub": "the mould this word was poured into",
+    "embedLink": "Embed…",
+    "embedTitle": "Published maps can be framed on any site: make this entry a map and publish it"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

@@ -101,3 +101,14 @@ test("the phone deck: a 44 px ▶ on the meaning card, and the shape card names 
   const shape = page.locator(".ask-deck-card").filter({ hasText: w.pattern!.ar.full });
   await expect(shape).toContainText(`${w.pattern!.ar.translit} • القالب الذي صُبّت فيه هذه الكلمة`);
 });
+
+test("the cite dialog leads to embedding through a published map (RDR-398, 450)", async ({ page }) => {
+  await seed(page);
+  await page.goto("/quran/20?w=ilm&at=20:114:17");
+  await panel(page).getByRole("button", { name: "استشهد" }).first().click();
+  const dlg = page.getByRole("dialog", { name: "استشهد بهذا" });
+  const embed = dlg.getByRole("link", { name: "التضمين…" });
+  await expect(embed).toHaveAttribute("href", "/g");
+  await embed.click();
+  await expect(page).toHaveURL(/\/g$/);
+});
