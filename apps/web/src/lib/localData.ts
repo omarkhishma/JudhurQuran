@@ -87,6 +87,10 @@ export async function deleteLocalData({ keepAccount = false } = {}): Promise<voi
     } catch {}
   }
   for (const k of await documentKeys()) await del(k);
+  // the copies kept for reading offline (P12): what this browser read is the reader's too
+  try {
+    for (const name of await caches.keys()) if (name.startsWith("jadhr-")) await caches.delete(name);
+  } catch {}
   try {
     // a sign-in with Google or Apple begun in this tab
     for (const k of Object.keys(sessionStorage)) if (k.startsWith(PREFIX)) sessionStorage.removeItem(k);

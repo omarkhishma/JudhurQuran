@@ -5,6 +5,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { fontVariables } from "@/lib/fonts";
+import { OfflineWorker } from "@/components/shell/OfflineWorker";
 import { SITE, THEME_KEY } from "@/lib/site";
 // the digits preference's key (lib/digits.ts), read here before the page paints
 const DIGITS_KEY = "jadhr-digits";
@@ -69,6 +70,8 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
         <NextIntlClientProvider locale={locale} messages={pick(messages, SCOPES.root)}>
           {/* Each route group wears its own header: the shared shell, or the reader's and editor's bespoke ones. */}
           <Providers>{children}</Providers>
+          {/* offline reading of what this browser read and saved (P12) */}
+          <OfflineWorker />
         </NextIntlClientProvider>
       </body>
     </html>

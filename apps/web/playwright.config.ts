@@ -14,6 +14,9 @@ export default defineConfig({
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3210",
     trace: "retain-on-failure",
+    // the offline worker answers a page's requests once it controls it, and Playwright's routes do not see what a
+    // worker answers: it is blocked here, and allowed by the spec that tests it (offline.spec.ts)
+    serviceWorkers: "block",
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },

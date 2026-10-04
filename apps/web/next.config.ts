@@ -62,6 +62,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: SECURITY_HEADERS },
+      // the offline worker is asked for afresh on every visit, so a release replaces it at once
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, max-age=0" }] },
       { source: "/", headers: FRAMED_BY_SELF },
       { source: "/:path((?!embed/|en/embed/).+)", headers: FRAMED_BY_SELF },
       { source: "/embed/:path*", headers: FRAMED_BY_ANY },

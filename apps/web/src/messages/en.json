@@ -42,7 +42,11 @@
     "digitsAutoTitle": "By the interface's language: ١٢٣ in Arabic, 123 in English",
     "digitsArabicTitle": "Arabic-Indic digits (١٢٣) on every page",
     "digitsLatinTitle": "Western digits (123) on every page",
-    "digitsHint": "Every page's numbers are shown in the shapes you choose, in this browser. The mushaf's text stays as it is."
+    "digitsHint": "Every page's numbers are shown in the shapes you choose, in this browser. The mushaf's text stays as it is.",
+    "offlineTitle": "You are offline",
+    "offlineLead": "This page needs a connection, and no copy of it is kept in this browser. The pages you have read and what you have saved stay readable offline.",
+    "offlineKept": "Kept in this browser to read offline",
+    "offlineNone": "No page is kept yet: what you read while connected is kept here to read offline."
   },
   "nav": {
     "read": "Read",
