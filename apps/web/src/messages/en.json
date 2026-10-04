@@ -36,7 +36,13 @@
     "storageExport": "Export what is here",
     "storageDismiss": "OK",
     "marks": "Vowel marks",
-    "marksHint": "Show or hide the vowel marks of the dictionaries, the hadith, the books and your texts; the mushaf always keeps all of its marks"
+    "marksHint": "Show or hide the vowel marks of the dictionaries, the hadith, the books and your texts; the mushaf always keeps all of its marks",
+    "digits": "Digits",
+    "digitsAuto": "By language",
+    "digitsAutoTitle": "By the interface's language: ١٢٣ in Arabic, 123 in English",
+    "digitsArabicTitle": "Arabic-Indic digits (١٢٣) on every page",
+    "digitsLatinTitle": "Western digits (123) on every page",
+    "digitsHint": "Every page's numbers are shown in the shapes you choose, in this browser. The mushaf's text stays as it is."
   },
   "nav": {
     "read": "Read",
@@ -2897,7 +2903,8 @@
     "keyRevokeNamed": "Revoke the key {name}",
     "keyRevokeConfirm": "Click again: the key stops",
     "keysDocs": "The API guide",
-    "publishedMap": "published"
+    "publishedMap": "published",
+    "display": "Display in this browser"
   },
   "contrib": {
     "title": "Review queue",

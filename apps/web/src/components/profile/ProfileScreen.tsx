@@ -22,6 +22,7 @@ import { useReview } from "@/lib/store/review";
 import { useSaved } from "@/lib/store/saved";
 import { runSync, useSyncStatus } from "@/lib/sync/run";
 import { AccountPanel, type Me } from "./AccountPanel";
+import { DigitsPref } from "@/components/ui/DigitsPref";
 
 
 const download = (name: string, data: unknown) => {
@@ -71,6 +72,11 @@ export function ProfileScreen({ initialTab }: { initialTab: Tab }) {
       <aside className="profile-id" aria-label={t("counts")}>
         <Identity signedIn={signedIn} me={me.data} />
         <Counts />
+        {/* how this browser shows every page (SHL-Q05, Q10): kept here, not in the account */}
+        <section className="flex flex-col gap-1" aria-labelledby="display-h">
+          <h2 id="display-h" className="label-caps">{t("display")}</h2>
+          <DigitsPref />
+        </section>
         {/* on a phone the data controls come after the open tab's list: one tap away from the top (PRF-35, F27) */}
         <a href="#your-data" className="btn self-start min-[900px]:hidden">
           {t("toData")}

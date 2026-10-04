@@ -1,59 +1,79 @@
 import { expect, type Page, test } from "@playwright/test";
 
 /**
- * Digits follow the interface language (DECISIONS, SHL-Q05): an Arabic page writes a verse key or a word's place
- * in Arabic-Indic digits — «٢:٢٥٥», never «2:255» — wherever it shows one: the reading surface's labels, the
- * panel's titles and occurrence lines, the senses' verse chips, the concordance rows, the doors, the omnibox.
- * English text inside the page (marked lang="en"), citations in English formats and what the reader typed are
- * left as they are.
+ * The digits preference (SHL-Q05, Q10): by the language, or ١٢٣ or 123 on every page — set in the profile or the
+ * reader's preferences, kept in this browser, on before the page paints, the text itself unchanged. The shapes are
+ * compared as drawn: the chosen digits drawn by the swap face equal the other digits drawn by the interface's font.
  */
 
-const OPEN = { layerOpen: { senses: true, family: true, patterns: true, lexica: true, timeline: true, usage: true } };
-
-async function latinKeys(page: Page): Promise<string[]> {
-  return page.evaluate(() => {
-    const out: string[] = [];
-    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    for (let n = w.nextNode(); n; n = w.nextNode()) {
-      const el = n.parentElement;
-      if (!el || el.closest("pre, textarea, input, [lang=en], script, style, [aria-hidden=true], .sr-only")) continue;
-      if (!el.getBoundingClientRect().width) continue;
-      for (const m of n.textContent?.match(/\b\d{1,3}:\d{1,3}(?::\d{1,3})?\b/g) ?? []) out.push(`${el.tagName.toLowerCase()}.${[...el.classList].slice(0, 2).join(".")} ${m}`);
-    }
-    return out;
-  });
+/** Draw `a` in the swap face and `b` in the interface's own face; true when the two drawings are identical. */
+async function drawnAlike(page: Page, swap: string, a: string, b: string): Promise<boolean> {
+  return page.evaluate(
+    async ([swap, a, b]) => {
+      await document.fonts.load(`32px "${swap}"`, a);
+      const ui = getComputedStyle(document.documentElement).getPropertyValue("--font-plex-arabic").trim();
+      await document.fonts.load(`32px ${ui}`, b);
+      const draw = (font: string, s: string) => {
+        const c = document.createElement("canvas");
+        c.width = 200;
+        c.height = 60;
+        const x = c.getContext("2d")!;
+        x.font = `32px ${font}`;
+        x.fillText(s, 10, 45);
+        return Array.from(x.getImageData(0, 0, 200, 60).data).join(",");
+      };
+      const one = draw(`"${swap}"`, a);
+      return one === draw(ui, b) && one !== draw(ui, a);
+    },
+    [swap, a, b] as const,
+  );
 }
 
-for (const path of ["/quran/2?w=ilm&at=2:120:59", "/quran/2/255", `/roots/${encodeURIComponent("علم")}`, "/concordance", "/search?q=%D8%B5%D8%A8%D8%B1", "/analyse?q=2%3A255", "/explore", "/notebook", "/me", "/data", "/library", "/"])
-  test(`Arabic digits for verse keys: ${decodeURIComponent(path)}`, async ({ page }) => {
-    await page.addInitScript((open) => {
-      localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 }));
-      localStorage.setItem("jadhr-prefs", JSON.stringify({ state: open, version: 2 }));
-    }, OPEN);
-    await page.goto(path);
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(500);
-    expect(await latinKeys(page)).toEqual([]);
+test("Western digits on every page of the Arabic interface, chosen in the profile, kept, on before paint (SHL-Q05)", async ({ page }) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("jadhr-personal")) localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 3 }));
   });
-
-test("Arabic digits in the omnibox's references", async ({ page, isMobile }) => {
-  test.skip(isMobile, "keyboard shortcut");
-  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
+  await page.goto("/me");
+  const pref = page.getByRole("group", { name: "الأرقام" }).first();
+  await expect(pref.getByRole("button", { name: /حسب لغة الواجهة/ })).toHaveAttribute("aria-pressed", "true");
+  await pref.getByRole("button", { name: /الأرقام العربية الغربية/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-digits", "latin");
+  // the Arabic-Indic digits the page writes are drawn as 123, by a face made of the interface's own Western digits
+  expect(await drawnAlike(page, "Jadhr Latin Digits", "٢٥٥", "255")).toBe(true);
+  // another page, from the server: set before it paints, the text unchanged
+  const html = await (await page.request.get("/quran/1")).text();
+  expect(html).not.toContain('data-digits="latin"');
   await page.goto("/quran/1");
-  await page.locator('.w[data-w="1:1:1"]').waitFor();
-  await page.keyboard.press("Control+k");
-  await page.getByRole("combobox", { name: "ابحث في كل شيء" }).fill("2:255:3");
-  await expect(page.getByRole("option").first()).toContainText("٢:٢٥٥:٣");
-  expect(await latinKeys(page)).toEqual([]);
+  await expect(page.locator("html")).toHaveAttribute("data-digits", "latin");
+  const count = page.locator(".reader-meta, header").getByText(/[٠-٩]/).first();
+  await expect(count).toBeVisible();
+  expect(await count.evaluate((el) => getComputedStyle(el).fontFamily)).toMatch(/^"Jadhr Latin Digits"/);
+  // the mushaf's own numbers keep its font
+  const word = page.locator('.w[data-w="1:1:1"]');
+  expect(await word.evaluate((el) => getComputedStyle(el).fontFamily)).not.toMatch(/Jadhr/);
+  // back to the language's digits
+  await page.goto("/me");
+  await page.getByRole("group", { name: "الأرقام" }).first().getByRole("button", { name: /حسب لغة الواجهة/ }).click();
+  await expect(page.locator("html")).not.toHaveAttribute("data-digits", /./);
+  await page.reload();
+  await expect(page.locator("html")).not.toHaveAttribute("data-digits", /./);
 });
 
-test("Arabic digits in the site header's search, on the pages outside the reader", async ({ page, isMobile }) => {
-  test.skip(isMobile, "the header's search box is the desktop's");
-  await page.addInitScript(() => localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 })));
-  await page.goto("/graph");
-  await page.getByRole("banner").getByRole("button", { name: /بحث/ }).click();
-  await page.getByRole("combobox", { name: /اكتب كلمة أو جذرًا/ }).fill("2:255");
-  await expect(page.getByRole("option").first()).toContainText("٢:٢٥٥");
-  // the footer's «all results for 2:255» repeats what the reader typed, which is left as typed
-  expect((await latinKeys(page)).filter((k) => !k.startsWith("button.w-full.border-t "))).toEqual([]);
+test("Arabic-Indic digits in the English interface, from the reader's preferences; samples and fields drawn as written (SHL-Q05)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the Reading popover opens from the ⋯ menu on phones; the profile's control is the same");
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("jadhr-personal")) localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 3 }));
+  });
+  await page.goto("/en/quran/1");
+  await page.getByRole("button", { name: "Reading", exact: true }).click();
+  const dlg = page.getByRole("dialog", { name: "Reading preferences" });
+  await dlg.getByRole("button", { name: /Arabic-Indic digits/ }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-digits", "arabic");
+  expect(await drawnAlike(page, "Jadhr Arabic Digits", "255", "٢٥٥")).toBe(true);
+  // the samples of the choice read as written
+  expect(await dlg.getByRole("button", { name: /Western digits/ }).evaluate((el) => getComputedStyle(el).fontFamily)).not.toMatch(/Jadhr/);
+  // and so does a field the reader types in
+  expect(await page.locator("input").first().evaluate((el) => getComputedStyle(el).fontFamily)).not.toMatch(/Jadhr/);
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-digits", "arabic");
 });

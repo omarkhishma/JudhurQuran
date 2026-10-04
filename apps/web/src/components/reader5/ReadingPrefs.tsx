@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/Switch";
 import { formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { usePrefs } from "@/lib/reader/store";
+import { DigitsPref } from "@/components/ui/DigitsPref";
 
 type Work = { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string };
 type Dict = { key: string; name_ar: string; name_en: string; author_ar: string; author_en: string; death_hijri: number | null; death_ce: number | null };
@@ -61,6 +62,8 @@ export function ReadingPrefs({ onClose }: { onClose: (how?: "key" | "pointer") =
       <Switch checked={p.imlaeiLine} onChange={(v) => p.set({ imlaeiLine: v })} label={t("prefImlaei")} hint={t("prefImlaeiHint")} />
       <Switch checked={p.marks} onChange={(v) => p.set({ marks: v })} label={t("prefMarks")} hint={t("prefMarksHint")} />
       <Switch checked={translitOn} onChange={(v) => p.set({ translitLine: v })} label={t("prefTranslit")} hint={t("prefTranslitHint")} />
+      {/* the digits of every page, kept in this browser (SHL-Q05) */}
+      <DigitsPref />
       <Switch checked={p.tintRoot} onChange={(v) => p.set({ tintRoot: v })} label={t("prefTint")} hint={t("prefTintHint")} />
       <Switch checked={p.grammarBand} onChange={(v) => p.set({ grammarBand: v })} label={t("prefGrammar")} hint={t("prefGrammarHint")} />
       <Switch checked={p.wordStates} onChange={(v) => p.set({ wordStates: v })} label={t("prefStates")} hint={t("prefStatesHint")} />

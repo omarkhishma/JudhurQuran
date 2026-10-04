@@ -10,6 +10,66 @@
   font-display: swap;
 }
 
+/* The digits preference (SHL-Q05, lib/digits.ts): faces of a kilobyte each, made from IBM Plex Sans Arabic and IBM Plex
+   Mono (SIL OFL 1.1, public/fonts/OFL-IBMPlex.txt; scripts/digit-fonts.py), that draw one set of digits in the other
+   set's shapes. Set first in each stack while <html data-digits> asks for it; the mushaf's own font is never changed. */
+@font-face {
+  font-family: "Jadhr Latin Digits";
+  src: url("/fonts/jadhr-digits-latin-400.woff2") format("woff2");
+  font-weight: 400;
+  unicode-range: U+0660-0669, U+06F0-06F9;
+  font-display: block;
+}
+@font-face {
+  font-family: "Jadhr Latin Digits";
+  src: url("/fonts/jadhr-digits-latin-500.woff2") format("woff2");
+  font-weight: 500;
+  unicode-range: U+0660-0669, U+06F0-06F9;
+  font-display: block;
+}
+@font-face {
+  font-family: "Jadhr Latin Digits";
+  src: url("/fonts/jadhr-digits-latin-600.woff2") format("woff2");
+  font-weight: 600;
+  unicode-range: U+0660-0669, U+06F0-06F9;
+  font-display: block;
+}
+@font-face {
+  font-family: "Jadhr Latin Digits Mono";
+  src: url("/fonts/jadhr-digits-latin-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  unicode-range: U+0660-0669, U+06F0-06F9;
+  font-display: block;
+}
+@font-face {
+  font-family: "Jadhr Latin Digits Mono";
+  src: url("/fonts/jadhr-digits-latin-mono-500.woff2") format("woff2");
+  font-weight: 500;
+  unicode-range: U+0660-0669, U+06F0-06F9;
+  font-display: block;
+}
+@font-face {
+  font-family: "Jadhr Arabic Digits";
+  src: url("/fonts/jadhr-digits-arabic-400.woff2") format("woff2");
+  font-weight: 400;
+  unicode-range: U+0030-0039;
+  font-display: block;
+}
+@font-face {
+  font-family: "Jadhr Arabic Digits";
+  src: url("/fonts/jadhr-digits-arabic-500.woff2") format("woff2");
+  font-weight: 500;
+  unicode-range: U+0030-0039;
+  font-display: block;
+}
+@font-face {
+  font-family: "Jadhr Arabic Digits";
+  src: url("/fonts/jadhr-digits-arabic-600.woff2") format("woff2");
+  font-weight: 600;
+  unicode-range: U+0030-0039;
+  font-display: block;
+}
+
 /* ─── Design tokens (handoff 02-design-tokens; seven colours darkened and a dark amber added for AA on every surface,
    docs/DESIGN-SYSTEM.md §1, checked by src/lib/tokens.test.ts) ───────────── */
 :root {
@@ -74,6 +134,26 @@
   --sh: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 14px 30px -14px rgba(0, 0, 0, 0.85);
   --sh-open: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 34px 64px -20px rgba(0, 0, 0, 0.9);
   color-scheme: dark;
+}
+
+/* the stacks with the chosen digits first; a code sample, a form field and a sample of each choice stay as written */
+:root[data-digits="latin"] {
+  --font-ui: "Jadhr Latin Digits", var(--font-plex-arabic), var(--font-plex-sans), "Jadhr Symbols", system-ui, sans-serif;
+  --font-latin: "Jadhr Latin Digits", var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: "Jadhr Latin Digits Mono", var(--font-plex-mono), ui-monospace, monospace;
+  --font-classical: "Jadhr Latin Digits", var(--font-amiri), "Amiri", "Jadhr Symbols", serif;
+}
+:root[data-digits="arabic"] {
+  --font-ui: "Jadhr Arabic Digits", var(--font-plex-arabic), var(--font-plex-sans), "Jadhr Symbols", system-ui, sans-serif;
+  --font-latin: "Jadhr Arabic Digits", var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: "Jadhr Arabic Digits", var(--font-plex-mono), ui-monospace, monospace;
+  --font-classical: "Jadhr Arabic Digits", var(--font-amiri), "Amiri", "Jadhr Symbols", serif;
+}
+:root[data-digits] :is(pre, code, kbd, samp) {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+}
+:root[data-digits] :is(input, textarea, select, .digits-raw) {
+  font-family: var(--font-plex-arabic), var(--font-plex-sans), system-ui, sans-serif;
 }
 
 @theme inline {
