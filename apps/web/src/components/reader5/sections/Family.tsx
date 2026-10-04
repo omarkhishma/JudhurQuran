@@ -9,6 +9,24 @@ import { useReader } from "@/lib/reader/store";
 import type { LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
 import { FORM_TERM } from "@/lib/terms";
 
+/** «ما في كتب الصرف»: the pattern's view, where the sarf books' own words on it are quoted (P3.3) — shown only when
+ * they say something on it. */
+export function ClassicalLink({ p }: { p: PatternInfo }) {
+  const t = useTranslations("rd");
+  const openShapes = useReader((s) => s.openShapes);
+  if (!p.classical) return null;
+  return (
+    <button
+      type="button"
+      className="text-[11px] text-t3 underline-offset-2 hover:text-t1 hover:underline"
+      onClick={() => openShapes(p.slug)}
+      title={t("classicalLinkTitle", { p: p.ar.full })}
+    >
+      {t("classicalLink")}
+    </button>
+  );
+}
+
 /** What a pattern does, from the editorial catalogue (P3.3) when written, else its verb form's term. */
 export function PatternFunction({ p }: { p: PatternInfo }) {
   const t = useTranslations("rd");
@@ -104,6 +122,7 @@ export function FamilySection({ w }: { w: WordPayload }) {
                 <span className="mono text-[11px] text-t3" dir="ltr">{g.pattern.ar.translit}</span>
                 <span className="flex-1" />
                 <span className="text-[11.5px]"><PatternFunction p={g.pattern} /></span>
+                <ClassicalLink p={g.pattern} />
               </>
             ) : (
               <span className="text-[12px] text-t3"><Term id="wazn">{t("noPatternGroup")}</Term></span>

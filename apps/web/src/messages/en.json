@@ -2332,6 +2332,8 @@
     "lanePage": "p. {page}",
     "laneRule_vocalised": "matched to the word by its vowels",
     "laneRule_verbForm": "matched to the word by its verb form",
+    "classicalLink": "In the books of sarf",
+    "classicalLinkTitle": "What the books of sarf say on the pattern {p}, in their words",
     "prefMarks": "Vowel marks in the dictionaries, hadith, books and your texts",
     "prefMarksHint": "The mushaf always keeps all of its marks"
   },

@@ -20,6 +20,8 @@ export type PatternInfo = {
   lemma_count: number;
   occurrences: number;
   method?: string | null;
+  /** whether the books of sarf say something on the pattern (P3.3): the tables point to it */
+  classical?: boolean;
 };
 
 /** al-Suyūṭī's entry on a word reported as non-Arabic (P3.7a), verbatim. */
@@ -212,10 +214,10 @@ export type DictEntry = {
   page_ref: string | null;
   excerpt: string;
   length: number;
-};
-export type DictWork = {
   /** Lane's paragraph on this word in the article (P3.1): its index, his headword, its page, how it was matched */
   word?: { para: number; headword: string; page_ref: string | null; rule: "vocalised" | "verb-form"; text: string }[];
+};
+export type DictWork = {
   id: string;
   title_ar: string;
   title_en: string;

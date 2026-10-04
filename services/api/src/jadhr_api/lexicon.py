@@ -393,6 +393,7 @@ def word_payload(
         mufradat["subentries"] = board.marked(conn, "mufradat_subentries", mufradat["subentries"])
     pattern_out = _pattern_out(pattern) | {"method": lem["pattern_method"]} if pattern else None
     board.patterns(conn, [pattern_out])
+    _mark_classical(conn, [pattern_out, *[g["pattern"] for g in family]])
     return {
         "slug": lem["slug"],
         "lemma_id": lem["id"],
@@ -597,6 +598,26 @@ def pattern_payload(conn: Connection, slug: str, limit: int = 200) -> dict[str, 
 
 _CLASSICAL_COLS = """id, source_id, kind, section, heading_ar, pattern_ar, form_number, match_method,
                      match_confidence, text_ar, examples_ar, cue_ar, locator, page_vol, page, status, seq"""
+
+
+def _mark_classical(conn: Connection, patterns: list[dict[str, Any] | None]) -> None:
+    """Whether the books of sarf say something on each pattern (P3.3): the Family and Shapes rows then point to it,
+    in one read for all of them."""
+    ps = [p for p in patterns if p]
+    if not ps:
+        return
+    have = {
+        r["slug"]
+        for r in rows(
+            conn,
+            """select distinct s.slug from unnest(cast(:slugs as text[])) s(slug)
+                 join content.pattern_functions f on f.kind <> 'commentary'
+                  and (s.slug = any(f.pattern_slugs) or s.slug = any(f.inflected_slugs) or s.slug = any(f.suffix_slugs))""",
+            {"slugs": sorted({p["slug"] for p in ps})},
+        )
+    }
+    for p in ps:
+        p["classical"] = p["slug"] in have
 
 
 def pattern_classical(conn: Connection, slug: str) -> dict[str, Any]:

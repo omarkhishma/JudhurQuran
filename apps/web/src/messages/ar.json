@@ -2332,6 +2332,8 @@
     "lanePage": "ص {page}",
     "laneRule_vocalised": "رُبطت بالكلمة بحركاتها",
     "laneRule_verbForm": "رُبطت بالكلمة بباب الفعل",
+    "classicalLink": "ما في كتب الصرف",
+    "classicalLinkTitle": "ما تقوله كتب الصرف في وزن {p}، بنصّها",
     "prefMarks": "التشكيل في المعاجم والحديث والكتب ونصوصك",
     "prefMarksHint": "نص المصحف يبقى بتشكيله كاملًا دائمًا"
   },

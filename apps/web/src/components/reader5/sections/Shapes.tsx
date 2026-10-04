@@ -12,7 +12,7 @@ import { useReader } from "@/lib/reader/store";
 import { FORM_TERM } from "@/lib/terms";
 import type { ClassicalRow, ClassicalSource, LemmaLite, PatternInfo, WordPayload } from "@/lib/reader/types";
 import { CreditLine } from "../CreditLine";
-import { PatternFunction, WordChip } from "./Family";
+import { ClassicalLink, PatternFunction, WordChip } from "./Family";
 import { ReviewMark, ReviewStatus } from "../BoardMark";
 
 // The closed list the root table checks against (RDR-227, 228, adapted): the ten derived-verb forms of
@@ -61,7 +61,9 @@ export function ShapesSection({ w, chapter }: { w: WordPayload; chapter: number 
         </button>
         <span className="mono block text-[10.5px] text-t3" dir="ltr">{g.pattern!.ar.translit}</span>
       </td>
-      <td className="text-[11.5px] text-t2"><PatternFunction p={g.pattern!} /></td>
+      <td className="text-[11.5px] text-t2">
+        <PatternFunction p={g.pattern!} /> <ClassicalLink p={g.pattern!} />
+      </td>
       <td>
         <div className="flex flex-wrap gap-1">
           {g.members.map((m) => (
