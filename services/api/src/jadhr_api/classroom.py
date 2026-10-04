@@ -540,6 +540,17 @@ def pack(u: dict[str, Any], lid: str) -> dict[str, Any]:
             "select location, root, text from classroom.notes where lesson_id = :l order by position",
             {"l": lesson["id"]},
         )
+        # a note on a word carries the word as the mushaf writes it, so the file reads without the site
+        with connect() as cc:
+            written = {
+                w["location"]: w["text_uthmani"]
+                for w in rows(
+                    cc,
+                    "select location, text_uthmani from content.words where location = any(:l)",
+                    {"l": [n["location"] for n in notes if n["location"]]},
+                )
+            }
+        notes = [{**n, "word": written.get(n["location"]) if n["location"] else None} for n in notes]
         out = _lesson_out(conn, lesson, "instructor", u)
         return {
             "format": "jadhr-lesson-pack",
@@ -781,3 +792,312 @@ def progress(u: dict[str, Any], lid: str, day: Any, finished: Any = None, minute
                 {"f": d if finished else None, "l": lesson["id"], "u": u["id"]},
             )
         return _lesson_out(conn, lesson, "member", u)["mine"]
+
+
+# ─── what the instructor sees (P9.2b) ───────────────────────────────────────────
+
+
+def _teaching(conn: Connection, u: dict[str, Any], lid: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    lesson, c, role = _lesson_role(conn, u, lid)
+    if role != "instructor":
+        raise Refusal(403, "not_instructor", "Only the class's instructor sees this.")
+    return lesson, c
+
+
+def _members(conn: Connection, c: dict[str, Any]) -> list[dict[str, Any]]:
+    """The class's members, each with whether their own detail may be shown (their choice; never for minors)."""
+    return [
+        {**m, "shows": bool(m["detail_opt_in"]) and not c["minors"]}
+        for m in q(
+            conn,
+            """select m.user_id, m.detail_opt_in, u.display_name from classroom.members m
+               join accounts.users u on u.id = m.user_id where m.class_id = :c order by m.joined_at""",
+            {"c": c["id"]},
+        )
+    ]
+
+
+def _cell(learners: int, total: int) -> dict[str, Any]:
+    """A number about a word or a root: counted from FEW learners or more, else said to be few."""
+    return {"learners": learners, "total": total} if learners >= FEW else {"few": True}
+
+
+def heat(u: dict[str, Any], lid: str) -> dict[str, Any]:
+    """A lesson as its instructor sees it: the class's totals — opened, finished, the median minutes — and who needs a
+    reminder (by name only for those who chose it); per word and kind, how many learners and how often, once the class
+    has FLOOR members and from FEW learners up; the roots most looked up. Never a learner's own row."""
+    with tx() as conn:
+        lesson, c = _teaching(conn, u, lid)
+        members = _members(conn, c)
+        shows = {str(m["user_id"]): (m["display_name"] or None) for m in members if m["shows"]}
+        progress = {
+            str(p["user_id"]): p
+            for p in q(conn, "select * from classroom.progress where lesson_id = :l", {"l": lesson["id"]})
+        }
+        ids = [str(m["user_id"]) for m in members]
+        opened = [i for i in ids if i in progress]
+        finished = [i for i in opened if progress[i]["finished_on"]]
+        quick = [i for i in finished if progress[i]["minutes"] < 3]
+        minutes = sorted(progress[i]["minutes"] for i in opened if progress[i]["minutes"] > 0)
+        median = (
+            minutes[len(minutes) // 2]
+            if len(minutes) % 2
+            else (sum(minutes[len(minutes) // 2 - 1 : len(minutes) // 2 + 1]) / 2 if minutes else None)
+        )
+        floor_met = len(ids) >= FLOOR
+        words: dict[str, dict[str, Any]] = {}
+        roots: list[dict[str, Any]] = []
+        if floor_met:
+            for r in q(
+                conn,
+                """select location, kind, count(distinct user_id)::int as learners, sum(n)::int as total
+                   from classroom.counts where lesson_id = :l and user_id = any(cast(:u as uuid[])) group by location, kind""",
+                {"l": lesson["id"], "u": ids},
+            ):
+                words.setdefault(r["location"], {})[r["kind"]] = _cell(r["learners"], r["total"])
+            with connect() as cc:
+                found = rows(
+                    cc,
+                    "select w.location, r.key, r.spaced from content.words w join content.roots r on r.id = w.root_id where w.location = any(:l)",
+                    {"l": [k for k in words]},
+                )
+            root_of = {f["location"]: (f["key"], f["spaced"]) for f in found}
+            by: dict[tuple[str, str], tuple[set[str], int]] = {}
+            for r in q(
+                conn,
+                """select location, user_id, sum(n)::int as n from classroom.counts
+                   where lesson_id = :l and kind = 'lookup' and user_id = any(cast(:u as uuid[])) group by location, user_id""",
+                {"l": lesson["id"], "u": ids},
+            ):
+                k = root_of.get(r["location"])
+                if k:
+                    who, total = by.get(k, (set(), 0))
+                    by[k] = (who | {str(r["user_id"])}, total + r["n"])
+            roots = [
+                {"key": k[0], "spaced": k[1], **_cell(len(who), total)}
+                for k, (who, total) in sorted(by.items(), key=lambda x: -x[1][1])[:4]
+            ]
+        nudges = q1(
+            conn,
+            "select count(*)::int as sent, count(seen_at)::int as seen from classroom.nudges where lesson_id = :l",
+            {"l": lesson["id"]},
+        )
+
+        def named(group: list[str]) -> list[str | None]:
+            return [shows[i] for i in group if i in shows]
+
+        return {
+            "members": len(ids),
+            "floor": FLOOR,
+            "few": FEW,
+            "floor_met": floor_met,
+            "minors": c["minors"],
+            "opened": len(opened),
+            "finished": len(finished),
+            "median_minutes": median,
+            "not_started": {
+                "count": len(ids) - len(opened),
+                "named": named([i for i in ids if i not in progress]),
+            },
+            "quick": {"count": len(quick), "named": named(quick)},
+            "words": words,
+            "roots": roots,
+            "nudges": nudges,
+        }
+
+
+def matrix(u: dict[str, Any], lid: str, layer: str) -> dict[str, Any]:
+    """The class's learners by the lesson's roots (D13's matrix): a row for each learner who chose to show their
+    detail, the others together in one row when there are FEW of them or more; cells summed for one kind."""
+    if layer not in KINDS:
+        raise Refusal(422, "bad_layer", "No such layer.")
+    with tx() as conn:
+        lesson, c = _teaching(conn, u, lid)
+        members = _members(conn, c)
+        ids = [str(m["user_id"]) for m in members]
+        counted = q(
+            conn,
+            """select location, user_id, sum(n)::int as n from classroom.counts
+               where lesson_id = :l and kind = :k and user_id = any(cast(:u as uuid[])) group by location, user_id""",
+            {"l": lesson["id"], "k": layer, "u": ids},
+        )
+        with connect() as cc:
+            found = rows(
+                cc,
+                "select w.location, r.key from content.words w join content.roots r on r.id = w.root_id where w.location = any(:l)",
+                {"l": list({x["location"] for x in counted})},
+            )
+            root_of = {f["location"]: f["key"] for f in found}
+            sums: dict[str, int] = {}
+            for x in counted:
+                if root_of.get(x["location"]):
+                    sums[root_of[x["location"]]] = sums.get(root_of[x["location"]], 0) + x["n"]
+            keys = list(dict.fromkeys([*lesson["roots"], *sorted(sums, key=lambda k: -sums[k])]))[:12]
+            spaced = {
+                r["key"]: r["spaced"]
+                for r in rows(cc, "select key, spaced from content.roots where key = any(:k)", {"k": keys})
+            }
+        columns = [{"key": k, "spaced": spaced.get(k, k)} for k in keys]
+        if len(ids) < FLOOR:
+            return {
+                "floor_met": False,
+                "floor": FLOOR,
+                "members": len(ids),
+                "columns": columns,
+                "rows": [],
+                "others": None,
+            }
+        cells: dict[str, dict[str, int]] = {}
+        for x in counted:
+            k = root_of.get(x["location"])
+            if k is not None and k in keys:
+                row = cells.setdefault(str(x["user_id"]), {})
+                row[k] = row.get(k, 0) + x["n"]
+        shown = [m for m in members if m["shows"]]
+        rest = [str(m["user_id"]) for m in members if not m["shows"]]
+        others = None
+        if len(rest) >= FEW:
+            agg: dict[str, int] = {}
+            for i in rest:
+                for k, n in cells.get(i, {}).items():
+                    agg[k] = agg.get(k, 0) + n
+            others = {"count": len(rest), "cells": agg}
+        return {
+            "floor_met": True,
+            "floor": FLOOR,
+            "members": len(ids),
+            "columns": columns,
+            "rows": [{"name": m["display_name"], "cells": cells.get(str(m["user_id"]), {})} for m in shown],
+            "others": others,
+            "others_few": 0 < len(rest) < FEW,
+        }
+
+
+def mine(u: dict[str, Any], lid: str) -> dict[str, Any]:
+    """What this member's reader sent for a lesson, as the server keeps it: the member may always see it."""
+    with tx() as conn:
+        lesson, _, role = _lesson_role(conn, u, lid)
+        if role != "member":
+            raise Refusal(403, "not_member", "This is a member's own.")
+        return {
+            "counts": q(
+                conn,
+                """select location, kind, sum(n)::int as n from classroom.counts where lesson_id = :l and user_id = :u
+                   group by location, kind order by location, kind""",
+                {"l": lesson["id"], "u": u["id"]},
+            )
+        }
+
+
+# the instructor's lesson notes (CLS-19, 20): saved, reordered, removed
+
+
+def notes(u: dict[str, Any], lid: str) -> dict[str, Any]:
+    with tx() as conn:
+        lesson, _ = _teaching(conn, u, lid)
+        return {"data": _notes_of(conn, lesson["id"])}
+
+
+def _notes_of(conn: Connection, lid: Any) -> list[dict[str, Any]]:
+    return [
+        {"id": str(n["id"]), "location": n["location"], "root": n["root"], "text": n["text"]}
+        for n in q(
+            conn,
+            "select * from classroom.notes where lesson_id = :l order by position, created_at",
+            {"l": lid},
+        )
+    ]
+
+
+def add_note(u: dict[str, Any], lid: str, location: Any, root: Any, text: Any) -> dict[str, Any]:
+    with tx() as conn:
+        lesson, _ = _teaching(conn, u, lid)
+        loc = (
+            location
+            if isinstance(location, str) and _PLACE.match(location) and _in(location, lesson["ranges"])
+            else None
+        )
+        rk = _str(root, 8) or None
+        body = _str(text, 1000)
+        if not loc and not rk and not body:
+            raise Refusal(422, "empty", "A note names a word, a root, or says something.")
+        n = q1(
+            conn, "select count(*)::int as n from classroom.notes where lesson_id = :l", {"l": lesson["id"]}
+        )["n"]  # type: ignore[index]
+        if n >= 100:
+            raise Refusal(422, "too_many", "A lesson keeps a hundred notes at most.")
+        if loc and q1(
+            conn,
+            "select 1 as x from classroom.notes where lesson_id = :l and location = :loc",
+            {"l": lesson["id"], "loc": loc},
+        ):
+            raise Refusal(409, "already", "This word is in the lesson notes already.")
+        q(
+            conn,
+            "insert into classroom.notes (lesson_id, location, root, text, position) values (:l, :loc, :r, :t, :p) returning id",
+            {"l": lesson["id"], "loc": loc, "r": rk, "t": body, "p": n},
+        )
+        return {"data": _notes_of(conn, lesson["id"])}
+
+
+def edit_note(u: dict[str, Any], nid: str, text: Any = None, move: Any = None) -> dict[str, Any]:
+    with tx() as conn:
+        n = q1(conn, "select * from classroom.notes where id = :n", {"n": _uuid(nid, "note")})
+        if n is None:
+            raise Refusal(404, "not_found", "No such note.")
+        lesson, _ = _teaching(conn, u, str(n["lesson_id"]))
+        if text is not None:
+            q(
+                conn,
+                "update classroom.notes set text = :t where id = :n returning id",
+                {"t": _str(text, 1000), "n": n["id"]},
+            )
+        if move in (-1, 1):
+            order = [
+                x["id"]
+                for x in q(
+                    conn,
+                    "select id from classroom.notes where lesson_id = :l order by position, created_at",
+                    {"l": lesson["id"]},
+                )
+            ]
+            i = order.index(n["id"])
+            j = i + move
+            if 0 <= j < len(order):
+                order[i], order[j] = order[j], order[i]
+                for p, x in enumerate(order):
+                    q(
+                        conn,
+                        "update classroom.notes set position = :p where id = :n returning id",
+                        {"p": p, "n": x},
+                    )
+        return {"data": _notes_of(conn, lesson["id"])}
+
+
+def delete_note(u: dict[str, Any], nid: str) -> dict[str, Any]:
+    with tx() as conn:
+        n = q1(conn, "select * from classroom.notes where id = :n", {"n": _uuid(nid, "note")})
+        if n is None:
+            raise Refusal(404, "not_found", "No such note.")
+        lesson, _ = _teaching(conn, u, str(n["lesson_id"]))
+        q(conn, "delete from classroom.notes where id = :n returning id", {"n": n["id"]})
+        return {"data": _notes_of(conn, lesson["id"])}
+
+
+def nudge(u: dict[str, Any], lid: str) -> dict[str, Any]:
+    """A reminder, gently, to every member who has not opened the lesson: a notice on their own classroom page, never
+    a message sent anywhere. The instructor learns how many, not who (unless they chose to be shown)."""
+    with tx() as conn:
+        lesson, c = _teaching(conn, u, lid)
+        if datetime.now(UTC) > open_until(lesson):
+            raise Refusal(409, "closed", "This lesson is not open.")
+        sent = q(
+            conn,
+            """insert into classroom.nudges (lesson_id, user_id)
+               select :l, m.user_id from classroom.members m
+               where m.class_id = :c and not exists (select 1 from classroom.progress p where p.lesson_id = :l and p.user_id = m.user_id)
+               on conflict (lesson_id, user_id) do update set sent_at = now(), seen_at = null
+               returning user_id""",
+            {"l": lesson["id"], "c": c["id"]},
+        )
+        return {"sent": len(sent)}

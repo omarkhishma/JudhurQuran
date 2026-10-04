@@ -192,6 +192,65 @@ def progress(u: User, lesson_id: Id, body: _Progress) -> ORJSONResponse:
     return ok(classroom.progress(u, lesson_id, body.day, body.finished, body.minutes))
 
 
+class _Note(BaseModel):
+    location: str | None = Field(None, max_length=20)
+    root: str | None = Field(None, max_length=8)
+    text: str = Field("", max_length=1000)
+
+
+class _NoteEdit(BaseModel):
+    text: str | None = Field(None, max_length=1000)
+    move: int | None = Field(None, ge=-1, le=1)
+
+
+@router.get(
+    "/lessons/{lesson_id}/heat",
+    summary="A lesson as its instructor sees it: totals, and per word above the floor",
+)
+def heat(u: User, lesson_id: Id) -> ORJSONResponse:
+    return ok(classroom.heat(u, lesson_id))
+
+
+@router.get(
+    "/lessons/{lesson_id}/matrix", summary="Learners who chose to show their detail by the lesson's roots"
+)
+def matrix(u: User, lesson_id: Id, layer: str = "lookup") -> ORJSONResponse:
+    return ok(classroom.matrix(u, lesson_id, layer))
+
+
+@router.get("/lessons/{lesson_id}/mine", summary="What my reader sent for a lesson, as the server keeps it")
+def mine(u: User, lesson_id: Id) -> ORJSONResponse:
+    return ok(classroom.mine(u, lesson_id))
+
+
+@router.get("/lessons/{lesson_id}/notes", summary="The instructor's lesson notes")
+def notes(u: User, lesson_id: Id) -> ORJSONResponse:
+    return ok(classroom.notes(u, lesson_id))
+
+
+@router.post("/lessons/{lesson_id}/notes", summary="A lesson note: a word, a root, a line")
+def add_note(u: User, lesson_id: Id, body: _Note) -> ORJSONResponse:
+    return ok(classroom.add_note(u, lesson_id, body.location, body.root, body.text), status=201)
+
+
+@router.patch("/notes/{note_id}", summary="Change a lesson note's words, or move it up or down")
+def edit_note(u: User, note_id: Id, body: _NoteEdit) -> ORJSONResponse:
+    return ok(classroom.edit_note(u, note_id, body.text, body.move))
+
+
+@router.delete("/notes/{note_id}", summary="Remove a lesson note")
+def delete_note(u: User, note_id: Id) -> ORJSONResponse:
+    return ok(classroom.delete_note(u, note_id))
+
+
+@router.post(
+    "/lessons/{lesson_id}/nudges",
+    summary="Remind the members who have not opened a lesson (a notice, not a message)",
+)
+def nudge(u: User, lesson_id: Id) -> ORJSONResponse:
+    return ok(classroom.nudge(u, lesson_id))
+
+
 @router.get("/me/active", summary="The open lessons of my classes: the verses my reader counts for")
 def active(u: User) -> ORJSONResponse:
     return ok(classroom.active(u))

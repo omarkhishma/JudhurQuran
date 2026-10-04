@@ -13,6 +13,7 @@ import pytest
 from fastapi.testclient import TestClient
 from jadhr_api import accounts, contrib
 from jadhr_api.classroom import CONSENT_VERSION
+from jadhr_api.db import connect, rows
 from jadhr_api.main import app
 
 client = TestClient(app)
@@ -342,4 +343,144 @@ def test_a_members_reader_sends_counts_only_for_an_open_lessons_verses(
             )
         )
         == "closed"
+    )
+
+
+@pytest.fixture
+def cohort(people: dict[str, dict[str, str]]) -> Iterator[list[dict[str, str]]]:
+    """Five more readers, signed in and named, to make a class above the floor."""
+    tag = uuid.uuid4().hex[:6]
+    emails = [f"class-k{i}-{tag}@example.org" for i in range(5)]
+    hs = []
+    for i, e in enumerate(emails):
+        h = _sign_in(e)
+        client.patch("/api/v1/me", headers=h, json={"display_name": f"k{i}-{tag}"})
+        hs.append(h)
+    yield hs
+    with accounts.tx() as conn:
+        for e in emails:
+            accounts.q(conn, "delete from accounts.users where email = :e returning id", {"e": e})
+            accounts.q(conn, "delete from accounts.login_tokens where email = :e returning email", {"e": e})
+
+
+def test_the_instructor_sees_totals_above_the_floor_and_detail_only_by_choice(
+    people: dict[str, dict[str, str]], cohort: list[dict[str, str]]
+) -> None:
+    """P9.2b: below five members no number about a word; a word counted from fewer than three learners is "few"; the
+    roots most looked up; opened, finished, the median minutes; who needs a reminder named only by their choice, never
+    in a class for minors; the matrix's rows only for those who chose, the others together when three or more."""
+    t = people["t"]
+    learners = [people["a"], people["b"], *cohort[:2]]
+    c = _class(t)
+    for i, h in enumerate(learners):
+        _join(h, c["join_code"], detail=i == 0)  # only the first shows their detail
+    lesson = client.post(
+        f"/api/v1/classroom/classes/{c['id']}/lessons",
+        headers=t,
+        json={"title": "ل", "ranges": [{"surah": 1, "from": 1, "to": 7}], "roots": ["حمد"]},
+    ).json()
+    url = f"/api/v1/classroom/lessons/{lesson['id']}"
+    today = datetime.now(UTC).date().isoformat()
+
+    def look(h: dict[str, str], *places: str) -> None:
+        r = client.post(
+            f"{url}/counts",
+            headers=h,
+            json={"day": today, "items": [{"location": p, "kind": "lookup"} for p in places]},
+        )
+        assert r.status_code == 200, r.text
+
+    for h in learners[:3]:
+        look(h, "1:2:3", "1:2:1")  # رب by three, الحمد by three
+    look(learners[3], "1:5:2")  # one learner only
+    client.post(f"{url}/progress", headers=learners[0], json={"day": today, "minutes": 2, "finished": True})
+    client.post(f"{url}/progress", headers=learners[1], json={"day": today, "minutes": 10})
+    # four members: under the floor, no number about a word
+    h4 = client.get(f"{url}/heat", headers=t).json()
+    assert (h4["members"], h4["floor_met"], h4["words"], h4["roots"]) == (4, False, {}, [])
+    assert (h4["opened"], h4["finished"], h4["median_minutes"]) == (2, 1, 6.0)
+    assert h4["not_started"]["count"] == 2 and h4["not_started"]["named"] == []  # neither chose to be named
+    assert h4["quick"] == {"count": 1, "named": [h4["quick"]["named"][0]]} and h4["quick"]["named"][
+        0
+    ].startswith("a-")
+    assert client.get(f"{url}/heat", headers=learners[0]).status_code == 403
+    assert client.get(f"{url}/matrix", headers=t).json()["floor_met"] is False
+    # a fifth member: the numbers appear, a word counted from one learner only said to be few
+    _join(cohort[2], c["join_code"])
+    h5 = client.get(f"{url}/heat", headers=t).json()
+    assert h5["floor_met"] and h5["words"]["1:2:3"]["lookup"] == {"learners": 3, "total": 3}
+    assert h5["words"]["1:5:2"]["lookup"] == {"few": True}
+    top = {r["key"]: r for r in h5["roots"]}
+    assert {k: (v.get("learners"), v.get("total"), v.get("few")) for k, v in top.items()} == {
+        "ربب": (3, 3, None),
+        "حمد": (3, 3, None),
+        "عبد": (None, None, True),
+    }
+    # the matrix: one named row (the one who chose), the four others together
+    m = client.get(f"{url}/matrix", headers=t, params={"layer": "lookup"}).json()
+    assert m["columns"][0]["key"] == "حمد" and len(m["rows"]) == 1 and m["rows"][0]["name"].startswith("a-")
+    assert (
+        m["rows"][0]["cells"] == {"ربب": 1, "حمد": 1}
+        and m["others"]["count"] == 4
+        and m["others"]["cells"]["ربب"] == 2
+    )
+    # a class for minors: no one is named, whatever they chose
+    client.patch(f"/api/v1/classroom/classes/{c['id']}", headers=t, json={"minors": True})
+    hm = client.get(f"{url}/heat", headers=t).json()
+    assert hm["quick"]["named"] == [] and client.get(f"{url}/matrix", headers=t).json()["rows"] == []
+    # a member sees what their own reader sent
+    own = client.get(f"{url}/mine", headers=learners[3]).json()["counts"]
+    assert own == [{"location": "1:5:2", "kind": "lookup", "n": 1}]
+    assert client.get(f"{url}/mine", headers=t).status_code == 403
+
+
+def test_lesson_notes_and_a_gentle_reminder(people: dict[str, dict[str, str]]) -> None:
+    t, a, b = people["t"], people["a"], people["b"]
+    c = _class(t)
+    _join(a, c["join_code"])
+    _join(b, c["join_code"])
+    lesson = client.post(
+        f"/api/v1/classroom/classes/{c['id']}/lessons",
+        headers=t,
+        json={"title": "ل", "ranges": [{"surah": 1, "from": 1, "to": 7}]},
+    ).json()
+    url = f"/api/v1/classroom/lessons/{lesson['id']}"
+    n1 = client.post(f"{url}/notes", headers=t, json={"location": "1:2:3", "text": "ربّ: المالك المصلح"})
+    assert n1.status_code == 201
+    assert _code(client.post(f"{url}/notes", headers=t, json={"location": "1:2:3"})) == "already"
+    assert (
+        _code(client.post(f"{url}/notes", headers=t, json={"location": "2:5:1"})) == "empty"
+    )  # outside the lesson, and nothing else
+    notes = client.post(f"{url}/notes", headers=t, json={"root": "حمد", "text": "الحمد"}).json()["data"]
+    assert [n["location"] or n["root"] for n in notes] == ["1:2:3", "حمد"]
+    moved = client.patch(f"/api/v1/classroom/notes/{notes[1]['id']}", headers=t, json={"move": -1}).json()[
+        "data"
+    ]
+    assert [n["root"] for n in moved] == ["حمد", None]
+    assert client.post(f"{url}/notes", headers=a, json={"text": "x"}).status_code == 403
+    left = client.delete(f"/api/v1/classroom/notes/{moved[0]['id']}", headers=t).json()["data"]
+    assert [n["location"] for n in left] == ["1:2:3"]
+    # the file carries a noted word as the mushaf writes it, so a member reads the note without the site
+    with connect() as cc:
+        written = rows(cc, "select text_uthmani from content.words where location = '1:2:3'")[0][
+            "text_uthmani"
+        ]
+    assert client.get(f"{url}/pack", headers=a).json()["notes"] == [
+        {"location": "1:2:3", "root": None, "text": "ربّ: المالك المصلح", "word": written}
+    ]
+    # the reminder: to each member who has not opened the lesson, a notice on their own page, seen when they open it
+    today = datetime.now(UTC).date().isoformat()
+    client.post(f"{url}/progress", headers=a, json={"day": today})
+    assert client.post(f"{url}/nudges", headers=t).json() == {"sent": 1}
+    seen_b = client.get(f"/api/v1/classroom/classes/{c['id']}", headers=b).json()["lessons"][0]["mine"][
+        "nudged"
+    ]
+    seen_a = client.get(f"/api/v1/classroom/classes/{c['id']}", headers=a).json()["lessons"][0]["mine"][
+        "nudged"
+    ]
+    assert (seen_b, seen_a) == (True, False)
+    client.get(url, headers=b)
+    assert (
+        client.get(f"/api/v1/classroom/classes/{c['id']}", headers=b).json()["lessons"][0]["mine"]["nudged"]
+        is False
     )
