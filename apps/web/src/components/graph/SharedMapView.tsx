@@ -153,8 +153,10 @@ function SharedHeader({ first, newer, onShowNewer, onComments }: { first: Loaded
         </div>
         {presence && <PresenceBlock presence={presence} />}
         <span className="shared-spacer flex-1" />
+        {/* the owner's arrangement, read: folded or opened, and the whole of it in view — not rearranged (F17) */}
         <div className="seg-group shrink-0">
-          <button type="button" className="seg" onClick={tools.tidy} title={t("tidyHint")}>{t("tidy")}</button>
+          <button type="button" className="seg" onClick={() => tools.foldTo(tools.nodes.filter((n) => n.data.kind !== "frame").map((n) => n.id), true)} title={t("foldEveryHint")}>{t("foldAll")}</button>
+          <button type="button" className="seg" onClick={() => tools.foldTo(tools.nodes.filter((n) => n.data.kind !== "frame").map((n) => n.id), false)} title={t("unfoldEveryHint")}>{t("unfoldAll")}</button>
           <button type="button" className="seg" onClick={tools.fit} title={t("fitHint")}>{t("fit")}</button>
         </div>
         <button type="button" className="btn shrink-0" onClick={() => void keepCopy()}>{t("saveCopy")}</button>

@@ -180,8 +180,8 @@ export type GraphCanvasProps = {
   embedded?: boolean;
   /** read-only: what an act the map refuses is told (a published copy, EDT-244, EDT-257) — said, never silent */
   guard?: string;
-  /** whether a read-only map's cards may be moved on screen (a shared map's readers arrange their view; a published
-   * one keeps its author's, EDT-282) */
+  /** whether a read-only map's cards may be moved on screen: no read-only view does so by default — it shows its
+   * author's arrangement (EDT-282, F17) */
   draggable?: boolean;
 };
 
@@ -309,7 +309,7 @@ function CanvasInner({
   translit = false,
   embedded = false,
   guard,
-  draggable = true,
+  draggable = false,
 }: GraphCanvasProps) {
   const t = useTranslations("graph");
   const locale = useLocale();
@@ -1340,12 +1340,21 @@ function CanvasInner({
             {!embedded && <h1 className="min-w-0 truncate px-1 text-[15px] font-semibold">{title}</h1>}
             {status}
             <div className="ms-auto flex flex-wrap items-center gap-1.5">
-              <div className="seg-group">
-                <button type="button" className="seg" onClick={() => void tidy()} aria-keyshortcuts="T">{t("tidy")}</button>
-                <button type="button" className="seg" onClick={fit} aria-keyshortcuts="F">{t("fit")}</button>
-              </div>
-              {/* a map inside a page keeps to what explores it; the full map has the rest */}
-              {!embedded && (
+              {editable ? (
+                <div className="seg-group">
+                  <button type="button" className="seg" onClick={() => void tidy()} aria-keyshortcuts="T">{t("tidy")}</button>
+                  <button type="button" className="seg" onClick={fit} aria-keyshortcuts="F">{t("fit")}</button>
+                </div>
+              ) : (
+                // a read-only map is read, not rearranged: its cards folded or opened, and the whole of it in view (F17)
+                <div className="seg-group">
+                  <button type="button" className="seg" onClick={() => tools.foldTo(nodes.filter((n) => n.data.kind !== "frame").map((n) => n.id), true)} title={t("foldEveryHint")}>{t("foldAll")}</button>
+                  <button type="button" className="seg" onClick={() => tools.foldTo(nodes.filter((n) => n.data.kind !== "frame").map((n) => n.id), false)} title={t("unfoldEveryHint")}>{t("unfoldAll")}</button>
+                  <button type="button" className="seg" onClick={fit} aria-keyshortcuts="F">{t("fit")}</button>
+                </div>
+              )}
+              {/* a map inside a page keeps to what explores it; the full map has the rest; a read-only one has no undo */}
+              {!embedded && editable && (
                 <>
                   <div className="seg-group">
                     <button type="button" className="seg" onClick={undo} disabled={!past.length} title={past.length ? t("undoLabel", { label: past[past.length - 1].label }) : t("undo")} aria-keyshortcuts="Meta+Z">
@@ -1403,7 +1412,7 @@ function CanvasInner({
           {start}
           <div
             ref={wrapper}
-            className={"graph-canvas relative min-h-0 flex-1" + (gliding ? " is-gliding" : "")}
+            className={"graph-canvas relative min-h-0 flex-1" + (gliding ? " is-gliding" : "") + (editable ? "" : " is-readonly")}
             dir="ltr"
             role="region"
             aria-label={t("canvasLabel")}

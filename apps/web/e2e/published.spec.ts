@@ -301,3 +301,28 @@ test("the gallery, the hub's tile, the read-only window and the Profile list the
     free(t);
   }
 });
+
+test("every read-only map is read, never rearranged: no tidy or undo, no ports, no dragging (F17, EDT-282, HWF-11)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "dragging with a mouse");
+  await page.goto(`/graph/root/${enc("علم")}`);
+  const node = page.locator(".react-flow__node").first();
+  await expect(node).toBeVisible({ timeout: 20_000 });
+  const bar = page.locator(".seg-group").first();
+  await expect(bar.getByRole("button", { name: "اطوِ الكل" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "ترتيب", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "تراجع", exact: true })).toHaveCount(0);
+  // its ports are not offered
+  expect(await node.locator(".react-flow__handle").first().evaluate((h) => getComputedStyle(h).visibility)).toBe("hidden");
+  // a card dragged stays where its author left it
+  const before = await node.getAttribute("style");
+  const box = (await node.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + 14);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 60, box.y + 80, { steps: 6 });
+  await page.mouse.up();
+  expect(await node.getAttribute("style")).toBe(before);
+  // folding every card is reading it
+  await bar.getByRole("button", { name: "اطوِ الكل" }).click();
+  await expect(page.locator(".graph-card.is-open")).toHaveCount(0);
+});
+

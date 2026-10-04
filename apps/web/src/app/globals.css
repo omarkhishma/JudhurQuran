@@ -5597,6 +5597,10 @@ a.wotd-pill:hover {
 .graph-canvas .react-flow__handle {
   transition: box-shadow 0.12s;
 }
+/* a read-only map links nothing: its ports are not offered (EDT-282, F17); the wires still end where they did */
+.graph-canvas.is-readonly .react-flow__handle {
+  visibility: hidden;
+}
 .graph-canvas .react-flow__handle:hover {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent);
 }
