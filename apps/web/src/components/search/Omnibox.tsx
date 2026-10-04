@@ -151,6 +151,8 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("placeholder")}
             aria-label={t("placeholder")}
+            // an Arabic or a Latin query reads in its own direction (SHL-F08)
+            dir="auto"
             role="combobox"
             aria-expanded={items.length > 0}
             aria-controls={listId}

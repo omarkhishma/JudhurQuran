@@ -284,8 +284,9 @@ def _timeline(
 def _next_steps(
     conn: Connection, lemma: dict[str, Any], family: list[dict[str, Any]], at: str | None
 ) -> list[dict[str, Any]]:
-    """Three deterministic doors (seeded by slug, so everyone gets the same): a cousin, a verse, the shape."""
-    seed = lemma["slug"]
+    """Three deterministic doors, seeded by the word and the dataset's version (P1.3): everyone gets the same ones
+    within a release, and a release may offer others — a cousin, a verse, the shape."""
+    seed = f"{lemma['slug']}@{content.dataset(conn)['version']}"
     steps: list[dict[str, Any]] = []
     cousins = [(m, g["pattern"]) for g in family for m in g["members"] if m["slug"] != lemma["slug"]]
     if cousins:

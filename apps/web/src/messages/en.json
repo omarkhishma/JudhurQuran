@@ -671,7 +671,6 @@
     "alsoLine": "{source} traces it to this root (ours: {corpus})",
     "openGraph": "Open the root map",
     "coreMeaning": "Core meaning",
-    "lexiconSoon": "The root's core meaning from Maqayis al-Lugha and its Quranic usage from al-Mufradat are coming soon.",
     "notFound": "No root with these letters occurs in the Quran.",
     "moreForms": "{count, plural, one {1 more form} other {{n} more forms}}",
     "onPattern": "pattern",
@@ -1644,7 +1643,6 @@
     "hearUntimed": "{count, plural, one {One occurrence has no timing and is left out} other {{n} occurrences have no timing and are left out}}"
   },
   "screens": {
-    "building": "This screen is being built as part of the plan and is not finished yet.",
     "read": {
       "title": "Reader",
       "lead": "Read the Quran with every word open to its root and meaning."
