@@ -56,3 +56,18 @@ test("the rail lists every text â€” the hadith, the books and the reader's own â
   await list.getByRole("link", { name: books[0].title_ar, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/books/${books[0].slug}$`));
 });
+
+test("a word in the verse's map preview chooses itself in the verse, its entry in the panel (RDR-158)", async ({ page }) => {
+  const v = await api<{ words: { lemma_slug: string | null; root: string | null; location: string }[] }>(page, "/verses/1:2");
+  const first = v.words.find((w) => w.root && w.lemma_slug)!;
+  await seed(page);
+  await page.goto("/quran/1");
+  await page.locator('[data-verse-btn="1:2"]').click();
+  await page.locator('[data-verse="1:2"] .ptool[data-tool="graph"]').click();
+  const words = page.locator('[data-verse="1:2"] .drawer .graph-word');
+  await expect(words.first()).toBeVisible();
+  const lemma = await api<{ ar: { full: string } }>(page, `/words/${first.lemma_slug}?limit=0`);
+  await words.filter({ hasText: lemma.ar.full }).first().click();
+  await expect(page).toHaveURL(new RegExp(`w=${first.lemma_slug}`));
+  await expect(panel(page).locator('[data-section="family"], .entry-head, h2').first()).toBeVisible();
+});

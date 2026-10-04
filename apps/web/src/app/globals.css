@@ -2956,6 +2956,18 @@ button.type-chip:hover {
   gap: 2px 10px;
   grid-column: 1 / -1;
 }
+/* a word in the verse's map preview chooses itself in the verse (RDR-158) */
+.graph-word {
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  min-height: 32px;
+}
+.graph-word:hover {
+  background: var(--card-2);
+}
 .graph-cols {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

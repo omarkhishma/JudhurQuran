@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { cnt, cnt2, formatNumber, toArabicDigits } from "@/lib/format";
 import { buildSeedGraph } from "@/lib/graph/seed";
 import { getJSON } from "@/lib/reader/api";
-import { usePersonal, useReader, verseRef } from "@/lib/reader/store";
+import { usePersonal, usePrefs, useReader, verseRef } from "@/lib/reader/store";
 import { noteOn, useSaved } from "@/lib/store/saved";
 import { SourceTopics, useVerseTopics } from "./SourceTopics";
 
@@ -132,9 +132,12 @@ export function NoteDrawer({ verseKey }: { verseKey: string }) {
 function GraphDrawer({ verseKey }: { verseKey: string }) {
   const t = useTranslations("rd");
   const setHandoff = useReader((s) => s.setHandoff);
+  const openWord = useReader((s) => s.openWord);
+  const setPrefs = usePrefs((s) => s.set);
   const locale = useLocale();
   const built = useQuery({ queryKey: ["seed-graph", JSON.stringify({ seed: "verse", key: verseKey })], queryFn: () => buildSeedGraph({ seed: "verse", key: verseKey }), staleTime: 5 * 60_000 });
-  // a verse's map: its words' roots and its words (P8.1a: a word as written is marked on the verse, not a card)
+  // a verse's map: its words' roots and its words (P8.1a: a word as written is marked on the verse, not a card; nor
+  // is a pattern, so the preview has no patterns column — it shows what the editor will build, RDR-158)
   const cols = (kind: "root" | "lemma") => (built.data?.nodes ?? []).filter((n) => n.data.kind === kind);
   const [roots, lemmas] = [cols("root"), cols("lemma")];
   if (built.isError) return <p className="text-[12.5px] text-bad" role="alert">{t("loadFailed")}</p>;
@@ -152,9 +155,26 @@ function GraphDrawer({ verseKey }: { verseKey: string }) {
           <div key={label} className="flex min-w-0 flex-col gap-1">
             <p className="label-caps">{t(label)} • {formatNumber(list.length, locale)}</p>
             <div className="flex flex-wrap gap-1">
-              {list.map((n) => (
-                <span key={n.id} className={`ar-classical text-[16px] ${color}`} lang="ar">{n.data.ar}</span>
-              ))}
+              {list.map((n) =>
+                // a word chooses itself in the verse, its entry in the panel (RDR-158)
+                n.data.kind === "lemma" && n.data.slug ? (
+                  <button
+                    key={n.id}
+                    type="button"
+                    className={`graph-word ar-classical text-[16px] ${color}`}
+                    lang="ar"
+                    onClick={() => {
+                      openWord({ slug: n.data.slug!, at: n.data.first ?? null });
+                      setPrefs({ panelOpen: true });
+                    }}
+                    title={n.data.sub}
+                  >
+                    {n.data.ar}
+                  </button>
+                ) : (
+                  <span key={n.id} className={`ar-classical text-[16px] ${color}`} lang="ar">{n.data.ar}</span>
+                ),
+              )}
             </div>
           </div>
         ))}
