@@ -51,6 +51,9 @@ services:
     build: { context: .., dockerfile: services/api/Dockerfile }
     restart: unless-stopped
     logging: *logging
+    # no capability and no way to gain one (security review I2)
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     depends_on: { db: { condition: service_healthy }, search: { condition: service_healthy } }
     # alive and reading the dataset (P12): Caddy waits for it, and a restart follows a failure
     healthcheck:
@@ -101,6 +104,9 @@ services:
         JADHR_API_ORIGIN: http://api:8000
     restart: unless-stopped
     logging: *logging
+    # no capability and no way to gain one (security review I2)
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     depends_on: { api: { condition: service_healthy } }
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/robots.txt').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
@@ -117,6 +123,10 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     logging: *logging
+    # root in its image, but with no capability save binding ports below 1024, and no way to gain one (I2)
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
     depends_on: { web: { condition: service_healthy }, api: { condition: service_healthy } }
     ports: ["${HTTP_PORT:-80}:80", "${HTTPS_PORT:-443}:443"]
     environment:
@@ -133,6 +143,9 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     logging: *logging
+    # no capability and no way to gain one (security review I2)
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     depends_on: { db: { condition: service_healthy } }
     environment:
       # read as the API's role, which reads these schemas, never as the superuser (security review L9)
@@ -157,6 +170,9 @@ services:
     build: { context: .., dockerfile: services/api/Dockerfile }
     restart: unless-stopped
     logging: *logging
+    # no capability and no way to gain one (security review I2)
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     depends_on: { caddy: { condition: service_started } }
     environment:
       JADHR_DATABASE_URL: postgresql+psycopg://jadhr_api:${APP_DB_PASSWORD:?set APP_DB_PASSWORD}@db:5432/jadhr
@@ -170,6 +186,8 @@ services:
   loader:
     profiles: [tools]
     build: { context: .., dockerfile: services/api/Dockerfile }
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     depends_on: { db: { condition: service_healthy }, search: { condition: service_healthy } }
     environment:
       JADHR_DATABASE_URL: postgresql+psycopg://jadhr:${POSTGRES_PASSWORD}@db:5432/jadhr
