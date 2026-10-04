@@ -116,3 +116,52 @@ def test_a_quranic_word_carries_its_transliteration() -> None:
     gold = analyse("2:255")["tokens"]
     assert all(c["translit"] for t in gold if t["kind"] == "gold" for c in t["candidates"][:1])
     assert analyse("كتاب")["tokens"][0]["candidates"][0]["translit"]
+
+
+def test_a_readers_word_is_read_as_the_same_word_in_a_book() -> None:
+    """P11.4: the reader's own text and the hadith and books are read by one set of rules — the form the build
+    stored for a book's word gets the same kind and the same dictionary root from the API, kind by kind."""
+    from jadhr_api.analyse import analyse_many
+    from jadhr_api.db import connect, rows
+
+    with connect() as conn:
+        sample = rows(
+            conn,
+            """select norm, kind, readings->0->>'dict_root' as dict_root from (
+                 select f.*, row_number() over (partition by kind order by id) as n from content.text_forms f) x
+                where n <= 300 order by kind, id""",
+        )
+        got = analyse_many(conn, [r["norm"] for r in sample])
+    assert {r["kind"] for r in sample} >= {
+        "form",
+        "clitic",
+        "pattern",
+        "pattern-dict",
+        "weak",
+        "particle",
+        "none",
+    }
+    wrong = [
+        (r["norm"], r["kind"], got["forms"].get(r["norm"], {}).get("kind"))
+        for r in sample
+        if (got["forms"].get(r["norm"], {}).get("kind"), got["forms"].get(r["norm"], {}).get("dict_root"))
+        != (r["kind"], r["dict_root"])
+    ]
+    assert wrong == [], wrong[:10]
+    # the Analyser's word by word reads them alike too, its corpus path and the shared rules' after it
+    from jadhr_api.analyse import analyse_word, vocabulary
+
+    with connect() as conn:
+        to_dict = vocabulary(conn).to_dict
+        apart = []
+        for r in sample[::5]:
+            a = analyse_word(conn, r["norm"])
+            c = a["candidates"][0] if a["candidates"] else None
+            got_root = None
+            if c and a["kind"] != "particle":
+                got_root = (c.get("dict_root") or {}).get("key") or (
+                    to_dict.get(c["root"]["key"]) if c["root"] else None
+                )
+            if (a["kind"], got_root) != (r["kind"], r["dict_root"]):
+                apart.append((r["norm"], r["kind"], a["kind"]))
+    assert apart == [], apart[:10]

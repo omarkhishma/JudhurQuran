@@ -8,13 +8,17 @@ confidence 1.0 with the place named. Any other text is read word by word against
                occurrences (the share is the confidence);
   ``clitic``   the form after a conjunction, preposition, article or attached pronoun is taken off, then as above
                (confidence scaled by 0.7, the clitics named);
-  ``pattern``  no form matches: root candidates from the closed list of patterns attested in the Quran,
-               kept only where the root exists in the Quran (confidence at most 0.35);
   ``particle`` a function word (the corpus tags it so wherever it occurs): no root, no pattern;
+  ``pattern``, ``pattern-dict``, ``weak``, ``weak-dict``  no form matches: the shared rules that read the hadith
+               and the books (``jadhr_arabic.analysis``, P11.4) — a pattern over the Quran's roots, then over the
+               dictionary's, then the classical rules for weak and doubled roots — so a word of a reader's text is
+               read as the same word in a book is;
   ``none``     nothing found.
 
-Nothing is invented: every candidate is a lemma, root and pattern the corpus gives some Quranic word, and
-every confidence says how it was found. A morphology service for non-Quranic Arabic is later work (P11).
+Nothing is invented: every candidate is a lemma, root and pattern the corpus or the lexica give, and every
+confidence says how it was found. The form and clitic paths read the corpus in the database, with each
+analysis's features and place; the vocabulary the shared rules read is built from the same tables once per
+process (``vocabulary``).
 """
 
 from __future__ import annotations
@@ -24,18 +28,18 @@ import unicodedata
 from collections import Counter
 from typing import Any
 
+from jadhr_arabic import analysis as shared
 from jadhr_arabic import normalize
 from sqlalchemy import Connection
 
 from . import search
-from .db import one, rows
+from .db import rows
 
 MAX_TOKENS = 60
 MAX_VERSES = 10  # a reference range («2:1-5») is read verse by verse, gold, up to this many verses
 TOP = 3
 CONTENT_POS = {"N", "V", "PN", "ADJ", "IMPN", "T", "LOC"}
 CLITIC_FACTOR = 0.7
-PATTERN_CEILING = 0.35
 REVIEW_BELOW = 0.8
 
 # proclitics and enclitics, longest first; a stem must keep two letters or more
@@ -65,7 +69,6 @@ _PREFIXES = (
 )
 _SUFFIXES = ("كما", "هما", "تما", "كم", "كن", "هم", "هن", "نا", "ها", "تم", "ني", "ه", "ك", "ي")
 _PREFIX_LABEL = {"و": "و", "ف": "ف", "ب": "ب", "ك": "ك", "ل": "ل", "س": "س", "ال": "ال"}
-_ROOT_SLOTS = ("ف", "ع", "ل")
 _TOKEN = re.compile(r"\S+")
 
 
@@ -147,54 +150,60 @@ def _strips(key: str) -> list[tuple[str, list[str]]]:
     return out
 
 
-def _by_pattern(conn: Connection, key: str, nouns_only: bool = False) -> list[dict[str, Any]]:
-    """Root candidates from the Quran's patterns: the word read against each pattern of its length, the
-    letters in the ف ع ل slots taken as the root, kept where that root exists in the Quran. After the
-    article only noun patterns are read."""
-    pats = rows(
-        conn,
-        """select slug, ar, ar_bare, occurrences from content.patterns
-           where length(ar_bare) = :n and (not :nouns or coalesce(pos_hint, '') <> 'V')""",
-        {"n": len(key), "nouns": nouns_only},
-    )
-    found: dict[str, dict[str, Any]] = {}
-    total = sum(p["occurrences"] for p in pats) or 1
-    for p in pats:
-        bare = normalize(p["ar_bare"])
-        letters: list[str] = []
-        ok = True
-        for pc, kc in zip(bare, key, strict=True):
-            if pc in _ROOT_SLOTS:
-                letters.append(kc)
-            elif pc != kc:
-                ok = False
-                break
-        if not ok or len(letters) != 3:
-            continue
-        rk = "".join(letters)
-        root = one(
-            conn, "select key, spaced, translit, occurrences from content.roots where key = :k", {"k": rk}
+_VOCAB: dict[str, Any] = {}
+
+
+def vocabulary(conn: Connection) -> shared.Vocabulary:
+    """The shared rules' vocabulary from the database, as the build makes it from its rows
+    (``jadhr_arabic.analysis.vocabulary_from``); read once per process — a new release restarts the API."""
+    if "v" not in _VOCAB:
+        _VOCAB["v"] = shared.vocabulary_from(
+            rows(conn, "select lemma_id, root_id, pos, norm, norm_uthmani, norm_plain from content.words"),
+            rows(conn, "select id, key from content.roots"),
+            rows(conn, "select slug, ar_bare, pos_hint, occurrences from content.patterns"),
+            rows(conn, "select key, quran_root, letters from content.dict_roots"),
         )
-        if root is None:
-            continue
-        score = min(PATTERN_CEILING, PATTERN_CEILING * (0.5 + p["occurrences"] / total))
-        best = found.get(rk)
-        if best is None or score > best["confidence"]:
-            found[rk] = {
-                "lemma": None,
-                "root": {"key": root["key"], "spaced": root["spaced"], "translit": root["translit"]},
-                "pattern": {"slug": p["slug"], "ar": p["ar"]},
-                "pos": None,
-                "features": None,
-                "segments": None,
-                "gloss_en": None,
-                "translit": None,
-                "count": 0,
-                "share": 0.0,
-                "confidence": round(score, 2),
-                "location": None,
-            }
-    return sorted(found.values(), key=lambda c: -c["confidence"])[:TOP]
+    return _VOCAB["v"]
+
+
+def _lookups(conn: Connection) -> dict[str, dict[Any, dict[str, Any]]]:
+    """What a reading names, by id or key: the Quran's lemmas, roots and patterns, the dictionary's roots."""
+    if "look" not in _VOCAB:
+        _VOCAB["look"] = {
+            "lemma": {
+                r["id"]: r for r in rows(conn, "select id, slug, ar, pos, gloss_en from content.lemmas")
+            },
+            "root": {r["key"]: r for r in rows(conn, "select key, spaced, translit from content.roots")},
+            "pattern": {r["slug"]: r for r in rows(conn, "select slug, ar from content.patterns")},
+            "dict": {r["key"]: r for r in rows(conn, "select key, display from content.dict_roots")},
+        }
+    return _VOCAB["look"]
+
+
+def _from_reading(r: shared.Reading, look: dict[str, dict[Any, dict[str, Any]]]) -> dict[str, Any]:
+    """A reading of the shared rules as the Analyser's candidate: its lemma, its root in the Quran or, where the
+    Quran has none, in the dictionary (``dict_root``), its pattern, and how sure."""
+    lem = look["lemma"].get(r.lemma_id)
+    root = look["root"].get(r.root) if r.root else None
+    pat = look["pattern"].get(r.pattern) if r.pattern else None
+    d = look["dict"].get(r.dict_root) if r.dict_root else None
+    return {
+        "lemma": {"slug": lem["slug"], "ar": lem["ar"], "pos": lem["pos"]} if lem else None,
+        "root": {"key": root["key"], "spaced": root["spaced"], "translit": root["translit"]}
+        if root
+        else None,
+        "dict_root": {"key": d["key"], "display": d["display"]} if d else None,
+        "pattern": {"slug": pat["slug"], "ar": pat["ar"]} if pat else None,
+        "pos": r.pos,
+        "features": None,
+        "segments": None,
+        "gloss_en": lem["gloss_en"] if lem else None,
+        "translit": None,
+        "count": r.count,
+        "share": 0.0,
+        "confidence": round(r.confidence, 2),
+        "location": None,
+    }
 
 
 def _dedupe(cands: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -222,6 +231,9 @@ def analyse_word(conn: Connection, token: str) -> dict[str, Any]:
         if cands[0]["pos"] not in CONTENT_POS and (cands[0]["root"] is None):
             return {**base, "kind": "particle", "confidence": 1.0, "candidates": [], "particle": cands[0]}
         return {**base, "kind": "form", "confidence": cands[0]["confidence"], "candidates": cands}
+    # written apart, the vocative and a lone letter are marks, not words with a root (the shared rules' MARKS)
+    if key in shared.MARKS:
+        return {**base, "kind": "particle", "confidence": 1.0, "candidates": []}
     for stem, taken in _strips(key):
         found = _by_form(conn, stem)
         if _has_article(taken):  # a word with the article cannot be a verb (ANA-F05)
@@ -238,18 +250,18 @@ def analyse_word(conn: Connection, token: str) -> dict[str, Any]:
                     "confidence": cands[0]["confidence"],
                     "candidates": cands,
                 }
-    for stem, taken in [(key, []), *_strips(key)]:
-        cands = _by_pattern(conn, stem, nouns_only=_has_article(taken))
-        if cands:
-            return {
-                **base,
-                "kind": "pattern",
-                "clitics": taken,
-                "stem": stem,
-                "confidence": cands[0]["confidence"],
-                "candidates": cands,
-            }
-    return {**base, "kind": "none", "confidence": 0.0, "candidates": []}
+    # past the corpus's own forms: the shared rules, as the hadith and the books are read (P11.4)
+    a = shared.analyse(vocabulary(conn), key)
+    if a.kind == "none" or not a.readings:
+        return {**base, "kind": "none", "confidence": 0.0, "candidates": []}
+    look = _lookups(conn)
+    return {
+        **base,
+        "kind": a.kind,
+        "clitics": list(a.clitics),
+        "confidence": a.confidence,
+        "candidates": [_from_reading(r, look) for r in a.readings],
+    }
 
 
 def _gold(conn: Connection, verse_id: int, positions: list[int] | None = None) -> list[dict[str, Any]]:
@@ -350,7 +362,13 @@ def analyse(conn: Connection, text: str) -> dict[str, Any]:
             tokens = [analyse_word(conn, t) for t in surface]
             source = {"kind": "free", "verse_key": None, "whole_verse": False}
         truncated = len([t for t in _TOKEN.findall(text) if _key(t)]) > MAX_TOKENS
-    roots = Counter(c["root"]["key"] for t in tokens for c in t["candidates"][:1] if c["root"])
+    # a root the Quran has, or the dictionary's where it has none
+    roots = Counter(
+        (c["root"] or c.get("dict_root") or {}).get("key")
+        for t in tokens
+        for c in t["candidates"][:1]
+        if c["root"] or c.get("dict_root")
+    )
     review = sum(
         1 for t in tokens if t["kind"] not in ("particle", "gold") and t["confidence"] < REVIEW_BELOW
     )
@@ -364,13 +382,12 @@ def analyse(conn: Connection, text: str) -> dict[str, Any]:
 
 
 MAX_BATCH_FORMS = 3000
-MAX_SLOW_FORMS = 400  # forms that need the clitic or pattern path, read one by one
 
 
 def analyse_many(conn: Connection, tokens: list[str]) -> dict[str, Any]:
     """The reader's own text (the Library's add-a-text, LIB-29…33): every distinct written form once, compact.
-    Forms the Quran spells are resolved in one query; the rest take the clitic and pattern paths one by one,
-    up to a cap (the remainder is reported, not guessed). Nothing is stored."""
+    Forms the Quran spells are resolved in one query; the rest by the shared rules in memory (clitics, patterns,
+    weak roots, the dictionary's roots), as the hadith and the books are read. Nothing is stored."""
     keys: list[str] = []
     seen: set[str] = set()
     for t in tokens:
@@ -396,7 +413,7 @@ def analyse_many(conn: Connection, tokens: list[str]) -> dict[str, Any]:
     for r in found:
         by.setdefault(r["k"], []).append(r)
     out: dict[str, dict[str, Any]] = {}
-    slow = 0
+    vocab, look = vocabulary(conn), _lookups(conn)
     for k in keys:
         rs = by.get(k)
         if rs:
@@ -412,19 +429,22 @@ def analyse_many(conn: Connection, tokens: list[str]) -> dict[str, Any]:
                     "lemma_ar": top["lemma_ar"],
                     "root": top["root_key"],
                     "root_spaced": top["spaced"],
+                    # the root's dictionary key, as the build files it (vocabulary.to_dict)
+                    "dict_root": vocab.to_dict.get(top["root_key"]) if top["root_key"] else None,
                     "gloss_en": top["gloss_en"],
                 }
-        elif slow < MAX_SLOW_FORMS:
-            slow += 1
-            a = analyse_word(conn, k)
-            c = a["candidates"][0] if a["candidates"] else None
+        else:
+            # the rest by the shared rules in memory, as the hadith and the books are read (P11.4)
+            a = shared.analyse(vocab, k)
+            c = _from_reading(a.readings[0], look) if a.readings else None
             out[k] = {
-                "kind": a["kind"],
-                "confidence": a["confidence"],
+                "kind": a.kind,
+                "confidence": a.confidence,
                 "lemma": (c["lemma"] or {}).get("slug") if c else None,
                 "lemma_ar": (c["lemma"] or {}).get("ar") if c else None,
                 "root": (c["root"] or {}).get("key") if c else None,
                 "root_spaced": (c["root"] or {}).get("spaced") if c else None,
+                "dict_root": (c.get("dict_root") or {}).get("key") if c else None,
                 "gloss_en": c["gloss_en"] if c else None,
             }
     # each input token's key, in order, so the page maps its words to these results without normalising itself

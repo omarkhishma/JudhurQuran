@@ -27,8 +27,9 @@ Every reading names a lemma, root and pattern some source gives; nothing is gues
 from __future__ import annotations
 
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from typing import Any
 
 from .normalize import normalize
 
@@ -104,6 +105,34 @@ class Vocabulary:
         for slug, bare, hint, n in self.patterns:
             p[len(normalize(bare))].append((slug, normalize(bare), hint, n))
         self._quran_by_fold, self._dict_by_fold, self._patterns_by_len = dict(q), dict(d), dict(p)
+
+
+def vocabulary_from(
+    words: list[dict[str, Any]],
+    root_rows: list[dict[str, Any]],
+    pattern_rows: list[dict[str, Any]],
+    dict_rows: list[dict[str, Any]],
+) -> Vocabulary:
+    """The vocabulary from the dataset's rows — the build's before they are written, the API's from its database —
+    so both read every word against the same thing: a word counted once under each of its matching keys (its
+    everyday spelling, its mushaf spelling, the spelling read off the mushaf). ``words``: lemma_id, root_id, pos and
+    the three keys; ``root_rows``: id and key; ``pattern_rows``: slug, ar_bare, pos_hint, occurrences;
+    ``dict_rows``: key, quran_root, letters."""
+    roots = {r["id"]: r["key"] for r in root_rows}
+    counts: dict[str, Counter[tuple[int | None, str | None, str | None]]] = {}
+    for w in words:
+        sig = (w["lemma_id"], roots.get(w["root_id"]) if w["root_id"] else None, w["pos"])
+        for key in {w.get("norm"), w.get("norm_uthmani"), w.get("norm_plain")} - {None, ""}:
+            counts.setdefault(key, Counter())[sig] += 1
+    forms = {k: [(*sig, n) for sig, n in c.items()] for k, c in counts.items()}
+    patterns = [(p["slug"], p["ar_bare"], p.get("pos_hint"), int(p["occurrences"])) for p in pattern_rows]
+    return Vocabulary(
+        forms=forms,
+        patterns=patterns,
+        quran_roots=set(roots.values()),
+        dict_roots={r["key"] for r in dict_rows if r["letters"] >= 3},
+        to_dict={r["quran_root"]: r["key"] for r in dict_rows if r["quran_root"]},
+    )
 
 
 def strips(key: str) -> list[tuple[str, tuple[str, ...]]]:
