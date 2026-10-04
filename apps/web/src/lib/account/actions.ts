@@ -1,6 +1,7 @@
 "use client";
 
 import { deleteLocalData } from "@/lib/localData";
+import { sitePath } from "./paths";
 import { type Account, authFetch, deviceName, useAccount } from "./store";
 
 /**
@@ -73,7 +74,7 @@ export async function verifyLink(token: string): Promise<string | null> {
   const out = (await r.json()) as SignedIn;
   remember([]);
   useAccount.getState().signIn(out.session, out.user);
-  return out.return_to;
+  return sitePath(out.return_to);
 }
 
 // ─── Google and Apple: the authorization code with PKCE, exchanged by the API ───
@@ -118,7 +119,7 @@ export async function finishOidc(provider: Provider, code: string, state: string
   if (!r.ok) return null;
   const out = (await r.json()) as SignedIn;
   useAccount.getState().signIn(out.session, out.user);
-  return { returnTo: saved.returnTo, locale: saved.locale };
+  return { returnTo: sitePath(saved.returnTo), locale: saved.locale === "en" ? "en" : "ar" };
 }
 
 /** Sign this device out. With `removeData`, everything this site keeps in this browser goes too (a shared computer). */

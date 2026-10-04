@@ -729,3 +729,24 @@ def test_the_account_says_what_the_server_keeps_and_when_the_oldest_of_each_kind
     assert abs(days_left(held["deletions"]["first_goes"]) - s.tombstone_days) < 0.01
     assert abs(days_left(held["history"]["first_goes"]) - s.history_days) < 0.01
     assert abs(days_left(held["lookups"]["first_goes"]) - s.lookup_retention_days) < 0.01
+
+
+def test_a_return_path_stays_on_the_site() -> None:
+    """Security review L3: a tab or line break the browser drops, a backslash, two slashes — never another site."""
+    for good in ("/notebook", "/quran/2?w=ilm&at=2:32:4", "/roots/علم", "/en/me?tab=account"):
+        assert accounts.safe_return(good) == good
+    for bad in (
+        "//evil.com",
+        "/\\evil.com",
+        "/\t/evil.com",
+        "/\n/evil.com",
+        "/\r//evil.com",
+        " /x",
+        "/x y",
+        "/\x7f",
+        "https://evil.com",
+        "",
+        None,
+        "/" + "a" * 300,
+    ):
+        assert accounts.safe_return(bad) == "/me", repr(bad)

@@ -168,9 +168,20 @@ def email_enabled() -> bool:
 # ─── sign-in, sessions, the account ───────────────────────────────────────────
 
 
+_UNSAFE_IN_PATH = re.compile(r"[\x00-\x20\x7f-\x9f\s\\]")
+
+
 def safe_return(path: str | None) -> str:
-    """Only a path inside the site, so a sign-in link can never send a reader elsewhere."""
-    if not path or not path.startswith("/") or path.startswith("//") or "\\" in path or len(path) > 300:
+    """Only a path inside the site, so a sign-in link can never send a reader elsewhere: no "//", no backslash, and no
+    control character or white space, which a browser's URL parser drops ("/<tab>/evil.com" is "//evil.com") —
+    security review L3; the web checks the same (lib/account/paths.ts)."""
+    if (
+        not path
+        or not path.startswith("/")
+        or path.startswith("//")
+        or _UNSAFE_IN_PATH.search(path)
+        or len(path) > 300
+    ):
         return "/me"
     return path
 

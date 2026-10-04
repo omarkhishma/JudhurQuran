@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { SignInScreen } from "@/components/account/AuthScreens";
+import { sitePath } from "@/lib/account/paths";
 
 // where to return comes from the URL; nothing here is the same for two readers
 export const dynamic = "force-dynamic";
@@ -15,6 +16,5 @@ export default async function Page({ params, searchParams }: PageProps<"/[locale
   setRequestLocale((await params).locale);
   const next = (await searchParams).next;
   // only a path inside the site (the API checks again)
-  const safe = typeof next === "string" && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next.slice(0, 300) : "/me";
-  return <SignInScreen returnTo={safe} />;
+  return <SignInScreen returnTo={sitePath(next)} />;
 }
