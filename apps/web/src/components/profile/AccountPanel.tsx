@@ -53,6 +53,7 @@ export function AccountPanel({ me, onChanged }: { me: Me | null; onChanged: () =
       <Choices onChanged={onChanged} />
       <Devices me={me} onChanged={onChanged} />
       <OnTheServer me={me} />
+      <ApiKeys />
       <History />
       <SignOut />
       <DeleteAccount />
@@ -195,6 +196,113 @@ function Devices({ me, onChanged }: { me: Me | null; onChanged: () => void }) {
           </li>
         ))}
       </ul>
+    </Card>
+  );
+}
+
+type ApiKey = { id: string; name: string; prefix: string; created_at: string; last_used_on: string | null; revoked_at: string | null };
+type Limits = { per_minute_without_key: number; per_minute_with_key: number };
+
+/**
+ * Keys for the public API (P10.2b): made here, each shown once and never again — the server keeps its hash, its
+ * first characters and the last day it was used, never the requests; revoked here. Reading without a key is open at
+ * a lower limit per address.
+ */
+function ApiKeys() {
+  const t = useTranslations("me");
+  const err = useErrorText();
+  const locale = useLocale();
+  const fmt = (n: number) => formatNumber(n, locale);
+  const day = (s: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { day: "numeric", month: "long", year: "numeric" }).format(new Date(s));
+  const list = useQuery({ queryKey: ["api-keys"], queryFn: () => authFetch<{ data: ApiKey[]; most: number }>("/me/keys") });
+  const limits = useQuery({ queryKey: ["public-limits"], queryFn: () => fetch("/api/v1/public").then((r) => r.json() as Promise<{ data: { limits: Limits } }>), staleTime: 3_600_000 });
+  const [name, setName] = useState("");
+  const [made, setMade] = useState<string | null>(null);
+  const [said, setSaid] = useState("");
+  const [asking, setAsking] = useState<string | null>(null);
+  const l = limits.data?.data.limits;
+  return (
+    <Card title={t("keysTitle")}>
+      <p className="text-[12.5px] leading-relaxed text-t2">{l ? t("keysLead", { without: fmt(l.per_minute_without_key), with: fmt(l.per_minute_with_key) }) : t("keysLeadPlain")}</p>
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setSaid("");
+          try {
+            const k = await authFetch<ApiKey & { key: string }>("/me/keys", { method: "POST", body: JSON.stringify({ name }) });
+            setMade(k.key);
+            setName("");
+            await list.refetch();
+          } catch (x) {
+            setSaid(err(x));
+          }
+        }}
+      >
+        <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-[12.5px] text-t2">
+          {t("keyName")}
+          <input className="field-input" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} dir="auto" />
+        </label>
+        <button type="submit" className="btn" disabled={!name.trim()}>{t("keyMake")}</button>
+      </form>
+      {made && (
+        <div className="flex flex-col gap-1.5 rounded-lg border border-line bg-card-2 p-3" role="status">
+          <p className="text-[12.5px] text-t1">{t("keyMade")}</p>
+          <div className="flex flex-wrap gap-2">
+            <input className="field-input mono min-w-0 flex-1 text-[12.5px]" readOnly value={made} dir="ltr" aria-label={t("keyValue")} onFocus={(e) => e.target.select()} />
+            <button
+              type="button"
+              className="btn"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(made);
+                  setSaid(t("keyCopied"));
+                } catch {
+                  setSaid(t("keyCopyFailed"));
+                }
+              }}
+            >
+              {t("keyCopy")}
+            </button>
+          </div>
+        </div>
+      )}
+      {said && <p className="text-[12.5px] text-t2" role="status">{said}</p>}
+      {list.data && (
+        <ul className="flex flex-col gap-1.5">
+          {list.data.data.length === 0 && <li className="text-[12.5px] text-t3">{t("keysNone")}</li>}
+          {list.data.data.map((k) => (
+            <li key={k.id} className="account-row">
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[13.5px]" dir="auto">{k.name}</span>
+                <span className="text-[11.5px] text-t3">
+                  <span className="mono" dir="ltr">{k.prefix}…</span> · {t("keyCreated", { day: day(k.created_at) })} · {k.last_used_on ? t("keyLastUsed", { day: day(k.last_used_on) }) : t("keyNeverUsed")}
+                  {k.revoked_at && ` · ${t("keyRevoked")}`}
+                </span>
+              </span>
+              {!k.revoked_at &&
+                (asking === k.id ? (
+                  <button
+                    type="button"
+                    className="btn min-h-[40px] text-bad"
+                    onClick={async () => {
+                      await authFetch(`/me/keys/${k.id}`, { method: "DELETE" });
+                      setAsking(null);
+                      await list.refetch();
+                    }}
+                  >
+                    {t("keyRevokeConfirm")}
+                  </button>
+                ) : (
+                  <button type="button" className="btn min-h-[40px]" aria-label={t("keyRevokeNamed", { name: k.name })} onClick={() => setAsking(k.id)}>
+                    {t("keyRevoke")}
+                  </button>
+                ))}
+            </li>
+          ))}
+        </ul>
+      )}
+      <Link href="/developers" className="self-start text-[12.5px] underline underline-offset-2">{t("keysDocs")}</Link>
     </Card>
   );
 }

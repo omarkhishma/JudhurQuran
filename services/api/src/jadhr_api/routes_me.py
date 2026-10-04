@@ -5,11 +5,11 @@ from __future__ import annotations
 import re
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from fastapi.responses import ORJSONResponse
 from pydantic import BaseModel, Field
 
-from . import accounts, classroom, contrib, oidc, shared_maps, sync
+from . import accounts, apikeys, classroom, contrib, oidc, shared_maps, sync
 from .settings import get_settings
 
 router = APIRouter(prefix="/api/v1")
@@ -174,6 +174,7 @@ def export(u: User) -> ORJSONResponse:
             "contributions": contrib.export_for(u),
             **shared_maps.export_for(u),
             **classroom.export_for(u),
+            **apikeys.export_for(u),
         },
         headers={**NO_STORE, "Content-Disposition": 'attachment; filename="jadhr-account.json"'},
     )
@@ -204,3 +205,25 @@ class _Lookups(BaseModel):
 @router.post("/me/lookups", summary="Share lookups with a class (only when the reader turned that on)")
 def lookups(u: User, body: _Lookups) -> ORJSONResponse:
     return ok({"recorded": sync.record_lookups(u, body.events)})
+
+
+# ─── API keys (P10.2b) ─────────────────────────────────────────────────────────
+
+
+class _Key(BaseModel):
+    name: str = Field(max_length=200)
+
+
+@router.get("/me/keys", summary="My API keys: names, prefixes, days — never a key's value")
+def api_keys(u: User) -> ORJSONResponse:
+    return ok(apikeys.keys(u))
+
+
+@router.post("/me/keys", summary="Make an API key: its value is in this answer and nowhere else, ever")
+def make_api_key(u: User, body: _Key) -> ORJSONResponse:
+    return ORJSONResponse(apikeys.create(u, body.name), status_code=201, headers=NO_STORE)
+
+
+@router.delete("/me/keys/{key_id}", summary="Revoke an API key")
+def revoke_api_key(u: User, key_id: Annotated[str, Path(max_length=40)]) -> ORJSONResponse:
+    return ok(apikeys.revoke(u, key_id))

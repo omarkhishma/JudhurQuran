@@ -104,6 +104,37 @@ def _not_found(what: str) -> Any:
     return not_found(what)
 
 
+# ─── the index ────────────────────────────────────────────────────────────────
+
+
+@router.get("", summary="The public API: its products, endpoints and limits")
+def index(request: Request) -> Response:
+    from .settings import get_settings
+
+    st = get_settings()
+    data = {
+        "products": {"quran": "the Quran's text, morphology and patterns"},
+        "endpoints": [
+            {
+                "method": "GET",
+                "path": f"/api/v1/public{r.path.removeprefix('/api/v1/public')}",
+                "summary": r.summary,
+            }
+            for r in router.routes
+            if getattr(r, "path", "") != "/api/v1/public"
+        ],
+        # without a key, per address; with one, per key (RateLimit-* headers on every answer)
+        "limits": {
+            "per_minute_without_key": st.public_rate_per_minute,
+            "per_minute_with_key": st.key_rate_per_minute,
+        },
+        "keys": f"{SITE}/me?tab=account",
+        "openapi": "/api/v1/openapi.json",
+    }
+    with connect() as conn:
+        return _answer(request, conn, [], data)
+
+
 # ─── the Quran ────────────────────────────────────────────────────────────────
 
 

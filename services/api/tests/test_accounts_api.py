@@ -480,6 +480,7 @@ def test_the_export_holds_everything_and_every_table_is_accounted_for(email: str
         "lookup_events": "lookups",
         "identities": "identities",
         "sessions": "account.devices",
+        "api_keys": "api_keys",
         # the contributions schema (audit 12 F15)
         "contributions.proposals": "contributions.proposals",
         "contributions.decisions": "contributions.decisions",

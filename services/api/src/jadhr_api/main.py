@@ -27,6 +27,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from . import (
     accounts,
     analyse,
+    apikeys,
     board,
     classroom,
     collections,
@@ -996,6 +997,23 @@ _hits: dict[str, deque[float]] = defaultdict(deque)
 _swept = [0.0]
 
 
+def _limits(response: Response, limit: int, remaining: int, reset: int) -> Response:
+    response.headers["RateLimit-Limit"] = str(limit)
+    response.headers["RateLimit-Remaining"] = str(max(0, remaining))
+    response.headers["RateLimit-Reset"] = str(reset)
+    return response
+
+
+PUBLIC_EXPOSE = "ETag, X-Dataset-Version, X-Dataset-Release, RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset, Retry-After"
+
+
+def _public(response: Response) -> Response:
+    """The public API is read from any site's pages, without a key (a key belongs on a server, not in a page)."""
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Expose-Headers"] = PUBLIC_EXPOSE
+    return response
+
+
 def _forget_idle(now: float) -> None:
     """An address is kept only while it counts: a minute after its last request it is gone (audit 11 F1)."""
     if now - _swept[0] < 60:
@@ -1072,6 +1090,33 @@ def create_app() -> FastAPI:
         ).split(",")[0]
         now = time.monotonic()
         _forget_idle(now)
+        # the public API (P10.2b): a key reads at its own limit, an address without one at the public limit; both
+        # said in RateLimit-* headers, and readable from any site's pages without a key
+        if request.url.path.startswith(f"{API_PREFIX}/public/"):
+            key = request.headers.get("x-api-key") or request.headers.get("authorization", "").removeprefix(
+                "Bearer "
+            )
+            if key.startswith("jk_"):
+                who = await asyncio.to_thread(apikeys.check, key)
+                if who is None:
+                    return _public(
+                        error(401, "invalid_key", "This API key is not valid: revoked, or never issued.")
+                    )
+                bucket, limit = f"key:{who}", settings.key_rate_per_minute
+            else:
+                bucket, limit = f"public:{ip}", settings.public_rate_per_minute
+            q = _hits[bucket]
+            while q and now - q[0] > 60:
+                q.popleft()
+            reset = int(60 - (now - q[0])) + 1 if q else 60
+            if len(q) >= limit:
+                resp = error(429, "rate_limited", "Too many requests; slow down, or read with a key.")
+                resp.headers["Retry-After"] = str(reset)
+                return _public(_limits(resp, limit, 0, reset))
+            q.append(now)
+            response = await call_next(request)
+            response.headers.setdefault("X-Content-Type-Options", "nosniff")
+            return _public(_limits(response, limit, limit - len(q), reset))
         q = _hits[ip]
         while q and now - q[0] > 60:
             q.popleft()
