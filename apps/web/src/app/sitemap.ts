@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getCatalog, SITEMAP_IDS, WORD_SITEMAPS, WORDS_PER_SITEMAP } from "@/lib/catalog";
+import { CATALOG_PARTS, getCatalog, getCatalogPart, SITEMAP_IDS, WORD_SITEMAPS, WORDS_PER_SITEMAP } from "@/lib/catalog";
 import { publishedPath } from "@/lib/graph/publishedShared";
 import { loadGallery } from "@/lib/publishedServer";
 import { SITE } from "@/lib/site";
@@ -8,7 +8,7 @@ import { SITE } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 // Pages that exist in both locales; Arabic is canonical at the bare path, English under /en.
-const STATIC_PATHS = ["/", "/quran", "/roots", "/graph", "/g", "/about", "/sources", "/privacy", "/developers"];
+const STATIC_PATHS = ["/", "/quran", "/roots", "/graph", "/g", "/explore", "/data", "/about", "/sources", "/privacy", "/developers"];
 
 /** The published maps (P8.5), the latest first, at most 5,000; none when the API cannot say (the rest still lists). */
 async function publishedMaps(): Promise<{ slug: string; updated_at: string }[]> {
@@ -35,6 +35,13 @@ export function generateSitemaps() {
 
 export default async function sitemap(props: { id: Promise<string> }): Promise<MetadataRoute.Sitemap> {
   const id = await props.id;
+  // the dictionary, the hadith and their chapters, the narrators, the books (P12: every surface)
+  const part = CATALOG_PARTS.find((p) => p === id);
+  if (part) {
+    const got = await getCatalogPart(part);
+    return got.paths.map((p) => entry(p, got.loaded_at, 0.6));
+  }
+  if (id === "maps") return (await publishedMaps()).map((m) => entry(publishedPath(m.slug), m.updated_at, 0.5));
   const c = await getCatalog();
   const at = c.loaded_at;
   if (id === "core") {
@@ -44,7 +51,6 @@ export default async function sitemap(props: { id: Promise<string> }): Promise<M
       ...surahs.map((s) => entry(`/quran/${s}`, at, 0.9)),
       ...c.verses.map(([s, a]) => entry(`/quran/${s}/${a}`, at, 0.7)),
       ...c.roots.map((r) => entry(`/roots/${encodeURIComponent(r)}`, at, 0.8)),
-      ...(await publishedMaps()).map((m) => entry(publishedPath(m.slug), m.updated_at, 0.5)),
     ];
   }
   const chunk = Number(id.replace("words-", ""));

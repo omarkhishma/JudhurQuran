@@ -10,6 +10,9 @@ export type Catalog = { loaded_at: string; verses: [number, number, number][]; r
  */
 export const WORDS_PER_SITEMAP = 40_000;
 export const WORD_SITEMAPS = 2;
-export const SITEMAP_IDS = ["core", ...Array.from({ length: WORD_SITEMAPS }, (_, i) => `words-${i}`)];
+/** The parts of the site beyond the Quran, each a sitemap of its own, listed by the API (`/catalog/{part}`). */
+export const CATALOG_PARTS = ["dictionary", "hadith", "hadith-chapters", "narrators", "books"] as const;
+export const SITEMAP_IDS = ["core", ...Array.from({ length: WORD_SITEMAPS }, (_, i) => `words-${i}`), ...CATALOG_PARTS, "maps"];
+export const getCatalogPart = (part: (typeof CATALOG_PARTS)[number]) => api<{ loaded_at: string; paths: string[] }>(`/catalog/${part}`);
 
 export const getCatalog = () => api<Catalog>("/catalog");

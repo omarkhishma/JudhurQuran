@@ -138,6 +138,17 @@ def catalog(request: Request) -> Response:
         return cached(request, content.catalog(conn))
 
 
+@router.get(
+    "/catalog/{part}",
+    summary="Every page of a part of the site (dictionary, hadith, its chapters, narrators, books) — for sitemaps",
+)
+def catalog_part(request: Request, part: str) -> Response:
+    if part not in content.CATALOG_PARTS:
+        raise Refusal(404, "not_found", f"No such part; the parts are {', '.join(content.CATALOG_PARTS)}.")
+    with connect() as conn:
+        return cached(request, content.catalog_paths(conn, part))
+
+
 @router.get("/sources", summary="Every data source with its license and required attribution")
 def sources(request: Request) -> Response:
     with connect() as conn:

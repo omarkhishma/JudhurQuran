@@ -45,6 +45,74 @@ def catalog(conn: Connection) -> dict[str, Any]:
     }
 
 
+# the sitemaps beyond the Quran (P12, SEO for every surface): each part one sitemap, under the 50,000 addresses a
+# sitemap may hold. A book's paragraphs are reached through their sections, which list them; they are not listed
+# apart, where each would repeat a part of its section.
+CATALOG_PARTS = ("dictionary", "hadith", "hadith-chapters", "narrators", "books")
+
+
+def catalog_paths(conn: Connection, part: str) -> dict[str, Any]:
+    """Every page of a part of the site, as the path its address takes (without the language's prefix)."""
+    from urllib.parse import quote
+
+    q = lambda s: quote(s, safe="")  # noqa: E731
+    if part == "dictionary":
+        from .dictionary import ALPHABET
+
+        keys = [r["key"] for r in rows(conn, "select key from content.dict_roots order by key")]
+        # the letters' pages are the dictionary's alphabet (a bare alif is filed with the hamza)
+        paths = [
+            "/dictionary",
+            *[f"/dictionary/letter/{q(c)}" for c in ALPHABET],
+            *[f"/dictionary/{q(k)}" for k in keys],
+        ]
+    elif part == "hadith":
+        texts = [
+            r["slug"] for r in rows(conn, "select slug from content.texts where kind = 'hadith' order by id")
+        ]
+        refs = rows(
+            conn,
+            """select t.slug, p.ref from content.passages p join content.texts t on t.id = p.text_id
+                where t.kind = 'hadith' order by t.id, p.ordinal""",
+        )
+        paths = [
+            "/hadith",
+            *[f"/hadith/{s}" for s in texts],
+            *[f"/hadith/{r['slug']}/{q(r['ref'].replace('.', '_'))}" for r in refs],
+        ]
+    elif part == "hadith-chapters":
+        chs = rows(
+            conn,
+            """select t.slug, c.ordinal from content.chapters c join content.texts t on t.id = c.text_id
+                where t.kind = 'hadith' order by t.id, c.ordinal""",
+        )
+        paths = [f"/hadith/{c['slug']}/kitab/{c['ordinal']}" for c in chs]
+    elif part == "narrators":
+        # a narrator's page is an entry of Ibn Hajar's; the other rows are names his entries refer to
+        ids = [
+            r["id"] for r in rows(conn, "select id from content.narrators where kind = 'entry' order by id")
+        ]
+        paths = ["/hadith/narrators", *[f"/hadith/narrators/{i}" for i in ids]]
+    elif part == "books":
+        books = [
+            r["slug"] for r in rows(conn, "select slug from content.texts where kind = 'book' order by id")
+        ]
+        chs = rows(
+            conn,
+            """select t.slug, c.ordinal from content.chapters c join content.texts t on t.id = c.text_id
+                where t.kind = 'book' order by t.id, c.ordinal""",
+        )
+        paths = [
+            "/books",
+            "/books/catalogue",
+            *[f"/books/{s}" for s in books],
+            *[f"/books/{c['slug']}/{c['ordinal']}" for c in chs],
+        ]
+    else:
+        raise ValueError(part)
+    return {"loaded_at": dataset(conn)["loaded_at"], "part": part, "paths": paths}
+
+
 def sources(conn: Connection) -> list[dict[str, Any]]:
     return rows(
         conn,
