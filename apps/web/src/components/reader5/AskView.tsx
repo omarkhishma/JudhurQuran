@@ -144,7 +144,8 @@ function useAskActions(w: WordPayload) {
     goDeeper: () => {
       setAsk(false);
       setPrefs({ panelOpen: true });
-      openWord({ slug: w.slug, at: w.occurrence?.location ?? null });
+      // at the first place, which the card explains it from, even before that place's payload has come
+      openWord({ slug: w.slug, at: w.occurrence?.location ?? first?.location ?? null });
     },
     readHref: first ? `/quran/${first.verse_key.split(":")[0]}?w=${encodeURIComponent(w.slug)}&at=${first.location}#v${first.verse_key.split(":")[1]}` : null,
   };
