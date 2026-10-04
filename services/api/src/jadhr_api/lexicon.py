@@ -672,20 +672,6 @@ def texts(conn: Connection) -> list[dict[str, Any]]:
     return out
 
 
-def text_detail(conn: Connection, slug: str) -> dict[str, Any] | None:
-    t = one(conn, "select * from content.texts where slug = :s", {"s": slug})
-    if t is None:
-        return None
-    t["chapters"] = rows(
-        conn,
-        """select ordinal, uri, title_ar, title_en, title_translit, passage_count, meta
-           from content.chapters where text_id = :t order by ordinal""",
-        {"t": t["id"]},
-    )
-    t.pop("id")
-    return t
-
-
 def dictionaries(conn: Connection) -> list[dict[str, Any]]:
     return rows(
         conn,

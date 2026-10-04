@@ -51,6 +51,7 @@ from . import (
     routes_releases,
     topics,
 )
+from . import texts as texts_api
 from .db import connect, one
 from .search import search as run_search
 from .settings import get_settings
@@ -442,13 +443,45 @@ def texts(request: Request) -> Response:
         return cached(request, {"data": lexicon.texts(conn)})
 
 
-@router.get("/texts/{slug}", summary="One text with its chapters")
-def text(request: Request, slug: str) -> Response:
+@router.get("/texts/{slug}", summary="One text with its source and its top-level chapters")
+def text(request: Request, slug: Annotated[str, Path(max_length=40)]) -> Response:
     with connect() as conn:
-        t = lexicon.text_detail(conn, slug)
+        t = texts_api.text_detail(conn, slug)
         if t is None:
             raise not_found("text")
         return cached(request, t)
+
+
+@router.get(
+    "/texts/{slug}/chapters/{ordinal}",
+    summary="A chapter: its place in the text, its sub-chapters and the passages under it, paged",
+)
+def text_chapter(
+    request: Request,
+    slug: Annotated[str, Path(max_length=40)],
+    ordinal: Annotated[int, Path(ge=1)],
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+) -> Response:
+    with connect() as conn:
+        c = texts_api.chapter(conn, slug, ordinal, offset, limit)
+        if c is None:
+            raise not_found("chapter")
+        return cached(request, c)
+
+
+@router.get(
+    "/texts/{slug}/passages/{ref}",
+    summary="A passage beyond the Quran: its text verbatim, cut into its words, each with its reading",
+)
+def text_passage(
+    request: Request, slug: Annotated[str, Path(max_length=40)], ref: Annotated[str, Path(max_length=40)]
+) -> Response:
+    with connect() as conn:
+        p = texts_api.passage(conn, slug, ref)
+        if p is None:
+            raise not_found("passage")
+        return cached(request, p)
 
 
 @router.get(
