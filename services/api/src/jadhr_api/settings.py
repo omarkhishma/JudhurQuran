@@ -38,9 +38,10 @@ class Settings(BaseSettings):
     # ─── Accounts and sync (P6, D3) ────────────────────────────────────────────
     # where the web app lives, for the links in sign-in e-mails
     public_web_url: str = "http://localhost:3210"
-    # "dev" keeps messages in memory and lets a development server read them back (never in production);
+    # "dev" keeps messages in memory and lets a development server read them back (never in production; set it
+    # yourself, in .env — a server started with nothing set must not hand anyone a sign-in link: security review I1);
     # "smtp" sends them; "none" sends nothing (accounts by e-mail are then off)
-    mail_backend: str = "dev"
+    mail_backend: str = "none"
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_user: str | None = None

@@ -19,6 +19,8 @@ get_settings().rate_limit_per_minute = 1_000_000
 # the limits' own test sets them (test_accounts_api.py, test_requests_are_bounded_per_body_per_account_and_…)
 get_settings().account_rate_per_minute = 1_000_000
 get_settings().mail_per_ip_per_hour = 1_000_000
+# sign-in links go to the development outbox the tests read back (the default sends nothing: security review I1)
+get_settings().mail_backend = "dev"
 
 
 def _database_ready() -> bool:

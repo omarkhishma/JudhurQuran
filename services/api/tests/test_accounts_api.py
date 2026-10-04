@@ -750,3 +750,17 @@ def test_a_return_path_stays_on_the_site() -> None:
         "/" + "a" * 300,
     ):
         assert accounts.safe_return(bad) == "/me", repr(bad)
+
+
+def test_a_server_started_with_nothing_set_sends_no_link_and_shows_no_outbox(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Security review I1: the development outbox hands anyone any address's sign-in link, so it opens only when set."""
+    from jadhr_api.settings import Settings
+
+    monkeypatch.delenv("JADHR_MAIL_BACKEND", raising=False)
+    assert Settings(_env_file=None).mail_backend == "none"  # type: ignore[call-arg]
+    monkeypatch.setattr(get_settings(), "mail_backend", "none")
+    assert client.get("/api/v1/auth/dev/outbox", params={"email": "x@example.org"}).status_code == 404
+    assert client.get("/api/v1/auth/providers").json()["email"] is False
+    assert client.post("/api/v1/auth/email", json={"email": "x@example.org"}).status_code == 503
