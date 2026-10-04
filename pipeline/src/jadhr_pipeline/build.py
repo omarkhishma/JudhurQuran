@@ -701,6 +701,21 @@ def build(raw: RawPaths, out_dir: Path, version: str) -> dict[str, Any]:
         for k in ("texts", "chapters", "passages"):
             generic[k] = generic[k] + extra[k]
         generic["text_forms"] = extra["text_forms"]
+        generic["root_texts"] = extra["root_texts"]
+        generic["text_lemmas"] = extra["text_lemmas"]
+        # the texts on the timeline (P11.2, P3.5): each by its compiler's death year, after the Quran
+        generic["corpora"] = generic.get("corpora", []) + [
+            {
+                "id": t["slug"],
+                "text_id": t["id"],
+                "label_ar": t["title_ar"],
+                "label_en": t["title_en"],
+                "year": t["era_year"],
+                "sort_order": i,
+            }
+            for i, t in enumerate(extra["texts"], start=2)
+            if t["era_year"]
+        ]
         # each narrator's name in an isnād and its link, a row of its own (P11.2b)
         generic["narrator_links"] = [
             {

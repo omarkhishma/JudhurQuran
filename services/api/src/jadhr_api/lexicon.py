@@ -249,21 +249,34 @@ def _attestations(conn: Connection, lemma_id: int, limit: int) -> dict[str, Any]
     }
 
 
-def _timeline(conn: Connection, lex: dict[str, Any], attested: bool) -> dict[str, Any]:
-    """Dictionaries by death year and corpora by date. "has_article" is only that a dictionary has an
-    article on this root — which sense it attests is shown only where senses are linked (P3.4a)."""
+def _timeline(
+    conn: Connection, lex: dict[str, Any], attested: bool, root: str | None = None
+) -> dict[str, Any]:
+    """Dictionaries by death year and corpora by date — the Quran, then the hadith collections and the books by
+    their compilers' death (P11.2, P3.5). "has_article" is only that a dictionary has an article on this root;
+    a text "attests" the root where its passages hold it (``count``, the sure; ``possible`` apart), as the build
+    counted them. Which sense each attests is shown only where senses are linked (P3.4a)."""
     works = rows(
         conn,
         """select id, title_ar, title_en, author_ar, author_en, death_hijri, death_ce, lang
            from content.lexicon_works order by coalesce(death_ce, 9999), sort_order""",
     )
     having = {w["id"] for w in lex["works"]}
-    corpora = rows(conn, "select id, label_ar, label_en, year from content.corpora order by year, sort_order")
+    corpora = rows(
+        conn,
+        """select c.id, c.label_ar, c.label_en, c.year, t.kind,
+                  coalesce(r.sure, 0) as count, coalesce(r.possible, 0) as possible
+             from content.corpora c left join content.texts t on t.id = c.text_id
+             left join content.dict_roots d on d.quran_root = :root
+             left join content.root_texts r on r.text_id = c.text_id and r.root = coalesce(d.key, :root)
+            order by c.year, c.sort_order""",
+        {"root": root},
+    )
     return {
         "min": 550,
         "max": 1920,
         "dictionaries": [w | {"has_article": w["id"] in having} for w in works if w["death_ce"]],
-        "corpora": [c | {"attests": attested} for c in corpora],
+        "corpora": [c | {"attests": attested if c["id"] == "quran" else c["count"] > 0} for c in corpora],
         "per_sense": None,  # sense ↔ source links arrive with the editorial workbench (P3.4a)
     }
 
@@ -394,7 +407,7 @@ def word_payload(
         "family": family,
         "shapes": shapes,
         "dict_articles": lex["works"],
-        "timeline": _timeline(conn, lex, attest["total"] > 0),
+        "timeline": _timeline(conn, lex, attest["total"] > 0, root["key"] if root else None),
         "attestations": attest,
         "next_steps": _next_steps(conn, lem, family, at),
     }

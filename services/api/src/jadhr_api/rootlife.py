@@ -65,14 +65,12 @@ def root_in_texts(
     if root is None:
         return None
     k = root["key"]
+    # each text's count, made by the build (content.root_texts)
     counts = rows(
         conn,
-        f"""select t.slug, t.kind, t.title_ar, t.title_en,
-                   count(*) filter (where {WHICH["sure"]})::int as sure,
-                   count(*) filter (where {WHICH["possible"]})::int as possible
-              from content.passages p join content.texts t on t.id = p.text_id
-             where t.kind <> 'quran' and {WHICH["all"]}
-             group by t.id order by t.sort_order""",
+        """select t.slug, t.kind, t.title_ar, t.title_en, c.sure, c.possible
+             from content.root_texts c join content.texts t on t.id = c.text_id
+            where c.root = :k order by t.sort_order""",
         {"k": k},
     )
     where = ["t.kind <> 'quran'", WHICH[which]]

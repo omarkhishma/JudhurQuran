@@ -87,3 +87,59 @@ def test_a_root_is_asked_by_the_qurans_key_or_the_dictionarys() -> None:
     assert get("علم", limit=1)["root"] == {"key": "علم", "display": "علم", "quran_root": "علم"}
     assert client.get("/api/v1/roots/ءءء/texts").status_code == 404
     assert client.get("/api/v1/roots/علم/texts", params={"kind": "quran"}).status_code == 422
+
+
+def test_the_timeline_holds_the_texts_by_their_compilers_death_each_marked_where_it_holds_the_root() -> None:
+    """P11.2, P3.5: the panel's timeline carries the hadith collections and the books after the Quran, each at its
+    compiler's death year, attesting the root where its passages hold it, with the build's count."""
+    with connect() as conn:
+        slug = one(
+            conn,
+            """select l.slug from content.lemmas l join content.roots r on r.id = l.root_id
+                where r.key = 'علم' order by l.occurrences desc limit 1""",
+        )["slug"]
+        bukhari = one(
+            conn,
+            """select count(*)::int as n from content.passages p join content.texts t on t.id = p.text_id
+                where t.slug = 'bukhari' and 'علم' = any(p.roots)""",
+        )["n"]
+        texts = {
+            r["slug"]: r["era_year"]
+            for r in rows(conn, "select slug, era_year from content.texts where kind <> 'quran'")
+        }
+    w = client.get(f"/api/v1/words/{slug}").json()
+    corpora = {c["id"]: c for c in w["timeline"]["corpora"]}
+    assert corpora["quran"]["year"] == 632 and corpora["quran"]["attests"]
+    assert corpora["bukhari"]["count"] == bukhari and corpora["bukhari"]["attests"]
+    assert {k: c["year"] for k, c in corpora.items() if k != "quran"} == texts
+    years = [c["year"] for c in w["timeline"]["corpora"]]
+    assert years == sorted(years)
+
+
+def test_a_readers_known_words_are_counted_in_each_text_and_kept_nowhere() -> None:
+    """LIB-Q08: how many of each text's Quranic words (content lemmas, where the rules are sure) the reader knows —
+    asked in a body, answered no-store; the counts recomputed here from the passages' forms."""
+    with connect() as conn:
+        known = [
+            r["slug"]
+            for r in rows(conn, "select slug from content.lemmas order by occurrences desc limit 50")
+        ]
+        expected = one(
+            conn,
+            """select count(distinct (f.readings->0->>'lemma_id')::int) as n
+                 from content.passages p join content.texts t on t.id = p.text_id,
+                      unnest(p.form_ids) fid join content.text_forms f on f.id = fid
+                where t.slug = 'nawawi-riyadsalihin' and f.kind in ('form', 'clitic')
+                  and f.readings->0->>'lemma_id' is not null""",
+        )["n"]
+    r = client.post("/api/v1/texts/known", json={"lemmas": known})
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
+    by = {x["slug"]: x for x in r.json()["data"]}
+    assert set(by) >= {"bukhari", "tabari-jamicbayan"} and "quran" not in by
+    assert all(0 < x["known"] <= x["total"] <= 4832 for x in by.values())
+    # a text's total is at most the lemmas its sure forms name (content words only, the report's words only)
+    assert 0 < by["nawawi-riyadsalihin"]["total"] <= expected
+    nothing = {
+        x["slug"]: x["known"] for x in client.post("/api/v1/texts/known", json={"lemmas": []}).json()["data"]
+    }
+    assert set(nothing.values()) == {0}

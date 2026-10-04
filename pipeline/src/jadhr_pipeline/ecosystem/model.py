@@ -12,11 +12,12 @@ the formula before it where they stand elsewhere in it (``meta.names``, ``meta.c
 from __future__ import annotations
 
 from bisect import bisect_right
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
 
 from jadhr_arabic import normalize
-from jadhr_arabic.analysis import Analysis, Vocabulary, analyse, word_spans
+from jadhr_arabic.analysis import CONTENT_POS, Analysis, Vocabulary, analyse, word_spans
 
 SURE = frozenset({"form", "clitic"})
 LOW = frozenset({"pattern", "pattern-dict", "weak", "weak-dict"})
@@ -83,12 +84,22 @@ def assemble(
 ) -> dict[str, list[dict[str, Any]]]:
     """Rows for texts, chapters, passages and text_forms, ids starting where the Quran's end. A form's id is the order
     it is first met in; each spelling is normalised once and each form read once (15M words, 360k forms)."""
-    out: dict[str, list[dict[str, Any]]] = {"texts": [], "chapters": [], "passages": [], "text_forms": []}
+    out: dict[str, list[dict[str, Any]]] = {
+        "texts": [],
+        "chapters": [],
+        "passages": [],
+        "text_forms": [],
+        "root_texts": [],
+        "text_lemmas": [],
+    }
     form_id: dict[str, int] = {}
     of_word: dict[str, int] = {}  # a word as written → its form's id, 0 where it holds no letters
     # each form's first reading's root, and whether the rules are sure of it (True), found it possible (False) or
     # neither (None)
     rooted: list[tuple[str | None, bool | None]] = [(None, None)]
+    # each form's Quranic lemma where the rules are sure of it and it is a content word (LIB-Q04: particles and
+    # pronouns are not counted in "words known"), else None
+    lemma_of: list[int | None] = [None]
 
     def form_of(word: str) -> int:
         fid = of_word.get(word)
@@ -102,6 +113,9 @@ def assemble(
             out["text_forms"].append(_form_row(fid, k, an))
             root = an.readings[0].dict_root if an.readings else None
             rooted.append((root, True if an.kind in SURE else False if an.kind in LOW else None))
+            top = an.readings[0] if an.readings else None
+            content = top is not None and (top.root is not None or (top.pos or "") in CONTENT_POS)
+            lemma_of.append(top.lemma_id if an.kind in SURE and content and top else None)
         of_word[word] = fid
         return fid
 
@@ -133,6 +147,11 @@ def assemble(
             )
         refs: set[str] = set()
         tokens = 0
+        # how many of the text's passages hold each root, sure apart from possible (P11.4b: the root's life and the
+        # timeline read these, not a count over the passages at each request)
+        sure_in: Counter[str] = Counter()
+        low_in: Counter[str] = Counter()
+        lemmas_in: set[int] = set()
         for p in d.passages:
             if p.ref in refs:
                 raise ValueError(f"{d.slug}: passage {p.ref} twice")
@@ -159,11 +178,15 @@ def assemble(
                     if at >= 0 and a < skip[at][1]:
                         continue
                 root, certain = rooted[fid]
+                if lemma_of[fid]:
+                    lemmas_in.add(lemma_of[fid])  # type: ignore[arg-type]
                 if root and certain:
                     sure.setdefault(root, None)
                 elif root and certain is False:
                     low.setdefault(root, None)
             tokens += len(ids)
+            sure_in.update(list(sure))  # the roots themselves: ``sure`` maps each to None
+            low_in.update(r for r in low if r not in sure)
             out["passages"].append(
                 {
                     "id": passage_id,
@@ -183,6 +206,12 @@ def assemble(
                 }
             )
             passage_id += 1
+        # the Quranic lemmas the text uses where the rules are sure, for "words known" on the shelf (LIB-Q08)
+        out["text_lemmas"] += [{"text_id": tid, "lemma_id": lem} for lem in sorted(lemmas_in)]
+        out["root_texts"] += [
+            {"root": r, "text_id": tid, "sure": sure_in[r], "possible": low_in[r]}
+            for r in sorted(set(sure_in) | set(low_in))
+        ]
         for row, n in zip(out["chapters"][-len(d.chapters) :] if d.chapters else [], counts, strict=True):
             row["passage_count"] = n
         out["texts"].append(

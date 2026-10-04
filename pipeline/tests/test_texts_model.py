@@ -53,3 +53,27 @@ def test_a_reference_is_given_once() -> None:
     d.passages.append(Passage(0, "1", "مكرر"))
     with pytest.raises(ValueError, match="twice"):
         assemble([d], V, text_id=2, chapter_id=115, passage_id=6237, sort_order=2)
+
+
+def test_each_text_counts_the_passages_holding_each_root_sure_apart_from_possible() -> None:
+    """P11.4b: the build counts, per text, how many passages hold each root — the root's life and the timeline read
+    these counts, never a count over the passages at each request."""
+    from jadhr_arabic.analysis import Vocabulary
+    from jadhr_pipeline.ecosystem.model import Chapter, Draft, Passage, assemble
+
+    v = Vocabulary(
+        forms={"علم": [(1, "علم", "N", 3)], "عالم": [(2, "علم", "N", 2)]},
+        patterns=[("fa3uul", "فعول", None, 9)],
+        quran_roots={"علم", "رسل"},
+        dict_roots={"علم", "رسل"},
+        to_dict={"علم": "علم", "رسل": "رسل"},
+    )
+    d = Draft("t", "x:t", "book", "ت", "T", None, None, None, None, None, "s", {}, [Chapter("c")])
+    d.passages = [Passage(0, "1", "علم عالم"), Passage(0, "2", "علم رسول"), Passage(0, "3", "رسول")]
+    out = assemble([d], v, text_id=1, chapter_id=1, passage_id=1, sort_order=1)
+    by = {r["root"]: (r["sure"], r["possible"]) for r in out["root_texts"]}
+    # two passages are sure of علم (one holds it twice: counted once); رسول reads to رسل by its pattern: possible
+    assert by["علم"] == (2, 0)
+    assert by["رسل"][0] == 0 and by["رسل"][1] == 2
+    # the lemmas it uses where sure: علم's two (lemma 1 «علم», lemma 2 «عالم»); a pattern's reading names none
+    assert {r["lemma_id"] for r in out["text_lemmas"]} == {1, 2}

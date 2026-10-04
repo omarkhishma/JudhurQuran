@@ -69,6 +69,10 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
      {"word_meanings"}),
     ("hadeethenc_links", "hadeethenc_links.jsonl", ["id", "item_id", "passage_id", "book", "number", "agreement",
                                                     "status"], set()),
+    # a root's count in each text, sure apart from possible (P11.4b)
+    ("root_texts", "root_texts.jsonl", ["root", "text_id", "sure", "possible"], set()),
+    # the Quranic lemmas each text uses where sure, for "words known" on the shelf (LIB-Q08)
+    ("text_lemmas", "text_lemmas.jsonl", ["text_id", "lemma_id"], set()),
     # the catalogue: the works the D9 gate lets in, each linked to where its text is read (P11.3a)
     ("catalogue_works", "catalogue_works.jsonl", ["id", "version", "work", "author_uri", "death_ah", "before_islam",
                                                   "era_year", "title_ar", "title_lat", "author_ar", "author_lat",
@@ -288,6 +292,8 @@ TRUNCATE_ORDER = [
     "glossary_terms",
     "corpora",
     "catalogue_works",
+    "root_texts",
+    "text_lemmas",
     "hadeethenc_links",
     "hadeethenc_items",
     "narrator_links",

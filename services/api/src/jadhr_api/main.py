@@ -56,7 +56,7 @@ from . import (
 )
 from . import catalogue as catalogue_api
 from . import texts as texts_api
-from .db import connect, one
+from .db import connect, one, rows
 from .refusal import Refusal
 from .search import search as run_search
 from .settings import get_settings
@@ -936,6 +936,29 @@ class _Tokens(BaseModel):
 def analyse_tokens(body: _Tokens) -> Response:
     with connect() as conn:
         return ORJSONResponse(analyse.analyse_many(conn, body.tokens), headers={"Cache-Control": "no-store"})
+
+
+class _Known(BaseModel):
+    lemmas: list[Annotated[str, Field(max_length=80)]] = Field(max_length=10000)
+
+
+@router.post(
+    "/texts/known",
+    summary="How many of each text's Quranic words the reader knows (LIB-Q08): asked in a body, kept nowhere",
+)
+def texts_known(body: _Known) -> Response:
+    # the words a reader knows are theirs: in a body, answered no-store, never logged (the privacy page says so)
+    with connect() as conn:
+        found = rows(
+            conn,
+            """with mine as (select id from content.lemmas where slug = any(:s))
+               select t.slug, count(*)::int as total, count(m.id)::int as known
+                 from content.text_lemmas x join content.texts t on t.id = x.text_id
+                 left join mine m on m.id = x.lemma_id
+                group by t.id order by t.sort_order""",
+            {"s": body.lemmas},
+        )
+    return ORJSONResponse({"data": found}, headers={"Cache-Control": "no-store"})
 
 
 class _UrlIntake(BaseModel):
