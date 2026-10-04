@@ -5,11 +5,18 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
+import { paragraphHref } from "@/lib/books";
+import { dictHref } from "@/lib/dictionary";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
+import { hadithHref } from "@/lib/hadith";
+import { searchMyTexts } from "@/lib/library/searchTexts";
 import type { SearchResult } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
 
 type Item = { id: string; href: string; kind: string; primary: React.ReactNode; secondary?: React.ReactNode };
+/** The texts beyond the Quran in a search's answer (P11): a hadith or a book's paragraph, with its place. */
+type TextHit = { uri: string; ref: string; text: { slug: string; title_ar: string; title_en: string }; chapter?: { title_ar: string } | null; start: string };
+type Ecosystem = { dict_roots?: { key: string; display: string; lexica: number; quran_root: string | null }[]; texts?: TextHit[]; books?: TextHit[] };
 
 export function Omnibox({ onClose }: { onClose: () => void }) {
   const t = useTranslations("search");
@@ -27,9 +34,11 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
     queryFn: async () => {
       const r = await fetch(`/api/v1/search?q=${encodeURIComponent(debounced)}&limit=8`);
       if (!r.ok) throw new Error(String(r.status));
-      return (await r.json()) as SearchResult;
+      return (await r.json()) as SearchResult & { results: Ecosystem };
     },
   });
+  // the reader's own texts, searched in this browser and never sent (SRC-Q03)
+  const mine = useQuery({ queryKey: ["search-mine", debounced], queryFn: () => searchMyTexts(debounced, 3), enabled: debounced.length > 1 });
 
   const items: Item[] = useMemo(() => {
     if (!data) return [];
@@ -84,6 +93,39 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
           </span>
         ),
       });
+    // the ecosystem (SHL-Q07): the dictionary's roots, the hadith, the books' paragraphs
+    for (const d of (data.results.dict_roots ?? []).slice(0, 2))
+      out.push({
+        id: `d${d.key}`,
+        href: dictHref(d.key),
+        kind: t("kindDictRoot"),
+        primary: <span className="ar-classical text-[19px]" dir="rtl" lang="ar">{d.display}</span>,
+        secondary: t("dictRootMeta", cnt(d.lexica, locale)),
+      });
+    for (const h of (data.results.texts ?? []).slice(0, 2))
+      out.push({
+        id: h.uri,
+        href: hadithHref(h.text.slug, h.ref),
+        kind: t("kindHadith"),
+        primary: <span className="ar-classical line-clamp-1 text-[16px] leading-[1.8]" dir="rtl" lang="ar">{h.start}</span>,
+        secondary: <span dir="auto">{`${locale === "ar" ? h.text.title_ar : h.text.title_en} • ${formatNumber(Number(h.ref.split(/[._]/)[0]) || 0, locale)}`}</span>,
+      });
+    for (const h of (data.results.books ?? []).slice(0, 2))
+      out.push({
+        id: h.uri,
+        href: paragraphHref(h.text.slug, h.ref),
+        kind: t("kindBook"),
+        primary: <span className="ar-classical line-clamp-1 text-[16px] leading-[1.8]" dir="rtl" lang="ar">{h.start}</span>,
+        secondary: <span dir="auto">{[h.text.title_ar, h.chapter?.title_ar].filter(Boolean).join(" • ")}</span>,
+      });
+    for (const h of mine.data?.hits ?? [])
+      out.push({
+        id: `m${h.id}-${h.passage}`,
+        href: `/library/text/${h.id}#p${h.passage}`,
+        kind: t("kindMine"),
+        primary: <span className="ar-classical line-clamp-1 text-[16px] leading-[1.8]" dir="rtl" lang="ar">{`${h.before} ${h.match} ${h.after}`.trim()}</span>,
+        secondary: t("mineIn", { title: h.title, n: formatNumber(h.passage, locale) }),
+      });
     for (const l of data.results.lemmas.slice(0, 4))
       if (l.root)
         out.push({
@@ -94,7 +136,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
           secondary: l.gloss_en && locale === "en" ? l.gloss_en : t("formMeta", cnt(l.occurrences, locale)),
         });
     return out;
-  }, [data, t, locale]);
+  }, [data, mine.data, t, locale]);
 
   // The highlighted row resets whenever the query changes.
   const active = activeState.q === debounced ? activeState.i : 0;

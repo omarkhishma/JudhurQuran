@@ -514,7 +514,12 @@
     "sectionHadith": "In the hadith collections",
     "hadithIn": "{book}, hadith {ref}",
     "sourceBooks": "Classical books",
-    "sectionBooks": "In the classical books"
+    "sectionBooks": "In the classical books",
+    "kindDictRoot": "Dictionary",
+    "dictRootMeta": "{count, plural, one {in # dictionary} other {in # dictionaries}}",
+    "kindHadith": "Hadith",
+    "kindBook": "Book",
+    "kindMine": "My texts"
   },
   "footer": {
     "label": "Site links",

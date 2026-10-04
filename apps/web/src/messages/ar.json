@@ -514,7 +514,12 @@
     "sectionHadith": "في كتب الحديث",
     "hadithIn": "{book}، الحديث {ref}",
     "sourceBooks": "كتب التراث",
-    "sectionBooks": "في كتب التراث"
+    "sectionBooks": "في كتب التراث",
+    "kindDictRoot": "المعجم",
+    "dictRootMeta": "{count, plural, one {في معجم واحد} two {في معجمين} few {في {n} معاجم} many {في {n} معجمًا} other {في {n} معجم}}",
+    "kindHadith": "حديث",
+    "kindBook": "كتاب",
+    "kindMine": "نصوصي"
   },
   "footer": {
     "label": "روابط الموقع",
