@@ -40,13 +40,15 @@ const ROOT = /^[\u0621-\u064a]{1,6}$/;
  * ready, whether it edits, and what it did. Heard only from the page that holds this one. Read-only (a shared map
  * read, not edited), it only says it is there, finds a card and hands the map over.
  */
-export function SplitReceiver({ readOnly = false }: { readOnly?: boolean }) {
+export function SplitReceiver({ readOnly = false, saveNow }: { readOnly?: boolean; saveNow?: (ids: string[]) => Promise<void> }) {
   const t = useTranslations("graph");
   const locale = useLocale();
   const tools = useCanvasTools();
   const live = useRef(tools);
+  const save = useRef(saveNow);
   useEffect(() => {
     live.current = tools;
+    save.current = saveNow;
   });
   useEffect(() => {
     if (window.parent === window) return;
@@ -87,6 +89,8 @@ export function SplitReceiver({ readOnly = false }: { readOnly?: boolean }) {
             live.current.center(first);
           });
         }
+        // said once kept — in this browser and in the shared copy — so the page may record it and move on
+        await save.current?.([...nodes.map((n) => n.id), ...edges.map((x) => x.id)]);
         return reply({ type: "jadhr:merged", ref, cards: nodes.length });
       }
       // a word, or the verse or root of the reader's context (B44)

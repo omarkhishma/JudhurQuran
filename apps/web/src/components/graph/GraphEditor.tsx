@@ -230,8 +230,8 @@ function EditorInner({
   }, [doc.kind, setShared, show, t]);
 
   // the latest save, for a timer or a cleanup that outlives the render that set it
-  const writeRef = useRef<() => Promise<void>>(() => Promise.resolve());
-  const write = useCallback(async () => {
+  const writeRef = useRef<(opts?: { push?: boolean }) => Promise<void>>(() => Promise.resolve());
+  const write = useCallback(async (opts: { push?: boolean } = {}) => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
     if (halted()) return;
@@ -247,8 +247,10 @@ function EditorInner({
     // the other windows on this map follow (P8.6)
     onSaved();
     // a shared map's history is the server's; a private one's is kept here
-    if (sharedRef.current) void pushShared();
-    else void keepVersion(doc.id, title || t("untitled"), nodes, edges);
+    if (sharedRef.current) {
+      const pushed = pushShared();
+      if (opts.push) await pushed;
+    } else void keepVersion(doc.id, title || t("untitled"), nodes, edges);
     if (contentOf(titleRef.current, latest.current.nodes, latest.current.edges) === content) show("saved");
     else {
       // changed while it was being written: that change is saved in turn
@@ -275,6 +277,15 @@ function EditorInner({
     },
     [write, show, halted],
   );
+
+  /** Written now, and pushed to the shared copy, once the map holds `ids` — so a page that framed this editor can say a
+   * change is kept before it moves on (a lesson's proposal confirmed, P9.3). */
+  const saveNow = useCallback(async (ids: string[]) => {
+    for (let i = 0; i < 100 && !ids.every((id) => latest.current.nodes.some((n) => n.id === id) || latest.current.edges.some((e) => e.id === id)); i++) await new Promise((r) => setTimeout(r, 20));
+    await writeRef.current({ push: true });
+    // a push already under way takes this change on its next turn: wait for that turn too
+    for (let i = 0; i < 250 && (pushing.current || again.current); i++) await new Promise((r) => setTimeout(r, 20));
+  }, []);
 
   // leaving the editor, or the page, writes what is pending at once
   useEffect(() => {
@@ -433,8 +444,8 @@ function EditorInner({
         }}
         header={
           <>
-            {/* in the split view's graph pane, the word the reader sends (P8.6) */}
-            <SplitReceiver />
+            {/* in the split view's graph pane, the word the reader sends (P8.6); a lesson's proposal confirmed (P9.3) */}
+            <SplitReceiver saveNow={saveNow} />
             <EditorHeader
               title={title}
               onTitle={(v) => {
