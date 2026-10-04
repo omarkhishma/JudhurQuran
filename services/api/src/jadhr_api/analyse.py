@@ -158,7 +158,11 @@ def vocabulary(conn: Connection) -> shared.Vocabulary:
     (``jadhr_arabic.analysis.vocabulary_from``); read once per process — a new release restarts the API."""
     if "v" not in _VOCAB:
         _VOCAB["v"] = shared.vocabulary_from(
-            rows(conn, "select lemma_id, root_id, pos, norm, norm_uthmani, norm_plain from content.words"),
+            # in the words' own order, as the build reads them: a tie between two readings goes to the first met
+            rows(
+                conn,
+                "select lemma_id, root_id, pos, norm, norm_uthmani, norm_plain from content.words order by id",
+            ),
             rows(conn, "select id, key from content.roots"),
             rows(conn, "select slug, ar_bare, pos_hint, occurrences from content.patterns"),
             rows(conn, "select key, quran_root, letters from content.dict_roots"),
@@ -385,9 +389,9 @@ MAX_BATCH_FORMS = 3000
 
 
 def analyse_many(conn: Connection, tokens: list[str]) -> dict[str, Any]:
-    """The reader's own text (the Library's add-a-text, LIB-29…33): every distinct written form once, compact.
-    Forms the Quran spells are resolved in one query; the rest by the shared rules in memory (clitics, patterns,
-    weak roots, the dictionary's roots), as the hadith and the books are read. Nothing is stored."""
+    """The reader's own text (the Library's add-a-text, LIB-29…33): every distinct written form once, compact,
+    read by the shared rules in memory — the same function the build read the hadith and the books with, so a word
+    of a reader's text is read as the same word in a book. Nothing is stored."""
     keys: list[str] = []
     seen: set[str] = set()
     for t in tokens:
@@ -396,57 +400,21 @@ def analyse_many(conn: Connection, tokens: list[str]) -> dict[str, Any]:
             seen.add(k)
             keys.append(k)
     keys = keys[:MAX_BATCH_FORMS]
-    found = rows(
-        conn,
-        """with m as (
-             select coalesce(case when w.norm = any(:ks) then w.norm end,
-                             case when w.norm_plain = any(:ks) then w.norm_plain end, w.norm_uthmani) as k,
-                    w.lemma_id, w.root_id, w.pos, count(*)::int as n
-             from content.words w where w.norm = any(:ks) or w.norm_uthmani = any(:ks) or w.norm_plain = any(:ks)
-             group by 1, 2, 3, 4)
-           select m.k, m.n, m.pos, l.slug, l.ar as lemma_ar, r.key as root_key, r.spaced, l.gloss_en
-           from m left join content.lemmas l on l.id = m.lemma_id left join content.roots r on r.id = m.root_id
-           order by m.k, m.n desc""",
-        {"ks": keys},
-    )
-    by: dict[str, list[dict[str, Any]]] = {}
-    for r in found:
-        by.setdefault(r["k"], []).append(r)
-    out: dict[str, dict[str, Any]] = {}
     vocab, look = vocabulary(conn), _lookups(conn)
+    out: dict[str, dict[str, Any]] = {}
     for k in keys:
-        rs = by.get(k)
-        if rs:
-            total = sum(r["n"] for r in rs)
-            top = rs[0]
-            if top["pos"] not in CONTENT_POS and not top["root_key"]:
-                out[k] = {"kind": "particle", "confidence": 1.0, "lemma": top["slug"], "root": None}
-            else:
-                out[k] = {
-                    "kind": "form",
-                    "confidence": round(top["n"] / total, 2),
-                    "lemma": top["slug"],
-                    "lemma_ar": top["lemma_ar"],
-                    "root": top["root_key"],
-                    "root_spaced": top["spaced"],
-                    # the root's dictionary key, as the build files it (vocabulary.to_dict)
-                    "dict_root": vocab.to_dict.get(top["root_key"]) if top["root_key"] else None,
-                    "gloss_en": top["gloss_en"],
-                }
-        else:
-            # the rest by the shared rules in memory, as the hadith and the books are read (P11.4)
-            a = shared.analyse(vocab, k)
-            c = _from_reading(a.readings[0], look) if a.readings else None
-            out[k] = {
-                "kind": a.kind,
-                "confidence": a.confidence,
-                "lemma": (c["lemma"] or {}).get("slug") if c else None,
-                "lemma_ar": (c["lemma"] or {}).get("ar") if c else None,
-                "root": (c["root"] or {}).get("key") if c else None,
-                "root_spaced": (c["root"] or {}).get("spaced") if c else None,
-                "dict_root": (c.get("dict_root") or {}).get("key") if c else None,
-                "gloss_en": c["gloss_en"] if c else None,
-            }
+        a = shared.analyse(vocab, k)
+        c = _from_reading(a.readings[0], look) if a.readings else None
+        out[k] = {
+            "kind": a.kind,
+            "confidence": round(a.confidence, 2),
+            "lemma": (c["lemma"] or {}).get("slug") if c else None,
+            "lemma_ar": (c["lemma"] or {}).get("ar") if c else None,
+            "root": (c["root"] or {}).get("key") if c and a.kind != "particle" else None,
+            "root_spaced": (c["root"] or {}).get("spaced") if c and a.kind != "particle" else None,
+            "dict_root": (c.get("dict_root") or {}).get("key") if c and a.kind != "particle" else None,
+            "gloss_en": c["gloss_en"] if c else None,
+        }
     # each input token's key, in order, so the page maps its words to these results without normalising itself
     return {
         "token_keys": [_key(t) for t in tokens],
