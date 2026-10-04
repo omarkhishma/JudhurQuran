@@ -4039,5 +4039,23 @@
     "mineNone": "This root is not in your texts.",
     "whereMine": "{title}, passage {n}",
     "mineAll": "{count, plural, one {Its place in your texts} other {All its places in your texts ({n})}}"
+  },
+  "ops": {
+    "title": "What went wrong",
+    "lead": "Errors the pages met, errors the API did not handle, and what the monitor's check found unanswered, counted by day: their kind, their place, the release and how often. Nothing in them is about anyone; they are kept thirty days.",
+    "period": "Period",
+    "days": "{n, plural, =1 {Today} other {Last {shown} days}}",
+    "source_web": "Pages",
+    "source_api": "API",
+    "source_monitor": "Monitor",
+    "none": "Nothing went wrong in this period.",
+    "times": "Times",
+    "release": "Release {v}",
+    "last": "Last {when}",
+    "gateSignIn": "This page is for the board's administrators. Sign in to see it.",
+    "gateNotAdmin": "This page is for the board's administrators.",
+    "signIn": "Sign in",
+    "loadFailed": "Could not load.",
+    "nav": "What went wrong"
   }
 }

@@ -518,6 +518,9 @@ def worklists(u: dict[str, Any]) -> dict[str, Any]:
         "layers": [{"layer": k, "total": layers[k], **counts(vby, "layer", k)} for k in LAYERS],
         "awaiting_me": waiting["n"] if waiting else 0,
         "my_open": mine["n"] if mine else 0,
+        # the reader's role as the server holds it now (a role given since they signed in shows at once): an
+        # administrator also sees what went wrong (B61)
+        "role": u["role"],
     }
 
 

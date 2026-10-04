@@ -168,14 +168,26 @@ def purge() -> int:
 
 
 def report(days: int = 7) -> list[dict[str, Any]]:
+    """The last ``days`` days, today among them: each kind at each place, the most frequent first."""
     with tx() as conn:
         return q(
             conn,
             """select source, kind, message, place, release, sum(count)::int as count, max(last_at) as last_at
-                 from ops.errors where day >= current_date - :d
+                 from ops.errors where day > current_date - :d
                 group by source, kind, message, place, release order by count desc, last_at desc limit 100""",
             {"d": days},
         )
+
+
+def totals(days: int = 7) -> dict[str, int]:
+    """How many errors each source counted in the last ``days`` days, today among them."""
+    with tx() as conn:
+        rows = q(
+            conn,
+            "select source, sum(count)::int as n from ops.errors where day > current_date - :d group by source",
+            {"d": days},
+        )
+    return {r["source"]: r["n"] for r in rows}
 
 
 def check(base: str, timeout: float = 15) -> list[str]:

@@ -1051,6 +1051,22 @@ def ops_error(body: _ErrorReport, request: Request) -> Response:
     return Response(status_code=204)
 
 
+@router.get(
+    "/ops/errors",
+    summary="What went wrong in the last days, by kind and place, for the board's administrators (B61)",
+    include_in_schema=False,
+)
+def ops_errors(
+    u: Annotated[dict[str, Any], Depends(accounts.current_user)], days: int = Query(7, ge=1, le=ops.KEEP_DAYS)
+) -> Response:
+    if u["role"] != "admin" or u.get("blocked_at"):
+        raise Refusal(403, "not_admin", "This is for the board's administrators.")
+    counted = {"web": 0, "api": 0, "monitor": 0} | ops.totals(days)
+    return ORJSONResponse(
+        {"days": days, "totals": counted, "rows": ops.report(days)}, headers={"Cache-Control": "no-store"}
+    )
+
+
 class _Known(BaseModel):
     lemmas: list[Annotated[str, Field(max_length=80)]] = Field(max_length=10000)
 

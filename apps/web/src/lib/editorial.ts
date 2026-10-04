@@ -32,7 +32,7 @@ export type Entry = {
 };
 
 type Counts = { total: number; draft: number; review: number; changes: number; approved: number };
-export type Worklists = { kinds: (Counts & { kind: Kind })[]; layers: (Counts & { layer: Layer })[]; awaiting_me: number; my_open: number };
+export type Worklists = { kinds: (Counts & { kind: Kind })[]; layers: (Counts & { layer: Layer })[]; awaiting_me: number; my_open: number; role: string };
 /** A relation row's details (P8.4): its two ends as the book words them, the roots they were mapped to and how surely,
  * the sense it names, its verses. */
 export type RelationRow = {

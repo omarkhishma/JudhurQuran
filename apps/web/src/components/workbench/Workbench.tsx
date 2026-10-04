@@ -24,6 +24,7 @@ export function Workbench({ initial }: { initial: Place }) {
   const locale = useLocale();
   const client = useIsClient();
   const session = useAccount((s) => s.session);
+  const tOps = useTranslations("ops");
   const [place, setPlace] = useState<Place>(initial);
   const lists = useQuery({ queryKey: ["editorial-worklists", session], queryFn: getWorklists, enabled: client && !!session, retry: false, refetchOnWindowFocus: true });
 
@@ -111,6 +112,12 @@ export function Workbench({ initial }: { initial: Place }) {
             </button>
           );
         })}
+        {/* the administrators also see what went wrong (B61), by the role the server holds now */}
+        {w?.role === "admin" && (
+          <Link href="/workbench/errors" className="workbench-tab mt-2">
+            {tOps("nav")}
+          </Link>
+        )}
         </div>
       </nav>
       {/* the page's main landmark is the site's; the workbench's own column is a part of it */}

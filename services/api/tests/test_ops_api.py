@@ -186,3 +186,38 @@ def test_reports_are_bounded_by_kind_place_day_and_address(monkeypatch: object) 
             conn.execute(
                 text("delete from ops.errors where message like :t or kind = 'overflow'"), {"t": f"%{tag}%"}
             )
+
+
+def test_what_went_wrong_is_read_by_the_boards_administrators_only() -> None:
+    """B61: the counts of the last days, by kind and place, on a page of the workbench — administrators only."""
+    client = TestClient(app)
+    tag = _tag()
+    email = f"ops-{tag}@example.org"
+    ops.record("web", "TypeError", f"read {tag}", "/quran/2", "2026.10.0")
+    try:
+        r = client.post("/api/v1/auth/email", json={"email": email, "locale": "en"})
+        assert r.status_code == 202
+        link = client.get("/api/v1/auth/dev/outbox", params={"email": email}).json()["messages"][-1]["link"]
+        session = client.post("/api/v1/auth/verify", json={"token": link.split("token=")[1]}).json()[
+            "session"
+        ]
+        h = {"Authorization": f"Bearer {session}"}
+        assert client.get("/api/v1/ops/errors").status_code == 401
+        for role in ("member", "editor"):
+            with tx() as conn:
+                conn.execute(
+                    text("update accounts.users set role = :r where email = :e"), {"r": role, "e": email}
+                )
+            assert client.get("/api/v1/ops/errors", headers=h).status_code == 403, role
+        with tx() as conn:
+            conn.execute(text("update accounts.users set role = 'admin' where email = :e"), {"e": email})
+        d = client.get("/api/v1/ops/errors", params={"days": 1}, headers=h).json()
+        assert d["days"] == 1 and set(d["totals"]) == {"web", "api", "monitor"} and d["totals"]["web"] >= 1
+        mine = [x for x in d["rows"] if x["message"] == f"read {tag}"]
+        assert [(x["kind"], x["place"], x["count"]) for x in mine] == [("TypeError", "/quran/2", 1)]
+        assert client.get("/api/v1/ops/errors", params={"days": 31}, headers=h).status_code == 422
+    finally:
+        with tx() as conn:
+            conn.execute(text("delete from ops.errors where message = :m"), {"m": f"read {tag}"})
+            conn.execute(text("delete from accounts.users where email = :e"), {"e": email})
+            conn.execute(text("delete from accounts.login_tokens where email = :e"), {"e": email})
