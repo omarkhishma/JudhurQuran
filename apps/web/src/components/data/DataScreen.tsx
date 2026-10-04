@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Changelog } from "@/components/contrib/Changelog";
 import { Link } from "@/i18n/navigation";
 import { useIsClient } from "@/lib/client";
@@ -127,7 +127,7 @@ function Dataset() {
       </div>
 
       <aside className="flex flex-col gap-4" aria-label={t("rail")}>
-        <Cite release={current.data ?? null} />
+        <Cite release={current.isPending ? undefined : (current.data ?? null)} />
         {current.data && <CheckFile release={current.data} />}
         <Licences release={current.data ?? null} />
       </aside>
@@ -272,11 +272,18 @@ function ReleaseCard({ r, latest }: { r: Release; latest: boolean }) {
 
 /** "Cite the dataset" (DAT-18…22, Q06): five forms, the DOI when there is one, else the release's own address; copied
  * with a word that shows either way (DAT-H03). */
-function Cite({ release }: { release: Release | null }) {
+function Cite({ release }: { release: Release | null | undefined }) {
   const t = useTranslations("dataset");
   const client = useIsClient();
   const [format, setFormat] = useState<CiteFormat>("bibtex");
   const [said, setSaid] = useState("");
+  // reached as /data#cite (the reader's cite dialog): brought into view once the release it cites is read
+  const scrolled = useRef(false);
+  useEffect(() => {
+    if (scrolled.current || window.location.hash !== "#cite" || release === undefined) return;
+    scrolled.current = true;
+    document.getElementById("cite")?.scrollIntoView({ block: "start" });
+  }, [release]);
   useEffect(() => {
     if (!said) return;
     const id = setTimeout(() => setSaid(""), 1800);
@@ -284,14 +291,14 @@ function Cite({ release }: { release: Release | null }) {
   }, [said]);
   if (!release)
     return (
-      <section className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4" aria-labelledby="cite-h">
+      <section id="cite" className="flex scroll-mt-20 flex-col gap-2 rounded-xl border border-line bg-card p-4" aria-labelledby="cite-h">
         <h2 id="cite-h" className="text-[15px] font-semibold">{t("citeTitle")}</h2>
-        <p className="text-[12.5px] text-t3">{t("citeNone")}</p>
+        <p className="text-[12.5px] text-t3">{release === undefined ? "…" : t("citeNone")}</p>
       </section>
     );
   const text = citation(format, release, releaseAddress(client ? window.location.origin : "", release.version));
   return (
-    <section className="flex flex-col gap-2 rounded-xl border border-line bg-card p-4" aria-labelledby="cite-h">
+    <section id="cite" className="flex scroll-mt-20 flex-col gap-2 rounded-xl border border-line bg-card p-4" aria-labelledby="cite-h">
       <h2 id="cite-h" className="text-[15px] font-semibold">{t("citeTitle")}</h2>
       <div className="flex flex-wrap gap-1" role="group" aria-label={t("citeFormat")}>
         {CITE_FORMATS.map((f) => (

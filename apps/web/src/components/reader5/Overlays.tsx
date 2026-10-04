@@ -330,6 +330,10 @@ function CiteBody({ opened, chapter }: { opened: CiteTarget; chapter: ChapterInf
             {t("exportJson")}
           </button>
           <span className="flex-1" />
+          {/* the whole dataset, cited by its release (journey C) */}
+          <Link href="/data#cite" className="text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setCite(null)}>
+            {t("citeDataset")}
+          </Link>
           <Link href="/sources" className="text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setCite(null)}>
             {t("licencesLink")}
           </Link>

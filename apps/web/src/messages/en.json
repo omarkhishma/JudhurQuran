@@ -2325,7 +2325,8 @@
     "textCount": "the root in {n} of its passages",
     "textsSummary": "The root is in {n} of the {of} hadith collections and books, the earliest {first} ({year} CE).",
     "textsNone": "The root is in none of the hadith collections and books.",
-    "textsOpen": "Its passages there"
+    "textsOpen": "Its passages there",
+    "citeDataset": "Cite the whole dataset"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
