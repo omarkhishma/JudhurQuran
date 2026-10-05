@@ -99,14 +99,18 @@ function Line({ line, rtl }: { line: OgLine; rtl: boolean }) {
 
 const isArabic = (s: string) => /[\u0600-\u06FF]/.test(s);
 
-/** The shared share-card: brand mark, a title, up to three lines, and the tagline. */
+/** The shared share-card: brand mark, the Quran's own words where it has them, a title, up to three lines, and the
+ * tagline. */
 export async function ogCard({
   locale,
+  quran,
   title,
   lines,
   footer,
 }: {
   locale: string;
+  /** Quranic text drawn exactly by `quranImage` (B7), above the title */
+  quran?: { src: string; width: number; height: number };
   title: OgLine;
   lines: OgLine[];
   /** Bottom line; defaults to the tagline. */
@@ -135,6 +139,8 @@ export async function ogCard({
           <Line line={{ text: brand, size: 40, bold: true }} rtl={ar} />
         </div>
         <div style={{ display: "flex", flex: 1, flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- the image renderer draws an <img>, not next/image */}
+          {quran && <img src={quran.src} width={quran.width} height={quran.height} alt="" />}
           <Line line={title} rtl={isArabic(title.text)} />
           {lines.map((l, i) => (
             <Line key={i} line={l} rtl={isArabic(l.text)} />

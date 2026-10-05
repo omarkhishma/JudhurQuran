@@ -53,8 +53,10 @@ const nextConfig: NextConfig = {
   // so workspace dependencies are included.
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname, "../../"),
-  // Share images read their fonts from disk at request time.
-  outputFileTracingIncludes: { "/**": ["./src/fonts/og/**"] },
+  // Share images read their fonts from disk at request time; the Quran's text in them is shaped by HarfBuzz (B7),
+  // loaded from node_modules with its WebAssembly beside it.
+  outputFileTracingIncludes: { "/**": ["./src/fonts/og/**", "./src/fonts/UthmanicHafs_V22.ttf", "./node_modules/harfbuzzjs/dist/harfbuzz.wasm"] },
+  serverExternalPackages: ["harfbuzzjs"],
   // The public API is served under the same origin (/api/v1/*) so the browser never needs CORS.
   async rewrites() {
     return [{ source: "/api/v1/:path*", destination: `${API_ORIGIN}/api/v1/:path*` }];
