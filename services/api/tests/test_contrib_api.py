@@ -630,3 +630,36 @@ def test_a_correction_to_a_layer_the_build_made_goes_through_the_same_queue(
         shown["label"] == "صحيح البخاري، الحديث ١" and shown["waiting"] >= 1
     )  # the narrator one still waits
     assert client.get("/api/v1/corrections", params={"target": "quran:1:1"}).status_code == 422
+
+
+def test_a_blank_proposal_is_refused_and_its_why_loses_the_controls_that_reorder_text(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """A wording or a why of spaces, or of direction marks alone, is refused as empty — never sent on for the database
+    to fail on — in a proposal and in its revision; a why keeps its words, its direction controls out (L12)."""
+    h = people["proposer"]
+    base = {"kind": "correction", "lemma": "hadith:bukhari:1", "field": "split"}
+    for text, why in (("   ", "سبب"), ("نص", chr(0x200F) + " "), (chr(0x202E), "سبب")):
+        r = client.post("/api/v1/proposals", headers=h, json={**base, "text": text, "why": why})
+        assert r.status_code == 422 and r.json()["error"]["code"] == "empty", (text, why, r.text)
+    made = client.post(
+        "/api/v1/proposals",
+        headers=h,
+        json={**base, "text": "نص التصحيح", "why": chr(0x202E) + "سبب" + chr(0x202C) + " واضح"},
+    )
+    assert made.status_code == 201, made.text
+    assert made.json()["why"] == "سبب واضح"
+    # sent back for changes, its revision is held to the same
+    pid = made.json()["id"]
+    assert (
+        client.post(
+            f"/api/v1/proposals/{pid}/decisions",
+            headers=people["editor"],
+            json={"decision": "changes", "note": "x"},
+        ).status_code
+        == 200
+    )
+    r = client.post(
+        f"/api/v1/proposals/{pid}/revise", headers=h, json={"text": " ", "why": "سبب", "sources": []}
+    )
+    assert r.status_code == 422 and r.json()["error"]["code"] == "empty"

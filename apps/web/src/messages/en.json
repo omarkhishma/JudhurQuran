@@ -3217,7 +3217,8 @@
       "no_account": "No such account.",
       "unknown_kind": "Unknown kind of proposal.",
       "no_target": "This place is not in the data.",
-      "wrong_target": "This correction does not apply to this kind of place."
+      "wrong_target": "This correction does not apply to this kind of place.",
+      "empty": "Write what you propose and why."
     },
     "refIn": "The entry or page in {work}",
     "revertedBy": "Merged, then taken back by the editorial board",

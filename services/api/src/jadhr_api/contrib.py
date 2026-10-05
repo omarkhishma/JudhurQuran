@@ -266,6 +266,19 @@ def _check_active(conn: Connection, u: dict[str, Any]) -> None:
         raise Refusal(403, "blocked", "This account can no longer propose, review or report.")
 
 
+_BLANK = re.compile("[\\s" + chr(0x200E) + chr(0x200F) + chr(0x061C) + "]*")
+
+
+def _wording(body: dict[str, Any]) -> tuple[str, str]:
+    """A proposal's wording and why, as they are kept: the controls that reorder text out of both (L12, research 24),
+    neither empty once trimmed — a blank one is refused, never left for the database to fail on."""
+    proposed, why = plain.text(body["text"]).strip(), plain.text(body["why"]).strip()
+    # nothing but spaces and direction marks is nothing to read
+    if _BLANK.fullmatch(proposed) or _BLANK.fullmatch(why):
+        raise Refusal(422, "empty", "A proposal says what it proposes and why.")
+    return proposed, why
+
+
 def propose(u: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     kind = body["kind"]
     if kind not in KINDS:
@@ -275,7 +288,7 @@ def propose(u: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
     target = _validate_target(kind, lemma, ordinal, body.get("location"), field)
     location = target["location"]
     current = target["current"]
-    proposed = plain.text(body["text"]).strip()
+    proposed, why = _wording(body)
     if kind in ("edit", "gloss", "morphology") and proposed == current.strip():
         raise Refusal(422, "same_wording", "The wording is the same as the current one.")
     sources = clean_sources(body.get("sources") or [])
@@ -316,7 +329,7 @@ def propose(u: dict[str, Any], body: dict[str, Any]) -> dict[str, Any]:
                 "f": field,
                 "c": current,
                 "t": proposed,
-                "w": body["why"].strip(),
+                "w": why,
                 "s": json.dumps(sources, ensure_ascii=False),
                 "u": u["id"],
                 "v": version,
@@ -726,6 +739,7 @@ def revise(u: dict[str, Any], pid: str, body: dict[str, Any]) -> dict[str, Any]:
     """Changes requested: the proposer answers with a new revision, which goes back to the queue (RVQ-42)."""
     pid = _uuid(pid)
     sources = clean_sources(body.get("sources") or [])
+    proposed, why = _wording(body)
     with tx() as conn:
         _check_active(conn, u)
         p = q1(
@@ -745,8 +759,8 @@ def revise(u: dict[str, Any], pid: str, body: dict[str, Any]) -> dict[str, Any]:
                    status = 'open', note = null, updated_at = now(), decided_at = null where id = :id"""
             ),
             {
-                "t": body["text"].strip(),
-                "w": body["why"].strip(),
+                "t": proposed,
+                "w": why,
                 "s": json.dumps(sources, ensure_ascii=False),
                 "id": p["id"],
             },
