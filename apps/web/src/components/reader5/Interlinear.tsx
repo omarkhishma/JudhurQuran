@@ -47,11 +47,12 @@ export function Interlinear({ chapters }: { chapters: number[] }) {
     });
   }, [on, q.data, locale]);
 
-  if (!on) return null;
-  const from = q.data?.meanings_from;
+  // the credit names what is drawn under the words, so it waits for them
+  if (!on || !q.data) return null;
+  const from = q.data.meanings_from;
   return (
     <p className="interlinear-credit text-[12px] leading-relaxed text-t3">
-      {locale === "ar" && from ? t("interlinearCreditAr", { work: from.title_ar, publisher: from.publisher_ar.split("،")[0] }) : t("interlinearCreditEn")}
+      {locale !== "ar" ? t("interlinearCreditEn") : from ? t("interlinearCreditAr", { work: from.title_ar, publisher: from.publisher_ar.split("،")[0] }) : t("interlinearCreditArBare")}
     </p>
   );
 }
