@@ -359,8 +359,13 @@ function CanvasInner({
     return () => clearTimeout(id);
   }, [toastNow]);
 
+  // every step the reader takes — a change, an undo, a redo — counted, so work that ends later (an import's layout)
+  // can tell whether the map is still the one it began on
+  const steps = useRef(0);
+
   /** Every mutation goes through commit(label, …) so undo carries a human-readable label (handoff §4.3). */
   const commit = useCallback((label: string, nextNodes: GraphNode[], nextEdges: GraphEdge[]) => {
+    steps.current++;
     setPast((p) => [...p.slice(-80), { label, nodes: live.current.nodes, edges: live.current.edges }]);
     setFuture([]);
     setNodes(nextNodes);
@@ -423,6 +428,7 @@ function CanvasInner({
   const undo = useCallback(() => {
     const last = past[past.length - 1];
     if (!last) return;
+    steps.current++;
     setPast((p) => p.slice(0, -1));
     setFuture((f) => [...f, { label: last.label, nodes, edges }]);
     setNodes(last.nodes);
@@ -432,6 +438,7 @@ function CanvasInner({
   const redo = useCallback(() => {
     const next = future[future.length - 1];
     if (!next) return;
+    steps.current++;
     setFuture((f) => f.slice(0, -1));
     setPast((p) => [...p, { label: next.label, nodes, edges }]);
     setNodes(next.nodes);
@@ -1181,15 +1188,17 @@ function CanvasInner({
   const importCards = useCallback(
     (next: GraphNode[], nextEdges: GraphEdge[], label: string) => {
       commit(label, next, nextEdges);
-      // laid out afresh once the cards are measured, then fitted (EDT-260); the import stays one undo step
-      setTimeout(
-        () =>
-          void layout(rf.getNodes(), rf.getEdges()).then((laid) => {
-            setNodes(laid);
-            requestAnimationFrame(() => fit());
-          }),
-        250,
-      );
+      const at = steps.current;
+      // laid out afresh once the cards are measured, then fitted (EDT-260); the import stays one undo step — and a
+      // layout that ends after the reader has undone it, or changed the map, is dropped, never drawn over their step
+      setTimeout(() => {
+        if (steps.current !== at) return;
+        void layout(rf.getNodes(), rf.getEdges()).then((laid) => {
+          if (steps.current !== at) return;
+          setNodes(laid);
+          requestAnimationFrame(() => fit());
+        });
+      }, 250);
     },
     [commit, rf, fit],
   );
@@ -1569,6 +1578,7 @@ function CanvasInner({
                   return p && (Math.round(p.x) !== Math.round(n.position.x) || Math.round(p.y) !== Math.round(n.position.y));
                 });
                 if (!moved.length) return;
+                steps.current++;
                 setPast((p) => [...p.slice(-80), { label: t("doMove", cnt(moved.length, locale)), nodes: before, edges }]);
                 setFuture([]);
               }}
