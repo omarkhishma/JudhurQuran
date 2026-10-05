@@ -1,10 +1,13 @@
 "use client";
 
 import { ApiError, apiError, authFetch, useAccount } from "@/lib/account/store";
-import { type Proposal as Draft, usePersonal } from "@/lib/reader/store";
+import { type CorrectionField, type Proposal as Draft, usePersonal } from "@/lib/reader/store";
 
 /** Contribution and moderation in the browser (PLAN P7): the shapes the API returns and the calls that change them. */
-export type Kind = "edit" | "sense" | "gloss" | "morphology" | "error" | "attest" | "entry";
+export type Kind = "edit" | "sense" | "gloss" | "morphology" | "error" | "attest" | "entry" | "correction";
+/** the kinds a word of the Quran takes (the proposal form's) */
+export type WordKind = Exclude<Kind, "correction">;
+export type { CorrectionField };
 export type Status = "open" | "approved" | "changes" | "merged" | "declined" | "withdrawn" | "reverted";
 export type Filter = "open" | "mine" | "approved" | "changes" | "merged" | "declined";
 export const FILTERS: Filter[] = ["open", "mine", "approved", "changes", "merged", "declined"];
@@ -14,6 +17,7 @@ export type ProposalOut = {
   kind: Kind;
   lemma: string;
   lemma_ar: string;
+  target_href?: string | null;
   sense_ordinal: number | null;
   location: string | null;
   field: string | null;
@@ -53,6 +57,7 @@ export type Merge = {
   kind: Kind;
   lemma: string;
   lemma_ar: string;
+  target_href?: string | null;
   sense_ordinal: number | null;
   location: string | null;
   field: string | null;

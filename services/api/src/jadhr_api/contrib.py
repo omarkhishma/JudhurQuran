@@ -22,7 +22,11 @@ from .accounts import q, q1, tx
 from .db import connect, one, rows
 from .refusal import Refusal
 
-KINDS = ("edit", "sense", "gloss", "morphology", "error", "attest", "entry")
+KINDS = ("edit", "sense", "gloss", "morphology", "error", "attest", "entry", "correction")
+# B58 (RVQ-Q11): a correction to a layer the build made by rule — a hadith's split into isnād and matn, a name in its
+# isnād linked to a narrator, a dictionary article filed under a root, a book paragraph's printed page — its target
+# named by the item's own address (hadith:…, dict:…, book:…) where a word of the Quran names its lemma
+CORRECTION_FIELDS = {"split": "hadith", "narrator": "hadith", "filing": "dict", "page": "book"}
 # a wording of meaning needs a structured source before it can be approved (RVQ-Q05)
 NEEDS_SOURCE = {"edit", "sense", "gloss"}
 MORPH_FIELDS = {
@@ -140,6 +144,61 @@ def _morph_value(conn: Connection, word: dict[str, Any], field: str) -> str:
     )
 
 
+def _validate_correction(target: str, field: str | None, location: str | None) -> dict[str, Any]:
+    """A correction's target exists, of the kind its layer belongs to, and what it holds now is read here (B58)."""
+    from . import texts
+
+    space = CORRECTION_FIELDS.get(field or "")
+    if space is None:
+        raise Refusal(422, "no_field", "No such layer to correct.")
+    if not target.startswith(f"{space}:"):
+        raise Refusal(422, "wrong_target", "This layer belongs to another kind of item.")
+    with connect() as conn:
+        if space == "dict":
+            e = one(
+                conn,
+                "select headword, dict_roots, dict_candidates from content.lexicon_entries where uri = :u",
+                {"u": target},
+            )
+            if e is None:
+                raise Refusal(422, "no_target", "No such article.")
+            filed = " · ".join(e["dict_roots"] or [])
+            open_ = " · ".join(str(c) for c in (e["dict_candidates"] or []))
+            return {"lemma_id": None, "current": filed or f"؟ {open_}".strip(), "location": None}
+        row = one(
+            conn,
+            """select t.slug, t.kind, p.ref from content.passages p join content.texts t on t.id = p.text_id
+                where p.uri = :u""",
+            {"u": target},
+        )
+        if row is None or row["kind"] != space:
+            raise Refusal(422, "no_target", "No such passage.")
+        pg = texts.passage(conn, row["slug"], row["ref"])
+    if pg is None:
+        raise Refusal(422, "no_target", "No such passage.")
+    meta, body = pg["meta"] or {}, pg["ar_full"] or ""
+    if field == "split":
+        sp = meta.get("split") or {}
+        cut = lambda r: body[r[0] : r[1]].strip()[:400] if r else ""  # noqa: E731
+        return {
+            "lemma_id": None,
+            "current": f"{cut(sp.get('isnad'))}\n—\n{cut(sp.get('matn'))}",
+            "location": None,
+        }
+    if field == "narrator":
+        n = next((x for x in pg.get("narrators") or [] if str(x["ordinal"]) == str(location)), None)
+        if n is None:
+            raise Refusal(422, "no_place", "No such name in this isnād.")
+        linked = (n.get("narrator") or {}).get("name") or "—"
+        return {"lemma_id": None, "current": f"{n['text']} ← {linked}", "location": str(location)}
+    pages = meta.get("pages") or []
+    first, last = (pages[0], pages[-1]) if pages else (None, None)
+    shown = f"{first[0]}/{first[1]}" if first else "—"
+    if last and last != first:
+        shown += f"–{last[0]}/{last[1]}"
+    return {"lemma_id": None, "current": shown, "location": None}
+
+
 def _validate_target(
     kind: str, lemma: str, ordinal: int | None, location: str | None, field: str | None
 ) -> dict[str, Any]:
@@ -147,6 +206,8 @@ def _validate_target(
     the "before" of every kind that has one is read here, never taken from the request (audit 12 F7)."""
     if location is not None:
         location = location.translate(_DIGITS)
+    if kind == "correction":
+        return _validate_correction(lemma, field, location)
     with connect() as conn:
         lem = one(conn, "select id, slug, ar, gloss_en from content.lemmas where slug = :s", {"s": lemma})
         if kind == "entry":
@@ -284,16 +345,55 @@ def _where(f: str) -> str:
     }[f]
 
 
-def _lemma_ar(slugs: list[str]) -> dict[str, str]:
+class _Names(dict[str, str | None]):
+    """A proposal's target as the reader knows it, and where an item of the library (B58) is read on the site."""
+
+    hrefs: dict[str, str]
+
+
+_AR_DIGITS = str.maketrans("0123456789", "٠١٢٣٤٥٦٧٨٩")
+
+
+def _lemma_ar(slugs: list[str]) -> _Names:
+    """A word of the Quran by its lemma; an item of the library (B58) by its text's title and its place in it, with the
+    page that reads it — a dictionary article on the page of the root it is filed under."""
     with connect() as conn:
-        return {
-            r["slug"]: content.lemma_display(r["ar"])
+        out = _Names(
+            (r["slug"], content.lemma_display(r["ar"]))
             for r in rows(conn, "select slug, ar from content.lemmas where slug = any(:s)", {"s": slugs})
-        }
+        )
+        out.hrefs = {}
+        uris = [s for s in slugs if s.split(":", 1)[0] in ("hadith", "book", "dict")]
+        if uris:
+            for r in rows(
+                conn,
+                """select p.uri, t.kind, t.slug, t.title_ar, p.ref from content.passages p
+                     join content.texts t on t.id = p.text_id where p.uri = any(:u)""",
+                {"u": uris},
+            ):
+                hadith = r["kind"] == "hadith"
+                out[r["uri"]] = (
+                    f"{r['title_ar']}، {'الحديث' if hadith else 'الفقرة'} {r['ref'].translate(_AR_DIGITS)}"
+                )
+                out.hrefs[r["uri"]] = (
+                    f"/hadith/{r['slug']}/{r['ref'].replace('.', '_', 1)}"
+                    if hadith
+                    else f"/books/{r['slug']}/p/{r['ref']}"
+                )
+            for r in rows(
+                conn,
+                """select e.uri, e.headword, e.dict_roots, w.title_ar from content.lexicon_entries e
+                     join content.lexicon_works w on w.id = e.work_id where e.uri = any(:u)""",
+                {"u": uris},
+            ):
+                out[r["uri"]] = f"{r['title_ar']}، مادة {r['headword']}"
+                if r["dict_roots"]:
+                    out.hrefs[r["uri"]] = f"/dictionary/{r['dict_roots'][0]}#{r['uri']}"
+        return out
 
 
 def _out(
-    p: dict[str, Any], viewer: dict[str, Any] | None, names: dict[str, str], works: dict[str, Any]
+    p: dict[str, Any], viewer: dict[str, Any] | None, names: _Names, works: dict[str, Any]
 ) -> dict[str, Any]:
     sources = p["sources"] or []
     mine = viewer is not None and p["proposer_id"] is not None and str(p["proposer_id"]) == str(viewer["id"])
@@ -302,6 +402,7 @@ def _out(
         "kind": p["kind"],
         "lemma": p["lemma"],
         "lemma_ar": names.get(p["lemma"], p["lemma"]),
+        "target_href": names.hrefs.get(p["lemma"]),
         "sense_ordinal": p["sense_ordinal"],
         "location": p["location"],
         "field": p["field"],
@@ -750,7 +851,7 @@ def _people(merges: list[dict[str, Any]]) -> dict[str, str | None]:
 
 
 def _merge_out(
-    m: dict[str, Any], names: dict[str, str], works: dict[str, Any], people: dict[str, str | None]
+    m: dict[str, Any], names: _Names, works: dict[str, Any], people: dict[str, str | None]
 ) -> dict[str, Any]:
     return {
         "id": str(m["id"]),
@@ -758,6 +859,7 @@ def _merge_out(
         "kind": m["kind"],
         "lemma": m["lemma"],
         "lemma_ar": names.get(m["lemma"], m["lemma"]),
+        "target_href": names.hrefs.get(m["lemma"]),
         "sense_ordinal": m["sense_ordinal"],
         "location": m["location"],
         "field": m["field"],
@@ -1043,3 +1145,47 @@ def export_for(u: dict[str, Any]) -> dict[str, Any]:
         "role_grants": [plain(r) for r in grants],
         "merges_credited": [plain(r) for r in merges],
     }
+
+
+def for_target(target: str) -> dict[str, Any]:
+    """The corrections in force on an item of the library, shown beside what the build made (B58), and how many wait."""
+    with tx() as conn:
+        merged = q(
+            conn,
+            "select * from contributions.merges where lemma = :t and kind = 'correction' and reverted_at is null "
+            "order by merged_at",
+            {"t": target},
+        )
+        waiting = q1(
+            conn,
+            """select count(*) as n from contributions.proposals where lemma = :t and kind = 'correction'
+               and status in ('open', 'approved', 'changes')""",
+            {"t": target},
+        )
+    names = _lemma_ar([target])
+    works = _works()
+    people = _people(merged)
+    return {
+        "target": target,
+        "label": names.get(target, target),
+        "data": [_merge_out(m, names, works, people) for m in merged],
+        "waiting": int(waiting["n"]) if waiting else 0,
+    }
+
+
+def in_force(targets: list[str]) -> dict[str, list[dict[str, Any]]]:
+    """The corrections in force on many items at once — a dictionary page's articles (B58) — by item."""
+    with tx() as conn:
+        merged = q(
+            conn,
+            """select * from contributions.merges where lemma = any(:t) and kind = 'correction' and reverted_at is null
+               order by merged_at""",
+            {"t": targets},
+        )
+    names = _lemma_ar(targets)
+    works = _works()
+    people = _people(merged)
+    out: dict[str, list[dict[str, Any]]] = {}
+    for m in merged:
+        out.setdefault(m["lemma"], []).append(_merge_out(m, names, works, people))
+    return out

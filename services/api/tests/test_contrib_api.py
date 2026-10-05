@@ -556,3 +556,77 @@ def test_the_account_export_holds_its_contributions(people: dict[str, dict[str, 
     theirs = client.get("/api/v1/me/export", headers=people["r1"]).json()["contributions"]
     assert any(x["proposal_id"] == p["id"] and x["decision"] == "approve" for x in theirs["decisions"])
     assert any(g["role"] == "reviewer" for g in theirs["role_grants"])
+
+
+def test_a_correction_to_a_layer_the_build_made_goes_through_the_same_queue(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """B58 (RVQ-Q11): a hadith's split, a name in its isnād, a dictionary article's filing and a book paragraph's page
+    are corrected through the same two approvals, their items named by their own addresses; what they hold now is
+    read here; once merged a correction stands beside what the build made, which stays as it was."""
+    h = people["proposer"]
+    split = {
+        "kind": "correction",
+        "lemma": "hadith:bukhari:1",
+        "field": "split",
+        "text": "يبدأ المتن عند «إنما الأعمال بالنيات»",
+        "why": "التقسيم الآلي أدخل في الإسناد كلمة من المتن",
+    }
+    p = client.post("/api/v1/proposals", headers=h, json=split)
+    assert p.status_code == 201, p.text
+    p = p.json()
+    assert p["lemma_ar"] == "صحيح البخاري، الحديث ١" and p["target_href"] == "/hadith/bukhari/1"
+    assert "\n—\n" in p["current_text"]  # the isnād and the matn as the build split them
+    narrator = client.post(
+        "/api/v1/proposals",
+        headers=h,
+        json={**split, "field": "narrator", "location": "2", "text": "سفيان الثوري", "why": "تمييز سفيان"},
+    ).json()
+    assert narrator["current_text"].startswith("سُفْيَانُ ← سفيان بن عيينة")
+    with connect() as conn:
+        article = one(
+            conn, "select uri, dict_roots from content.lexicon_entries where uri like 'dict:lisan:%' limit 1"
+        )
+        para = one(
+            conn,
+            "select p.uri from content.passages p join content.texts t on t.id = p.text_id where t.kind = 'book' limit 1",
+        )
+    filing = client.post(
+        "/api/v1/proposals",
+        headers=h,
+        json={
+            "kind": "correction",
+            "lemma": article["uri"],
+            "field": "filing",
+            "text": "علم",
+            "why": "الأصل",
+        },  # type: ignore[index]
+    ).json()
+    assert filing["current_text"] == " · ".join(article["dict_roots"])  # type: ignore[index]
+    assert filing["target_href"].startswith("/dictionary/") and filing["target_href"].endswith(article["uri"])  # type: ignore[index]
+    page = client.post(
+        "/api/v1/proposals",
+        headers=h,
+        json={"kind": "correction", "lemma": para["uri"], "field": "page", "text": "1/50", "why": "الصفحة"},  # type: ignore[index]
+    ).json()
+    assert page["target_href"].startswith("/books/") and "/p/" in page["target_href"]
+    for bad in (
+        {**split, "field": "filing"},  # a hadith has no filing
+        {**split, "field": "nothing"},
+        {**split, "lemma": "hadith:bukhari:999999"},
+        {**split, "field": "narrator", "location": "99"},
+        {**split, "lemma": "quran:2:255"},  # never the Quranic text
+    ):
+        assert client.post("/api/v1/proposals", headers=h, json=bad).status_code == 422, bad
+    # two reviewers and the board: in force beside the build's split
+    for who in ("r1", "r2", "editor"):
+        client.post(
+            f"/api/v1/proposals/{p['id']}/decisions", headers=people[who], json={"decision": "approve"}
+        )
+    shown = client.get("/api/v1/corrections", params={"target": "hadith:bukhari:1"}).json()
+    mine = [m for m in shown["data"] if m["proposal_id"] == p["id"]]
+    assert len(mine) == 1 and mine[0]["text"] == split["text"] and mine[0]["field"] == "split"
+    assert (
+        shown["label"] == "صحيح البخاري، الحديث ١" and shown["waiting"] >= 1
+    )  # the narrator one still waits
+    assert client.get("/api/v1/corrections", params={"target": "quran:1:1"}).status_code == 422

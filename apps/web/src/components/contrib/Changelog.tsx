@@ -46,7 +46,7 @@ export function Changelog() {
                 <span className={e.event === "merged" ? "text-good" : "text-bad"}>{t(e.event)}</span>
                 <span>{date(e.at)}</span>
                 <span>{tc(`kind.${e.merge.kind}`)}</span>
-                <Link href={`/read?w=${encodeURIComponent(e.merge.lemma)}`} prefetch={false} className="ar-classical text-[17px] text-word" lang="ar">
+                <Link href={e.merge.kind === "correction" ? (e.merge.target_href ?? "/review") : `/read?w=${encodeURIComponent(e.merge.lemma)}`} prefetch={false} className="ar-classical text-[17px] text-word" lang="ar">
                   {e.merge.lemma_ar}
                 </Link>
                 <span className="mono" dir="ltr">{e.dataset_version}</span>

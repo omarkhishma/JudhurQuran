@@ -425,7 +425,7 @@ function TabList({ tab }: { tab: Exclude<Tab, "account"> }) {
         href: `/review?filter=mine&id=${p.id}`,
         at: Date.parse(p.created_at),
       }));
-      const drafts = proposals.map((p) => ({ id: p.id, dot: "var(--amber)", ar: p.label, text: `${tc("kind." + p.kind)} • ${p.text.slice(0, 90)}`, when: t("draft", { date: date(p.ts) }), href: `/read?w=${encodeURIComponent(p.slug)}`, at: p.ts }));
+      const drafts = proposals.map((p) => ({ id: p.id, dot: "var(--amber)", ar: p.label, text: `${tc("kind." + p.kind)} • ${p.text.slice(0, 90)}`, when: t("draft", { date: date(p.ts) }), href: p.href ?? `/read?w=${encodeURIComponent(p.slug)}`, at: p.ts }));
       return [...drafts, ...sent].sort((a, b) => b.at - a.at).map((r) => ({ id: r.id, dot: r.dot, ar: r.ar, text: r.text, when: r.when, href: r.href }));
     }
     if (tab === "bookmarks")

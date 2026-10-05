@@ -30,6 +30,9 @@ export type CiteTarget =
 export type SuggestKind = "edit" | "sense" | "error" | "gloss" | "morphology" | "attest" | "entry";
 /** A morphology field open to correction: its label's message key and the value shown now. */
 export type MorphKey = "gRoot" | "gLemma" | "gPos" | "gForm" | "gAspect" | "gVoice" | "gDerivation" | "gPgn" | "gCase" | "gMood" | "gGroup";
+/** A layer the build made by rule that a reader may correct (B58): a hadith's split, a name in its isnād, a dictionary
+ * article's root, a book paragraph's printed page. */
+export type CorrectionField = "split" | "narrator" | "filing" | "page";
 export type SuggestField = { key: MorphKey; value: string };
 export type SuggestTarget = { kind: SuggestKind; slug: string; label: string; ordinal?: number; current: string; at?: string; fields?: SuggestField[] };
 
@@ -303,14 +306,17 @@ export type Topic = { id: string; label: string; ts: number };
 export const verseRef = (key: string) => `quran:${key}`;
 export type Proposal = {
   id: string;
-  kind: SuggestKind;
+  kind: SuggestKind | "correction";
+  /** a word's lemma, or a correction's item by its address (hadith:bukhari:1; B58) */
   slug: string;
   label: string;
   ordinal: number | null;
   /** the occurrence a gloss or morphology proposal is about */
   at?: string | null;
   /** the morphology field corrected (a SuggestField key) */
-  field?: MorphKey | null;
+  field?: MorphKey | CorrectionField | null;
+  /** where a correction's item is read (B58): the page it was written on */
+  href?: string;
   current: string;
   text: string;
   why: string;

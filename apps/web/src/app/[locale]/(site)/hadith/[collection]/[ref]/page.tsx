@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { CorrectedMark, Corrections } from "@/components/contrib/Corrections";
 import { Explanations } from "@/components/hadith/Explanations";
 import { RecordPlace } from "@/components/library/RecordPlace";
 import { Grades } from "@/components/hadith/Grades";
@@ -84,6 +85,7 @@ export default async function HadithPage({ params }: PageProps<"/[locale]/hadith
         {kitab && <p className="ar-classical text-[18px] text-t2" lang="ar" dir="rtl">{r.path.map((p) => p.title_ar).join(" — ")}</p>}
         <p className="flex flex-wrap items-center gap-2 text-[12.5px]">
           {r.parts && <span className="state-chip" title={t("autoSplitNote")}>{t("autoSplit")}</span>}
+          <CorrectedMark target={r.uri} field="split" />
           <span className="text-t3">{t("numbering", { numbering: (ar ? c.meta_ar : c.meta_en) ?? "" })}</span>
         </p>
       </header>
@@ -111,6 +113,7 @@ export default async function HadithPage({ params }: PageProps<"/[locale]/hadith
                   <span className="ar-classical text-[17px]" lang="ar" dir="rtl">
                     {n.narrator ? <Link href={narratorHref(n.narrator.id)} className="hover:text-root">{n.text}</Link> : n.text}
                   </span>
+                  <CorrectedMark target={r.uri} field="narrator" location={n.ordinal} />
                   {n.narrator ? (
                     <span className="text-[12px] text-t3">
                       <bdi lang="ar" className="line-clamp-1 inline" title={n.narrator.name}>{n.narrator.name.split(" ").slice(0, 8).join(" ")}{n.narrator.name.split(" ").length > 8 ? "…" : ""}</bdi> • {t("linkAuto", { c: pct(n.confidence, locale) })}
@@ -139,6 +142,12 @@ export default async function HadithPage({ params }: PageProps<"/[locale]/hadith
           )}
         </div>
       </div>
+      {/* the split and the links are the build's, by rule: readers correct them through the edit requests (B58) */}
+      {!r.meta.empty && r.uri && (
+        <div className="mt-6">
+          <Corrections compact target={r.uri} label={`${c.title_ar} ${unnumbered(r.ref) ? number : refText(r.ref, "ar")}`} fields={r.narrators.length > 0 ? ["split", "narrator"] : ["split"]} narrators={r.narrators.map((n) => ({ ordinal: n.ordinal, text: n.text }))} />
+        </div>
+      )}
 
       <Explanations items={r.explanations} />
 

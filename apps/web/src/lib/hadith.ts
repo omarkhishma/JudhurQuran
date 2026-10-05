@@ -110,6 +110,8 @@ export type Explanation = {
 export type HadithRecord = {
   text: ChapterPage["text"];
   ref: string;
+  /** the record's own address (hadith:bukhari:1), which a correction names (B58) */
+  uri: string;
   path: { ordinal: number; title_ar: string; title_en: string }[];
   ar_full: string;
   token_count: number;

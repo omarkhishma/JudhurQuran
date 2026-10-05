@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BookText } from "@/components/books/BookText";
+import { Corrections } from "@/components/contrib/Corrections";
 import { RecordPlace } from "@/components/library/RecordPlace";
 import { Sources } from "@/components/hadith/Sources";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
@@ -81,6 +82,12 @@ export default async function BookParagraphPage({ params }: PageProps<"/[locale]
         <p className="text-[12.5px] text-t3">{t(citedBy(b.info).note)}</p>
       </header>
       <BookText slug={slug} paragraphs={[{ ref: p.ref, meta: p.meta, cite: p.cite, segments: p.segments, words: p.words }]} forms={p.forms} surahs={surahs} volumes={b.info.volumes ?? 1} linkParagraphs={false} title={b.title_ar} />
+      {/* the printed page is placed by the build's reading of the edition's markers: readers correct it (B58) */}
+      {!!p.meta.pages?.length && p.uri && (
+        <div className="mt-6">
+          <Corrections compact target={p.uri} label={p.cite.ar} fields={["page"]} />
+        </div>
+      )}
       <nav className="mt-8 flex flex-wrap gap-2" aria-label={p.cite.ar}>
         {p.prev && <Link href={paragraphHref(slug, p.prev)} className="btn" rel="prev">{t("prevParagraph")}</Link>}
         {p.next && <Link href={paragraphHref(slug, p.next)} className="btn" rel="next">{t("nextParagraph")}</Link>}

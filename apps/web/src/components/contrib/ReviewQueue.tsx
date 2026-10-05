@@ -272,15 +272,15 @@ function Detail({ id, focusKey, onDecided }: { id: string; focusKey: number; onD
           <h2 id="proposal-title" ref={heading} tabIndex={-1} className="text-[16px] font-semibold outline-none">
             {t(`kind.${p.kind}`)}
             {p.sense_ordinal ? ` ${formatNumber(p.sense_ordinal, locale).padStart(2, locale === "ar" ? "٠" : "0")}` : ""} •{" "}
-            <Link href={`/read?w=${encodeURIComponent(p.lemma)}`} className="ar-classical text-[19px] text-word" lang="ar">
+            <Link href={p.kind === "correction" ? (p.target_href ?? "/review") : `/read?w=${encodeURIComponent(p.lemma)}`} className="ar-classical text-[19px] text-word" lang="ar">
               {p.lemma_ar}
             </Link>
           </h2>
           <p className="text-[12.5px] text-t3">
             {t.rich("byLine", { name: () => who(p.proposer), date: date(p.created_at) })}
             {p.revision > 1 && ` • ${t("revision", { n: formatNumber(p.revision, locale) })}`}
-            {p.location && ` • ${verseRef(p.location, locale)}`}
-            {p.field && ` • ${tr(p.field)}`}
+            {p.location && ` • ${p.kind === "correction" ? t("narratorAt", { n: formatNumber(Number(p.location), locale) }) : verseRef(p.location, locale)}`}
+            {p.field && ` • ${p.kind === "correction" ? t(`correctionField.${p.field}`) : tr(p.field)}`}
             {p.proposer.mine && live && ` • ${t("notYours")}`}
           </p>
         </div>

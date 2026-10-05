@@ -87,6 +87,8 @@ export type BookChapter = {
 export type BookParagraph = {
   text: BookChapter["text"];
   ref: string;
+  /** the paragraph's own address (book:…:n), which a correction names (B58) */
+  uri: string;
   cite: Cite;
   path: { ordinal: number; title_ar: string; title_en: string }[];
   ar_full: string;

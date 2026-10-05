@@ -367,8 +367,8 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
         return None
     p = one(
         conn,
-        """select p.id, p.ref, p.ordinal, p.chapter_id, p.ar_full, p.token_count, p.form_ids, p.roots, p.roots_low,
-                  p.meta
+        """select p.id, p.uri, p.ref, p.ordinal, p.chapter_id, p.ar_full, p.token_count, p.form_ids, p.roots,
+                  p.roots_low, p.meta
              from content.passages p where p.text_id = :t and p.ref = :r""",
         {"t": t["id"], "r": ref},
     )
@@ -416,6 +416,8 @@ def passage(conn: Connection, slug: str, ref: str) -> dict[str, Any] | None:
     )
     return {
         "text": _text_head(t),
+        # its own address, which a correction names it by (B58)
+        "uri": p["uri"],
         "ref": p["ref"],
         "cite": cite(t, p, ch["ordinal"], ch["title_ar"]) if ch else None,
         "path": path,

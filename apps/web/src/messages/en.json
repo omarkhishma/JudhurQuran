@@ -3030,7 +3030,8 @@
       "morphology": "morphology correction",
       "error": "error report",
       "attest": "attestation",
-      "entry": "new entry"
+      "entry": "new entry",
+      "correction": "Correction"
     },
     "decision": {
       "approve": "approved",
@@ -3139,7 +3140,9 @@
       "not_admin": "Only an administrator does this.",
       "own_account": "An administrator does not block their own account.",
       "no_account": "No such account.",
-      "unknown_kind": "Unknown kind of proposal."
+      "unknown_kind": "Unknown kind of proposal.",
+      "no_target": "This place is not in the data.",
+      "wrong_target": "This correction does not apply to this kind of place."
     },
     "refIn": "The entry or page in {work}",
     "revertedBy": "Merged, then taken back by the editorial board",
@@ -3175,7 +3178,28 @@
     "unblock": "Unblock this account",
     "blockSure": "Block it: no proposing, reviewing or reporting",
     "unblockSure": "Let it propose, review and report again",
-    "mergedCredit": "Merged • credited to <name></name> beside its source and in the changelog"
+    "mergedCredit": "Merged • credited to <name></name> beside its source and in the changelog",
+    "correctionField": {
+      "split": "The isnād and matn split",
+      "narrator": "A narrator in the isnād",
+      "filing": "The article's root",
+      "page": "The printed page"
+    },
+    "narratorAt": "name {n} in the isnād",
+    "correctionsTitle": "Readers' corrections",
+    "correctionsLead": "What the rules made here, readers correct with two reviewers' and the board's approval; what the rules made stays beside the correction.",
+    "correctionsWaiting": "Corrections waiting for review: {n} •",
+    "correctionPropose": "Propose a correction",
+    "correctionWhat": "What you correct",
+    "correctionWho": "Which name in the isnād",
+    "correctionText": "The correction",
+    "correctionWhy": "Why",
+    "correctionSource": "Source (optional)",
+    "correctionSend": "Send to the edit requests",
+    "correctionSent": "Your correction was sent to the edit requests.",
+    "correctionBy": "proposed by {name} • approved by {n} • {date}",
+    "aReader": "a reader",
+    "correctedMark": "corrected by readers"
   },
   "wordContrib": {
     "former": "a former contributor",

@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { ArticleCorrections, useCorrectionsInForce } from "@/components/contrib/Corrections";
 import { LexiconArticle } from "@/components/lexicon/LexiconArticle";
 import { MarksToggle } from "@/components/ui/MarksToggle";
 import { Link } from "@/i18n/navigation";
@@ -16,6 +17,8 @@ export function DictionaryLexicon({ root }: { root: DictRoot }) {
   const locale = useLocale();
   const [active, setActive] = useState(root.works[0]?.id);
   const [target, setTarget] = useState<string | null>(null);
+  // every article's corrections in force, in one request for the page (B58)
+  const corrections = useCorrectionsInForce(root.works.flatMap((w) => w.articles.map((a) => a.uri)));
   // the address names an article (#dict:lane:علم): its lexicon's tab, then the article in view
   useEffect(() => {
     const go = () => {
@@ -95,6 +98,7 @@ export function DictionaryLexicon({ root }: { root: DictRoot }) {
               note={note(a)}
               href={articleHref(root.key, a.uri)}
             />
+            <ArticleCorrections target={a.uri} label={`${work.title_ar}، ${a.headword}`} inForce={corrections.data?.[a.uri] ?? []} />
           </div>
         ))}
         <details className="text-[12px] text-t3">

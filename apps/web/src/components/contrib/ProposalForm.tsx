@@ -6,7 +6,7 @@ import { useState } from "react";
 import { SignInPanel } from "@/components/account/SignInPanel";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useAccount } from "@/lib/account/store";
-import { type Kind, submit } from "@/lib/contrib";
+import { type WordKind as Kind, submit } from "@/lib/contrib";
 import { type MorphKey, type SuggestTarget, usePersonal } from "@/lib/reader/store";
 import { verseRef } from "@/lib/format";
 import { useRefusal } from "./refusal";

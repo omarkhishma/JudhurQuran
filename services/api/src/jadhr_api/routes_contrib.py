@@ -30,7 +30,8 @@ class _Source(BaseModel):
 
 class _Proposal(BaseModel):
     kind: str = Field(max_length=12)
-    lemma: str = Field(min_length=1, max_length=80)
+    # a word's lemma, or a correction's item by its address (hadith:…, dict:…, book:…; B58)
+    lemma: str = Field(min_length=1, max_length=200)
     sense_ordinal: int | None = Field(None, ge=1, le=500)
     location: str | None = Field(None, max_length=12)
     field: str | None = Field(None, max_length=20)
@@ -119,6 +120,28 @@ def changelog(
 @router.get("/lemmas/{slug}/contributions", summary="A word's merged contributions, shown beside its sources")
 def lemma_contributions(slug: str) -> ORJSONResponse:
     return ok(contrib.for_lemma(slug[:80]), BRIEF)
+
+
+@router.get(
+    "/corrections",
+    summary="The corrections in force on an item of the library, beside what the build made (B58)",
+)
+def corrections(
+    target: str = Query(..., min_length=6, max_length=200, pattern=r"^(hadith|book|dict):"),
+) -> ORJSONResponse:
+    return ok(contrib.for_target(target), headers={"Cache-Control": "no-store"})
+
+
+@router.get(
+    "/corrections/in-force", summary="The corrections in force on many items at once (a page's articles; B58)"
+)
+def corrections_in_force(
+    targets: Annotated[
+        list[Annotated[str, Field(min_length=6, max_length=200, pattern=r"^(hadith|book|dict):")]],
+        Query(max_length=80),
+    ],
+) -> ORJSONResponse:
+    return ok({"data": contrib.in_force(targets)}, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/me/proposals", summary="Your proposals, every status")
