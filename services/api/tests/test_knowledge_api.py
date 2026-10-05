@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from jadhr_api.db import connect, rows
 from jadhr_api.main import app
 
 client = TestClient(app)
@@ -68,7 +69,19 @@ def test_surah_card_is_the_built_card_verbatim() -> None:
         d = get(f"/api/v1/surahs/{n}/card")
         assert d["card"]["names"] == cards[n]["names"]
         assert d["card"]["aims"] == cards[n]["aims"]
-        assert set(d["sources"]) == set(cards[n]["source_ids"])
+        # the card's own sources, and those of the verses said to have come down elsewhere listed with it (B6)
+        with connect() as conn:
+            noted = {
+                r["source_id"]
+                for r in rows(
+                    conn,
+                    "select source_id from content.verse_places where surah = :s and scope = 'verses'",
+                    {"s": n},
+                )
+                if r["source_id"]
+            }
+        assert {x["source_id"] for x in d["places"]} == noted
+        assert set(d["sources"]) == set(cards[n]["source_ids"]) | noted
     assert client.get("/api/v1/surahs/115/card").status_code == 404
 
 
