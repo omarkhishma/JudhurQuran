@@ -4032,6 +4032,8 @@
     "pagesRun": "الصفحات من {from}",
     "pagesRunVolume": "المجلد {v}، الصفحات من {from}",
     "volumePage": "{v}/{p}",
+    "pageTurn": "تبدأ هنا الصفحة {page}",
+    "wordPlace": "موضع الكلمة في المطبوع",
     "page": "ص {p}",
     "editorBracket": "بين قوسي المحقق: زيادة منه أو تفسير، كما طبعه",
     "editorNumber": "رقم الفقرة في طبعة المحقق",

@@ -7274,6 +7274,21 @@ a.wotd-pill:hover {
 .bk-cite-btn:hover {
   text-decoration: underline;
 }
+/* where a printed page begins inside a paragraph (B56): the page's number, quiet, never taken for the author's */
+.bk-turn {
+  display: inline-block;
+  margin-inline: 0.3em;
+  padding: 0 0.35em;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--t3);
+  vertical-align: 0.3em;
+  white-space: nowrap;
+  user-select: none;
+}
 
 /* a file picker whose button speaks the page's language (P11.3c): the input hidden, its focus shown on the label */
 .file-pick {

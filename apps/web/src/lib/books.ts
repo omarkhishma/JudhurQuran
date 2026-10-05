@@ -44,7 +44,9 @@ export type Book = {
 /** A chapter as a contents line; a book without headings is read in runs of printed pages (a label of ours). */
 export type BookChapterLine = ChapterLine & { meta: { label?: "pages" | "opening"; volume?: number; pages_from?: number } | null };
 
-export type Cite = { key: string; ar: string; by: "page" | "number" | "section" };
+/** A paragraph's citation: its stable key, its Arabic form, what it is cited by, and the author, work and editor a page of
+ * it is cited after (B56). */
+export type Cite = { key: string; ar: string; by: "page" | "number" | "section"; base?: string };
 
 export type ParagraphMeta = {
   pages?: [number, number][];
@@ -53,7 +55,23 @@ export type ParagraphMeta = {
   editor_section?: string;
   editor?: [number, number][];
   quran_refs?: [number, number, number][];
+  /** where a printed page begins inside the paragraph (B56): the character its first word stands at, the volume, the
+   * page it opens and the last page of the run after it (more than one where a page's own turn is not marked) */
+  breaks?: [number, number, number, number][];
 };
+
+/** The printed pages a place in a paragraph stands on (B56): a volume and a first and last page — one page where the
+ * version marks the turns around it, a range where it does not. Null where the paragraph has no pages, or runs over
+ * two volumes with no turn marked. */
+export function pagesAt(meta: ParagraphMeta, offset: number): { v: number; from: number; to: number } | null {
+  const pages = meta.pages;
+  if (!pages?.length) return null;
+  const [first, last] = [pages[0], pages[pages.length - 1]];
+  const turns = meta.breaks ?? [];
+  if (!turns.length) return first[0] === last[0] ? { v: first[0], from: first[1], to: last[1] } : null;
+  const turn = [...turns].reverse().find(([o]) => o <= offset);
+  return turn ? { v: turn[1], from: turn[2], to: turn[3] } : { v: first[0], from: first[1], to: first[1] };
+}
 
 export type Paragraph = {
   ref: string;

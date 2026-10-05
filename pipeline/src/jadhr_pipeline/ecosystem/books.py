@@ -3,8 +3,9 @@ headings a tree of chapters, its paragraphs passages — keeping only the author
 alike and counted, never by hand:
 
 * the page markers (``PageV01P005``) and milestones (``ms12``) leave the text; a paragraph keeps the printed page it
-  starts and ends on; a printed page is cited only where the version's markers pass the check (``page_trust``), else
-  the citation is its section and paragraph;
+  starts and ends on, and where a page begins inside it, at which character (``breaks``) — only where the version's
+  markers stand exactly where the print turns the page; a printed page is cited only where the version's markers pass
+  the check (``page_trust``), else the citation is its section and paragraph;
 * a number in brackets after Quranic words is the verse's number when those words end verse N of the Quran (or a
   quoted fragment of it holds them) — kept; any other «(N)», «[N]», ««N»» is the editor's footnote marker — taken out;
 * «[البقرة: 164]» is the editor's reference to a verse — taken out of the text, kept as a link to the verse;
@@ -19,6 +20,12 @@ alike and counted, never by hand:
   the halves; in JK's versions its signs («< > ! + & $ | ^», «! 7 <») go, a «# | …» or «# > … <» line is a heading and
   a paragraph's opening number is the editor's; in Shamela-Ibāḍiyya's «^» is the printed «ﷺ»; in the Zaydiyya
   library's «=» opens a report.
+
+Al-Ṭabarī's version carries a second series, «PageEndV01P050», standing exactly where page 50 begins (read against
+al-Turkī's print on turath: 12 of 12 sampled at the page's first words), while its regular markers stand within a line
+of the turn (0 of 12 exactly); other versions' regular markers stand at the turn (16 of 16 in Ibn Kathīr and the
+Bukhalāʾ). So a page-end marker closes the page before the one it names and joins the paging, and a version that has
+them takes its breaks inside paragraphs from them alone.
 
 A book without headings is read in runs of printed pages within each volume (a label of ours, said so)."""
 
@@ -40,7 +47,10 @@ from .model import Chapter, Draft, Passage
 
 HEADER_END = "#META#Header#End#"
 _W = re.compile(r"[ء-غف-ي]+")
-_PAGE = re.compile(r"PageV(\d+)P(\d+)")
+# a page marker: «PageV01P049» closes page 49; «PageEndV01P050» opens page 50, so closes 49 too (the module's note)
+_PAGE = re.compile(r"Page(End)?V(\d+)P(\d+)")
+# where an exact page turn stood inside a paragraph, carried through the rules to its place in the clean text
+_TURN = "\ue000"
 _MILESTONE = re.compile(r"(?<![A-Za-z])ms\d+(?![A-Za-z])")
 _HEADING = re.compile(r"^### (\|+)(EDITOR\||PARATEXT\|)?\s?(.*)$")
 _ENTRY = re.compile(
@@ -55,7 +65,6 @@ _ONLY_NUMBER = re.compile(r"^\s*\[\s*([\d٠-٩]{1,4})\s*\]\s*$")
 _DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 PAGE_RUN = 50  # a long book without headings or volumes: one chapter per this many printed pages
 HEMISTICH = "\u2003"  # the gap between a verse's two halves, where the version marks them («%~%»)
-_PAGE_END = re.compile(r"PageEndV\d+P\d+")
 _QUOTE_TAG = re.compile(r"@QUR@\d+|@\s*\d+\s*@")
 _ANCHOR = re.compile(r'(?:<\s*a?\s*|=)"(?P<ref>[^"<>]{1,40})"\s*>')
 _TAG = re.compile(r"</?[A-Za-z][^<>\n]{0,200}>")
@@ -85,7 +94,6 @@ def markup(text: str, fam: str, stats: Counter[str]) -> tuple[str, dict[str, Any
             stats[rule] += n
         return t
 
-    text = sub("page-end-markers", _PAGE_END, " ", text)
     text = sub("quote-tags", _QUOTE_TAG, " ", text)
     anchors = [m.group("ref") for m in _ANCHOR.finditer(text)]
     if anchors:
@@ -170,6 +178,9 @@ class Quran:
         return False
 
 
+Page = tuple[int, int]
+
+
 @dataclass
 class Para:
     text: str
@@ -177,6 +188,11 @@ class Para:
     heading: int | None = None  # the chapter it falls under (an index into the chapters)
     number: str | None = None  # the editor's number for it, where he numbers paragraphs
     marks: list[tuple[int, int]] = field(default_factory=list)  # the page markers it held, in order
+    marked: str | None = None  # its text with each exact page turn inside it as ``_TURN``
+    # each turn's pages: the one it opens and the last of the run after it (a page whose own turn is not marked
+    # leaves the run on two or more)
+    turns: list[tuple[Page, Page]] = field(default_factory=list)
+    inexact: bool = False  # a page turns inside it where the version's marker is not exact
 
 
 def _raw_parts(raw: str, fam: str = "") -> tuple[list[tuple[int, str, bool]], list[Para]]:
@@ -256,9 +272,6 @@ def _raw_parts(raw: str, fam: str = "") -> tuple[list[tuple[int, str, bool]], li
     return heads, paras
 
 
-Page = tuple[int, int]
-
-
 def fixed_pages(marks: list[Page]) -> tuple[list[Page | None], int, int]:
     """Each marker's page as the version's own sequence bears it out. The longest rising run of its markers is the
     spine; a run of markers off it — a slip («34» between 342 and 344), an unnumbered page («0») — is read as the pages
@@ -303,25 +316,35 @@ def fixed_pages(marks: list[Page]) -> tuple[list[Page | None], int, int]:
     return out, read, unknown
 
 
-def paged(paras: list[Para]) -> tuple[Counter[Page], list[Page | None], int, int]:
+def _closes(end: str | None, v: str, n: str) -> Page:
+    """The page a marker closes: «PageV01P049» page 49; «PageEndV01P050», standing where page 50 begins, page 49."""
+    return (int(v), int(n) - 1 if end else int(n))
+
+
+def paged(paras: list[Para], ends_exact: bool = False) -> tuple[Counter[Page], list[Page | None], int, int]:
     """Each paragraph's first and last printed page, its markers out of its text; the words on each page. A marker
     closes the page whose text stands before it («PageV01P049» ends page 49), so the text after a paragraph's last
     marker is on the page the next marker closes — read from the end of the book back, each marker's page as
-    ``fixed_pages`` reads it. A paragraph whose first page is unknown has no pages."""
-    marks = [(int(v), int(n)) for p in paras for v, n in _PAGE.findall(p.text)]
+    ``fixed_pages`` reads it. A paragraph whose first page is unknown has no pages. Where a page turns between two of
+    a paragraph's runs of words at an exact marker — a page-end marker where the version has them (``ends_exact``),
+    else any — the turn is kept in ``marked`` as ``_TURN`` with the page it opens (the one after the page the marker
+    closes) and the last page of the run after it; a turn at a marker not exact, across volumes, or beside a page not
+    known leaves the paragraph without turns (``inexact``)."""
+    marks = [_closes(*m) for p in paras for m in _PAGE.findall(p.text)]
     fixed, read, unknown = fixed_pages(marks)
     words: Counter[Page] = Counter()
     after: Page | None = None
     k = len(fixed)
     for p in reversed(paras):
         parts = _PAGE.split(p.text)
-        texts = parts[0::3]
-        p.marks = [(int(v), int(n)) for v, n in zip(parts[1::3], parts[2::3], strict=True)]
+        texts = parts[0::4]
+        found = list(zip(parts[1::4], parts[2::4], parts[3::4], strict=True))
+        p.marks = [_closes(*m) for m in found]
         k -= len(p.marks)
         on = [*fixed[k : k + len(p.marks)], after]
         lettered = []
-        for t, pg in zip(texts, on, strict=True):
-            n = len(_W.findall(t))
+        for x, pg in zip(texts, on, strict=True):
+            n = len(_W.findall(x))
             if n and pg is not None:
                 words[pg] += n
             if n:
@@ -330,8 +353,58 @@ def paged(paras: list[Para]) -> tuple[Counter[Page], list[Page | None], int, int
         p.pages = [first, *([last] if last else [])] if first else []
         if p.marks:
             after = on[0]
+        # the turns inside it: between a run of words and the next one, where the page changes
+        out: list[str] = [texts[0]]
+        turns: list[tuple[Page, Page]] = []
+        before: Page | None = on[0] if _W.search(texts[0]) else None
+        inexact = False
+        for m, (end, _, _) in enumerate(found):
+            nxt, sep = texts[m + 1], " "
+            if before is not None and _W.search(nxt):
+                closes, to = on[m], on[m + 1]
+                if closes is None or to is None:
+                    inexact = True
+                elif to != before:
+                    opens = (closes[0], closes[1] + 1)
+                    if (end or not ends_exact) and opens[0] == to[0] and opens <= to:
+                        turns.append((opens, to))
+                        sep = f" {_TURN} "
+                    else:
+                        inexact = True
+            out += [sep, nxt]
+            if _W.search(nxt):
+                before = on[m + 1]
         p.text = _PAGE.sub(" ", p.text)
+        p.inexact = inexact
+        p.turns, p.marked = ([], None) if inexact or not turns else (turns, "".join(out))
     return words, fixed, read, unknown
+
+
+def _spaced(text: str) -> str:
+    """The last step of ``clean``: runs of spaces as one, none before «،» or «.», none at the ends."""
+    return re.sub(r"[ \t]+", " ", text).replace(" ،", "،").replace(" .", ".").strip()
+
+
+def breaks(marked: str, body: str, turns: list[tuple[Page, Page]]) -> list[list[int]] | None:
+    """Where each page begins in a paragraph's clean text (``body``): the character at which its first word stands, the
+    volume, the page it opens and the last page of the run after it — read from the same paragraph cleaned with its
+    turns in (``marked``). None when the turns changed what the rules did (the clean texts differ once the turns are
+    out): the stored text is never bent to place a turn."""
+    if _spaced(marked.replace(_TURN, " ")) != body or marked.count(_TURN) != len(turns):
+        return None
+    out: list[list[int]] = []
+    at = -1
+    for opens, to in turns:
+        at = marked.index(_TURN, at + 1)
+        before = _spaced(marked[:at].replace(_TURN, " "))
+        if body[: len(before)] != before:
+            return None
+        o = len(before)
+        while o < len(body) and body[o] == " ":
+            o += 1
+        if 0 < o < len(body):
+            out.append([o, opens[0], opens[1], to[1]])
+    return out
 
 
 def clean(text: str, quran: Quran, stats: Counter[str], fam: str = "") -> tuple[str, dict[str, Any]]:
@@ -398,7 +471,7 @@ def clean(text: str, quran: Quran, stats: Counter[str], fam: str = "") -> tuple[
         spans.append([m.start(), m.end()])
     if spans:
         stats["editor-brackets"] += len(spans)
-    text = re.sub(r"[ \t]+", " ", text).replace(" ،", "،").replace(" .", ".").strip()
+    text = _spaced(text)
     if spans:
         meta["editor"] = [[m.start(), m.end()] for m in _BRACKET.finditer(text)]
     return text, meta
@@ -446,7 +519,8 @@ def book(
     text = (raw / spec["file"]).read_text(encoding="utf-8")
     fam = family(spec["version"])
     heads, paras = _raw_parts(text, fam)
-    words_per_page, pages, read, unknown = paged(paras)
+    # a version with page-end markers places its regular markers near the turn only (the module's note)
+    words_per_page, pages, read, unknown = paged(paras, ends_exact="PageEndV" in text)
     stats[f"{spec['slug']}:page-markers-read-between-neighbours"] += read
     stats[f"{spec['slug']}:page-markers-unknown"] += unknown
     # the editor's paragraph numbers («[456]»): out of the text, kept on the paragraph that follows
@@ -514,6 +588,16 @@ def book(
         else:
             ci = index_of[p.heading]
         body, meta = clean(p.text, quran, stats, fam)
+        if p.marked:
+            # the same rules over the text with its turns in, on a counter of their own: each turn's place in the text
+            found = breaks(clean(p.marked, quran, Counter(), fam)[0], body, p.turns)
+            if found is None:
+                stats[f"{spec['slug']}:page-turns-not-placed"] += len(p.turns)
+            elif found:
+                meta["breaks"] = found
+                stats[f"{spec['slug']}:page-turns"] += len(found)
+        if p.inexact:
+            stats[f"{spec['slug']}:paragraphs-turning-page-at-a-marker-not-exact"] += 1
         if p.pages:
             meta["pages"] = [[v, pg] for v, pg in p.pages]
             # its place among the paragraphs that open on its first page: «١/٣، ف٢» is page 3's second

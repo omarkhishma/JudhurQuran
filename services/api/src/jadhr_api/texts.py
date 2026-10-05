@@ -79,6 +79,8 @@ def cite(
             [*parts, *([where.translate(_AR_DIGITS)] if where else []), f"ف{n}".translate(_AR_DIGITS)]
         ),
         "by": by,
+        # the author, the work and its editor: what a page of it is cited after («…، ١/٢٤»; B56)
+        "base": "، ".join(parts),
     }
 
 

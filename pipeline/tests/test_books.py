@@ -18,6 +18,7 @@ from jadhr_pipeline.ecosystem.books import (
     _JK_HEADING,
     _MILESTONE,
     _TAG,
+    _TURN,
     _VERSE_REF,
     _W,
     HEADER_END,
@@ -25,6 +26,7 @@ from jadhr_pipeline.ecosystem.books import (
     Quran,
     _raw_parts,
     book,
+    breaks,
     card,
     clean,
     family,
@@ -87,6 +89,51 @@ def test_a_marker_closes_the_page_whose_text_stands_before_it() -> None:
     assert dict(words) == {(1, 1): 2, (1, 2): 3, (1, 3): 1, (1, 4): 1, (1, 5): 1}
     assert all("Page" not in p.text for p in paras)
     assert paras[2].marks == [(1, 2)] and paras[3].marks == [(1, 3)]
+
+
+def test_a_page_end_marker_opens_the_page_it_names_and_turns_inside_paragraphs_are_kept() -> None:
+    """B56: «PageEndV01P003» stands where page 3 begins, so it closes page 2 as «PageV01P002» would; in a version that
+    has them, a page turning inside a paragraph is kept where such a marker stands — with the page it opens and the
+    last of the run after it — and a turn at a regular marker leaves the paragraph without turns."""
+    paras = [
+        Para("أ ب PageEndV01P002 ج د PageEndV01P003 ه"),
+        Para("و PageV01P003 ز ح"),  # a regular marker inside: the page turns there, not exactly
+        Para("ط PageEndV01P005 ي"),  # page 4 has no marker: the run before holds 3 and 4, the one after 5
+        Para("ك PageEndV01P006"),
+    ]
+    paged(paras, ends_exact=True)
+    assert [p.pages for p in paras] == [
+        [(1, 1), (1, 3)],
+        [(1, 3), (1, 4)],
+        [(1, 4), (1, 5)],
+        [(1, 5), (1, 5)],
+    ]
+    assert paras[0].turns == [((1, 2), (1, 2)), ((1, 3), (1, 3))]
+    assert paras[0].marked == f"أ ب  {_TURN}  ج د  {_TURN}  ه"
+    assert paras[1].turns == [] and paras[1].marked is None and paras[1].inexact
+    assert paras[2].turns == [((1, 5), (1, 5))]
+    assert (
+        paras[3].turns == [] and paras[3].marked is None
+    )  # the turn after its last word is the next paragraph's
+    assert all("Page" not in p.text for p in paras)
+    # the same regular marker, in a version whose regular markers are exact, turns the page exactly
+    exact = [Para("أ PageV01P001 ب PageV01P002 ج"), Para("د PageV01P003")]
+    paged(exact)
+    assert exact[0].turns == [((1, 2), (1, 2)), ((1, 3), (1, 3))] and not exact[0].inexact
+
+
+def test_a_turn_is_placed_in_the_clean_text_or_not_at_all() -> None:
+    """A turn's place is read from the paragraph cleaned with its turns in, at the first word after it; when the turns
+    change what the rules did, none is placed, and the stored text never bends to them."""
+    q = _quran()
+    marked = f"قال أبو جعفر (12) {_TURN} [البقرة: 4] وبالآخرة هم يوقنون {_TURN} ، ثم قال"
+    body, _ = clean(marked.replace(_TURN, " "), q, Counter())
+    with_turns, _ = clean(marked, q, Counter())
+    found = breaks(with_turns, body, [((1, 7), (1, 7)), ((1, 8), (1, 9))])
+    assert found is not None and [x[1:] for x in found] == [[1, 7, 7], [1, 8, 9]]
+    assert body[found[0][0] :].startswith("وبالآخرة") and body[found[1][0] :].startswith("، ثم")
+    assert breaks(with_turns, body + " زيادة", [((1, 7), (1, 7)), ((1, 8), (1, 9))]) is None
+    assert breaks(with_turns, body, [((1, 7), (1, 7))]) is None
 
 
 def test_a_marker_in_a_heading_or_a_section_left_out_keeps_its_place() -> None:
@@ -364,6 +411,8 @@ def test_no_markup_of_the_versions_is_left_in_the_books() -> None:
             left.update(re.findall(r"[<>|^@#%&$=~+]", p.text))
         for c in d.chapters:
             assert not re.search(r"[A-Za-z<>@%]", c.title_ar), (spec["slug"], c.title_ar)
+            # nor a marker's digits («وإياي فاتقون 01 605», al-Ṭabarī's page-end markers in 123 headings until B56)
+            assert not re.search(r"(?<![\d:])\b\d{2} \d{3}\b", c.title_ar), (spec["slug"], c.title_ar)
     assert sum(left.values()) < 120, left
 
 
@@ -384,6 +433,65 @@ def test_a_books_paragraphs_carry_the_printed_pages_they_stand_on() -> None:
     ]
     # the paragraphs opening on page 49 are its first, second and third; page 50's first
     assert [p.meta["on_page"] for p in d.passages[:5]] == [1, 2, 3, 1, 1]
+
+
+def test_a_page_turns_inside_a_paragraph_where_the_print_turns_it() -> None:
+    """B56, read off the files: in al-Ṭabarī each page-end marker inside a paragraph is a turn at the first word after
+    it, opening the page the marker names; in Ibn Kathīr and the Bukhalāʾ (regular markers at the turn, read against
+    the print) each regular marker inside a paragraph is one, opening the page after the one it closes. Al-Ṭabarī's
+    paragraph on pages 23–24 (cited as page 32 before B56, its regular markers skipping 23–31) carries its turn at
+    «عن زيد القصار», as al-Turkī's print turns it."""
+    reg, quran = _shelf()
+    for slug in ("tabari-jamicbayan", "ibnkathir-tafsirquran", "jahiz-bukhala"):
+        spec = next(b for b in reg["books"] if b["slug"] == slug)
+        raw = (RAW / spec["file"]).read_text(encoding="utf-8")
+        marker = re.compile(r"PageEndV(\d+)P(\d+)" if "PageEndV" in raw else r"PageV(\d+)P(\d+)")
+        # every turn the file holds inside a paragraph: the page it opens and the words after it
+        expected = []
+        for m in marker.finditer(raw):
+            v, n = int(m.group(1)), int(m.group(2))
+            words_after = _W.findall(re.sub(r"Page(End)?V\d+P\d+|ms\d+", " ", raw[m.end() : m.end() + 300]))[
+                :6
+            ]
+            expected.append(((v, n if "End" in marker.pattern else n + 1), words_after))
+        d = book(RAW, spec, quran, None, Counter())
+        turns = [(p, b) for p in d.passages for b in p.meta.get("breaks", [])]
+        assert len(turns) > 100, slug
+        # a page a version names twice (al-Ṭabarī's two «PageEndV11P006») has the words after each
+        by_page: dict[tuple[int, int], list[list[str]]] = {}
+        for page, words in expected:
+            by_page.setdefault(page, []).append(words)
+        slipped: list[tuple[str, int, int]] = []
+        for p, (o, v, opens, last) in turns:
+            # at a word's start or before the punctuation after the last word, never inside a word
+            assert 0 < o < len(p.text) and not (_W.match(p.text[o - 1]) and _W.match(p.text[o])), (
+                slug,
+                p.ref,
+                o,
+            )
+            assert opens <= last and p.meta["pages"][0] < [v, opens] <= p.meta["pages"][-1], (slug, p.ref)
+            first = _W.findall(p.text[o:])[0]
+            if (v, opens) in by_page:
+                assert any(first in w[:4] for w in by_page[(v, opens)]), (
+                    slug,
+                    p.ref,
+                    first,
+                    by_page[(v, opens)],
+                )
+            else:
+                # a marker the paging read between its neighbours (Ibn Kathīr's «PageV01P446» between 465 and 467)
+                slipped.append((p.ref, v, opens))
+                assert any(first in w[:4] for _, w in expected), (slug, p.ref, first)
+        assert len(slipped) <= 5, (slug, slipped)
+        if slug == "tabari-jamicbayan":
+            m = re.search(r"PageEndV01P024\s*\n~~(\S+ \S+ \S+)", raw)
+            assert m is not None
+            para = next(
+                p
+                for p in d.passages
+                if [o for o, *_ in p.meta.get("breaks", []) if p.text[o:].startswith(m.group(1))]
+            )
+            assert para.meta["pages"] == [[1, 23], [1, 24]]
 
 
 def test_every_book_holds_only_the_authors_text_with_the_editors_apparatus_counted() -> None:

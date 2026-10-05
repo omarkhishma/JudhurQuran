@@ -4032,6 +4032,8 @@
     "pagesRun": "Pages from {from}",
     "pagesRunVolume": "Volume {v}, pages from {from}",
     "volumePage": "{v}/{p}",
+    "pageTurn": "Page {page} begins here",
+    "wordPlace": "The word's place in print",
     "page": "p. {p}",
     "editorBracket": "In the editor's brackets: his addition or gloss, as printed",
     "editorNumber": "The paragraph's number in the editor's edition",
