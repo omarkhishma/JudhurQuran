@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueries } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { getJSON } from "@/lib/reader/api";
@@ -14,17 +14,25 @@ import { useAudio } from "@/lib/store/audio";
  * buttons taken out of the way of the reader's assistive technology (they stay on screen as they are); ↑ and ↓ between
  * verses, Enter opens the verse, Space recites it; the verse being recited said as it begins. Off, nothing changes.
  */
-export function VerseReading({ chapter }: { chapter: number }) {
+export function VerseReading({ chapters }: { chapters: number[] }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const on = usePrefs((s) => s.readByVerse);
-  const lines = useQuery({
-    queryKey: ["surah-lines", chapter, "imlaei"],
-    queryFn: () => getJSON<{ data: Record<string, string> }>(`/surahs/${chapter}/lines?kind=imlaei`),
-    enabled: on,
-    staleTime: Infinity,
+  // each sūra on the surface (a page of the mushaf may hold more than one, B1), its verses' spelling by their key
+  const lines = useQueries({
+    queries: chapters.map((c) => ({
+      queryKey: ["surah-lines", c, "imlaei"],
+      queryFn: () => getJSON<{ data: Record<string, string> }>(`/surahs/${c}/lines?kind=imlaei`),
+      enabled: on,
+      staleTime: Infinity,
+    })),
   });
-  const reciting = useAudio((s) => (s.playing && s.surah === chapter ? (s.queue[s.index]?.key ?? null) : null));
+  const spelling = (key: string) => {
+    const [s, a] = key.split(":");
+    return lines[chapters.indexOf(Number(s))]?.data?.data[a];
+  };
+  const stamp = lines.map((l) => l.dataUpdatedAt).join();
+  const reciting = useAudio((s) => (s.playing && chapters.includes(s.surah ?? -1) ? (s.queue[s.index]?.key ?? null) : null));
   // the verse being recited, said as it begins (the live region speaks when its words change)
   const said = on && reciting ? t("recitingNow", { ref: verseRef(reciting, locale) }) : "";
 
@@ -47,8 +55,7 @@ export function VerseReading({ chapter }: { chapter: number }) {
     passages.forEach((p, i) => {
       p.dataset.label ??= p.getAttribute("aria-label") ?? "";
       if (!p.hasAttribute("tabindex")) p.setAttribute("tabindex", i === 0 ? "0" : "-1");
-      const ayah = (p.dataset.verse ?? "").split(":")[1];
-      const text = lines.data?.data[ayah];
+      const text = spelling(p.dataset.verse ?? "");
       if (text) p.setAttribute("aria-label", `${p.dataset.label}: ${text}`);
     });
 
@@ -74,7 +81,8 @@ export function VerseReading({ chapter }: { chapter: number }) {
     }
     root.addEventListener("keydown", onKey);
     return () => root.removeEventListener("keydown", onKey);
-  }, [on, lines.data, chapter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the spellings, by when each came
+  }, [on, stamp, chapters.join()]);
 
   return on ? (
     <p className="sr-only" aria-live="polite">

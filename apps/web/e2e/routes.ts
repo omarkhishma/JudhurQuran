@@ -20,6 +20,8 @@ export const STATIC = [
   "/quran",
   "/quran/1",
   "/quran/2/255",
+  "/mushaf",
+  "/mushaf/50",
   "/word/1:1:1",
   "/roots",
   `/roots/${enc("علم")}`,

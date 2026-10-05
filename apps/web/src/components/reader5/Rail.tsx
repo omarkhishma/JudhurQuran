@@ -334,7 +334,11 @@ function PageJump({ onNavigate }: { onNavigate: () => void }) {
         {t("pageJumpLabel")}
         <input className="rail-search" inputMode="numeric" value={page} onChange={(e) => setPage(e.target.value)} placeholder="١–٦٠٤" dir="auto" />
       </label>
-      <button type="submit" className="btn" disabled={!valid || busy}>{t("pageJumpGo")}</button>
+      <span className="flex flex-wrap gap-2">
+        <button type="submit" className="btn" disabled={!valid || busy}>{t("pageJumpGo")}</button>
+        {/* the page itself, as the mushaf lays it (B1) */}
+        <button type="button" className="btn" disabled={!valid} onClick={() => { onNavigate(); router.push(`/mushaf/${n}`); }}>{t("readAsPage")}</button>
+      </span>
     </form>
   );
 }

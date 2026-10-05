@@ -7599,3 +7599,25 @@ a.wotd-pill:hover {
   border: 1px solid var(--line);
   border-radius: 8px;
 }
+
+/* the mushaf by its pages (B1): the way to the page before and after, a sūra that begins on the page */
+.page-turns {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+.page-surah-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 18px 0 6px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.page-surah-head .chapter-title a:hover {
+  text-decoration: underline;
+}
+

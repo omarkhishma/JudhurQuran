@@ -33,8 +33,19 @@ const PLACE = /^\d{1,3}:\d{1,3}:\d{1,3}$/;
  */
 export type InitialSelection = { verse?: string; word?: { slug: string; at: string } };
 
-export function ReadingSurface({ chapter, initial, children }: { chapter: ChapterInfo; initial?: InitialSelection; children: React.ReactNode }) {
+/** A page of the mushaf on the surface (B1): its number, and the sūras whose verses stand on it. */
+export type SurfacePage = { number: number; surahs: { number: number; nameAr: string }[] };
+
+export function ReadingSurface({ chapter, initial, page, children }: { chapter: ChapterInfo; initial?: InitialSelection; page?: SurfacePage; children: React.ReactNode }) {
   const t = useTranslations("rd");
+  // the sūras whose verses are on the surface: the reader's one, or those a page of the mushaf holds (B1)
+  const chapters = page ? page.surahs.map((s) => s.number) : [chapter.number];
+  const chaptersKey = chapters.join();
+  const pageNo = page?.number ?? null;
+  const onSurface = (key: string) => chapters.includes(Number(key.split(":")[0]));
+  const nameOf = (s: number) => page?.surahs.find((x) => x.number === s)?.nameAr ?? chapter.nameAr;
+  // a verse's element: «v255» in a sūra, «v2-255» on a page, where two sūras may share a verse's number
+  const anchor = (s: number | string, a: number | string) => (page ? `v${s}-${a}` : `v${a}`);
   const locale = useLocale();
   const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
@@ -60,7 +71,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   const verseTopics = usePersonal((s) => s.verseTopics);
   const topicList = usePersonal((s) => s.topics);
   const topicLabel = new Map(topicList.map((x) => [x.id, x.label]));
-  const inChapter = (k: string) => k.startsWith(`quran:${chapter.number}:`);
+  const inChapter = (k: string) => k.startsWith("quran:") && onSurface(k.slice(6));
   const markedVerses = [
     ...new Set([
       ...Object.keys(notes).filter(inChapter).map((k) => k.slice(6)),
@@ -142,7 +153,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   // Where the last visit stopped in this sūra, captured once: reading on moves progress, not the marker.
   const [resume] = useState(() => {
     const prev = usePersonal.getState().progress.quran;
-    return prev && prev.chapter === chapter.number && prev.passage > 1 ? { passage: prev.passage, at: prev.at } : null;
+    return !page && prev && prev.chapter === chapter.number && prev.passage > 1 ? { passage: prev.passage, at: prev.at } : null;
   });
   // Words are buttons; only one of them is in the tab order at a time (the server markup leaves that
   // to the browser, to keep al-Baqara light).
@@ -163,13 +174,13 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     const v = p.get("v") ?? initial?.verse ?? null;
     if (w || v) arrival.current = true;
     if (w !== null && (w || at)) {
-      openWord({ slug: w, at: at && at.startsWith(`${chapter.number}:`) ? at : null });
+      openWord({ slug: w, at: at && onSurface(at) ? at : null });
       setPrefs({ panelOpen: true });
-    } else if (v && v.startsWith(`${chapter.number}:`)) {
+    } else if (v && onSurface(v)) {
       openVerse(v);
       setPrefs({ panelOpen: true });
     }
-    const target = at ? `v${at.split(":")[1]}` : v ? `v${v.split(":")[1]}` : window.location.hash.slice(1);
+    const target = at ? anchor(at.split(":")[0], at.split(":")[1]) : v ? anchor(v.split(":")[0], v.split(":")[1]) : window.location.hash.slice(1);
     requestAnimationFrame(() => {
       const el = target ? document.getElementById(target) : resume ? document.getElementById(`v${resume.passage}`) : null;
       if (el) {
@@ -178,8 +189,9 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
         setTimeout(() => el.removeAttribute("data-target"), 2400);
       }
     });
-    // the route's initial selection is compared by value
-  }, [chapter.number, openWord, openVerse, setPrefs, resume, initial?.verse, initial?.word?.slug, initial?.word?.at]);
+    // the route's initial selection is compared by value; the page's sūras by their numbers
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapter.number, chaptersKey, openWord, openVerse, setPrefs, resume, initial?.verse, initial?.word?.slug, initial?.word?.at]);
 
   // State → URL, without navigation, once something changes: a verse of this sūra is its own path
   // (/quran/2/255), a word and the index are parameters on the sūra (?w=…&at=…, ?mode=lookup). Each
@@ -193,14 +205,15 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     }
     const url = new URL(window.location.href);
     const prefix = /^\/en(\/|$)/.test(url.pathname) ? "/en" : "";
-    url.pathname = `${prefix}/quran/${chapter.number}`;
+    // a page of the mushaf keeps its own address, what is open on it as parameters (B1)
+    url.pathname = pageNo !== null ? `${prefix}/mushaf/${pageNo}` : `${prefix}/quran/${chapter.number}`;
     for (const k of ["w", "at", "v", "mode", "q"]) url.searchParams.delete(k);
     if (mode === "word" && selection) {
       if (selection.slug) url.searchParams.set("w", selection.slug);
       if (selection.at) url.searchParams.set("at", selection.at);
     } else if (mode === "verse" && verse) {
       const [s, a] = verse.split(":");
-      if (Number(s) === chapter.number) url.pathname += `/${a}`;
+      if (pageNo === null && Number(s) === chapter.number) url.pathname += `/${a}`;
       else url.searchParams.set("v", verse);
     } else if (mode === "index") url.searchParams.set("mode", "lookup");
     else if (mode === "surah") url.searchParams.set("mode", "about");
@@ -214,14 +227,14 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       arrival.current = false;
       window.history.replaceState(window.history.state, "", url.href);
     } else window.history.pushState(window.history.state, "", url.href);
-  }, [mode, selection, verse, chapter.number]);
+  }, [mode, selection, verse, chapter.number, pageNo]);
 
   // Back and forward: read the entry's URL back into the reader (another sūra is Next's navigation).
   useEffect(() => {
     function onPop() {
       const u = new URL(window.location.href);
-      const m = u.pathname.match(/\/quran\/(\d+)(?:\/(\d+))?\/?$/);
-      if (!m || Number(m[1]) !== chapter.number) return;
+      const m = pageNo !== null ? u.pathname.match(/\/mushaf\/(\d+)\/?$/) : u.pathname.match(/\/quran\/(\d+)(?:\/(\d+))?\/?$/);
+      if (!m || Number(m[1]) !== (pageNo ?? chapter.number)) return;
       const raw = u.searchParams.get("w");
       const placed = PLACE.test(raw ?? "");
       const w = placed ? "" : raw;
@@ -229,7 +242,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       const v = u.searchParams.get("v");
       const mode = u.searchParams.get("mode");
       const s = useReader.getState();
-      if (m[2]) s.openVerse(`${m[1]}:${m[2]}`);
+      if (pageNo === null && m[2]) s.openVerse(`${m[1]}:${m[2]}`);
       else if (w || at) s.openWord({ slug: w ?? "", at }, { fromHistory: true });
       else if (v) s.openVerse(v);
       else if (mode === "lookup") s.setMode("index");
@@ -238,7 +251,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     }
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [chapter.number]);
+  }, [chapter.number, pageNo]);
 
   // Selection, root-family and focus-root underlines; the hot passage.
   useEffect(() => {
@@ -299,16 +312,18 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
-    let last = 0;
+    let last = "";
     const io = new IntersectionObserver(
       (entries) => {
         const visible = entries.filter((e) => e.isIntersecting).map((e) => e.target as HTMLElement);
         if (!visible.length) return;
-        const ayah = Number((visible[0].dataset.verse ?? "").split(":")[1]);
-        if (ayah && ayah !== last) {
-          last = ayah;
-          setProgress("quran", { chapter: chapter.number, passage: ayah });
-          markRead(chapter.number, ayah);
+        // the verse's own sūra: a page of the mushaf may hold two (B1)
+        const key = visible[0].dataset.verse ?? "";
+        const [s, ayah] = key.split(":").map(Number);
+        if (ayah && key !== last) {
+          last = key;
+          setProgress("quran", { chapter: s, passage: ayah });
+          markRead(s, ayah);
         }
       },
       { rootMargin: "-20% 0px -70% 0px" },
@@ -328,12 +343,12 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
         else closeEntry();
         return;
       }
-      // Alt+↑/↓ move to the previous / next sūra from anywhere in the reader.
+      // Alt+↑/↓ move to the previous / next sūra from anywhere in the reader — on a page of the mushaf, the page
       if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
-        const n = chapter.number + (e.key === "ArrowDown" ? 1 : -1);
-        if (n >= 1 && n <= 114) {
+        const n = (pageNo ?? chapter.number) + (e.key === "ArrowDown" ? 1 : -1);
+        if (n >= 1 && n <= (pageNo !== null ? 604 : 114)) {
           e.preventDefault();
-          router.push(`/quran/${n}`);
+          router.push(pageNo !== null ? `/mushaf/${n}` : `/quran/${n}`);
         }
         return;
       }
@@ -363,7 +378,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [closeEntry, drawer, chapter.number, router]);
+  }, [closeEntry, drawer, chapter.number, pageNo, router]);
 
   // Touch: a 420 ms long-press reveals a verse's tools; moving cancels it, so scrolling never does (RDR-149).
   const press = useRef<{ timer: ReturnType<typeof setTimeout> | null }>({ timer: null });
@@ -429,7 +444,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       // the translation shown under the verse goes with it, credited (RDR-555)
       const tr = ref.current?.querySelector<HTMLElement>(`[data-inline="${CSS.escape(key)}"] .inline-translation`);
       const trText = tr?.querySelector(".inline-tr-text")?.textContent;
-      const text = `﴿${words.join(" ")}﴾ [${chapter.nameAr}: ${formatNumber(ayah, "ar")}]` + (tr && trText ? `\n${trText} — ${tr.dataset.credit ?? ""}` : "");
+      const text = `﴿${words.join(" ")}﴾ [${nameOf(Number(key.split(":")[0]))}: ${formatNumber(ayah, "ar")}]` + (tr && trText ? `\n${trText} — ${tr.dataset.credit ?? ""}` : "");
       try {
         await navigator.clipboard.writeText(text);
         showToast(t("verseCopied"));
@@ -446,17 +461,23 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     if (!sel || sel.rangeCount === 0 || !ref.current) return;
     const range = sel.getRangeAt(0);
     const parts: string[] = [];
-    const refs: number[] = [];
+    const refs: [number, number][] = [];
     for (const v of Array.from(ref.current.querySelectorAll<HTMLElement>(".passage"))) {
       if (!range.intersectsNode(v)) continue;
       const words = Array.from(v.querySelectorAll<HTMLElement>(".w")).filter((w) => range.intersectsNode(w));
       if (!words.length) continue;
       parts.push(words.map(tokenText).join(" "));
-      refs.push(Number((v.dataset.verse ?? "").split(":")[1]));
+      const [vs, va] = (v.dataset.verse ?? "").split(":").map(Number);
+      refs.push([vs, va]);
     }
     if (!parts.length) return;
-    const span = refs.length > 1 ? `${formatNumber(refs[0], "ar")}–${formatNumber(refs[refs.length - 1], "ar")}` : formatNumber(refs[0], "ar");
-    e.clipboardData.setData("text/plain", `﴿${parts.join(" ")}﴾ [${chapter.nameAr}: ${span}]`);
+    const [[s1, a1], [s2, a2]] = [refs[0], refs[refs.length - 1]];
+    // across two sūras of a page (B1), each named
+    const span =
+      s1 !== s2
+        ? `${nameOf(s1)}: ${formatNumber(a1, "ar")} – ${nameOf(s2)}: ${formatNumber(a2, "ar")}`
+        : `${nameOf(s1)}: ${refs.length > 1 ? `${formatNumber(a1, "ar")}–${formatNumber(a2, "ar")}` : formatNumber(a1, "ar")}`;
+    e.clipboardData.setData("text/plain", `﴿${parts.join(" ")}﴾ [${span}]`);
     e.preventDefault();
   }
 
@@ -495,7 +516,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
   // Phone with the sheet put away: the selected word's gloss stands under its verse (RDR-605).
   const phone = mounted && document.querySelector(".reader-v5")?.getAttribute("data-bp") === "phone";
   const glossEl =
-    phone && !panelOpen && mode === "word" && selection?.at?.startsWith(`${chapter.number}:`)
+    phone && !panelOpen && mode === "word" && selection?.at && onSurface(selection.at)
       ? document.querySelector(`[data-gloss="${CSS.escape(selection.at.split(":").slice(0, 2).join(":"))}"]`)
       : null;
 
@@ -543,10 +564,10 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     >
       {/* the classroom: said here whenever this reading counts for a lesson (P9.2a) */}
       {mounted && <LessonStrip chapter={chapter.number} />}
-      {mounted && <Interlinear chapter={chapter.number} />}
+      {mounted && <Interlinear chapters={chapters} />}
       {children}
-      {mounted && <InlineLines chapter={chapter.number} />}
-      {mounted && <VerseReading chapter={chapter.number} />}
+      {mounted && <InlineLines chapters={chapters} />}
+      {mounted && <VerseReading chapters={chapters} />}
       {resumeEl &&
         createPortal(
           <span className="resume-mark">

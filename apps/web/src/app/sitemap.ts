@@ -8,7 +8,9 @@ import { SITE } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 // Pages that exist in both locales; Arabic is canonical at the bare path, English under /en.
-const STATIC_PATHS = ["/", "/quran", "/roots", "/graph", "/g", "/explore", "/data", "/about", "/sources", "/privacy", "/developers"];
+const STATIC_PATHS = ["/", "/quran", "/mushaf", "/roots", "/graph", "/g", "/explore", "/data", "/about", "/sources", "/privacy", "/developers"];
+// the mushaf's pages (B1)
+const MUSHAF_PAGES = 604;
 
 /** The published maps (P8.5), the latest first, at most 5,000; none when the API cannot say (the rest still lists). */
 async function publishedMaps(): Promise<{ slug: string; updated_at: string }[]> {
@@ -49,6 +51,7 @@ export default async function sitemap(props: { id: Promise<string> }): Promise<M
     return [
       ...STATIC_PATHS.map((p) => entry(p, at, p === "/" ? 1 : 0.6)),
       ...surahs.map((s) => entry(`/quran/${s}`, at, 0.9)),
+      ...Array.from({ length: MUSHAF_PAGES }, (_, i) => entry(`/mushaf/${i + 1}`, at, 0.6)),
       ...c.verses.map(([s, a]) => entry(`/quran/${s}/${a}`, at, 0.7)),
       ...c.roots.map((r) => entry(`/roots/${encodeURIComponent(r)}`, at, 0.8)),
       // each root's count answered (B8a)

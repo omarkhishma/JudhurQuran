@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import type { SurahPayload, Verse } from "@/lib/types";
 import { SurahSteps } from "./SurahSteps";
@@ -31,7 +32,11 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
           {t("aboutSurah")}
         </button>
         <p className="text-[12px] text-t3">
-          {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " • " + tc("verses", cnt(s.verse_count, locale)) + " • " + t("pagesRange", { from: formatNumber(s.page_start, locale), to: formatNumber(s.page_end, locale) })}
+          {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " • " + tc("verses", cnt(s.verse_count, locale)) + " • "}
+          {/* its pages, each open in the mushaf's page mode (B1) */}
+          <Link href={`/mushaf/${s.page_start}`} className="underline-offset-2 hover:underline" prefetch={false}>
+            {t("pagesRange", { from: formatNumber(s.page_start, locale), to: formatNumber(s.page_end, locale) })}
+          </Link>
         </p>
         {showBasmala && (
           <p className="quran basmala" dir="rtl" lang="ar" aria-label={t("basmala")}>

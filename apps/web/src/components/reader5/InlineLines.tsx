@@ -23,7 +23,18 @@ function useLines(chapter: number, kind: "imlaei" | "translit", enabled: boolean
  * plain Arabic explanation (Arabic UI option) and a translation (on by default in English) — RDR-095/096,
  * RDR-557.
  */
-export function InlineLines({ chapter }: { chapter: number }) {
+export function InlineLines({ chapters }: { chapters: number[] }) {
+  // a page of the mushaf may hold more than one sūra (B1): each fills its own verses
+  return (
+    <>
+      {chapters.map((c) => (
+        <SurahLines key={c} chapter={c} />
+      ))}
+    </>
+  );
+}
+
+function SurahLines({ chapter }: { chapter: number }) {
   const t = useTranslations("rd");
   const locale = useLocale();
   const pref = usePrefs((s) => s.translationLine);
@@ -38,7 +49,7 @@ export function InlineLines({ chapter }: { chapter: number }) {
   const iml = useLines(chapter, "imlaei", imlaeiOn);
   const tl = useLines(chapter, "translit", translitOn);
   // Rendered only after mount (ReadingSurface), so the server-rendered slots are already in the DOM.
-  const slots = useMemo(() => (chapter ? Array.from(document.querySelectorAll<HTMLElement>("[data-inline]")) : []), [chapter]);
+  const slots = useMemo(() => (chapter ? Array.from(document.querySelectorAll<HTMLElement>("[data-inline]")).filter((s) => (s.dataset.inline ?? "").startsWith(`${chapter}:`)) : []), [chapter]);
   if (!translationOn && !muyassar && !imlaeiOn && !translitOn) return null;
   const byAyah = (data: typeof tr.data) => {
     const m = new Map<number, string>();

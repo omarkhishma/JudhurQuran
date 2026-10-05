@@ -2514,7 +2514,20 @@
     "recitingNow": "Now reciting: verse {ref}",
     "prefInterlinear": "Word by word",
     "prefInterlinearHint": "Under each word its meaning at its place, its root and its pattern.",
-    "interlinearCreditEn": "Under each word: its gloss from the Quranic Arabic Corpus, then its root and its pattern from the morphology."
+    "interlinearCreditEn": "Under each word: its gloss from the Quranic Arabic Corpus, then its root and its pattern from the morphology.",
+    "mushafPageTitle": "Page {n}",
+    "pageOf": "{n} of {of}",
+    "juzN": "Juzʾ {n}",
+    "nextPage": "Next page",
+    "prevPage": "Previous page",
+    "pageTurnsTop": "Turning the pages",
+    "pageTurnsBottom": "Turning the pages, below the page",
+    "pageModeNote": "The verses as they stand on the Madinah mushaf's pages, each page opening and closing on a whole verse. The printed page's lines are not drawn. ← next page, → previous, or swipe.",
+    "mushafTitle": "The mushaf, page by page",
+    "mushafLead": "Read the Quran by the 604 pages of the Madinah mushaf, every word opening its root and meaning as in the reader.",
+    "mushafParts": "Where each juzʾ begins",
+    "openPage": "Open the page",
+    "readAsPage": "Read it as a page"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
