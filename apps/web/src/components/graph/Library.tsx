@@ -17,6 +17,7 @@ import type { SearchResult } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
 import { DRAG_TYPE, useCanvasTools, type CanvasTools } from "./GraphCanvas";
 import { EntitySearch, MyTopics, TopicSearch } from "./Topics";
+import { getJSON } from "@/lib/reader/api";
 
 /** The kinds a reader can begin a card from (frames come with P8.1-C). */
 const TILE_KINDS: NodeKind[] = ["root", "pattern", "lemma", "verse", "note"];
@@ -248,7 +249,7 @@ function AddFromData({ tools, kind, pick, clearPick, inputRef, at, translit }: {
   const { data } = useQuery({
     queryKey: ["palette-search", dq],
     enabled: dq.length > 0,
-    queryFn: async () => (await (await fetch(`/api/v1/search?q=${encodeURIComponent(dq)}&limit=6`)).json()) as SearchResult,
+    queryFn: async () => await getJSON<SearchResult>(`/search?q=${encodeURIComponent(dq)}&limit=6`),
   });
   const show = (k: NodeKind) => !pick || pick === k;
   const add = (cards: GraphNode[], label: string) => {
@@ -269,7 +270,7 @@ function AddFromData({ tools, kind, pick, clearPick, inputRef, at, translit }: {
   });
   /** A written form found by search adds its word (the lemma), first met where the search found it. */
   async function addForm(lemma: number, sample: string) {
-    const d = (await (await fetch(`/api/v1/lemmas?ids=${lemma}`)).json()) as { data: LemmaRow[] };
+    const d = await getJSON<{ data: LemmaRow[] }>(`/lemmas?ids=${lemma}`);
     if (d.data[0]) add([lemmaCard(d.data[0], sample)], t("doAddWord", { word: d.data[0].ar }));
   }
   const lemmaIds = new Set(data?.results.lemmas.map((l) => l.id));
@@ -392,7 +393,7 @@ function MapRoots({ tools, translit }: { tools: CanvasTools; translit: boolean }
     queryKey: ["roots-by-key", keys.join(",")],
     enabled: keys.length > 0,
     staleTime: 10 * 60_000,
-    queryFn: async () => ((await (await fetch(`/api/v1/roots?keys=${encodeURIComponent(keys.join(","))}&limit=${keys.length}`)).json()) as { data: RootRow[] }).data,
+    queryFn: async () => (await getJSON<{ data: RootRow[] }>(`/roots?keys=${encodeURIComponent(keys.join(","))}&limit=${keys.length}`)).data,
   });
   if (!keys.length) return null;
   const on = new Set(tools.nodes.filter((n) => n.data.kind === "root").map((n) => n.id));

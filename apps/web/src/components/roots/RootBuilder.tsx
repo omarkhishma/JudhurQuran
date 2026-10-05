@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber } from "@/lib/format";
 import type { RootSummary } from "@/lib/types";
+import { getJSON } from "@/lib/reader/api";
 
 const FOLD: Record<string, string> = { "ا": "ء", "أ": "ء", "إ": "ء", "آ": "ء", "ؤ": "ء", "ئ": "ء", "ى": "ي", "ة": "ت" };
 
@@ -25,7 +26,7 @@ export function RootBuilder() {
   const { data } = useQuery({
     queryKey: ["root-builder", params],
     enabled: active,
-    queryFn: async () => (await (await fetch(`/api/v1/roots?${params}&limit=120`)).json()) as { data: RootSummary[]; total: number },
+    queryFn: async () => await getJSON<{ data: RootSummary[]; total: number }>(`/roots?${params}&limit=120`),
   });
 
   function set(i: number, raw: string) {

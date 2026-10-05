@@ -22,6 +22,7 @@ export function Concordance({ root, lemmas }: { root: string; lemmas: { id: numb
       const r = await fetch(
         `/api/v1/roots/${encodeURIComponent(root)}/occurrences?limit=40${lemma ? `&lemma=${lemma}` : ""}${pageParam ? `&cursor=${pageParam}` : ""}`,
       );
+      if (!r.ok) throw new Error(String(r.status));
       return (await r.json()) as OccurrencesPage;
     },
     getNextPageParam: (last) => last.next_cursor ?? undefined,

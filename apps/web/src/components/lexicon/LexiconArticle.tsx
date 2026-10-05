@@ -36,7 +36,11 @@ export function LexiconArticle({
   const { data, isFetching } = useQuery({
     queryKey: ["lex-entry", entry.id],
     enabled: full,
-    queryFn: async () => (await (await fetch(entryUrl ?? `/api/v1/lexicon/entries/${entry.id}`)).json()) as { body: string },
+    queryFn: async () => {
+      const r = await fetch(entryUrl ?? `/api/v1/lexicon/entries/${entry.id}`);
+      if (!r.ok) throw new Error(String(r.status));
+      return (await r.json()) as { body: string };
+    },
   });
   const truncated = entry.length > entry.excerpt.length;
   // Whitespace only: a verse citation the source printed on its own line («[الفجر/ ٣]») rejoins its sentence.

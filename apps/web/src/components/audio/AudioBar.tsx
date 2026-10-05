@@ -8,6 +8,7 @@ import { Icon } from "@/components/Icon";
 import { useAudio } from "@/lib/store/audio";
 import { formatNumber } from "@/lib/format";
 import { useIsClient } from "@/lib/client";
+import { getJSON } from "@/lib/reader/api";
 
 type Reciter = { id: string; name_ar: string; name_en: string; style: string; is_default: boolean };
 
@@ -20,7 +21,7 @@ export function AudioBar({ surah, surahName }: { surah: number; surahName: strin
   const [open, setOpen] = useState(false);
   const { data } = useQuery({
     queryKey: ["reciters"],
-    queryFn: async () => ((await (await fetch("/api/v1/recitations")).json()) as { data: Reciter[] }).data,
+    queryFn: async () => (await getJSON<{ data: Reciter[] }>("/recitations")).data,
   });
   const active = a.surah === surah && (a.playing || a.queue.length > 0) && a.mode !== "word" && a.mode !== "playlist";
   const verse = active ? a.queue[a.index] : null;
