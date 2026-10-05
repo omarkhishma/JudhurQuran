@@ -138,6 +138,10 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
         <summary className="cursor-pointer text-word">{t("howWeCount")}</summary>
         <p className="mt-2 max-w-[80ch] leading-relaxed">{t("howWeCountBody")}</p>
       </details>
+      {/* the count answered, and why the web gives others (B8a) */}
+      <p className="mt-2 text-[13px]">
+        <Link href={`/roots/${encodeURIComponent(r.key)}/count`} className="text-word underline underline-offset-2">{t("countLink")}</Link>
+      </p>
 
       {r.lexicon.core_meaning && (
         <section className="mt-10" aria-labelledby="core-meaning">

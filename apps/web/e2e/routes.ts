@@ -23,6 +23,7 @@ export const STATIC = [
   "/word/1:1:1",
   "/roots",
   `/roots/${enc("علم")}`,
+  `/roots/${enc("علم")}/count`,
   "/graph",
   `/graph/root/${enc("علم")}`,
   "/split",

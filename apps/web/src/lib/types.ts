@@ -109,6 +109,8 @@ export type PatternMethod = "tag" | "verb-form" | "verb-form-I" | "match";
 export type LemmaSummary = {
   id: number;
   key: string;
+  /** its address in the reader (/read?w=…) */
+  slug?: string;
   ar: string;
   ar_bare: string;
   pos: string;

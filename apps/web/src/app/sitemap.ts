@@ -51,6 +51,8 @@ export default async function sitemap(props: { id: Promise<string> }): Promise<M
       ...surahs.map((s) => entry(`/quran/${s}`, at, 0.9)),
       ...c.verses.map(([s, a]) => entry(`/quran/${s}/${a}`, at, 0.7)),
       ...c.roots.map((r) => entry(`/roots/${encodeURIComponent(r)}`, at, 0.8)),
+      // each root's count answered (B8a)
+      ...c.roots.map((r) => entry(`/roots/${encodeURIComponent(r)}/count`, at, 0.6)),
     ];
   }
   const chunk = Number(id.replace("words-", ""));
