@@ -83,8 +83,9 @@ test("a passage of an article goes alone onto a map, kept as where it runs and a
   await page.goto("/quran/20?w=ilm&at=20:114:17");
   const article = page.locator('[data-section="lexica"] .dict-article[data-dict="maqayis"]');
   const shownBox = article.locator(".dict-body").first();
+  // the marks hidden once the page has read the reader's preferences: the text is read as shown then
+  await expect.poll(async () => displayBare(e.body).startsWith((await shownBox.innerText()).slice(0, 40)), { timeout: 15_000 }).toBe(true);
   const shown = await shownBox.innerText();
-  expect(displayBare(e.body).startsWith(shown.slice(0, 40))).toBe(true);
   const word = "يدل على";
   const at = shown.indexOf(word);
   expect(at).toBeGreaterThan(0);
