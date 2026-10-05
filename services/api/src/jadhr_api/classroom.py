@@ -18,7 +18,7 @@ from typing import Any
 
 from sqlalchemy import Connection
 
-from . import plain
+from . import plain, sets
 from .accounts import q, q1, tx
 from .db import connect, rows
 from .refusal import Refusal
@@ -519,6 +519,77 @@ def add_lesson(u: dict[str, Any], cid: str, title: Any, ranges: Any, roots: Any,
         return _lesson_out(conn, lesson, "instructor", u)
 
 
+# ─── a class's sets of words (B29) ──────────────────────────────────────────────
+
+SETS_MAX = 50
+
+
+def _set(conn: Connection, sid: str) -> dict[str, Any]:
+    s = q1(conn, "select * from classroom.sets where id = :s", {"s": _uuid(sid, "set")})
+    if s is None:
+        raise Refusal(404, "not_found", "No such set.")
+    return s
+
+
+def _set_out(s: dict[str, Any]) -> dict[str, Any]:
+    return {"id": str(s["id"]), "title": s["title"], "rule": s["rule"], "created_at": _iso(s["created_at"])}
+
+
+def class_sets(u: dict[str, Any], cid: str) -> dict[str, Any]:
+    """A class's sets, for its instructor and its members: each a title and the rule its words come from."""
+    with tx() as conn:
+        c = _class(conn, cid)
+        role = _role_in(conn, u, c)
+        found = q(
+            conn, "select * from classroom.sets where class_id = :c order by created_at", {"c": c["id"]}
+        )
+        return {"role": role, "data": [_set_out(s) for s in found]}
+
+
+def add_set(u: dict[str, Any], cid: str, title: Any, rule: Any) -> dict[str, Any]:
+    """A set the instructor makes for the class: a title of theirs and a rule the data is read by — never a list of
+    words, so the set holds what its rule yields and nothing it claims beside."""
+    with tx() as conn:
+        c = _own(conn, u, cid)
+        _open_class(c)
+        n = q1(conn, "select count(*)::int as n from classroom.sets where class_id = :c", {"c": c["id"]})
+        if n and n["n"] >= SETS_MAX:
+            raise Refusal(409, "too_many_sets", f"A class holds {SETS_MAX} sets at most.")
+        clean = sets.clean_rule(conn, rule)
+        s = q1(
+            conn,
+            """insert into classroom.sets (class_id, title, rule) values (:c, :t, cast(:r as jsonb)) returning *""",
+            {
+                "c": c["id"],
+                "t": plain.name(_str(title, 120, need=True, field="set's title")),
+                "r": json.dumps(clean),
+            },
+        )
+        assert s is not None
+        return _set_out(s)
+
+
+def class_set(u: dict[str, Any], sid: str) -> dict[str, Any]:
+    """One of a class's sets with its words, read from the data now, for the instructor and the members."""
+    with tx() as conn:
+        s = _set(conn, sid)
+        c = _class(conn, str(s["class_id"]))
+        role = _role_in(conn, u, c)
+        return {
+            **sets.evaluate(conn, s["rule"]),
+            **_set_out(s),
+            "class": {"id": str(c["id"]), "name": c["name"]},
+            "role": role,
+        }
+
+
+def drop_set(u: dict[str, Any], sid: str) -> None:
+    with tx() as conn:
+        s = _set(conn, sid)
+        _own(conn, u, str(s["class_id"]))
+        q(conn, "delete from classroom.sets where id = :s returning id", {"s": s["id"]})
+
+
 def copy_lesson(u: dict[str, Any], lid: str, cid: str) -> dict[str, Any]:
     """An instructor teaching several classes copies a lesson into another of theirs (B46): its title, verses, roots,
     due date and lesson notes — nothing of any member, and not its map, which is the first class's."""
@@ -720,6 +791,14 @@ def export_for(u: dict[str, Any]) -> dict[str, Any]:
                     "name": c["name"],
                     "minors": c["minors"],
                     "created_at": _iso(c["created_at"]),
+                    "sets": [
+                        {"title": s["title"], "rule": s["rule"], "created_at": _iso(s["created_at"])}
+                        for s in q(
+                            conn,
+                            "select * from classroom.sets where class_id = :c order by created_at",
+                            {"c": c["id"]},
+                        )
+                    ],
                     "lessons": [
                         {
                             "title": x["title"],

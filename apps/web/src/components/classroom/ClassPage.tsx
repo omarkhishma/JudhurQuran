@@ -9,6 +9,9 @@ import { addLesson, copyLesson, deleteClass, deleteLesson, getClass, getClasses,
 import { useIsClient } from "@/lib/client";
 import { setFinished } from "@/lib/classroomSignals";
 import { cnt } from "@/lib/format";
+import { SetBuilder } from "@/components/explore/SetBuilder";
+import { MadeSetCard, useRuleSummary } from "@/components/explore/SetSummary";
+import { addClassSet, classSets } from "@/lib/sets";
 import { ConsentText, useClassError, useFmt, useSurahNames, useSurahs } from "./shared";
 
 const FLOOR = 5;
@@ -70,9 +73,55 @@ export function ClassPage({ id }: { id: string }) {
         )}
         {teach && !c.archived_at && <LessonBuilder classId={c.id} />}
       </section>
+      <ClassSetsSection classId={c.id} teach={teach} open={!c.archived_at} />
       {teach ? <Roster c={c} /> : <MySettings c={c} />}
       {teach && <ClassSettings c={c} />}
     </div>
+  );
+}
+
+/** The class's sets of words (B29): each a title and a rule its words are read by, opened in Explore with its deck
+ * and map; its instructor makes one with the same builder a reader's own sets use. */
+function ClassSetsSection({ classId, teach, open }: { classId: string; teach: boolean; open: boolean }) {
+  const t = useTranslations("classroom");
+  const te = useTranslations("explore");
+  const qc = useQueryClient();
+  const summary = useRuleSummary();
+  const [building, setBuilding] = useState(false);
+  const q = useQuery({ queryKey: ["class-sets", classId], queryFn: () => classSets(classId), retry: false });
+  const sets = q.data?.data ?? [];
+  return (
+    <section aria-labelledby="sets-h" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 id="sets-h" className="text-[17px] font-semibold">{t("setsTitle")}</h2>
+          <p className="text-[12.5px] leading-relaxed text-t3">{t(teach ? "setsLeadTeach" : "setsLead")}</p>
+        </div>
+        {teach && open && !building && <button type="button" className="btn" onClick={() => setBuilding(true)}>{te("newSet")}</button>}
+      </div>
+      {building && (
+        <SetBuilder
+          saveLabel={t("setSave")}
+          onSave={async (title, rule) => {
+            await addClassSet(classId, title, rule);
+            await qc.invalidateQueries({ queryKey: ["class-sets", classId] });
+            setBuilding(false);
+          }}
+          onCancel={() => setBuilding(false)}
+        />
+      )}
+      {sets.length > 0 ? (
+        <ul className="set-grid">
+          {sets.map((s) => (
+            <li key={s.id}>
+              <MadeSetCard href={`/explore?cset=${s.id}`} title={s.title} line={summary(s.rule)} rule={s.rule} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        !building && q.isSuccess && <p className="text-[13.5px] text-t3">{t(teach ? "setsNoneTeach" : "setsNone")}</p>
+      )}
+    </section>
   );
 }
 

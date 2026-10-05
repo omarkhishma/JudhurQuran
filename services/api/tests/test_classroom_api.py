@@ -799,3 +799,51 @@ def test_the_windows_on_a_lessons_map_are_told_when_it_changes(people: dict[str,
         _until(ws, lambda m: m["type"] == "changed")
         tc.post(f"/api/v1/classroom/proposals/{p['id']}/decide", headers=t, json={"decision": "declined"})
         _until(ws, lambda m: m["type"] == "changed")
+
+
+def test_a_class_s_sets_are_rules_its_instructor_names_and_its_members_read(
+    people: dict[str, dict[str, str]],
+) -> None:
+    """B29: a set for a class is a title and a rule — never words typed in — checked as a reader's set is; the class's
+    members read it with its words computed now; only the instructor adds or removes one; the export keeps it."""
+    t, a, b = people["t"], people["a"], people["b"]
+    c = _class(t)
+    assert _join(a, c["join_code"]).status_code in (200, 201)
+    made = client.post(
+        f"/api/v1/classroom/classes/{c['id']}/sets",
+        headers=t,
+        json={"title": "كلمات يس", "rule": {"frequent": True, "surah": 36, "limit": 15}},
+    )
+    assert made.status_code == 201, made.text
+    s = made.json()
+    assert s["rule"] == {"frequent": True, "surah": 36, "limit": 15}
+    # a member reads the class's sets, and one with its words — the same words the rule yields for anyone
+    listed = client.get(f"/api/v1/classroom/classes/{c['id']}/sets", headers=a).json()
+    assert listed["role"] == "member" and [x["id"] for x in listed["data"]] == [s["id"]]
+    one = client.get(f"/api/v1/classroom/sets/{s['id']}", headers=a).json()
+    anyone = client.post("/api/v1/sets/evaluate", json={"rule": s["rule"]}).json()
+    assert one["title"] == "كلمات يس" and one["class"]["name"] == c["name"]
+    assert [x["slug"] for x in one["items"]] == [x["slug"] for x in anyone["items"]] and one[
+        "item_count"
+    ] == 15
+    # a reader outside the class sees nothing of it; a member adds and removes nothing
+    assert client.get(f"/api/v1/classroom/sets/{s['id']}", headers=b).status_code == 404
+    assert client.get(f"/api/v1/classroom/classes/{c['id']}/sets", headers=b).status_code == 404
+    denied = client.post(
+        f"/api/v1/classroom/classes/{c['id']}/sets",
+        headers=a,
+        json={"title": "x", "rule": {"frequent": True}},
+    )
+    assert denied.status_code == 403
+    assert client.delete(f"/api/v1/classroom/sets/{s['id']}", headers=a).status_code == 403
+    # a rule the data cannot hold is refused as a reader's would be
+    bad = client.post(
+        f"/api/v1/classroom/classes/{c['id']}/sets", headers=t, json={"title": "x", "rule": {"root": ["ققق"]}}
+    )
+    assert bad.status_code == 422 and _code(bad) == "unknown_root"
+    # the instructor's export holds it; then it goes
+    exported = client.get("/api/v1/me/export", headers=t).json()
+    taught = next(x for x in exported["classroom"]["teaching"] if x["name"] == c["name"])
+    assert taught["sets"][0]["title"] == "كلمات يس" and taught["sets"][0]["rule"] == s["rule"]
+    assert client.delete(f"/api/v1/classroom/sets/{s['id']}", headers=t).status_code == 204
+    assert client.get(f"/api/v1/classroom/classes/{c['id']}/sets", headers=t).json()["data"] == []

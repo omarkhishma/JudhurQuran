@@ -15,6 +15,8 @@ export type SetItem = {
   root: { key: string; spaced: string; translit: string } | null;
   pattern: { slug: string; ar: Ar } | null;
   first: { location: string; verse_key: string } | null;
+  /** in a set made within one sūra (B29): how often the word stands in it */
+  in_surah?: number;
 };
 export type SetDetail = Omit<SetCard, "slugs" | "sample"> & {
   why_ar: string;

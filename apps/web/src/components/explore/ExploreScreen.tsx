@@ -1,18 +1,23 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Link, useRouter } from "@/i18n/navigation";
+import { useAccount } from "@/lib/account/store";
+import { getClasses } from "@/lib/classroom";
 import { useIsClient } from "@/lib/client";
 import { colourVar, fetchCoverage, type PathIndex, type PathLesson, type SetCard, type SetDetail, type SetItem } from "@/lib/collections";
 import type { WordOfTheDay } from "@/lib/daily";
 import { cnt, formatNumber, toArabicDigits, verseRef } from "@/lib/format";
 import { encodeSeed } from "@/lib/graph/seedCodec";
 import { getJSON } from "@/lib/reader/api";
-import { usePersonal, type WordState } from "@/lib/reader/store";
+import { type ReaderSet, usePersonal, type WordState } from "@/lib/reader/store";
+import { classSet, classSets, colourOf, dropClassSet, evaluateSet, type EvaluatedSet, type SetRule } from "@/lib/sets";
 import { useStar } from "@/lib/store/saved";
 import { useTranslitOn } from "@/lib/useTranslit";
+import { SetBuilder } from "./SetBuilder";
+import { MadeSetCard, useRuleSummary } from "./SetSummary";
 import { StudyDeck } from "./StudyDeck";
 
 const pct = (x: number, locale: string) => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en", { style: "percent", maximumFractionDigits: 1 }).format(x);
@@ -33,6 +38,8 @@ export function ExploreScreen({
   path,
   lessonN,
   initialLesson,
+  mineId = null,
+  classSetId = null,
 }: {
   sets: SetCard[];
   word: WordOfTheDay | null;
@@ -42,6 +49,10 @@ export function ExploreScreen({
   path: PathIndex | null;
   lessonN: number | null;
   initialLesson: PathLesson | null;
+  /** a set the reader made (B29), opened from their list */
+  mineId?: string | null;
+  /** a set a teacher made for one of the reader's classes (B29) */
+  classSetId?: string | null;
 }) {
   const t = useTranslations("explore");
   return (
@@ -51,7 +62,11 @@ export function ExploreScreen({
         <span className="flex-1" />
         <Link href="/read?mode=ask" className="btn">{t("askAction")}</Link>
       </div>
-      {lessonN ? (
+      {mineId ? (
+        <MySetView id={mineId} />
+      ) : classSetId ? (
+        <ClassSetView id={classSetId} />
+      ) : lessonN ? (
         <LessonView n={lessonN} initial={initialLesson} />
       ) : setId ? (
         <SetView id={setId} initial={initialSet} />
@@ -74,6 +89,8 @@ export function ExploreScreen({
               ))}
             </ul>
           </section>
+          <MySets />
+          <ClassSets />
           {path && <PathSection path={path} />}
         </>
       )}
@@ -269,12 +286,13 @@ function LessonView({ n, initial }: { n: number; initial: PathLesson | null }) {
   );
 }
 
-function SetView({ id, initial, loading = false }: { id: string; initial: SetDetail | null; loading?: boolean }) {
+function SetView({ id, initial, loading = false, custom }: { id: string; initial: SetDetail | null; loading?: boolean; custom?: { back: string; actions?: ReactNode; missing?: string } }) {
   const t = useTranslations("explore");
   const locale = useLocale();
   const router = useRouter();
   const [deck, setDeck] = useState(false);
-  const lesson = id.startsWith("path-");
+  // a lesson of the path or a set someone made: its words come with it, nothing is fetched here
+  const lesson = id.startsWith("path-") || !!custom;
   const q = useQuery({ queryKey: ["collection", id], queryFn: () => getJSON<SetDetail>(`/collections/${encodeURIComponent(id)}`), initialData: initial ?? undefined, staleTime: Infinity, retry: false, enabled: !lesson });
   const s = lesson ? initial : q.data;
   if (lesson ? loading : q.isLoading) return <div className="h-60 animate-pulse rounded-xl bg-card-2" role="status" aria-label={t("loading")} />;
@@ -282,7 +300,7 @@ function SetView({ id, initial, loading = false }: { id: string; initial: SetDet
   if (!s)
     return (
       <div className="flex flex-col items-start gap-2">
-        <p className="text-[14px] text-t2" role="alert">{t("setMissing")}</p>
+        <p className="text-[14px] text-t2" role="alert">{custom?.missing ?? t("setMissing")}</p>
         <Link href="/explore" className="btn">{t("back")}</Link>
       </div>
     );
@@ -293,7 +311,7 @@ function SetView({ id, initial, loading = false }: { id: string; initial: SetDet
     <div className="set-view">
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" className="btn" onClick={() => router.push(lesson ? "/explore#explore-path" : "/explore")}>{lesson ? t("pathBack") : t("back")}</button>
+          <button type="button" className="btn" onClick={() => router.push(custom ? custom.back : lesson ? "/explore#explore-path" : "/explore")}>{lesson && !custom ? t("pathBack") : t("back")}</button>
           <h2 className="text-[20px] font-semibold" style={{ color: colourVar(s.colour) }}>{ar ? s.title_ar : s.title_en}</h2>
           <span className="text-[12px] text-t3">{t("words", cnt(s.item_count, locale))}</span>
         </div>
@@ -315,8 +333,8 @@ function SetView({ id, initial, loading = false }: { id: string; initial: SetDet
           ))}
         </ol>
       </div>
-      <aside className="set-side" aria-label={lesson ? t("pathWhyTitle") : t("why")}>
-        <p className="label-caps">{lesson ? t("pathWhyTitle") : t("why")}</p>
+      <aside className="set-side" aria-label={lesson && !custom ? t("pathWhyTitle") : t("why")}>
+        <p className="label-caps">{lesson && !custom ? t("pathWhyTitle") : t("why")}</p>
         <p className="text-[13.5px] leading-relaxed text-t2">{ar ? s.why_ar : s.why_en}</p>
         {s.roots.length > 0 && (
           <>
@@ -334,6 +352,7 @@ function SetView({ id, initial, loading = false }: { id: string; initial: SetDet
           <button type="button" className="btn btn-primary" onClick={() => setDeck(true)}>{t("study")}</button>
           <Link href={`/graph/seed?s=${seed}`} className="btn">{t("asMap")}</Link>
           <Link href="/read?mode=review" className="btn">{t("reviewKept")}</Link>
+          {custom?.actions}
         </div>
       </aside>
       {deck && <StudyDeck title={ar ? s.title_ar : s.title_en} items={s.items} onClose={() => setDeck(false)} />}
@@ -378,6 +397,12 @@ function SetItemRow({ x }: { x: SetItem }) {
               {" • "}
             </>
           )}
+          {x.in_surah !== undefined && (
+            <>
+              <span className="font-medium text-t2">{t("inSurahCount", { n: formatNumber(x.in_surah, locale) })}</span>
+              {" • "}
+            </>
+          )}
           {t("inQuran", cnt(x.occurrences, locale))}
           {x.first && (
             <>
@@ -405,5 +430,160 @@ function SetItemRow({ x }: { x: SetItem }) {
         </button>
       </span>
     </div>
+  );
+}
+
+// ─── sets someone made (B29) ─────────────────────────────────────────────────
+
+/** A set someone made, shaped as the curated sets are, so the same view, deck and map serve it. */
+function asDetail(id: string, title: string, rule: SetRule, e: EvaluatedSet, intro: string, why: string): SetDetail {
+  return { id, ordinal: 0, colour: colourOf(rule), title_ar: title, title_en: title, intro_ar: intro, intro_en: intro, why_ar: why, why_en: why, item_count: e.item_count, root_count: e.root_count, occurrences: e.occurrences, coverage: e.coverage, quote: null, source: null, items: e.items, roots: e.roots };
+}
+
+/** The reader's own sets (B29): made by a rule here, kept in this browser and synced with their account. */
+function MySets() {
+  const t = useTranslations("explore");
+  const client = useIsClient();
+  const router = useRouter();
+  const sets = usePersonal((s) => s.sets);
+  const save = usePersonal((s) => s.saveSet);
+  const summary = useRuleSummary();
+  const [building, setBuilding] = useState(false);
+  return (
+    <section id="explore-mine" className="flex flex-col gap-3" aria-labelledby="explore-mine-h">
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 id="explore-mine-h" className="text-[15px] font-semibold">{t("mySets")}</h2>
+          <p className="max-w-[720px] text-[12.5px] leading-relaxed text-t3">{t("mySetsSub")}</p>
+        </div>
+        {!building && <button type="button" className="btn" onClick={() => setBuilding(true)}>{t("newSet")}</button>}
+      </div>
+      {building && (
+        <SetBuilder
+          onSave={(title, rule) => {
+            const id = save({ title, rule });
+            setBuilding(false);
+            router.push(`/explore?mine=${id}`);
+          }}
+          onCancel={() => setBuilding(false)}
+        />
+      )}
+      {client && sets.length > 0 && (
+        <ul className="set-grid">
+          {sets.map((s) => (
+            <li key={s.id}>
+              <MadeSetCard href={`/explore?mine=${s.id}`} title={s.title} line={summary(s.rule)} rule={s.rule} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** The sets the reader's teachers made for their classes (B29), shown to a member signed in. */
+function ClassSets() {
+  const t = useTranslations("explore");
+  const session = useAccount((s) => s.session);
+  const summary = useRuleSummary();
+  const classes = useQuery({ queryKey: ["classes", session], queryFn: getClasses, enabled: !!session, staleTime: 60_000, retry: false });
+  const mine = [...(classes.data?.learning ?? []), ...(classes.data?.teaching ?? [])];
+  const lists = useQueries({ queries: mine.map((c) => ({ queryKey: ["class-sets", c.id], queryFn: () => classSets(c.id), staleTime: 60_000, retry: false })) });
+  const all = mine.flatMap((c, i) => (lists[i]?.data?.data ?? []).map((s) => ({ s, c })));
+  if (!all.length) return null;
+  return (
+    <section className="flex flex-col gap-3" aria-labelledby="explore-class-sets">
+      <div>
+        <h2 id="explore-class-sets" className="text-[15px] font-semibold">{t("classSets")}</h2>
+        <p className="text-[12.5px] text-t3">{t("classSetsSub")}</p>
+      </div>
+      <ul className="set-grid">
+        {all.map(({ s, c }) => (
+          <li key={s.id}>
+            <MadeSetCard href={`/explore?cset=${s.id}`} title={s.title} line={summary(s.rule)} rule={s.rule} from={t("fromClass", { name: c.name })} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** One of the reader's own sets: its words read from the data now, editable and removable here. */
+function MySetView({ id }: { id: string }) {
+  const t = useTranslations("explore");
+  const client = useIsClient();
+  const router = useRouter();
+  const mine = usePersonal((s) => s.sets.find((x) => x.id === id)) as ReaderSet | undefined;
+  const save = usePersonal((s) => s.saveSet);
+  const remove = usePersonal((s) => s.removeSet);
+  const summary = useRuleSummary();
+  const [editing, setEditing] = useState(false);
+  const [sure, setSure] = useState(false);
+  const q = useQuery({ queryKey: ["set-eval", mine?.rule], queryFn: () => evaluateSet(mine!.rule), enabled: !!mine, retry: false, staleTime: 60_000 });
+  if (!client) return <div className="h-60 animate-pulse rounded-xl bg-card-2" role="status" aria-label={t("loading")} />;
+  if (editing && mine)
+    return (
+      <SetBuilder
+        initial={mine}
+        onSave={(title, rule) => {
+          save({ id, title, rule });
+          setEditing(false);
+        }}
+        onCancel={() => setEditing(false)}
+      />
+    );
+  const detail = mine && q.data ? asDetail(`mine-${id}`, mine.title, mine.rule, q.data, summary(mine.rule), t("myWhy")) : null;
+  return (
+    <SetView
+      id={`mine-${id}`}
+      initial={detail}
+      loading={!!mine && q.isLoading}
+      custom={{
+        back: "/explore#explore-mine",
+        missing: t("setGone"),
+        actions: (
+          <span className="flex flex-wrap gap-2">
+            <button type="button" className="btn" onClick={() => setEditing(true)}>{t("editSet")}</button>
+            {sure ? (
+              <button type="button" className="btn btn-danger" onClick={() => { remove(id); router.push("/explore#explore-mine"); }}>{t("deleteSetSure")}</button>
+            ) : (
+              <button type="button" className="btn" onClick={() => setSure(true)}>{t("deleteSet")}</button>
+            )}
+          </span>
+        ),
+      }}
+    />
+  );
+}
+
+/** A set made for one of the reader's classes: read with their session, removable by the class's instructor. */
+function ClassSetView({ id }: { id: string }) {
+  const t = useTranslations("explore");
+  const router = useRouter();
+  const session = useAccount((s) => s.session);
+  const client = useIsClient();
+  const summary = useRuleSummary();
+  const [sure, setSure] = useState(false);
+  const q = useQuery({ queryKey: ["class-set", id, session], queryFn: () => classSet(id), enabled: !!session, retry: false });
+  if (!client || (session && q.isLoading)) return <div className="h-60 animate-pulse rounded-xl bg-card-2" role="status" aria-label={t("loading")} />;
+  const s = q.data;
+  const detail = s ? asDetail(`class-${id}`, s.title, s.rule, s, summary(s.rule), t("classWhy", { name: s.class.name })) : null;
+  return (
+    <SetView
+      id={`class-${id}`}
+      initial={detail}
+      custom={{
+        back: s ? `/classroom/${s.class.id}` : "/explore",
+        missing: t("setGone"),
+        actions:
+          s?.role === "instructor" ? (
+            sure ? (
+              <button type="button" className="btn btn-danger" onClick={async () => { await dropClassSet(id); router.push(`/classroom/${s.class.id}`); }}>{t("deleteSetSure")}</button>
+            ) : (
+              <button type="button" className="btn" onClick={() => setSure(true)}>{t("deleteSet")}</button>
+            )
+          ) : null,
+      }}
+    />
   );
 }

@@ -58,7 +58,7 @@ const saved: Adapter = {
     }),
 };
 
-// ─── personal: word states, positions, proposals, trails kept, links, topics, furthest verses ───
+// ─── personal: word states, positions, proposals, trails kept, links, topics, furthest verses, the reader's sets ───
 
 const FLAGS = ["onboarded", "visited", "hubPromptHidden"] as const;
 
@@ -71,6 +71,7 @@ const personalOf = (state: unknown) => {
     ...s.savedTrails.map((t): [string, unknown, number] => [`t:${t.id}`, t, t.ts]),
     ...Object.entries(s.links).map(([k, v]): [string, unknown] => [`l:${k}`, v]),
     ...s.topics.map((t): [string, unknown, number] => [`tp:${t.id}`, t, t.ts]),
+    ...s.sets.map((x): [string, unknown, number] => [`st:${x.id}`, x, x.ts]),
     ...Object.entries(s.verseTopics).map(([k, v]): [string, unknown] => [`vt:${k}`, v]),
     ...Object.entries(s.read).map(([k, v]): [string, unknown] => [`r:${k}`, v]),
     ...FLAGS.filter((f) => s[f]).map((f): [string, unknown] => [`f:${f}`, true]),
@@ -91,6 +92,7 @@ const personal: Adapter = {
       const proposals = new Map(s.proposals.map((p) => [p.id, p]));
       const savedTrails = new Map(s.savedTrails.map((t) => [t.id, t]));
       const topics = new Map(s.topics.map((t) => [t.id, t]));
+      const readerSets = new Map(s.sets.map((x) => [x.id, x]));
       const next: Partial<typeof s> = {};
       const put = <T>(m: Record<string, T>, k: string, c: Change) => {
         if (c.deleted) delete m[k];
@@ -115,6 +117,7 @@ const personal: Adapter = {
         else if (kind === "pr") putList(proposals, k, c);
         else if (kind === "t") putList(savedTrails, k, c);
         else if (kind === "tp") putList(topics, k, c);
+        else if (kind === "st") putList(readerSets, k, c);
         else if (kind === "f" && (FLAGS as readonly string[]).includes(k) && !c.deleted) next[k as (typeof FLAGS)[number]] = true;
       }
       return {
@@ -127,6 +130,7 @@ const personal: Adapter = {
         proposals: [...proposals.values()].sort((a, b) => a.ts - b.ts),
         savedTrails: [...savedTrails.values()].sort((a, b) => a.ts - b.ts),
         topics: [...topics.values()].sort((a, b) => a.ts - b.ts),
+        sets: [...readerSets.values()].sort((a, b) => a.ts - b.ts),
       };
     }),
 };

@@ -128,6 +128,34 @@ def remove(u: User, class_id: Id, user_id: Id) -> Response:
     return gone()
 
 
+class _Set(BaseModel):
+    title: str = Field(max_length=200)
+    rule: dict[str, Any]
+
+
+@router.get("/classes/{class_id}/sets", summary="A class's sets of words, each a title and its rule (B29)")
+def class_sets(class_id: Id, u: User) -> ORJSONResponse:
+    return ok(classroom.class_sets(u, class_id))
+
+
+@router.post(
+    "/classes/{class_id}/sets", summary="A set of words for the class, by a rule (its instructor; B29)"
+)
+def add_set(class_id: Id, body: _Set, u: User) -> ORJSONResponse:
+    return ok(classroom.add_set(u, class_id, body.title, body.rule), 201)
+
+
+@router.get("/sets/{set_id}", summary="One of a class's sets with its words, read from the data now (B29)")
+def class_set(set_id: Id, u: User) -> ORJSONResponse:
+    return ok(classroom.class_set(u, set_id))
+
+
+@router.delete("/sets/{set_id}", summary="Remove one of a class's sets (its instructor)")
+def drop_set(set_id: Id, u: User) -> Response:
+    classroom.drop_set(u, set_id)
+    return gone()
+
+
 @router.get("/classes/{class_id}/lessons", summary="A class's lessons")
 def lessons(u: User, class_id: Id) -> ORJSONResponse:
     return ok(classroom.lessons(u, class_id))

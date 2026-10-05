@@ -57,6 +57,7 @@ from . import (
     routes_public,
     routes_published,
     routes_releases,
+    sets,
     topics,
 )
 from . import catalogue as catalogue_api
@@ -948,6 +949,22 @@ def collection_detail(request: Request, set_id: str) -> Response:
         if out is None:
             raise not_found("collection")
         return cached(request, out)
+
+
+class _SetRule(BaseModel):
+    rule: dict[str, Any]
+
+
+@router.post(
+    "/sets/evaluate",
+    summary="The words a set's rule yields — a root, patterns, the most frequent, the function words, the loanwords, "
+    "within a sūra (B29)",
+)
+def sets_evaluate(body: _SetRule) -> Response:
+    # a reader's own set is theirs: its rule comes in a body, and nothing about it is kept or cached
+    with connect() as conn:
+        out = sets.evaluate(conn, sets.clean_rule(conn, body.rule))
+    return ORJSONResponse(out, headers={"Cache-Control": "no-store"})
 
 
 class _Slugs(BaseModel):

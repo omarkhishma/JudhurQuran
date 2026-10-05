@@ -7588,3 +7588,14 @@ a.wotd-pill:hover {
   padding-inline: 1rem;
 }
 
+/* a set made by a rule (B29): the patterns to choose from, a short list that scrolls */
+.set-builder-patterns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px 12px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}

@@ -33,6 +33,9 @@ export default async function ExplorePage({ params, searchParams }: PageProps<"/
   const sp = await searchParams;
   const setId = typeof sp.set === "string" && /^[a-z0-9-]{1,40}$/.test(sp.set) ? sp.set : null;
   const lessonN = typeof sp.path === "string" && /^[1-9]\d{0,3}$/.test(sp.path) ? Number(sp.path) : null;
+  // a set the reader made (kept in their browser) or one made for their class (read with their session): drawn there
+  const mineId = typeof sp.mine === "string" && /^s\d{1,16}$/.test(sp.mine) ? sp.mine : null;
+  const classSetId = typeof sp.cset === "string" && /^[0-9a-f-]{36}$/.test(sp.cset) ? sp.cset : null;
   const [sets, word, set, path, lesson] = await Promise.all([
     api<{ data: SetCard[] }>("/collections"),
     api<WordOfTheDay>(`/word-of-the-day?date=${meccaToday()}`).catch(() => null),
@@ -41,5 +44,5 @@ export default async function ExplorePage({ params, searchParams }: PageProps<"/
     lessonN ? api<PathLesson>(`/path/${lessonN}`).catch(() => null) : Promise.resolve(null),
   ]);
   const label = word ? t("wotdDate", dayLabel(word.date, locale)) : "";
-  return <ExploreScreen sets={sets.data} word={word} wotdLabel={label} setId={setId} initialSet={set} path={path} lessonN={lessonN} initialLesson={lesson} />;
+  return <ExploreScreen sets={sets.data} word={word} wotdLabel={label} setId={setId} initialSet={set} path={path} lessonN={lessonN} initialLesson={lesson} mineId={mineId} classSetId={classSetId} />;
 }

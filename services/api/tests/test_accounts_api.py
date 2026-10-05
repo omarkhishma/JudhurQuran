@@ -522,6 +522,7 @@ def test_the_export_holds_everything_and_every_table_is_accounted_for(email: str
         # the classroom schema (P9): what it holds of a teacher and of a member
         "classroom.classes": "classroom.teaching",
         "classroom.lessons": "classroom.teaching.lessons",
+        "classroom.sets": "classroom.teaching.sets",
         "classroom.notes": "classroom.teaching.lessons.notes",
         "classroom.members": "classroom.joined",
         "classroom.counts": "classroom.counts",

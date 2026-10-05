@@ -8,6 +8,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Seed } from "@/lib/graph/seedCodec";
 import { progressByIdentifier } from "@/lib/library/ids";
+import type { SetRule } from "@/lib/sets";
 import { safeJSONStorage } from "@/lib/store/safeStorage";
 
 export type Mode = "empty" | "word" | "verse" | "index" | "surah";
@@ -328,6 +329,9 @@ export type Proposal = {
   refused?: { code: string | null; at: number };
 };
 
+/** A set of words the reader made (B29): their title and the rule its words are computed by. */
+export type ReaderSet = { id: string; title: string; rule: SetRule; ts: number };
+
 type PersonalState = {
   wordStates: Record<string, WordState>;
   trail: TrailStep[];
@@ -349,6 +353,10 @@ type PersonalState = {
   contextClearedAt: number;
   /** the hub's local-first note, dismissed (HUB-48: dismissible, never a wall) */
   hubPromptHidden: boolean;
+  /** the sets of words the reader made, kept here and synced with their other records (B29) */
+  sets: ReaderSet[];
+  saveSet: (s: { id?: string; title: string; rule: SetRule }) => string;
+  removeSet: (id: string) => void;
   setWordState: (slug: string, s: WordState) => void;
   recordLookup: (c: Partial<Omit<ReadingContext, "ts">>) => void;
   markRead: (surah: number, ayah: number) => void;
@@ -389,6 +397,13 @@ export const usePersonal = create<PersonalState>()(
       read: {},
       contextClearedAt: 0,
       hubPromptHidden: false,
+      sets: [],
+      saveSet: ({ id, title, rule }) => {
+        const key = id ?? `s${Date.now()}`;
+        set((st) => ({ sets: [...st.sets.filter((x) => x.id !== key), { id: key, title, rule, ts: Date.now() }].sort((a, b) => a.ts - b.ts) }));
+        return key;
+      },
+      removeSet: (id) => set((st) => ({ sets: st.sets.filter((x) => x.id !== id) })),
       setWordState: (slug, s) => set((st) => ({ wordStates: { ...st.wordStates, [slug]: s } })),
       // every lookup updates the reading context and today's session (RDR-113, 437, 441)
       recordLookup: (c) =>
