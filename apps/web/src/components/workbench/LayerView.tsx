@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ApiError } from "@/lib/account/store";
 import { decideMany, getAwaiting, getTargets, saveVerdicts, STATES, type Ends, type Layer, type RelationRow, type State, type TopicLayerRow, type VerdictItem } from "@/lib/editorial";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
+import { TopicCoverage } from "@/components/graph/TopicCoverage";
 import { TopicPicker } from "./TopicPicker";
 import type { Place } from "./Workbench";
 
@@ -67,6 +68,8 @@ export function LayerView({ layer, state, q, onPlace }: { layer: Layer; state: S
     <section className="flex flex-col gap-3" aria-labelledby="layer-h">
       <h2 id="layer-h" className="text-[16px] font-semibold">{t(`layer_${layer}`)}</h2>
       <p className="text-[12.5px] leading-relaxed text-t3">{t("layerLead")}</p>
+      {/* the board's map of where the topics stop and QSAC's suggestions wait, a sūra's verses one press away (B43) */}
+      {placing && <TopicCoverage onPick={(n) => onPlace({ q: `${n}:` })} />}
 
       {mineToDecide.length > 0 && (
         <div className="workbench-box" role="group" aria-label={t("batchReview")}>

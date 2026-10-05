@@ -7621,3 +7621,34 @@ a.wotd-pill:hover {
   text-decoration: underline;
 }
 
+/* where the topics stop (B43): a sūra a cell, shaded by the share of its verses with a topic */
+.topic-coverage {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16px, 1fr));
+  gap: 3px;
+}
+.topic-cell {
+  display: block;
+  aspect-ratio: 1;
+  width: 100%;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  padding: 0;
+}
+button.topic-cell:hover,
+button.topic-cell:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+.topic-coverage-ramp {
+  display: inline-block;
+  width: 96px;
+  height: 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  background: linear-gradient(to var(--ramp-end, right), var(--card), var(--c-desc));
+}
+[dir="rtl"] .topic-coverage-ramp {
+  --ramp-end: left;
+}
+

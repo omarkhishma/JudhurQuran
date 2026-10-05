@@ -11,6 +11,7 @@ import type { GraphNode } from "@/lib/graph/types";
 import { getJSON } from "@/lib/reader/api";
 import { usePersonal } from "@/lib/reader/store";
 import type { CanvasTools } from "./GraphCanvas";
+import { TopicCoverage } from "./TopicCoverage";
 
 /**
  * Topics on the map (P8.3, QAN-09; research 06 Part 3, D29; P8.3b): the taxonomy in force — Quranpedia's Arabic
@@ -96,6 +97,13 @@ export function TopicSearch({ tools }: { tools: CanvasTools }) {
           <Credits sources={found.data.sources} />
         </>
       )}
+      {/* where the index stops, plain to see (B43) */}
+      <details className="text-[12px]">
+        <summary className="cursor-pointer text-t2">{t("coverageTitle")}</summary>
+        <div className="mt-2">
+          <TopicCoverage heading={false} />
+        </div>
+      </details>
     </section>
   );
 }

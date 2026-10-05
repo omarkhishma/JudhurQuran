@@ -201,6 +201,21 @@ def test_a_qsac_tag_is_the_boards_to_place_under_an_arabic_topic(
         params={"layer": "topic_candidates", "state": "all", "limit": 1},
     ).json()
     assert listed["total"] == 6041
+    # a sūra's suggestions (B43: the coverage strip leads the board to them): «40:» is sūra 40's alone, never 140's or
+    # «6:»'s inside «36:»
+    for s in (40, 6):
+        expected = _q(
+            """select count(*) as n from content.topic_links l where l.source_id = 'qsac'
+                and split_part(l.verse_key, ':', 1)::int = :s and not exists (select 1 from content.topic_links p
+                    where p.verse_key = l.verse_key and p.source_id = 'quranpedia-topics')""",
+            {"s": s},
+        )[0]["n"]
+        got = client.get(
+            "/api/v1/editorial/verdict",
+            headers=a,
+            params={"layer": "topic_candidates", "state": "all", "q": f"{s}:", "limit": 100},
+        ).json()
+        assert got["total"] == expected and all(r["sub"].startswith(f"{s}:") for r in got["data"])
     near = client.get(
         "/api/v1/editorial/verdict", headers=a, params={"layer": "topic_candidates", "state": "all", "q": key}
     ).json()["data"]

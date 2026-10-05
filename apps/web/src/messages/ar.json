@@ -1704,7 +1704,18 @@
     "gallerySearchGo": "ابحث",
     "galleryRoot": "الخرائط التي تحمل الجذر {root}",
     "galleryQuery": "نتائج «{q}»",
-    "galleryClear": "كل الخرائط"
+    "galleryClear": "كل الخرائط",
+    "coverageTitle": "أين تتوقف الموضوعات",
+    "coverageLead": "{covered} من {verses} آية لها موضوع ({pct})، منها {placed} وضعتها هيئة التحرير. كل مربع سورة، يشتدّ لونه بقدر ما لآياتها من موضوعات.",
+    "coverageCell": "سورة {name}: {covered} من {verses} آية لها موضوع",
+    "coveragePlaced": "{n} منها وضعتها هيئة التحرير",
+    "coverageNone": "لا موضوع",
+    "coverageAll": "كل الآيات",
+    "coverageTable": "الأرقام سورةً سورة",
+    "coverageSurah": "السورة",
+    "coverageVerses": "آياتها",
+    "coverageCovered": "لها موضوع في المصدر",
+    "coverageByBoard": "وضعتها هيئة التحرير"
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",

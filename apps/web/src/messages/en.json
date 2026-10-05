@@ -1704,7 +1704,18 @@
     "gallerySearchGo": "Search",
     "galleryRoot": "Maps holding the root {root}",
     "galleryQuery": "Results for «{q}»",
-    "galleryClear": "All the maps"
+    "galleryClear": "All the maps",
+    "coverageTitle": "Where the topics stop",
+    "coverageLead": "{covered} of {verses} verses have a topic ({pct}), {placed} of them placed by the editorial board. Each cell is a sūra, darker as more of its verses have a topic.",
+    "coverageCell": "Sūrat {name}: {covered} of {verses} verses have a topic",
+    "coveragePlaced": "{n} placed by the editorial board",
+    "coverageNone": "No topic",
+    "coverageAll": "Every verse",
+    "coverageTable": "The numbers, sūra by sūra",
+    "coverageSurah": "Sūra",
+    "coverageVerses": "Verses",
+    "coverageCovered": "With a topic in the source",
+    "coverageByBoard": "Placed by the board"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

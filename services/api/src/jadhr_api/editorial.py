@@ -683,7 +683,17 @@ def targets(
     for it in items:
         it["state"] = state_of(it["key"])
     if kind == "verdict" and query:
-        items = [i for i in items if query in (i["label"] or "") or query in (i["sub"] or "")]
+        # «36:» is a sūra's rows (B43: the coverage strip leads the board to a sūra), never «136:» or «6:12»'s
+        surah = re.fullmatch(r"\d{1,3}:", query)
+        items = [
+            i
+            for i in items
+            if (
+                (i["sub"] or "").startswith(query)
+                if surah
+                else query in (i["label"] or "") or query in (i["sub"] or "")
+            )
+        ]
     if state != "all":
         items = [i for i in items if i["state"] == state]
     return {"total": len(items), "data": items[offset : offset + limit]}
