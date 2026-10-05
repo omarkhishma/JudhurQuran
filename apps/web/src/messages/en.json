@@ -1745,7 +1745,17 @@
     "quoteFromMap": "or from the map's cards",
     "quoteRemove": "Remove the quotation",
     "quoteNoVerse": "There is no verse with that number.",
-    "quoteHint": "The comment keeps only the reference; the words are drawn from the dataset, as the cards draw them."
+    "quoteHint": "The comment keeps only the reference; the words are drawn from the dataset, as the cards draw them.",
+    "quoteRunChanged": "This release retyped the article, so the quoted passage is no longer where it was. The article is shown from its start; choose the passage again.",
+    "quotePassage": "a passage",
+    "quoteThisPassage": "Quote this passage alone",
+    "quoteWhole": "Quote the whole article",
+    "quotePassageBeside": "Quote the passage beside the card",
+    "passageClear": "Clear the selection",
+    "passageHint": "Select lines of the article to quote them alone.",
+    "passageNote": "The map keeps only where the passage runs; its words are read from the dictionary whenever it is shown.",
+    "doQuotePassage": "Quote a passage",
+    "doQuoteWhole": "Quote the whole article"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",
@@ -2569,7 +2579,10 @@
     "mushafParts": "Where each juzʾ begins",
     "openPage": "Open the page",
     "readAsPage": "Read it as a page",
-    "senseSuggested": "Suggested by <who></who>"
+    "senseSuggested": "Suggested by <who></who>",
+    "passageToMap": "Put this passage on a map",
+    "passageClear": "Clear the selection",
+    "passageNote": "The map keeps only where the passage runs; its words are read from the dictionary whenever it is shown."
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

@@ -2,14 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { Icon } from "@/components/Icon";
+import { PassageBar } from "@/components/PassageBar";
 import { ReviewMark } from "@/components/reader5/BoardMark";
 import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber, toArabicDigits } from "@/lib/format";
 import { lemmaId, link, POS_AR, rootId } from "@/lib/graph/build";
 import { useEntry } from "@/lib/graph/quote";
+import { readRun, type Run } from "@/lib/graph/run";
+import { passageOf, useSelectionIn } from "@/lib/graph/usePassage";
 import { KIND_COLOR, type GraphNode, type QuoteKey } from "@/lib/graph/types";
 import { DICT_KIND } from "@/lib/lexica";
 import { getJSON } from "@/lib/reader/api";
@@ -36,7 +39,7 @@ export function Meaning({ tools, card }: { tools: CanvasTools; card: GraphNode }
   if (d.kind === "lemma" && d.slug) return <LemmaMeaning tools={tools} card={card} slug={d.slug} />;
   if (d.kind === "pattern" && d.slug) return <PatternMeaning card={card} slug={d.slug} />;
   if (d.kind === "verse" && d.verse) return <VerseMeaning tools={tools} card={card} verseKey={d.verse.key} />;
-  if (d.kind === "note" && d.entry) return <QuoteMeaning entry={d.entry} />;
+  if (d.kind === "note" && d.entry) return <QuoteMeaning entry={d.entry} run={d.run} card={card} tools={tools} />;
   if (d.kind === "note" && card.id.startsWith("topic:")) return <TopicMeaning tools={tools} card={card} />;
   if (d.kind === "note" && card.id.startsWith("entity:")) return <EntityMeaning tools={tools} card={card} />;
   return <NoteMeaning card={card} tools={tools} />;
@@ -342,10 +345,14 @@ function DictEntryBlock({ tools, card, work, entry }: { tools: CanvasTools; card
   const t = useTranslations("graph");
   const locale = useLocale();
   const [whole, setWhole] = useState(false);
-  const full = useEntry(whole ? entry.id : undefined);
+  // lines selected in the article, to quote them alone (B36): the whole article is read to place them in it
+  const shownRef = useRef<HTMLParagraphElement>(null);
+  const [sel, clearSel] = useSelectionIn(shownRef);
+  const full = useEntry(whole || sel ? entry.id : undefined);
   const ar = work.lang !== "en";
   const text = whole && full.data ? full.data.body : entry.excerpt;
   const cut = !whole && entry.length > entry.excerpt.length;
+  const chosen = passageOf(full.data?.body, text, sel);
   async function copy() {
     try {
       const body = full.data?.body ?? (await getJSON<{ body: string }>(`/lexicon/entries/${entry.id}`)).body;
@@ -360,10 +367,24 @@ function DictEntryBlock({ tools, card, work, entry }: { tools: CanvasTools; card
   const quoted = tools.nodes.some((n) => n.id === `quote:${key}` || n.id === `quote:${entry.id}`);
   return (
     <div className="dict-entry">
-      <p className={ar ? "ar-classical whitespace-pre-wrap text-[14px] leading-[2]" : "whitespace-pre-wrap text-[13px] leading-relaxed"} lang={ar ? "ar" : "en"} dir={ar ? "rtl" : "ltr"}>
+      <p ref={shownRef} className={ar ? "ar-classical whitespace-pre-wrap text-[14px] leading-[2]" : "whitespace-pre-wrap text-[13px] leading-relaxed"} lang={ar ? "ar" : "en"} dir={ar ? "rtl" : "ltr"}>
         {text}
         {cut && <span className="text-t3"> …</span>}
       </p>
+      {tools.editable && chosen && full.data && (
+        <PassageBar
+          text={full.data.body.slice(chosen.from, chosen.to)}
+          lang={work.lang}
+          action={t("quotePassageBeside")}
+          onAction={() => {
+            tools.attachQuote(card.id, key, chosen);
+            clearSel();
+          }}
+          clearLabel={t("passageClear")}
+          onClear={clearSel}
+          note={t("passageNote")}
+        />
+      )}
       <div className="flex items-center gap-1 text-[11.5px] text-t3">
         {entry.length > entry.excerpt.length && (
           <button type="button" className="hover:text-t1" onClick={() => setWhole(!whole)} aria-expanded={whole}>
@@ -556,14 +577,27 @@ function VerseMeaning({ tools, card, verseKey }: { tools: CanvasTools; card: Gra
   );
 }
 
-/** A quoted article in full, with its work's credit as the reader gives it, and the way to its root (RDR-239). */
-export function QuoteMeaning({ entry }: { entry: QuoteKey }) {
+/** A quoted article in full, with its work's credit as the reader gives it, and the way to its root (RDR-239). The
+ * passage a note quotes (B36) is marked in it and brought into view — or, the article retyped since, said to be no
+ * longer there; on a map that is the reader's, lines selected in it become the passage, and the whole article can be
+ * quoted again. */
+export function QuoteMeaning({ entry, run, card, tools }: { entry: QuoteKey; run?: Run; card?: GraphNode; tools?: CanvasTools }) {
   const t = useTranslations("graph");
   const locale = useLocale();
   const e = useEntry(entry);
+  const box = useRef<HTMLQuoteElement>(null);
+  const marked = useRef<HTMLElement>(null);
+  const [sel, clearSel] = useSelectionIn(box);
+  const body = e.data?.body;
+  const passage = body && run ? readRun(body, run) : null;
+  useEffect(() => {
+    marked.current?.scrollIntoView({ block: "nearest" });
+  }, [passage]);
   if (e.isPending) return <Loading />;
-  if (!e.data) return <p className="text-[12.5px] text-t3">{t("quoteUnavailable")}</p>;
+  if (!e.data || body === undefined) return <p className="text-[12.5px] text-t3">{t("quoteUnavailable")}</p>;
   const ar = e.data.lang !== "en";
+  const chosen = passageOf(body, body, sel);
+  const editable = !!(tools?.editable && card);
   return (
     <figure className="flex flex-col gap-1.5">
       <figcaption className="text-[12.5px] font-medium text-t1">
@@ -575,9 +609,27 @@ export function QuoteMeaning({ entry }: { entry: QuoteKey }) {
           </span>
         )}
       </figcaption>
-      <blockquote className={"quote-full " + (ar ? "ar-classical text-[16px] leading-[2]" : "text-[13px] leading-relaxed")} lang={ar ? "ar" : "en"} dir={ar ? "rtl" : "ltr"} tabIndex={0}>
-        {e.data.body}
+      {run && !passage && <p className="text-[12px] leading-relaxed text-amber">{t("quoteRunChanged")}</p>}
+      <blockquote ref={box} className={"quote-full " + (ar ? "ar-classical text-[16px] leading-[2]" : "text-[13px] leading-relaxed")} lang={ar ? "ar" : "en"} dir={ar ? "rtl" : "ltr"} tabIndex={0}>
+        {passage && run ? (
+          <>
+            {body.slice(0, run.from)}
+            <mark ref={marked} className="quote-run">{passage}</mark>
+            {body.slice(run.to)}
+          </>
+        ) : (
+          body
+        )}
       </blockquote>
+      {editable && chosen && (
+        <PassageBar text={body.slice(chosen.from, chosen.to)} lang={e.data.lang} action={t("quoteThisPassage")} onAction={() => { tools!.setQuoteRun(card!.id, chosen); clearSel(); }} clearLabel={t("passageClear")} onClear={clearSel} />
+      )}
+      {editable && !chosen && (
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-[11.5px] text-t3">{t("passageHint")}</p>
+          {run && <button type="button" className="btn text-[12px]" onClick={() => tools!.setQuoteRun(card!.id, null)}>{t("quoteWhole")}</button>}
+        </div>
+      )}
       <p className="text-[11px] leading-relaxed text-t3">
         {locale === "ar" ? e.data.attribution_ar : e.data.attribution_en}
         {!e.data.redistributable && <> · {t("quoteDisplayOnly")}</>}

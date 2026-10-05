@@ -27,7 +27,8 @@ import { link, verseId, type RootGraphPayload } from "@/lib/graph/build";
 import { fromPattern, fromRoot, fromVerses, linkVerse, versePlan, versesOf, type Added, type ExtractOptions, type RootRow, type VersePage, type VerseWord } from "@/lib/graph/extract";
 import { bundleFiles } from "@/lib/graph/files";
 import { endsOf, fieldMember, fromRelations, fromShared, relationLink, rootCardOf, type RelationEdge, type RootRelations } from "@/lib/graph/meaning";
-import { useEntryTitles } from "@/lib/graph/quote";
+import { quoteId, useEntryTitles } from "@/lib/graph/quote";
+import { sameRun, type Run } from "@/lib/graph/run";
 import { entityCard, type EntityRow } from "@/lib/graph/entities";
 import { headingVersesPath, sourceHeading, topicCard, topicVerses, type TopicCredit, type TopicRow } from "@/lib/graph/topics";
 import { getJSON } from "@/lib/reader/api";
@@ -116,7 +117,9 @@ export type CanvasTools = {
   unlink: (edgeId: string) => void;
   /** a dictionary's article quoted on a note beside a card and describing it; the quotation already on the map is
    * linked instead (EDT-180, QAN-18, D22) */
-  attachQuote: (id: string, entry: QuoteKey) => void;
+  attachQuote: (id: string, entry: QuoteKey, run?: Run) => void;
+  /** a quoting note narrowed to a passage of its article, or widened to the whole of it (B36): one step */
+  setQuoteRun: (id: string, run: Run | null) => void;
   /** a card of the dataset beside another and linked to it — a word's root, a verse's word — or, already on the map,
    * selected and linked (EDT-173, QAN-17) */
   addLinked: (card: GraphNode, edge: GraphEdge, beside: string, label: string, places?: { verse: string; place: string }) => void;
@@ -813,14 +816,18 @@ function CanvasInner({
     },
     [commit, t, locale, toast],
   );
-  /** A dictionary's article quoted on a note beside a card, describing it; already on the map, it is linked. */
+  /** A dictionary's article — or a passage of it (B36) — quoted on a note beside a card, describing it; the same
+   * quotation already on the map is linked. */
   const attachQuote = useCallback(
-    (id: string, entry: QuoteKey) => {
+    (id: string, entry: QuoteKey, run?: Run) => {
       const ns = live.current.nodes;
       const n = ns.find((x) => x.id === id);
       if (!n) return;
-      const qid = `quote:${entry}`;
-      const have = ns.find((x) => x.id === qid);
+      const same = ns.find((x) => x.data.kind === "note" && x.data.entry === entry && sameRun(x.data.run, run));
+      // a note narrowed or widened since keeps its id; a new one takes the next free
+      let qid = same?.id ?? quoteId(entry, run);
+      for (let i = 2; !same && ns.some((x) => x.id === qid); i++) qid = `${quoteId(entry, run)}~${i}`;
+      const have = same;
       const edge = link(id, qid, "describes");
       if (have) {
         if (!live.current.edges.some((e) => (e.source === id && e.target === qid) || (e.source === qid && e.target === id))) commit(t("doQuoteLink"), ns, [...live.current.edges, edge]);
@@ -831,7 +838,7 @@ function CanvasInner({
       const size = KIND_SIZE.note;
       const taken: Rect[] = ns.map((x) => ({ x: x.position.x, y: x.position.y, ...sizeOf(x) }));
       const spot = freeSpot(taken, { x: n.position.x - size.width / 2 - 64, y: n.position.y + size.height / 2 }, size.width, size.height);
-      const note: GraphNode = { id: qid, type: "card", position: spot, data: { kind: "note", entry } };
+      const note: GraphNode = { id: qid, type: "card", position: spot, data: { kind: "note", entry, ...(run ? { run } : {}) } };
       commit(t("doQuote"), [...ns, note], [...live.current.edges, edge]);
       reveal(spot, size.width, size.height);
       toast(t("quoted"), true);
@@ -1200,6 +1207,17 @@ function CanvasInner({
     removeField: actions.removeField,
     addField: actions.addField,
     editHeadword: (id, text) => commit(t("doEditHeadword"), nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, text } } : n)), edges),
+    setQuoteRun: (id, run) =>
+      commit(
+        t(run ? "doQuotePassage" : "doQuoteWhole"),
+        nodes.map((n) => {
+          if (n.id !== id) return n;
+          const { run: _old, ...rest } = n.data;
+          void _old;
+          return { ...n, data: run ? { ...rest, run } : rest };
+        }),
+        edges,
+      ),
     foldTo: (ids, to) => {
       const set = new Set(ids);
       setNodes((ns) => ns.map((n) => (set.has(n.id) && n.data.kind !== "frame" && !!n.data.folded !== to ? { ...n, data: { ...n.data, folded: to } } : n)));

@@ -10,7 +10,8 @@ import { layout } from "./layout";
 import { notebookLoaded, useNotebook } from "@/lib/store/notebook";
 import { noteOn, useSaved } from "@/lib/store/saved";
 import { createGraph, loadGraph, saveGraph } from "./persist";
-import { loadEntry } from "./quote";
+import { loadEntry, quoteId } from "./quote";
+import type { Run } from "./run";
 import type { Seed, TrailSeedStep } from "./seedCodec";
 import { subtopicLink, topicCard, topicCardId, topicVerses, type TopicPage } from "./topics";
 import type { GraphEdge, GraphKind, GraphNode, NodeKind, QuoteKey } from "./types";
@@ -221,15 +222,15 @@ async function trailSeed(steps: TrailSeedStep[], phrase?: string, set?: string):
 }
 
 /** A quoted article: the note that quotes it, by its identifier (P1.7a), describing its root (RDR-239). */
-async function quoteSeed(entry: QuoteKey): Promise<SeedGraph> {
+async function quoteSeed(entry: QuoteKey, run?: Run): Promise<SeedGraph> {
   const e = await loadEntry(entry);
   const r = (await rootSummaries([e.root_key])).get(e.root_key);
   const rid = rootId(e.root_key);
-  const qid = `quote:${entry}`;
+  const qid = quoteId(entry, run);
   return {
     kind: "root",
     title: { key: "quoteTitle", values: { work: e.title_ar, workEn: e.title_en, root: r?.spaced ?? spaced(e.root_key) } },
-    nodes: [card(qid, "note", { entry, focus: true }), card(rid, "root", { ar: r?.spaced ?? spaced(e.root_key), sub: r?.translit, count: r?.occurrences, rootKey: e.root_key })],
+    nodes: [card(qid, "note", { entry, ...(run ? { run } : {}), focus: true }), card(rid, "root", { ar: r?.spaced ?? spaced(e.root_key), sub: r?.translit, count: r?.occurrences, rootKey: e.root_key })],
     edges: [link(qid, rid, "describes")],
   };
 }
@@ -321,7 +322,7 @@ export function buildSeedGraph(seed: Seed, locale = "ar"): Promise<SeedGraph> {
     case "set":
       return trailSeed(seed.steps, undefined, seed.name);
     case "quote":
-      return quoteSeed(seed.entry);
+      return quoteSeed(seed.entry, seed.run);
     case "note":
       return noteSeed(seed.note);
     case "topic":

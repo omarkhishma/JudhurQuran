@@ -1,4 +1,5 @@
 import type { Edge, Node } from "@xyflow/react";
+import type { Run } from "./run";
 
 /**
  * The graph document, version 2 (P8.1a; research 13 §3). Card kinds are the design's, read as Quranic objects
@@ -47,6 +48,9 @@ export type GraphNodeData = {
    * are read from the dataset when the card is drawn (lib/graph/quote), never kept in the map — the dictionaries are
    * display-only (D22), and a quotation is shown verbatim or not at all (law L2). */
   entry?: QuoteKey;
+  /** the passage of that article the note quotes (B36): where it runs and a hash of its words, never the words — the
+   * card draws the run while the article still holds the same words there, and says so when it no longer does */
+  run?: Run;
   /** the reader's own fields on the card (EDT-092…109) */
   fields?: Field[];
   /** what the dataset holds below this card, for its "to extract" count (P8.2, EDT-091): a root's patterns and words,

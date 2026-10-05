@@ -1,3 +1,4 @@
+import { cleanRun } from "./run";
 import { FIELD_KINDS, type EdgeData, type Field, type FieldKind, type GraphDoc, type GraphEdge, type GraphKind, type GraphNode, type GraphNodeData, type NodeKind, type Rel } from "./types";
 
 /**
@@ -61,6 +62,8 @@ function cleanData(raw: unknown): GraphNodeData | null {
   put("phrase", bool(d.phrase));
   // only a note quotes, and only by the article's identifier (or its row id, on a map made before identifiers)
   if (kind === "note") put("entry", int(d.entry, 1, 2_000_000_000) ?? (typeof d.entry === "string" && DICT_URI.test(d.entry) ? d.entry : undefined));
+  // the passage of it the note quotes, by place and hash alone (B36)
+  if (out.entry !== undefined) put("run", cleanRun(d.run));
   if (Array.isArray(d.fields)) {
     const fields = d.fields.slice(0, 40).map(cleanField).filter((f): f is Field => !!f);
     if (fields.length) out.fields = fields;

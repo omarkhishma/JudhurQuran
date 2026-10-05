@@ -28,6 +28,10 @@ const FOLD: Record<string, string> = {
 };
 const FOLD_RE = new RegExp(`[${Object.keys(FOLD).join("")}]`, "g");
 
+const STRIP_ONE = new RegExp(STRIP.source);
+/** Whether one character is a mark `stripMarks` takes out. */
+export const isMark = (c: string): boolean => STRIP_ONE.test(c);
+
 export function stripMarks(text: string): string {
   return text.normalize("NFC").replace(STRIP, "");
 }

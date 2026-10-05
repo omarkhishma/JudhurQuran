@@ -1,3 +1,4 @@
+import { cleanRun, type Run } from "./run";
 import { DICT_URI } from "./sanitize";
 import type { QuoteKey } from "./types";
 
@@ -22,7 +23,7 @@ export type Seed =
   | { seed: "set"; name: string; steps: TrailSeedStep[] }
   /** a dictionary's article, quoted on a note linked to its root (RDR-239): named by its identifier (P1.7a), never
    * carried */
-  | { seed: "quote"; entry: QuoteKey }
+  | { seed: "quote"; entry: QuoteKey; run?: Run }
   /** a note of the reader's Notebook (NTB-22) — a free note, or a verse's (`v:{key}`) — named by its id: its words
    * stay in this browser, which builds it */
   | { seed: "note"; note: string }
@@ -90,7 +91,9 @@ export function validSeed(x: unknown): Seed | null {
       return steps.length && str(o.name, 120) ? { seed: "set", name: o.name.trim(), steps } : null;
     }
     case "quote":
-      return (typeof o.entry === "number" && Number.isInteger(o.entry) && o.entry > 0 && o.entry < 2_000_000_000) || (typeof o.entry === "string" && DICT_URI.test(o.entry)) ? { seed: "quote", entry: o.entry } : null;
+      if (!((typeof o.entry === "number" && Number.isInteger(o.entry) && o.entry > 0 && o.entry < 2_000_000_000) || (typeof o.entry === "string" && DICT_URI.test(o.entry)))) return null;
+      // a passage of the article (B36), by its place and hash alone
+      return cleanRun(o.run) ? { seed: "quote", entry: o.entry, run: cleanRun(o.run) } : { seed: "quote", entry: o.entry };
     case "note":
       return str(o.note, 24) && NOTE_ID.test(o.note) ? { seed: "note", note: o.note } : null;
     case "topic":

@@ -41,4 +41,13 @@ describe("seeds", () => {
     expect(validSeed({ seed: "note", note: "../graph" })).toBeNull();
     expect(decodeSeed(encodeSeed({ seed: "quote", entry: 42 }))).toEqual({ seed: "quote", entry: 42 });
   });
+
+  it("name a passage of an article by where it runs and a hash of it, never its words (B36)", () => {
+    const run = { from: 12, to: 80, hash: "0a1b2c3d" };
+    expect(decodeSeed(encodeSeed({ seed: "quote", entry: "dict:lane:علم", run }))).toEqual({ seed: "quote", entry: "dict:lane:علم", run });
+    expect(validSeed({ seed: "quote", entry: "dict:lane:علم", run: { ...run, text: "forged" } })).toEqual({ seed: "quote", entry: "dict:lane:علم", run });
+    // a run in any other shape is left out, the article still quoted whole
+    expect(validSeed({ seed: "quote", entry: "dict:lane:علم", run: { from: 12, to: 13, hash: "0a1b2c3d" } })).toEqual({ seed: "quote", entry: "dict:lane:علم" });
+    expect(validSeed({ seed: "quote", entry: "dict:lane:علم", run: "12-80" })).toEqual({ seed: "quote", entry: "dict:lane:علم" });
+  });
 });

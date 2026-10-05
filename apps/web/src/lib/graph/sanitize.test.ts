@@ -45,6 +45,19 @@ describe("cleanGraph", () => {
     expect(out.skippedEdges).toBe(3);
   });
 
+  it("keeps a quoted passage only as where it runs and its hash, and only on a note that quotes (B36)", () => {
+    const run = { from: 5, to: 60, hash: "deadbeef" };
+    const { nodes } = cleanGraph(
+      [
+        { id: "quote:dict:lane:علم~5-60", position: { x: 0, y: 0 }, data: { kind: "note", entry: "dict:lane:علم", run: { ...run, text: "forged" } } },
+        { id: "n", position: { x: 0, y: 0 }, data: { kind: "note", text: "mine", run } },
+        { id: "q", position: { x: 0, y: 0 }, data: { kind: "note", entry: 7, run: { from: 60, to: 5, hash: "deadbeef" } } },
+      ],
+      [],
+    );
+    expect(nodes.map((n) => n.data)).toEqual([{ kind: "note", entry: "dict:lane:علم", run }, { kind: "note", text: "mine" }, { kind: "note", entry: 7 }]);
+  });
+
   it("keeps a quotation only as its article's id, with no words of the map's own, and fields only in their kind's shape", () => {
     const { nodes } = cleanGraph(
       [

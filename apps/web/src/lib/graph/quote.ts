@@ -3,7 +3,12 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { getJSON } from "@/lib/reader/api";
+import type { Run } from "./run";
 import type { QuoteKey } from "./types";
+
+/** A quoting note's card id: the article's, and the passage's place when it quotes one (B36), so two passages of one
+ * article are two cards. */
+export const quoteId = (entry: QuoteKey, run?: Run) => (run ? `quote:${entry}~${run.from}-${run.to}` : `quote:${entry}`);
 
 /** A dictionary's article as the dataset gives it, with its work's credit (GET /lexicon/entries/{identifier}). */
 export type Entry = {

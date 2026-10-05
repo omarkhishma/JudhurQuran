@@ -133,7 +133,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
 
       <div className="px-3 pb-3">
         {data.kind === "note" && data.entry ? (
-          <QuotedArticle entry={data.entry} max={data.folded ? 110 : 420} />
+          <QuotedArticle entry={data.entry} run={data.run} max={data.folded ? 110 : 420} />
         ) : heading ? (
           <div className="mt-1">
             <p className={heading === "entity" ? "ar-classical text-[22px] leading-[1.5] text-t1" : "text-[15px] font-semibold leading-snug text-t1"} lang="ar" dir="auto">{(data.text ?? "").split("\n")[0]}</p>

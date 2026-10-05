@@ -5482,6 +5482,22 @@ a.wotd-pill:hover {
 [dir="rtl"] .comment-quote {
   border-radius: 8px 0 0 8px;
 }
+/* a passage selected in an article, and what to do with it (B36) */
+.passage-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--ring);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ring) 6%, var(--card));
+}
+/* the passage a note quotes, marked in its whole article (B36) */
+.quote-run {
+  background: color-mix(in srgb, var(--ring) 16%, transparent);
+  color: inherit;
+  border-radius: 3px;
+}
 .quote-picker {
   display: flex;
   flex-direction: column;

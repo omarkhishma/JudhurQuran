@@ -2,8 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { PassageBar } from "@/components/PassageBar";
+import { passageOf, useSelectionIn } from "@/lib/graph/usePassage";
 import { Term } from "@/components/terms/Term";
 import { Segmented } from "@/components/ui/Segmented";
 import { cnt, formatNumber } from "@/lib/format";
@@ -131,10 +133,14 @@ function ArticleEntry({ e, lang, expanded, onToggle, onCopied }: { e: DictEntry;
   const t = useTranslations("rd");
   const locale = useLocale();
   const setHandoff = useReader((s) => s.setHandoff);
-  const full = useQuery({ queryKey: ["lex-entry", e.id], queryFn: () => getJSON<{ body: string }>(`/lexicon/entries/${e.id}`), enabled: expanded, staleTime: Infinity });
+  // lines selected in the article, to put them alone on a map (B36): the whole article is read to place them in it
+  const shownRef = useRef<HTMLDivElement>(null);
+  const [sel, clearSel] = useSelectionIn(shownRef);
+  const full = useQuery({ queryKey: ["lex-entry", e.id], queryFn: () => getJSON<{ body: string }>(`/lexicon/entries/${e.id}`), enabled: expanded || !!sel, staleTime: Infinity });
   // the vowel marks shown or hidden (D7)
   const shown = useMarks();
   const text = shown(expanded && full.data ? full.data.body : e.excerpt);
+  const chosen = passageOf(full.data?.body, text, sel);
   const truncated = e.length > e.excerpt.length;
   async function copy() {
     const body = full.data?.body ?? (await getJSON<{ body: string }>(`/lexicon/entries/${e.id}`)).body;
@@ -152,9 +158,24 @@ function ArticleEntry({ e, lang, expanded, onToggle, onCopied }: { e: DictEntry;
         lang={lang === "en" ? "en" : "ar"}
         dir={lang === "en" ? "ltr" : "rtl"}
         data-collapsed={!expanded && truncated}
+        ref={shownRef}
       >
         {text}
       </div>
+      {chosen && full.data && (
+        <PassageBar
+          text={shown(full.data.body.slice(chosen.from, chosen.to))}
+          lang={lang}
+          action={t("passageToMap")}
+          onAction={() => {
+            setHandoff({ seed: "quote", entry: e.uri ?? e.id, run: chosen });
+            clearSel();
+          }}
+          clearLabel={t("passageClear")}
+          onClear={clearSel}
+          note={t("passageNote")}
+        />
+      )}
       <div className="flex items-center gap-3 text-[11.5px] text-t3">
         {truncated && (
           <button type="button" className="hover:text-t1" onClick={onToggle}>
