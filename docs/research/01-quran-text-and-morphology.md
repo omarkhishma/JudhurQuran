@@ -380,15 +380,13 @@ Tanzil (tanzil.net/docs/Text_License and the file footer), QAC (download page, l
   - `qac/quranic-corpus-morphology-0.4.txt` = `qac-morphology-0.4/…`;
   - `fonts/UthmanicHafs_V22.ttf` = `fonts/kfgqpc-uthmanic-hafs/UthmanicHafs_V22.ttf`;
   - `tanzil/quran-uthmani.txt` = `tanzil/quran-uthmani-nomarks.txt`. Another process overwrote the earlier marks variant, which now lives at `quran-uthmani-marks-sajdah.txt`.
-- **QF-sourced files** past the 1-week cache rule: delete `quran-com-api-v4-text/*.json` and `qpc/qpc-hafs-via-qul.json` by 2026-10-09, or record an explicit owner decision.
-- **Missing project files:** the project has no `docs/PLAN.md` or `docs/DECISIONS.md` yet, and I was told not to write outside `data/raw` and `docs/research`, so the decisions above are not logged there.
+- **QF-sourced files**: removed from `data/raw` (§5); nothing of Quran Foundation's is kept.
 
 ## 11. Pending, and who owns it
 
 - **Owner:** decide the QAC licensing posture. Options: (i) treat QAC as GPL-3.0 and drop the "no changes" clause under GPLv3 §7; (ii) ask Kais Dukes or the quran.com team (corpus maintainers) for written permission to publish a corrected derivative and to use it commercially; or (iii) never redistribute QAC-derived data and only display it. This is a legal decision; I recommend (ii).
 - **Owner:** ask KFGQPC (info@qurancomplex.gov.sa) to confirm that redistributing the Unicode Hafs text through our public API is allowed. The usage page covers websites and software, but not data redistribution explicitly.
 - **Owner:** create a free QUL account if QUL datasets are wanted (all data downloads are login-gated), and read https://www.tarteel.ai/terms in a browser. I could not read it non-interactively; the browser tool needs a browser selection that only the owner can make.
-- **Owner:** delete the two QF-sourced files by 2026-10-09 (§5).
 - **Next build step (engineering):**
   - run AlKhalil over all 49,967 root-bearing tokens;
   - build the Tanzil↔QPC↔QAC word map with the 7 documented exceptions;
