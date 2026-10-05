@@ -541,7 +541,7 @@ def texts(request: Request) -> Response:
 
 
 @router.get("/texts/{slug}", summary="One text with its source and its top-level chapters")
-def text(request: Request, slug: Annotated[str, Path(max_length=40)]) -> Response:
+def text(request: Request, slug: Annotated[str, Path(max_length=80)]) -> Response:
     with connect() as conn:
         t = texts_api.text_detail(conn, slug)
         if t is None:
@@ -555,7 +555,7 @@ def text(request: Request, slug: Annotated[str, Path(max_length=40)]) -> Respons
 )
 def text_chapter(
     request: Request,
-    slug: Annotated[str, Path(max_length=40)],
+    slug: Annotated[str, Path(max_length=80)],
     ordinal: Annotated[int, Path(ge=1)],
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
@@ -573,7 +573,7 @@ def text_chapter(
     summary="A passage beyond the Quran: its text verbatim, cut into its words, each with its reading",
 )
 def text_passage(
-    request: Request, slug: Annotated[str, Path(max_length=40)], ref: Annotated[str, Path(max_length=40)]
+    request: Request, slug: Annotated[str, Path(max_length=80)], ref: Annotated[str, Path(max_length=40)]
 ) -> Response:
     with connect() as conn:
         p = texts_api.passage(conn, slug, ref)

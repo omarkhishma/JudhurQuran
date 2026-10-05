@@ -44,6 +44,37 @@ def test_the_shelf_lists_the_seven_collections_after_the_quran_then_the_books() 
         assert t["lemma_count"] is None and t["function_lemmas"] == []
 
 
+def test_every_text_on_the_shelf_opens_by_its_slug_with_its_first_chapter_and_passage() -> None:
+    """Every text the shelf lists is answered by its slug — the longest included (a book's slug ran to 41 letters and its
+    page was refused while the routes took 40) — and so are its first chapter and its first passage."""
+    with connect() as conn:
+        longest = int(scalar(conn, "select max(length(slug)) from content.texts"))
+        first = {
+            r["slug"]: r["ref"]
+            for r in rows(
+                conn,
+                """select distinct on (t.slug) t.slug, p.ref from content.texts t join content.passages p on p.text_id = t.id
+                    where t.kind <> 'quran' order by t.slug, p.id""",
+            )
+        }
+    assert longest > 40
+    shelf = client.get("/api/v1/texts").json()["data"]
+    assert {t["slug"] for t in shelf if t["kind"] != "quran"} == set(first)
+    for t in shelf:
+        r = client.get(f"/api/v1/texts/{t['slug']}")
+        assert r.status_code == 200, (t["slug"], r.text[:200])
+        if t["kind"] == "quran":
+            continue
+        chapters = r.json()["chapters"]
+        assert chapters, t["slug"]
+        assert (
+            client.get(f"/api/v1/texts/{t['slug']}/chapters/{chapters[0]['ordinal']}").status_code == 200
+        ), t["slug"]
+        assert client.get(f"/api/v1/texts/{t['slug']}/passages/{first[t['slug']]}").status_code == 200, t[
+            "slug"
+        ]
+
+
 def test_a_text_comes_with_its_sources_and_its_top_level_chapters() -> None:
     for c in COLLECTIONS:
         d = get(f"/api/v1/texts/{c['slug']}")
