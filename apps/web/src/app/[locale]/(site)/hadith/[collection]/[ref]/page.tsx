@@ -5,6 +5,7 @@ import { CorrectedMark, Corrections } from "@/components/contrib/Corrections";
 import { Explanations } from "@/components/hadith/Explanations";
 import { RecordPlace } from "@/components/library/RecordPlace";
 import { Grades } from "@/components/hadith/Grades";
+import { Backlinks } from "@/components/notebook/Backlinks";
 import { HadithText } from "@/components/hadith/HadithText";
 import { Sources } from "@/components/hadith/Sources";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
@@ -150,6 +151,8 @@ export default async function HadithPage({ params }: PageProps<"/[locale]/hadith
       )}
 
       <Explanations items={r.explanations} />
+      {/* the reader's notes that mention this hadith (B58) */}
+      <Backlinks uri={r.uri} className="mt-6" />
 
       <nav className="mt-10 flex flex-wrap gap-2" aria-label={number}>
         {r.prev && <Link href={hadithHref(c.slug, r.prev)} className="btn" rel="prev">{t("prev")}</Link>}

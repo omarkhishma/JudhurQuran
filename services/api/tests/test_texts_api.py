@@ -215,3 +215,37 @@ def test_no_text_beyond_the_quran_holds_a_character_outside_the_bmp() -> None:
         # the check can fail: the same pattern finds an astral character when there is one
         assert scalar(conn, "select '𝒜' ~ '[\\U00010000-\\U0010FFFF]'") is True
     assert astral == 0
+
+
+def test_a_notes_mentions_of_the_library_are_read_from_a_body_and_kept_nowhere() -> None:
+    """NTB-Q04, B58: «@bukhari:1» and «@shafici-risala:40» in a note — the hadith and the paragraph found with their
+    addresses and titles, a book's with its citation as its page gives it; what is not there is left out; a text named
+    in another shape is refused before it reaches the database."""
+    para = get("/api/v1/texts/shafici-risala/passages/40")
+    hadith = get("/api/v1/texts/bukhari/passages/1")
+    r = client.post(
+        "/api/v1/texts/mentioned",
+        json={
+            "items": [
+                {"text": "bukhari", "ref": "1"},
+                {"text": "shafici-risala", "ref": "40"},
+                {"text": "bukhari", "ref": "999999"},
+                {"text": "quran", "ref": "1"},
+            ]
+        },
+    )
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
+    by = {x["uri"]: x for x in r.json()["data"]}
+    assert set(by) == {hadith["uri"], para["uri"]}
+    assert by[hadith["uri"]]["kind"] == "hadith" and by[hadith["uri"]]["cite_ar"] is None
+    assert by[para["uri"]]["cite_ar"] == para["cite"]["ar"]
+    shelf = {t["slug"]: t for t in get("/api/v1/texts")["data"]}
+    assert by[para["uri"]]["title_ar"] == shelf["shafici-risala"]["title_ar"]
+    bad = client.post("/api/v1/texts/mentioned", json={"items": [{"text": "bukhari'; --", "ref": "1"}]})
+    assert bad.status_code == 422
+    assert (
+        client.post(
+            "/api/v1/texts/mentioned", json={"items": [{"text": "bukhari", "ref": "1"}] * 41}
+        ).status_code
+        == 422
+    )

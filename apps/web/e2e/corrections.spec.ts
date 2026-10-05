@@ -150,6 +150,36 @@ test("signed out, a correction is written first, kept on this device, and sign-i
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
+test("a note mentions a hadith and a book's paragraph, linked, and each page names the note (B58, NTB-Q04)", async ({ page }) => {
+  const h = await api<Hadith>(page, "/texts/bukhari/passages/1");
+  const p = await api<Paragraph>(page, "/texts/shafici-risala/passages/40");
+  await page.addInitScript(() => {
+    if (localStorage.getItem("jadhr-personal")) return;
+    localStorage.setItem("jadhr-personal", JSON.stringify({ state: { visited: true, onboarded: true }, version: 2 }));
+  });
+  const asked: string[] = [];
+  page.on("request", (q) => q.url().includes("/api/v1/") && asked.push(q.url()));
+  await page.goto("/notebook");
+  await page.getByRole("button", { name: "+ ملاحظة جديدة" }).click();
+  const editor = page.locator(".notebook-editor");
+  await editor.getByRole("textbox", { name: "عنوان الملاحظة" }).fill("النية والبيان");
+  await editor.getByRole("textbox", { name: "نص الملاحظة" }).fill("انظر @bukhari:1 و@البخاري:٢، وقارن @shafici-risala:40 و@bukhari:999999");
+  const linked = editor.getByRole("region", { name: "مرتبطة بـ" });
+  await expect(linked.locator('a[href="/hadith/bukhari/1"]')).toContainText(`صحيح البخاري ${ar(1)}`);
+  await expect(linked.locator('a[href="/hadith/bukhari/2"]')).toContainText(`صحيح البخاري ${ar(2)}`);
+  await expect(linked.locator('a[href="/books/shafici-risala/p/40"]')).toContainText(`الفقرة ${ar(40)}`);
+  await expect(linked.locator('a[href="/books/shafici-risala/p/40"]')).toHaveAttribute("title", p.cite.ar);
+  await expect(linked).toContainText("لم نجد «bukhari:999999»");
+  // the note's mentions went in a body, never in an address
+  expect(asked.filter((u) => /bukhari|risala/.test(decodeURIComponent(u)) && u.includes("/texts/") && !u.includes("/texts/mentioned"))).toEqual([]);
+  // the hadith's page and the paragraph's name the note
+  await page.goto("/hadith/bukhari/1");
+  await expect(page.locator(".backlinks")).toContainText("النية والبيان");
+  await page.goto(`/books/shafici-risala/p/${p.ref}`);
+  await expect(page.locator(".backlinks")).toContainText("النية والبيان");
+  expect(h.uri).toBe("hadith:bukhari:1");
+});
+
 test("a failure to read the corrections leaves the page as the build made it, never broken (B58)", async ({ page }) => {
   await page.route("**/api/v1/corrections**", (r) => r.fulfill({ status: 500, body: "{}" }));
   await page.goto("/hadith/bukhari/1");

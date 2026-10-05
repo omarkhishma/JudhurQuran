@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BookText } from "@/components/books/BookText";
 import { Corrections } from "@/components/contrib/Corrections";
 import { RecordPlace } from "@/components/library/RecordPlace";
+import { Backlinks } from "@/components/notebook/Backlinks";
 import { Sources } from "@/components/hadith/Sources";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
 import { Link } from "@/i18n/navigation";
@@ -88,6 +89,8 @@ export default async function BookParagraphPage({ params }: PageProps<"/[locale]
           <Corrections compact target={p.uri} label={p.cite.ar} fields={["page"]} />
         </div>
       )}
+      {/* the reader's notes that mention this paragraph (B58) */}
+      <Backlinks uri={p.uri} className="mt-6" />
       <nav className="mt-8 flex flex-wrap gap-2" aria-label={p.cite.ar}>
         {p.prev && <Link href={paragraphHref(slug, p.prev)} className="btn" rel="prev">{t("prevParagraph")}</Link>}
         {p.next && <Link href={paragraphHref(slug, p.next)} className="btn" rel="next">{t("nextParagraph")}</Link>}

@@ -13,6 +13,8 @@ import { Link } from "@/i18n/navigation";
 import { normalize } from "@/lib/arabic/normalize";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
+import { paragraphHref } from "@/lib/books";
+import { hadithHref, refText } from "@/lib/hadith";
 import { foldLatin, type Mention, parseMentions } from "@/lib/notebook/mentions";
 import { getJSON } from "@/lib/reader/api";
 import { mergeSessions, type SavedTrail, usePersonal } from "@/lib/reader/store";
@@ -22,9 +24,11 @@ import { useDebounced } from "@/lib/useDebounced";
 
 type Group = "all" | "root" | "surah" | "tag";
 /** One row of the notebook: a free note, a note on a verse, or a saved trail (NTB-35…38 reconciled). */
-type Item = { kind: "note" | "verse" | "trail"; id: string; title: string; body: string; tags: string[]; created: number; updated: number; roots: string[]; verses: string[]; words?: string[]; verse?: string; trail?: SavedTrail };
+type Item = { kind: "note" | "verse" | "trail"; id: string; title: string; body: string; tags: string[]; created: number; updated: number; roots: string[]; verses: string[]; words?: string[]; passages?: string[]; verse?: string; trail?: SavedTrail };
 type SurahRow = { number: number; name_ar: string; name_translit: string; verse_count: number };
-type Resolved = { mention: Mention; href: string | null; label: string; kind: "verse" | "root" | "word" | "lexicon" | "none"; root?: string; verse?: string; slug?: string };
+type Resolved = { mention: Mention; href: string | null; label: string; kind: "verse" | "root" | "word" | "lexicon" | "passage" | "none"; root?: string; verse?: string; slug?: string; uri?: string; title?: string };
+type TextRow = { slug: string; kind: string; title_ar: string; title_en: string };
+type Mentioned = { text: string; ref: string; uri: string; kind: "hadith" | "book"; title_ar: string; title_en: string; cite_ar: string | null };
 
 const surahOf = (key: string) => Number(key.split(":")[0]);
 const download = (name: string, text: string, type: string) => {
@@ -127,7 +131,7 @@ function useItems(): Item[] {
   const trails = usePersonal((s) => s.savedTrails);
   return useMemo(() => {
     const out: Item[] = [
-      ...notes.map((n) => ({ kind: "note" as const, id: n.id, title: n.title, body: n.body, tags: n.tags, created: n.created, updated: n.updated, roots: n.links.roots, verses: n.links.verses, words: n.links.words ?? [] })),
+      ...notes.map((n) => ({ kind: "note" as const, id: n.id, title: n.title, body: n.body, tags: n.tags, created: n.created, updated: n.updated, roots: n.links.roots, verses: n.links.verses, words: n.links.words ?? [], passages: n.links.passages ?? [] })),
       ...Object.values(verseNotes).map((n) => ({ kind: "verse" as const, id: `v:${n.verse}`, title: "", body: n.text, tags: [], created: n.at, updated: n.at, roots: [], verses: [n.verse], verse: n.verse })),
       ...trails.map((tr) => ({
         kind: "trail" as const,
@@ -257,14 +261,15 @@ function NoteEditor({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
       roots: [...new Set(resolved.flatMap((r) => (r.root ? [r.root] : [])))],
       verses: [...new Set(resolved.flatMap((r) => (r.verse ? [r.verse] : [])))],
       words: [...new Set(resolved.flatMap((r) => (r.slug ? [r.slug] : [])))],
+      passages: [...new Set(resolved.flatMap((r) => (r.uri ? [r.uri] : [])))],
     }),
     [resolved],
   );
   // written only once every mention is read: while they are being read the links would be empty, and a note handed
   // to a map or synced in that moment would lose them
   useEffect(() => {
-    if (settled && JSON.stringify(links) !== JSON.stringify({ roots: x.roots, verses: x.verses, words: x.words ?? [] })) update(x.id, { links });
-  }, [settled, links, x.id, x.roots, x.verses, x.words, update]);
+    if (settled && JSON.stringify(links) !== JSON.stringify({ roots: x.roots, verses: x.verses, words: x.words ?? [], passages: x.passages ?? [] })) update(x.id, { links });
+  }, [settled, links, x.id, x.roots, x.verses, x.words, x.passages, update]);
   const fmt = (n: number) => new Date(n).toLocaleString(locale === "ar" ? "ar-EG" : "en-GB", { dateStyle: "medium", timeStyle: "short" });
   return (
     <article className="flex flex-col gap-3">
@@ -433,32 +438,66 @@ function TrailView({ x, onDeleted }: { x: Item; onDeleted: () => void }) {
 }
 
 /** The mentions of a body, each resolved against the data: a verse checked against its sūra's length, a root
- * and a word through search, a lexicon by its Arabic or English name (NTB-28, Q04). */
+ * and a word through search, a lexicon by its Arabic or English name (NTB-28, Q04), a hadith or a book's paragraph by
+ * its text and number (B58) — an Arabic name that names no text read as the word it is. */
 function useResolved(body: string): { resolved: Resolved[]; settled: boolean } {
   const locale = useLocale();
+  const t = useTranslations("notebook");
   const db = useDebounced(body, 400);
   const mentions = useMemo(() => parseMentions(db), [db]);
   const surahs = useSurahs();
   const lexica = useQuery({ queryKey: ["lexicon-works"], queryFn: () => getJSON<{ data: { id: string; title_ar: string; title_en: string }[] }>("/lexicon/works"), staleTime: Infinity, enabled: mentions.some((m) => m.kind === "word") });
-  const searches = useQueries({
-    queries: mentions.map((m) => ({
-      queryKey: ["note-mention", m.kind === "verse" ? "" : m.query],
-      // a private note's words go in a body, never a URL, a log line or a cache (NTB-28)
-      queryFn: async () => {
-        const r = await fetch("/api/v1/search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: m.kind === "verse" ? "" : m.query, limit: 5 }) });
-        if (!r.ok) throw new Error(String(r.status));
-        return (await r.json()) as { detected: { kind: string }; results: { roots: { key: string; spaced: string }[]; lemmas: { slug?: string; ar: string; root: string | null }[] } };
-      },
-      enabled: m.kind !== "verse",
-      staleTime: Infinity,
-    })),
+  const hasPassage = mentions.some((m) => m.kind === "passage");
+  const texts = useQuery({ queryKey: ["texts"], queryFn: () => getJSON<{ data: TextRow[] }>("/texts"), staleTime: Infinity, enabled: hasPassage });
+  // a text by its address, or by a word of its Arabic title — a hadith collection first, then one book alone
+  const slugOf = (m: Extract<Mention, { kind: "passage" }>): string | null | undefined => {
+    if (!texts.data) return undefined;
+    const shelf = texts.data.data.filter((x) => x.kind === "hadith" || x.kind === "book");
+    if (/^[a-z]/.test(m.name)) return shelf.find((x) => x.slug === m.name)?.slug ?? null;
+    const name = normalize(m.name);
+    const named = shelf.filter((x) => ` ${normalize(x.title_ar)} `.includes(` ${name} `));
+    const hadith = named.filter((x) => x.kind === "hadith");
+    return (hadith.length === 1 ? hadith[0] : named.length === 1 ? named[0] : null)?.slug ?? null;
+  };
+  // what each mention asks the search: a root's letters, a word, an Arabic name that named no text
+  const searchOf = (m: Mention): string | null => (m.kind === "verse" ? null : m.kind === "passage" ? (/^[a-z]/.test(m.name) || slugOf(m) !== null ? null : m.name.split(" ")[0]) : m.query);
+  const asked = mentions.flatMap((m) => {
+    const slug = m.kind === "passage" ? slugOf(m) : null;
+    return m.kind === "passage" && slug ? [{ text: slug, ref: m.ref }] : [];
   });
-  // every mention read: the typing has paused, and the sūras, the lexica and the searches it needs have answered
+  // a private note's mentions go in a body, never a URL, a log line or a cache (NTB-28)
+  const found = useQuery({
+    queryKey: ["note-passages", asked],
+    queryFn: async () => {
+      const r = await fetch("/api/v1/texts/mentioned", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: asked.slice(0, 40) }) });
+      if (!r.ok) throw new Error(String(r.status));
+      return ((await r.json()) as { data: Mentioned[] }).data;
+    },
+    enabled: asked.length > 0,
+    staleTime: Infinity,
+  });
+  const searches = useQueries({
+    queries: mentions.map((m) => {
+      const q = searchOf(m);
+      return {
+        queryKey: ["note-mention", q ?? ""],
+        queryFn: async () => {
+          const r = await fetch("/api/v1/search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q, limit: 5 }) });
+          if (!r.ok) throw new Error(String(r.status));
+          return (await r.json()) as { detected: { kind: string }; results: { roots: { key: string; spaced: string }[]; lemmas: { slug?: string; ar: string; root: string | null }[] } };
+        },
+        enabled: q !== null,
+        staleTime: Infinity,
+      };
+    }),
+  });
+  // every mention read: the typing has paused, and the sūras, the lexica, the texts and the searches it needs have answered
   const settled =
     db === body &&
     (!mentions.some((m) => m.kind === "verse") || !surahs.isPending) &&
     (!mentions.some((m) => m.kind === "word") || !lexica.isPending) &&
-    searches.every((q, i) => mentions[i].kind === "verse" || !q.isPending);
+    (!hasPassage || (!texts.isPending && (asked.length === 0 || !found.isPending))) &&
+    searches.every((q, i) => searchOf(mentions[i]) === null || !q.isPending);
   const resolved = mentions.map((m, i): Resolved => {
     if (m.kind === "verse") {
       const s = surahs.data?.data.find((x) => x.number === m.surah);
@@ -468,6 +507,17 @@ function useResolved(body: string): { resolved: Resolved[]; settled: boolean } {
       return { mention: m, href: `/quran/${m.surah}/${m.ayah}`, label: `${nm}: ${formatNumber(m.ayah, locale)}${to ? `–${formatNumber(to, locale)}` : ""}`, kind: "verse", verse: `${m.surah}:${m.ayah}` };
     }
     const d = searches[i]?.data;
+    if (m.kind === "passage") {
+      const slug = slugOf(m);
+      const hit = slug ? found.data?.find((x) => x.text === slug && x.ref === m.ref) : undefined;
+      if (hit) {
+        const title = locale === "ar" ? hit.title_ar : hit.title_en;
+        return hit.kind === "hadith"
+          ? { mention: m, href: hadithHref(hit.text, hit.ref), label: `${title} ${refText(hit.ref, locale)}`, kind: "passage", uri: hit.uri }
+          : { mention: m, href: paragraphHref(hit.text, hit.ref), label: t("paragraphOf", { title, n: formatNumber(Number(hit.ref), locale) }), kind: "passage", uri: hit.uri, title: hit.cite_ar ?? undefined };
+      }
+      if (searchOf(m) === null) return { mention: m, href: null, label: m.raw, kind: slug === undefined || (slug && found.isPending) ? "passage" : "none" };
+    }
     if (m.kind === "word") {
       const fq = foldLatin(m.query);
       const nq = normalize(m.query);
@@ -519,7 +569,7 @@ function ProposeFromNote({ words, body }: { words: Resolved[]; body: string }) {
 
 function LinkedChips({ resolved }: { resolved: Resolved[] }) {
   const t = useTranslations("notebook");
-  const colour = { verse: "var(--c-sentence)", root: "var(--c-root)", word: "var(--c-word)", lexicon: "var(--c-desc)", none: "var(--line-2)" } as const;
+  const colour = { verse: "var(--c-sentence)", root: "var(--c-root)", word: "var(--c-word)", lexicon: "var(--c-desc)", passage: "var(--c-desc)", none: "var(--line-2)" } as const;
   return (
     <section aria-label={t("linked")} className="flex flex-col gap-1.5">
       <p className="label-caps">{t("linked")}</p>
@@ -530,7 +580,7 @@ function LinkedChips({ resolved }: { resolved: Resolved[] }) {
           {resolved.map((r) => (
             <li key={`${r.mention.kind}:${r.mention.raw}`}>
               {r.href ? (
-                <Link href={r.href} prefetch={false} className="chip min-h-[32px] max-[899px]:min-h-[40px]" data-kind={r.kind}>
+                <Link href={r.href} prefetch={false} className="chip min-h-[32px] max-[899px]:min-h-[40px]" data-kind={r.kind} title={r.title}>
                   <span className="dot" style={{ background: colour[r.kind] }} aria-hidden="true" />
                   <span className={r.kind === "root" || r.kind === "word" ? "ar-classical text-[16px]" : ""} dir="auto">{r.label}</span>
                 </Link>
@@ -551,6 +601,7 @@ function toMarkdown(x: Item, locale: string): string {
   if (x.tags.length) lines.push(`tags: ${x.tags.join(", ")}`);
   if (x.verses.length) lines.push(`verses: ${x.verses.join(", ")}`);
   if (x.roots.length) lines.push(`roots: ${x.roots.join(", ")}`);
+  if (x.passages?.length) lines.push(`texts: ${x.passages.join(", ")}`);
   lines.push(`created: ${date}`);
   return lines.join("\n") + "\n";
 }

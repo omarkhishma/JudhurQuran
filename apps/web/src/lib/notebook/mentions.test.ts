@@ -33,6 +33,21 @@ describe("@-mentions in notes (NTB-27, NTB-Q04)", () => {
     expect(parseMentions("write to a@b.org @2:255 @2:255")).toHaveLength(1);
   });
 
+  it("reads a hadith and a book's paragraph by text and number, the text by its address or its Arabic title (B58)", () => {
+    expect(parseMentions("قال @bukhari:1 وفي @Muslim:8.2 و@shafici-risala:40، ثم @tirmidhi:s12.")).toEqual([
+      { kind: "passage", raw: "bukhari:1", name: "bukhari", ref: "1" },
+      { kind: "passage", raw: "Muslim:8.2", name: "muslim", ref: "8.2" },
+      { kind: "passage", raw: "shafici-risala:40", name: "shafici-risala", ref: "40" },
+      { kind: "passage", raw: "tirmidhi:s12", name: "tirmidhi", ref: "s12" },
+    ]);
+    expect(parseMentions("@البخاري:١ و@أبي داود: ٣٠")).toEqual([
+      { kind: "passage", raw: "البخاري:١", name: "البخاري", ref: "1" },
+      { kind: "passage", raw: "أبي داود: ٣٠", name: "أبي داود", ref: "30" },
+    ]);
+    // a verse stays a verse, a root a root, a word followed by a colon and no number a word
+    expect(parseMentions("@2:255 @k-t-b @علم: هو").map((m) => m.kind)).toEqual(["verse", "root", "word"]);
+  });
+
   it("matches a lexicon's name typed with or without its marks", () => {
     expect(foldLatin("Lisān")).toBe(foldLatin("Lisan"));
     expect(foldLatin("al-ʿAyn")).toBe("alayn");

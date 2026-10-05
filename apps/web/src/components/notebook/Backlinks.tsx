@@ -6,16 +6,17 @@ import { useIsClient } from "@/lib/client";
 import { useNotebook } from "@/lib/store/notebook";
 
 /**
- * The reader's notes that mention this root, word or verse (NTB-31: backlinks), on its entry, linked to each
- * note. Read from this browser; nothing is asked of the server. Nothing is shown when no note mentions it.
+ * The reader's notes that mention this root, word, verse, hadith or book paragraph (NTB-31: backlinks; B58), on its
+ * page, linked to each note. Read from this browser; nothing is asked of the server. Nothing is shown when no note
+ * mentions it.
  */
-export function Backlinks({ root, slug, verse, className = "" }: { root?: string | null; slug?: string | null; verse?: string | null; className?: string }) {
+export function Backlinks({ root, slug, verse, uri, className = "" }: { root?: string | null; slug?: string | null; verse?: string | null; uri?: string | null; className?: string }) {
   const t = useTranslations("notebook");
   const client = useIsClient();
   const notes = useNotebook((s) => s.notes);
   if (!client) return null;
   const hits = notes
-    .filter((n) => (root && n.links.roots.includes(root)) || (slug && n.links.words?.includes(slug)) || (verse && n.links.verses.includes(verse)))
+    .filter((n) => (root && n.links.roots.includes(root)) || (slug && n.links.words?.includes(slug)) || (verse && n.links.verses.includes(verse)) || (uri && n.links.passages?.includes(uri)))
     .sort((a, b) => b.updated - a.updated);
   if (!hits.length) return null;
   return (

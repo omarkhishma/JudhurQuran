@@ -1113,6 +1113,26 @@ def texts_known(body: _Known) -> Response:
     return ORJSONResponse({"data": found}, headers={"Cache-Control": "no-store"})
 
 
+class _Mention(BaseModel):
+    text: str = Field(pattern=r"^[a-z][a-z0-9-]{1,79}$")
+    ref: str = Field(pattern=r"^s?\d{1,6}(\.\d{1,4})?$")
+
+
+class _Mentions(BaseModel):
+    items: list[_Mention] = Field(max_length=40)
+
+
+@router.post(
+    "/texts/mentioned",
+    summary="The hadith and book paragraphs a note mentions (NTB-Q04, B58): asked in a body, kept nowhere",
+)
+def texts_mentioned(body: _Mentions) -> Response:
+    # what a private note mentions is the reader's: in a body, answered no-store, never in an address or a log line
+    with connect() as conn:
+        found = texts_api.mentioned(conn, [(x.text, x.ref) for x in body.items])
+    return ORJSONResponse({"data": found}, headers={"Cache-Control": "no-store"})
+
+
 class _UrlIntake(BaseModel):
     url: str = Field(min_length=8, max_length=2000)
 

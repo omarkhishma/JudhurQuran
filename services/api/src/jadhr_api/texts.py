@@ -525,6 +525,35 @@ def hits(conn: Connection, uris: list[str]) -> dict[str, dict[str, Any]]:
     return out
 
 
+def mentioned(conn: Connection, items: list[tuple[str, str]]) -> list[dict[str, Any]]:
+    """The hadith and book paragraphs a note mentions (B58, NTB-Q04), by text and number: each one found with its
+    address, its text's titles and, for a book, its citation — what a link in the note needs, nothing more."""
+    if not items:
+        return []
+    found = rows(
+        conn,
+        """select p.uri, p.ref, p.ordinal, p.meta, t.slug, t.kind, t.title_ar, t.title_en, t.author_ar, t.info,
+                  c.ordinal as c_ord, c.title_ar as c_ar
+             from unnest(cast(:s as text[]), cast(:r as text[])) as q(slug, ref)
+             join content.texts t on t.slug = q.slug and t.kind in ('hadith', 'book')
+             join content.passages p on p.text_id = t.id and p.ref = q.ref
+             join content.chapters c on c.id = p.chapter_id""",
+        {"s": [s for s, _ in items], "r": [r for _, r in items]},
+    )
+    return [
+        {
+            "text": r["slug"],
+            "ref": r["ref"],
+            "uri": r["uri"],
+            "kind": r["kind"],
+            "title_ar": r["title_ar"],
+            "title_en": r["title_en"],
+            "cite_ar": (cite(r, r, r["c_ord"], r["c_ar"]) or {}).get("ar"),
+        }
+        for r in found
+    ]
+
+
 def hadeethenc_item(conn: Connection, item_id: int) -> dict[str, Any] | None:
     """One HadeethEnc item, verbatim, with the hadith it cites in our texts and how far each agrees."""
     it = one(conn, "select * from content.hadeethenc_items where id = :i", {"i": item_id})

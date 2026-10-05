@@ -11,8 +11,9 @@ import { idbStorage } from "./idbStorage";
  * and synced when the reader signs in (P6). Notes on a verse stay where the reader writes them (the saved store,
  * keyed by verse); the Notebook shows and edits both.
  */
-/** What a note's @-mentions resolve to: roots, verses and words (lemma slugs, for backlinks, NTB-31). */
-export type NoteLinks = { roots: string[]; verses: string[]; words?: string[] };
+/** What a note's @-mentions resolve to: roots, verses and words (lemma slugs, for backlinks, NTB-31), and the hadith
+ * and book paragraphs of the library by their addresses (hadith:bukhari:1; B58). */
+export type NoteLinks = { roots: string[]; verses: string[]; words?: string[]; passages?: string[] };
 export type FreeNote = { id: string; title: string; body: string; tags: string[]; created: number; updated: number; links: NoteLinks };
 
 type NotebookState = {
