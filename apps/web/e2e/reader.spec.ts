@@ -523,6 +523,32 @@ test("tafsir side by side: up to three works at once (P2.10)", async ({ page }) 
   await expect(p.locator(".tafsir-cols.is-compare > article")).toHaveCount(3);
 });
 
+test("the word opened is marked where each tafsir names it, side by side, and a tafsir that does not says so (B3)", async ({ page }) => {
+  await returning(page);
+  await page.goto("/quran/1");
+  // الرحمن in 1:3, then its verse
+  await page.locator('.w[data-w="1:3:1"]').click();
+  await page.locator('[data-verse-btn="1:3"]').click();
+  const p = panel(page);
+  await expect(p.getByText(/معلَّمة حيث يذكرها كل تفسير/)).toBeVisible();
+  // al-Muyassar names it: marked whatever its vowels
+  const one = p.locator(".tafsir-cols > article").first();
+  await expect(one.locator("mark.tafsir-mark").first()).toBeVisible();
+  // side by side, each column marks it or says it does not name it
+  await p.getByRole("button", { name: "جنبًا إلى جنب" }).click();
+  const cols = p.locator(".tafsir-cols.is-compare > article");
+  await expect(cols).toHaveCount(2);
+  for (let i = 0; i < 2; i++) {
+    const col = cols.nth(i);
+    await expect.poll(async () => (await col.locator("mark.tafsir-mark").count()) > 0 || (await col.getByText("لا يذكر هذا التفسير الكلمة بلفظها في هذا الموضع.").count()) > 0).toBe(true);
+  }
+  // the marks go and come back on the reader's word
+  await p.getByRole("button", { name: "أزل العلامة" }).click();
+  await expect(p.locator("mark.tafsir-mark")).toHaveCount(0);
+  await p.getByRole("button", { name: "علِّمها" }).click();
+  await expect(p.locator("mark.tafsir-mark").first()).toBeVisible();
+});
+
 test("recitation speed cycles 1×, 0.75×, 0.5× and repeat toggles (RDR-554)", async ({ page }) => {
   await returning(page);
   await page.goto("/quran/1");

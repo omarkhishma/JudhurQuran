@@ -7397,3 +7397,13 @@ a.wotd-pill:hover {
   display: flex;
   justify-content: flex-end;
 }
+
+/* a word marked where a tafsir names it (B3): a wash under the letters, never over them */
+.tafsir-mark {
+  background: color-mix(in srgb, var(--c-word) 20%, transparent);
+  color: inherit;
+  border-radius: 4px;
+  padding: 0 0.08em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}

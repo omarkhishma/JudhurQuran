@@ -2,11 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import { verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
-import { usePrefs } from "@/lib/reader/store";
+import { findWord } from "@/lib/reader/findWord";
+import { usePrefs, useReader } from "@/lib/reader/store";
 import type { Commentary, Work } from "@/lib/types";
 
 export function useCommentary(verseKey: string | null, works: string[], initialData?: Commentary) {
@@ -22,7 +23,8 @@ const MAX_COMPARE = 3;
 
 /**
  * The verse's tafsir (P2.5a, P2.10): one work at a time, or up to three side by side (columns when the
- * panel is wide enough, stacked when it is not); the chosen translation below; every work credited.
+ * panel is wide enough, stacked when it is not); the chosen translation below; every work credited. The word the
+ * reader opened in this verse is marked where each work names it (B3), and a work that never names it says so.
  */
 export function TafsirSection({ verseKey }: { verseKey: string }) {
   const t = useTranslations("panel");
@@ -38,6 +40,14 @@ export function TafsirSection({ verseKey }: { verseKey: string }) {
   const { data, isLoading, isError } = useCommentary(verseKey, [...shown, translation]);
   const trans = data?.data.find((d) => d.work.id === translation);
   const tafsirWorks = (works.data ?? []).filter((w) => w.kind === "tafsir");
+  // the word the reader opened last, when it stands in this verse: its everyday spelling is what the tafsirs write
+  const focusAt = useReader((s) => {
+    const last = s.history[s.cursor]?.at;
+    return last && last.startsWith(`${verseKey}:`) ? last : null;
+  });
+  const focus = useQuery({ queryKey: ["word-at", focusAt], enabled: !!focusAt, staleTime: Infinity, queryFn: () => getJSON<{ text_imlaei: string; text_uthmani: string }>(`/words/${focusAt}`) });
+  const [marking, setMarking] = useState(true);
+  const word = marking ? (focus.data?.text_imlaei ?? null) : null;
 
   function pick(id: string) {
     if (mode === "one") return setActive(id);
@@ -71,6 +81,22 @@ export function TafsirSection({ verseKey }: { verseKey: string }) {
           })}
         </div>
         {mode === "compare" && <p className="text-[11px] text-t3">{tr("tafsirCompareNote")}</p>}
+        {focus.data && (
+          <p className="flex flex-wrap items-center gap-x-2 text-[12px] text-t2">
+            <span>
+              {t.rich(marking ? "tafsirMarked" : "tafsirUnmarked", {
+                word: () => (
+                  <span className="ar-classical text-[15px] text-t1" lang="ar">
+                    {focus.data.text_uthmani}
+                  </span>
+                ),
+              })}
+            </span>
+            <button type="button" className="btn min-h-[36px] px-2.5 text-[12px]" aria-pressed={marking} onClick={() => setMarking((m) => !m)}>
+              {t(marking ? "tafsirUnmark" : "tafsirMark")}
+            </button>
+          </p>
+        )}
       </section>
       <section className={"tafsir-cols px-4 py-4" + (mode === "compare" ? " is-compare" : "")} aria-busy={isLoading}>
         {isLoading && <p className="text-t3">…</p>}
@@ -87,8 +113,9 @@ export function TafsirSection({ verseKey }: { verseKey: string }) {
                     <p className="text-[12px] text-t3">{t("passageRange", { from: verseRef(c.passage.verse_from, locale), to: verseRef(c.passage.verse_to, locale) })}</p>
                   )}
                   <div className="ar-classical whitespace-pre-line text-[17px] leading-[2.05] text-t1" dir="rtl" lang="ar">
-                    {c.passage.text}
+                    <Marked text={c.passage.text} word={word} />
                   </div>
+                  {word && findWord(c.passage.text, word).length === 0 && <p className="text-[12px] text-t3">{t("tafsirNotNamed")}</p>}
                 </>
               ) : (
                 <p className="text-t3">{t("noPassage")}</p>
@@ -129,4 +156,23 @@ function WorkCredit({ work }: { work: Work }) {
       </a>
     </p>
   );
+}
+
+/** The text with the word marked where it stands; the text itself as it is. */
+function Marked({ text, word }: { text: string; word: string | null }) {
+  const ranges = word ? findWord(text, word) : [];
+  if (!ranges.length) return <>{text}</>;
+  const parts: React.ReactNode[] = [];
+  let at = 0;
+  ranges.forEach(([from, to], i) => {
+    if (from > at) parts.push(<Fragment key={`t${i}`}>{text.slice(at, from)}</Fragment>);
+    parts.push(
+      <mark key={`m${i}`} className="tafsir-mark">
+        {text.slice(from, to)}
+      </mark>,
+    );
+    at = to;
+  });
+  if (at < text.length) parts.push(<Fragment key="end">{text.slice(at)}</Fragment>);
+  return <>{parts}</>;
 }

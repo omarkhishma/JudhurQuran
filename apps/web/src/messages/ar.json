@@ -639,7 +639,12 @@
     "patternAbout": "كيف نحدّد الوزن",
     "lemmaGlossEn": "معنى الصيغة (إنجليزي)",
     "glossSource": "الترجمة الحرفية: المدونة القرآنية اللغوية",
-    "lemmaGlossSource": "معنى الصيغة: مراجعة مؤلف المدونة"
+    "lemmaGlossSource": "معنى الصيغة: مراجعة مؤلف المدونة",
+    "tafsirMarked": "<word></word> معلَّمة حيث يذكرها كل تفسير",
+    "tafsirUnmarked": "<word></word> بلا علامة",
+    "tafsirUnmark": "أزل العلامة",
+    "tafsirMark": "علِّمها",
+    "tafsirNotNamed": "لا يذكر هذا التفسير الكلمة بلفظها في هذا الموضع."
   },
   "roots": {
     "indexTitle": "جذور القرآن الكريم",

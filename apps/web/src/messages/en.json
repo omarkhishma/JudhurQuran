@@ -639,7 +639,12 @@
     "patternAbout": "How patterns are found",
     "lemmaGlossEn": "Dictionary sense",
     "glossSource": "Word by word: Quranic Arabic Corpus",
-    "lemmaGlossSource": "Lemma sense: Quranic Arabic Corpus (author’s revision)"
+    "lemmaGlossSource": "Lemma sense: Quranic Arabic Corpus (author’s revision)",
+    "tafsirMarked": "<word></word> is marked where each tafsir names it",
+    "tafsirUnmarked": "<word></word> unmarked",
+    "tafsirUnmark": "Remove the marks",
+    "tafsirMark": "Mark it",
+    "tafsirNotNamed": "This tafsir does not name the word as it is written here."
   },
   "roots": {
     "indexTitle": "Roots of the Quran",
