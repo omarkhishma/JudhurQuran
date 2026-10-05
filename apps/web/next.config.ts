@@ -70,7 +70,8 @@ const nextConfig: NextConfig = {
       { source: "/:path((?!embed/|en/embed/).+)", headers: FRAMED_BY_SELF },
       { source: "/embed/:path*", headers: FRAMED_BY_ANY },
       { source: "/en/embed/:path*", headers: FRAMED_BY_ANY },
-    ];
+      // a route with no headers is refused by Next: in development an embed has none (its CSP is production's)
+    ].filter((r) => r.headers.length > 0);
   },
 };
 
