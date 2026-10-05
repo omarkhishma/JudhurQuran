@@ -21,7 +21,6 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, Response, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
@@ -1439,7 +1438,8 @@ def create_app() -> FastAPI:
         default_response_class=ORJSONResponse,
         lifespan=lifespan,
     )
-    app.add_middleware(GZipMiddleware, minimum_size=1024)
+    # no compression here: Caddy, the only way in, encodes every answer (zstd or gzip, infra/Caddyfile); the web's
+    # renders read the API inside the network, where compressing and inflating each answer cost both sides for nothing
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

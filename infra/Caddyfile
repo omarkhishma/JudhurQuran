@@ -1,13 +1,18 @@
 # Public entry point. SITE_ADDRESS is the domain (automatic HTTPS) or ":80" for a plain local run.
 {$SITE_ADDRESS::80} {
 	# Defaults plus fonts: the KFGQPC font must be served as the signed TTF (no conversion to WOFF2 is
-	# allowed), so transport compression is what shrinks it.
+	# allowed), so transport compression is what shrinks it. Compression is done here only: the web app and the API
+	# send plain answers, which this encodes as zstd or gzip (an answer that came compressed would pass through as
+	# gzip); a release's JSON-lines files are text and are encoded too.
 	encode {
-		zstd
-		gzip
+		# levels measured on the production build (DECISIONS 2026-10-05): zstd "better" takes al-Baqara's page 15%
+		# under the gzip the web app sent; gzip 8 matches it for browsers without zstd, at a third of level 9's time
+		zstd better
+		gzip 8
 		match {
 			header Content-Type text/*
 			header Content-Type application/json*
+			header Content-Type application/x-ndjson*
 			header Content-Type application/javascript*
 			header Content-Type application/xml*
 			header Content-Type image/svg+xml*

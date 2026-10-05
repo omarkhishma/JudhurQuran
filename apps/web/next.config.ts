@@ -49,6 +49,9 @@ const FRAMED_BY_ANY = isProd ? [{ key: "Content-Security-Policy", value: csp("*"
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Caddy, the only way in, compresses every answer as zstd or gzip (infra/Caddyfile); a page compressed here would
+  // reach it already gzipped and pass through as gzip, the work done twice and the better encoding lost
+  compress: false,
   // Self-contained server for the container image (Dockerfile.web); the monorepo root is the trace root
   // so workspace dependencies are included.
   output: "standalone",
