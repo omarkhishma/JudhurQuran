@@ -45,6 +45,31 @@ describe("cleanGraph", () => {
     expect(out.skippedEdges).toBe(3);
   });
 
+  it("keeps a map type's field as the reader's own, named by its template, a choice not yet made left unmade (B37)", () => {
+    const { nodes } = cleanGraph(
+      [
+        {
+          id: "lemma:x",
+          position: { x: 0, y: 0 },
+          data: {
+            kind: "lemma",
+            fields: [
+              { id: "a", kind: "select", label: "المحور", value: "", options: ["الإيمان", "العمل"], tpl: "axis" },
+              { id: "b", kind: "tags", label: "حقل دلالي", value: ["الإدراك"], tpl: "<script>" },
+              { id: "c", kind: "select", label: "x", value: "z", options: ["p", "q"] },
+            ],
+          },
+        },
+      ],
+      [],
+    );
+    expect(nodes[0].data.fields).toEqual([
+      { id: "a", kind: "select", label: "المحور", value: "", options: ["الإيمان", "العمل"], tpl: "axis" },
+      { id: "b", kind: "tags", label: "حقل دلالي", value: ["الإدراك"] },
+      { id: "c", kind: "select", label: "x", value: "p", options: ["p", "q"] },
+    ]);
+  });
+
   it("keeps a quoted passage only as where it runs and its hash, and only on a note that quotes (B36)", () => {
     const run = { from: 5, to: 60, hash: "deadbeef" };
     const { nodes } = cleanGraph(

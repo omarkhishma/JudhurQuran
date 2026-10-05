@@ -1755,7 +1755,20 @@
     "passageHint": "Select lines of the article to quote them alone.",
     "passageNote": "The map keeps only where the passage runs; its words are read from the dictionary whenever it is shown.",
     "doQuotePassage": "Quote a passage",
-    "doQuoteWhole": "Quote the whole article"
+    "doQuoteWhole": "Quote the whole article",
+    "tpl_semanticField": "Semantic field",
+    "tpl_difference": "Difference",
+    "tpl_axis": "Axis",
+    "tplEvery": "{label} on every card of its kind ({n})",
+    "tplNote": "This kind of map's own fields: empty, yours to fill, never from the sources.",
+    "doAddTemplate": "{label} on {count, plural, one {a card} other {{n} cards}}",
+    "doEditOptions": "Options of “{label}”",
+    "fieldOptions": "Options",
+    "fieldOptionsShared": "Options, the same on every card of the map",
+    "fieldNoChoice": "— none chosen —",
+    "optionRemove": "Remove the option “{tag}”",
+    "optionAdd": "A new option…",
+    "optionAddLabel": "Add an option to “{label}”"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

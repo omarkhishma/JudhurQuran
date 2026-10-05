@@ -276,6 +276,7 @@ function ManySettings({ tools }: { tools: CanvasTools }) {
  */
 function CardSettings({ tools, card }: { tools: CanvasTools; card: GraphNode }) {
   const t = useTranslations("graph");
+  const locale = useLocale();
   const d = card.data;
   const [draft, setDraft] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
@@ -336,6 +337,41 @@ function CardSettings({ tools, card }: { tools: CanvasTools; card: GraphNode }) 
         </div>
         {menu && (
           <div className="field-menu" role="menu" aria-label={t("fieldAddHint")}>
+            {/* the map type's own fields (B37): on this card, or on every card of its kind that lacks it */}
+            {tools.templates(d.kind).map((tp) => {
+              const lack = tools.nodes.filter((n) => n.data.kind === d.kind && !(n.data.fields ?? []).some((f) => f.tpl === tp.id));
+              const here = lack.some((n) => n.id === card.id);
+              return (
+                <div key={tp.id} className="field-menu-tpl">
+                  {here && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="is-template"
+                      onClick={() => {
+                        setMenu(false);
+                        tools.addTemplate([card.id], tp.id);
+                      }}
+                    >
+                      {t(`tpl_${tp.id}`)}
+                    </button>
+                  )}
+                  {lack.length > 1 && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMenu(false);
+                        tools.addTemplate(lack.map((n) => n.id), tp.id);
+                      }}
+                    >
+                      {t("tplEvery", { label: t(`tpl_${tp.id}`), ...cnt(lack.length, locale) })}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+            {tools.templates(d.kind).length > 0 && <p className="field-menu-note">{t("tplNote")}</p>}
             {FIELD_KINDS.map((k) => (
               <button
                 key={k}
@@ -365,6 +401,7 @@ function CardSettings({ tools, card }: { tools: CanvasTools; card: GraphNode }) 
                 onRemove={() => tools.removeField(card.id, f.id)}
                 onLabel={(label) => tools.renameField(card.id, f.id, label)}
                 onError={(m) => tools.toast(m)}
+                onOptions={f.kind === "select" ? (o) => tools.editOptions(card.id, f.id, o) : undefined}
               />
             ))}
           </div>

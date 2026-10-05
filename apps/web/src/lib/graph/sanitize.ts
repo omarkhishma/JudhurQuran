@@ -1,4 +1,5 @@
 import { cleanRun } from "./run";
+import { TEMPLATE_IDS, type TemplateId } from "./templates";
 import { FIELD_KINDS, type EdgeData, type Field, type FieldKind, type GraphDoc, type GraphEdge, type GraphKind, type GraphNode, type GraphNodeData, type NodeKind, type Rel } from "./types";
 
 /**
@@ -125,7 +126,8 @@ function cleanField(raw: unknown): Field | null {
       break;
     case "select":
       options = Array.isArray(f.options) ? [...new Set(f.options.filter((o): o is string => typeof o === "string" && o.length > 0 && o.length <= 60))].slice(0, 20) : [];
-      value = typeof v === "string" && options.includes(v) ? v : (options[0] ?? "");
+      // nothing chosen yet is kept as nothing chosen
+      value = typeof v === "string" && (options.includes(v) || v === "") ? v : (options[0] ?? "");
       break;
     case "tags":
       value = Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === "string" && x.trim().length > 0 && x.length <= 60).map((x) => x.trim()))].slice(0, 30) : [];
@@ -140,7 +142,8 @@ function cleanField(raw: unknown): Field | null {
       value = typeof v === "string" && FILE_ID.test(v) ? v : "";
   }
   const fileName = (kind === "audio" || kind === "image" || kind === "file") && value ? str(f.fileName, 200) : undefined;
-  return { id, kind, label, value, ...(options ? { options } : {}), ...(fileName ? { fileName } : {}) };
+  const tpl = typeof f.tpl === "string" && TEMPLATE_IDS.includes(f.tpl as TemplateId) ? f.tpl : undefined;
+  return { id, kind, label, value, ...(options ? { options } : {}), ...(fileName ? { fileName } : {}), ...(tpl ? { tpl } : {}) };
 }
 
 function cleanEdgeData(raw: unknown, legacyLabel: unknown): EdgeData {

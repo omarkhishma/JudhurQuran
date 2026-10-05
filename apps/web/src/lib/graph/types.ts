@@ -21,7 +21,7 @@ export const FIELD_KINDS: FieldKind[] = ["text", "notes", "number", "select", "t
 
 /** A field (EDT-266): an audio, image or file field's value is the id of the file kept in this browser
  * (lib/graph/files), its name beside it. */
-export type Field = { id: string; kind: FieldKind; label: string; value: string | number | string[]; options?: string[]; fileName?: string };
+export type Field = { id: string; kind: FieldKind; label: string; value: string | number | string[]; options?: string[]; fileName?: string; /** the map type's field it was added as (B37, lib/graph/templates) */ tpl?: string };
 
 /** A quoted article: its identifier (`dict:<work>:<root>`), or its row id on a map made before identifiers. */
 export type QuoteKey = number | string;

@@ -34,7 +34,8 @@ import { headingVersesPath, sourceHeading, topicCard, topicVerses, type TopicCre
 import { getJSON } from "@/lib/reader/api";
 import { layout } from "@/lib/graph/layout";
 import { allowedRels, checkLink, META, type Refusal } from "@/lib/graph/relations";
-import { KIND_COLOR, KIND_SIZE, type Field, type FieldKind, type GraphEdge, type GraphKind, type GraphNode, type QuoteKey, type Rel } from "@/lib/graph/types";
+import { KIND_COLOR, KIND_SIZE, type Field, type FieldKind, type GraphEdge, type GraphKind, type GraphNode, type NodeKind, type QuoteKey, type Rel } from "@/lib/graph/types";
+import { templateOf, templatesFor, type Template, type TemplateId } from "@/lib/graph/templates";
 import { useTheme } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { useGraphUi } from "@/lib/graph/uiPrefs";
@@ -108,6 +109,11 @@ export type CanvasTools = {
   editField: (id: string, field: string, value: Field["value"], fileName?: string) => void;
   removeField: (id: string, field: string) => void;
   addField: (id: string, kind: FieldKind) => void;
+  /** the fields this map's type offers a card of a kind, and one added to several cards at once (B37) */
+  templates: (card: NodeKind) => Template[];
+  addTemplate: (ids: string[], tpl: TemplateId) => void;
+  /** a choice's options, renamed, added or removed — alike on every card for a map type's field (B37) */
+  editOptions: (id: string, field: string, options: string[]) => void;
   /** a note's text edited in the details (EDT-183, EDT-223) */
   editHeadword: (id: string, text: string) => void;
   /** every card given folded or unfolded at once (EDT-187) */
@@ -997,6 +1003,22 @@ function CanvasInner({
       expand: (id, opts) => void expand(id, opts),
       expanding,
       // fields (EDT-104…107): a new one named for its kind, edited, renamed and removed, each a named step
+      templates: (card) => templatesFor(kind, card),
+      // a map type's field (B37): empty, once on each card, and a choice's options as the map already has them
+      addTemplate: (ids, tplId) => {
+        const tpl = templateOf(tplId);
+        const label = t(`tpl_${tplId}`);
+        const ns = live.current.nodes;
+        const shared = ns.flatMap((n) => n.data.fields ?? []).find((f) => f.tpl === tplId)?.options ?? [];
+        const to = new Set(ids.filter((id) => ns.some((n) => n.id === id && !(n.data.fields ?? []).some((f) => f.tpl === tplId))));
+        if (!to.size) return;
+        const field = (): Field => ({ id: crypto.randomUUID().replace(/-/g, "").slice(0, 12), kind: tpl.kind, label, value: tpl.kind === "tags" ? [] : "", tpl: tplId, ...(tpl.kind === "select" ? { options: shared } : {}) });
+        commit(
+          t("doAddTemplate", { label, ...cnt(to.size, locale) }),
+          ns.map((n) => (to.has(n.id) ? { ...n, data: { ...n.data, fields: [...(n.data.fields ?? []), field()] } } : n)),
+          live.current.edges,
+        );
+      },
       addField: (id, kind) => {
         const label = t(`field_${kind}`);
         const field: Field = { id: crypto.randomUUID().replace(/-/g, "").slice(0, 12), kind, label, value: kind === "tags" ? [] : kind === "number" ? 0 : kind === "select" ? t("selectOne") : "", ...(kind === "select" ? { options: [t("selectOne"), t("selectTwo"), t("selectThree")] } : {}) };
@@ -1014,7 +1036,7 @@ function CanvasInner({
       relate: (id) => void relate(id),
       topicVerses: (id) => void addTopicVerses(id),
     }),
-    [editable, guard, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast, kind, relate, addTopicVerses],
+    [editable, guard, translit, mapView, fold, nodes, edges, commit, t, expand, expanding, updateFields, attachNote, focusCard, toast, kind, relate, addTopicVerses, locale],
   );
   const frameActions: FrameActions = useMemo(
     () => ({ members: (id) => membersOf(id, nodes), resize: resizeFrame, selectInside: (id) => selectIds(membersOf(id)) }),
@@ -1206,6 +1228,21 @@ function CanvasInner({
     editField: actions.editField,
     removeField: actions.removeField,
     addField: actions.addField,
+    templates: actions.templates,
+    addTemplate: actions.addTemplate,
+    // a choice's options (B37): a map type's field has the same ones on every card; a choice no longer offered is unset
+    editOptions: (id, fid, options) => {
+      const ns = live.current.nodes;
+      const f = ns.find((n) => n.id === id)?.data.fields?.find((x) => x.id === fid);
+      if (!f) return;
+      const clean = [...new Set(options.map((o) => o.trim()).filter((o) => o && o.length <= 60))].slice(0, 20);
+      const same = (n: GraphNode, x: Field) => (f.tpl ? x.tpl === f.tpl : n.id === id && x.id === fid);
+      commit(
+        t("doEditOptions", { label: f.label }),
+        ns.map((n) => ((n.data.fields ?? []).some((x) => same(n, x)) ? { ...n, data: { ...n.data, fields: n.data.fields!.map((x) => (same(n, x) ? { ...x, options: clean, value: clean.includes(String(x.value)) ? x.value : "" } : x)) } } : n)),
+        live.current.edges,
+      );
+    },
     editHeadword: (id, text) => commit(t("doEditHeadword"), nodes.map((n) => (n.id === id ? { ...n, data: { ...n.data, text } } : n)), edges),
     setQuoteRun: (id, run) =>
       commit(

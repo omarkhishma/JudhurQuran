@@ -1755,7 +1755,20 @@
     "passageHint": "حدّد سطورًا من المادة لتقتبسها وحدها.",
     "passageNote": "تحفظ الخريطة موضع المقطع وحده، ويُقرأ نصه من المعجم كلما عُرض.",
     "doQuotePassage": "اقتباس مقطع",
-    "doQuoteWhole": "اقتباس المادة كلها"
+    "doQuoteWhole": "اقتباس المادة كلها",
+    "tpl_semanticField": "حقل دلالي",
+    "tpl_difference": "فرق",
+    "tpl_axis": "المحور",
+    "tplEvery": "{label} على كل البطاقات من نوعها ({n})",
+    "tplNote": "حقول هذا النوع من الخرائط: فارغة، تملؤها أنت، ولا تأتي من المصادر.",
+    "doAddTemplate": "{label} على {count, plural, one {بطاقة} two {بطاقتين} few {{n} بطاقات} many {{n} بطاقة} other {{n} بطاقة}}",
+    "doEditOptions": "خيارات «{label}»",
+    "fieldOptions": "الخيارات",
+    "fieldOptionsShared": "الخيارات، وهي نفسها على كل بطاقات الخريطة",
+    "fieldNoChoice": "— لم يُختر —",
+    "optionRemove": "إزالة الخيار «{tag}»",
+    "optionAdd": "خيار جديد…",
+    "optionAddLabel": "إضافة خيار إلى «{label}»"
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",

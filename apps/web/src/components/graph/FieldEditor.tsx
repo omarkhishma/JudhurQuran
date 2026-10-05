@@ -20,6 +20,7 @@ export function FieldEditor({
   onRemove,
   onLabel,
   onError,
+  onOptions,
 }: {
   field: Field;
   density: "card" | "panel";
@@ -28,6 +29,8 @@ export function FieldEditor({
   onRemove?: () => void;
   onLabel?: (label: string) => void;
   onError?: (message: string) => void;
+  /** a choice's options, edited in the details (B37) */
+  onOptions?: (options: string[]) => void;
 }) {
   const t = useTranslations("graph");
   const [label, setLabel] = useState<string | null>(null);
@@ -64,6 +67,13 @@ export function FieldEditor({
         )}
       </div>
       <FieldValue field={field} editable={editable} onValue={onValue} onError={onError} />
+      {/* a choice's options are the reader's to name (B37): the same on every card for a map type's field */}
+      {editable && field.kind === "select" && onOptions && (
+        <div className="flex flex-col gap-1">
+          <span className="field-label">{field.tpl ? t("fieldOptionsShared") : t("fieldOptions")}</span>
+          <Tags field={{ ...field, kind: "tags", value: field.options ?? [] }} onValue={(v) => onOptions(v as string[])} options />
+        </div>
+      )}
     </div>
   );
 }
@@ -96,6 +106,8 @@ function FieldValue({ field, editable, onValue, onError }: { field: Field; edita
     case "select":
       return (
         <select className="field-input" value={String(field.value)} aria-label={field.label} onChange={(e) => onValue(e.target.value)}>
+          {/* nothing chosen yet */}
+          {(field.value === "" || !(field.options ?? []).length) && <option value="">{t("fieldNoChoice")}</option>}
           {(field.options ?? []).map((o) => (
             <option key={o} value={o}>{o}</option>
           ))}
@@ -148,7 +160,7 @@ function ReadValue({ field: f }: { field: Field }) {
 }
 
 /** Tags as chips: Enter or a comma adds one, × removes it (EDT-109). */
-function Tags({ field, onValue }: { field: Field; onValue: (value: Field["value"]) => void }) {
+function Tags({ field, onValue, options = false }: { field: Field; onValue: (value: Field["value"]) => void; options?: boolean }) {
   const t = useTranslations("graph");
   const [draft, setDraft] = useState("");
   const tags = Array.isArray(field.value) ? field.value : [];
@@ -162,14 +174,14 @@ function Tags({ field, onValue }: { field: Field; onValue: (value: Field["value"
       {tags.map((x) => (
         <span key={x} className="field-chip">
           {x}
-          <button type="button" onClick={() => onValue(tags.filter((y) => y !== x))} aria-label={t("tagRemove", { tag: x })}>×</button>
+          <button type="button" onClick={() => onValue(tags.filter((y) => y !== x))} aria-label={t(options ? "optionRemove" : "tagRemove", { tag: x })}>×</button>
         </span>
       ))}
       <input
         className="field-input min-w-[80px] flex-1"
         value={draft}
-        placeholder={t("tagAdd")}
-        aria-label={t("tagAddLabel", { label: field.label })}
+        placeholder={t(options ? "optionAdd" : "tagAdd")}
+        aria-label={t(options ? "optionAddLabel" : "tagAddLabel", { label: field.label })}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={add}
         onKeyDown={(e) => {

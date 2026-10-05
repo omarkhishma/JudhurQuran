@@ -6044,6 +6044,25 @@ a.wotd-pill:hover {
   font-size: 12px;
   text-align: start;
 }
+/* a map type's own field (B37): first in the menu, across both columns */
+.field-menu-tpl {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.field-menu .is-template {
+  color: var(--c-word);
+  font-weight: 500;
+}
+.field-menu-note {
+  grid-column: 1 / -1;
+  padding: 2px 8px 6px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--t3);
+}
 .field-menu button:hover,
 .field-menu button:focus-visible {
   background: var(--card-2);

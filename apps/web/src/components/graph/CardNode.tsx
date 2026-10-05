@@ -6,7 +6,8 @@ import { createContext, memo, useContext, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { citeVerse, cnt, formatNumber } from "@/lib/format";
 import { META } from "@/lib/graph/relations";
-import { FIELD_KINDS, KIND_COLOR, type Field, type FieldKind, type GraphNode } from "@/lib/graph/types";
+import { FIELD_KINDS, KIND_COLOR, type Field, type FieldKind, type GraphNode, type NodeKind } from "@/lib/graph/types";
+import type { Template, TemplateId } from "@/lib/graph/templates";
 import { useQuery } from "@tanstack/react-query";
 import type { ExtractOptions, VerseWord } from "@/lib/graph/extract";
 import { getJSON } from "@/lib/reader/api";
@@ -33,6 +34,10 @@ export type GraphActions = {
   expand: (id: string, opts?: ExtractOptions) => void;
   setText: (id: string, text: string) => void;
   addField: (id: string, kind: FieldKind) => void;
+  /** the fields this map's type offers a card of a kind (B37) */
+  templates: (card: NodeKind) => Template[];
+  /** a map type's field added to these cards, empty, once each (B37) */
+  addTemplate: (ids: string[], tpl: TemplateId) => void;
   editField: (id: string, field: string, value: Field["value"], fileName?: string) => void;
   removeField: (id: string, field: string) => void;
   attach: (id: string) => void;
@@ -59,6 +64,8 @@ export const GraphActionsContext = createContext<GraphActions>({
   expand: () => {},
   setText: () => {},
   addField: () => {},
+  templates: () => [],
+  addTemplate: () => {},
   editField: () => {},
   removeField: () => {},
   attach: () => {},
@@ -536,6 +543,24 @@ function Fields({ id, data }: { id: string; data: GraphNode["data"] }) {
       </div>
       {menu && (
         <div className="field-menu" role="menu" aria-label={t("fieldAddHint")}>
+          {/* the map type's own fields first, those this card has not got (B37) */}
+          {actions
+            .templates(data.kind)
+            .filter((tp) => !fields.some((f) => f.tpl === tp.id))
+            .map((tp) => (
+              <button
+                key={tp.id}
+                type="button"
+                role="menuitem"
+                className="is-template"
+                onClick={() => {
+                  setMenu(false);
+                  actions.addTemplate([id], tp.id);
+                }}
+              >
+                {t(`tpl_${tp.id}`)}
+              </button>
+            ))}
           {FIELD_KINDS.map((k) => (
             <button
               key={k}
