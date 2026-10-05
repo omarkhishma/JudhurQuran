@@ -121,7 +121,18 @@ def surah_card(conn: Connection, number: int) -> dict[str, Any] | None:
     card = one(conn, "select * from content.surah_cards where surah = :s", {"s": number})
     if card is None:
         return None
-    return {"card": card, "sources": _knowledge_sources(conn, set(card["source_ids"]))}
+    # its verses a source says came down elsewhere or at another time than the sūra (P3.9), listed on the card that
+    # the revelation order points to (B6)
+    places = rows(
+        conn,
+        """select id, surah, ayah_from, ayah_to, place, period, role, attributed_to, quote, context, method, scope,
+                  source_id, tc_check
+             from content.verse_places where surah = :s and scope = 'verses'
+            order by ayah_from, case role when 'source-note' then 0 when 'preferred' then 1 else 2 end, id""",
+        {"s": number},
+    )
+    sources = set(card["source_ids"]) | {p["source_id"] for p in places if p["source_id"]}
+    return {"card": card, "places": places, "sources": _knowledge_sources(conn, sources)}
 
 
 def word_relations(conn: Connection, slug: str, at: str | None = None) -> dict[str, Any] | None:

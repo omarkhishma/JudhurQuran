@@ -211,7 +211,7 @@ const review: Adapter = {
 // ─── settings: one record per choice that differs from the default (back to the default = removed) ───
 
 /** Reading choices follow the reader; the panel's width, folds and open rails fit one screen and stay there. */
-const SYNCED_PREFS = ["size", "translitLine", "translationLine", "muyassarLine", "imlaeiLine", "tintRoot", "grammarBand", "wordStates", "panelTabs", "explainTerms", "dictOff", "lexMode", "compare", "translation", "tafsirs", "reciter", "dueSignal"] as const satisfies readonly (keyof Prefs)[];
+const SYNCED_PREFS = ["size", "translitLine", "translationLine", "muyassarLine", "imlaeiLine", "tintRoot", "grammarBand", "wordStates", "panelTabs", "explainTerms", "dictOff", "lexMode", "compare", "translation", "tafsirs", "reciter", "dueSignal", "order"] as const satisfies readonly (keyof Prefs)[];
 
 function choices<K extends string>(fields: readonly K[], defaults: Record<K, unknown>, get: () => Record<K, unknown>, set: (p: Partial<Record<K, unknown>>) => void): Adapter {
   const of = (state: unknown) => {

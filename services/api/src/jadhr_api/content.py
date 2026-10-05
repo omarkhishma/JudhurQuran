@@ -156,7 +156,19 @@ def source_layers(conn: Connection) -> dict[str, Any]:
 
 
 def surahs(conn: Connection) -> list[dict[str, Any]]:
-    return rows(conn, "select * from content.surahs order by number")
+    """The 114 sūras; each with ``place_notes``: how many of its verses a source says came down elsewhere or at
+    another time than the sūra (P3.9's notes: Tanzil's own, the Tafsir Center's reported and preferred) — what the
+    revelation order cannot say of a sūra as a whole (B6)."""
+    return rows(
+        conn,
+        """select s.*, coalesce(n.verses, 0) as place_notes
+             from content.surahs s
+             left join (select surah, count(distinct a)::int as verses
+                          from content.verse_places, generate_series(ayah_from::int, ayah_to::int) a
+                         where scope = 'verses' group by surah) n
+               on n.surah = s.number
+            order by s.number""",
+    )
 
 
 def surah(conn: Connection, number: int) -> dict[str, Any] | None:

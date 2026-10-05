@@ -16,7 +16,7 @@ import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
 import type { ChapterInfo } from "./ReaderShell";
 
 type Division = { number: number; key: string; surah: number; ayah: number; page: number; name_ar: string; name_translit: string; juz?: number };
-type SurahRow = { number: number; name_ar: string; name_translit: string; name_en: string; revelation_place: string; verse_count: number; juz_start: number; page_start: number };
+type SurahRow = { number: number; name_ar: string; name_translit: string; name_en: string; revelation_place: string; revelation_order: number; verse_count: number; juz_start: number; page_start: number };
 
 /**
  * The rail (design 03 §3.4, adapted per RDR-541): the sūra index with juzʾ navigation in place of the
@@ -52,13 +52,15 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
   const percent = new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { style: "percent", maximumFractionDigits: 0 });
   const setFocusRoot = useReader((s) => s.setFocusRoot);
 
+  // the reader's order of the sūras (B6): the mushaf's, or the traditional order of revelation
+  const order = usePrefs((s) => s.order);
   const filtered = useMemo(() => {
-    const all = surahs.data?.data ?? [];
+    const all = order === "revelation" ? [...(surahs.data?.data ?? [])].sort((a, b) => a.revelation_order - b.revelation_order) : (surahs.data?.data ?? []);
     const k = q.trim();
     if (!k) return all;
     const nk = normalize(k);
     return all.filter((s) => String(s.number) === k.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))) || normalize(s.name_ar).includes(nk) || s.name_translit.toLowerCase().includes(k.toLowerCase()) || s.name_en.toLowerCase().includes(k.toLowerCase()));
-  }, [surahs.data, q]);
+  }, [surahs.data, q, order]);
 
   useEffect(() => {
     list.current?.querySelector<HTMLElement>("[aria-current=page]")?.scrollIntoView({ block: "center" });
@@ -108,7 +110,7 @@ export function Rail({ chapter, overlay, onNavigate }: { chapter: ChapterInfo; o
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="ar-classical truncate text-[15px] leading-[1.5]" lang="ar">{s.name_ar}</span>
                   <span className="truncate text-[10.5px] text-t3">
-                    {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " • " + t("verses", cnt(s.verse_count, locale))}
+                    {(s.revelation_place === "meccan" ? t("meccan") : t("medinan")) + " • " + t("verses", cnt(s.verse_count, locale)) + (order === "revelation" ? ` • ${t("revealedNth", { n: formatNumber(s.revelation_order, locale) })}` : "")}
                   </span>
                   {last?.chapter === s.number && (
                     <span className="rail-resume">

@@ -510,6 +510,8 @@ export type SurahCard = {
     tc_study_preferred_period: "makki" | "madani" | null;
     source_ids: string[];
   };
+  /** its verses a source says came down elsewhere or at another time than the sūra (B6) */
+  places: VersePlace[];
   sources: Record<string, KnowledgeSource>;
 };
 

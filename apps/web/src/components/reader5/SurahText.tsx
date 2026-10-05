@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import type { SurahPayload, Verse } from "@/lib/types";
+import { SurahSteps } from "./SurahSteps";
 import { VerseLines } from "./VerseLines";
 
 // Recite and Roots stand in every verse (the design's primary tools); the other six are drawn by the
@@ -67,10 +67,7 @@ export async function SurahText({ payload, basmala, locale }: { payload: SurahPa
       </div>
       <footer className="chapter-foot">
         <p className="text-[11.5px] text-t3">{t("endOfSurah", { name: s.name_ar })}</p>
-        <nav className="flex w-full justify-between gap-3" aria-label={t("surahNav")}>
-          {s.number > 1 ? <Link href={`/quran/${s.number - 1}`} className="btn min-h-[40px]">{t("prevSurah")}</Link> : <span />}
-          {s.number < 114 ? <Link href={`/quran/${s.number + 1}`} className="btn min-h-[40px]">{t("nextSurah")}</Link> : <span />}
-        </nav>
+        <SurahSteps number={s.number} />
       </footer>
     </div>
   );

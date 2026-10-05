@@ -190,6 +190,9 @@ export type Prefs = {
   reciter: string | null;
   /** plan B30: the count of roots due, on the home page and in the tab's title; quiet, and the reader's to turn off */
   dueSignal: boolean;
+  /** plan B6: the sūras in the mushaf's order, or in the traditional order of revelation (the index, the rail, the
+   * way to the next sūra) */
+  order: "mushaf" | "revelation";
 };
 
 type PrefsState = Prefs & {
@@ -221,6 +224,7 @@ export const DEFAULT_PREFS: Prefs = {
   tafsirs: ["muyassar", "saadi", "ibn-kathir", "tabari", "qurtubi", "baghawi", "mukhtasar"],
   reciter: null,
   dueSignal: true,
+  order: "mushaf",
 };
 
 export const usePrefs = create<PrefsState>()(

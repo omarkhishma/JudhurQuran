@@ -23,6 +23,8 @@ export type Surah = {
   juz_start: number;
   word_count: number;
   has_basmala: boolean;
+  /** how many of its verses a source says came down elsewhere or at another time than the sūra (B6) */
+  place_notes?: number;
 };
 
 export type Token = { position: number; text: string; word_from: number; word_to: number };

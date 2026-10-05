@@ -6,7 +6,7 @@ import { formatNumber } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import type { EditorNote, SurahCard } from "@/lib/reader/types";
 import type { ChapterInfo } from "./ReaderShell";
-import { EditorNotes, Fold, SourceCredit, VerseLayer } from "./VerseKnowledge";
+import { EditorNotes, Fold, PlaceNote, SourceCredit, VerseLayer } from "./VerseKnowledge";
 import { SurahVocabulary } from "./Vocabulary";
 
 const FIELDS = [
@@ -61,6 +61,13 @@ export function SurahAbout({ chapter }: { chapter: ChapterInfo }) {
           </VerseLayer>
         );
       })}
+      {q.data.places.length > 0 && (
+        <VerseLayer title={t("placeNotesTitle")} defaultOpen={false} meta={t("notesN", { n: formatNumber(q.data.places.length, locale) })}>
+          {q.data.places.map((p) => (
+            <PlaceNote key={p.id} p={p} source={q.data.sources[p.source_id]} verses />
+          ))}
+        </VerseLayer>
+      )}
       {q.data.card.source_ids.map((id) => (
         <SourceCredit key={id} s={q.data.sources[id]} />
       ))}

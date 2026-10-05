@@ -7,7 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber } from "@/lib/format";
 import { encodeSeed } from "@/lib/graph/seedCodec";
 import { getJSON } from "@/lib/reader/api";
-import type { EditorNote, KnowledgeSource, VerseKnowledge as VK } from "@/lib/reader/types";
+import type { EditorNote, KnowledgeSource, VerseKnowledge as VK, VersePlace } from "@/lib/reader/types";
 import { SourceTopics, useVerseTopics } from "./SourceTopics";
 
 export function useVerseKnowledge(key: string) {
@@ -144,25 +144,7 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
       {k.places.length > 0 && (
         <VerseLayer title={t("secPlace")} defaultOpen={false} meta={t("notesN", { n: formatNumber(k.places.length, locale) })}>
           {k.places.map((p) => (
-            <article key={p.id} className="kn-item">
-              <p className="text-[11.5px] font-medium text-t2">
-                {t(`placeRole_${p.role}`)}
-                {p.scope === "surah" && <span className="font-normal text-t3"> • {t("wholeSurah")}</span>}
-                {p.attributed_to && <span className="font-normal text-t3"> • {p.attributed_to}</span>}
-              </p>
-              {p.role === "source-note" ? (
-                <>
-                  <p className="text-[13px] text-t1">
-                    {[p.place && PLACE_KEYS.has(p.place) ? t(`place_${p.place.replace(/-/g, "_")}`) : null, p.period ? t(`period_${p.period}`) : null].filter(Boolean).join(" • ")}
-                    {p.ayah_from !== p.ayah_to ? ` (${formatNumber(p.ayah_from, locale)}–${formatNumber(p.ayah_to, locale)})` : ""}
-                  </p>
-                  <p className="text-[12px] italic text-t3" lang="en" dir="ltr">“{p.quote}”</p>
-                </>
-              ) : (
-                <Fold text={p.quote} lines={4} className="ar-classical text-[14.5px] leading-[1.95]" />
-              )}
-              <SourceCredit s={k.sources[p.source_id]} />
-            </article>
+            <PlaceNote key={p.id} p={p} source={k.sources[p.source_id]} />
           ))}
         </VerseLayer>
       )}
@@ -240,5 +222,41 @@ function TopicsLayer({ verseKey }: { verseKey: string }) {
     <VerseLayer title={t("secTopics")} meta={q.data.data.length ? formatNumber(q.data.data.length, locale) : undefined} defaultOpen={false}>
       <SourceTopics data={q.data} />
     </VerseLayer>
+  );
+}
+
+
+/** One note on where or when verses came down (P3.9): the source's own words, its role — Tanzil's note, the Tafsir
+ * Center's reported or preferred — and its credit; on a sūra's card (B6) with the verses it names. */
+export function PlaceNote({ p, source, verses = false }: { p: VersePlace; source: KnowledgeSource | undefined; verses?: boolean }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const range = p.ayah_from !== p.ayah_to ? `${formatNumber(p.ayah_from, locale)}–${formatNumber(p.ayah_to, locale)}` : formatNumber(p.ayah_from, locale);
+  return (
+    <article className="kn-item">
+      <p className="text-[11.5px] font-medium text-t2">
+        {verses && (
+          <>
+            <Link href={`/quran/${p.surah}/${p.ayah_from}`} className="underline underline-offset-2">{t("placeVerses", { range })}</Link>
+            {" • "}
+          </>
+        )}
+        {t(`placeRole_${p.role}`)}
+        {p.scope === "surah" && <span className="font-normal text-t3"> • {t("wholeSurah")}</span>}
+        {p.attributed_to && <span className="font-normal text-t3"> • {p.attributed_to}</span>}
+      </p>
+      {p.role === "source-note" ? (
+        <>
+          <p className="text-[13px] text-t1">
+            {[p.place && PLACE_KEYS.has(p.place) ? t(`place_${p.place.replace(/-/g, "_")}`) : null, p.period ? t(`period_${p.period}`) : null].filter(Boolean).join(" • ")}
+            {!verses && p.ayah_from !== p.ayah_to ? ` (${range})` : ""}
+          </p>
+          <p className="text-[12px] italic text-t3" lang="en" dir="ltr">“{p.quote}”</p>
+        </>
+      ) : (
+        <Fold text={p.quote} lines={4} className="ar-classical text-[14.5px] leading-[1.95]" />
+      )}
+      <SourceCredit s={source} />
+    </article>
   );
 }

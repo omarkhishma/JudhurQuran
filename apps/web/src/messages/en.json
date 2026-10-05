@@ -437,7 +437,13 @@
     "next": "Next surah",
     "sajdaRecommended": "Place of prostration",
     "sajdaObligatory": "Place of prostration",
-    "surahLabel": "Surah {name}"
+    "surahLabel": "Surah {name}",
+    "orderLabel": "Order of the sūras",
+    "orderMushaf": "Mushaf order",
+    "orderRevelation": "Revelation order",
+    "orderNote": "The revelation order here is the traditional one of the Egyptian standard mushaf, as Tanzil's data gives it: a judgement of the scholars on the order of the sūras, not a text, and the Tafsir Center's order differs for some sūras. Many sūras hold verses said to have come down elsewhere or at another time than the sūra; their number is given with each sūra, and their detail in its card.",
+    "revealedNth": "revealed {n}",
+    "placeNotes": "{count, plural, one {one verse said to have come down elsewhere} other {{n} verses said to have come down elsewhere}}"
   },
   "search": {
     "dialogLabel": "Search the Quran",
@@ -2426,7 +2432,13 @@
     "commentaryParagraph": "The paragraph",
     "commentarySection": "{count, plural, one {The section (one paragraph)} other {The section ({n} paragraphs)}}",
     "commentaryMore": "{count, plural, one {and one more section of the book on the verse} other {and {n} more sections of the book on the verse}}",
-    "commentaryHow": "Sections are tied to the verse by the books' own headings, a rule for each book; the text is quoted as it is."
+    "commentaryHow": "Sections are tied to the verse by the books' own headings, a rule for each book; the text is quoted as it is.",
+    "surahNavRevelation": "The sūras in revelation order",
+    "prevByRevelation": "Revealed before: {name}",
+    "nextByRevelation": "Revealed after: {name}",
+    "revealedNth": "revealed {n}",
+    "placeNotesTitle": "Verses said to have come down elsewhere",
+    "placeVerses": "Verses {range}"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
