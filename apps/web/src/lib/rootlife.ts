@@ -18,10 +18,17 @@ export type RootInTexts = {
   total: number;
   offset: number;
   limit: number;
+  graded?: { grader: string; ruling: string } | null;
 };
 
+/** Each grader of the hadith with the rulings they give and on how many (B57; /api/v1/hadith/rulings). */
+export type GraderRulings = { grader: string; grader_ar: string | null; grader_en: string | null; rulings: { value: string; value_ar: string | null; n: number }[] };
+
+/** A grader's name or ruling as the address carries it: their own terms, a few words at most. */
+export const graderTerm = (v: unknown): string | null => (typeof v === "string" && /^[\p{L}\p{N} '\-().,/]{1,60}$/u.test(v) ? v : null);
+
 export type Which = "sure" | "possible" | "all";
-export type Query = { kind: "hadith" | "book" | null; text: string | null; which: Which; page: number };
+export type Query = { kind: "hadith" | "book" | null; text: string | null; which: Which; page: number; grader?: string | null; ruling?: string | null };
 
 /** Where a passage of a text is read: a hadith's page, a book paragraph's page. */
 export const hitHref = (h: Pick<RootHit, "text" | "ref">) => (h.text.kind === "hadith" ? hadithHref(h.text.slug, h.ref) : paragraphHref(h.text.slug, h.ref));
@@ -32,6 +39,8 @@ export function rootTextsHref(key: string, q: Partial<Query> = {}) {
   if (q.kind) p.set("kind", q.kind);
   if (q.text) p.set("text", q.text);
   if (q.which && q.which !== "sure") p.set("which", q.which);
+  if (q.grader) p.set("grader", q.grader);
+  if (q.grader && q.ruling) p.set("ruling", q.ruling);
   if (q.page && q.page > 1) p.set("page", String(q.page));
   const s = p.toString();
   return `/dictionary/${encodeURIComponent(key)}/texts${s ? `?${s}` : ""}`;

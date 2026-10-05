@@ -6,7 +6,8 @@ import { KwicRow } from "@/components/rootlife/RootInTexts";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { cnt } from "@/lib/format";
-import { type RootInTexts, rootTextsHref } from "@/lib/rootlife";
+import { GraderFilter } from "@/components/rootlife/GraderFilter";
+import { type GraderRulings, graderTerm, type RootInTexts, rootTextsHref } from "@/lib/rootlife";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/concordance">): Promise<Metadata> {
   const { locale } = await params;
@@ -68,7 +69,12 @@ export default async function ConcordanceRoute({ params, searchParams }: PagePro
   );
   if (source !== "quran") {
     const key = root || DEFAULT_ROOT;
-    const d = await api<RootInTexts>(`/roots/${encodeURIComponent(key)}/texts?kind=${source}&limit=40`).catch(() => null);
+    // the hadith by one grader's ruling (B57)
+    const grader = source === "hadith" ? graderTerm(s("grader")) : null;
+    const ruling = grader ? graderTerm(s("ruling")) : null;
+    const graded = grader && ruling ? `&grader=${encodeURIComponent(grader)}&ruling=${encodeURIComponent(ruling)}` : "";
+    const d = await api<RootInTexts>(`/roots/${encodeURIComponent(key)}/texts?kind=${source}&limit=40${graded}`).catch(() => null);
+    const graders = source === "hadith" ? (await api<{ data: GraderRulings[] }>("/hadith/rulings").catch(() => ({ data: [] }))).data : [];
     const tt = await getTranslations("rootTexts");
     return (
       <>
@@ -77,6 +83,17 @@ export default async function ConcordanceRoute({ params, searchParams }: PagePro
           <h1 className="mb-1 text-[22px] font-semibold">
             {tt(source === "hadith" ? "inHadith" : "inBooks")} — <span className="ar-classical text-root" lang="ar">{d?.root.display ?? key}</span>
           </h1>
+          {source === "hadith" && (
+            <div className="mb-3">
+              <GraderFilter
+                graders={graders}
+                grader={grader}
+                ruling={ruling}
+                href={(g, r) => `/concordance?root=${encodeURIComponent(key)}&source=hadith${g ? `&grader=${encodeURIComponent(g)}` : ""}${g && r ? `&ruling=${encodeURIComponent(r)}` : ""}`}
+                locale={locale}
+              />
+            </div>
+          )}
           {d ? (
             <>
               <p className="mb-3 text-[13px] text-t3" aria-live="polite">{tt("found", cnt(d.total, locale))}</p>
@@ -90,7 +107,7 @@ export default async function ConcordanceRoute({ params, searchParams }: PagePro
                 <p className="text-[14px] text-t2">{tt("none")}</p>
               )}
               <p className="mt-4">
-                <Link href={rootTextsHref(d.root.key, { kind: source })} className="btn">{t("textsMore")}</Link>
+                <Link href={rootTextsHref(d.root.key, { kind: source, grader, ruling })} className="btn">{t("textsMore")}</Link>
               </p>
             </>
           ) : (

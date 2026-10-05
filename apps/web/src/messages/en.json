@@ -4068,7 +4068,12 @@
     "mineReading": "Reading your texts…",
     "mineNone": "This root is not in your texts.",
     "whereMine": "{title}, passage {n}",
-    "mineAll": "{count, plural, one {Its place in your texts} other {All its places in your texts ({n})}}"
+    "mineAll": "{count, plural, one {Its place in your texts} other {All its places in your texts ({n})}}",
+    "graderLabel": "A grader's ruling",
+    "graderAll": "All the hadith",
+    "rulingLabel": "{grader}'s rulings",
+    "graderNote": "One grader's ruling as they gave it, never a grade of the hadith's own: a hadith has as many rulings as graders who ruled on it, and they may differ.",
+    "gradedBy": "As {grader} rules: {ruling}"
   },
   "ops": {
     "title": "What went wrong",

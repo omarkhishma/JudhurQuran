@@ -143,3 +143,27 @@ def test_a_readers_known_words_are_counted_in_each_text_and_kept_nowhere() -> No
         x["slug"]: x["known"] for x in client.post("/api/v1/texts/known", json={"lemmas": []}).json()["data"]
     }
     assert set(nothing.values()) == {0}
+
+
+def test_a_roots_hadith_are_read_by_one_graders_ruling() -> None:
+    """B57: the hadith one grader rules so — never a grade of the hadith's own — the graders and their rulings listed
+    with how many hadith each covers, the terms as each grader's own and their Arabic where the dataset gives it."""
+    graders = client.get("/api/v1/hadith/rulings").json()["data"]
+    albani = next(g for g in graders if g["grader"] == "Al-Albani")
+    assert albani["grader_ar"] == "محمد ناصر الدين الألباني"
+    sahih = next(r for r in albani["rulings"] if r["value"] == "Sahih")
+    assert sahih["value_ar"] == "صحيح" and sahih["n"] > 1000
+    base = "/api/v1/roots/%D8%B9%D9%84%D9%85/texts?kind=hadith&limit=100"
+    every = client.get(base).json()
+    held = client.get(f"{base}&grader=Al-Albani&ruling=Sahih").json()
+    weak = client.get(f"{base}&grader=Al-Albani&ruling=Daif").json()
+    assert 0 < held["total"] < every["total"] and 0 < weak["total"] < every["total"]
+    assert held["graded"] == {"grader": "Al-Albani", "ruling": "Sahih"} and every["graded"] is None
+    # each one held so by that grader, read back from its own page
+    for h in held["data"][:5]:
+        page = client.get(f"/api/v1/texts/{h['text']['slug']}/passages/{h['ref']}").json()
+        assert {"grader": "Al-Albani", "value": "Sahih"} in [
+            {"grader": g["grader"], "value": g["value"]} for g in page["meta"]["grades"]
+        ]
+    # a grader alone, or a ruling alone, filters nothing
+    assert client.get(f"{base}&grader=Al-Albani").json()["total"] == every["total"]

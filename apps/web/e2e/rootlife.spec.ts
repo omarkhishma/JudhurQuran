@@ -80,3 +80,26 @@ test("the panel's timeline carries the hadith collections and the books by their
   await expect(lane.locator(".timeline-corpus.is-empty")).toHaveCount(texts.filter((c) => !c.attests).length);
   await expect(page.locator(".reader-panel, .reader-sheet").getByRole("link", { name: "مواضعه فيها" }).first()).toHaveAttribute("href", `/dictionary/${encodeURIComponent("علم")}/texts`);
 });
+
+test("a root's hadith read by one grader's ruling, on its page and in the concordance (B57)", async ({ page }) => {
+  const held = await life(page, "?kind=hadith&limit=40&grader=Al-Albani&ruling=Sahih");
+  const weak = await life(page, "?kind=hadith&limit=40&grader=Al-Albani&ruling=Daif");
+  const all = await life(page, "?kind=hadith&limit=40");
+  expect(held.total).toBeGreaterThan(0);
+  expect(held.total).toBeLessThan(all.total);
+  await page.goto(`/dictionary/${enc("علم")}/texts?kind=hadith`);
+  const graders = page.getByRole("navigation", { name: "حكم المحدِّث" });
+  await expect(page.getByText("يُعرض حكم محدِّث واحد كما قاله")).toBeVisible();
+  await graders.getByRole("link", { name: "محمد ناصر الدين الألباني" }).click();
+  const rulings = page.getByRole("navigation", { name: "أحكام محمد ناصر الدين الألباني" });
+  await rulings.getByRole("link", { name: /^صحيح [٠-٩]/ }).click();
+  await expect(page).toHaveURL(/grader=Al-Albani&ruling=Sahih/);
+  await expect(page.locator("p[aria-live=polite]")).toContainText(ar(held.total));
+  await expect(page.locator("p[aria-live=polite]")).toContainText("ما حكم عليه محمد ناصر الدين الألباني: صحيح");
+  await axe(page);
+  // the concordance's hadith, by the same grader's other ruling
+  await page.goto(`/concordance?root=${enc("علم")}&source=hadith&grader=Al-Albani&ruling=Daif`);
+  await expect(page.locator("p[aria-live=polite]")).toContainText(ar(weak.total));
+  await expect(page.locator("a[data-uri]").first()).toHaveAttribute("data-uri", weak.data[0].uri);
+  await axe(page);
+});

@@ -581,12 +581,24 @@ def root_texts(
     which: Annotated[str, Query(pattern="^(sure|possible|all)$")] = "sure",
     offset: Annotated[int, Query(ge=0, le=100000)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    grader: Annotated[
+        str | None, Query(max_length=60, description="with ruling: the hadith this grader rules so")
+    ] = None,
+    ruling: Annotated[str | None, Query(max_length=60)] = None,
 ) -> Response:
     with connect() as conn:
-        out = rootlife.root_in_texts(conn, key, kind, text, which, offset, limit)
+        out = rootlife.root_in_texts(conn, key, kind, text, which, offset, limit, grader, ruling)
         if out is None:
             raise not_found("root")
         return cached(request, out)
+
+
+@router.get(
+    "/hadith/rulings", summary="Each grader of the hadith with the rulings they give, and on how many (B57)"
+)
+def hadith_rulings(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, {"data": rootlife.rulings(conn)})
 
 
 @router.get(

@@ -9,6 +9,7 @@ A root is asked by its dictionary key or by the Quran's (they differ for a few w
 
 from __future__ import annotations
 
+import json
 from bisect import bisect_right
 from typing import Any
 
@@ -59,8 +60,18 @@ def _kwic(text: str, form_ids: list[int], meta: dict[str, Any], hits_: set[int])
 
 
 def root_in_texts(
-    conn: Connection, key: str, kind: str | None, slug: str | None, which: str, offset: int, limit: int
+    conn: Connection,
+    key: str,
+    kind: str | None,
+    slug: str | None,
+    which: str,
+    offset: int,
+    limit: int,
+    grader: str | None = None,
+    ruling: str | None = None,
 ) -> dict[str, Any] | None:
+    """A root's passages in the hadith and the books; with a grader and a ruling, only the hadith that grader rules
+    so (B57) — one grader's word, never a grade of the hadith's own, since the graders disagree."""
     root = resolve(conn, key)
     if root is None:
         return None
@@ -81,6 +92,9 @@ def root_in_texts(
     if slug:
         where.append("t.slug = :slug")
         params["slug"] = slug
+    if grader and ruling:
+        where.append("p.meta->'grades' @> cast(:graded as jsonb)")
+        params["graded"] = json.dumps([{"grader": grader, "value": ruling}])
     cond = " and ".join(where)
     found = rows(
         conn,
@@ -134,7 +148,31 @@ def root_in_texts(
         "total": total,
         "offset": offset,
         "limit": limit,
+        "graded": {"grader": grader, "ruling": ruling} if grader and ruling else None,
     }
+
+
+def rulings(conn: Connection) -> list[dict[str, Any]]:
+    """Each grader of the hadith with the rulings they give and on how many hadith (B57): their own terms, and the
+    Arabic the dataset gives each (none where it gives none)."""
+    found = rows(
+        conn,
+        """select g->>'grader' as grader, max(g->>'grader_ar') as grader_ar, max(g->>'grader_en') as grader_en,
+                  g->>'value' as value, max(g->>'value_ar') as value_ar, count(*)::int as n
+             from content.passages p join content.texts t on t.id = p.text_id,
+                  jsonb_array_elements(coalesce(p.meta->'grades', '[]'::jsonb)) g
+            where t.kind = 'hadith'
+            group by g->>'grader', g->>'value'
+            order by g->>'grader', count(*) desc""",
+    )
+    out: dict[str, dict[str, Any]] = {}
+    for r in found:
+        g = out.setdefault(
+            r["grader"],
+            {"grader": r["grader"], "grader_ar": r["grader_ar"], "grader_en": r["grader_en"], "rulings": []},
+        )
+        g["rulings"].append({"value": r["value"], "value_ar": r["value_ar"], "n": r["n"]})
+    return sorted(out.values(), key=lambda g: -sum(x["n"] for x in g["rulings"]))
 
 
 SURE_KINDS = ["form", "clitic"]

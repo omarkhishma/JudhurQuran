@@ -8,7 +8,8 @@ import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { dictHref } from "@/lib/dictionary";
 import { cnt, formatNumber } from "@/lib/format";
-import { type Query, type RootInTexts, type Which, rootTextsHref } from "@/lib/rootlife";
+import { GraderFilter } from "@/components/rootlife/GraderFilter";
+import { type GraderRulings, graderTerm, type Query, type RootInTexts, type Which, rootTextsHref } from "@/lib/rootlife";
 import { localized } from "@/lib/seo";
 
 // read from ?kind, ?text, ?which and ?page: rendered for each request, the API answers from its cache
@@ -24,6 +25,8 @@ function read(sp: { [k: string]: string | string[] | undefined }): Query {
     text: /^[a-z0-9-]{3,80}$/.test(one("text")) ? one("text") : null,
     which: which === "possible" || which === "all" ? (which as Which) : "sure",
     page: Math.max(1, Number(one("page")) || 1),
+    grader: graderTerm(one("grader")),
+    ruling: graderTerm(one("ruling")),
   };
 }
 
@@ -34,6 +37,10 @@ async function load(raw: string, q: Query) {
   const p = new URLSearchParams({ which: q.which, offset: String((q.page - 1) * PAGE), limit: String(PAGE) });
   if (q.kind) p.set("kind", q.kind);
   if (q.text) p.set("text", q.text);
+  if (q.grader && q.ruling) {
+    p.set("grader", q.grader);
+    p.set("ruling", q.ruling);
+  }
   const key = decodeURIComponent(raw);
   if (key.length > 20) notFound();
   return api<RootInTexts>(`/roots/${encodeURIComponent(key)}/texts?${p}`);
@@ -61,6 +68,10 @@ export default async function RootTextsPage({ params, searchParams }: PageProps<
   const pages = Math.max(1, Math.ceil(d.total / PAGE));
   const texts = d.counts.filter((c) => !q.kind || c.kind === q.kind);
   const chip = (on: boolean) => `chip${on ? " is-on" : ""}`;
+  // the grader and the ruling named as the data names them (B57)
+  const graded = d.graded ? (await api<{ data: GraderRulings[] }>("/hadith/rulings").catch(() => ({ data: [] }))).data.find((g) => g.grader === d.graded!.grader) : undefined;
+  const graderName = graded?.grader_ar ?? d.graded?.grader ?? "";
+  const rulingName = graded?.rulings.find((r) => r.value === d.graded?.ruling)?.value_ar ?? d.graded?.ruling ?? "";
   return (
     <div className="mx-auto max-w-[1000px] px-4 py-10">
       <JsonLd data={breadcrumbs(locale, [[ar ? "الرئيسية" : "Home", "/"], [name, dictHref(key)], [t("pageTitle", { root: name }), rootTextsHref(key)]])} />
@@ -79,6 +90,15 @@ export default async function RootTextsPage({ params, searchParams }: PageProps<
           <Link href={rootTextsHref(key, { ...q, kind: "hadith", text: null, page: 1 })} className={chip(q.kind === "hadith")} aria-current={q.kind === "hadith" ? "page" : undefined}>{t("inHadith")}</Link>
           <Link href={rootTextsHref(key, { ...q, kind: "book", text: null, page: 1 })} className={chip(q.kind === "book")} aria-current={q.kind === "book" ? "page" : undefined}>{t("inBooks")}</Link>
         </nav>
+        {q.kind !== "book" && (
+          <GraderFilter
+            graders={(await api<{ data: GraderRulings[] }>("/hadith/rulings").catch(() => ({ data: [] }))).data}
+            grader={q.grader ?? null}
+            ruling={q.ruling ?? null}
+            href={(grader, ruling) => rootTextsHref(key, { ...q, kind: grader ? "hadith" : q.kind, grader, ruling, text: null, page: 1 })}
+            locale={locale}
+          />
+        )}
         <nav aria-label={t("whichLabel")} className="flex flex-wrap gap-2">
           {(["sure", "possible", "all"] as const).map((w) => (
             <Link key={w} href={rootTextsHref(key, { ...q, which: w, page: 1 })} className={chip(q.which === w)} aria-current={q.which === w ? "page" : undefined}>
@@ -106,7 +126,10 @@ export default async function RootTextsPage({ params, searchParams }: PageProps<
           </details>
         )}
       </div>
-      <p className="mb-3 text-[13px] text-t3" aria-live="polite">{t("found", cnt(d.total, locale))}</p>
+      <p className="mb-3 text-[13px] text-t3" aria-live="polite">
+        {t("found", cnt(d.total, locale))}
+        {d.graded && ` • ${t("gradedBy", { grader: graderName, ruling: rulingName })}`}
+      </p>
       {d.data.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {d.data.map((h) => (
