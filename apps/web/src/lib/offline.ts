@@ -20,11 +20,12 @@ export async function keptFor(b: Bookmark): Promise<{ pages: string[]; data: str
     const surah = first?.split(":")[0];
     return {
       pages: [`/read?w=${enc(b.key)}`, ...(surah ? [`/quran/${surah}`] : [])],
-      // the entry, and what the reader beside it asks for: the sūras, this one's roots, the recitations
+      // the entry, and what the reader beside it asks for: the sūras, this one's roots, the recitations (the roots of
+      // the reader's own words are asked for by POST, never kept)
       data: [
         `/api/v1/words/${enc(b.key)}?limit=12`,
         ...(first ? [`/api/v1/words/${enc(b.key)}?limit=12&at=${first}`] : []),
-        ...(surah ? [`/api/v1/surahs`, `/api/v1/surahs/${surah}/roots`, `/api/v1/recitations`, `/api/v1/lemmas/roots`] : []),
+        ...(surah ? [`/api/v1/surahs`, `/api/v1/surahs/${surah}/roots`, `/api/v1/recitations`] : []),
       ],
     };
   }
