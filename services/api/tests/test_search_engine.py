@@ -294,3 +294,88 @@ def test_the_texts_beyond_the_quran_are_searched() -> None:
     assert [h["uri"] for h in more["results"]["books"]] == [h["uri"] for h in books[1:2]]
     assert search("2:255")["results"]["books"] == [] and search("kitab")["results"]["books"] == []
     assert search("2:255")["results"]["texts"] == [] and search("kitab")["results"]["texts"] == []
+
+
+def test_the_meanings_are_searched_in_the_sources_words() -> None:
+    """B12: a query finds the verses whose tafsir, gharīb meaning or translation holds it — every verse whose Arabic
+    sources hold the word whole (counted in Postgres, marks aside) and more by its stems (والصبر, بالصبر); each verse
+    once, counted once, paged to the end; up to three sources a verse, each credited to its work with the words marked;
+    English finds the translations alone; a verse reference asks nothing of them."""
+    from jadhr_api.db import connect, rows, scalar
+
+    marks = "[" + chr(0x064B) + "-" + chr(0x065F) + chr(0x0670) + chr(0x0640) + "]"
+    letters = chr(0x0621) + "-" + chr(0x064A)
+
+    def whole(w: str) -> str:
+        return f"(^|[^{letters}]){w}([^{letters}]|$)"
+
+    with connect() as conn:
+        held = {
+            r["key"]
+            for r in rows(
+                conn,
+                """select v.key from content.work_passages p join content.works w on w.id = p.work_id
+                     join content.verses v on v.id = p.verse_from
+                    where w.lang = 'ar' and regexp_replace(p.text, :m, '', 'g') ~ :w
+                   union select g.verse_keys[1] from content.gharib_meanings g
+                    where regexp_replace(g.phrase_ar || ': ' || g.meaning_ar, :m, '', 'g') ~ :w""",
+                {"m": marks, "w": whole("الصبر")},
+            )
+        }
+        held_en = {
+            r["key"]
+            for r in rows(
+                conn,
+                """select distinct v.key from content.work_passages p join content.works w on w.id = p.work_id
+                     join content.verses v on v.id = p.verse_from where w.lang = 'en' and p.text ~* '\\mpatience\\M'""",
+            )
+        }
+        lang = {r["id"]: r["lang"] for r in rows(conn, "select id, lang from content.works")}
+        gharib = {r["id"] for r in rows(conn, "select id from content.gharib_works")}
+        docs = int(
+            scalar(
+                conn,
+                "select (select count(*) from content.work_passages) + (select count(*) from content.gharib_meanings)",
+            )
+        )
+    assert len(held) > 50 and held_en
+    assert searchindex.status()["indices"]["meanings"]["documents"] == docs
+
+    def every(q: str) -> list[dict]:
+        seen: list[dict] = []
+        while True:
+            r = client.get(
+                "/api/v1/search", params={"q": q, "only": "meanings", "limit": 100, "offset": len(seen)}
+            ).json()
+            if not r["results"]["meanings"]:
+                return seen
+            seen += r["results"]["meanings"]
+
+    d = search("الصبر", limit=10)
+    found = every("الصبر")
+    keys = [m["verse"]["key"] for m in found]
+    assert len(keys) == len(set(keys)) == d["totals"]["meanings"]
+    assert held <= set(keys) and len(keys) > len(held)
+    assert [m["verse"]["key"] for m in d["results"]["meanings"]] == keys[:10]
+    with connect() as conn:
+        qpc = {
+            r["key"]: r["text_qpc"]
+            for r in rows(conn, "select key, text_qpc from content.verses where key = any(:k)", {"k": keys})
+        }
+    kinds: set[str] = set()
+    for m in found:
+        assert m["verse"]["text_qpc"] == qpc[m["verse"]["key"]] and m["verse"]["name_ar"]
+        assert 1 <= len(m["sources"]) <= 3
+        for s in m["sources"]:
+            kinds.add(s["kind"])
+            assert s["kind"] in ("tafsir", "gharib") and s["work"]["title_ar"]
+            assert (s["work"]["id"] in gharib) if s["kind"] == "gharib" else lang[s["work"]["id"]] == "ar"
+            assert "⁨" in s["excerpt"] and "⁩" in s["excerpt"]
+    assert kinds == {"tafsir", "gharib"}
+    en = every("patience")
+    assert held_en <= {m["verse"]["key"] for m in en}
+    for m in en:
+        for s in m["sources"]:
+            assert s["kind"] == "translation" and lang[s["work"]["id"]] == "en" and s["work"]["title_en"]
+            assert "⁨" in s["excerpt"]
+    assert search("2:255")["results"]["meanings"] == [] and search("2:255")["totals"].get("meanings", 0) == 0

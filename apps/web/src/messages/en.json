@@ -620,7 +620,15 @@
     "dictRootMeta": "{count, plural, one {in # dictionary} other {in # dictionaries}}",
     "kindHadith": "Hadith",
     "kindBook": "Book",
-    "kindMine": "My texts"
+    "kindMine": "My texts",
+    "sourceMeanings": "Meanings in tafsir and translations",
+    "sectionMeanings": "In the meanings",
+    "meaningsNote": "Verses whose tafsir, translation or gharīb work says what you searched for, credited to its book. We give no answer of our own: we show what they said.",
+    "meaningKind": {
+      "tafsir": "tafsir",
+      "translation": "translation",
+      "gharib": "gharīb"
+    }
   },
   "footer": {
     "label": "Site links",

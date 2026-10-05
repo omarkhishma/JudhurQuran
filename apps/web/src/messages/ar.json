@@ -620,7 +620,15 @@
     "dictRootMeta": "{count, plural, one {في معجم واحد} two {في معجمين} few {في {n} معاجم} many {في {n} معجمًا} other {في {n} معجم}}",
     "kindHadith": "حديث",
     "kindBook": "كتاب",
-    "kindMine": "نصوصي"
+    "kindMine": "نصوصي",
+    "sourceMeanings": "المعاني في التفاسير والترجمات",
+    "sectionMeanings": "في المعاني",
+    "meaningsNote": "آيات قال فيها المفسرون والمترجمون وكتب الغريب ما بحثت عنه، منسوبًا إلى كتبهم. لا نجيب نحن: نعرض ما قالوه.",
+    "meaningKind": {
+      "tafsir": "تفسير",
+      "translation": "ترجمة",
+      "gharib": "غريب"
+    }
   },
   "footer": {
     "label": "روابط الموقع",

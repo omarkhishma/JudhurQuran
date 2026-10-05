@@ -112,6 +112,40 @@ def _texts_query(q: str, kind: str) -> dict[str, Any]:
     }
 
 
+def _meanings_query(q: str, latin: bool) -> dict[str, Any]:
+    """What the sources say of a verse holding the words (B12): the Arabic sources for Arabic, the translations for
+    Latin; the words as a phrase first, then all of them, then (in Arabic) their stems, so «الصبر» finds «والصبر»; a
+    gharīb meaning, which is short and to the point, a little ahead of a long passage that only mentions them."""
+    field = "en" if latin else "ar"
+    stems = [] if latin else [{"match": {"ar.stemmed": {"query": q, "operator": "and", "boost": 0.5}}}]
+    return {
+        "bool": {
+            "must": [
+                {
+                    "bool": {
+                        "should": [
+                            {"match_phrase": {field: {"query": q, "boost": 6}}},
+                            {"match": {field: {"query": q, "operator": "and", "boost": 2}}},
+                            *stems,
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                }
+            ],
+            "should": [{"term": {"doc_kind": {"value": "gharib", "boost": 1.5}}}],
+            "filter": [{"term": {"lang": "en" if latin else "ar"}}],
+        }
+    }
+
+
+def _excerpt(hl: dict[str, list[str]], field: str) -> str | None:
+    """A source's words around the match: the field's own highlight when it marks the words, else the stems' one."""
+    own = (hl.get(field) or [None])[0]
+    if own and "⁨" in own:
+        return own
+    return (hl.get(f"{field}.stemmed") or [None])[0] or own
+
+
 def _passages_query(q: str, latin: bool) -> dict[str, Any]:
     if latin:
         should = [
@@ -170,6 +204,7 @@ _PLAN_KIND = {
     "patterns": "patterns",
     "texts": "texts",
     "books": "books",
+    "meanings": "meanings",
 }
 
 
@@ -186,6 +221,7 @@ def search(
     results.setdefault("passages", [])
     results.setdefault("texts", [])
     results.setdefault("books", [])
+    results.setdefault("meanings", [])
     if kind in ("empty", "verse_ref", "word_loc", "juz", "hizb", "page", "pattern"):
         base["engine"] = "opensearch"
         return base
@@ -226,6 +262,39 @@ def search(
                     "post_tags": ["⁩"],
                     "number_of_fragments": 0,
                 },
+            },
+        )
+        # what the human sources say (B12): the verses whose tafsir, translation or gharīb meaning holds the words,
+        # one hit a verse with up to three of its sources, the verses counted apart from the passages
+        add(
+            "meanings",
+            "meanings",
+            {
+                "query": _meanings_query(q, latin),
+                "_source": ["verse_key"],
+                "collapse": {
+                    "field": "verse_key",
+                    "inner_hits": {
+                        "name": "sources",
+                        "size": 3,
+                        "_source": ["doc_kind", "work_id"],
+                        "highlight": {
+                            # the words as written, else (Arabic) as their stems matched them
+                            "fields": {
+                                f: {
+                                    "type": "plain",
+                                    "fragment_size": 170,
+                                    "number_of_fragments": 1,
+                                    "no_match_size": 170 if f in ("en", "ar") else 0,
+                                }
+                                for f in (["en"] if latin else ["ar", "ar.stemmed"])
+                            },
+                            "pre_tags": ["⁨"],
+                            "post_tags": ["⁩"],
+                        },
+                    },
+                },
+                "aggs": {"verses": {"cardinality": {"field": "verse_key", "precision_threshold": 10000}}},
             },
         )
         if not latin:
@@ -282,6 +351,9 @@ def search(
         hits = res["hits"]["hits"]
         if name in _PLAN_KIND:
             totals[_PLAN_KIND[name]] = res["hits"]["total"]["value"]
+        if name == "meanings":
+            # a verse counted once, however many of its sources hold the words
+            totals["meanings"] = int(res.get("aggregations", {}).get("verses", {}).get("value", 0))
         if name == "dictroots":
             have = {r["key"] for r in results.get("dict_roots", [])}
             results["dict_roots"] = (results.get("dict_roots") or []) + [
@@ -344,6 +416,42 @@ def search(
             ]
             # the Postgres engine's verse list, now ranked by relevance
             results["verses"] = [p["verse"] for p in results["passages"]]
+        elif name == "meanings":
+            keys = [h["_source"]["verse_key"] for h in hits]
+            verses = {
+                v["key"]: v
+                for v in rows(
+                    conn,
+                    """select v.key, v.surah, v.ayah, v.text_qpc, s.name_ar, s.name_translit
+                       from content.verses v join content.surahs s on s.number = v.surah where v.key = any(:k)""",
+                    {"k": keys},
+                )
+            }
+            works = {
+                r["id"]: r
+                for r in rows(
+                    conn,
+                    """select id, title_ar, title_en from content.works
+                       union all select id, title_ar, title_en from content.gharib_works""",
+                )
+            }
+            field = "en" if latin else "ar"
+            results["meanings"] = [
+                {
+                    "verse": verses[h["_source"]["verse_key"]],
+                    "sources": [
+                        {
+                            "kind": s["_source"]["doc_kind"],
+                            "work": works.get(s["_source"]["work_id"], {"id": s["_source"]["work_id"]}),
+                            "excerpt": _excerpt(s.get("highlight", {}), field),
+                        }
+                        for s in h["inner_hits"]["sources"]["hits"]["hits"]
+                    ],
+                    "score": round(h["_score"] or 0, 3),
+                }
+                for h in hits
+                if h["_source"]["verse_key"] in verses
+            ]
         elif name in ("texts", "books"):
             from .texts import hits as text_hits
 

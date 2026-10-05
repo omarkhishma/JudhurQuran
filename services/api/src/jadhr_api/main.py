@@ -1345,7 +1345,7 @@ def search(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0, le=10000),
     only: str | None = Query(
-        None, pattern="^(verses|lemmas|dictionary|texts|books)$", description="page through one kind"
+        None, pattern="^(verses|lemmas|dictionary|texts|books|meanings)$", description="page through one kind"
     ),
 ) -> Response:
     with connect() as conn:

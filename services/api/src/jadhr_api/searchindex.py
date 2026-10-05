@@ -144,6 +144,14 @@ MAPPINGS: dict[str, dict[str, Any]] = {
                           "stemmed": {"type": "text", "analyzer": "ar_stemmed"}}},
         "roots": KW, "roots_low": KW, "era_year": INT,
     },
+    # meaning search (B12): what the human sources say of each verse — the tafsirs' and translations' passages, the
+    # gharīb meanings at their words — searched for what a reader means, never answered by us
+    "meanings": {
+        "doc_kind": KW, "work_id": KW, "lang": KW, "verse_key": KW, "verse_id": INT, "verse_to": INT,
+        "ar": {"type": "text", "analyzer": "ar_bare", "fields": {"exact": {"type": "text", "analyzer": "ar_exact"},
+                                                                  "stemmed": {"type": "text", "analyzer": "ar_stemmed"}}},
+        "en": {"type": "text", "analyzer": "english"},
+    },
 }  # fmt: skip
 
 PREFIX = "jadhr_"
@@ -388,6 +396,42 @@ def _texts(conn: Connection) -> Iterator[dict[str, Any]]:
         }
 
 
+def _meanings(conn: Connection) -> Iterator[dict[str, Any]]:
+    keys = {r["id"]: r["key"] for r in rows(conn, "select id, key from content.verses")}
+    by_key = {k: i for i, k in keys.items()}
+    for p in rows(
+        conn,
+        """select p.id, p.work_id, p.verse_from, p.verse_to, p.text, w.kind, w.lang
+             from content.work_passages p join content.works w on w.id = p.work_id order by p.id""",
+    ):
+        yield {
+            "_id": f"w:{p['id']}",
+            "doc_kind": p["kind"],
+            "work_id": p["work_id"],
+            "lang": p["lang"],
+            "verse_key": keys[p["verse_from"]],
+            "verse_id": p["verse_from"],
+            "verse_to": p["verse_to"],
+            "ar" if p["lang"] == "ar" else "en": p["text"],
+        }
+    for g in rows(
+        conn,
+        """select g.id, g.work_id, g.verse_keys, g.phrase_ar, g.meaning_ar from content.gharib_meanings g
+            order by g.id""",
+    ):
+        first = g["verse_keys"][0]
+        yield {
+            "_id": f"g:{g['id']}",
+            "doc_kind": "gharib",
+            "work_id": g["work_id"],
+            "lang": "ar",
+            "verse_key": first,
+            "verse_id": by_key[first],
+            "verse_to": by_key[g["verse_keys"][-1]],
+            "ar": f"{g['phrase_ar']}: {g['meaning_ar']}",
+        }
+
+
 SOURCES = {
     "words": (_words, "select count(*) from content.lemmas"),
     "roots": (_roots, "select count(*) from content.roots"),
@@ -402,6 +446,10 @@ SOURCES = {
     "texts": (
         _texts,
         "select count(*) from content.passages p join content.texts t on t.id = p.text_id where t.kind <> 'quran'",
+    ),
+    "meanings": (
+        _meanings,
+        "select (select count(*) from content.work_passages) + (select count(*) from content.gharib_meanings)",
     ),
 }
 

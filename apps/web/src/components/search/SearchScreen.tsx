@@ -22,6 +22,8 @@ type Lemma = { id: number; slug?: string; ar: string; envelope?: { translit: str
 type DictEntry = { entry_id: number; uri?: string | null; work: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; lang: string } | null; root_key: string | null; root_spaced: string | null; dict_root?: string | null; headword: string; excerpt: string | null };
 /** A root of the dictionary (P11.1): the Quran's or not. */
 type DictRootHit = { key: string; display: string; letters: number; quran_root: string | null; lexica: number };
+/** A verse whose human sources hold the query (B12): up to three of them, each with its work and the words found. */
+type MeaningHit = { verse: { key: string; surah: number; ayah: number; text_qpc: string; name_ar: string; name_translit: string }; sources: { kind: "tafsir" | "translation" | "gharib"; work: { id: string; title_ar?: string; title_en?: string }; excerpt: string | null }[] };
 type Passage = { uri: string; ref: string; text: { slug: string; kind: string }; verse?: Verse; highlight_ar?: string | null; highlight_en?: string | null; trans_en?: string | null };
 export type SearchPayload = {
   query: string;
@@ -41,12 +43,14 @@ export type SearchPayload = {
     texts?: TextHit[];
     // the classical books (P11.3): a paragraph whose words hold the query, with its book and section
     books?: TextHit[];
+    // what the human sources say (B12): the verses whose tafsir, translation or gharīb meaning holds the query
+    meanings?: MeaningHit[];
   };
-  totals?: Partial<Record<"verses" | "lemmas" | "roots" | "patterns" | "surahs" | "dictionary" | "words" | "texts" | "books", number>>;
+  totals?: Partial<Record<"verses" | "lemmas" | "roots" | "patterns" | "surahs" | "dictionary" | "words" | "texts" | "books" | "meanings", number>>;
 };
 
 const KINDS = ["verses", "words", "roots", "patterns", "surahs"] as const;
-const SOURCES = ["dictionary", "hadith", "books", "mine"] as const;
+const SOURCES = ["meanings", "dictionary", "hadith", "books", "mine"] as const;
 type Kind = (typeof KINDS)[number] | (typeof SOURCES)[number];
 const ALL: Kind[] = [...KINDS, ...SOURCES];
 const EXAMPLES = ["الرحمن", "ك ت ب", "2:255", "الصلاة", "مَفْعُول", "s-b-r", "mercy"];
@@ -89,7 +93,7 @@ const verseRowsOf = (d: SearchPayload): VerseRow[] =>
  * One kind, paged (SRC-12, 21, 23): the first page comes with the search, each "show more" reveals `step`
  * more and asks the API for the next page when the loaded rows run out. Counts are the matches, not the rows.
  */
-function usePaged<T>(dq: string, only: "verses" | "lemmas" | "dictionary" | "texts" | "books", first: T[], total: number, pick: (d: SearchPayload) => T[], key: (x: T) => string, step: number) {
+function usePaged<T>(dq: string, only: "verses" | "lemmas" | "dictionary" | "texts" | "books" | "meanings", first: T[], total: number, pick: (d: SearchPayload) => T[], key: (x: T) => string, step: number) {
   const [state, setState] = useState({ dq, shown: step });
   const shown = state.dq === dq ? state.shown : step;
   const pages = Math.max(0, Math.ceil((Math.min(shown, total) - first.length) / PAGE));
@@ -189,6 +193,8 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
   const hadith = usePaged(dq, "texts", firstTexts, totals.texts ?? firstTexts.length, (d) => d.results.texts ?? [], (x) => x.uri, 10);
   const firstBooks = useMemo(() => r?.books ?? [], [r]);
   const books = usePaged(dq, "books", firstBooks, totals.books ?? firstBooks.length, (d) => d.results.books ?? [], (x) => x.uri, 10);
+  const firstMeanings = useMemo(() => r?.meanings ?? [], [r]);
+  const meanings = usePaged(dq, "meanings", firstMeanings, totals.meanings ?? firstMeanings.length, (d) => d.results.meanings ?? [], (x) => x.verse.key, 5);
   const patterns = r?.patterns ?? [];
   const surahs = r?.surahs ?? [];
   const mineHits = dq ? (mine.data?.hits ?? []) : [];
@@ -198,6 +204,7 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
     roots: rootsTotal,
     patterns: patterns.length,
     surahs: surahs.length,
+    meanings: meanings.total,
     dictionary: dict.total + (r?.dict_roots?.length ?? 0),
     hadith: hadith.total,
     books: books.total,
@@ -241,6 +248,7 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
       <fieldset className="flex flex-col gap-1">
         <legend className="label-caps mb-1">{t("facetSource")}</legend>
         {facetRow("verses", t("sourceQuran"))}
+        {facetRow("meanings", t("sourceMeanings"))}
         {facetRow("dictionary", t("sourceDictionaries"))}
         {facetRow("hadith", t("sourceHadith"))}
         {facetRow("books", t("sourceBooks"))}
@@ -385,6 +393,37 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
                 ))}
               </ul>
               <More paged={verses} />
+            </ResultGroup>
+          )}
+          {kinds.meanings && meanings.rows.length > 0 && (
+            <ResultGroup title={t("sectionMeanings")} n={meanings.total}>
+              <p className="-mt-1 mb-2 text-[12px] leading-relaxed text-t3">{t("meaningsNote")}</p>
+              <ul className="flex flex-col gap-2">
+                {meanings.rows.map((m) => (
+                  <li key={m.verse.key} className="result-row flex-col items-stretch">
+                    <Link href={`/quran/${m.verse.surah}/${m.verse.ayah}`} className="flex flex-wrap items-baseline gap-x-2 hover:underline">
+                      <span className="mono text-[12px] text-t3">{verseRef(m.verse.key, locale)}</span>
+                      <span className="text-[12.5px] text-t2" lang={locale === "ar" ? "ar" : "en"}>{locale === "ar" ? `سورة ${m.verse.name_ar}` : m.verse.name_translit}</span>
+                    </Link>
+                    <p className="quran line-clamp-2 text-[19px] leading-[1.9]" lang="ar" dir="rtl">{m.verse.text_qpc}</p>
+                    <ul className="flex flex-col gap-1.5">
+                      {m.sources.map((s, i) => (
+                        <li key={`${s.work.id}-${i}`} className="flex flex-col gap-0.5 border-t border-line pt-1.5">
+                          <span className="text-[11.5px] text-t3">
+                            <bdi lang={s.kind === "translation" ? "en" : "ar"}>{(locale === "ar" ? s.work.title_ar : s.work.title_en) ?? s.work.title_ar ?? s.work.id}</bdi> • {t(`meaningKind.${s.kind}`)}
+                          </span>
+                          {s.excerpt && (
+                            <span className={"line-clamp-3 text-[14px] leading-[1.8] text-t1" + (s.kind === "translation" ? "" : " ar-classical text-[16px]")} lang={s.kind === "translation" ? "en" : "ar"} dir={s.kind === "translation" ? "ltr" : "rtl"}>
+                              <Highlight text={s.excerpt} />
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+              <More paged={meanings} />
             </ResultGroup>
           )}
           {kinds.words && shownWords.length > 0 && (
