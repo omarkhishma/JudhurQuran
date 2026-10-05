@@ -30,7 +30,7 @@ def run(slug: str, titles: list[tuple[str, int | None]]) -> dict[tuple[int, int]
         {"id": 100 + i, "text_id": 9, "title_ar": t, "parent_id": (100 + p) if p is not None else None}
         for i, (t, p) in enumerate(titles)
     ]
-    rows, report = map_commentary([{"id": 9, "slug": slug}], chapters, VERSES, SURAHS)
+    rows, _ = map_commentary([{"id": 9, "slug": slug}], chapters, VERSES, SURAHS)
     out: dict[tuple[int, int], set[int]] = {}
     for r in rows:
         out.setdefault((r["verse_id"] // 1000, r["verse_id"] % 1000), set()).add(r["chapter_id"])
