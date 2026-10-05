@@ -178,9 +178,12 @@ test("RDR-533: Esc closes the omnibox while its input has focus", async ({ page,
   test.skip(isMobile, "the shortcut belongs to a keyboard");
   await seed(page);
   await page.goto("/quran/1");
-  await page.keyboard.press("ControlOrMeta+k");
   const dlg = page.getByRole("dialog", { name: "ابحث في كل شيء" });
-  await expect(dlg).toBeVisible();
+  // the shortcut is heard once the page's scripts are running: pressed again until it is
+  await expect(async () => {
+    await page.keyboard.press("ControlOrMeta+k");
+    await expect(dlg).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
   await dlg.getByRole("combobox").fill("علم");
   await expect(dlg.getByRole("combobox")).toBeFocused();
   await page.keyboard.press("Escape");

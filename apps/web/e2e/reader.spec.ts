@@ -206,8 +206,10 @@ test("a lookup becomes the reading context and goes into today's session (RDR-11
   await returning(page);
   await page.goto("/quran/20?w=ilm&at=20:114:17");
   await expect(panel(page).getByRole("heading").first()).toBeVisible();
-  const st = await page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state);
-  expect(st.context).toMatchObject({ word: "ilm", root: "علم", verse: "20:114" });
+  // the store writes the lookup after the panel is drawn: read it once it has
+  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem("jadhr-personal") ?? "{}").state);
+  await expect.poll(async () => (await stored()).context ?? null).toMatchObject({ word: "ilm", root: "علم", verse: "20:114" });
+  const st = await stored();
   const day = await page.evaluate(() => new Date().toLocaleDateString("en-CA"));
   const today = st.sessions.find((x: { day: string }) => x.day === day);
   expect(today).toMatchObject({ text: "quran", words: ["ilm"], roots: ["علم"], verses: ["20:114"] });
