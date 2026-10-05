@@ -6,9 +6,9 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { routing } from "@/i18n/routing";
 import { fontVariables } from "@/lib/fonts";
 import { OfflineWorker } from "@/components/shell/OfflineWorker";
-import { SITE, THEME_KEY } from "@/lib/site";
+import { themeScript } from "@/lib/headScript";
+import { SITE } from "@/lib/site";
 // the digits preference's key (lib/digits.ts), read here before the page paints
-const DIGITS_KEY = "jadhr-digits";
 import { Providers } from "@/components/shell/Providers";
 import "../globals.css";
 
@@ -44,7 +44,7 @@ export const viewport: Viewport = {
 // Runs before first paint: apply the stored theme (default light, per the design system); then follow it when
 // another window of the site changes it — another tab, or the split view's page and its panes (P8.6). A published
 // map's embed takes its theme from its address alone and keeps none (EDT-302, EDT-288): it lives on other sites.
-const themeScript = `if(/^\\/(en\\/)?embed\\//.test(location.pathname)){var m=/[?&]theme=(dark|light)/.exec(location.search);document.documentElement.dataset.theme=m?m[1]:"light"}else{try{var t=localStorage.getItem(${JSON.stringify(THEME_KEY)});if(t==="dark"||t==="light"){document.documentElement.dataset.theme=t}else{document.documentElement.dataset.theme="light"}}catch(e){document.documentElement.dataset.theme="light"}addEventListener("storage",function(e){if(e.key===${JSON.stringify(THEME_KEY)}&&(e.newValue==="dark"||e.newValue==="light"))document.documentElement.dataset.theme=e.newValue})}try{var d=localStorage.getItem(${JSON.stringify(DIGITS_KEY)});if(d==="arabic"||d==="latin")document.documentElement.dataset.digits=d}catch(e){}addEventListener("storage",function(e){if(e.key===${JSON.stringify(DIGITS_KEY)}){if(e.newValue==="arabic"||e.newValue==="latin")document.documentElement.dataset.digits=e.newValue;else delete document.documentElement.dataset.digits}})`;
+
 
 export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {
   const { locale } = await params;

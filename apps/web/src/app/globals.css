@@ -7407,3 +7407,132 @@ a.wotd-pill:hover {
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
+
+/* ─── More contrast (B9): the reader's choice, or the system's request when they have not chosen; every text token
+   at 7:1 or more on every surface and well (tokens.test.ts), lines and focus strong enough to see at a glance ─── */
+:root[data-contrast="more"] {
+  --canvas: #ffffff;
+  --card: #ffffff;
+  --card-2: #f4f4f6;
+  --card-3: #ececf0;
+  --panel: #ffffff;
+  --paper: #ffffff;
+  --line: #6b6b75;
+  --line-2: #45454d;
+  --edge: #3a3a42;
+  --t1: #000000;
+  --t2: #1f1f24;
+  --t3: #2e2e36;
+  --c-root: #5e350f;
+  --c-form: #432a91;
+  --c-word: #123d9c;
+  --c-sentence: #0b5029;
+  --c-desc: #2e2e36;
+  --ring: #123d9c;
+  --good: #0a5027;
+  --bad: #8f0e0e;
+  --amber: #6b2f00;
+}
+:root[data-contrast="more"][data-theme="dark"] {
+  --canvas: #000000;
+  --card: #0b0b0e;
+  --card-2: #141418;
+  --card-3: #1c1c22;
+  --panel: #000000;
+  --paper: #050507;
+  --line: #8a8a96;
+  --line-2: #b6b6c2;
+  --edge: #c4c4ce;
+  --t1: #ffffff;
+  --t2: #ededf3;
+  --t3: #dadae3;
+  --c-root: #f6c792;
+  --c-form: #d4c2ff;
+  --c-word: #b3cbff;
+  --c-sentence: #a6ebb7;
+  --c-desc: #dadae3;
+  --ring: #b3cbff;
+  --good: #a9f0b8;
+  --bad: #ffb3b8;
+  --amber: #ffd796;
+}
+@media (prefers-contrast: more) {
+  :root:not([data-contrast]) {
+    --canvas: #ffffff;
+    --card: #ffffff;
+    --card-2: #f4f4f6;
+    --card-3: #ececf0;
+    --panel: #ffffff;
+    --paper: #ffffff;
+    --line: #6b6b75;
+    --line-2: #45454d;
+    --edge: #3a3a42;
+    --t1: #000000;
+    --t2: #1f1f24;
+    --t3: #2e2e36;
+    --c-root: #5e350f;
+    --c-form: #432a91;
+    --c-word: #123d9c;
+    --c-sentence: #0b5029;
+    --c-desc: #2e2e36;
+    --ring: #123d9c;
+    --good: #0a5027;
+    --bad: #8f0e0e;
+    --amber: #6b2f00;
+  }
+  :root:not([data-contrast])[data-theme="dark"] {
+    --canvas: #000000;
+    --card: #0b0b0e;
+    --card-2: #141418;
+    --card-3: #1c1c22;
+    --panel: #000000;
+    --paper: #050507;
+    --line: #8a8a96;
+    --line-2: #b6b6c2;
+    --edge: #c4c4ce;
+    --t1: #ffffff;
+    --t2: #ededf3;
+    --t3: #dadae3;
+    --c-root: #f6c792;
+    --c-form: #d4c2ff;
+    --c-word: #b3cbff;
+    --c-sentence: #a6ebb7;
+    --c-desc: #dadae3;
+    --ring: #b3cbff;
+    --good: #a9f0b8;
+    --bad: #ffb3b8;
+    --amber: #ffd796;
+  }
+}
+:root[data-contrast="more"] :focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ─── Wider spacing (B9): taller lines and wider gaps between words for every text, a little space between Latin
+   letters; the Arabic letters never spaced apart (their joining would break) ─── */
+:root[data-spacing="wide"] body {
+  line-height: 1.85;
+  word-spacing: 0.14em;
+}
+:root[data-spacing="wide"] :is(p, li, dd, blockquote, .quran, .ar-classical) {
+  line-height: 2.15;
+  word-spacing: 0.18em;
+}
+:root[data-spacing="wide"] :is(p, li, dd, blockquote):lang(en) {
+  letter-spacing: 0.03em;
+}
+
+/* ─── The system's forced colours (Windows contrast themes): the focus and the selected states still show ─── */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 2px solid CanvasText;
+    outline-offset: 2px;
+  }
+  .chip.is-on,
+  .seg[aria-pressed="true"],
+  .w.is-active {
+    outline: 2px solid Highlight;
+  }
+}
+

@@ -17,6 +17,7 @@ import { HoverCard, type HoverWord } from "./HoverCard";
 import { InlineGloss } from "./InlineGloss";
 import { noteOn, useSaved } from "@/lib/store/saved";
 import { InlineLines } from "./InlineLines";
+import { VerseReading } from "./VerseReading";
 import { VerseDrawer, type DrawerTool } from "./VerseDrawer";
 
 /** A word's place, s:a:w. */
@@ -534,7 +535,8 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       onFocus={(e) => {
         const el = e.target as HTMLElement;
         // the first Tab into the text lands on one word; arrows move from there
-        if (el.classList.contains("w")) roving(ref.current!, el);
+        // read verse by verse (B9), the words stay out of the tab order
+        if (el.classList.contains("w") && ref.current!.dataset.read !== "verse") roving(ref.current!, el);
         setFocusVerse(el.matches(":focus-visible") ? (el.closest<HTMLElement>(".passage")?.dataset.verse ?? null) : null);
       }}
     >
@@ -542,6 +544,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
       {mounted && <LessonStrip chapter={chapter.number} />}
       {children}
       {mounted && <InlineLines chapter={chapter.number} />}
+      {mounted && <VerseReading chapter={chapter.number} />}
       {resumeEl &&
         createPortal(
           <span className="resume-mark">

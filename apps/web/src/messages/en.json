@@ -46,7 +46,15 @@
     "offlineTitle": "You are offline",
     "offlineLead": "This page needs a connection, and no copy of it is kept in this browser. The pages you have read and what you have saved stay readable offline.",
     "offlineKept": "Kept in this browser to read offline",
-    "offlineNone": "No page is kept yet: what you read while connected is kept here to read offline."
+    "offlineNone": "No page is kept yet: what you read while connected is kept here to read offline.",
+    "contrast": "Contrast",
+    "contrastAuto": "As the system",
+    "contrastMore": "More",
+    "contrastHint": "Darker text and clearer lines in both themes; “As the system” follows your device when it asks for more contrast.",
+    "spacing": "Spacing",
+    "spacingNormal": "Normal",
+    "spacingWide": "Wider",
+    "spacingHint": "Taller lines and wider gaps between words, for readers the letters crowd; an Arabic word's letters are never spaced apart."
   },
   "nav": {
     "read": "Read",
@@ -2438,7 +2446,10 @@
     "nextByRevelation": "Revealed after: {name}",
     "revealedNth": "revealed {n}",
     "placeNotesTitle": "Verses said to have come down elsewhere",
-    "placeVerses": "Verses {range}"
+    "placeVerses": "Verses {range}",
+    "prefByVerse": "Read verse by verse with a screen reader",
+    "prefByVerseHint": "Each verse is one stop for a screen reader, read in today's spelling; ↑ and ↓ between verses, Enter opens the verse, Space recites it.",
+    "recitingNow": "Now reciting: verse {ref}"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

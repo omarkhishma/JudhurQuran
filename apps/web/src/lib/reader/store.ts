@@ -193,6 +193,8 @@ export type Prefs = {
   /** plan B6: the sūras in the mushaf's order, or in the traditional order of revelation (the index, the rail, the
    * way to the next sūra) */
   order: "mushaf" | "revelation";
+  /** plan B9: each verse one stop for a screen reader, read in today's spelling, ↑ ↓ between verses */
+  readByVerse: boolean;
 };
 
 type PrefsState = Prefs & {
@@ -225,6 +227,7 @@ export const DEFAULT_PREFS: Prefs = {
   reciter: null,
   dueSignal: true,
   order: "mushaf",
+  readByVerse: false,
 };
 
 export const usePrefs = create<PrefsState>()(

@@ -56,6 +56,31 @@ describe("the design system's colour tokens (P1.5)", () => {
     });
   }
 
+  // more contrast (B9): every text token at 7:1 (WCAG AAA) on every surface and well, in both themes; the system's
+  // request draws exactly the reader's choice
+  const more = { ...light, ...block(':root[data-contrast="more"]') };
+  const moreDark = { ...dark, ...block(':root[data-contrast="more"][data-theme="dark"]') };
+  for (const [name, t] of [["light", more], ["dark", moreDark]] as const) {
+    it(`reads every text token at 7:1 or more with more contrast, ${name}`, () => {
+      const wells = {
+        "root-wash": mix(t["c-root"], t.card, 0.12),
+        "word-wash": mix(t["c-word"], t.card, 0.1),
+        "form-wash": mix(t["c-form"], t.card, 0.1),
+        "sentence-wash": mix(t["c-sentence"], t.card, 0.1),
+      };
+      const below: string[] = [];
+      for (const x of TEXT) {
+        for (const s of SURFACES) if (ratio(t[x], t[s]) < 7) below.push(`${x} on ${s}: ${ratio(t[x], t[s]).toFixed(2)}`);
+        for (const [w, c] of Object.entries(wells)) if (ratio(t[x], c) < 7) below.push(`${x} on ${w}: ${ratio(t[x], c).toFixed(2)}`);
+      }
+      expect(below).toEqual([]);
+    });
+  }
+  it("draws the system's request for more contrast as the reader's choice", () => {
+    expect(block(":root:not([data-contrast])")).toEqual(block(':root[data-contrast="more"]'));
+    expect(block(':root:not([data-contrast])[data-theme="dark"]')).toEqual(block(':root[data-contrast="more"][data-theme="dark"]'));
+  });
+
   it("fails a colour the handoff gave and the build darkened (a check that can fail)", () => {
     // the handoff's --t3 #71717c on the light canvas
     expect(ratio("#71717c", light.canvas)).toBeLessThan(4.5);
