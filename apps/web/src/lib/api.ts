@@ -20,3 +20,21 @@ export async function api<T>(path: string, { revalidate = 86400 }: { revalidate?
   }
   return (await res.json()) as T;
 }
+
+/** Verses of a sūra asked for at once: a part this size stays well under the 2 MB the data cache keeps. */
+const SURAH_PART = 100;
+
+/**
+ * A whole sūra for a server render, asked for 100 verses at a time and joined. The data cache keeps an answer of up
+ * to 2 MB, stored as base64 (a third larger), so al-Baqara whole (2.2 MB) was never kept and every render that drew
+ * it fetched it again; each part is kept on its own. The parts join to exactly the whole (checked for all 114).
+ */
+export async function surahWhole<T extends { surah: { verse_count: number }; verses: unknown[] }>(n: number): Promise<T> {
+  const first = await api<T>(`/surahs/${n}?start=1&end=${SURAH_PART}`);
+  const count = first.surah.verse_count;
+  if (count <= SURAH_PART) return first;
+  const starts: number[] = [];
+  for (let a = SURAH_PART + 1; a <= count; a += SURAH_PART) starts.push(a);
+  const rest = await Promise.all(starts.map((a) => api<T>(`/surahs/${n}?start=${a}&end=${Math.min(count, a + SURAH_PART - 1)}`)));
+  return { ...first, verses: [...first.verses, ...rest.flatMap((p) => p.verses)] };
+}

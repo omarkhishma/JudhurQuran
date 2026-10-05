@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AudioBar } from "@/components/audio/AudioBar";
 import { JsonLd, breadcrumbs } from "@/components/seo/JsonLd";
-import { api } from "@/lib/api";
+import { api, surahWhole } from "@/lib/api";
 import type { SurahPayload, Verse } from "@/lib/types";
 import { ReaderShell, type ChapterInfo } from "./ReaderShell";
 import { ReadingSurface, type InitialSelection } from "./ReadingSurface";
@@ -23,7 +23,7 @@ export async function ReaderPage({
   initial?: { verse?: string; word?: string };
   crumbs?: [string, string][];
 }) {
-  const [payload, basmala] = await Promise.all([api<SurahPayload>(`/surahs/${surah}`), api<Verse>("/verses/1:1")]);
+  const [payload, basmala] = await Promise.all([surahWhole<SurahPayload>(surah), api<Verse>("/verses/1:1")]);
   const s = payload.surah;
   const chapter: ChapterInfo = {
     text: "quran",
