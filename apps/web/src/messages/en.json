@@ -82,7 +82,8 @@
     "contribute": "Contribute",
     "dictionary": "Dictionary",
     "hadith": "Hadith",
-    "books": "Books"
+    "books": "Books",
+    "transparency": "Transparency"
   },
   "hub": {
     "rootOfDay": "Root of the day",
@@ -4249,5 +4250,53 @@
     "signIn": "Sign in",
     "loadFailed": "Could not load.",
     "nav": "What went wrong"
+  },
+  "transparency": {
+    "title": "What we know, and what we do not yet",
+    "lead": "Every number here is counted from the data of release {version}, none written by hand: how much of the text each layer covers, whether a source gave it or our rules derived it, where the sources disagree, and what waits on review.",
+    "notSigned": "No expert has signed any layer yet. What our rules derived — the patterns, the meanings at each word's place, the hadith's split, the narrators' links, the books' pages — waits on the editorial board's review, and the board is not yet named. What came from a source is credited to it as it is.",
+    "signed": "The editorial board has approved {n} of its entries so far.",
+    "byRule": "By our rules, not yet reviewed",
+    "bySource": "From its source",
+    "countOf": "{count} of {of} ({pct})",
+    "disagree": "{n} words whose root the sources give differently; each reading is shown with its source.",
+    "group": {
+      "quran": "The Quran and its words",
+      "lexica": "The lexica: the Quran's roots each one has",
+      "tafsir": "Tafsir and translations: the verses each covers",
+      "texts": "Hadith and books",
+      "review": "Review"
+    },
+    "layer": {
+      "text": "The mushaf's text",
+      "roots": "Words to their roots",
+      "patterns": "Patterns of the forms",
+      "gharib": "Meanings at each word's place",
+      "topics": "The verses' topics",
+      "hadith-split": "The hadith's isnād and matn",
+      "narrators": "Isnād names linked to the narrators' entries",
+      "book-pages": "Books cited by their printed pages"
+    },
+    "what": {
+      "text": "The King Fahd Complex's text as published, its hash checked at every load of the data.",
+      "roots": "From the Quranic Arabic Corpus; the words with no root are particles, pronouns and foreign names, and say so.",
+      "patterns": "A pattern is read from the word's form by our rules, and waits on the experts' review.",
+      "gharib": "al-Muyassar fī Gharīb al-Qurʾān's meanings set on their words by matching rules.",
+      "topics": "Quranpedia's topics, and the verses the editorial board has placed since.",
+      "hadith-split": "Split by our rules at the formulas of transmission, measured against Sanadset.",
+      "narrators": "Each name linked to its entry in Ibn Ḥajar's Taqrīb by our rules; the rest show their candidates.",
+      "book-pages": "The printed page is cited where the version's markers passed the check; otherwise the section and paragraph."
+    },
+    "review": {
+      "proposals_open": "Readers' proposals waiting",
+      "proposals_merged": "Proposals merged",
+      "corrections_in_force": "Corrections in force on what the rules made",
+      "board_in_review": "The board's work in review",
+      "board_approved": "Entries the board approved",
+      "reports_open": "Reports not yet settled"
+    },
+    "reviewLead": "Every proposal passes two approvals, and is credited to its author in the changelog.",
+    "reviewLink": "Edit requests",
+    "sourcesLink": "Sources and licences"
   }
 }

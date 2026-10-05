@@ -59,6 +59,7 @@ from . import (
     routes_releases,
     sets,
     topics,
+    transparency,
 )
 from . import catalogue as catalogue_api
 from . import texts as texts_api
@@ -932,6 +933,15 @@ def root_graph(request: Request, root: str) -> Response:
 def loanword_dispute(request: Request) -> Response:
     with connect() as conn:
         return cached(request, content.loanword_dispute(conn))
+
+
+@router.get(
+    "/transparency",
+    summary="Each layer of the data: what it covers, where its sources disagree, what waits on review (B17)",
+)
+def transparency_report(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, transparency.report(conn))
 
 
 @router.get("/collections", summary="Curated sets of Quranic words, with every member's slug")

@@ -21,6 +21,7 @@ export const STATIC = [
   "/quran/1",
   "/quran/2/255",
   "/mushaf",
+  "/transparency",
   "/mushaf/50",
   "/word/1:1:1",
   "/roots",

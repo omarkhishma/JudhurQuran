@@ -7713,3 +7713,20 @@ button.topic-cell:focus-visible {
   stroke-width: 2;
 }
 
+/* what we know (B17): a layer's share of the text, one hue; a layer our rules derived marked as such */
+.transparency-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--card-2);
+  overflow: hidden;
+}
+.transparency-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--c-root);
+}
+.state-chip.is-rule {
+  border-color: color-mix(in srgb, var(--amber) 55%, var(--line));
+}
+
