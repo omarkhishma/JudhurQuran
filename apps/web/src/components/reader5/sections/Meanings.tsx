@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { type ReactNode, useState } from "react";
 import { Term } from "@/components/terms/Term";
+import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { sourceLine } from "@/lib/reader/board";
 import { EditorsNotes, MergedLine, MergedSenses, MyProposals, useDrafts, useWordContributions } from "@/components/contrib/WordContributions";
@@ -25,11 +26,14 @@ import { ReviewMark, ReviewStatus } from "../BoardMark";
 export function MeaningsSection({ w }: { w: WordPayload }) {
   const t = useTranslations("rd");
   const tb = useTranslations("board");
+  const tw = useTranslations("wordContrib");
+  const tc = useTranslations("contrib");
   const locale = useLocale();
   const setSuggest = useReader((s) => s.setSuggest);
   const drafts = useDrafts(w.slug);
   // what readers proposed and two reviewers, one of the board, approved: shown beside the sources (P7.3)
-  const merges = useWordContributions(w.slug).data?.data ?? [];
+  // one the board took into its sense list is shown there, credited to the reader, not again here (B38)
+  const merges = (useWordContributions(w.slug).data?.data ?? []).filter((m) => !m.folded);
   const glossHere = merges.filter((m) => m.kind === "gloss" && m.location && m.location === w.occurrence?.location);
   const glossLemma = merges.filter((m) => m.kind === "gloss" && !m.location);
   const lines: { key: string; text: ReactNode; source: ReactNode; lang: string; suggest?: SuggestTarget; merged?: typeof merges }[] = [];
@@ -100,6 +104,13 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
                 {s.text_en && <p className="text-[13.5px] italic text-t2" lang="en" dir="ltr">{s.text_en}</p>}
                 {s.status === "board" && s.sources.length > 0 && (
                   <p className="text-[11px] text-t3" dir="auto">{sourceLine(s.sources, locale)}</p>
+                )}
+                {s.suggested && (
+                  <p className="text-[11px] text-t3">
+                    {t.rich("senseSuggested", { who: () => (s.suggested!.name ? <bdi>{s.suggested!.name}</bdi> : s.suggested!.former ? tw("former") : tc("aContributor")) })}
+                    {" • "}
+                    <Link href={`/review?filter=merged&id=${s.suggested.proposal_id}`} prefetch={false} className="underline-offset-2 hover:text-t1 hover:underline">{tw("decisions")}</Link>
+                  </p>
                 )}
                 <button type="button" className="suggest-link self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest({ kind: "edit", slug: w.slug, label: w.ar.full, ordinal: s.ordinal, current: s.text_ar ?? s.text_en ?? "" })}>
                   {t("suggestEdit")}

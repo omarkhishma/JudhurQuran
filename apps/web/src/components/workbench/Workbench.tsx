@@ -11,7 +11,8 @@ import { cnt, formatNumber } from "@/lib/format";
 import { EntryView } from "./EntryView";
 import { LayerView } from "./LayerView";
 
-export type Place = { kind: Kind; layer?: Layer; target?: string; state: State; q: string };
+/** `readers`: a word list narrowed to the words whose readers' suggestions wait on the board (B38). */
+export type Place = { kind: Kind; layer?: Layer; target?: string; state: State; q: string; readers?: boolean };
 
 /**
  * The editorial workbench (P3.0, research 14): for the board only — anyone else is told what it is and who it is
@@ -34,6 +35,7 @@ export function Workbench({ initial }: { initial: Place }) {
     if (place.target) qs.set("target", place.target);
     if (place.state !== "all") qs.set("state", place.state);
     if (place.q) qs.set("q", place.q);
+    if (place.readers) qs.set("readers", "1");
     window.history.replaceState(null, "", `${window.location.pathname}?${qs}`);
   }, [place]);
 
@@ -96,9 +98,10 @@ export function Workbench({ initial }: { initial: Place }) {
         {KINDS.map((k) => {
           const c = w?.kinds.find((x) => x.kind === k);
           return (
-            <button key={k} type="button" className={"workbench-tab" + (place.kind === k ? " is-on" : "")} aria-current={place.kind === k ? "page" : undefined} onClick={() => go({ kind: k, layer: undefined, state: "all", q: "" })}>
+            <button key={k} type="button" className={"workbench-tab" + (place.kind === k ? " is-on" : "")} aria-current={place.kind === k ? "page" : undefined} onClick={() => go({ kind: k, layer: undefined, state: "all", q: "", readers: false })}>
               <span>{t(`kind_${k}`)}</span>
               {c && <span className="text-[11.5px] text-t3">{t("countOf", { done: formatNumber(c.approved, locale), total: formatNumber(c.total, locale) })}</span>}
+              {!!c?.readers && <span className="text-[11.5px] text-t2">{t("readersWaiting", cnt(c.readers, locale))}</span>}
             </button>
           );
         })}
@@ -177,13 +180,13 @@ function Awaiting({ onOpen }: { onOpen: (kind: Kind, target: string) => void }) 
 }
 
 /** A worklist's targets, the most used in the Quran first, by the state of the board's work on each. */
-function TargetList({ place, counts, onPlace }: { place: Place; counts?: { total: number; approved: number; review: number }; onPlace: (p: Partial<Place>) => void }) {
+function TargetList({ place, counts, onPlace }: { place: Place; counts?: { total: number; approved: number; review: number; readers?: number }; onPlace: (p: Partial<Place>) => void }) {
   const t = useTranslations("workbench");
   const locale = useLocale();
   const [query, setQuery] = useState(place.q);
   const q = useInfiniteQuery({
-    queryKey: ["editorial-targets", place.kind, place.state, place.q],
-    queryFn: ({ pageParam }) => getTargets(place.kind, { state: place.state, q: place.q, offset: pageParam }),
+    queryKey: ["editorial-targets", place.kind, place.state, place.q, !!place.readers],
+    queryFn: ({ pageParam }) => getTargets(place.kind, { state: place.state, q: place.q, offset: pageParam, readers: place.readers }),
     initialPageParam: 0,
     getNextPageParam: (last, all) => (all.reduce((n, p) => n + p.data.length, 0) < last.total ? all.reduce((n, p) => n + p.data.length, 0) : undefined),
   });
@@ -219,6 +222,12 @@ function TargetList({ place, counts, onPlace }: { place: Place; counts?: { total
         >
           <input className="field-input flex-1" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("search")} aria-label={t("search")} dir="auto" />
         </form>
+        {place.kind === "sense_list" && (
+          // the words whose readers' suggestions, merged by the reviewers, wait on the board (B38)
+          <button type="button" className={"seg" + (place.readers ? " is-on" : "")} aria-pressed={!!place.readers} onClick={() => onPlace({ readers: !place.readers })}>
+            {t("readersFilter", { n: formatNumber(counts?.readers ?? 0, locale) })}
+          </button>
+        )}
       </div>
       <p className="text-[12px] text-t3" role="status">{q.isPending ? "" : t("found", cnt(total, locale))}</p>
       <ul className="workbench-rows">
@@ -228,6 +237,7 @@ function TargetList({ place, counts, onPlace }: { place: Place; counts?: { total
               <span className="ar-classical min-w-[96px] text-[19px] text-t1" lang="ar">{it.label}</span>
               <span className="min-w-0 flex-1 truncate text-[12.5px] text-t3" dir="auto">{it.sub}</span>
               {it.occurrences != null && place.kind !== "glossary" && <span className="mono text-[11.5px] text-t3">{formatNumber(it.occurrences, locale)}</span>}
+              {!!it.readers && <span className="state-chip is-open">{t("readersWaiting", cnt(it.readers, locale))}</span>}
               <span className={`state-chip is-${it.state}`}>{t(`state_${it.state}`)}</span>
             </button>
           </li>

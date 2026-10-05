@@ -2559,7 +2559,8 @@
     "mushafLead": "اقرأ القرآن بصفحات مصحف المدينة الستمئة والأربع، كل كلمة فيها تفتح جذرها ومعناها كما في القارئ.",
     "mushafParts": "أوائل الأجزاء",
     "openPage": "افتح الصفحة",
-    "readAsPage": "اقرأها صفحة"
+    "readAsPage": "اقرأها صفحة",
+    "senseSuggested": "من اقتراح <who></who>"
   },
   "board": {
     "reviewed": "راجعته هيئة التحرير",
@@ -3532,7 +3533,21 @@
     "candTopicVerses": "أول آياته",
     "candQsac": "وسوم مدونة QSAC الآلية على آياته: إشارة لا اسم",
     "candPlacedHere": "ما وضعته الهيئة تحته",
-    "remappedTopic": "وضعت تحت: {topic}"
+    "remappedTopic": "وضعت تحت: {topic}",
+    "readersWaiting": "اقتراحات القراء: {n}",
+    "readersFilter": "ما ينتظر من اقتراحات القراء ({n})",
+    "fromReader": "مأخوذ من اقتراح قارئ",
+    "candReaders": "اقتراحات القراء التي قبلها المراجعون",
+    "candReadersNote": "اقترحها قراء وقبلها مراجعان أحدهما من الهيئة، وهي معروضة بجانب الكلمة. الاقتراح ليس مصدرًا: المعنى المأخوذ منه يُكتب بعبارة الهيئة ويستند إلى الكتب التي يذكرها، ويُنسب الاقتراح إلى صاحبه في صفحة الكلمة.",
+    "readerKind_sense": "معنى جديد",
+    "readerKind_edit": "تعديل المعنى {n}",
+    "readerKind_gloss": "تصحيح المعنى المختصر",
+    "readerState_waiting": "ينتظر الهيئة",
+    "readerState_taken": "أخذته القائمة السارية",
+    "readerState_seen": "سبق اعتماد القائمة السارية",
+    "readerWas": "كان",
+    "readerWhy": "سببه",
+    "takeSuggestion": "خذه معنى في القائمة"
   },
   "classroom": {
     "title": "الصف",

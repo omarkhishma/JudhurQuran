@@ -102,8 +102,11 @@ def targets(
     layer: str | None = Query(None, max_length=40),
     offset: int = Query(0, ge=0, le=1_000_000),
     limit: int = Query(50, ge=1, le=200),
+    readers: bool = Query(
+        False, description="Only the words whose readers' suggestions wait on the board (B38)"
+    ),
 ) -> ORJSONResponse:
-    return ok(editorial.targets(u, kind, state, q.strip(), offset, limit, layer))
+    return ok(editorial.targets(u, kind, state, q.strip(), offset, limit, layer, readers))
 
 
 @router.get(

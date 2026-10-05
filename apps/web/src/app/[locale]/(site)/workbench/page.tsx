@@ -19,6 +19,6 @@ export default async function Page({ params, searchParams }: PageProps<"/[locale
   const kind: Kind = one("kind") === "verdict" || (KINDS as string[]).includes(one("kind")) ? (one("kind") as Kind) : "root_gloss";
   const layer = (LAYERS as readonly string[]).includes(one("layer")) ? (one("layer") as Layer) : undefined;
   const state = (STATES as string[]).includes(one("state")) ? (one("state") as State) : "all";
-  const initial: Place = { kind, layer, state, q: one("q").slice(0, 80), target: one("target").slice(0, 200) || undefined };
+  const initial: Place = { kind, layer, state, q: one("q").slice(0, 80), target: one("target").slice(0, 200) || undefined, readers: kind === "sense_list" && one("readers") === "1" };
   return <Workbench initial={initial} />;
 }

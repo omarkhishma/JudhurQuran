@@ -32,7 +32,7 @@ export type Entry = {
 };
 
 type Counts = { total: number; draft: number; review: number; changes: number; approved: number };
-export type Worklists = { kinds: (Counts & { kind: Kind })[]; layers: (Counts & { layer: Layer })[]; awaiting_me: number; my_open: number; role: string };
+export type Worklists = { kinds: (Counts & { kind: Kind; readers?: number })[]; layers: (Counts & { layer: Layer })[]; awaiting_me: number; my_open: number; role: string };
 /** A relation row's details (P8.4): its two ends as the book words them, the roots they were mapped to and how surely,
  * the sense it names, its verses. */
 export type RelationRow = {
@@ -51,7 +51,8 @@ export type RelationRow = {
 /** A topic layer's row (P8.3b): the verse in the mushaf's text, and the topic — or QSAC's tag — where its source
  * places it. */
 export type TopicLayerRow = { verse_key: string; verse_text: string; topic_id: string; name: string; description: string | null; parent_ar: string | null; parent_en: string | null; grand_en: string | null };
-export type TargetRow = { key: string; label: string; sub: string; occurrences?: number; state: Exclude<State, "all">; source_status?: string; relation?: RelationRow; topic?: TopicLayerRow };
+/** `readers`: on a word's sense list, the readers' merged suggestions that wait on the board (B38). */
+export type TargetRow = { key: string; label: string; sub: string; occurrences?: number; state: Exclude<State, "all">; readers?: number; source_status?: string; relation?: RelationRow; topic?: TopicLayerRow };
 
 export type EntryPage = {
   kind: Kind;
@@ -68,9 +69,10 @@ export type EntryPage = {
 const enc = (s: string) => s.split("/").map(encodeURIComponent).join("/");
 
 export const getWorklists = () => authFetch<Worklists>("/editorial/worklists");
-export const getTargets = (kind: Kind, p: { state: State; q: string; layer?: Layer; offset: number; limit?: number }) => {
+export const getTargets = (kind: Kind, p: { state: State; q: string; layer?: Layer; offset: number; limit?: number; readers?: boolean }) => {
   const qs = new URLSearchParams({ state: p.state, offset: String(p.offset), limit: String(p.limit ?? 50) });
   if (p.q) qs.set("q", p.q);
+  if (p.readers) qs.set("readers", "true");
   if (p.layer) qs.set("layer", p.layer);
   return authFetch<{ total: number; data: TargetRow[] }>(`/editorial/${kind}?${qs}`);
 };

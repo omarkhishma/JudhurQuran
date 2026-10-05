@@ -452,6 +452,107 @@ def test_fields_from_the_books_and_a_loose_reading_kept_from_readers_until_revie
     assert [x["review"]["verdict"] for x in panel if x["id"] == secret] == ["reviewed"]
 
 
+def test_readers_suggestions_reach_the_board_and_the_reader_is_credited_when_taken(
+    board: dict[str, dict[str, str]],
+) -> None:
+    """B38: a sense a reader proposed and two reviewers, one of the board, merged arrives in the workbench beside the
+    word's sense list as a candidate — its words, sources, proposer and approvers — and the word is listed among those
+    whose suggestions wait; a sense the board takes from it names it (only a suggestion of that word's, in force), and
+    once that list is approved the word's page credits the reader on the board's sense and the merge is not shown
+    twice; a suggestion merged after the list waits again."""
+    a, b, m = board["a"], board["b"], board["m"]
+    name = client.get("/api/v1/me", headers=m).json()["display_name"]
+    slug = client.get(
+        "/api/v1/editorial/sense_list", headers=a, params={"state": "todo", "offset": 2500, "limit": 1}
+    ).json()["data"][0]["key"]
+    src = [{"work": "mufradat", "ref": "123"}]
+    pids: list[str] = []
+
+    def suggest(text_: str) -> str:
+        p = client.post(
+            "/api/v1/proposals",
+            headers=m,
+            json={"kind": "sense", "lemma": slug, "text": text_, "why": "a test", "sources": src},
+        )
+        assert p.status_code == 201, p.text
+        pids.append(p.json()["id"])
+        for who in (a, b):
+            r = client.post(
+                f"/api/v1/proposals/{pids[-1]}/decisions", headers=who, json={"decision": "approve"}
+            )
+        assert r.json()["status"] == "merged", r.text
+        return pids[-1]
+
+    try:
+        assert all(
+            x["key"] != slug
+            for x in client.get(
+                "/api/v1/editorial/sense_list", headers=a, params={"readers": True, "limit": 200}
+            ).json()["data"]
+        )
+        pid = suggest("معنى اقترحه قارئ")
+        page = client.get(f"/api/v1/editorial/sense_list/{slug}", headers=a).json()
+        [r] = page["candidates"]["readers"]
+        assert r["proposal_id"] == pid and r["kind"] == "sense" and r["text"] == "معنى اقترحه قارئ"
+        assert r["state"] == "waiting" and r["contributor"] == name and r["why"] == "a test"
+        assert r["sources"][0]["work"] == "mufradat" and r["sources"][0]["title_ar"]
+        assert [x["board"] for x in r["reviewers"]] == [True, True]
+        listed = client.get(
+            "/api/v1/editorial/sense_list", headers=a, params={"readers": True, "limit": 200}
+        ).json()["data"]
+        assert {x["key"]: x["readers"] for x in listed}[slug] == 1
+        kinds = {k["kind"]: k for k in client.get("/api/v1/editorial/worklists", headers=a).json()["kinds"]}
+        with accounts.tx() as conn:
+            assert kinds["sense_list"]["readers"] == len(editorial.waiting_words(conn))
+        # only a suggestion of this word's, merged and in force, can be named
+        for bad, code in ((str(uuid.uuid4()), "unknown_suggestion"), ("not-an-id", "bad_value")):
+            r_ = client.put(
+                f"/api/v1/editorial/sense_list/{slug}",
+                headers=a,
+                json={
+                    "value": {"senses": [{"ar": "x", "en": "", "sources": src, "from": bad}]},
+                    "sources": [],
+                },
+            )
+            assert r_.status_code == 422 and r_.json()["error"]["code"] == code, r_.text
+        _approve(
+            board,
+            "sense_list",
+            slug,
+            {"senses": [{"ar": "معنى أخذته الهيئة", "en": "", "sources": src, "from": pid}]},
+        )
+        page = client.get(f"/api/v1/editorial/sense_list/{slug}", headers=a).json()
+        assert [x["state"] for x in page["candidates"]["readers"]] == ["taken"]
+        assert page["in_force"]["value"]["senses"][0]["from"] == pid
+        word = client.get(f"/api/v1/words/{slug}", params={"limit": 0}).json()
+        assert word["senses"][0]["text_ar"] == "معنى أخذته الهيئة"
+        assert word["senses"][0]["suggested"] == {"proposal_id": pid, "name": name, "former": False}
+        merged = client.get(f"/api/v1/lemmas/{slug}/contributions").json()["data"]
+        assert [(x["proposal_id"], x["folded"]) for x in merged] == [(pid, True)]
+        # one merged after the list waits again; the one taken does not
+        later = suggest("معنى آخر بعد القائمة")
+        states = {
+            x["proposal_id"]: x["state"]
+            for x in client.get(f"/api/v1/editorial/sense_list/{slug}", headers=a).json()["candidates"][
+                "readers"
+            ]
+        }
+        assert states == {pid: "taken", later: "waiting"}
+        listed = client.get(
+            "/api/v1/editorial/sense_list", headers=a, params={"readers": True, "limit": 200}
+        ).json()["data"]
+        assert {x["key"]: x["readers"] for x in listed}[slug] == 1
+    finally:
+        with accounts.tx() as conn:
+            for q_ in (
+                "delete from contributions.changelog where merge_id in (select id from contributions.merges where proposal_id = any(cast(:p as uuid[]))) returning id",
+                "delete from contributions.merges where proposal_id = any(cast(:p as uuid[])) returning id",
+                "delete from contributions.decisions where proposal_id = any(cast(:p as uuid[])) returning id",
+                "delete from contributions.proposals where id = any(cast(:p as uuid[])) returning id",
+            ):
+                accounts.q(conn, q_, {"p": pids})
+
+
 def test_the_web_lists_every_kind_and_layer_the_api_keeps() -> None:
     """The workbench's screen keeps its own list of kinds and layers (apps/web/src/lib/editorialShape.ts); a layer
     the API judges but the screen does not list cannot be worked on (topic_links was, until P8.3b)."""

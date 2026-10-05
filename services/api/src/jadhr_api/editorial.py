@@ -185,7 +185,16 @@ def _value(kind: str, raw: Any) -> tuple[dict[str, Any], bool]:
             ar, en = _str(s.get("ar"), 1000), _str(s.get("en"), 1000)
             if not ar and not en:
                 raise Refusal(422, "empty", "Each sense is written in Arabic, in English, or both.")
-            out_s.append({"ar": ar, "en": en, "sources": _sources(s.get("sources"), need=True)})
+            sense: dict[str, Any] = {"ar": ar, "en": en, "sources": _sources(s.get("sources"), need=True)}
+            # the reader's suggestion it was taken from (B38): credited on the word, never a source
+            if s.get("from"):
+                try:
+                    sense["from"] = str(uuid.UUID(str(s["from"])))
+                except ValueError:
+                    raise Refusal(
+                        422, "bad_value", "A sense names a reader's suggestion by its id."
+                    ) from None
+            out_s.append(sense)
         return {"senses": out_s}, False
     if kind == "topic":
         # the board's Arabic name for a heading, and where it stands: "" as its source places it, "top", or a topic;
@@ -421,6 +430,85 @@ def _entry_out(e: dict[str, Any], names: dict[str, str | None]) -> dict[str, Any
     }
 
 
+# ─── readers' suggestions as the board's candidates (B38) ─────────────────────
+
+SUGGESTED = ("sense", "edit", "gloss")
+
+
+def _suggested(conn: Connection, slugs: list[str] | None = None) -> dict[str, list[dict[str, Any]]]:
+    """The suggestions on a word's meaning that readers proposed and reviewers merged (P7) — a new sense, an edit of
+    one, a gloss corrected — still in force, by word, in the order they were merged."""
+    found = q(
+        conn,
+        f"""select m.*, p.why from contributions.merges m join contributions.proposals p on p.id = m.proposal_id
+             where m.reverted_at is null and m.kind in ('sense', 'edit', 'gloss')
+             {"and m.lemma = any(:s)" if slugs is not None else ""} order by m.merged_at""",
+        {"s": slugs} if slugs is not None else {},
+    )
+    out: dict[str, list[dict[str, Any]]] = {}
+    for m in found:
+        out.setdefault(m["lemma"], []).append(m)
+    return out
+
+
+def _lists(conn: Connection, slugs: list[str] | None = None) -> dict[str, dict[str, Any]]:
+    """The sense lists in force: when each was approved and the suggestions it took."""
+    return {
+        r["target"]: {
+            "at": r["decided_at"],
+            "took": {s["from"] for s in r["value"].get("senses", []) if s.get("from")},
+        }
+        for r in q(
+            conn,
+            f"""select target, value, decided_at from editorial.entries where kind = 'sense_list' and status = 'approved'
+                 {"and target = any(:s)" if slugs is not None else ""}""",
+            {"s": slugs} if slugs is not None else {},
+        )
+    }
+
+
+def _waits(m: dict[str, Any], lst: dict[str, Any] | None) -> bool:
+    """A suggestion waits on the board until a list in force takes it or was approved after it merged."""
+    if lst is None:
+        return True
+    return str(m["proposal_id"]) not in lst["took"] and (lst["at"] is None or m["merged_at"] > lst["at"])
+
+
+def waiting_words(conn: Connection) -> dict[str, int]:
+    """The words whose readers' suggestions wait on the board, with how many."""
+    lists = _lists(conn)
+    return {
+        slug: n for slug, ms in _suggested(conn).items() if (n := sum(_waits(m, lists.get(slug)) for m in ms))
+    }
+
+
+def _readers(slug: str) -> list[dict[str, Any]]:
+    """A word's merged suggestions as the workbench shows them: the reader's words and sources, who proposed and who
+    approved, and whether the list in force took it, was approved after it, or it waits."""
+    from . import contrib
+
+    with tx() as conn:
+        ms = _suggested(conn, [slug]).get(slug, [])
+        lst = _lists(conn, [slug]).get(slug)
+    if not ms:
+        return []
+    names = contrib._lemma_ar([slug])
+    works = contrib._works()
+    people = contrib._people(ms)
+    return [
+        contrib._merge_out(m, names, works, people)
+        | {
+            "why": m["why"],
+            "state": "taken"
+            if lst and str(m["proposal_id"]) in lst["took"]
+            else "waiting"
+            if _waits(m, lst)
+            else "seen",
+        }
+        for m in ms
+    ]
+
+
 # ─── what is in force: read beside the content ─────────────────────────────────
 
 
@@ -505,6 +593,7 @@ def worklists(u: dict[str, Any]) -> dict[str, Any]:
             "select count(*)::int as n from editorial.entries where author_id = :u and status in ('draft', 'changes')",
             {"u": u["id"]},
         )
+        suggested = len(waiting_words(conn))
 
     def counts(xs: list[dict[str, Any]], key: str, name: str) -> dict[str, int]:
         c = {s: 0 for s in ("draft", "review", "changes", "approved")}
@@ -514,7 +603,11 @@ def worklists(u: dict[str, Any]) -> dict[str, Any]:
         return c
 
     return {
-        "kinds": [{"kind": k, "total": totals[k], **counts(by, "kind", k)} for k in _POOL],
+        "kinds": [
+            {"kind": k, "total": totals[k], **counts(by, "kind", k)}
+            | ({"readers": suggested} if k == "sense_list" else {})
+            for k in _POOL
+        ],
         "layers": [{"layer": k, "total": layers[k], **counts(vby, "layer", k)} for k in LAYERS],
         "awaiting_me": waiting["n"] if waiting else 0,
         "my_open": mine["n"] if mine else 0,
@@ -588,10 +681,18 @@ def _topic_targets(conn: Connection, query: str) -> list[dict[str, Any]]:
 
 
 def targets(
-    u: dict[str, Any], kind: str, state: str, query: str, offset: int, limit: int, layer: str | None
+    u: dict[str, Any],
+    kind: str,
+    state: str,
+    query: str,
+    offset: int,
+    limit: int,
+    layer: str | None,
+    readers: bool = False,
 ) -> dict[str, Any]:
     """A worklist's targets, the most used in the Quran first (a layer's rows in the book's order), each with the
-    state of the board's work on it: to do, open (a draft or changes asked), in review, in force."""
+    state of the board's work on it: to do, open (a draft or changes asked), in review, in force; a word's sense list
+    with the readers' suggestions waiting on it (B38), and only the words that have them when ``readers``."""
     _board(u)
     _kind(kind)
     if state not in ("all", "todo", "open", "review", "approved"):
@@ -602,6 +703,7 @@ def targets(
             "select target, status from editorial.entries where kind = :k and status <> 'retired'",
             {"k": kind},
         )
+        waits = waiting_words(conn) if kind == "sense_list" else {}
     states: dict[str, set[str]] = {}
     for w in work:
         states.setdefault(w["target"], set()).add(w["status"])
@@ -682,6 +784,10 @@ def targets(
             items = rows(conn, sql + where + order, {"q": f"%{query}%"} if query else {})
     for it in items:
         it["state"] = state_of(it["key"])
+        if kind == "sense_list":
+            it["readers"] = waits.get(it["key"], 0)
+    if readers:
+        items = [i for i in items if i.get("readers")]
     if kind == "verdict" and query:
         # «36:» is a sūra's rows (B43: the coverage strip leads the board to a sūra), never «136:» or «6:12»'s
         surah = re.fullmatch(r"\d{1,3}:", query)
@@ -764,6 +870,7 @@ def candidates(conn: Connection, kind: str, t: dict[str, Any]) -> dict[str, Any]
             else None
         )
         return {
+            "readers": _readers(t["key"]),
             "mufradat": mufradat,
             "muyassar": muyassar,
             "wujuh": wujuh,
@@ -938,6 +1045,17 @@ def save(u: dict[str, Any], kind: str, target: str, raw_value: Any, raw_sources:
         if kind == "topic":
             _check_topic(conn, t, value, sources)
     with tx() as conn:
+        named = (
+            {s["from"] for s in value.get("senses", []) if s.get("from")} if kind == "sense_list" else set()
+        )
+        if named:
+            held = {str(m["proposal_id"]) for m in _suggested(conn, [target]).get(target, [])}
+            if named - held:
+                raise Refusal(
+                    422,
+                    "unknown_suggestion",
+                    "A sense names a suggestion that is not this word's, or not in force.",
+                )
         e = q1(
             conn,
             "select * from editorial.entries where kind = :k and target = :t and status in ('draft', 'review', 'changes') for update",

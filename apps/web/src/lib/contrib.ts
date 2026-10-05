@@ -69,6 +69,8 @@ export type Merge = {
   reviewers: { name: string | null; board: boolean }[];
   merged_at: string;
   reverted_at: string | null;
+  /** taken into the board's sense list in force (B38): shown there, credited, not again beside it */
+  folded?: boolean;
 };
 export type ChangelogEntry = { entry: number; at: string; event: "merged" | "reverted"; dataset_version: string; merge: Merge };
 export type Changelog = { data: ChangelogEntry[]; more: boolean };

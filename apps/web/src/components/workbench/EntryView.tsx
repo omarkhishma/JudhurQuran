@@ -3,7 +3,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
+import { ContributionCredit } from "@/components/contrib/WordContributions";
 import { ApiError } from "@/lib/account/store";
+import { hasArabic } from "@/lib/arabic/normalize";
+import type { Merge } from "@/lib/contrib";
 import { decideEntry, discardEntry, getEntry, getWorks, saveEntry, submitEntry, withdrawEntry, type Entry, type EntryPage, type Kind, type Source } from "@/lib/editorial";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { TopicPicker } from "./TopicPicker";
@@ -206,12 +209,13 @@ function ValueView({ kind, value, sources }: { kind: Kind; value: Value; sources
       )}
       {kind === "sense_list" && (
         <ol className="flex flex-col gap-1.5">
-          {(value.senses as { ar: string; en: string; sources: Source[] }[]).map((s, i) => (
+          {(value.senses as { ar: string; en: string; sources: Source[]; from?: string }[]).map((s, i) => (
             <li key={i} className="flex gap-2">
               <span className="mono text-[11px] text-t3">{i + 1}</span>
               <span className="flex min-w-0 flex-col">
                 {s.ar && <span className="text-[14.5px] text-t1" lang="ar" dir="rtl">{s.ar}</span>}
                 {s.en && <span className="text-[13px] text-t2" lang="en" dir="ltr">{s.en}</span>}
+                {s.from && <span className="text-[11.5px] text-t3">{t("fromReader")}</span>}
                 <SourceList sources={s.sources} />
               </span>
             </li>
@@ -335,7 +339,7 @@ function Form({ kind, page, value, sources, onValue, onSources }: { kind: Kind; 
 /** A sense list: numbered senses, each in Arabic, English or both, each with its own sources; reordered, removed. */
 function SensesForm({ value, onValue }: { value: Value; onValue: (v: Value) => void }) {
   const t = useTranslations("workbench");
-  const senses = value.senses as { ar: string; en: string; sources: Source[] }[];
+  const senses = value.senses as { ar: string; en: string; sources: Source[]; from?: string }[];
   const put = (i: number, s: Partial<(typeof senses)[number]>) => onValue({ senses: senses.map((x, j) => (j === i ? { ...x, ...s } : x)) });
   const move = (i: number, d: -1 | 1) => {
     const next = [...senses];
@@ -347,7 +351,7 @@ function SensesForm({ value, onValue }: { value: Value; onValue: (v: Value) => v
       {senses.length === 0 && <p className="text-[12.5px] text-t3">{t("sensesEmpty")}</p>}
       {senses.map((s, i) => (
         <fieldset key={i} className="flex flex-col gap-1.5 rounded-lg border border-line p-2">
-          <legend className="px-1 text-[12px] text-t3">{t("senseN", { n: i + 1 })}</legend>
+          <legend className="px-1 text-[12px] text-t3">{t("senseN", { n: i + 1 })}{s.from ? ` — ${t("fromReader")}` : ""}</legend>
           <textarea className="field-input min-h-[52px]" value={s.ar} onChange={(e) => put(i, { ar: e.target.value })} dir="rtl" lang="ar" aria-label={t("textAr")} />
           <textarea className="field-input min-h-[44px]" value={s.en} onChange={(e) => put(i, { en: e.target.value })} dir="ltr" lang="en" aria-label={t("textEn")} />
           <SourcesForm sources={s.sources} onSources={(src) => put(i, { sources: src })} />
@@ -397,6 +401,10 @@ function SourcesForm({ sources, onSources }: { sources: Source[]; onSources: (s:
     </div>
   );
 }
+
+/** A reader's merged suggestion on the word's meaning (B38): whether the list in force took it, was approved after it,
+ * or it waits on the board. */
+type Reader = Merge & { why: string | null; state: "waiting" | "taken" | "seen" };
 
 /**
  * The sources' candidates for a target: verbatim slices and counts, each with a button to cite it and, where the
@@ -473,8 +481,41 @@ function Candidates({ kind, page, canUse, onCite, onUse }: { kind: Kind; page: E
   }
   if (kind === "sense_list") {
     const addSense = (ar: string, s: Source) => onUse((old) => ({ senses: [...(old.senses ?? []), { ar, en: "", sources: [s] }] }));
+    // a reader's suggestion taken as a sense: their words to rewrite, the books they named, and whose it was — the
+    // suggestion credits them on the word and is never itself a source (B38, L2); a verse cited is the mushaf's
+    const take = (m: Reader) =>
+      onUse((old) =>
+        (old.senses ?? []).some((x: { from?: string }) => x.from === m.proposal_id)
+          ? old
+          : { senses: [...(old.senses ?? []), { ar: hasArabic(m.text) ? m.text : "", en: hasArabic(m.text) ? "" : m.text, sources: m.sources.map((s) => ({ work: s.work === "quran" ? "qpc-hafs" : s.work, ref: s.ref })), from: m.proposal_id }] },
+      );
+    const readers = (c.readers ?? []) as Reader[];
     return (
       <div className="flex flex-col gap-3">
+        {readers.length > 0 && (
+          <section className="cand" aria-labelledby="cand-readers">
+            <p className="cand-h" id="cand-readers">{t("candReaders")}</p>
+            <p className="text-[11.5px] leading-relaxed text-t3">{t("candReadersNote")}</p>
+            <ul className="flex flex-col gap-2">
+              {readers.map((m) => (
+                <li key={m.id} className="flex flex-col gap-1 border-t border-line pt-2">
+                  <p className="flex flex-wrap items-center gap-2 text-[11.5px]">
+                    <span className="font-medium text-t2">{t(`readerKind_${m.kind}`, { n: formatNumber(m.sense_ordinal ?? 0, locale) })}</span>
+                    {m.location && <span className="mono text-t3" dir="ltr">{verseRef(m.location, locale)}</span>}
+                    <span className={`state-chip is-${m.state === "waiting" ? "open" : m.state === "taken" ? "approved" : "todo"}`}>{t(`readerState_${m.state}`)}</span>
+                  </p>
+                  {m.kind !== "sense" && m.previous_text && <p className="text-[12.5px] text-t3" dir="auto">{t("readerWas")}: {m.previous_text}</p>}
+                  <p className="text-[14.5px] leading-[1.8] text-t1" dir="auto">{m.text}</p>
+                  {m.why && <p className="text-[12px] text-t2" dir="auto">{t("readerWhy")}: {m.why}</p>}
+                  <ContributionCredit m={m} />
+                  {canUse && m.state !== "taken" && (
+                    <button type="button" className="chip self-start text-[11px]" onClick={() => take(m)}>{t("takeSuggestion")}</button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {c.corpus_gloss && <p className="text-[12.5px] text-t2">{t("candCorpusGloss")}: <span dir="ltr" lang="en">{c.corpus_gloss}</span></p>}
         {c.mufradat?.map((m: { id: string; headword_ar: string; text_ar: string; page_ref: string | null }) => (
           <figure key={m.id} className="cand">
@@ -514,7 +555,7 @@ function Candidates({ kind, page, canUse, onCite, onUse }: { kind: Kind; page: E
           </div>
         )}
         {c.lane && <Article title={t("candLane")} body={c.lane.body} cut={c.lane.length > c.lane.body.length} lang="en" cite={null} />}
-        {!c.mufradat?.length && !c.muyassar?.length && !c.wujuh?.length && <p className="text-[12.5px] text-t3">{t("candNone")}</p>}
+        {!readers.length && !c.mufradat?.length && !c.muyassar?.length && !c.wujuh?.length && <p className="text-[12.5px] text-t3">{t("candNone")}</p>}
       </div>
     );
   }

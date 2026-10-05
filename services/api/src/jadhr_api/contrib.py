@@ -946,12 +946,44 @@ def for_lemma(slug: str) -> dict[str, Any]:
             "select count(*) as n from contributions.proposals where lemma = :s and status in ('open', 'approved')",
             {"s": slug},
         )
+        # a suggestion the board's sense list in force has taken (B38) is shown there, credited, not twice
+        lst = q1(
+            conn,
+            "select value from editorial.entries where kind = 'sense_list' and status = 'approved' and target = :s",
+            {"s": slug},
+        )
+    took = {s["from"] for s in (lst["value"].get("senses", []) if lst else []) if s.get("from")}
     names = _lemma_ar([slug])
     works = _works()
     people = _people(found)
     return {
-        "data": [_merge_out(m, names, works, people) for m in found],
+        "data": [
+            _merge_out(m, names, works, people) | {"folded": str(m["proposal_id"]) in took} for m in found
+        ],
         "pending": pending["n"] if pending else 0,
+    }
+
+
+def credits(proposal_ids: list[str]) -> dict[str, dict[str, Any]]:
+    """The readers credited for suggestions the board took into a sense list (B38), by proposal: the name their
+    account carries now, or none for a reader who chose none or left (F14, F24)."""
+    if not proposal_ids:
+        return {}
+    with tx() as conn:
+        found = q(
+            conn,
+            """select m.proposal_id, m.contributor_id, u.display_name from contributions.merges m
+                 left join accounts.users u on u.id = m.contributor_id
+                where m.proposal_id = any(cast(:p as uuid[])) and m.reverted_at is null""",
+            {"p": proposal_ids},
+        )
+    return {
+        str(r["proposal_id"]): {
+            "proposal_id": str(r["proposal_id"]),
+            "name": r["display_name"] if r["contributor_id"] else None,
+            "former": r["contributor_id"] is None,
+        }
+        for r in found
     }
 
 

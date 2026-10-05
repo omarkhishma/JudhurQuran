@@ -203,7 +203,7 @@ export type BoardReview = { verdict: "reviewed" | "corrected"; note: string | nu
 /** A source as the board cites it: a work and where in it, and the words quoted. */
 export type BoardSource = { work: string; ref: string; quote?: string; title_ar?: string; title_en?: string };
 /** A sense: the board's (`status: "board"`, with its sources) or one merged from a proposal. */
-export type Sense = { id: number; ordinal: number; text_ar: string | null; text_en: string | null; sources: BoardSource[]; status: string };
+export type Sense = { id: number; ordinal: number; text_ar: string | null; text_en: string | null; sources: BoardSource[]; status: string; suggested?: { proposal_id: string; name: string | null; former: boolean } };
 
 export type DictEntry = {
   id: number;

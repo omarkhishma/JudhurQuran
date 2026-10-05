@@ -2559,7 +2559,8 @@
     "mushafLead": "Read the Quran by the 604 pages of the Madinah mushaf, every word opening its root and meaning as in the reader.",
     "mushafParts": "Where each juzʾ begins",
     "openPage": "Open the page",
-    "readAsPage": "Read it as a page"
+    "readAsPage": "Read it as a page",
+    "senseSuggested": "Suggested by <who></who>"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",
@@ -3532,7 +3533,21 @@
     "candTopicVerses": "Its first verses",
     "candQsac": "QSAC's machine tags on its verses: a hint, never a name",
     "candPlacedHere": "What the board placed under it",
-    "remappedTopic": "Placed under: {topic}"
+    "remappedTopic": "Placed under: {topic}",
+    "readersWaiting": "Readers' suggestions: {n}",
+    "readersFilter": "Readers' suggestions waiting ({n})",
+    "fromReader": "Taken from a reader's suggestion",
+    "candReaders": "Readers' suggestions the reviewers accepted",
+    "candReadersNote": "Proposed by readers and accepted by two reviewers, one of them of the board; they are shown beside the word. A suggestion is not a source: a sense taken from one is written in the board's words and rests on the books it cites, and the reader is credited on the word's page.",
+    "readerKind_sense": "A new sense",
+    "readerKind_edit": "An edit of sense {n}",
+    "readerKind_gloss": "A gloss corrected",
+    "readerState_waiting": "Waits on the board",
+    "readerState_taken": "Taken into the list in force",
+    "readerState_seen": "Came before the list in force was approved",
+    "readerWas": "Was",
+    "readerWhy": "Why",
+    "takeSuggestion": "Take it as a sense"
   },
   "classroom": {
     "title": "Classroom",

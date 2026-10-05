@@ -187,6 +187,10 @@ def senses(conn: Connection, slug: str) -> tuple[list[dict[str, Any]], dict[str,
     s = forced(conn, "sense_list", [slug]).get(slug)
     if not s:
         return None
+    # a sense taken from a reader's suggestion (B38) credits the reader, as the suggestion was credited
+    from .contrib import credits
+
+    taken = credits([x["from"] for x in s["value"]["senses"] if x.get("from")])
     out = [
         {
             "id": -(i + 1),
@@ -196,6 +200,7 @@ def senses(conn: Connection, slug: str) -> tuple[list[dict[str, Any]], dict[str,
             "sources": named(conn, x["sources"]),
             "status": "board",
         }
+        | ({"suggested": taken[x["from"]]} if x.get("from") in taken else {})
         for i, x in enumerate(s["value"]["senses"])
     ]
     return out, {"approved_at": s["approved_at"]}
