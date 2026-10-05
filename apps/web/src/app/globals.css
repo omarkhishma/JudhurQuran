@@ -7652,3 +7652,64 @@ button.topic-cell:focus-visible {
   --ramp-end: left;
 }
 
+/* my roots (B16): the count, the line of how it grew, the latest met */
+.my-roots {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+@media (max-width: 760px) {
+  .my-roots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.my-roots-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: pan-y;
+}
+.chart-axis {
+  stroke: var(--line-2);
+  stroke-width: 1;
+}
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.chart-tick {
+  fill: var(--t3);
+  font-size: 11px;
+  font-family: var(--font-ui);
+}
+/* the drawing scales with its width: on a phone its labels are drawn larger so they read at about the same size */
+@media (max-width: 760px) {
+  .chart-tick {
+    font-size: 21px;
+  }
+}
+.chart-line {
+  fill: none;
+  stroke: var(--c-root);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.chart-area {
+  fill: color-mix(in srgb, var(--c-root) 12%, transparent);
+}
+.chart-cross {
+  stroke: var(--line-2);
+  stroke-width: 1;
+}
+.chart-dot {
+  fill: var(--c-root);
+  stroke: var(--card);
+  stroke-width: 2;
+}
+

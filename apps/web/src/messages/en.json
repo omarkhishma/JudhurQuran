@@ -358,7 +358,19 @@
     "classSetsSub": "Sets your teachers made for your classes, their words from the same rules.",
     "fromClass": "Class {name}",
     "inSurahCount": "{n} in the sūra",
-    "setGone": "This set was not found: it may have been deleted, or be in another browser not yet synced."
+    "setGone": "This set was not found: it may have been deleted, or be in another browser not yet synced.",
+    "myRoots": "My roots",
+    "myRootsSub": "The roots you looked up, each with the day you first met it. The count grows as you read, and a day not read takes nothing from it.",
+    "myRootsCount": "{roots} of the Quran's {of}",
+    "myRootsChart": "Roots met since {since}: {n}",
+    "myRootsAt": "{n} by {date}",
+    "myRootsTable": "The numbers, day by day",
+    "myRootsDate": "Day",
+    "myRootsSoFar": "Roots by that day",
+    "myRootsLatest": "Met most recently",
+    "myRootsOpenMap": "Open the latest {n} as a map",
+    "myRootsMap": "My roots",
+    "myRootsKept": "Kept in this browser, and with your account when the journal syncs."
   },
   "review": {
     "title": "Root review",

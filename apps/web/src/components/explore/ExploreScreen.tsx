@@ -16,6 +16,7 @@ import { type ReaderSet, usePersonal, type WordState } from "@/lib/reader/store"
 import { classSet, classSets, colourOf, dropClassSet, evaluateSet, type EvaluatedSet, type SetRule } from "@/lib/sets";
 import { useStar } from "@/lib/store/saved";
 import { useTranslitOn } from "@/lib/useTranslit";
+import { MyRoots } from "./MyRoots";
 import { SetBuilder } from "./SetBuilder";
 import { MadeSetCard, useRuleSummary } from "./SetSummary";
 import { StudyDeck } from "./StudyDeck";
@@ -89,6 +90,7 @@ export function ExploreScreen({
               ))}
             </ul>
           </section>
+          <MyRoots />
           <MySets />
           <ClassSets />
           {path && <PathSection path={path} />}
