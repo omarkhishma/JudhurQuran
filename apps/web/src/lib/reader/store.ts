@@ -195,6 +195,8 @@ export type Prefs = {
   order: "mushaf" | "revelation";
   /** plan B9: each verse one stop for a screen reader, read in today's spelling, ↑ ↓ between verses */
   readByVerse: boolean;
+  /** plan B2: under each word its meaning, its root and its pattern */
+  interlinear: boolean;
 };
 
 type PrefsState = Prefs & {
@@ -228,6 +230,7 @@ export const DEFAULT_PREFS: Prefs = {
   dueSignal: true,
   order: "mushaf",
   readByVerse: false,
+  interlinear: false,
 };
 
 export const usePrefs = create<PrefsState>()(

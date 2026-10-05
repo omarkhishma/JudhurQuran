@@ -171,6 +171,42 @@ def surahs(conn: Connection) -> list[dict[str, Any]]:
     )
 
 
+def surah_interlinear(conn: Connection, number: int) -> dict[str, Any]:
+    """Under each word of a sūra (B2): its meaning at its place in al-Muyassar fī Gharīb al-Qurʾān — verbatim, under
+    the first word of the phrase it explains — the corpus's English gloss, its root's letters and its lemma's pattern.
+    Each word as [meaning or null, gloss or null, root or null, pattern or null], by its place."""
+    words = rows(
+        conn,
+        """select w.location, w.gloss_en, r.spaced as root, l.pattern
+             from content.words w
+             left join content.roots r on r.id = w.root_id
+             left join content.lemmas l on l.id = w.lemma_id
+            where w.surah = :s order by w.id""",
+        {"s": number},
+    )
+    meanings = rows(
+        conn,
+        """select word_locations[1] as at, meaning_ar from content.gharib_meanings
+            where surah = :s and cardinality(word_locations) > 0 order by seq""",
+        {"s": number},
+    )
+    first = {}
+    for m in meanings:
+        first.setdefault(m["at"], m["meaning_ar"])
+    work = one(
+        conn,
+        """select id, title_ar, title_en, publisher_ar, publisher_en, attribution_ar, attribution_en, licence_url
+             from content.gharib_works order by sort_order limit 1""",
+    )
+    return {
+        "surah": number,
+        "words": {
+            w["location"]: [first.get(w["location"]), w["gloss_en"], w["root"], w["pattern"]] for w in words
+        },
+        "meanings_from": work,
+    }
+
+
 def surah(conn: Connection, number: int) -> dict[str, Any] | None:
     return one(conn, "select * from content.surahs where number = :n", {"n": number})
 

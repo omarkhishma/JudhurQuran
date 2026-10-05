@@ -67,6 +67,7 @@ export function ReadingPrefs({ onClose }: { onClose: (how?: "key" | "pointer") =
       <DigitsPref />
       {/* more contrast and wider spacing, kept in this browser (B9) */}
       <DisplayPrefs />
+      <Switch checked={p.interlinear} onChange={(v) => p.set({ interlinear: v })} label={t("prefInterlinear")} hint={t("prefInterlinearHint")} />
       <Switch checked={p.readByVerse} onChange={(v) => p.set({ readByVerse: v })} label={t("prefByVerse")} hint={t("prefByVerseHint")} />
       <Switch checked={p.tintRoot} onChange={(v) => p.set({ tintRoot: v })} label={t("prefTint")} hint={t("prefTintHint")} />
       <Switch checked={p.grammarBand} onChange={(v) => p.set({ grammarBand: v })} label={t("prefGrammar")} hint={t("prefGrammarHint")} />

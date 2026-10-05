@@ -2449,7 +2449,10 @@
     "placeVerses": "Verses {range}",
     "prefByVerse": "Read verse by verse with a screen reader",
     "prefByVerseHint": "Each verse is one stop for a screen reader, read in today's spelling; ↑ and ↓ between verses, Enter opens the verse, Space recites it.",
-    "recitingNow": "Now reciting: verse {ref}"
+    "recitingNow": "Now reciting: verse {ref}",
+    "prefInterlinear": "Word by word",
+    "prefInterlinearHint": "Under each word its meaning at its place, its root and its pattern.",
+    "interlinearCreditEn": "Under each word: its gloss from the Quranic Arabic Corpus, then its root and its pattern from the morphology."
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

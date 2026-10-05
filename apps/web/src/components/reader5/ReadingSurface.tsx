@@ -17,6 +17,7 @@ import { HoverCard, type HoverWord } from "./HoverCard";
 import { InlineGloss } from "./InlineGloss";
 import { noteOn, useSaved } from "@/lib/store/saved";
 import { InlineLines } from "./InlineLines";
+import { Interlinear } from "./Interlinear";
 import { VerseReading } from "./VerseReading";
 import { VerseDrawer, type DrawerTool } from "./VerseDrawer";
 
@@ -542,6 +543,7 @@ export function ReadingSurface({ chapter, initial, children }: { chapter: Chapte
     >
       {/* the classroom: said here whenever this reading counts for a lesson (P9.2a) */}
       {mounted && <LessonStrip chapter={chapter.number} />}
+      {mounted && <Interlinear chapter={chapter.number} />}
       {children}
       {mounted && <InlineLines chapter={chapter.number} />}
       {mounted && <VerseReading chapter={chapter.number} />}

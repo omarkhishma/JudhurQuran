@@ -191,6 +191,17 @@ def surahs(request: Request) -> Response:
 
 
 @router.get(
+    "/surahs/{number}/interlinear",
+    summary="Under each word of a sūra: its gharīb meaning at its place, its English gloss, its root, its pattern (B2)",
+)
+def surah_interlinear(request: Request, number: int) -> Response:
+    if not 1 <= number <= 114:
+        raise not_found("surah")
+    with connect() as conn:
+        return cached(request, content.surah_interlinear(conn, number))
+
+
+@router.get(
     "/surahs/lemma-sets", summary="The distinct words (lemma slugs) of every sūra, for vocabulary coverage"
 )
 def surah_lemma_sets(request: Request) -> Response:
