@@ -12,17 +12,18 @@ const COLOR: Record<TrailStep["kind"], string> = { word: "var(--c-word)", verse:
 
 /** Labels for trail steps: a word's headword (fetched, cached), a verse's key, a root's letters. */
 export function useStepViews(steps: TrailStep[]): StepView[] {
+  // a word met twice on the trail is asked for once
+  const ids = [...new Set(steps.filter((s) => s.kind === "word").map((s) => s.id))];
   const words = useQueries({
-    queries: steps.map((s) => ({
-      queryKey: ["word", s.id, null],
-      queryFn: () => getJSON<WordPayload>(`/words/${encodeURIComponent(s.id)}?limit=12`),
+    queries: ids.map((id) => ({
+      queryKey: ["word", id, null],
+      queryFn: () => getJSON<WordPayload>(`/words/${encodeURIComponent(id)}?limit=12`),
       staleTime: Infinity,
-      enabled: s.kind === "word",
     })),
   });
-  return steps.map((s, i) => {
+  return steps.map((s) => {
     if (s.kind === "word") {
-      const w = words[i]?.data;
+      const w = words[ids.indexOf(s.id)]?.data;
       return { step: s, label: w ? w.ar.full : s.id, sub: w?.ar.translit ?? "", root: w?.root?.key ?? null, color: COLOR.word };
     }
     if (s.kind === "verse") return { step: s, label: s.id, sub: "", root: null, color: COLOR.verse };
