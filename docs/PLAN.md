@@ -432,7 +432,7 @@ Each proposal: what it is · why it serves the reader · cost (S/M/L) · risk. T
 - B13 **Hifz companion** (P5): repeat a range with a reciter, hide words progressively, root-family hints for hard words, progress by juz, all local-first · M · scope creep; keep it simple.
 - B14 **More languages** (P10/P11): QuranEnc's licensed translations (Urdu, Indonesian, Turkish, French, Bengali…) for glosses and verse translation, later UI locales · reach beyond Arabic and English readers · M · each translation's terms.
 - B15 **Offline app** (P12): installable PWA with downloadable surahs, tafsirs and saved items · readers in low-connectivity places · M · storage budget.
-- B16 **"My roots" map** (P5): a personal graph of the roots met, growing over time — progress made visible without streaks · S/M · none.
+- B16 ✅ (e41f569, 2026-10-05: in Explore, the count, its growth and the latest met, opened as a map) **"My roots" map** (P5): a personal graph of the roots met, growing over time — progress made visible without streaks · S/M · none.
 - B17 **Public transparency page** (P10): live coverage, disagreements, open review items and expert sign-offs per layer · trust in a sensitive domain · S · keeping it current.
 - B24 **Tajwīd colouring** (P2): optional colour-coded tajwīd rules on the mushaf text (18 rules from cpfair's data, CC BY 4.0, remapped onto our text) with each rule explained in the plain-language layer · a daily need for reciters · M · offsets must be remapped and checked (D24).
 - B25 **People and places of the Quran** (P3.9 + P8): a page per prophet, nation, place and event with every verse that mentions it (by name or by pronoun), opening into a topic graph · turns the registry into an explorable encyclopedia · M · licences per D25.
