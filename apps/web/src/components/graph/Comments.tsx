@@ -12,8 +12,11 @@ import { useAccount } from "@/lib/account/store";
 import { cnt, formatNumber } from "@/lib/format";
 import { foldQuery as fold } from "@/lib/graph/find";
 import { META } from "@/lib/graph/relations";
-import { deleteComment, getComments, markCommentsRead, postComment, resolveComment, type Comment, type Person } from "@/lib/graph/shared";
+import { deleteComment, getComments, markCommentsRead, postComment, resolveComment, type Comment, type CommentQuote as Quote, type Person } from "@/lib/graph/shared";
 import { KIND_COLOR, type ForkRef, type GraphNode } from "@/lib/graph/types";
+import { useVerseText } from "@/lib/graph/verseText";
+import { ApiError } from "@/lib/account/store";
+import { CommentQuote } from "./CommentQuote";
 import type { CanvasTools } from "./GraphCanvas";
 
 /**
@@ -241,6 +244,7 @@ function CommentItem({ c, gid, tools, onReply }: { c: Comment; gid: string; tool
           )}
         </p>
         {!c.deleted && <Body c={c} />}
+        {!c.deleted && c.quote && <CommentQuote quote={c.quote} />}
         <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-t3">
           <time dateTime={c.created_at}>{when}</time>
           {c.resolved_at && <span>· {t("commentResolved")}</span>}
@@ -296,6 +300,11 @@ export function Composer({ gid, people, tools, anchor, parent, onDone, autoFocus
   const [active, setActive] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [picking, setPicking] = useState(false);
+  // a quoted verse that is not one is said at once, and the comment is not sent with it
+  const quotedVerse = useVerseText(quote?.kind === "verse" ? quote.key : undefined);
+  const noVerse = quote?.kind === "verse" && quotedVerse.isSuccess && !quotedVerse.data;
   const matches = query === null ? [] : people.filter((p) => p.name && fold(p.name).includes(fold(query))).slice(0, 6);
   const open = matches.length > 0;
 
@@ -329,14 +338,17 @@ export function Composer({ gid, people, tools, anchor, parent, onDone, autoFocus
         node_id: parent ? null : (anchor?.id ?? null),
         anchor: parent || !anchor ? "" : (tools?.cardName(anchor.id) ?? anchor.id),
         mentions: picked.filter((p) => body.includes(`@${p.name}`)).map((p) => p.id),
+        quote,
       });
       setText("");
       setPicked([]);
+      setQuote(null);
+      setPicking(false);
       await qc.invalidateQueries({ queryKey: KEY(gid) });
       onSent?.();
       onDone?.();
     } catch (e) {
-      setError(terr(`err.${errorKind(e)}`));
+      setError(e instanceof ApiError && e.code === "no_such_verse" ? t("quoteNoVerse") : e instanceof ApiError && e.code === "no_such_entry" ? t("quoteUnavailable") : terr(`err.${errorKind(e)}`));
     } finally {
       setBusy(false);
     }
@@ -418,14 +430,99 @@ export function Composer({ gid, people, tools, anchor, parent, onDone, autoFocus
           </ul>
         )}
       </div>
+      {quote ? (
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <CommentQuote quote={quote} max={160} />
+          </div>
+          <button type="button" className="field-remove" onClick={() => setQuote(null)} aria-label={t("quoteRemove")}>×</button>
+        </div>
+      ) : picking ? (
+        <QuotePicker tools={tools} anchor={anchor} onPick={(q) => { setQuote(q); setPicking(false); }} onCancel={() => setPicking(false)} />
+      ) : null}
       <div className="flex items-center gap-2">
+        {!quote && !picking && (
+          <button type="button" className="comment-act text-[11.5px]" onClick={() => setPicking(true)}>{t("quoteAdd")}</button>
+        )}
         {error && <p className="flex-1 text-[11.5px] text-bad" role="alert">{error}</p>}
         <span className="flex-1" />
         {parent && (
           <button type="button" className="btn text-[12.5px]" onClick={onDone}>{t("cancel")}</button>
         )}
-        <button type="submit" className="btn btn-primary text-[12.5px]" disabled={busy || !text.trim()}>{t("commentSend")}</button>
+        <button type="submit" className="btn btn-primary text-[12.5px]" disabled={busy || !text.trim() || noVerse}>{t("commentSend")}</button>
       </div>
     </form>
+  );
+}
+
+/** A verse typed as «٢:٢٥٥» or «2:255», read in either digits; anything else is not one. */
+function verseKeyOf(raw: string): string | null {
+  const m = /^\s*([0-9٠-٩]{1,3})\s*:\s*([0-9٠-٩]{1,3})\s*$/.exec(raw);
+  if (!m) return null;
+  const digits = (s: string) => s.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660));
+  return `${Number(digits(m[1]))}:${Number(digits(m[2]))}`;
+}
+
+/**
+ * Choosing what a comment quotes (B41): a verse by its reference, or a verse or an article already on the map — the
+ * card the comment is on first. Only the reference is taken; the words are drawn from the dataset.
+ */
+function QuotePicker({ tools, anchor, onPick, onCancel }: { tools?: CanvasTools; anchor?: GraphNode | null; onPick: (q: Quote) => void; onCancel: () => void }) {
+  const t = useTranslations("graph");
+  const id = useId();
+  const [ref, setRef] = useState("");
+  const [bad, setBad] = useState(false);
+  const quotable = (n: GraphNode): Quote | null => (n.data.kind === "verse" && n.data.verse ? { kind: "verse", key: n.data.verse.key } : n.data.kind === "note" && n.data.entry != null ? { kind: "entry", id: n.data.entry } : null);
+  const cards = tools ? [...(anchor ? [anchor] : []), ...tools.nodes.filter((n) => n.id !== anchor?.id)].flatMap((n) => { const q = quotable(n); return q ? [{ n, q }] : []; }).slice(0, 8) : [];
+  function attach() {
+    const key = verseKeyOf(ref);
+    if (!key) return setBad(true);
+    onPick({ kind: "verse", key });
+  }
+  return (
+    <div className="quote-picker" role="group" aria-label={t("quoteAdd")}>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <label htmlFor={`${id}-ref`} className="text-[11.5px] text-t3">{t("quoteVerseLabel")}</label>
+        <input
+          id={`${id}-ref`}
+          className="field-input w-24 text-[12.5px]"
+          value={ref}
+          dir="ltr"
+          inputMode="numeric"
+          placeholder={t("quoteVersePlaceholder")}
+          aria-invalid={bad || undefined}
+          aria-describedby={bad ? `${id}-bad` : undefined}
+          onChange={(e) => {
+            setRef(e.target.value);
+            setBad(false);
+          }}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") {
+              e.preventDefault();
+              attach();
+            } else if (e.key === "Escape") onCancel();
+          }}
+        />
+        <button type="button" className="btn text-[12px]" onClick={attach}>{t("quoteAttach")}</button>
+        <button type="button" className="comment-act text-[11.5px]" onClick={onCancel}>{t("cancel")}</button>
+      </div>
+      {bad && <p id={`${id}-bad`} className="text-[11.5px] text-bad">{t("quoteVerseBad")}</p>}
+      {cards.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-[11.5px] text-t3">{t("quoteFromMap")}</p>
+          <ul className="flex flex-wrap gap-1.5">
+            {cards.map(({ n, q }) => (
+              <li key={n.id}>
+                <button type="button" className="chip text-[12px]" onClick={() => onPick(q)}>
+                  <span className="text-t3">{t(META[n.data.kind].label)}</span> <span lang="ar">{tools!.cardName(n.id)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="text-[11px] leading-relaxed text-t3">{t("quoteHint")}</p>
+    </div>
   );
 }

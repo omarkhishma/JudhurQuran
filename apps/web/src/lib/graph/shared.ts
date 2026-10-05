@@ -1,7 +1,7 @@
 "use client";
 
 import { ApiError, apiError, authFetch, useAccount } from "@/lib/account/store";
-import type { GraphEdge, GraphKind, GraphNode } from "./types";
+import type { GraphEdge, GraphKind, GraphNode, QuoteKey } from "./types";
 
 /**
  * Maps shared for comments (P8.1-E): the server's copy of a map its owner chose to share, read by anyone with the
@@ -29,12 +29,16 @@ export type SharedRow = Omit<SharedDoc, "doc" | "doc_version"> & { open: number;
 
 export type Person = { id: string; name: string | null };
 
+/** What a comment quotes (B41): a verse by its key, a dictionary article by its identifier — never the words. */
+export type CommentQuote = { kind: "verse"; key: string } | { kind: "entry"; id: QuoteKey };
+
 export type Comment = {
   id: string;
   parent_id: string | null;
   node_id: string | null;
   anchor: string;
   body: string;
+  quote: CommentQuote | null;
   deleted: boolean;
   author: (Person & { owner: boolean }) | null;
   mine: boolean;
@@ -82,7 +86,7 @@ export const getComments = (id: string) => authFetch<CommentsPage>(`/graphs/${id
 /** The reader has the comments in front of them: what came before is no longer new to them. Fetching the comments is
  * not reading them (a window keeps them for its card markers). */
 export const markCommentsRead = (id: string) => authFetch<{ read: true }>(`/graphs/${id}/read`, { method: "POST" });
-export const postComment = (id: string, c: { body: string; node_id?: string | null; anchor?: string; parent_id?: string | null; mentions?: string[] }) =>
+export const postComment = (id: string, c: { body: string; node_id?: string | null; anchor?: string; parent_id?: string | null; mentions?: string[]; quote?: CommentQuote | null }) =>
   authFetch<Comment>(`/graphs/${id}/comments`, { method: "POST", body: JSON.stringify(c) });
 export const resolveComment = (id: string, resolved: boolean) => authFetch<Comment>(`/comments/${id}`, { method: "PATCH", body: JSON.stringify({ resolved }) });
 export async function deleteComment(id: string): Promise<void> {

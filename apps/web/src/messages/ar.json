@@ -1736,7 +1736,16 @@
     "coverageSurah": "السورة",
     "coverageVerses": "آياتها",
     "coverageCovered": "لها موضوع في المصدر",
-    "coverageByBoard": "وضعتها هيئة التحرير"
+    "coverageByBoard": "وضعتها هيئة التحرير",
+    "quoteAdd": "أرفق شاهدًا",
+    "quoteVerseLabel": "آية برقمها",
+    "quoteVersePlaceholder": "٢:٢٥٥",
+    "quoteVerseBad": "اكتب السورة والآية هكذا: ٢:٢٥٥",
+    "quoteAttach": "أرفقها",
+    "quoteFromMap": "أو من بطاقات الخريطة",
+    "quoteRemove": "أزل الشاهد",
+    "quoteNoVerse": "لا آية بهذا الرقم.",
+    "quoteHint": "يُحفظ مع التعليق مرجع الشاهد وحده، ويُعرض نصه من النص المحفوظ كما تعرضه البطاقات."
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",

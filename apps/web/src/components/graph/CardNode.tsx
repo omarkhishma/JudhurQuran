@@ -6,7 +6,7 @@ import { createContext, memo, useContext, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { citeVerse, cnt, formatNumber } from "@/lib/format";
 import { META } from "@/lib/graph/relations";
-import { FIELD_KINDS, KIND_COLOR, type Field, type FieldKind, type GraphNode, type QuoteKey } from "@/lib/graph/types";
+import { FIELD_KINDS, KIND_COLOR, type Field, type FieldKind, type GraphNode } from "@/lib/graph/types";
 import { useQuery } from "@tanstack/react-query";
 import type { ExtractOptions, VerseWord } from "@/lib/graph/extract";
 import { getJSON } from "@/lib/reader/api";
@@ -15,7 +15,8 @@ import type { CardStats } from "./GraphCanvas";
 import { CommentMarker } from "./Comments";
 import { isBoardTopic, sourceHeading, topicOf } from "@/lib/graph/topics";
 import { FieldEditor } from "./FieldEditor";
-import { opening, useEntry } from "@/lib/graph/quote";
+import { useEntry } from "@/lib/graph/quote";
+import { QuotedArticle } from "./QuotedArticle";
 import { excerptOf, keyOf, markedVerse, useVerseText } from "@/lib/graph/verseText";
 
 export type GraphActions = {
@@ -132,7 +133,7 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
 
       <div className="px-3 pb-3">
         {data.kind === "note" && data.entry ? (
-          <Quote entry={data.entry} folded={!!data.folded} />
+          <QuotedArticle entry={data.entry} max={data.folded ? 110 : 420} />
         ) : heading ? (
           <div className="mt-1">
             <p className={heading === "entity" ? "ar-classical text-[22px] leading-[1.5] text-t1" : "text-[15px] font-semibold leading-snug text-t1"} lang="ar" dir="auto">{(data.text ?? "").split("\n")[0]}</p>
@@ -249,38 +250,6 @@ function CardNodeImpl({ id, data, selected }: NodeProps<GraphNode>) {
       </div>
       <Handle type="source" position={Position.Left} className="!h-2.5 !w-2.5 !border-2 !border-card" style={{ background: color }} />
     </div>
-  );
-}
-
-/**
- * A dictionary's article quoted on a note (RDR-239): its opening words in «», cut at a word and marked «…», with the
- * work and its author and page — read from the dataset, as the reader shows it (D22, L2). The whole article is in
- * the details.
- */
-function Quote({ entry, folded }: { entry: QuoteKey; folded: boolean }) {
-  const t = useTranslations("graph");
-  const locale = useLocale();
-  const e = useEntry(entry);
-  if (e.isPending) return <span className="mt-1 block h-10 animate-pulse rounded bg-card-2" aria-hidden="true" />;
-  if (!e.data) return <p className="mt-1 text-[12px] text-t3">{t("quoteUnavailable")}</p>;
-  const { text, cut } = opening(e.data.body, folded ? 110 : 420);
-  const ar = e.data.lang !== "en";
-  return (
-    <figure className="mt-1">
-      <blockquote className={ar ? "ar-classical text-[15.5px] leading-[1.9] text-t1" : "text-[13px] leading-relaxed text-t1"} lang={ar ? "ar" : "en"} dir={ar ? "rtl" : "ltr"}>
-        «{text}
-        {cut && <span className="text-t3"> …</span>}»
-      </blockquote>
-      <figcaption className="mt-1 text-[11px] leading-relaxed text-t3">
-        {locale === "ar" ? `${e.data.title_ar} — ${e.data.author_ar}` : `${e.data.title_en} — ${e.data.author_en}`}
-        {e.data.page_ref && (
-          <>
-            {" · "}
-            <bdi dir="ltr" className="whitespace-nowrap">{e.data.page_ref}</bdi>
-          </>
-        )}
-      </figcaption>
-    </figure>
   );
 }
 

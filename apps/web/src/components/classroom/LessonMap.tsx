@@ -4,6 +4,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Composer, useMapComments } from "@/components/graph/Comments";
+import { CommentQuote } from "@/components/graph/CommentQuote";
 import type { SplitMessage } from "@/components/graph/SplitReceiver";
 import { Link } from "@/i18n/navigation";
 import { cardRef, decideProposal, getActivity, getProposals, rangesLine, sendProposal, setLessonMap, withdrawProposal, type CardRef, type FeedItem, type LessonOut, type Proposal } from "@/lib/classroom";
@@ -421,6 +422,7 @@ function FeedEntry({ x }: { x: FeedItem }) {
           <b className="font-semibold" dir="auto">{who}</b> · {parts.join(" · ")}
         </p>
         {x.kind === "commented" && d.body && <p className="feed-quote" dir="auto">{d.body}</p>}
+        {x.kind === "commented" && d.quote && <CommentQuote quote={d.quote} max={160} />}
         <time className="text-[11px] text-t3" dateTime={x.at}>{ago(x.at)}</time>
       </div>
     </li>

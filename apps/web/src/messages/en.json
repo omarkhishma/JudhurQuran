@@ -1736,7 +1736,16 @@
     "coverageSurah": "Sūra",
     "coverageVerses": "Verses",
     "coverageCovered": "With a topic in the source",
-    "coverageByBoard": "Placed by the board"
+    "coverageByBoard": "Placed by the board",
+    "quoteAdd": "Quote a source",
+    "quoteVerseLabel": "A verse by its number",
+    "quoteVersePlaceholder": "2:255",
+    "quoteVerseBad": "Write the sūra and the verse like this: 2:255",
+    "quoteAttach": "Quote it",
+    "quoteFromMap": "or from the map's cards",
+    "quoteRemove": "Remove the quotation",
+    "quoteNoVerse": "There is no verse with that number.",
+    "quoteHint": "The comment keeps only the reference; the words are drawn from the dataset, as the cards draw them."
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",

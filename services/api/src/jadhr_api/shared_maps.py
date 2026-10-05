@@ -15,14 +15,16 @@ and join it, and anyone in the class may be mentioned there (jadhr_api.classroom
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from datetime import timedelta
 from typing import Any
 
 from sqlalchemy import Connection, text
 
-from . import classroom, plain
+from . import classroom, content, plain
 from .accounts import now, q, q1, tx
+from .db import connect, one
 from .refusal import Refusal
 
 KINDS = ("root", "topic", "meaning", "free")
@@ -346,6 +348,43 @@ def _people(conn: Connection, g: dict[str, Any]) -> dict[str, str | None]:
     }
 
 
+_VERSE_KEY = re.compile(r"\d{1,3}:\d{1,3}")
+_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
+
+
+def _quote(raw: Any) -> dict[str, Any] | None:
+    """What a comment quotes (B41): a verse by its key, or a dictionary article by its identifier (``dict:lane:علم``)
+    or row id — checked against the dataset and kept as that reference, never as words, so a comment shows a verse or
+    an article only as the dataset gives it (L1, D22)."""
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise Refusal(422, "bad_quote", "A quotation names a verse or a dictionary article.")
+    if raw.get("kind") == "verse":
+        key = str(raw.get("key") or "").translate(_DIGITS).replace(" ", "")
+        with connect() as conn:
+            found = _VERSE_KEY.fullmatch(key) and one(
+                conn, "select 1 as x from content.verses where key = :k", {"k": key}
+            )
+        if not found:
+            raise Refusal(422, "no_such_verse", "No such verse.")
+        return {"kind": "verse", "key": key}
+    if raw.get("kind") == "entry":
+        ident = raw.get("id")
+        if (
+            isinstance(ident, bool)
+            or not isinstance(ident, (int, str))
+            or (isinstance(ident, str) and len(ident) > 120)
+        ):
+            raise Refusal(422, "bad_quote", "An article is named by its identifier.")
+        with connect() as conn:
+            found = content.lexicon_entry(conn, ident)
+        if not found:
+            raise Refusal(422, "no_such_entry", "No such article, or none that can be shown.")
+        return {"kind": "entry", "id": ident}
+    raise Refusal(422, "bad_quote", "A quotation names a verse or a dictionary article.")
+
+
 def _comment_out(
     c: dict[str, Any], g: dict[str, Any], u: dict[str, Any], names: dict[str, str | None]
 ) -> dict[str, Any]:
@@ -358,6 +397,7 @@ def _comment_out(
         "node_id": c["node_id"],
         "anchor": c["anchor"],
         "body": "" if gone else c["body"],
+        "quote": None if gone else c["quote"],
         "deleted": gone,
         "author": None
         if gone or author is None
@@ -425,6 +465,7 @@ def comment(
     anchor: str,
     parent_id: str | None,
     mentions: list[str],
+    quote: Any = None,
 ) -> dict[str, Any]:
     if u.get("blocked_at"):
         raise Refusal(403, "blocked", "This account cannot comment.")
@@ -433,6 +474,7 @@ def comment(
         raise Refusal(422, "empty", "Write the comment first.")
     if len(words) > 2000:
         raise Refusal(422, "too_long", "A comment is at most 2,000 characters.")
+    quoted = _quote(quote)
     with tx() as conn:
         g = _graph(conn, _uuid(gid))
         classroom.map_gate(conn, g["id"], u)
@@ -463,8 +505,8 @@ def comment(
             raise Refusal(422, "bad_mention", "Only people who have spoken on this map can be mentioned.")
         c = q1(
             conn,
-            """insert into graphs.comments (graph_id, parent_id, author_id, node_id, anchor, body, mentions)
-               values (:g, :p, :u, :n, :a, :b, cast(:m as uuid[])) returning *""",
+            """insert into graphs.comments (graph_id, parent_id, author_id, node_id, anchor, body, mentions, quote)
+               values (:g, :p, :u, :n, :a, :b, cast(:m as uuid[]), cast(:qt as jsonb)) returning *""",
             {
                 "g": g["id"],
                 # a reply sits on its comment's card
@@ -474,6 +516,7 @@ def comment(
                 "a": parent["anchor"] if parent else _str(anchor, 200),
                 "b": words,
                 "m": named,
+                "qt": json.dumps(quoted, ensure_ascii=False) if quoted else None,
             },
         )
         assert c is not None
@@ -526,7 +569,7 @@ def _drop(conn: Connection, ids: list[Any]) -> None:
     """Comments taken away: one others replied to stays as a mark so the thread reads; the rest go."""
     conn.execute(
         text(
-            """update graphs.comments c set body = '', mentions = '{}', deleted_at = now(), author_id = null
+            """update graphs.comments c set body = '', mentions = '{}', quote = null, deleted_at = now(), author_id = null
                where c.id = any(:ids) and exists (select 1 from graphs.comments r where r.parent_id = c.id)"""
         ),
         {"ids": ids},
@@ -584,7 +627,7 @@ def export_for(u: dict[str, Any]) -> dict[str, Any]:
         )
         said = q(
             conn,
-            """select c.id, c.graph_id, d.title as map_title, c.parent_id, c.node_id, c.anchor, c.body,
+            """select c.id, c.graph_id, d.title as map_title, c.parent_id, c.node_id, c.anchor, c.body, c.quote,
                       c.resolved_at, c.created_at
                from graphs.comments c join graphs.documents d on d.id = c.graph_id
                where c.author_id = :u and c.deleted_at is null order by c.created_at""",

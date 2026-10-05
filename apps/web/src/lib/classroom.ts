@@ -1,6 +1,7 @@
 "use client";
 
 import { authFetch } from "@/lib/account/store";
+import type { CommentQuote } from "@/lib/graph/shared";
 import type { GraphEdge, GraphNode } from "@/lib/graph/types";
 
 /**
@@ -193,6 +194,8 @@ export type FeedItem = {
     links?: number;
     for?: string | null;
     body?: string;
+    /** the verse or article a comment quotes, by reference (B41) */
+    quote?: CommentQuote | null;
     reply?: boolean;
     card?: CardRef | null;
   };

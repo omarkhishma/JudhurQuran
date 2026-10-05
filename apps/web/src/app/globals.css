@@ -5470,6 +5470,26 @@ a.wotd-pill:hover {
   border-radius: 4px;
   padding: 0 2px;
 }
+/* a verse or an article a comment quotes (B41), drawn from the dataset as the cards draw it */
+.comment-quote {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-inline-start: 2px solid var(--line-2);
+  border-radius: 0 8px 8px 0;
+  background: var(--card-2);
+  overflow-wrap: anywhere;
+}
+[dir="rtl"] .comment-quote {
+  border-radius: 8px 0 0 8px;
+}
+.quote-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+}
 .comment-act {
   color: var(--t3);
 }

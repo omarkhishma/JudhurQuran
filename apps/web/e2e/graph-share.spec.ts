@@ -210,6 +210,61 @@ test("a map shared for comments: its link, the owner's saves following it, comme
   }
 });
 
+test("a comment quotes a verse by its number or a card's, and an article by its identifier — drawn from the dataset, the server keeping the reference alone (B41)", async ({ browser, isMobile }) => {
+  test.skip(isMobile, "two accounts in desktop windows; the phone has its own test");
+  test.setTimeout(150_000);
+  const o = await person(browser, "o");
+  const r = await person(browser, "r");
+  try {
+    await newMap(o.page);
+    const gid = await shareFromEditor(o.page);
+    await r.page.goto(`/graph/shared/${gid}`);
+    const rd = r.page.getByRole("complementary", { name: "التفاصيل" });
+    await rd.getByRole("tab", { name: "التعليقات" }).click();
+    const box = rd.getByRole("textbox", { name: "تعليقك" });
+    // a verse by its number in Arabic digits; one that is not there is said at once, and the comment waits
+    await rd.getByRole("button", { name: "أرفق شاهدًا" }).click();
+    const ref = rd.getByRole("textbox", { name: "آية برقمها" });
+    await ref.fill("١١٤:٩٩");
+    await ref.press("Enter");
+    await expect(rd.getByText("لا آية بهذا الرقم.")).toBeVisible();
+    await box.fill("تعليق");
+    await expect(rd.getByRole("button", { name: "أرسل", exact: true })).toBeDisabled();
+    await rd.getByRole("button", { name: "أزل الشاهد" }).click();
+    await rd.getByRole("button", { name: "أرفق شاهدًا" }).click();
+    await ref.fill("٢:٢٥٥");
+    await ref.press("Enter");
+    const v = ((await (await r.page.request.get("/api/v1/verses?keys=2:255")).json()) as { data: { tokens: { text: string }[] }[] }).data[0];
+    await box.fill("آية الكرسي هنا");
+    await box.press("Enter");
+    const quoted = rd.locator(".comment-thread .comment-quote");
+    await expect(quoted.first().locator("blockquote")).toHaveText(v.tokens.map((x) => x.text).join(" "));
+    await expect(quoted.first().getByRole("link")).toHaveAttribute("href", "/quran/2/255");
+    // a verse already on the map, chosen from its cards
+    await rd.getByRole("button", { name: "أرفق شاهدًا" }).click();
+    await rd.locator(".quote-picker").getByRole("button", { name: /آية/ }).first().click();
+    await box.fill("وهذه آية الخريطة");
+    await box.press("Enter");
+    await expect(quoted).toHaveCount(2);
+    // an article by its identifier, drawn with its work and author as a card draws it
+    const art = (await (await r.page.request.get(`/api/v1/lexicon/entries/${encodeURIComponent("dict:lane:علم")}`)).json()) as { uri: string; title_ar: string; author_ar: string };
+    const sent = await r.page.request.post(`/api/v1/graphs/${gid}/comments`, { headers: r.h, data: { body: "وفي المعجم", quote: { kind: "entry", id: art.uri, text: "كلام مدسوس" } } });
+    expect(sent.status()).toBe(201);
+    await comeBack(r.page);
+    await expect(quoted.filter({ hasText: `${art.title_ar} — ${art.author_ar}` })).toBeVisible();
+    await expect(rd.getByText("كلام مدسوس")).toHaveCount(0);
+    // what the server keeps: the references alone
+    const kept = ((await (await r.page.request.get(`/api/v1/graphs/${gid}/comments`, { headers: r.h })).json()) as { data: { quote: unknown }[] }).data.map((c) => c.quote);
+    const map = (await shared(r.page, gid)).doc.nodes.find((n) => n.data.kind === "verse")!;
+    expect(kept).toEqual([{ kind: "verse", key: "2:255" }, { kind: "verse", key: (map.data.verse as { key: string }).key }, { kind: "entry", id: art.uri }]);
+    const results = await new AxeBuilder({ page: r.page }).include(".comment-thread").withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    expect(results.violations.map((x) => `${x.id}: ${x.nodes[0]?.target.join(" ")}`)).toEqual([]);
+  } finally {
+    await drop(r);
+    await drop(o);
+  }
+});
+
 test("a save over a newer shared copy stops and asks; the shared copy opens in its place; stopping the share ends the link, and deleting a shared map stops it (P8.1-E)", async ({ browser, isMobile }) => {
   test.skip(isMobile, "desktop windows");
   test.setTimeout(120_000);

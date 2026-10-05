@@ -1713,7 +1713,7 @@ def activity(u: dict[str, Any], lid: str, before: Any = None, limit: Any = 30) -
         said = (
             q(
                 conn,
-                """select id, author_id, node_id, parent_id, body, created_at from graphs.comments
+                """select id, author_id, node_id, parent_id, body, quote, created_at from graphs.comments
                    where graph_id = :g and deleted_at is null
                      and (cast(:b as timestamptz) is null or created_at < :b)
                    order by created_at desc limit :n""",
@@ -1752,6 +1752,8 @@ def activity(u: dict[str, Any], lid: str, before: Any = None, limit: Any = 30) -
             "at": _iso(c["created_at"]),
             "detail": {
                 "body": c["body"][:200],
+                # a verse or an article the comment quotes, by reference (B41)
+                "quote": c["quote"],
                 "reply": c["parent_id"] is not None,
                 "card": cards.get(c["node_id"]) if c["node_id"] else None,
             },

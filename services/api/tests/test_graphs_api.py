@@ -210,6 +210,65 @@ def test_comments_anchor_reply_resolve_and_mention(people: dict[str, dict[str, s
     assert [c["id"] for c in client.get(url, headers=o).json()["data"]] == [c2["id"]]
 
 
+def test_a_comment_quotes_a_verse_or_an_article_by_reference(people: dict[str, dict[str, str]]) -> None:
+    """B41: a comment carries a verse by its key (Arabic digits read) or a dictionary article by its identifier,
+    checked against the dataset and kept as that reference alone — words sent with it are not kept, a verse or an
+    article that is not there (or cannot be shown) is refused; a comment taken away keeps no quotation."""
+    from jadhr_api.db import connect, one
+
+    o, r = people["o"], people["r"]
+    g = _share(o)
+    url = f"/api/v1/graphs/{g['id']}/comments"
+    with connect() as conn:
+        shown = one(
+            conn, "select uri from content.lexicon_entries where displayable and uri is not null limit 1"
+        )
+        hidden = one(
+            conn,
+            """select uri from content.lexicon_entries e where not displayable and uri is not null
+                and not exists (select 1 from content.lexicon_entries x where x.uri = e.uri and x.displayable) limit 1""",
+        )
+    assert shown
+    verse = client.post(
+        url,
+        headers=r,
+        json={"body": "انظر هذه الآية", "quote": {"kind": "verse", "key": "٢:٢٥٥", "text": "كلام مدسوس"}},
+    )
+    assert verse.status_code == 201, verse.text
+    assert verse.json()["quote"] == {"kind": "verse", "key": "2:255"}
+    art = client.post(
+        url,
+        headers=o,
+        json={
+            "body": "وفي المعجم",
+            "parent_id": verse.json()["id"],
+            "quote": {"kind": "entry", "id": shown["uri"]},
+        },
+    ).json()
+    assert art["quote"] == {"kind": "entry", "id": shown["uri"]}
+    page = client.get(url, headers=r).json()["data"]
+    assert [c["quote"] for c in page] == [
+        {"kind": "verse", "key": "2:255"},
+        {"kind": "entry", "id": shown["uri"]},
+    ]
+    for bad, code in (
+        ({"kind": "verse", "key": "2:999"}, "no_such_verse"),
+        ({"kind": "verse", "key": "<b>"}, "no_such_verse"),
+        ({"kind": "entry", "id": "dict:lane:لا-جذر-كهذا"}, "no_such_entry"),
+        ({"kind": "entry", "id": True}, "bad_quote"),
+        ({"kind": "text", "body": "x"}, "bad_quote"),
+    ) + ((({"kind": "entry", "id": hidden["uri"]}, "no_such_entry"),) if hidden else ()):
+        res = client.post(url, headers=r, json={"body": "x", "quote": bad})
+        assert res.status_code == 422 and res.json()["error"]["code"] == code, (bad, res.text)
+    # taken away with a reply under it: the mark keeps no words and no quotation
+    assert client.delete(f"/api/v1/comments/{verse.json()['id']}", headers=r).status_code == 204
+    mark = next(c for c in client.get(url, headers=o).json()["data"] if c["id"] == verse.json()["id"])
+    assert mark["deleted"] and mark["quote"] is None
+    with accounts.tx() as conn:
+        kept = accounts.q1(conn, "select quote from graphs.comments where id = :i", {"i": verse.json()["id"]})
+    assert kept is not None and kept["quote"] is None
+
+
 def test_stopping_the_share_and_deleting_an_account(people: dict[str, dict[str, str]]) -> None:
     o, r = people["o"], people["r"]
     g = _share(o)

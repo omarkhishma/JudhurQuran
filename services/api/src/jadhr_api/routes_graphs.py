@@ -43,6 +43,8 @@ class _Comment(BaseModel):
     anchor: str = Field("", max_length=400)
     parent_id: str | None = Field(None, max_length=40)
     mentions: list[str] = Field(default_factory=list, max_length=20)
+    # what the comment quotes (B41): {"kind": "verse", "key": "2:255"} or {"kind": "entry", "id": "dict:lane:علم"}
+    quote: dict[str, Any] | None = None
 
 
 class _Resolve(BaseModel):
@@ -104,7 +106,9 @@ def mark_read(u: User, graph_id: GraphId) -> ORJSONResponse:
 )
 def comment(u: User, graph_id: GraphId, body: _Comment) -> ORJSONResponse:
     return ok(
-        shared_maps.comment(u, graph_id, body.body, body.node_id, body.anchor, body.parent_id, body.mentions),
+        shared_maps.comment(
+            u, graph_id, body.body, body.node_id, body.anchor, body.parent_id, body.mentions, body.quote
+        ),
         status=201,
     )
 
