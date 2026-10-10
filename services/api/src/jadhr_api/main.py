@@ -293,6 +293,22 @@ def verse_irab(request: Request, key: Annotated[str, Path(max_length=7)]) -> Res
 
 
 @router.get(
+    "/verses/{key}/similar",
+    summary="The verses nearest a verse by a pinned open model's reading of the verses and their explanation (computed)",
+)
+def verse_similar(
+    request: Request, key: Annotated[str, Path(max_length=7)], limit: int = Query(10, ge=1, le=10)
+) -> Response:
+    from . import semantic
+
+    with connect() as conn:
+        out = semantic.neighbours(conn, key, limit)
+        if out is None:
+            raise not_found("verse")
+        return cached(request, out)
+
+
+@router.get(
     "/verses/{key}/books",
     summary="The tafsir books' sections on a verse, by the books' own headings: each opening verbatim, cited",
 )
@@ -1495,11 +1511,17 @@ def search(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0, le=10000),
     only: str | None = Query(
-        None, pattern="^(verses|lemmas|dictionary|texts|books|meanings)$", description="page through one kind"
+        None,
+        pattern="^(verses|lemmas|dictionary|texts|books|meanings|semantic)$",
+        description="page through one kind",
     ),
 ) -> Response:
     with connect() as conn:
-        return cached(request, run_search(conn, q, limit, offset, only))
+        out = run_search(conn, q, limit, offset, only)
+    if out.get("semantic", {}).get("status") == "unavailable":
+        # the embedding service did not answer: this answer must not stand in a cache once it is back
+        return ORJSONResponse(out, headers={"Cache-Control": "no-store"})
+    return cached(request, out)
 
 
 class _SearchAsk(BaseModel):

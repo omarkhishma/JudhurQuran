@@ -277,21 +277,41 @@ def search(
     """OpenSearch when it is reachable (scored, multi-field, highlighted); Postgres otherwise. The
     response says which engine answered, and ``totals`` counts the matches of each kind, not the results
     returned (SRC-12). ``only`` with ``offset`` pages through one kind. Detection, references and root
-    letters are exact lookups in Postgres either way."""
-    from . import search_os
+    letters are exact lookups in Postgres either way.
 
-    es = searchindex.client()
+    Verses close in meaning (P17, ``semantic``) join an Arabic word or phrase and an English search: the model's
+    ranking fused with the sources' words, with ``semantic`` saying how it was made or why it is missing."""
+    from . import search_os, semantic
+
     out: dict[str, Any] | None = None
-    if searchindex.available(es):
-        try:
-            out = search_os.search(conn, es, q, limit, offset, only)
-        except Exception:  # an index problem must never take search down: fall back
-            out = None
-    if out is None:
-        out = search_pg(conn, q, limit, offset, only)
-        out["engine"] = "postgres"
-    if out["detected"]["kind"] != "pattern" and not offset:
-        out["results"]["lemmas"] = rank_lemmas(out["results"].get("lemmas", []), q)
+    if only == "semantic":
+        # a page of the semantic group alone: nothing else is asked
+        kind, info = detect(conn, q)
+        ar, en = LABELS[kind]
+        out = {
+            "query": q,
+            "detected": {"kind": kind, "label_ar": ar, "label_en": en, **info},
+            "results": {},
+            "totals": {},
+            "engine": "semantic",
+        }
+    else:
+        es = searchindex.client()
+        if searchindex.available(es):
+            try:
+                out = search_os.search(conn, es, q, limit, offset, only)
+            except Exception:  # an index problem must never take search down: fall back
+                out = None
+        if out is None:
+            out = search_pg(conn, q, limit, offset, only)
+            out["engine"] = "postgres"
+        if out["detected"]["kind"] != "pattern" and not offset:
+            out["results"]["lemmas"] = rank_lemmas(out["results"].get("lemmas", []), q)
+    if out["detected"]["kind"] in semantic.ELIGIBLE and only in (None, "semantic"):
+        sem = semantic.search(conn, q, out["detected"]["kind"], limit, offset if only else 0)
+        out["results"]["semantic"] = sem.pop("items")
+        out["totals"]["semantic"] = sem["total"]
+        out["semantic"] = sem
     return out
 
 
