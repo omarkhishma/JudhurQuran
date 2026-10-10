@@ -968,6 +968,15 @@ def _pair(conn: Connection, r: Reading, kind: str, limit: int, offset: int) -> d
                       from content.words w join content.surahs s on s.number = w.surah where {w}""",
                 p,
             )
+            # a word's root beside it: «الصبر» and «الشكر» are one word each, their roots many
+            if s["kind"] == "lemma" and s.get("root_key"):
+                rc = one(
+                    conn,
+                    """select count(*)::int as n, count(distinct w.verse_id)::int as v from content.words w
+                        where w.root_id = (select id from content.roots where key = :rk)""",
+                    {"rk": s["root_key"]},
+                )
+                c = {**c, "root": {"key": s["root_key"], "spaced": s["root_spaced"], **rc}}
             counts[name] = c
         out["counts"] = counts
         out["same_root"] = bool(a.get("root_key") or a.get("key")) and (
