@@ -10,6 +10,8 @@ dependencies = [
   "psycopg[binary]>=3.2",
   "lxml>=5",
   "openpyxl>=3.1",
+  # the verses' vectors for semantic search (P17.2): the pinned model, as the server runs it
+  "jadhr-embed",
 ]
 
 [project.optional-dependencies]

@@ -11,6 +11,7 @@ compared with the build report — the mushaf-integrity check.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import sys
@@ -161,6 +162,9 @@ TABLES: list[tuple[str, str, list[str], set[str]]] = [
     ("word_layers", "word_layers.jsonl", ["token_id", "verse_id", "position", "part", "kind", "text", "source_id"],
      set()),
     ("verse_irab", "verse_irab.jsonl", ["verse_id", "text", "source_id"], set()),
+    # semantic search (P17): each verse's vectors and its nearest verses by them, built by jadhr_pipeline.semantic
+    ("verse_vectors", "verse_vectors.jsonl", ["verse_id", "lang", "source", "model", "vec"], set()),
+    ("verse_neighbours", "verse_neighbours.jsonl", ["verse_id", "rank", "neighbour_id", "score", "model"], set()),
     ("mushaf_signs", "mushaf_signs.jsonl", ["id", "sort_order", "kind", "codepoints", "chars", "label_ar", "text_ar",
                                             "example_key", "example_token", "page", "occurrences", "source_id"],
      {"codepoints"}),
@@ -290,6 +294,8 @@ TRUNCATE_ORDER = [
     "loanword_passages",
     "loanword_sources",
     "mushaf_signs",
+    "verse_neighbours",
+    "verse_vectors",
     "verse_irab",
     "word_layers",
     "entity_candidates",
@@ -338,7 +344,7 @@ TRUNCATE_ORDER = [
 
 
 def _rows(
-    path: Path, columns: list[str], json_cols: set[str], rename: dict[str, str]
+    path: Path, columns: list[str], json_cols: set[str], rename: dict[str, str], decode: dict[str, Any] | None = None
 ) -> Iterator[tuple[Any, ...]]:
     with path.open(encoding="utf-8") as fh:
         for line in fh:
@@ -346,6 +352,8 @@ def _rows(
             for src, dst in rename.items():
                 if src in obj:
                     obj[dst] = obj.pop(src)
+            for c, f in (decode or {}).items():
+                obj[c] = f(obj[c])
             yield tuple(Jsonb(obj.get(c)) if c in json_cols else obj.get(c) for c in columns)
 
 
@@ -358,6 +366,9 @@ RENAMES: dict[str, dict[str, str]] = {
     "mufradat_citations": _OFFSETS,
     "particle_citations": _OFFSETS,
 }
+
+# Build fields written as text and stored as bytes: a vector's float32s, base64 in the JSONL (P17)
+DECODE: dict[str, dict[str, Any]] = {"verse_vectors": {"vec": base64.b64decode}}
 
 # Every loaded table must be emptied first, or a reload would duplicate rows.
 _missing = {t for t, *_ in TABLES} - set(TRUNCATE_ORDER)
@@ -405,7 +416,7 @@ def load(build_dir: Path, sources_file: Path, dsn: str | None = None) -> dict[st
             n = 0
             cols = ", ".join(f'"{c}"' for c in columns)
             with cur.copy(f"copy content.{table} ({cols}) from stdin") as copy:
-                for row in _rows(path, columns, json_cols, rename):
+                for row in _rows(path, columns, json_cols, rename, DECODE.get(table)):
                     copy.write_row(row)
                     n += 1
             counts[table] = n

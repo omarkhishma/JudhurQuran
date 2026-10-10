@@ -56,6 +56,10 @@ def main(argv: list[str] | None = None) -> int:
             REPO / "data/collections.yaml",
             REPO / "data/topics.yaml",
         )
+        # the verses' vectors for semantic search (P17.2): the pinned model, fetched once (python -m jadhr_embed fetch)
+        from .semantic import build_semantic
+
+        semantic = build_semantic(out)
         print(
             json.dumps(
                 {
@@ -65,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
                     "unpinned": pins["unpinned"],
                     **report["counts"],
                     **layers,
+                    "semantic": semantic,
                 },
                 ensure_ascii=False,
             )

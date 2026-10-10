@@ -22,6 +22,8 @@ dependencies = [
   "trafilatura>=2.0",
   "pypdf>=6.0",
   "python-multipart>=0.0.9",
+  # semantic search (P17, D34): the verse vectors searched exactly in memory
+  "numpy>=2.0",
 ]
 
 [project.optional-dependencies]

@@ -7,12 +7,13 @@ requires-python = ">=3.13,<3.14"
 package = false
 
 [tool.uv.workspace]
-members = ["packages/arabic-py", "pipeline", "services/api"]
+members = ["packages/arabic-py", "pipeline", "services/api", "services/embed"]
 
 [tool.uv.sources]
 jadhr-arabic = { workspace = true }
 jadhr-pipeline = { workspace = true }
 jadhr-api = { workspace = true }
+jadhr-embed = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -34,4 +35,4 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 ignore = ["RUF001", "RUF002", "RUF003", "E501"]  # Arabic text is intentional; the formatter owns line length (SQL strings stay readable)
 
 [tool.pytest.ini_options]
-testpaths = ["packages/arabic-py/tests", "pipeline/tests", "services/api/tests"]
+testpaths = ["packages/arabic-py/tests", "pipeline/tests", "services/api/tests", "services/embed/tests"]
