@@ -6,6 +6,7 @@ import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import type { RootDetail, Source, Surah } from "@/lib/types";
 import { DistributionChart } from "@/components/roots/DistributionChart";
+import { RootSpread } from "@/components/stats/RootSpread";
 import { Concordance } from "@/components/roots/Concordance";
 import { RootLexicon } from "@/components/lexicon/RootLexicon";
 import { RootMap } from "@/components/roots/RootMap";
@@ -241,6 +242,10 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
         <p className="mb-3 text-[13.5px] text-t2">{t("distributionLead")}</p>
         <div className="card p-4">
           <DistributionChart rows={r.distribution} surahNames={surahs.data.map((s) => ({ number: s.number, name_ar: s.name_ar, name_translit: s.name_translit }))} />
+        </div>
+        {/* the root in revelation order and on the mushaf's pages, its mind map (P16.3, P16.4) */}
+        <div className="mt-4">
+          <RootSpread rootKey={r.key} spaced={r.spaced} />
         </div>
       </section>
 

@@ -1773,7 +1773,9 @@
     "fieldNoChoice": "— لم يُختر —",
     "optionRemove": "إزالة الخيار «{tag}»",
     "optionAdd": "خيار جديد…",
-    "optionAddLabel": "إضافة خيار إلى «{label}»"
+    "optionAddLabel": "إضافة خيار إلى «{label}»",
+    "tidyRadial": "ذهنية",
+    "tidyRadialLong": "رتّب كخريطة ذهنية: الجذر في المركز وما حوله في حلقات"
   },
   "lexicon": {
     "coreMeaning": "أصل معنى الجذر",
@@ -4732,6 +4734,8 @@
     "mindKeyWord": "كلمة",
     "mindKeyTopic": "موضوع",
     "mindKeyRelation": "علاقة",
-    "mindOpenMap": "افتح خريطة الجذر في المحرر"
+    "mindOpenMap": "افتح خريطة الجذر في المحرر",
+    "rootSpreadCaption": "كلماته في كل ألف كلمة من كل سورة. ورد {total} مرة في {verses} آية. اضغط عمودًا لتفتح السورة بالأرقام.",
+    "countIn": "{n} مرة"
   }
 }

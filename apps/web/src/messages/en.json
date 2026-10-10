@@ -1773,7 +1773,9 @@
     "fieldNoChoice": "— none chosen —",
     "optionRemove": "Remove the option “{tag}”",
     "optionAdd": "A new option…",
-    "optionAddLabel": "Add an option to “{label}”"
+    "optionAddLabel": "Add an option to “{label}”",
+    "tidyRadial": "Radial",
+    "tidyRadialLong": "Arrange as a mind map: the root at the centre, the rest in rings"
   },
   "lexicon": {
     "coreMeaning": "Core meaning of the root",
@@ -4731,6 +4733,8 @@
     "mindKeyWord": "word",
     "mindKeyTopic": "topic",
     "mindKeyRelation": "relation",
-    "mindOpenMap": "Open the root's map in the editor"
+    "mindOpenMap": "Open the root's map in the editor",
+    "rootSpreadCaption": "Its words per thousand in each sūra. It occurs {total} times in {verses} verses. Press a column to open the sūra in numbers.",
+    "countIn": "{n} times"
   }
 }

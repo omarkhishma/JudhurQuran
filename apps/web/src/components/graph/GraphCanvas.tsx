@@ -32,7 +32,7 @@ import { sameRun, type Run } from "@/lib/graph/run";
 import { entityCard, type EntityRow } from "@/lib/graph/entities";
 import { headingVersesPath, sourceHeading, topicCard, topicVerses, type TopicCredit, type TopicRow } from "@/lib/graph/topics";
 import { getJSON } from "@/lib/reader/api";
-import { layout } from "@/lib/graph/layout";
+import { layout, radialLayout } from "@/lib/graph/layout";
 import { allowedRels, checkLink, META, type Refusal } from "@/lib/graph/relations";
 import { KIND_COLOR, KIND_SIZE, type Field, type FieldKind, type GraphEdge, type GraphKind, type GraphNode, type NodeKind, type QuoteKey, type Rel } from "@/lib/graph/types";
 import { templateOf, templatesFor, type Template, type TemplateId } from "@/lib/graph/templates";
@@ -86,6 +86,7 @@ export type CanvasTools = {
   undo: () => void;
   redo: () => void;
   tidy: () => void;
+  tidyRadial: () => void;
   fit: () => void;
   exportPng: () => void;
   exportJson: () => void | Promise<void>;
@@ -376,12 +377,14 @@ function CanvasInner({
   const fit = useCallback(() => rf.fitView({ padding: 0.1, duration: 250, maxZoom: 1, minZoom: 0.34 }), [rf]);
 
   const tidy = useCallback(
-    async (label = t("tidy"), base?: { nodes: GraphNode[]; edges: GraphEdge[] }, look?: string[]) => {
+    async (label = t("tidy"), base?: { nodes: GraphNode[]; edges: GraphEdge[] }, look?: string[], mode: "layered" | "radial" = "layered") => {
       const src = base ?? { nodes: rf.getNodes(), edges: rf.getEdges() };
       // frames are laid out by their cards: each wraps, after the layout, the cards it held before (EDT-154)
       const frames = src.nodes.filter((n) => n.data.kind === "frame");
       const held = new Map(frames.map((f) => [f.id, frameMembers(f.id, src.nodes)]));
-      const cards = await layout(src.nodes.filter((n) => n.data.kind !== "frame"), src.edges);
+      const free = src.nodes.filter((n) => n.data.kind !== "frame");
+      // a mind map (P16.4): the root at the centre, the rest on rings by their distance in links
+      const cards = mode === "radial" ? radialLayout(free, src.edges) : await layout(free, src.edges);
       const at = new Map(cards.map((n) => [n.id, n]));
       const laid = [
         ...frames.map((f) => {
@@ -1219,6 +1222,7 @@ function CanvasInner({
     undo,
     redo,
     tidy: () => void tidy(),
+    tidyRadial: () => void tidy(t("tidyRadial"), undefined, undefined, "radial"),
     fit,
     exportPng: () => void exportPng(),
     exportJson,
@@ -1362,6 +1366,7 @@ function CanvasInner({
           run: () => window.dispatchEvent(new CustomEvent("jadhr:library-drop", { detail: { payload: { pick: k }, at } })),
         })),
         { label: t("tidy"), keys: "T", run: () => void tidy() },
+        { label: t("tidyRadialLong"), run: () => void tidy(t("tidyRadial"), undefined, undefined, "radial") },
         { label: t("fit"), keys: "F", run: fit },
       ];
     const card = nodes.find((n) => n.id === menu.on);

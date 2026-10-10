@@ -3,6 +3,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { RootSpread } from "@/components/stats/RootSpread";
 import { Segmented } from "@/components/ui/Segmented";
 import { Link } from "@/i18n/navigation";
 import { useAfterMount } from "@/lib/client";
@@ -322,14 +323,18 @@ export function ConcordanceScreen({ initial, initialPage, initialTr }: { initial
           </p>
         </div>
       ) : (
-        <Distribution
-          d={dist.data}
-          loading={dist.isLoading}
-          form={f.form}
-          onForm={(form) => set({ form: form === f.form ? "" : form, view: "kwic" })}
-          onSurah={(s) => set({ surah: String(s), view: "kwic" })}
-          onNear={(near) => set({ near, view: "kwic" })}
-        />
+        <>
+          <Distribution
+            d={dist.data}
+            loading={dist.isLoading}
+            form={f.form}
+            onForm={(form) => set({ form: form === f.form ? "" : form, view: "kwic" })}
+            onSurah={(s) => set({ surah: String(s), view: "kwic" })}
+            onNear={(near) => set({ near, view: "kwic" })}
+          />
+          {/* the whole root in the order of revelation and on the mushaf's pages (P16.3) */}
+          {first && <RootSpread rootKey={first.root.key} spaced={first.root.spaced} />}
+        </>
       )}
     </div>
   );

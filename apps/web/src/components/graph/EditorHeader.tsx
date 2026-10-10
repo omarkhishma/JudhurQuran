@@ -57,6 +57,7 @@ export function EditorHeader({
       <span className="flex-1" />
       <div className="seg-group shrink-0">
         <button type="button" className="seg" onClick={tools.tidy} aria-keyshortcuts="T" title={t("tidyHint")}>{t("tidy")}</button>
+        <button type="button" className="seg" onClick={tools.tidyRadial} title={t("tidyRadialLong")}>{t("tidyRadial")}</button>
         <button type="button" className="seg" onClick={tools.fit} aria-keyshortcuts="F" title={t("fitHint")}>{t("fit")}</button>
       </div>
       <div className="seg-group shrink-0">
