@@ -89,7 +89,7 @@ test("the doors count from the data, and every surface is listed with its purpos
   await expect(doors.getByRole("link", { name: /ابحث في المعجم/ })).toContainText(`${roots} و${lemmas}`);
   await expect(doors.getByRole("link", { name: /ابحث في المعجم/ })).toContainText(arCount(lexica, { one: "معجم واحد", two: "معجمان", few: "# معاجم", many: "# معجمًا", other: "# معجم" }));
   const tiles = page.locator(".hub-tile");
-  await expect(tiles).toHaveCount(24);
+  await expect(tiles).toHaveCount(25);
   await expect(page.locator('a.hub-tile[href="/stats"]')).toContainText("القرآن بالأرقام");
   // the dictionary as its own surface (P11.1), the hadith collections (P11.2) and the classical books (P11.3)
   await expect(page.locator('a.hub-tile[href="/dictionary"]')).toContainText("المعجم");

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Link, useRouter } from "@/i18n/navigation";
+import { looksLikeQuestion } from "@/lib/ask";
 
 /**
  * The hub's search, the primary action (06 §6.1, HUB-05, Q03): it teaches the Quran's own queries — a word,
@@ -42,7 +43,8 @@ export function HubSearch() {
         aria-label={t("searchLabel")}
         onSubmit={(e) => {
           e.preventDefault();
-          if (q.trim()) router.push(`/search?q=${encodeURIComponent(q.trim())}`);
+          // a question goes to «اسأل القرآن» (P18), a word, a root or a verse to the search
+          if (q.trim()) router.push(`/${looksLikeQuestion(q) ? "ask" : "search"}?q=${encodeURIComponent(q.trim())}`);
         }}
         className="hub-search"
       >
@@ -72,6 +74,12 @@ export function HubSearch() {
               {x}
             </Link>
           ))}
+      </p>
+      <p className="hub-search-try">
+        <span>{t("askTry")}</span>
+        <Link href={`/ask?q=${encodeURIComponent(t("askExample"))}`} prefetch={false} className="hub-try" dir="auto">
+          {t("askExample")}
+        </Link>
       </p>
     </div>
   );

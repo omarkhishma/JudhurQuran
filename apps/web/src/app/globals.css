@@ -8144,3 +8144,78 @@ text.chart-axis.is-ar {
   flex-wrap: wrap;
   max-width: 100%;
 }
+
+/* «اسأل القرآن» (P18.3): the question box, what it was understood as, the answer's big number, two words compared */
+.askq-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-inline: 16px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--sh);
+}
+.askq-box:focus-within {
+  border-color: var(--ring);
+}
+.askq-input {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  background: transparent;
+  outline: none;
+  font-size: 17px;
+  color: var(--t1);
+}
+.askq-input::placeholder {
+  color: var(--t3);
+}
+.askq-understood {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  background: var(--card-2);
+}
+.askq-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+  font-size: 12px;
+  color: var(--t3);
+}
+.askq-field input,
+.askq-field select {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--t1);
+  font-size: 14px;
+}
+.askq-big {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--t1);
+  font-variant-numeric: tabular-nums;
+}
+.askq-compare {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.askq-compare th,
+.askq-compare td {
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+  text-align: start;
+}
+.askq-compare thead th {
+  border-top: none;
+}

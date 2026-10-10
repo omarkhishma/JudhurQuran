@@ -9,6 +9,7 @@ import { paragraphHref } from "@/lib/books";
 import { dictHref } from "@/lib/dictionary";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { hadithHref } from "@/lib/hadith";
+import { looksLikeQuestion } from "@/lib/ask";
 import { searchMyTexts } from "@/lib/library/searchTexts";
 import type { SearchResult } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
@@ -41,8 +42,11 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
   const mine = useQuery({ queryKey: ["search-mine", debounced], queryFn: () => searchMyTexts(debounced, 3), enabled: debounced.length > 1 });
 
   const items: Item[] = useMemo(() => {
-    if (!data) return [];
     const out: Item[] = [];
+    // a question, not a word: asked of the Quran first (P18), whatever else the search finds
+    if (debounced && looksLikeQuestion(debounced))
+      out.push({ id: "ask", href: `/ask?q=${encodeURIComponent(debounced)}`, kind: t("kindAsk"), primary: <span dir="auto">{t("askThis", { q: debounced })}</span> });
+    if (!data) return out;
     for (const v of data.results.verses.slice(0, 5))
       out.push({
         id: `v${v.key}`,
@@ -146,7 +150,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
           secondary: l.gloss_en && locale === "en" ? l.gloss_en : t("formMeta", cnt(l.occurrences, locale)),
         });
     return out;
-  }, [data, mine.data, t, locale]);
+  }, [data, mine.data, t, locale, debounced]);
 
   // The highlighted row resets whenever the query changes.
   const active = activeState.q === debounced ? activeState.i : 0;

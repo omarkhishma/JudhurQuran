@@ -7,6 +7,7 @@ import { Icon } from "@/components/Icon";
 import { Term } from "@/components/terms/Term";
 import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic } from "@/lib/arabic/normalize";
+import { looksLikeQuestion } from "@/lib/ask";
 import { useIsClient } from "@/lib/client";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { paragraphHref } from "@/lib/books";
@@ -344,6 +345,12 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
           {t("fallbackNote")}
         </p>
       )}
+      {dq && looksLikeQuestion(dq) && (
+        <p className="search-fallback" role="note">
+          {t("askBanner")}{" "}
+          <Link href={`/ask?q=${encodeURIComponent(dq)}`} className="text-word underline">{t("askBannerGo")}</Link>
+        </p>
+      )}
       {data?.semantic?.status === "unavailable" && (
         <p className="search-fallback" role="note">
           {t("semanticUnavailable")}
@@ -385,6 +392,9 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
               <p>{t("emptyFor", { q: dq })}</p>
               <p className="mt-2">
                 <Link href={`/read?mode=ask&q=${encodeURIComponent(dq)}`} className="text-word underline">{t("askInstead")}</Link>
+              </p>
+              <p className="mt-1">
+                <Link href={`/ask?q=${encodeURIComponent(dq)}`} className="text-word underline">{t("askInstead2")}</Link>
               </p>
             </div>
           )}

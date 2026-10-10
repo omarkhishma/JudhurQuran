@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Link } from "@/i18n/navigation";
 import { hasArabic, hasMarks } from "@/lib/arabic/normalize";
+import { looksLikeQuestion } from "@/lib/ask";
 import { cnt, formatNumber } from "@/lib/format";
 import { getJSON, useWord } from "@/lib/reader/api";
 import { useBreakpoint } from "@/lib/reader/media";
@@ -94,6 +95,15 @@ export function AskView() {
             </button>
           ))}
         </div>
+      )}
+      {dq && looksLikeQuestion(dq) && (
+        <p className="text-[13.5px] text-t2">
+          {/* a question, not a word: «اسأل القرآن» reads it and answers from the data (P18) */}
+          {t("askWholeLead")}{" "}
+          <Link href={`/ask?q=${encodeURIComponent(dq)}`} className="text-word underline-offset-2 hover:underline">
+            {t("askWholeGo")}
+          </Link>
+        </p>
       )}
       {dq && hits.isFetched && matches.length === 0 && (
         <p className="text-[13.5px] text-t2">
