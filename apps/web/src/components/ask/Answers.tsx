@@ -6,7 +6,7 @@ import { useState } from "react";
 import { BarList } from "@/components/charts/BarList";
 import { Figure } from "@/components/charts/Figure";
 import { SurahColumns } from "@/components/charts/SurahColumns";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { type Answer, type AskPayload, askQuery, type CountAnswer, type MeaningAnswer, type PairAnswer, type Reading, type RootAnswer, type Subject, type SurahAnswer, type SuperlativeAnswer, type ThemeAnswer, type Understood, type VerseRef, type WhereAnswer } from "@/lib/ask";
 import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
 import { encodeSeed } from "@/lib/graph/seedCodec";
@@ -96,6 +96,7 @@ function Links({ items }: { items: { href: string; label: string }[] }) {
 function WhereView({ a }: { a: WhereAnswer }) {
   const t = useTranslations("ask");
   const locale = useLocale();
+  const router = useRouter();
   const [by, setBy] = useState<"revelation" | "mushaf">("mushaf");
   const name = (s: { name_ar: string; name_translit: string }) => (locale === "ar" ? s.name_ar : s.name_translit);
   const head = (
@@ -128,7 +129,7 @@ function WhereView({ a }: { a: WhereAnswer }) {
             </table>
           }
         >
-          <SurahColumns by={by} label={t("distTitle")} data={a.surahs.map((s) => ({ surah: s.surah, name: name(s), place: s.place, order: s.revelation_order, value: s.count }))} />
+          <SurahColumns by={by} label={t("distTitle")} onPick={(n) => router.push(`/quran/${n}`)} data={a.surahs.map((s) => ({ surah: s.surah, name: name(s), place: s.place, order: s.revelation_order, value: s.count }))} />
         </Figure>
         <Links items={[{ href: concordance, label: t("openConcordance") }]} />
       </div>
