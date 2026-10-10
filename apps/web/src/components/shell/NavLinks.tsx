@@ -20,6 +20,7 @@ export const NAV_ITEMS = [
   { href: "/books", key: "books", match: ["/books"] },
   { href: "/concordance", key: "concordance", match: ["/concordance", "/roots"] },
   { href: "/analyse", key: "analyser", match: ["/analyse"] },
+  { href: "/stats", key: "stats", match: ["/stats", "/mindmap"] },
   { href: "/graph", key: "graph", match: ["/graph", "/g", "/split"] },
   { href: "/notebook", key: "notebook", match: ["/notebook", "/saved"] },
   { href: "/review", key: "reviewQueue", match: ["/review"] },

@@ -19,6 +19,7 @@ export const DESTINATIONS: Destination[] = [
   { key: "books", href: "/books" },
   { key: "concordance", href: "/concordance" },
   { key: "analyser", href: "/analyse" },
+  { key: "stats", href: "/stats" },
   { key: "search", href: "/search" },
   { key: "graph", href: "/graph" },
   { key: "split", href: "/split" },

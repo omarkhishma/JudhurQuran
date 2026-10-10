@@ -4,6 +4,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import { Icon } from "@/components/Icon";
+import { Link } from "@/i18n/navigation";
 import { Term } from "@/components/terms/Term";
 import { cnt, cnt2, formatNumber, verseRef } from "@/lib/format";
 import { SECTIONS, type SectionId, usePersonal, usePrefs, useReader } from "@/lib/reader/store";
@@ -205,6 +206,10 @@ function EntryHeader({ w }: { w: WordPayload }) {
           <Icon name="quote" size={13} />
           {t("cite")}
         </button>
+        {/* the word's mind map (P16.4): its root, pattern, near and opposite words and topics around it */}
+        <Link href={`/mindmap?word=${encodeURIComponent(w.slug)}`} prefetch={false} className="btn">
+          {t("mindMap")}
+        </Link>
         <button type="button" className="btn icon-btn" aria-pressed={star} onClick={toggleStar} aria-label={star ? t("unstar") : t("star")} title={star ? t("unstar") : t("star")}>
           <Icon name="star" size={14} className={star ? "text-root [&_path]:fill-current" : ""} />
         </button>

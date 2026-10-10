@@ -58,6 +58,7 @@ from . import (
     routes_published,
     routes_releases,
     sets,
+    stats,
     topics,
     transparency,
 )
@@ -328,6 +329,115 @@ def word_relations(
         # the near, related and opposite words the administration or the board defined (P14, D31)
         out["defined"] = context.word_relations(conn, slug)
         return cached(request, out)
+
+
+# ─── statistics (P16, law L4: descriptive only, each answer saying what it counted) ───
+
+
+@router.get(
+    "/stats/overview",
+    summary="The Quran in numbers: sizes, distinct words and roots, the longest and shortest",
+)
+def stats_overview(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, stats.overview(conn))
+
+
+@router.get(
+    "/stats/frequency",
+    summary="The most frequent roots, lemmas, patterns or parts of speech, overall or in a scope",
+)
+def stats_frequency(
+    request: Request,
+    kind: str = Query("root", pattern="^(root|lemma|pattern|pos)$"),
+    surah: int | None = Query(None, ge=1, le=114),
+    place: str | None = Query(None, pattern="^(meccan|medinan)$"),
+    content: bool = Query(True, description="leave out particles, pronouns and other function words"),
+    limit: int = Query(30, ge=1, le=500),
+) -> Response:
+    with connect() as conn:
+        return cached(request, stats.frequency(conn, kind, surah, place, content, limit))
+
+
+@router.get("/stats/surahs", summary="Each sūra's size and vocabulary")
+def stats_surahs(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, stats.surah_profiles(conn))
+
+
+@router.get(
+    "/stats/surahs/{number}",
+    summary="One sūra's profile: its roots, its own roots, its once-only words, its neighbours",
+)
+def stats_surah(request: Request, number: int) -> Response:
+    with connect() as conn:
+        out = stats.surah_detail(conn, number)
+        if out is None:
+            raise not_found("surah")
+        return cached(request, out)
+
+
+@router.get(
+    "/stats/distribution", summary="Where a root or a lemma occurs: by sūra, revelation order, juzʾ and page"
+)
+def stats_distribution(
+    request: Request,
+    root: str | None = Query(None, max_length=8),
+    lemma: str | None = Query(None, max_length=80),
+) -> Response:
+    with connect() as conn:
+        out = stats.distribution(conn, root, lemma)
+        if out is None:
+            raise not_found("root or lemma")
+        return cached(request, out)
+
+
+@router.get("/stats/matrix", summary="Roots × sūras: the words of each root in each sūra")
+def stats_matrix(
+    request: Request,
+    top: int = Query(30, ge=1, le=120),
+    roots: str | None = Query(None, max_length=400, description="comma-separated root keys"),
+) -> Response:
+    with connect() as conn:
+        return cached(request, stats.matrix(conn, top, [r for r in (roots or "").split(",") if r] or None))
+
+
+@router.get(
+    "/stats/collocations", summary="The roots sharing verses with a root, with PMI and log-likelihood"
+)
+def stats_collocations(
+    request: Request, root: str = Query(..., max_length=8), limit: int = Query(30, ge=1, le=200)
+) -> Response:
+    with connect() as conn:
+        out = stats.collocations(conn, root, limit)
+        if out is None:
+            raise not_found("root")
+        return cached(request, out)
+
+
+@router.get(
+    "/stats/network", summary="The most frequent roots and their strongest associations by shared verses"
+)
+def stats_network(
+    request: Request, top: int = Query(60, ge=10, le=150), per_node: int = Query(3, ge=1, le=8)
+) -> Response:
+    with connect() as conn:
+        return cached(request, stats.network(conn, top, per_node))
+
+
+@router.get("/stats/similarity", summary="How alike the sūras' vocabularies are, clustered")
+def stats_similarity(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, stats.similarity(conn))
+
+
+@router.get(
+    "/stats/rank-frequency",
+    summary="Every lemma's count by rank, and the share of the words the first N make up",
+)
+def stats_rank_frequency(request: Request) -> Response:
+    with connect() as conn:
+        return cached(request, stats.rank_frequency(conn))
 
 
 @router.get(

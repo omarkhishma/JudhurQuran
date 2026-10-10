@@ -104,6 +104,9 @@
   --sentence-wash: color-mix(in srgb, var(--c-sentence) 10%, var(--card));
   /* Chart mark colour for single-series root charts (validated: lightness band + contrast, light and dark) */
   --chart-root: #a8682c;
+  /* Meccan and Medinan sūras in charts (P16): validated as a pair — lightness band, CVD separation, contrast */
+  --chart-meccan: #a8682c;
+  --chart-medinan: #2b62ce;
   color-scheme: light;
 }
 
@@ -131,6 +134,8 @@
   --c-sentence: #6fce88;
   --c-desc: #9a9aa8;
   --chart-root: #b97a3c;
+  --chart-meccan: #b97a3c;
+  --chart-medinan: #3987e5;
   --sh: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 14px 30px -14px rgba(0, 0, 0, 0.85);
   --sh-open: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 34px 64px -20px rgba(0, 0, 0, 0.9);
   color-scheme: dark;
@@ -7981,3 +7986,159 @@ button.topic-cell:focus-visible {
 }
 
 
+/* the chart kit (P16, D36): a figure, its legend and table; tooltips; bars; axes; the mind map */
+.chart-fig {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.chart-body {
+  position: relative;
+  min-width: 0;
+}
+.chart-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.chart-key.is-line {
+  height: 2px;
+  width: 14px;
+}
+.chart-key.is-dot {
+  border-radius: 99px;
+}
+.chart-ramp {
+  display: inline-block;
+  width: 96px;
+  height: 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  background: linear-gradient(to var(--ramp-end, right), var(--card), var(--hue));
+}
+[dir="rtl"] .chart-ramp {
+  --ramp-end: left;
+}
+.chart-table table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.chart-table th,
+.chart-table td {
+  padding: 3px 6px;
+  border-top: 1px solid var(--line);
+  text-align: start;
+}
+.chart-table td.num,
+.chart-table th.num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.chart-tip-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.chart-tip {
+  position: absolute;
+  z-index: 10;
+  transform: translate(-50%, calc(-100% - 10px));
+  max-width: 240px;
+  padding: 6px 9px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: var(--sh);
+  white-space: nowrap;
+}
+.chart-axis {
+  font-size: 10px;
+  fill: var(--t3);
+  font-variant-numeric: tabular-nums;
+}
+.chart-axis.is-ar {
+  font-size: 9px;
+  fill: var(--t2);
+}
+.chart-node-label {
+  font-size: 12px;
+  fill: var(--t1);
+  paint-order: stroke;
+  stroke: var(--card);
+  stroke-width: 3px;
+}
+.bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: auto minmax(64px, 140px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+}
+.bar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  color: var(--t1);
+}
+.bar-track {
+  height: 10px;
+}
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-start-end-radius: 4px;
+  border-end-end-radius: 4px;
+}
+.mind-center {
+  font-size: 26px;
+  font-weight: 600;
+  fill: var(--t1);
+  paint-order: stroke;
+  stroke: var(--card);
+  stroke-width: 4px;
+}
+.mind-branch {
+  font-size: 15px;
+  font-weight: 600;
+  fill: var(--t1);
+  paint-order: stroke;
+  stroke: var(--card);
+  stroke-width: 3px;
+}
+.mind-leaf {
+  font-size: 12.5px;
+  fill: var(--t2);
+}
+.stats-grid {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 1000px) {
+  .stats-grid.is-two {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+/* a chart's controls wrap on a narrow screen rather than push the page sideways */
+.chart-legend .seg-group {
+  flex-wrap: wrap;
+  max-width: 100%;
+}

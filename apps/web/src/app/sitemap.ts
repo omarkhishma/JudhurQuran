@@ -8,7 +8,7 @@ import { SITE } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 // Pages that exist in both locales; Arabic is canonical at the bare path, English under /en.
-const STATIC_PATHS = ["/", "/quran", "/mushaf", "/roots", "/graph", "/g", "/explore", "/data", "/about", "/sources", "/transparency", "/privacy", "/developers"];
+const STATIC_PATHS = ["/", "/quran", "/mushaf", "/roots", "/graph", "/g", "/explore", "/data", "/about", "/sources", "/transparency", "/privacy", "/developers", "/stats", "/stats/relations"];
 // the mushaf's pages (B1)
 const MUSHAF_PAGES = 604;
 
