@@ -35,6 +35,7 @@ from . import (
     collections,
     concordance,
     content,
+    context,
     daily,
     entities,
     hear,
@@ -322,6 +323,23 @@ def word_relations(
 ) -> Response:
     with connect() as conn:
         out = knowledge.word_relations(conn, slug, at)
+        if out is None:
+            raise not_found("word")
+        # the near, related and opposite words the administration or the board defined (P14, D31)
+        out["defined"] = context.word_relations(conn, slug)
+        return cached(request, out)
+
+
+@router.get(
+    "/words/{location}/context",
+    summary="A word's Quranic context: the range in force (the administration's or the board's), how the sources "
+    "group the verses around it, and the context's verses with the word and its root marked",
+)
+def word_context(
+    request: Request, location: Annotated[str, Path(pattern=r"^\d{1,3}:\d{1,3}:\d{1,3}$")]
+) -> Response:
+    with connect() as conn:
+        out = context.word_context(conn, location)
         if out is None:
             raise not_found("word")
         return cached(request, out)

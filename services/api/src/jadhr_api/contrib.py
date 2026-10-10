@@ -1025,6 +1025,35 @@ def grant(admin: dict[str, Any] | None, email: str, role: str, reason: str | Non
     return {"email": u["email"], "role": u["role"]}
 
 
+def people(admin: dict[str, Any], query: str) -> dict[str, Any]:
+    """The accounts an administrator manages roles for: everyone with a role or a block, or the account an address
+    names. An address is shown to administrators only, here."""
+    if admin["role"] != "admin":
+        raise Refusal(403, "not_admin", "Only an administrator manages roles.")
+    with tx() as conn:
+        found = q(
+            conn,
+            f"""select id, email, display_name, role, blocked_at, created_at, last_seen_at from accounts.users
+                where {"email ilike :q" if query else "role <> 'member' or blocked_at is not null"}
+                order by (role = 'admin') desc, role, email limit 200""",
+            {"q": f"%{query.lower()}%"} if query else {},
+        )
+    return {
+        "data": [
+            {
+                "email": r["email"],
+                "name": r["display_name"],
+                "role": r["role"],
+                "blocked": r["blocked_at"] is not None,
+                "since": r["created_at"].isoformat(),
+                "seen": r["last_seen_at"].isoformat() if r["last_seen_at"] else None,
+                "you": str(r["id"]) == str(admin["id"]),
+            }
+            for r in found
+        ]
+    }
+
+
 def forget(conn: Connection, user_id: Any) -> None:
     """Deleting an account (P6): its unmerged proposals go; every name it left is cleared; merges stay, credited
     to a former contributor."""

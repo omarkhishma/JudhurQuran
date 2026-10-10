@@ -41,9 +41,12 @@ def version() -> str:
     with connect() as conn:
         r = one(
             conn,
-            "select coalesce(max(decided_at)::text, '') as at, count(*) as n from editorial.entries where status = 'approved'",
+            """select coalesce(max(decided_at)::text, '') as at, count(*) as n,
+                      (select coalesce(max(created_at)::text, '') from editorial.reviews) as reviewed
+               from editorial.entries where status = 'approved'""",
         )
-    v = f"{r['at']}#{r['n']}" if r else ""
+    # a review of what the administration published changes what the reader is told, not what is in force (P14)
+    v = f"{r['at']}#{r['n']}#{r['reviewed']}" if r else ""
     _version = (time.monotonic(), v)
     return v
 

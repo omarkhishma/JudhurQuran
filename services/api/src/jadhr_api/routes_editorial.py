@@ -55,6 +55,13 @@ def works(u: User) -> ORJSONResponse:
     return ok({"data": editorial.works(u)})
 
 
+@router.get(
+    "/overview", summary="The dashboard: what is defined, the sūras by context, recent work (the board)"
+)
+def overview(u: User) -> ORJSONResponse:
+    return ok(editorial.overview(u))
+
+
 @router.get("/awaiting", summary="Work in review that waits on this editor")
 def awaiting(u: User, limit: int = Query(100, ge=1, le=200)) -> ORJSONResponse:
     return ok(editorial.awaiting(u, limit))
@@ -83,6 +90,23 @@ def withdraw(u: User, entry_id: str) -> ORJSONResponse:
 @router.post("/entries/{entry_id}/decide", summary="Approve the revision in review, or ask for changes")
 def decide(u: User, entry_id: str, body: _Decide) -> ORJSONResponse:
     return ok(editorial.decide(u, entry_id, body.decision, body.note))
+
+
+@router.post(
+    "/entries/{entry_id}/publish",
+    summary="Put the administration's own work in force directly: contexts and word relations (administrators)",
+)
+def publish(u: User, entry_id: str) -> ORJSONResponse:
+    return ok(editorial.publish(u, entry_id))
+
+
+class _Review(BaseModel):
+    note: str | None = Field(None, max_length=2000)
+
+
+@router.post("/entries/{entry_id}/review", summary="The board's review of what the administration published")
+def review_published(u: User, entry_id: str, body: _Review) -> ORJSONResponse:
+    return ok(editorial.review_published(u, entry_id, body.note))
 
 
 @router.delete("/entries/{entry_id}", summary="Discard a draft")

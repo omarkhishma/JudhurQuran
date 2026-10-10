@@ -2,15 +2,19 @@
 
 The editorial board writes and decides here what only scholars can: a root's English gloss, a correction of Ibn
 Fāris's statement as cut, a pattern's function and its plain explanation, a word's sense list, the glossary's
-bodies, the topic taxonomy (P8.3b), and a verdict on every row extracted from a book. Candidates are verbatim slices of cited sources or counts
+bodies, the topic taxonomy (P8.3b), a verdict on every row extracted from a book, and — the administration's own
+kinds (P14, D31) — a sūra's passages, a word's own context and a word's near, related and opposite words. Candidates are verbatim slices of cited sources or counts
 from the corpus — the tool never suggests wording of its own (L2). An entry is in force only when an editor other
 than its author approves its current revision; the database refuses a self-decision and a second approval of one
-revision by one person (migration 0023). The work is keyed by stable keys and read beside the content, so a dataset
+revision by one person (migration 0023). The administration's kinds may instead be published by an administrator
+who wrote them, and reviewed by the board afterwards; the database refuses any other way into force (migration 0053).
+The work is keyed by stable keys and read beside the content, so a dataset
 release never loses it; every save, submission and decision is logged.
 """
 
 from __future__ import annotations
 
+import itertools
 import json
 import re
 import threading
@@ -23,7 +27,7 @@ from typing import Any
 from jadhr_arabic import normalize
 from sqlalchemy import Connection
 
-from . import board, lexicon, plain
+from . import board, context, lexicon, plain
 from .accounts import q, q1, tx
 from .db import connect, one, rows
 from .refusal import Refusal
@@ -37,9 +41,15 @@ KINDS = (
     "sense_list",
     "glossary",
     "topic",
+    "context_passages",
+    "context_word",
+    "word_relations",
     "verdict",
 )
 BOARD = {"editor", "admin"}
+# the administration publishes these directly (D31); the database holds the same list (migration 0053)
+DIRECT = context.DIRECT
+MAX_SPAN = 300  # verses in a word's own context
 OPEN = ("draft", "review", "changes")
 
 # the books' rows a verdict is given on: the table, the column that says what the row is, and an order to work in
@@ -204,6 +214,63 @@ def _value(kind: str, raw: Any) -> tuple[dict[str, Any], bool]:
             "name_en": _str(v.get("name_en"), 200),
             "under": _str(v.get("under"), 60),
         }, False
+    if kind == "context_passages":
+        raw_p = v.get("passages")
+        if not isinstance(raw_p, list) or len(raw_p) > 300:
+            raise Refusal(422, "bad_value", "A sūra's passages are a list of at most three hundred.")
+        ps = []
+        for p in raw_p:
+            p = p if isinstance(p, dict) else {}
+            a, b = p.get("from"), p.get("to")
+            if not (isinstance(a, int) and isinstance(b, int) and 1 <= a <= b):
+                raise Refusal(422, "bad_value", "A passage runs from one verse to the same or a later one.")
+            ps.append(
+                {
+                    "from": a,
+                    "to": b,
+                    "title_ar": _str(p.get("title_ar"), 200),
+                    "title_en": _str(p.get("title_en"), 200),
+                }
+            )
+        ps.sort(key=lambda x: x["from"])
+        for x, y in itertools.pairwise(ps):
+            if y["from"] <= x["to"]:
+                raise Refusal(422, "passages_overlap", "Two passages of a sūra cannot share a verse.")
+        return {"passages": ps}, False
+    if kind == "context_word":
+        out_c = {
+            "from": _str(v.get("from"), 7, need=True),
+            "to": _str(v.get("to"), 7, need=True),
+            "meaning_ar": _str(v.get("meaning_ar"), 2000),
+            "meaning_en": _str(v.get("meaning_en"), 2000),
+            "note_ar": _str(v.get("note_ar"), 1000),
+        }
+        # a range alone is a reading of the text; a statement of what the word means here rests on a source (L2)
+        return out_c, bool(out_c["meaning_ar"] or out_c["meaning_en"])
+    if kind == "word_relations":
+        raw_l = v.get("links")
+        if not isinstance(raw_l, list) or len(raw_l) > 60:
+            raise Refusal(422, "bad_value", "A word's links are a list of at most sixty.")
+        ls, seen = [], set()
+        for x in raw_l:
+            x = x if isinstance(x, dict) else {}
+            rel = x.get("rel")
+            if rel not in context.RELS:
+                raise Refusal(422, "bad_value", "A link is near, related or opposite.")
+            to = _str(x.get("to"), 80, need=True)
+            if (to, rel) in seen:
+                raise Refusal(422, "duplicate_link", "That word is linked so already.")
+            seen.add((to, rel))
+            link: dict[str, Any] = {
+                "to": to,
+                "rel": rel,
+                "note_ar": _str(x.get("note_ar"), 1000),
+                "note_en": _str(x.get("note_en"), 1000),
+            }
+            if isinstance(x.get("source"), dict) and _str(x["source"].get("work"), 60):
+                link["source"] = _sources([x["source"]], need=True)[0]
+            ls.append(link)
+        return {"links": ls}, False
     if kind == "glossary":
         ar, en = _str(v.get("body_ar"), 4000), _str(v.get("body_en"), 4000)
         if not ar and not en:
@@ -279,6 +346,35 @@ def _target(conn: Connection, kind: str, target: str) -> dict[str, Any]:
         )
     elif kind == "topic":
         t = _topic_target(conn, target)
+    elif kind == "context_passages":
+        t = (
+            one(
+                conn,
+                """select number::text as key, name_ar as label, name_translit as translit, verse_count, number
+                   from content.surahs where number = :n""",
+                {"n": int(target)},
+            )
+            if target.isdigit() and len(target) <= 3
+            else None
+        )
+    elif kind == "context_word":
+        t = one(
+            conn,
+            """select w.location as key, w.text_uthmani as label, w.surah, w.ayah, w.verse_id, w.position,
+                      v.key as verse_key, l.slug as lemma_slug, l.ar as lemma_ar, r.spaced as root_spaced
+               from content.words w join content.verses v on v.id = w.verse_id
+               left join content.lemmas l on l.id = w.lemma_id left join content.roots r on r.id = w.root_id
+               where w.location = :k""",
+            {"k": target},
+        )
+    elif kind == "word_relations":
+        t = one(
+            conn,
+            """select l.slug as key, l.ar as label, l.key as lemma_key, l.translit, l.occurrences, l.gloss_en,
+                      r.key as root_key, r.spaced as root_spaced
+               from content.lemmas l left join content.roots r on r.id = l.root_id where l.slug = :k""",
+            {"k": target},
+        )
     else:
         layer, row = _layer(target)
         spec = LAYERS[layer]
@@ -383,6 +479,33 @@ def _check_topic(
             )
         seen.add(at)
         at = _parent_of(conn, at, placed)
+
+
+def _check_context(conn: Connection, kind: str, t: dict[str, Any], value: dict[str, Any]) -> None:
+    """A sūra's passages lie inside the sūra; a word's own context holds the word's verse, runs forward in the mushaf's
+    order and is at most three hundred verses; a word is linked only to another word the corpus holds."""
+    if kind == "context_passages":
+        for p in value["passages"]:
+            if p["to"] > t["verse_count"]:
+                raise Refusal(422, "outside_surah", f"The sūra has {t['verse_count']} verses.")
+    elif kind == "context_word":
+        a = one(conn, "select id from content.verses where key = :k", {"k": value["from"]})
+        b = one(conn, "select id from content.verses where key = :k", {"k": value["to"]})
+        if a is None or b is None:
+            raise Refusal(422, "unknown_verse", "Name the verses by sūra and verse, as 2:255.")
+        if not a["id"] <= t["verse_id"] <= b["id"]:
+            raise Refusal(422, "context_without_word", "A word's context holds the verse the word is in.")
+        if b["id"] - a["id"] + 1 > MAX_SPAN:
+            raise Refusal(422, "context_too_long", f"A word's context is at most {MAX_SPAN} verses.")
+    elif kind == "word_relations":
+        tos = [x["to"] for x in value["links"]]
+        if t["key"] in tos:
+            raise Refusal(422, "self_link", "A word is not linked to itself.")
+        known = {
+            r["slug"] for r in rows(conn, "select slug from content.lemmas where slug = any(:s)", {"s": tos})
+        }
+        if set(tos) - known:
+            raise Refusal(422, "unknown_word", f"No word {sorted(set(tos) - known)[0]} in the corpus.")
 
 
 def _check_ends(conn: Connection, t: dict[str, Any], ends: dict[str, str]) -> None:
@@ -555,6 +678,9 @@ _POOL = {
     "sense_list": "select count(*) from content.lemmas",
     "glossary": "select count(*) from content.glossary_terms",
     "topic": "select count(*) from content.topics where source_id in ('quranpedia-topics', 'labeaume')",
+    "context_passages": "select count(*) from content.surahs",
+    "context_word": "select count(*) from content.words",
+    "word_relations": "select count(*) from content.lemmas",
 }
 
 
@@ -617,6 +743,91 @@ def worklists(u: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def overview(u: dict[str, Any]) -> dict[str, Any]:
+    """The dashboard's view (P14.4): how many words have a context in force — by a passage of their sūra or their own
+    range — overall and per sūra, the sūras with passages, the words with near, related or opposite words, and the
+    latest work on the board's entries, newest first."""
+    _board(u)
+    with connect() as conn:
+        surahs = rows(
+            conn,
+            "select number, name_ar, name_translit, verse_count, word_count from content.surahs order by number",
+        )
+        per_verse = {
+            (r["surah"], r["ayah"]): r["n"]
+            for r in rows(
+                conn, "select surah, ayah, count(*)::int as n from content.words group by surah, ayah"
+            )
+        }
+        words_total = sum(per_verse.values())
+    with tx() as conn:
+        segs = q(
+            conn,
+            "select target, value from editorial.entries where kind = 'context_passages' and status = 'approved'",
+        )
+        own = q(
+            conn,
+            """select e.target, w.surah, w.ayah from editorial.entries e join content.words w on w.location = e.target
+               where e.kind = 'context_word' and e.status = 'approved'""",
+        )
+        rel = q1(
+            conn,
+            """select count(*)::int as words, coalesce(sum(jsonb_array_length(value -> 'links')), 0)::int as links
+               from editorial.entries where kind = 'word_relations' and status = 'approved'""",
+        )
+        recent = q(
+            conn,
+            """select l.action, l.at, l.revision, l.actor_id, e.kind, e.target from editorial.log l
+               join editorial.entries e on e.id = l.entry_id order by l.at desc limit 20""",
+        )
+        names = _who(conn, [r["actor_id"] for r in recent])
+    covered: dict[int, set[int]] = {}
+    for s in segs:
+        n = int(s["target"])
+        covered.setdefault(n, set()).update(
+            a for p in s["value"]["passages"] for a in range(p["from"], p["to"] + 1)
+        )
+    own_extra: dict[int, int] = {}
+    for o in own:
+        if o["ayah"] not in covered.get(o["surah"], set()):
+            own_extra[o["surah"]] = own_extra.get(o["surah"], 0) + 1
+    by_surah = []
+    for s in surahs:
+        n = s["number"]
+        words = sum(per_verse.get((n, a), 0) for a in covered.get(n, set())) + own_extra.get(n, 0)
+        by_surah.append(
+            {
+                "surah": n,
+                "name_ar": s["name_ar"],
+                "name_translit": s["name_translit"],
+                "verses": s["verse_count"],
+                "words": s["word_count"],
+                "verses_in_passages": len(covered.get(n, set())),
+                "words_with_context": words,
+            }
+        )
+    return {
+        "words": words_total,
+        "words_with_context": sum(x["words_with_context"] for x in by_surah),
+        "words_own_range": len(own),
+        "surahs_with_passages": len(segs),
+        "relations": {"words": rel["words"] if rel else 0, "links": rel["links"] if rel else 0},
+        "by_surah": by_surah,
+        "recent": [
+            {
+                "action": r["action"],
+                "kind": r["kind"],
+                "target": r["target"],
+                "revision": r["revision"],
+                "by": names.get(str(r["actor_id"])),
+                "at": r["at"].isoformat(),
+            }
+            for r in recent
+        ],
+        "role": u["role"],
+    }
+
+
 _LISTS = {
     "root_gloss": ("select key, spaced as label, translit as sub, occurrences from content.roots", "spaced"),
     "root_core": (
@@ -639,7 +850,27 @@ _LISTS = {
         "select key, label_ar as label, label_en as sub, sort_order as occurrences from content.glossary_terms",
         "label_ar",
     ),
+    "word_relations": (
+        "select slug as key, ar as label, coalesce(gloss_en, '') as sub, occurrences from content.lemmas",
+        "ar_bare",
+    ),
 }
+
+
+def _context_word_targets(conn: Connection, query: str, worked: list[str]) -> list[dict[str, Any]]:
+    """A word's own context is set from the reader or by its place: «2:255» lists that verse's words, «2:255:3» the
+    word; with no query, the words that have work on them, in the mushaf's order."""
+    q_ = query.strip().translate(str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789"))
+    if re.fullmatch(r"\d{1,3}:\d{1,3}(:\d{1,3})?", q_):
+        where, params = ("w.location = :q", {"q": q_}) if q_.count(":") == 2 else ("v.key = :q", {"q": q_})
+    else:
+        where, params = "w.location = any(:w)", {"w": worked}
+    return rows(
+        conn,
+        f"""select w.location as key, w.text_uthmani as label, v.key as sub, null::int as occurrences
+            from content.words w join content.verses v on v.id = w.verse_id where {where} order by w.id limit 400""",
+        params,
+    )
 
 
 def _topic_targets(conn: Connection, query: str) -> list[dict[str, Any]]:
@@ -775,6 +1006,14 @@ def targets(
                     it["relation"] = {k: r[k] for k in r if k != "id"}
         elif kind == "topic":
             items = _topic_targets(conn, query)
+        elif kind == "context_passages":
+            items = rows(
+                conn,
+                """select number::text as key, name_ar as label, name_translit as sub, verse_count as occurrences
+                   from content.surahs order by number""",
+            )
+        elif kind == "context_word":
+            items = _context_word_targets(conn, query, list(states))
         else:
             sql, col = _LISTS[kind]
             where = f" where {col} ilike :q" if query else ""
@@ -881,6 +1120,21 @@ def candidates(conn: Connection, kind: str, t: dict[str, Any]) -> dict[str, Any]
         return {"current": {"body_ar": t["body_ar"], "body_en": t["body_en"]}}
     if kind == "topic":
         return _topic_candidates(conn, t)
+    if kind == "context_passages":
+        return context.surah_groupings(conn, int(t["key"]))
+    if kind == "context_word":
+        return {
+            "groupings": context.groupings(conn, t["verse_id"]),
+            "in_force": context.resolve(conn, t["key"]),
+            "verse_count": one(
+                conn, "select verse_count from content.surahs where number = :s", {"s": t["surah"]}
+            )["verse_count"],  # type: ignore[index]
+        }
+    if kind == "word_relations":
+        return {
+            **context.relation_candidates(conn, t["key"]),
+            "linked": context.word_relations(conn, t["key"]),
+        }
     return {"row": {k: v for k, v in t.items() if k not in ("label",)}}
 
 
@@ -1044,6 +1298,8 @@ def save(u: dict[str, Any], kind: str, target: str, raw_value: Any, raw_sources:
             raise Refusal(422, "place_or_reject", "Place the verse under an Arabic topic, or reject the tag.")
         if kind == "topic":
             _check_topic(conn, t, value, sources)
+        if kind in DIRECT:
+            _check_context(conn, kind, t, value)
     with tx() as conn:
         named = (
             {s["from"] for s in value.get("senses", []) if s.get("from")} if kind == "sense_list" else set()
@@ -1207,6 +1463,64 @@ def decide(u: dict[str, Any], entry_id: str, decision: str, note: str | None) ->
         out = _entry_out(done, {})
     if decision == "approve":
         _in_force_changed()
+    return out
+
+
+def publish(u: dict[str, Any], entry_id: str) -> dict[str, Any]:
+    """The administration's own kinds (D31): an administrator puts their own work in force with no second approval;
+    what was in force before is retired. The board may review it afterwards (``review_published``)."""
+    _board(u)
+    if u["role"] != "admin":
+        raise Refusal(403, "not_admin", "Only an administrator publishes directly.")
+    with tx() as conn:
+        e = _open(conn, entry_id)
+        if e["kind"] not in DIRECT:
+            raise Refusal(
+                409, "needs_review", "This kind of entry comes into force by another editor's approval."
+            )
+        if str(e["author_id"]) != str(u["id"]):
+            raise Refusal(403, "not_author", "An administrator publishes their own work.")
+        if e["status"] not in OPEN:
+            raise Refusal(409, "not_open", "Only work not yet in force is published.")
+        q(
+            conn,
+            "update editorial.entries set status = 'retired', updated_at = now() where kind = :k and target = :t and status = 'approved' returning id",
+            {"k": e["kind"], "t": e["target"]},
+        )
+        done = q1(
+            conn,
+            "update editorial.entries set status = 'approved', decided_at = now(), updated_at = now() where id = :id returning *",
+            {"id": e["id"]},
+        )
+        assert done is not None
+        _log(conn, done["id"], u, "published", done["revision"])
+        out = _entry_out(done, {})
+    _in_force_changed()
+    return out
+
+
+def review_published(u: dict[str, Any], entry_id: str, note: str | None) -> dict[str, Any]:
+    """An editor other than its author reviews what the administration published: the reader then sees the board's
+    review beside it. Asking for changes is a note to the administration; the entry stays in force."""
+    _board(u)
+    note = _str(note, 2000) or None
+    with tx() as conn:
+        e = _open(conn, entry_id)
+        if e["kind"] not in DIRECT or e["status"] != "approved":
+            raise Refusal(409, "not_published", "Only the administration's published work is reviewed so.")
+        if str(e["author_id"]) == str(u["id"]):
+            raise Refusal(403, "self_review", "An author does not review their own entry.")
+        try:
+            q(
+                conn,
+                "insert into editorial.reviews (entry_id, revision, reviewer_id, decision, note) values (:e, :r, :u, 'approve', :n) returning id",
+                {"e": e["id"], "r": e["revision"], "u": u["id"], "n": note},
+            )
+        except Exception as ex:  # the database's own refusal: this revision has this editor's review already
+            raise Refusal(409, "already_decided", "This revision has your decision already.") from ex
+        _log(conn, e["id"], u, "reviewed", e["revision"], {"note": note} if note else None)
+        out = _entry_out(e, {})
+    _in_force_changed()
     return out
 
 

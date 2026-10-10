@@ -3582,7 +3582,15 @@
     "readerState_seen": "Came before the list in force was approved",
     "readerWas": "Was",
     "readerWhy": "Why",
-    "takeSuggestion": "Take it as a sense"
+    "takeSuggestion": "Take it as a sense",
+    "kind_context_passages": "Sūra passages (context)",
+    "kindLead_context_passages": "Divide a sūra into passages that hold one idea; every word in a passage takes the whole passage as its context unless it has a range of its own. The sources' boundaries (rukūʿ, the tafsirs' passages, the commentaries' headings) are drawn beside the verses to help; none of them becomes a context until you set it. The administration publishes this directly; the board reviews it afterwards.",
+    "kind_context_word": "A word's own context",
+    "kindLead_context_word": "Set, for one word at its place, the verse where its context starts and the verse where it ends, and if you wish write what it means in that context, resting on a source. This overrides the sūra's passage for this word only. Search by verse (2:255) or by the word's place (2:255:3).",
+    "kind_word_relations": "Near and opposite words",
+    "kindLead_word_relations": "Link a word to Quranic words close to it in meaning, related to it, or opposite to it, with a note on the difference if you wish. A link shows on both words. What the books of furūq and aḍdād say appears here as candidates only.",
+    "action_published": "published by the administration",
+    "action_reviewed": "reviewed by the board"
   },
   "classroom": {
     "title": "Classroom",

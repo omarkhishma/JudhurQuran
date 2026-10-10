@@ -160,6 +160,11 @@ def grant(u: User, body: _Grant) -> ORJSONResponse:
     return ok(contrib.grant(u, body.email, body.role, body.reason))
 
 
+@router.get("/admin/people", summary="Accounts with a role, or found by their address (administrators)")
+def people(u: User, q: str = Query("", max_length=320)) -> ORJSONResponse:
+    return ok(contrib.people(u, q.strip()))
+
+
 @router.get("/reports", summary="Unresolved reports, with the proposal each concerns (the editorial board)")
 def reports(u: User) -> ORJSONResponse:
     return ok(contrib.open_reports(u))
