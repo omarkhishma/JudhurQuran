@@ -6,7 +6,7 @@ import { useLocale } from "next-intl";
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { formatNumber } from "@/lib/format";
-import { useTip } from "./Figure";
+import { useTip, useWidth } from "./Figure";
 
 export type NetNode = { id: string; label: string; size: number; href?: string; sub?: string };
 export type NetEdge = { a: string; b: string; weight: number; note?: string };
@@ -25,6 +25,9 @@ const H = 620;
 export function Network({ nodes, edges, label, hue = "var(--chart-root)" }: { nodes: NetNode[]; edges: NetEdge[]; label: string; hue?: string }) {
   const locale = useLocale();
   const tip = useTip();
+  // shrunk to a phone, the labels keep a readable size (up to twice theirs in the drawing's units)
+  const [box, drawn] = useWidth(W);
+  const k = Math.min(2, Math.max(1, W / drawn)).toFixed(2);
   const [focus, setFocus] = useState<string | null>(null);
   const laid = useMemo(() => {
     const ns: N[] = nodes.map((n) => ({ ...n }));
@@ -35,8 +38,9 @@ export function Network({ nodes, edges, label, hue = "var(--chart-root)" }: { no
     // a fixed start: each node on a circle by its place in the list, so the layout does not depend on chance
     ns.forEach((n, i) => {
       const a = (2 * Math.PI * i) / ns.length;
-      n.x = W / 2 + 200 * Math.cos(a);
-      n.y = H / 2 + 200 * Math.sin(a);
+      // rounded: the server's and the browser's sine may differ in the last bit, and the simulation would carry it
+      n.x = Math.round(W / 2 + 200 * Math.cos(a));
+      n.y = Math.round(H / 2 + 200 * Math.sin(a));
     });
     const sim = forceSimulation(ns)
       .force("link", forceLink<N, E>(es).id((d) => d.id).distance(70).strength(0.4))
@@ -51,6 +55,34 @@ export function Network({ nodes, edges, label, hue = "var(--chart-root)" }: { no
     }
     return { ns, es, r, w };
   }, [nodes, edges]);
+  // a label below its node, or above it, where it covers no other label and no node as large: the largest nodes first;
+  // the others name themselves on a touch or on focus, and in the table
+  const labelled = useMemo(() => {
+    const s = Number(k);
+    type Box = [number, number, number, number, string];
+    const hits = (a: Box, b: Box) => a[4] !== b[4] && a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+    const dot = (n: N): Box => {
+      const r = laid.r(n.size);
+      return [(n.x ?? 0) - r, (n.y ?? 0) - r, (n.x ?? 0) + r, (n.y ?? 0) + r, n.id];
+    };
+    const dots: Box[] = [];
+    const placed: Box[] = [];
+    const out = new Map<string, "below" | "above">();
+    for (const n of [...laid.ns].sort((a, b) => b.size - a.size)) {
+      const w = n.label.length * 6.5 * s;
+      const r = laid.r(n.size);
+      for (const side of ["below", "above"] as const) {
+        const top = side === "below" ? (n.y ?? 0) + r + 2 : (n.y ?? 0) - r - 2 - 13 * s;
+        const b: Box = [(n.x ?? 0) - w / 2, top, (n.x ?? 0) + w / 2, top + 13 * s, n.id];
+        if (placed.some((p) => hits(b, p)) || dots.some((d) => hits(b, d))) continue;
+        placed.push(b);
+        out.set(n.id, side);
+        break;
+      }
+      dots.push(dot(n));
+    }
+    return out;
+  }, [laid, k]);
   const near = useMemo(() => {
     if (!focus) return null;
     const s = new Set([focus]);
@@ -63,7 +95,7 @@ export function Network({ nodes, edges, label, hue = "var(--chart-root)" }: { no
     return s;
   }, [focus, laid]);
   return (
-    <div className="relative">
+    <div className="relative" ref={box} style={{ "--k": k } as React.CSSProperties}>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="group" aria-label={label}>
         {laid.es.map((e, i) => {
           const a = e.source as N;
@@ -84,9 +116,11 @@ export function Network({ nodes, edges, label, hue = "var(--chart-root)" }: { no
               opacity={on ? 1 : 0.25}
             >
               <circle cx={n.x} cy={n.y} r={laid.r(n.size)} fill={hue} stroke="var(--card)" strokeWidth={2} />
-              <text x={n.x} y={(n.y ?? 0) + laid.r(n.size) + 12} textAnchor="middle" className="chart-node-label">
-                {n.label}
-              </text>
+              {(labelled.has(n.id) || n.id === focus) && (
+                <text x={n.x} y={labelled.get(n.id) === "above" ? (n.y ?? 0) - laid.r(n.size) - 4 * Number(k) : (n.y ?? 0) + laid.r(n.size) + 12 * Number(k)} textAnchor="middle" className="chart-node-label">
+                  {n.label}
+                </text>
+              )}
             </g>
           );
           return n.href ? (

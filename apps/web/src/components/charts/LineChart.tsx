@@ -5,9 +5,8 @@ import { line } from "d3-shape";
 import { useLocale } from "next-intl";
 import { useState } from "react";
 import { formatNumber } from "@/lib/format";
-import { useTip } from "./Figure";
+import { useTip, useWidth } from "./Figure";
 
-const W = 640;
 const H = 240;
 const P = { top: 26, right: 16, bottom: 40, left: 52 };
 
@@ -19,6 +18,7 @@ const P = { top: 26, right: 16, bottom: 40, left: 52 };
 export function LineChart({ points, logX = false, logY = false, xLabel, yLabel, label, hue = "var(--chart-root)", format }: { points: [number, number][]; logX?: boolean; logY?: boolean; xLabel: string; yLabel: string; label: string; hue?: string; format?: (y: number) => string }) {
   const locale = useLocale();
   const tip = useTip();
+  const [box, W] = useWidth(640);
   const [at, setAt] = useState<number | null>(null);
   const xs = points.map((p) => p[0]);
   const ys = points.map((p) => p[1]);
@@ -29,7 +29,7 @@ export function LineChart({ points, logX = false, logY = false, xLabel, yLabel, 
   const xt = logX ? [1, 10, 100, 1000, 10000].filter((v) => v <= Math.max(...xs)) : x.ticks(5);
   const yt = logY ? [1, 10, 100, 1000, 10000].filter((v) => v <= Math.max(...ys)) : y.ticks(4);
   return (
-    <div className="relative" dir="ltr">
+    <div className="relative" dir="ltr" ref={box}>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"

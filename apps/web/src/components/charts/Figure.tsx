@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { type ReactNode, useCallback, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * A chart's frame (P16, D36): its title, what was counted and how (law L4), the chart, its legend, and its numbers as
@@ -46,6 +46,26 @@ export function RampKey({ hue, low, high }: { hue: string; low: string; high: st
       <span>{high}</span>
     </span>
   );
+}
+
+/**
+ * The width a chart is drawn at, measured: a chart drawn in its own pixels keeps its text at the size the styles give
+ * it on a phone as on a desktop. The server and the first paint use `fallback`, so the page hydrates as rendered.
+ */
+export function useWidth(fallback: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(fallback);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => {
+      const w = Math.round(e.contentRect.width);
+      if (w > 0) setWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, width] as const;
 }
 
 /** One tooltip per chart, placed at the pointer or at the focused mark, its value first. Content is text only. */

@@ -8063,17 +8063,19 @@ button.topic-cell:focus-visible {
   box-shadow: var(--sh);
   white-space: nowrap;
 }
-.chart-axis {
+/* the chart kit's axis text; `.chart-axis` on a line is the older axis stroke above */
+text.chart-axis {
   font-size: 10px;
   fill: var(--t3);
+  stroke: none;
   font-variant-numeric: tabular-nums;
 }
-.chart-axis.is-ar {
-  font-size: 9px;
+text.chart-axis.is-ar {
+  font-size: 11px;
   fill: var(--t2);
 }
 .chart-node-label {
-  font-size: 12px;
+  font-size: calc(12px * var(--k, 1));
   fill: var(--t1);
   paint-order: stroke;
   stroke: var(--card);

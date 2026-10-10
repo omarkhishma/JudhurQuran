@@ -3,11 +3,10 @@
 import { scaleLinear } from "d3-scale";
 import { useLocale, useTranslations } from "next-intl";
 import { formatNumber } from "@/lib/format";
-import { Key, useTip } from "./Figure";
+import { Key, useTip, useWidth } from "./Figure";
 
 export type SurahValue = { surah: number; name: string; place: "meccan" | "medinan"; order: number; value: number; extra?: string };
 
-const W = 1140;
 const H = 180;
 const PAD = { top: 8, bottom: 22, side: 36 };
 
@@ -21,6 +20,7 @@ export function SurahColumns({ data, by, label, onPick }: { data: SurahValue[]; 
   const locale = useLocale();
   const rtl = locale === "ar";
   const tip = useTip();
+  const [box, W] = useWidth(1140);
   const rows = [...data].sort((a, b) => (by === "mushaf" ? a.surah - b.surah : a.order - b.order));
   const max = Math.max(1, ...rows.map((r) => r.value));
   const y = scaleLinear().domain([0, max]).nice(4).range([H - PAD.bottom, PAD.top]);
@@ -28,13 +28,15 @@ export function SurahColumns({ data, by, label, onPick }: { data: SurahValue[]; 
   const bw = Math.max(2, Math.min(24, step - 2));
   const x = (i: number) => (rtl ? W - PAD.side - (i + 1) * step : PAD.side + i * step) + (step - bw) / 2;
   const ticks = y.ticks(4);
+  // a number under every tenth sūra, or every twentieth where they stand close
+  const every = step * 10 < 32 ? 20 : 10;
   return (
-    <div className="relative">
+    <div className="relative" ref={box}>
       <div className="mb-2 flex flex-wrap gap-3">
         <Key color="var(--chart-meccan)" label={t("meccan")} />
         <Key color="var(--chart-medinan)" label={t("medinan")} />
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={label}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={label} direction="ltr">
         {ticks.map((v) => (
           <g key={v}>
             <line x1={PAD.side} x2={W - PAD.side} y1={y(v)} y2={y(v)} stroke="var(--line)" strokeWidth={1} />
@@ -64,7 +66,7 @@ export function SurahColumns({ data, by, label, onPick }: { data: SurahValue[]; 
                 fill={r.place === "meccan" ? "var(--chart-meccan)" : "var(--chart-medinan)"}
                 pointerEvents="none"
               />
-              {(i % 10 === 0 || i === rows.length - 1) && (
+              {(i % every === 0 || i === rows.length - 1) && (
                 <text x={x(i) + bw / 2} y={H - 6} textAnchor="middle" className="chart-axis">
                   {formatNumber(by === "mushaf" ? r.surah : r.order, locale)}
                 </text>
