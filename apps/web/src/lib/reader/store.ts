@@ -41,6 +41,8 @@ export type SuggestTarget = { kind: SuggestKind; slug: string; label: string; or
 type ReaderState = {
   mode: Mode;
   ask: boolean;
+  // what the address asked the ask box to hold (?mode=ask&q=…), taken before the reader's own address replaces it
+  askQ: string;
   review: boolean;
   selection: Selection | null;
   verse: string | null;
@@ -68,7 +70,7 @@ type ReaderState = {
   setMode: (m: Mode) => void;
   back: () => void;
   forward: () => void;
-  setAsk: (on: boolean) => void;
+  setAsk: (on: boolean, q?: string) => void;
   setReview: (on: boolean) => void;
   setSheet: (s: "half" | "full") => void;
   setRailOverlay: (on: boolean) => void;
@@ -92,6 +94,7 @@ const HISTORY_CAP = 30;
 export const useReader = create<ReaderState>((set, get) => ({
   mode: "empty",
   ask: false,
+  askQ: "",
   review: false,
   selection: null,
   verse: null,
@@ -142,7 +145,7 @@ export const useReader = create<ReaderState>((set, get) => ({
     if (cursor >= history.length - 1) return;
     set({ cursor: cursor + 1, selection: history[cursor + 1], mode: "word", verse: null });
   },
-  setAsk: (on) => set({ ask: on }),
+  setAsk: (on, q) => set(q === undefined ? { ask: on } : { ask: on, askQ: q }),
   setReview: (on) => set({ review: on }),
   setSheet: (sheet) => set({ sheet }),
   setRailOverlay: (on) => set({ railOverlay: on }),

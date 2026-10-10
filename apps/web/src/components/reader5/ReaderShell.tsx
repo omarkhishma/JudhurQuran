@@ -44,7 +44,7 @@ export function ReaderShell({ chapter, children, footer }: { chapter: ChapterInf
     const p = new URLSearchParams(window.location.search);
     const personal = usePersonal.getState();
     const mode = p.get("mode");
-    if (mode === "ask") useReader.getState().setAsk(true);
+    if (mode === "ask") useReader.getState().setAsk(true, p.get("q") ?? "");
     else if (mode === "lookup") {
       useReader.getState().setMode("index");
       setPrefs({ panelOpen: true });

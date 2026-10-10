@@ -30,7 +30,8 @@ export function AskView() {
   const locale = useLocale();
   const bp = useBreakpoint();
   // Ask only renders in the browser (the shell enters it after mount), so the URL is readable here.
-  const [q, setQ] = useState(() => (typeof window === "undefined" ? "" : (new URLSearchParams(window.location.search).get("q") ?? "")));
+  // the address's ?q= as the shell took it (the reader's own address has replaced it by now), else the address
+  const [q, setQ] = useState(() => useReader.getState().askQ || (typeof window === "undefined" ? "" : (new URLSearchParams(window.location.search).get("q") ?? "")));
   const [pick, setPick] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const dq = useDebounced(q.trim(), 180);
