@@ -1,0 +1,55 @@
+# The held-out questions (PLAN P18.1): written on 2026-10-10 after the rules were tuned on ask_bank.yaml, and scored
+# once, as they were written — no rule or resolver was changed for them. Their score is the measure of the reading on
+# questions it has not seen. Same fields as ask_bank.yaml.
+
+questions:
+  - {q: "كم مرة ورد ذكر الرسول في القرآن", intent: count, a: rasul}
+  - {q: "كم مرة جاءت كلمة الحكمة", intent: count, a: hikma}
+  - {q: "عدد مرات ذكر داود", intent: count, a: dawud}
+  - {q: "كم مرة ذكر سليمان", intent: count, a: sulayman}
+  - {q: "كم مرة ورد اسم هارون في سورة طه", intent: count, a: harun, surah: 20}
+  - {q: "كم مرة وردت كلمة الميزان", intent: count, a: mizan}
+  - {q: "كم مرة ذكرت القيامة في السور المكية", intent: count, a: qiyama, place: meccan}
+  - {q: "كم مرة ورد جذر س ج د", intent: count, a: سجد}
+  - {q: "how many times is David mentioned", intent: count, a: dawud}
+  - {q: "how often is the word wisdom used", intent: count, a: hikma}
+  - {q: "how many times is the word throne mentioned", intent: count, a: arsh}
+  - {q: "how many times is hell mentioned in the quran", intent: count, a: jahannam}
+  - {q: "أين ورد ذكر لوط", intent: where, a: lut}
+  - {q: "في أي السور ذكرت النخل", intent: where, a: nakhl}
+  - {q: "مواضع كلمة الدعاء", intent: where, a: dua}
+  - {q: "where is Adam mentioned", intent: where, a: adam}
+  - {q: "which surahs mention the spider", intent: where, a: ankabut}
+  - {q: "where does the word iron appear", intent: where, a: hadid}
+  - {q: "توزيع ذكر الساعة في القرآن", intent: distribution, a: sa}
+  - {q: "distribution of the word hell", intent: distribution, a: jahannam}
+  - {q: "ما معنى العرش", intent: meaning, a: arsh}
+  - {q: "ما معنى كلمة الكرسي", intent: meaning, a: kursiyy}
+  - {q: "ما المقصود بالميزان", intent: meaning, a: mizan}
+  - {q: "what does mizan mean", intent: meaning, a: mizan}
+  - {q: "meaning of hikma", intent: meaning, a: hikma}
+  - {q: "ما جذر كلمة الإصلاح", intent: root, a: islah}
+  - {q: "ما جذر كلمة الحمد", intent: root, a: hamd}
+  - {q: "what is the root of sabil", intent: root, a: sabil}
+  - {q: "ما الفرق بين الرسول والنبي", intent: compare, a: rasul, b: nabiyy}
+  - {q: "قارن بين الذهب والفضة", intent: compare, a: dhahab, b: fidda}
+  - {q: "الفرق بين الظن واليقين", intent: compare, a: zann, b: yaqin}
+  - {q: "what is the difference between gold and silver", intent: compare, a: dhahab, b: fidda}
+  - {q: "compare doubt and certainty", intent: compare, a: shakk, b: yaqin}
+  - {q: "الآيات التي تجمع الذهب والفضة", intent: together, a: dhahab, b: fidda}
+  - {q: "أين اجتمع ذكر إبراهيم وإسماعيل", intent: together, a: ibrahim, b: ismail}
+  - {q: "verses that mention both grapes and palm trees", intent: together, a: inab, b: nakhl}
+  - {q: "ماذا قال القرآن عن الأمانة", intent: theme}
+  - {q: "آيات عن الإحسان إلى الجار", intent: theme}
+  - {q: "الآيات التي تتحدث عن خلق الإنسان", intent: theme}
+  - {q: "what does the quran say about honesty", intent: theme}
+  - {q: "verses about the creation of man", intent: theme}
+  - {q: "كم آية في سورة النور", intent: surah, surah: 24, focus: verses}
+  - {q: "كم كلمة في سورة الكوثر", intent: surah, surah: 108, focus: words}
+  - {q: "هل سورة الفاتحة مكية", intent: surah, surah: 1}
+  - {q: "how many verses are in surah al-kahf", intent: surah, surah: 18, focus: verses}
+  - {q: "statistics for surah Maryam", intent: surah, surah: 19}
+  - {q: "ما أقصر سورة في القرآن", intent: superlative, focus: shortest_surah}
+  - {q: "ما أكثر جذر ورودا في القرآن", intent: superlative, focus: most_frequent_root}
+  - {q: "which is the longest verse", intent: superlative, focus: longest_verse}
+  - {q: "what is the shortest verse in the quran", intent: superlative, focus: shortest_verse}

@@ -1524,6 +1524,39 @@ def search(
     return cached(request, out)
 
 
+@router.get(
+    "/ask",
+    summary="A question in Arabic or English read as an intent and its terms, answered from the data and the sources only",
+)
+def ask_question(
+    request: Request,
+    q: str | None = Query(None, min_length=1, max_length=300),
+    intent: str | None = Query(
+        None,
+        pattern="^(count|where|distribution|meaning|root|compare|together|theme|surah|superlative)$",
+        description="the reading itself, as 'understood as' gave it and the reader edited it",
+    ),
+    a: str | None = Query(None, max_length=120),
+    b: str | None = Query(None, max_length=120),
+    surah: int | None = Query(None, ge=1, le=114),
+    place: str | None = Query(None, pattern="^(meccan|medinan)$"),
+    limit: int = Query(20, ge=1, le=50),
+    offset: int = Query(0, ge=0, le=2000),
+) -> Response:
+    from . import ask
+
+    if not q and not intent:
+        raise HTTPException(status_code=422, detail="a question (q) or a reading (intent and its terms)")
+    reading = {"intent": intent, "a": a, "b": b, "surah": surah, "place": place} if intent else {}
+    with connect() as conn:
+        out = ask.ask(conn, q, limit, offset, **reading)
+    sem = [x.get("semantic") for x in (out["answer"], out.get("fallback") or {}) if isinstance(x, dict)]
+    if any(s and s.get("status") == "unavailable" for s in sem):
+        # read with the embedding service away: not to be kept once it is back
+        return ORJSONResponse(out, headers={"Cache-Control": "no-store"})
+    return cached(request, out)
+
+
 class _SearchAsk(BaseModel):
     q: str = Field(min_length=1, max_length=200)
     limit: int = Field(20, ge=1, le=100)

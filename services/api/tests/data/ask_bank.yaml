@@ -1,0 +1,193 @@
+# The question bank (PLAN P18.1, D35): questions as readers write them, each with the reading a person would give it.
+# Written apart from the example questions the reader uses (jadhr_api.ask.EXAMPLES), so its score is a measure.
+# a, b: a word's lemma slug, or a root's letters (key); surah: its number; place: meccan | medinan; focus: a sūra
+# question's figure or a superlative's kind. A term the data cannot name is expected as `a: null` with its intent.
+
+questions:
+  # ── count, Arabic ──
+  - {q: "كم مرة ذكرت كلمة الرحمة في القرآن؟", intent: count, a: rahma}
+  - {q: "كم مرة ورد لفظ الجنة", intent: count, a: janna}
+  - {q: "كم مرة ذكر موسى في القرآن الكريم", intent: count, a: musa}
+  - {q: "كم مرة جاء ذكر إبراهيم", intent: count, a: ibrahim}
+  - {q: "كم مرة تكررت كلمة الصبر", intent: count, a: sabr}
+  - {q: "عدد مرات ورود كلمة النار", intent: count, a: nar}
+  - {q: "ما عدد مرات ذكر الصلاة في القرآن", intent: count, a: sala-2}
+  - {q: "كم مرة وردت الزكاة", intent: count, a: zaka}
+  - {q: "كم مرة ذكر فرعون", intent: count, a: firawn}
+  - {q: "كم مرة ذكرت مريم", intent: count, a: maryam}
+  - {q: "كم مرة ورد اسم عيسى", intent: count, a: isa}
+  - {q: "كم مرة ذكر نوح", intent: count, a: nuh}
+  - {q: "كم مرة ورد ذكر يوسف", intent: count, a: yusuf}
+  - {q: "كم مرة ذكرت كلمة القلب", intent: count, a: qalb}
+  - {q: "كم مرة وردت كلمة التقوى", intent: count, a: taqwa}
+  - {q: "كم مرة ذكر الشيطان", intent: count, a: shaytan}
+  - {q: "كم مرة ورد لفظ الجلالة الله", intent: count, a: allah}
+  - {q: "كم مرة ذكرت الرحمة في سورة البقرة", intent: count, a: rahma, surah: 2}
+  - {q: "كم مرة ورد الصبر في سورة آل عمران", intent: count, a: sabr, surah: 3}
+  - {q: "كم مرة ذكرت كلمة الجنة في السور المكية", intent: count, a: janna, place: meccan}
+  - {q: "كم مرة ورد ذكر النار في السور المدنية", intent: count, a: nar, place: medinan}
+  - {q: "كم مرة ورد جذر ر ح م", intent: count, a: رحم}
+  - {q: "كم مرة ورد جذر ك ت ب في القرآن", intent: count, a: كتب}
+  - {q: "كم مرة ورد جذر ع ل م في سورة البقرة", intent: count, a: علم, surah: 2}
+  - {q: "عدد ذكر كلمة الكتاب", intent: count, a: kitab}
+  - {q: "كم مرة ذكرت السماء", intent: count, a: sama}
+  - {q: "كم مرة وردت كلمة الأرض", intent: count, a: ard}
+  - {q: "كم مرة ذكر الموت", intent: count, a: mawt}
+  - {q: "كم مرة جاءت كلمة النور", intent: count, a: nur}
+  - {q: "كم مرة ذكرت كلمة اليتيم", intent: count, a: yatim}
+  # ── count, English ──
+  - {q: "How many times is Moses mentioned in the Quran?", intent: count, a: musa}
+  - {q: "how many times is mercy mentioned", intent: count, a: rahma}
+  - {q: "How often is the word paradise used?", intent: count, a: janna}
+  - {q: "how many times does patience appear", intent: count, a: sabr}
+  - {q: "how many times is prayer mentioned in the quran", intent: count, a: sala-2}
+  - {q: "How often does the word fire occur?", intent: count, a: nar}
+  - {q: "how many times is Abraham mentioned", intent: count, a: ibrahim}
+  - {q: "number of times the word heart is used", intent: count, a: qalb}
+  - {q: "how many times is forgiveness mentioned in Medinan surahs", intent: count, a: maghfira, place: medinan}
+  - {q: "how often is the word mercy used in surah Maryam", intent: count, a: rahma, surah: 19}
+  - {q: "frequency of the word light", intent: count, a: nur}
+  - {q: "how many times is taqwa mentioned", intent: count, a: taqwa}
+  - {q: "occurrences of the word orphan", intent: count, a: yatim}
+  - {q: "how many times does the word book appear", intent: count, a: kitab}
+  - {q: "how many times is death mentioned", intent: count, a: mawt}
+  # ── where ──
+  - {q: "أين وردت كلمة الصبر؟", intent: where, a: sabr}
+  - {q: "أين ذكر موسى في القرآن", intent: where, a: musa}
+  - {q: "في أي سورة ورد ذكر مريم", intent: where, a: maryam}
+  - {q: "ما السور التي ذكرت فيها الجنة", intent: where, a: janna}
+  - {q: "مواضع كلمة اليتيم", intent: where, a: yatim}
+  - {q: "مواضع ذكر فرعون في القرآن", intent: where, a: firawn}
+  - {q: "أين وردت كلمة التقوى", intent: where, a: taqwa}
+  - {q: "في أي السور وردت الزكاة", intent: where, a: zaka}
+  - {q: "أين ورد جذر ص ب ر", intent: where, a: صبر}
+  - {q: "ما الآيات التي ورد فيها اسم يوسف", intent: where, a: yusuf}
+  - {q: "where is Moses mentioned", intent: where, a: musa}
+  - {q: "where is the word patience used in the quran", intent: where, a: sabr}
+  - {q: "which surahs mention paradise", intent: where, a: janna}
+  - {q: "in which surahs is Mary mentioned", intent: where, a: maryam}
+  - {q: "where does the word orphan appear", intent: where, a: yatim}
+  - {q: "which verses mention charity", intent: where, a: sadaqa-2}
+  - {q: "where is Noah mentioned", intent: where, a: nuh}
+  # ── distribution ──
+  - {q: "توزيع كلمة الجنة في القرآن", intent: distribution, a: janna}
+  - {q: "كيف تتوزع كلمة الرحمة في السور", intent: distribution, a: rahma}
+  - {q: "توزيع جذر ص ب ر بين المكي والمدني", intent: distribution, a: صبر}
+  - {q: "انتشار كلمة النار في المصحف", intent: distribution, a: nar}
+  - {q: "كيف يتوزع ذكر موسى في القرآن", intent: distribution, a: musa}
+  - {q: "distribution of the word mercy", intent: distribution, a: rahma}
+  - {q: "how is the word patience distributed across the surahs", intent: distribution, a: sabr}
+  - {q: "the spread of paradise in the quran", intent: distribution, a: janna}
+  # ── meaning ──
+  - {q: "ما معنى الصمد؟", intent: meaning, a: samad}
+  - {q: "ما معنى كلمة التقوى", intent: meaning, a: taqwa}
+  - {q: "ما معنى الربا", intent: meaning, a: riba}
+  - {q: "معنى كلمة الفلق", intent: meaning, a: falaq}
+  - {q: "ما المقصود بالصراط", intent: meaning, a: sirat}
+  - {q: "ماذا تعني كلمة الكوثر", intent: meaning, a: kawthar}
+  - {q: "ما معنى الغاسق", intent: meaning, a: ghasiq}
+  - {q: "تفسير كلمة الهدى", intent: meaning, a: huda}
+  - {q: "ما معنى كلمة العصر", intent: meaning, a: asr-2}
+  - {q: "ما معنى المستقيم", intent: meaning, a: mustaqim}
+  - {q: "what does taqwa mean", intent: meaning, a: taqwa}
+  - {q: "what is the meaning of riba", intent: meaning, a: riba}
+  - {q: "meaning of the word kawthar", intent: meaning, a: kawthar}
+  - {q: "what does samad mean in the quran", intent: meaning, a: samad}
+  - {q: "define sabr", intent: meaning, a: sabr}
+  - {q: "what does the word huda mean", intent: meaning, a: huda}
+  # ── root ──
+  - {q: "ما جذر كلمة المستقيم؟", intent: root, a: mustaqim}
+  - {q: "ما هو جذر كلمة الرحمن", intent: root, a: rahman}
+  - {q: "جذر كلمة الكتاب", intent: root, a: kitab}
+  - {q: "من أي جذر كلمة الصلاة", intent: root, a: sala-2}
+  - {q: "ما أصل كلمة التقوى", intent: root, a: taqwa}
+  - {q: "ما جذر العلم", intent: root, a: ilm}
+  - {q: "ما جذر الإيمان", intent: root, a: iman}
+  - {q: "ما جذر كلمة الصبر", intent: root, a: sabr}
+  - {q: "what is the root of rahman", intent: root, a: rahman}
+  - {q: "root of the word kitab", intent: root, a: kitab}
+  - {q: "what is the root of taqwa", intent: root, a: taqwa}
+  - {q: "what's the root of mustaqim", intent: root, a: mustaqim}
+  # ── compare ──
+  - {q: "ما الفرق بين الصبر والشكر؟", intent: compare, a: sabr, b: shukr}
+  - {q: "الفرق بين الرحمة والمغفرة", intent: compare, a: rahma, b: maghfira}
+  - {q: "قارن بين الجنة والنار", intent: compare, a: janna, b: nar}
+  - {q: "ما الفرق بين الخوف والخشية", intent: compare, a: khawf, b: khashya}
+  - {q: "قارن بين الليل والنهار", intent: compare, a: layl, b: nahar}
+  - {q: "ما الفرق بين الشمس والقمر", intent: compare, a: shams, b: qamar}
+  - {q: "الفرق بين الظلم و العدل", intent: compare, a: zulm, b: adl}
+  - {q: "هل الحسنة والسيئة بمعنى واحد", intent: compare, a: hasana, b: sayyia}
+  - {q: "قارن بين موسى وعيسى", intent: compare, a: musa, b: isa}
+  - {q: "what is the difference between mercy and forgiveness", intent: compare, a: rahma, b: maghfira}
+  - {q: "difference between paradise and hell", intent: compare, a: janna, b: jahannam}
+  - {q: "compare patience and gratitude", intent: compare, a: sabr, b: shukr}
+  - {q: "compare the sun and the moon", intent: compare, a: shams, b: qamar}
+  - {q: "what's the difference between night and day", intent: compare, a: layl, b: nahar}
+  # ── together ──
+  - {q: "الآيات التي تجمع الصبر والصلاة", intent: together, a: sabr, b: sala-2}
+  - {q: "ما الآيات التي ذكر فيها الشمس والقمر", intent: together, a: shams, b: qamar}
+  - {q: "الآيات التي فيها الجنة والنار", intent: together, a: janna, b: nar}
+  - {q: "أين اجتمع الليل والنهار", intent: together, a: layl, b: nahar}
+  - {q: "الآيات التي تجمع بين الصلاة والزكاة", intent: together, a: sala-2, b: zaka}
+  - {q: "أين ذكر موسى وفرعون معا", intent: together, a: musa, b: firawn}
+  - {q: "verses that mention both prayer and charity", intent: together, a: sala-2, b: sadaqa-2}
+  - {q: "verses with the sun and the moon", intent: together, a: shams, b: qamar}
+  - {q: "where do Moses and Pharaoh appear together", intent: together, a: musa, b: null}
+  - {q: "verses mentioning both night and day", intent: together, a: layl, b: nahar}
+  # ── theme ──
+  - {q: "ماذا قال القرآن عن اليتيم؟", intent: theme}
+  - {q: "ماذا يقول القرآن عن بر الوالدين", intent: theme}
+  - {q: "آيات عن الصبر على البلاء", intent: theme}
+  - {q: "الآيات التي تتحدث عن الصدق", intent: theme}
+  - {q: "ما الآيات التي تتكلم عن الرزق", intent: theme}
+  - {q: "آيات حول التوبة", intent: theme}
+  - {q: "كيف تحدث القرآن عن الموت", intent: theme}
+  - {q: "ماذا قال الله عن الظلم", intent: theme}
+  - {q: "what does the quran say about orphans", intent: theme}
+  - {q: "verses about patience", intent: theme}
+  - {q: "verses on kindness to parents", intent: theme}
+  - {q: "what does Allah say about charity", intent: theme}
+  - {q: "verses about the day of judgement", intent: theme}
+  - {q: "the verses that talk about forgiveness", intent: theme}
+  - {q: "الرفق بالحيوان في القرآن", intent: theme}
+  - {q: "حقوق الجار", intent: theme}
+  - {q: "the rights of neighbours", intent: theme}
+  # ── a sūra ──
+  - {q: "كم آية في سورة البقرة؟", intent: surah, surah: 2, focus: verses}
+  - {q: "كم عدد آيات سورة الكهف", intent: surah, surah: 18, focus: verses}
+  - {q: "كم كلمة في سورة الفاتحة", intent: surah, surah: 1, focus: words}
+  - {q: "إحصاءات سورة يس", intent: surah, surah: 36}
+  - {q: "معلومات عن سورة الملك", intent: surah, surah: 67}
+  - {q: "هل سورة الرحمن مكية أم مدنية", intent: surah, surah: 55}
+  - {q: "كم عدد كلمات سورة الإخلاص", intent: surah, surah: 112, focus: words}
+  - {q: "كم جذرا في سورة يوسف", intent: surah, surah: 12, focus: roots}
+  - {q: "how many verses are in surah Al-Baqarah", intent: surah, surah: 2, focus: verses}
+  - {q: "how many words in surah al-fatiha", intent: surah, surah: 1, focus: words}
+  - {q: "statistics of surah Yasin", intent: surah, surah: 36}
+  - {q: "is surah al-rahman meccan or medinan", intent: surah, surah: 55}
+  - {q: "how many verses does surah 18 have", intent: surah, surah: 18, focus: verses}
+  # ── superlatives ──
+  - {q: "ما أطول سورة في القرآن؟", intent: superlative, focus: longest_surah}
+  - {q: "ما أقصر سورة", intent: superlative, focus: shortest_surah}
+  - {q: "ما هي أطول آية", intent: superlative, focus: longest_verse}
+  - {q: "أقصر آية في القرآن", intent: superlative, focus: shortest_verse}
+  - {q: "ما أكثر الكلمات ورودا في القرآن", intent: superlative, focus: most_frequent_word}
+  - {q: "ما أكثر الجذور ورودا", intent: superlative, focus: most_frequent_root}
+  - {q: "أكثر الأفعال ورودا في القرآن", intent: superlative, focus: most_frequent_verb}
+  - {q: "ما أكثر الأسماء تكرارا", intent: superlative, focus: most_frequent_noun}
+  - {q: "what is the longest surah", intent: superlative, focus: longest_surah}
+  - {q: "which is the shortest surah", intent: superlative, focus: shortest_surah}
+  - {q: "what is the longest verse in the quran", intent: superlative, focus: longest_verse}
+  - {q: "the most frequent word in the quran", intent: superlative, focus: most_frequent_word}
+  - {q: "what is the most common root", intent: superlative, focus: most_frequent_root}
+  - {q: "most frequent verb", intent: superlative, focus: most_frequent_verb}
+  # ── read by example: no rule's wording ──
+  - {q: "هل تكررت كلمة الرحمة كثيرا", intent: count, a: rahma}
+  - {q: "أريد أن أعرف عدد ورود الجنة", intent: count, a: janna}
+  - {q: "اعرض لي مواضع الصبر", intent: where, a: sabr}
+  - {q: "اشرح معنى التقوى", intent: meaning, a: taqwa}
+  - {q: "إلى أي جذر ترجع كلمة الكتاب", intent: root, a: kitab}
+  - {q: "tell me how often the Quran uses the word mercy", intent: count, a: rahma}
+  - {q: "show me the places where paradise occurs", intent: where, a: janna}
+  - {q: "explain the meaning of taqwa", intent: meaning, a: taqwa}
+  - {q: "which root does kitab come from", intent: root, a: kitab}
