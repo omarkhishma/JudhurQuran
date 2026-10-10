@@ -184,3 +184,9 @@ Verses with a topic, per sūra:
 | 113 | 5 | 0 (0.0%) | 5 (100.0%) |
 | 114 | 6 | 0 (0.0%) | 6 (100.0%) |
 
+## 7 · The Tafsir Center's word layers
+
+The Center numbers 77,432 words; our display text has 77,430 tokens. Tied by their letters: 77,432 (100.0%); unaligned verses: 0. Two of the Center's words on one token (the mushaf joins them): 27:20, 36:22. A boundary moved, the verse spelt alike: 4:78, 18:49, 25:7. Paired by position between agreeing neighbours (the mushaf spells the word otherwise): 2:245:14, 7:69:22, 11:14:1, 72:16:1, 96:15:5.
+
+Rows kept: meaning 77,432, sarf 77,432, iʿrāb 77,432, qirāʾāt where the readers differ 29,673 (no difference recorded on 47,758 words), the readings' explanation 1,815, rasm notes 19,287; each verse's iʿrāb 6,236. Texts verbatim; empty values («-») skipped.
+

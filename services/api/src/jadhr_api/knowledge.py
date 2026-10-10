@@ -46,6 +46,77 @@ def _knowledge_sources(conn: Connection, ids: set[str]) -> dict[str, dict[str, A
     }
 
 
+# The Tafsir Center's layers for each word (P13, D33): verbatim, keyed to the display tokens a word spans.
+TC = "tafsircenter-quran-db"
+NO_DIFFERENCE = "لا خلاف بين القراء في هذا الموضع"
+_JOINED = "---{عند الوصل}---"
+
+
+def _readings(part: str) -> dict[str, Any]:
+    """One half of a qirāʾāt note — the word alone or joined to the next — as the Center writes it: either
+    «لا خلاف…», or «@<readers>/<what they read>» items. Split on its own marks only; every piece verbatim."""
+    part = part.strip()
+    if part == NO_DIFFERENCE:
+        return {"same": True, "items": []}
+    items = []
+    for chunk in (c.strip() for c in part.split("@")):
+        if not chunk:
+            continue
+        readers, sep, reading = chunk.partition("/")
+        items.append(
+            {"readers": readers.strip(), "reading": reading.strip()}
+            if sep
+            else {"readers": "", "reading": chunk}
+        )
+    return {"same": False, "items": items}
+
+
+def qiraat(text: str) -> dict[str, Any]:
+    alone, _, joined = text.partition(_JOINED)
+    return {"alone": _readings(alone), "joined": _readings(joined) if joined.strip() else None}
+
+
+def word_layers(conn: Connection, verse_id: int, token_from: int, token_to: int) -> dict[str, Any] | None:
+    """What the Tafsir Center gives for the written word(s) a corpus word stands in: its meaning in this place,
+    its sarf statement, its iʿrāb, the readers' difference (or that there is none) with what it means, and a
+    note on its spelling. A token the Center reads as two words («وما» «لي» in «وَمَالِيَ») gives both, in order."""
+    found = rows(
+        conn,
+        """select position, part, kind, text from content.word_layers
+           where verse_id = :v and position between :a and :b order by position, part""",
+        {"v": verse_id, "a": token_from, "b": token_to},
+    )
+    if not found:
+        return None
+    by: dict[str, list[str]] = {}
+    for r in found:
+        by.setdefault(r["kind"], []).append(r["text"])
+    return {
+        "meaning": by.get("meaning", []),
+        "sarf": by.get("sarf", []),
+        "irab": by.get("irab", []),
+        # no row: the Center says the readers do not differ here, alone or joined
+        "qiraat": [qiraat(x) for x in by.get("qiraat", [])],
+        "qiraat_same": "qiraat" not in by,
+        "qiraat_note": by.get("qiraat_note", []),
+        "rasm": by.get("rasm", []),
+        "source": _knowledge_sources(conn, {TC}).get(TC),
+    }
+
+
+def verse_irab(conn: Connection, key: str) -> dict[str, Any] | None:
+    """The Tafsir Center's iʿrāb of a whole verse, verbatim (P13)."""
+    r = one(
+        conn,
+        """select v.key, i.text from content.verse_irab i join content.verses v on v.id = i.verse_id
+           where v.key = :k""",
+        {"k": key},
+    )
+    if r is None:
+        return None
+    return {"key": r["key"], "text": r["text"], "source": _knowledge_sources(conn, {TC}).get(TC)}
+
+
 def verse_knowledge(conn: Connection, key: str) -> dict[str, Any] | None:
     """What the knowledge layers say about one verse: occasions of revelation, Makki/Madani notes,
     the verses Ibn Kathīr cites to explain it (and those whose explanation cites it), people and places."""

@@ -19,6 +19,7 @@ from jadhr_pipeline.knowledge.crossrefs import parse_reference
 from jadhr_pipeline.knowledge.entities import everyday
 from jadhr_pipeline.knowledge.places import tanzil_exceptions
 from jadhr_pipeline.knowledge.quran import SurahNames
+from jadhr_pipeline.knowledge.wordlayers import align_verse, anchored
 
 REPO = Path(__file__).resolve().parents[2]
 RAW = Path(os.environ.get("JADHR_RAW_DIR", REPO / "data" / "raw"))
@@ -256,6 +257,8 @@ def test_counts_match_the_report(built: tuple[dict, dict]) -> None:
         "verse_crossrefs": 21998,
         "entity_candidates": 107,
         "mushaf_signs": 8,
+        "word_layers": 77432 * 3 + 29673 + 1815 + 19287,  # meaning, sarf, iʿrāb; qirāʾāt, their notes; rasm
+        "verse_irab": 6236,
     }
     assert report["surah_cards"]["verse_counts"] == {"agree": 99, "one-text": 9, "unparsed": 5, "disagree": 1}
     assert report["surah_cards"]["apparatus_separated"]["footnotes"] == 6308
@@ -394,3 +397,79 @@ def test_mushaf_signs_are_tied_to_their_code_points_by_the_pages_own_examples(bu
     assert report["mushaf_signs"]["occurrences"]["sakt"] == 4
     assert report["mushaf_signs"]["occurrences"]["sajda"] == 15
     assert all(s["source_id"] == "kfgqpc-mushaf-key" and s["occurrences"] > 0 for s in signs.values())
+
+
+# ── the Tafsir Center's per-word layers (P13, D33) ────────────────────────────────────────────────
+@pytest.mark.parametrize(
+    ("center", "mushaf"),
+    [
+        (["يا/أيها", "الناس"], ["يَٰٓأَيُّهَا", "ٱلنَّاسُ"]),  # the vocative written apart
+        (["والليل", "إذا"], ["وَٱلَّيۡلِ", "إِذَا"]),  # the imlāʾī doubles the lam
+        (["نعمة", "الله"], ["نِعۡمَتَ", "ٱللَّهِ"]),  # the mushaf's open tāʾ
+    ],
+)
+def test_the_centers_spelling_meets_the_mushafs(center: list[str], mushaf: list[str]) -> None:
+    assert align_verse(center, mushaf) == [(0, 0), (1, 1)]
+
+
+def test_two_words_of_the_center_join_on_one_token() -> None:
+    center = ["وما", "لي", "لا", "أعبد"]
+    mushaf = ["وَمَالِيَ", "لَآ", "أَعۡبُدُ"]
+    assert align_verse(center, mushaf) == [(0, 0), (1, 0), (2, 1), (3, 2)]
+
+
+def test_a_word_spelt_otherwise_is_paired_only_between_agreeing_neighbours() -> None:
+    center = ["والله", "يقبض", "ويبسط", "وإليه"]
+    mushaf = ["وَٱللَّهُ", "يَقۡبِضُ", "وَيَبۡصُۜطُ", "وَإِلَيۡهِ"]
+    assert align_verse(center, mushaf) == [(0, 0), (1, 1), (2, 2), (3, 3)]
+    # two neighbours that both differ are not paired: nothing anchors them
+    assert align_verse(["أ", "ب", "ج"], ["أَ", "دَ", "هَ"]) is None
+    assert anchored(["ب", "ج"], ["ب", "د"]) is None  # too short to anchor
+
+
+def test_letters_that_differ_are_never_paired() -> None:
+    assert align_verse(["قال", "موسى"], ["قَالَ", "فِرۡعَوۡنُ"]) is None
+    assert align_verse(["قال"], ["قَالَ", "مُوسَىٰ"]) is None
+
+
+def test_every_word_of_the_center_is_tied_to_our_text(built: tuple[dict, dict]) -> None:
+    tables, report = built
+    w = report["word_layers"]
+    assert (w["center_words"], w["our_tokens"], w["aligned_words"]) == (77432, 77430, 77432)
+    assert w["verses_unaligned"] == []
+    assert w["verses_joined"] == ["27:20", "36:22"]
+    assert w["verses_boundary_moved"] == ["4:78", "18:49", "25:7"]
+    assert w["words_by_position"] == ["2:245:14", "7:69:22", "11:14:1", "72:16:1", "96:15:5"]
+    rows = tables["word_layers"]
+    keys = [(r["token_id"], r["kind"], r["part"]) for r in rows]
+    assert len(keys) == len(set(keys))
+    assert sum(r["kind"] == "meaning" for r in rows) == 77432
+    # «وَمَالِيَ» in 36:22 holds the Center's two words, «وما» then «لي», in order
+    joined = [
+        r
+        for r in rows
+        if r["verse_id"] == _vid(tables, "36:22") and r["position"] == 1 and r["kind"] == "meaning"
+    ]
+    assert [r["part"] for r in joined] == [1, 2]
+
+
+def test_the_centers_words_are_kept_verbatim(built: tuple[dict, dict]) -> None:
+    tables, _ = built
+    import sqlite3
+
+    con = sqlite3.connect(f"file:{RAW / 'tafsircenter/quran.db'}?mode=ro", uri=True)
+    want = dict(
+        con.execute("select wordNo, meaning from word_content_meaning where surahNo = 2 and ayahNo = 255")
+    )
+    con.close()
+    got = {
+        r["position"]: r["text"]
+        for r in tables["word_layers"]
+        if r["verse_id"] == _vid(tables, "2:255") and r["kind"] == "meaning"
+    }
+    assert got == want  # 2:255 has as many words as tokens, so position = the Center's word number
+    assert got[42] == "موضع قدمي الرحمن."
+    # a qirāʾāt row is kept only where the readers differ, alone or joined
+    same = "لا خلاف بين القراء في هذا الموضع"
+    kept = [r["text"] for r in tables["word_layers"] if r["kind"] == "qiraat"]
+    assert all([p.strip() for p in x.split("---{عند الوصل}---")] != [same, same] for x in kept)

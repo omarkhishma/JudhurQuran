@@ -281,6 +281,15 @@ def verse_knowledge(request: Request, key: str) -> Response:
         return cached(request, out)
 
 
+@router.get("/verses/{key}/irab", summary="The Tafsir Center's iʿrāb of a whole verse, verbatim (credited)")
+def verse_irab(request: Request, key: Annotated[str, Path(max_length=7)]) -> Response:
+    with connect() as conn:
+        out = knowledge.verse_irab(conn, key)
+        if out is None:
+            raise not_found("verse")
+        return cached(request, out)
+
+
 @router.get(
     "/verses/{key}/books",
     summary="The tafsir books' sections on a verse, by the books' own headings: each opening verbatim, cited",

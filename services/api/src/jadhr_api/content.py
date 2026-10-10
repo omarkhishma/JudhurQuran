@@ -428,6 +428,10 @@ def word(conn: Connection, location: str) -> dict[str, Any] | None:
         w["root_meaning"] = None
     w["glosses"] = word_glosses(conn, w["location"])
     w["meanings_here"] = word_meanings_here(conn, w["location"])
+    # imported here: knowledge is a sibling module the content module is otherwise independent of
+    from . import knowledge
+
+    w["tc"] = knowledge.word_layers(conn, w["verse_id"], w["token_from"], w["token_to"])
     w["next_steps"] = next_steps(conn, w)
     for k in ("root_id", "lemma_id", "verse_id"):
         w.pop(k, None)

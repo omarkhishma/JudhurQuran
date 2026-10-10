@@ -27,8 +27,18 @@ from .quran import QuranIndex, read_jsonl
 from .registry import load_registry, verify_pins
 from .signs import build_mushaf_signs
 from .surahs import build_surah_cards
+from .wordlayers import build_word_layers
 
-TABLES = ("surah_cards", "verse_places", "asbab", "verse_crossrefs", "entity_candidates", "mushaf_signs")
+TABLES = (
+    "surah_cards",
+    "verse_places",
+    "asbab",
+    "verse_crossrefs",
+    "entity_candidates",
+    "mushaf_signs",
+    "word_layers",
+    "verse_irab",
+)
 OPTIONAL_SOURCES = {"wikidata", "qursim"}
 
 
@@ -85,6 +95,7 @@ def build_knowledge(
     )
 
     signs, report["mushaf_signs"] = build_mushaf_signs(reg, build_dir)
+    word_tables, report["word_layers"] = build_word_layers(tc_db, build_dir)
 
     tables = {
         "surah_cards": cards,
@@ -93,6 +104,7 @@ def build_knowledge(
         "verse_crossrefs": crossrefs,
         "entity_candidates": entities,
         "mushaf_signs": signs,
+        **word_tables,
     }
     known = set(reg.sources)
     for name, rows in tables.items():

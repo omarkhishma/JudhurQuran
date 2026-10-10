@@ -191,6 +191,7 @@ def run(version: str = "2026.10.0") -> dict[str, Any]:
         "english": report.get("english"),
         "glosses": glosses(raw, owner_glosses),
         "topics": report.get("topics"),
+        "word_layers": (report.get("knowledge") or {}).get("word_layers"),
     }
 
 
@@ -342,7 +343,32 @@ def render_markdown(r: dict[str, Any]) -> str:
         "",
     ]
     L += _topics(r.get("topics"))
+    L += _word_layers(r.get("word_layers"))
     return "\n".join(L) + "\n"
+
+
+def _word_layers(w: dict[str, Any] | None) -> list[str]:
+    """The Tafsir Center's per-word layers tied to our text (PLAN P13, D33)."""
+    if not w:
+        return []
+    rows = w["rows"]
+    return [
+        "## 7 · The Tafsir Center's word layers",
+        "",
+        f"The Center numbers {_n(w['center_words'])} words; our display text has {_n(w['our_tokens'])} tokens."
+        f" Tied by their letters: {_n(w['aligned_words'])} ({_pct(w['aligned_words'], w['center_words'])}); unaligned"
+        f" verses: {len(w['verses_unaligned'])}. Two of the Center's words on one token (the mushaf joins them):"
+        f" {', '.join(w['verses_joined']) or 'none'}. A boundary moved, the verse spelt alike: "
+        f"{', '.join(w.get('verses_boundary_moved', [])) or 'none'}. Paired by position between agreeing neighbours (the"
+        f" mushaf spells the word otherwise): {', '.join(w.get('words_by_position', [])) or 'none'}.",
+        "",
+        f"Rows kept: meaning {_n(rows.get('meaning', 0))}, sarf {_n(rows.get('sarf', 0))}, iʿrāb {_n(rows.get('irab', 0))},"
+        f" qirāʾāt where the readers differ {_n(rows.get('qiraat', 0))} (no difference recorded on"
+        f" {_n(w['qiraat_no_difference'])} words), the readings' explanation {_n(rows.get('qiraat_note', 0))}, rasm"
+        f" notes {_n(rows.get('rasm', 0))}; each verse's iʿrāb {_n(w['verse_irab'])}. Texts verbatim; empty values («-»)"
+        " skipped.",
+        "",
+    ]
 
 
 def _topics(t: dict[str, Any] | None) -> list[str]:

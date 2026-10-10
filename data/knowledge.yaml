@@ -69,7 +69,7 @@ sources:
   - id: tafsircenter-quran-db
     kind: knowledge
     use: display
-    role: Arabic sūra introductions (names, revelation study, virtues, two counting texts, aims), sūra statistics table, and the vetted occasions of revelation with takhrīj
+    role: Arabic sūra introductions (names, revelation study, virtues, two counting texts, aims), sūra statistics table, the vetted occasions of revelation with takhrīj, and for each word of the Quran its meaning in its place, its sarf statement, its iʿrāb, its qirāʾāt and rasm notes, with each verse's iʿrāb (PLAN P13, D33)
     title_ar: قاعدة بيانات القرآن الكريم — مركز تفسير للدراسات القرآنية (tafsir-mcp-data)
     title_en: Tafsir Center for Quranic Studies — Quranic database (tafsir-mcp-data, quran.db)
     version: Hugging Face dataset revision dbbfa77518a724a10e72d8d7fd48d2d36a50fa9e (2026-05-13)

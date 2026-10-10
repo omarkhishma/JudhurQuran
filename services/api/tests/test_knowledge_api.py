@@ -121,3 +121,62 @@ def test_word_relations_mark_the_senses_whose_verses_hold_this_occurrence() -> N
     assert all(verse in s["verses"] for s in here)
     assert not any(s["cites_here"] for e in d["wujuh"] for s in e["senses"]), "nothing is marked without ?at="
     assert client.get("/api/v1/words/no-such-word/relations").status_code == 404
+
+
+# ── the Tafsir Center's per-word layers (P13, D33) ────────────────────────────────────────────────
+def _word_layers(verse_key: str, position: int) -> dict[str, list[str]]:
+    by: dict[str, list[str]] = {}
+    for r in jsonl("word_layers"):
+        if r["verse_id"] == VERSE_ID[verse_key] and r["position"] == position:
+            by.setdefault(r["kind"], []).append(r["text"])
+    return by
+
+
+def _slug_at(location: str) -> str:
+    lemma_id = next(w["lemma_id"] for w in jsonl("words") if w["location"] == location)
+    return next(lm["slug"] for lm in jsonl("lemmas") if lm["id"] == lemma_id)
+
+
+def test_a_words_occurrence_carries_the_centers_layers_verbatim() -> None:
+    # «كُرۡسِيُّهُ» in Ayat al-Kursi: the lemma by the API, the expected texts read from the build's own file
+    slug = _slug_at("2:255:42")
+    payload = get(f"/api/v1/words/{slug}", at="2:255:42")
+    tc = payload["occurrence"]["tc"]
+    want = _word_layers("2:255", payload["occurrence"]["token_from"])
+    assert tc["meaning"] == want["meaning"] and tc["sarf"] == want["sarf"] and tc["irab"] == want["irab"]
+    assert tc["source"]["id"] == "tafsircenter-quran-db" and "CC BY 4.0" in tc["source"]["attribution_en"]
+
+
+def test_the_readers_difference_is_split_on_the_centers_own_marks() -> None:
+    # «مَٰلِكِ» in 1:4: the Center lists who reads it with the alif and who without, and what the two mean
+    slug = _slug_at("1:4:1")
+    tc = get(f"/api/v1/words/{slug}", at="1:4:1")["occurrence"]["tc"]
+    assert tc["qiraat_same"] is False
+    alone = tc["qiraat"][0]["alone"]
+    assert alone["same"] is False and len(alone["items"]) == 2
+    raw = _word_layers("1:4", 1)["qiraat"][0]
+    for item in alone["items"]:  # every piece is a slice of the Center's text
+        assert item["readers"] in raw and item["reading"] in raw
+    assert tc["qiraat"][0]["joined"]["same"] is True
+    assert tc["qiraat_note"] == _word_layers("1:4", 1)["qiraat_note"]
+
+
+def test_a_word_whose_readers_agree_says_so_without_a_row() -> None:
+    slug = _slug_at("1:2:1")
+    tc = get(f"/api/v1/words/{slug}", at="1:2:1")["occurrence"]["tc"]
+    assert "qiraat" not in _word_layers("1:2", 1)
+    assert tc["qiraat"] == [] and tc["qiraat_same"] is True
+
+
+def test_a_verses_irab_is_the_centers_text() -> None:
+    out = get("/api/v1/verses/112:1/irab")
+    want = next(r["text"] for r in jsonl("verse_irab") if r["verse_id"] == VERSE_ID["112:1"])
+    assert out["text"] == want and out["source"]["id"] == "tafsircenter-quran-db"
+    assert client.get("/api/v1/verses/115:1/irab").status_code == 404
+
+
+def test_a_word_without_a_lemma_carries_them_too() -> None:
+    loc = next(w["location"] for w in jsonl("words") if w["lemma_id"] is None)
+    out = get(f"/api/v1/words/{loc}")
+    want = _word_layers(f"{out['surah']}:{out['ayah']}", out["token_from"])
+    assert out["tc"]["meaning"] == want["meaning"]

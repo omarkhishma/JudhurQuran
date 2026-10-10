@@ -13,7 +13,7 @@ from typing import Any
 from jadhr_arabic import display_bare, scholarly
 from sqlalchemy import Connection
 
-from . import board, content
+from . import board, content, knowledge
 from .db import one, rows, scalar
 
 
@@ -122,6 +122,8 @@ def _occurrence(conn: Connection, location: str, lemma_id: int) -> dict[str, Any
         "audio": content.word_audio(conn, f"{w['surah']}:{w['ayah']}", w["token_from"], w["token_to"]),
         "signs": content.token_signs(conn, w["verse_id"], w["token_to"]),
         "meanings_here": content.word_meanings_here(conn, w["location"]),
+        # the Tafsir Center's meaning here, sarf, iʿrāb, qirāʾāt and rasm for the written word (P13)
+        "tc": knowledge.word_layers(conn, w["verse_id"], w["token_from"], w["token_to"]),
         "variants": rows(
             conn,
             """select rv.source, rv.root_key, s.title_ar as source_title_ar, s.title_en as source_title_en
