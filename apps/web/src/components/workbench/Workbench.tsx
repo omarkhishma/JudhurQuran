@@ -8,11 +8,18 @@ import { ApiError, SignedOut, useAccount } from "@/lib/account/store";
 import { useIsClient } from "@/lib/client";
 import { getAwaiting, getTargets, getWorklists, KINDS, LAYERS, STATES, type Kind, type Layer, type State } from "@/lib/editorial";
 import { cnt, formatNumber } from "@/lib/format";
+import { Dashboard } from "./Dashboard";
 import { EntryView } from "./EntryView";
 import { LayerView } from "./LayerView";
+import { PassagesTool } from "./PassagesTool";
+import { PeopleTool } from "./PeopleTool";
+import { RelationsTool } from "./RelationsTool";
+import { WordContextTool } from "./WordContextTool";
 
-/** `readers`: a word list narrowed to the words whose readers' suggestions wait on the board (B38). */
-export type Place = { kind: Kind; layer?: Layer; target?: string; state: State; q: string; readers?: boolean };
+/** `readers`: a word list narrowed to the words whose readers' suggestions wait on the board (B38); `view`: the
+ * administration's dashboard or its roles page (P14) instead of a worklist; `back`: the reader's page that opened a
+ * tool, to return to. */
+export type Place = { kind: Kind; layer?: Layer; target?: string; state: State; q: string; readers?: boolean; view?: "dashboard" | "people"; back?: string };
 
 /**
  * The editorial workbench (P3.0, research 14): for the board only — anyone else is told what it is and who it is
@@ -30,7 +37,8 @@ export function Workbench({ initial }: { initial: Place }) {
   const lists = useQuery({ queryKey: ["editorial-worklists", session], queryFn: getWorklists, enabled: client && !!session, retry: false, refetchOnWindowFocus: true });
 
   useEffect(() => {
-    const qs = new URLSearchParams({ kind: place.kind });
+    const qs = new URLSearchParams(place.view ? { view: place.view } : { kind: place.kind });
+    if (place.back) qs.set("back", place.back);
     if (place.layer) qs.set("layer", place.layer);
     if (place.target) qs.set("target", place.target);
     if (place.state !== "all") qs.set("state", place.state);
@@ -56,7 +64,7 @@ export function Workbench({ initial }: { initial: Place }) {
     );
   if (lists.isError) return <Gate title={t("gateTitle")}><p role="alert">{t("loadFailed")}</p></Gate>;
 
-  const go = (p: Partial<Place>) => setPlace((x) => ({ ...x, target: undefined, ...p }));
+  const go = (p: Partial<Place>) => setPlace((x) => ({ ...x, target: undefined, view: undefined, back: undefined, ...p }));
   const w = lists.data;
   return (
     <div className="workbench">
@@ -68,14 +76,17 @@ export function Workbench({ initial }: { initial: Place }) {
           <span className="sr-only">{t("worklists")}</span>
           <select
             className="field-input"
-            value={place.layer ? `layer:${place.layer}` : place.kind === "verdict" ? "awaiting" : `kind:${place.kind}`}
+            value={place.view ? `view:${place.view}` : place.layer ? `layer:${place.layer}` : place.kind === "verdict" ? "awaiting" : `kind:${place.kind}`}
             onChange={(e) => {
               const [what, name] = e.target.value.split(":");
-              if (what === "awaiting") go({ kind: "verdict", layer: undefined, state: "all" });
+              if (what === "view") go({ view: name as Place["view"] });
+              else if (what === "awaiting") go({ kind: "verdict", layer: undefined, state: "all" });
               else if (what === "kind") go({ kind: name as Kind, layer: undefined, state: "all", q: "" });
               else go({ kind: "verdict", layer: name as Layer, state: "all", q: "" });
             }}
           >
+            <option value="view:dashboard">{t("dashTitle")}</option>
+            {w?.role === "admin" && <option value="view:people">{t("peopleTitle")}</option>}
             <option value="awaiting">{`${t("awaitingMe")} (${formatNumber(w?.awaiting_me ?? 0, locale)})`}</option>
             <optgroup label={t("writing")}>
               {KINDS.map((k) => (
@@ -90,7 +101,15 @@ export function Workbench({ initial }: { initial: Place }) {
           </select>
         </label>
         <div className="workbench-nav-list">
-        <button type="button" className={"workbench-tab" + (place.kind === "verdict" && !place.layer ? " is-on" : "")} onClick={() => go({ kind: "verdict", layer: undefined, state: "all" })}>
+        <button type="button" className={"workbench-tab" + (place.view === "dashboard" ? " is-on" : "")} aria-current={place.view === "dashboard" ? "page" : undefined} onClick={() => go({ view: "dashboard" })}>
+          <span>{t("dashTitle")}</span>
+        </button>
+        {w?.role === "admin" && (
+          <button type="button" className={"workbench-tab" + (place.view === "people" ? " is-on" : "")} aria-current={place.view === "people" ? "page" : undefined} onClick={() => go({ view: "people" })}>
+            <span>{t("peopleTitle")}</span>
+          </button>
+        )}
+        <button type="button" className={"workbench-tab" + (!place.view && place.kind === "verdict" && !place.layer ? " is-on" : "")} onClick={() => go({ kind: "verdict", layer: undefined, state: "all" })}>
           <span>{t("awaitingMe")}</span>
           <span className="mono">{formatNumber(w?.awaiting_me ?? 0, locale)}</span>
         </button>
@@ -98,7 +117,7 @@ export function Workbench({ initial }: { initial: Place }) {
         {KINDS.map((k) => {
           const c = w?.kinds.find((x) => x.kind === k);
           return (
-            <button key={k} type="button" className={"workbench-tab" + (place.kind === k ? " is-on" : "")} aria-current={place.kind === k ? "page" : undefined} onClick={() => go({ kind: k, layer: undefined, state: "all", q: "", readers: false })}>
+            <button key={k} type="button" className={"workbench-tab" + (!place.view && place.kind === k ? " is-on" : "")} aria-current={!place.view && place.kind === k ? "page" : undefined} onClick={() => go({ kind: k, layer: undefined, state: "all", q: "", readers: false })}>
               <span>{t(`kind_${k}`)}</span>
               {c && <span className="text-[11.5px] text-t3">{t("countOf", { done: formatNumber(c.approved, locale), total: formatNumber(c.total, locale) })}</span>}
               {!!c?.readers && <span className="text-[11.5px] text-t2">{t("readersWaiting", cnt(c.readers, locale))}</span>}
@@ -125,7 +144,17 @@ export function Workbench({ initial }: { initial: Place }) {
       </nav>
       {/* the page's main landmark is the site's; the workbench's own column is a part of it */}
       <div className="workbench-main" id="workbench-main">
-        {place.kind === "verdict" && !place.layer ? (
+        {place.view === "dashboard" ? (
+          <Dashboard lists={w} onOpen={(kind, target, q) => setPlace({ kind, target, q: q ?? "", state: "all" })} />
+        ) : place.view === "people" ? (
+          <PeopleTool />
+        ) : place.target && place.kind === "context_passages" ? (
+          <PassagesTool surah={Number(place.target)} role={w?.role ?? ""} onBack={() => setPlace((x) => ({ ...x, target: undefined }))} />
+        ) : place.target && place.kind === "context_word" ? (
+          <WordContextTool location={place.target} role={w?.role ?? ""} back={place.back} onBack={() => setPlace((x) => ({ ...x, target: undefined, back: undefined }))} />
+        ) : place.target && place.kind === "word_relations" ? (
+          <RelationsTool slug={place.target} role={w?.role ?? ""} back={place.back} onBack={() => setPlace((x) => ({ ...x, target: undefined, back: undefined }))} />
+        ) : place.kind === "verdict" && !place.layer ? (
           <Awaiting onOpen={(kind, target) => setPlace({ kind, target, state: "all", q: "", layer: kind === "verdict" ? (target.split(":")[0] as Layer) : undefined })} />
         ) : place.kind === "verdict" && place.layer && !place.target ? (
           <LayerView layer={place.layer} state={place.state} q={place.q} onPlace={(p) => setPlace((x) => ({ ...x, ...p }))} />

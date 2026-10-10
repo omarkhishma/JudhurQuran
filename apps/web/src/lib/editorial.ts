@@ -99,3 +99,68 @@ export const saveVerdicts = (layer: Layer, items: VerdictItem[], submit: boolean
   authFetch<{ data: Entry[] }>("/editorial/verdicts", { method: "POST", body: JSON.stringify({ layer, items, submit }) });
 export const decideMany = (ids: string[], decision: "approve" | "changes", note: string) =>
   authFetch<{ data: Entry[] }>("/editorial/decide", { method: "POST", body: JSON.stringify({ ids, decision, note: note || null }) });
+
+// ─── the administration's tools (P14, D31, D32) ───────────────────────────────
+
+/** An administrator puts their own work of the administration's kinds in force; an editor reviews it after. */
+export const publishEntry = (id: string) => authFetch<Entry>(`/editorial/entries/${id}/publish`, { method: "POST" });
+export const reviewPublished = (id: string, note: string) =>
+  authFetch<Entry>(`/editorial/entries/${id}/review`, { method: "POST", body: JSON.stringify({ note: note || null }) });
+
+export type Overview = {
+  words: number;
+  words_with_context: number;
+  words_own_range: number;
+  surahs_with_passages: number;
+  relations: { words: number; links: number };
+  by_surah: { surah: number; name_ar: string; name_translit: string; verses: number; words: number; verses_in_passages: number; words_with_context: number }[];
+  recent: { action: string; kind: Kind; target: string; revision: number; by: string | null; at: string }[];
+  role: string;
+};
+export const getOverview = () => authFetch<Overview>("/editorial/overview");
+
+/** A run of verses a source draws: `[from, to]` within one sūra. */
+export type SourceRuns = { source: string; kind: "ruku" | "tafsir" | "book"; title_ar: string; title_en: string | null; runs: [number, number][] };
+/** A sūra's passages tool's candidates: each source's runs, and for each verse that opens one, which sources do. */
+export type SurahGroupings = { sources: SourceRuns[]; opens: Record<string, string[]> };
+export type Passage = { from: number; to: number; title_ar: string; title_en: string };
+
+/** A grouping of verses around a word, with every source that draws it. */
+export type Grouping = {
+  from: string;
+  to: string;
+  from_id: number;
+  to_id: number;
+  verses: number;
+  sources: { kind: "ruku" | "tafsir" | "book" | "topic"; source: string; title_ar: string; title_en: string | null; topic_id?: string }[];
+};
+/** The context in force for a word: its own range (with what it means there) or its sūra's passage. */
+export type ContextInForce = {
+  level: "word" | "passage";
+  from: string;
+  to: string;
+  from_id: number;
+  to_id: number;
+  verses: number;
+  title_ar?: string;
+  title_en?: string;
+  statement: { meaning_ar: string; meaning_en: string; note_ar: string } | null;
+  sources: Source[];
+  by: "administration" | "board";
+  reviewed: boolean;
+  at: string | null;
+};
+export type Rel = "near" | "related" | "opposite";
+export const RELS: Rel[] = ["near", "related", "opposite"];
+export type Link = { to: string; rel: Rel; note_ar: string; note_en: string; source?: Source };
+export type LemmaCard = { slug: string; ar: string; pos: string | null; occurrences: number; gloss_en: string | null; root_key: string | null; root_spaced: string | null };
+export type DefinedLink = { slug: string; rel: Rel; note_ar: string; note_en: string; source?: Source; defined_on: "here" | "there"; by: "administration" | "board"; reviewed: boolean; at: string | null; word: LemmaCard };
+export type Defined = Record<Rel, DefinedLink[]>;
+
+export type Person = { email: string; name: string | null; role: string; blocked: boolean; since: string; seen: string | null; you: boolean };
+export const ROLES = ["member", "reviewer", "editor", "instructor", "admin"] as const;
+export const getPeople = (q: string) => authFetch<{ data: Person[] }>(`/admin/people${q ? `?q=${encodeURIComponent(q)}` : ""}`);
+export const grantRole = (email: string, role: string, reason: string) =>
+  authFetch<{ email: string; role: string }>("/admin/roles", { method: "POST", body: JSON.stringify({ email, role, reason: reason || null }) });
+export const setBlocked = (email: string, blocked: boolean, reason: string) =>
+  authFetch<unknown>("/admin/block", { method: "POST", body: JSON.stringify({ target: email, blocked, reason: reason || null }) });

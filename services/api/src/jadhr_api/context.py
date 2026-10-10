@@ -350,8 +350,9 @@ def surah_groupings(conn: Connection, surah: int) -> dict[str, Any]:
 
 
 def relation_candidates(conn: Connection, slug: str) -> dict[str, Any]:
-    """What the classical books relate to this word's root — furūq, near-synonym seeds, aḍdād — each with the other
-    root's most frequent words to choose from, and the words its semantic fields hold; never a link by themselves."""
+    """What the classical books relate to this word's root — al-ʿAskarī's furūq and the near-synonym seeds — each with
+    the other root's most frequent words to choose from, and the words its semantic fields hold; never a link by
+    themselves. (An aḍdād entry is one word with two opposite senses, not a pair of words, so it is not offered.)"""
     me = one(
         conn,
         "select l.slug, r.key as root_key from content.lemmas l left join content.roots r on r.id = l.root_id where l.slug = :s",
@@ -364,7 +365,7 @@ def relation_candidates(conn: Connection, slug: str) -> dict[str, Any]:
         """select c.id, c.type, c.source_id, c.headword_ar, c.target_ar, c.root_key, c.target_root_key, c.locator,
                   left(c.text_ar, 600) as text_ar, s.title_ar as source_title_ar
            from content.relation_candidates c left join content.relation_sources s on s.id = c.source_id
-           where c.type in ('furuq_contrast', 'near_synonym_candidate', 'didd')
+           where c.type in ('furuq_contrast', 'near_synonym_candidate')
              and (c.root_key = :r or c.target_root_key = :r) order by c.type, c.source_id, c.id limit 40""",
         {"r": me["root_key"]},
     )
@@ -397,4 +398,15 @@ def relation_candidates(conn: Connection, slug: str) -> dict[str, Any]:
            group by e.id, e.heading_ar, s.title_ar order by e.id limit 12""",
         {"r": me["root_key"]},
     )
+    for f in fields:
+        f["words"] = [
+            w
+            for k in (f["roots"] or [])[:8]
+            for w in rows(
+                conn,
+                """select l.slug, l.ar, l.occurrences, r.key as root_key from content.lemmas l
+                   join content.roots r on r.id = l.root_id where r.key = :k order by l.occurrences desc limit 2""",
+                {"k": k},
+            )
+        ]
     return {"classical": classical, "fields": fields}

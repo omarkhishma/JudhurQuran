@@ -6423,6 +6423,116 @@ a.wotd-pill:hover {
 .workbench-box.is-force {
   border-inline-start: 3px solid var(--good);
 }
+/* the administration's dashboard and tools (P14): headline numbers, the tools, a sūra's passages, the publish bar */
+.dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+.dash-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.dash-tools {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 900px) {
+  .dash-tools {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+.ctx-ramp {
+  background: linear-gradient(to var(--ramp-end, right), var(--card), var(--c-sentence));
+}
+.passages-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+.passage-verse {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 14px 8px;
+}
+.passage-verse.is-out .passage-text {
+  opacity: 0.55;
+}
+.passage-bound {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-inline: -14px;
+  padding: 2px 14px;
+  border-top: 1px dashed var(--line);
+}
+.bound-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 32px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--t2);
+  background: var(--card);
+}
+.bound-toggle:hover,
+.bound-toggle:focus-visible {
+  border-color: var(--ring);
+  color: var(--t1);
+}
+.bound-toggle.is-on {
+  border-color: var(--c-sentence);
+  color: var(--t1);
+  background: color-mix(in srgb, var(--c-sentence) 14%, var(--card));
+}
+.bound-src {
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  font-size: 11px;
+  color: var(--t2);
+}
+.passage-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-inline-start: 3px solid var(--c-sentence);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--c-sentence) 7%, var(--card));
+}
+.ctx-word {
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--c-word) 18%, transparent);
+  box-shadow: inset 0 -2px 0 var(--c-word);
+}
+.direct-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 -6px 18px -12px rgb(0 0 0 / 0.25);
+}
 .workbench-split {
   display: grid;
   gap: 16px;

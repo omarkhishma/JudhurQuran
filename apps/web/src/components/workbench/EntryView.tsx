@@ -259,7 +259,7 @@ function ValueView({ kind, value, sources }: { kind: Kind; value: Value; sources
   );
 }
 
-function SourceList({ sources }: { sources: Source[] }) {
+export function SourceList({ sources }: { sources: Source[] }) {
   if (!sources.length) return null;
   return (
     <ul className="flex flex-col gap-0.5 text-[11.5px] text-t3">
@@ -368,7 +368,7 @@ function SensesForm({ value, onValue }: { value: Value; onValue: (v: Value) => v
 }
 
 /** The sources a piece of work rests on: a work and where in it, and the words quoted when it quotes. */
-function SourcesForm({ sources, onSources }: { sources: Source[]; onSources: (s: Source[]) => void }) {
+export function SourcesForm({ sources, onSources }: { sources: Source[]; onSources: (s: Source[]) => void }) {
   const t = useTranslations("workbench");
   const locale = useLocale();
   // the works the reader shows by title: a source named by one of these ids is cited by its title there

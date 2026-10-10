@@ -19,6 +19,9 @@ export default async function Page({ params, searchParams }: PageProps<"/[locale
   const kind: Kind = one("kind") === "verdict" || (KINDS as string[]).includes(one("kind")) ? (one("kind") as Kind) : "root_gloss";
   const layer = (LAYERS as readonly string[]).includes(one("layer")) ? (one("layer") as Layer) : undefined;
   const state = (STATES as string[]).includes(one("state")) ? (one("state") as State) : "all";
-  const initial: Place = { kind, layer, state, q: one("q").slice(0, 80), target: one("target").slice(0, 200) || undefined, readers: kind === "sense_list" && one("readers") === "1" };
+  // the administration's dashboard opens when no worklist is named (P14); `back` is a page of this site only
+  const view = one("view") === "people" ? "people" : one("view") === "dashboard" || !one("kind") ? "dashboard" : undefined;
+  const back = /^\/(?!\/)[^\s]*$/.test(one("back")) ? one("back").slice(0, 300) : undefined;
+  const initial: Place = { kind, layer, state, q: one("q").slice(0, 80), target: one("target").slice(0, 200) || undefined, readers: kind === "sense_list" && one("readers") === "1", view, back };
   return <Workbench initial={initial} />;
 }
