@@ -11,13 +11,14 @@
 | `api` | `services/api/Dockerfile` | FastAPI, read-only, ETag + long cache headers |
 | `db` | `postgres:17-alpine` | the `content` schema, reloaded atomically per dataset release — the source of truth |
 | `search` | `opensearchproject/opensearch:2.19.3` | the derived search index (words, roots, patterns, passages, word occurrences, dictionary articles); disposable, rebuilt from Postgres |
+| `embed` | `services/embed/Dockerfile` | the embedding service (P17, D34): turns a reader's search into a vector with the pinned open model (multilingual-e5-large, 8-bit ONNX, MIT) on this server; reached only by the API; fetches the model (~580 MB, sha256-checked) into the `models` volume on its first start |
 | `loader` (one-off) | API image | migrations, atomic load of `data/build/<version>`, search reindex (aliases flip atomically), then expires the web cache |
 
 Files: `infra/compose.prod.yml`, `infra/Caddyfile`, `.env.example` (every variable explained).
 
 ## Owner inputs needed before the first deploy
 
-- A server with Docker (2 vCPU / 6 GB: OpenSearch takes a 1 GB heap by default, `SEARCH_HEAP` to change) and the domain pointed at it.
+- A server with Docker (2 vCPU / 6 GB: OpenSearch takes a 1 GB heap by default, `SEARCH_HEAP` to change; the embedding service about 0.8 GB, `EMBED_THREADS` its threads, 2 by default) and the domain pointed at it. The server reaches huggingface.co once, when the embedding service first starts.
 - `.env.production` on the server (never committed):
 
 ```
@@ -37,6 +38,7 @@ DATASET_VERSION=2026.10.0
 The raw sources are licensed downloads kept out of git (`data/raw/`, every file sha256-pinned in `data/sources.yaml`, `data/lexica.yaml`, `data/recitations.yaml`).
 
 ```
+uv run python -m jadhr_embed fetch            # once: the pinned model for the verses' vectors (data/tools/models)
 uv run jadhr-pipeline build                   # fails on any pin drift
 uv run python -m jadhr_pipeline.validation    # regenerates docs/DATA-VALIDATION.md
 JADHR_REQUIRE_DATA=1 uv run pytest packages/arabic-py pipeline services/api -q
@@ -63,7 +65,7 @@ for p in / /about /quran/2/255 /word/2:255:23 /roots/%D8%B9%D9%84%D9%85 /en/word
   curl -s -L -o /dev/null -w "%{http_code} redirects=%{num_redirects} $p\n" "https://<domain>$p"; done
 ```
 
-Every line must read `200 redirects=0`. `curl -s https://<domain>/api/v1/meta` shows the loaded dataset version and its text hash, which must equal `text_sha256` in `data/build/<version>/report.json`.
+Every line must read `200 redirects=0`. Search by meaning: `curl -s "https://<domain>/api/v1/search?q=%D8%A7%D9%84%D9%8A%D8%AA%D9%8A%D9%85" | python3 -c "import json,sys; print(json.load(sys.stdin)['semantic']['status'])"` must print `ok` (`unavailable`: the embedding service is down or still fetching its model on its first start). `curl -s https://<domain>/api/v1/meta` shows the loaded dataset version and its text hash, which must equal `text_sha256` in `data/build/<version>/report.json`.
 
 ## Monitoring and errors (P12)
 
@@ -138,6 +140,8 @@ Optional for readers; everything works without them. Before enabling sign-in in 
 Licensing gates from the research reports: the non-commercial assumption (EveryAyah audio CC BY-NC, corpus terms), al-Sa'di in life+70 jurisdictions until 2027-01-01, QuranEnc's "keep the version, link the source" terms (shown on every tafsir/translation), and the corpus attribution link on every word panel. See `docs/research/` and the sources page.
 
 ## Search index
+
+**Search by meaning** (P17): the API embeds a search through the `embed` service and compares it with the verses' vectors, which the build made with the same pinned model and the loader put in Postgres (`content.verse_vectors`, `content.verse_neighbours`). If the service is down or slow (`JADHR_EMBED_URL`, 1.5 s), the search answers by words, says so (`"semantic": {"status": "unavailable"}`) and is not cached. The vectors carry their model's tag; a search embedded by another model is never compared with them (`model_mismatch`): changing the model in `services/embed/src/jadhr_embed/models.py` means a new dataset build and load, then the new `embed` image.
 
 OpenSearch holds only derived data. If it is down, `/api/v1/search` answers from Postgres and says so (`"engine": "postgres"`); nothing else depends on it. Rebuild by hand at any time — new indices are built and checked against Postgres document counts before the aliases move:
 

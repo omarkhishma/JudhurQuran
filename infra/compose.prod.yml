@@ -1,4 +1,4 @@
-# Production stack: Postgres, API, web, Caddy (TLS + routing). Run from the repository root:
+# Production stack: Postgres, OpenSearch, the embedding service, API, web, Caddy (TLS + routing). Run from the repository root:
 #   docker compose -f infra/compose.prod.yml --env-file .env.production up -d --build
 # Load or update a dataset release (migrations + atomic load + web cache expiry):
 #   docker compose -f infra/compose.prod.yml --env-file .env.production run --rm loader
@@ -47,6 +47,26 @@ services:
       timeout: 5s
       retries: 30
 
+  # The embedding service (P17, D34): a reader's search becomes a vector on this server, never elsewhere. Reached by the
+  # API only (no port published, no route in Caddy). Its first start fetches the pinned model (~580 MB) into `models`.
+  embed:
+    build: { context: .., dockerfile: services/embed/Dockerfile }
+    restart: unless-stopped
+    logging: *logging
+    # no capability and no way to gain one (security review I2)
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      JADHR_EMBED_THREADS: ${EMBED_THREADS:-2}
+    volumes:
+      - models:/models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/healthz', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 600s
+
   api:
     build: { context: .., dockerfile: services/api/Dockerfile }
     restart: unless-stopped
@@ -54,7 +74,8 @@ services:
     # no capability and no way to gain one (security review I2)
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
-    depends_on: { db: { condition: service_healthy }, search: { condition: service_healthy } }
+    # without the embedding service the search answers by words and says so: it is not waited for
+    depends_on: { db: { condition: service_healthy }, search: { condition: service_healthy }, embed: { condition: service_started } }
     # alive and reading the dataset (P12): Caddy waits for it, and a restart follows a failure
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=5)"]
@@ -67,6 +88,7 @@ services:
       # and nothing else — never the superuser (security review L9)
       JADHR_DATABASE_URL: postgresql+psycopg://jadhr_api:${APP_DB_PASSWORD:?set APP_DB_PASSWORD}@db:5432/jadhr
       JADHR_SEARCH_URL: http://search:9200
+      JADHR_EMBED_URL: http://embed:8010
       JADHR_ENVIRONMENT: production
       JADHR_PUBLIC_BASE_URL: ${PUBLIC_URL:?set PUBLIC_URL}
       JADHR_CORS_ORIGINS: '["${PUBLIC_URL}"]'
@@ -210,6 +232,7 @@ services:
 volumes:
   pg:
   search:
+  models:
   account_backups:
   caddy_data:
   caddy_config:

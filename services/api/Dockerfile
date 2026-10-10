@@ -8,6 +8,8 @@ COPY pyproject.toml uv.lock ./
 COPY packages/arabic-py packages/arabic-py
 COPY pipeline pipeline
 COPY services/api services/api
+# a workspace member: the lock names it, though the API does not run it
+COPY services/embed services/embed
 RUN uv sync --frozen --no-dev --package jadhr-api
 
 FROM python:3.13-slim-trixie AS run
