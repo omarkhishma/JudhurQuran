@@ -77,6 +77,20 @@ Over time, this could allow users to build and explore a rich, interactive netwo
 
 ---
 
+Phase 2:
+
+Each word would have several layers of meaning: a lexical meaning, a semantic meaning, a contextual meaning, and maybe more in the future. One of the new ideas in this project is the concept of the contextual meaning of a word according to its Quranic context. This context would not be determined only by the single verse in which the word appears, but also by a group of surrounding verses that come before and after it, whenever those verses form one connected and coherent idea.
+
+In most cases, this contextual range would be defined by a human (Admin), mainly because its not yet exist in an online resources (at least based on my research). Therefore, the admin/owner should have access to a dashboard where he can define, for each word, where its relevant context begins and ends. For example, they could specify the exact surah and verse where the contextual passage starts, and the exact verse where it ends.
+
+also to build a full Semantic Search and Intelligence System for the Quran - a smart search engine for the Quran, where Users and Scholars can Search the Quran by "roots", "meaning" in Arabic and English languages, Explore the Quran using state-of-art visualization techniques, ask questions in natural language, Analyze the text, acquire detailed statistics and find hidden patterns and relations.
+
+I'm also looking to empower the quranic data with interactive visualization like charts, heatmaps in addition to the graphs and mindmaps.
+
+when tap it select the tapped word, show its meanings and data (root, how many times it mentioned, related topics, words with similar meaning or close to or related (these similar words are defind by the admin/owner), words with opposite meaning (also defind by the admin/owner), its morphological balance, etc...), and it list all other word an verses from the same root with allowness to interact with them and redirect to them.
+
+---
+
 #### Note:
 
 It's a big **NO** to rely only on my researches and my provided data. It's definitely describe or explain the idea and clarify the vision. However, without your extra mile to validate and enhance and improve and find the gaps, this will not reach the best result. and it's obvious that if you did not find somthing better then you should use from the provided search results.
