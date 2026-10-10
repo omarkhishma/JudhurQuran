@@ -25,8 +25,8 @@ const CLEARED = { lemma: "", pattern: "", surah: "", surah_to: "", juz: "", juz_
 const SEED_ROOTS = ["علم", "رحم", "كتب", "قرأ", "صبر", "هدي", "ذكر", "نور"];
 // The chapters of a root index in the order of the Arabic dictionaries; the hamza chapter is shown as أ.
 const LETTERS = ["ء", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر", "ز", "س", "ش", "ص", "ض", "ط", "ظ", "ع", "غ", "ف", "ق", "ك", "ل", "م", "ن", "ه", "و", "ي"];
-const MECCAN = "var(--chart-root)";
-const MEDINAN = "var(--c-sentence)";
+const MECCAN = "var(--chart-meccan)";
+const MEDINAN = "var(--chart-medinan)";
 
 /** The root the reader was last on (the trail), when the concordance is opened with none (CON-05). */
 function useContextRoot(enabled: boolean) {
