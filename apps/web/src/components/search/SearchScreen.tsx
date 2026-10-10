@@ -24,6 +24,8 @@ type DictEntry = { entry_id: number; uri?: string | null; work: { id: string; ti
 type DictRootHit = { key: string; display: string; letters: number; quran_root: string | null; lexica: number };
 /** A verse whose human sources hold the query (B12): up to three of them, each with its work and the words found. */
 type MeaningHit = { verse: { key: string; surah: number; ayah: number; text_qpc: string; name_ar: string; name_translit: string }; sources: { kind: "tafsir" | "translation" | "gharib"; work: { id: string; title_ar?: string; title_en?: string }; excerpt: string | null }[] };
+/** A verse close in meaning (P17): the model's ranking fused with the sources' words, with the text the model read. */
+type SemanticHit = { verse: MeaningHit["verse"]; source: { work: { id: string; title_ar: string; title_en: string } | null; text: string | null }; by_meaning: number | null; by_words: number | null };
 type Passage = { uri: string; ref: string; text: { slug: string; kind: string }; verse?: Verse; highlight_ar?: string | null; highlight_en?: string | null; trans_en?: string | null };
 export type SearchPayload = {
   query: string;
@@ -45,12 +47,16 @@ export type SearchPayload = {
     books?: TextHit[];
     // what the human sources say (B12): the verses whose tafsir, translation or gharīb meaning holds the query
     meanings?: MeaningHit[];
+    // verses close in meaning (P17): an open model's ranking on our server, fused with the sources' words
+    semantic?: SemanticHit[];
   };
-  totals?: Partial<Record<"verses" | "lemmas" | "roots" | "patterns" | "surahs" | "dictionary" | "words" | "texts" | "books" | "meanings", number>>;
+  totals?: Partial<Record<"verses" | "lemmas" | "roots" | "patterns" | "surahs" | "dictionary" | "words" | "texts" | "books" | "meanings" | "semantic", number>>;
+  // how the semantic group was made, or why it is missing
+  semantic?: { status: "ok" | "weak" | "unavailable" | "no_vectors" | "model_mismatch"; lang?: "ar" | "en"; model?: string; fused_with_words?: boolean };
 };
 
 const KINDS = ["verses", "words", "roots", "patterns", "surahs"] as const;
-const SOURCES = ["meanings", "dictionary", "hadith", "books", "mine"] as const;
+const SOURCES = ["semantic", "meanings", "dictionary", "hadith", "books", "mine"] as const;
 type Kind = (typeof KINDS)[number] | (typeof SOURCES)[number];
 const ALL: Kind[] = [...KINDS, ...SOURCES];
 const EXAMPLES = ["الرحمن", "ك ت ب", "2:255", "الصلاة", "مَفْعُول", "s-b-r", "mercy"];
@@ -93,7 +99,7 @@ const verseRowsOf = (d: SearchPayload): VerseRow[] =>
  * One kind, paged (SRC-12, 21, 23): the first page comes with the search, each "show more" reveals `step`
  * more and asks the API for the next page when the loaded rows run out. Counts are the matches, not the rows.
  */
-function usePaged<T>(dq: string, only: "verses" | "lemmas" | "dictionary" | "texts" | "books" | "meanings", first: T[], total: number, pick: (d: SearchPayload) => T[], key: (x: T) => string, step: number) {
+function usePaged<T>(dq: string, only: "verses" | "lemmas" | "dictionary" | "texts" | "books" | "meanings" | "semantic", first: T[], total: number, pick: (d: SearchPayload) => T[], key: (x: T) => string, step: number) {
   const [state, setState] = useState({ dq, shown: step });
   const shown = state.dq === dq ? state.shown : step;
   const pages = Math.max(0, Math.ceil((Math.min(shown, total) - first.length) / PAGE));
@@ -195,6 +201,8 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
   const books = usePaged(dq, "books", firstBooks, totals.books ?? firstBooks.length, (d) => d.results.books ?? [], (x) => x.uri, 10);
   const firstMeanings = useMemo(() => r?.meanings ?? [], [r]);
   const meanings = usePaged(dq, "meanings", firstMeanings, totals.meanings ?? firstMeanings.length, (d) => d.results.meanings ?? [], (x) => x.verse.key, 5);
+  const firstSemantic = useMemo(() => r?.semantic ?? [], [r]);
+  const semantic = usePaged(dq, "semantic", firstSemantic, totals.semantic ?? firstSemantic.length, (d) => d.results.semantic ?? [], (x) => x.verse.key, 5);
   const patterns = r?.patterns ?? [];
   const surahs = r?.surahs ?? [];
   const mineHits = dq ? (mine.data?.hits ?? []) : [];
@@ -204,6 +212,7 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
     roots: rootsTotal,
     patterns: patterns.length,
     surahs: surahs.length,
+    semantic: semantic.total,
     meanings: meanings.total,
     dictionary: dict.total + (r?.dict_roots?.length ?? 0),
     hadith: hadith.total,
@@ -248,6 +257,7 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
       <fieldset className="flex flex-col gap-1">
         <legend className="label-caps mb-1">{t("facetSource")}</legend>
         {facetRow("verses", t("sourceQuran"))}
+        {facetRow("semantic", t("sourceSemantic"))}
         {facetRow("meanings", t("sourceMeanings"))}
         {facetRow("dictionary", t("sourceDictionaries"))}
         {facetRow("hadith", t("sourceHadith"))}
@@ -334,6 +344,11 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
           {t("fallbackNote")}
         </p>
       )}
+      {data?.semantic?.status === "unavailable" && (
+        <p className="search-fallback" role="note">
+          {t("semanticUnavailable")}
+        </p>
+      )}
       <button type="button" className="btn search-filters-toggle" aria-expanded={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)}>
         <Icon name="sliders" size={13} />
         {t("filters")}
@@ -393,6 +408,36 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
                 ))}
               </ul>
               <More paged={verses} />
+            </ResultGroup>
+          )}
+          {kinds.semantic && semantic.rows.length > 0 && (
+            <ResultGroup title={t("sectionSemantic")} n={semantic.total}>
+              <p className="-mt-1 mb-2 text-[12px] leading-relaxed text-t3">{t(data?.semantic?.lang === "en" ? "semanticNoteEn" : "semanticNoteAr")}</p>
+              <ul className="flex flex-col gap-2">
+                {semantic.rows.map((m) => {
+                  const en = data?.semantic?.lang === "en";
+                  const work = m.source.work ? (locale === "ar" ? m.source.work.title_ar : m.source.work.title_en) : "";
+                  return (
+                    <li key={m.verse.key} className="result-row flex-col items-stretch" data-semantic={m.verse.key}>
+                      <Link href={`/quran/${m.verse.surah}/${m.verse.ayah}`} className="flex flex-wrap items-baseline gap-x-2 hover:underline">
+                        <span className="mono text-[12px] text-t3">{verseRef(m.verse.key, locale)}</span>
+                        <span className="text-[12.5px] text-t2" lang={locale === "ar" ? "ar" : "en"}>{locale === "ar" ? `سورة ${m.verse.name_ar}` : m.verse.name_translit}</span>
+                        <span className="ms-auto text-[11px] text-t3">{t(m.by_meaning && m.by_words ? "foundBoth" : m.by_meaning ? "foundMeaning" : "foundWords")}</span>
+                      </Link>
+                      <p className="quran line-clamp-2 text-[19px] leading-[1.9]" lang="ar" dir="rtl">{m.verse.text_qpc}</p>
+                      {m.source.text && (
+                        <div className="flex flex-col gap-0.5 border-t border-line pt-1.5">
+                          <span className="text-[11.5px] text-t3">{t("semanticRead", { work })}</span>
+                          <span className={"line-clamp-3 text-[14px] leading-[1.8] text-t1" + (en ? "" : " ar-classical text-[16px]")} lang={en ? "en" : "ar"} dir={en ? "ltr" : "rtl"}>
+                            {m.source.text}
+                          </span>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              <More paged={semantic} />
             </ResultGroup>
           )}
           {kinds.meanings && meanings.rows.length > 0 && (

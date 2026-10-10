@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "@/i18n/navigation";
-import { cnt, formatNumber } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { encodeSeed } from "@/lib/graph/seedCodec";
 import { getJSON } from "@/lib/reader/api";
 import type { EditorNote, KnowledgeSource, VerseKnowledge as VK, VersePlace } from "@/lib/reader/types";
@@ -184,6 +184,7 @@ export function VerseKnowledgeSections({ verseKey }: { verseKey: string }) {
       </VerseLayer>
 
       <TopicsLayer verseKey={verseKey} />
+      <SimilarLayer verseKey={verseKey} />
 
       {named.length > 0 && (
         <VerseLayer title={t("secEntities")} defaultOpen={false}>
@@ -225,6 +226,37 @@ function TopicsLayer({ verseKey }: { verseKey: string }) {
   );
 }
 
+/**
+ * The verses nearest this one by an open model's reading (P17): computed once per build from the verses with their
+ * explanation and translation, the verses around it in its own sūra left out — they are its context. A computation,
+ * said so, never a claim that two verses mean the same.
+ */
+function SimilarLayer({ verseKey }: { verseKey: string }) {
+  const t = useTranslations("rd");
+  const locale = useLocale();
+  const q = useQuery({
+    queryKey: ["verse-similar", verseKey],
+    queryFn: () => getJSON<{ items: { verse: { key: string; surah: number; ayah: number; text_qpc: string; name_ar: string; name_translit: string } }[] }>(`/verses/${verseKey}/similar`),
+    staleTime: Infinity,
+  });
+  if (!q.data?.items.length) return null;
+  return (
+    <VerseLayer title={t("secSimilar")} meta={formatNumber(q.data.items.length, locale)} defaultOpen={false}>
+      <p className="text-[11.5px] text-t3">{t("similarLead")}</p>
+      <ul className="flex flex-col">
+        {q.data.items.map(({ verse: v }) => (
+          <li key={v.key} className="kn-cite">
+            <Link href={`/quran/${v.surah}/${v.ayah}`} className="mono text-[11.5px] text-word hover:underline" dir="ltr">
+              {verseRef(v.key, locale)}
+            </Link>
+            <span className="text-[11.5px] text-t3" lang={locale === "ar" ? "ar" : "en"}>{locale === "ar" ? v.name_ar : v.name_translit}</span>
+            <span className="kn-quote quran line-clamp-2" lang="ar" dir="rtl">{v.text_qpc}</span>
+          </li>
+        ))}
+      </ul>
+    </VerseLayer>
+  );
+}
 
 /** One note on where or when verses came down (P3.9): the source's own words, its role — Tanzil's note, the Tafsir
  * Center's reported or preferred — and its credit; on a sūra's card (B6) with the verses it names. */

@@ -16,7 +16,7 @@ import { useDebounced } from "@/lib/useDebounced";
 type Item = { id: string; href: string; kind: string; primary: React.ReactNode; secondary?: React.ReactNode };
 /** The texts beyond the Quran in a search's answer (P11): a hadith or a book's paragraph, with its place. */
 type TextHit = { uri: string; ref: string; text: { slug: string; title_ar: string; title_en: string }; chapter?: { title_ar: string } | null; start: string };
-type Ecosystem = { dict_roots?: { key: string; display: string; lexica: number; quran_root: string | null }[]; texts?: TextHit[]; books?: TextHit[] };
+type Ecosystem = { dict_roots?: { key: string; display: string; lexica: number; quran_root: string | null }[]; texts?: TextHit[]; books?: TextHit[]; semantic?: { verse: { key: string; surah: number; ayah: number; text_qpc: string } }[] };
 
 export function Omnibox({ onClose }: { onClose: () => void }) {
   const t = useTranslations("search");
@@ -48,6 +48,16 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         id: `v${v.key}`,
         href: `/quran/${v.surah}/${v.ayah}`,
         kind: t("kindVerse"),
+        primary: <span className="quran line-clamp-1 text-[19px] leading-[1.9]" dir="rtl" lang="ar">{v.text_qpc}</span>,
+        secondary: <span className="mono" dir="ltr">{verseRef(v.key, locale)}</span>,
+      });
+    // verses close in meaning (P17), after the verses holding the words: up to three, none already listed
+    const listed = new Set(data.results.verses.slice(0, 5).map((v) => v.key));
+    for (const { verse: v } of (data.results.semantic ?? []).filter((x) => !listed.has(x.verse.key)).slice(0, 3))
+      out.push({
+        id: `m-${v.key}`,
+        href: `/quran/${v.surah}/${v.ayah}`,
+        kind: t("kindSemantic"),
         primary: <span className="quran line-clamp-1 text-[19px] leading-[1.9]" dir="rtl" lang="ar">{v.text_qpc}</span>,
         secondary: <span className="mono" dir="ltr">{verseRef(v.key, locale)}</span>,
       });
