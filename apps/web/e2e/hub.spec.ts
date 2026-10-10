@@ -31,8 +31,10 @@ test("search: the Quran's own queries, ⌘K back to the field while it shows, th
   const field = page.getByRole("search", { name: "ابحث في القرآن" }).getByRole("textbox");
   // the examples teach the Quran's queries as links, at every width
   const tries = page.locator(".hub-try");
-  await expect(tries).toHaveText(["عِلْم", "ع ل م", "٢:٢٥٥", "البقرة ٢٥٥"]);
+  await expect(tries).toHaveText(["عِلْم", "ع ل م", "٢:٢٥٥", "البقرة ٢٥٥", "كم مرة ذكرت كلمة الرحمة؟"]);
   await expect(tries.nth(3)).toHaveAttribute("href", `/search?q=${encodeURIComponent("البقرة ٢٥٥")}`);
+  // and a question, asked of the Quran (P18)
+  await expect(tries.nth(4)).toHaveAttribute("href", `/ask?q=${encodeURIComponent("كم مرة ذكرت كلمة الرحمة؟")}`);
   await page.locator("body").click({ position: { x: 5, y: 300 } });
   await page.keyboard.press("ControlOrMeta+k");
   await expect(field).toBeFocused();
