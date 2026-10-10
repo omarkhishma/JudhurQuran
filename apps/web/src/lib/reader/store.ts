@@ -9,6 +9,7 @@ import { persist } from "zustand/middleware";
 import type { Seed } from "@/lib/graph/seedCodec";
 import { progressByIdentifier } from "@/lib/library/ids";
 import type { SetRule } from "@/lib/sets";
+import type { LayerId } from "./layers";
 import { safeJSONStorage } from "@/lib/store/safeStorage";
 
 export type Mode = "empty" | "word" | "verse" | "index" | "surah";
@@ -55,6 +56,8 @@ type ReaderState = {
   focusRoot: string | null;
   toast: { text: string; id: number } | null;
   scrollTo: SectionId | null;
+  /** a layer of meaning to open and bring into view inside Meanings (P15): the data card's doors */
+  meaningLayer: LayerId | null;
   // the Shapes section: which view, and the last pattern chosen (RDR-226, 232) — a door or the omnibox may set them
   shapesView: "root" | "pattern";
   shapesPattern: string | null;
@@ -77,6 +80,7 @@ type ReaderState = {
   setFocusRoot: (k: string | null) => void;
   showToast: (text: string) => void;
   jumpTo: (s: SectionId | null) => void;
+  focusLayer: (id: LayerId | null) => void;
   setShapes: (p: { view?: "root" | "pattern"; pattern?: string | null }) => void;
   openShapes: (pattern: string) => void;
   closeEntry: () => void;
@@ -103,6 +107,7 @@ export const useReader = create<ReaderState>((set, get) => ({
   focusRoot: null,
   toast: null,
   scrollTo: null,
+  meaningLayer: null,
   shapesView: "root",
   shapesPattern: null,
   onbBeat: 0,
@@ -159,6 +164,10 @@ export const useReader = create<ReaderState>((set, get) => ({
       else p.openLayer(scrollTo);
     }
     set({ scrollTo });
+  },
+  focusLayer: (meaningLayer) => {
+    set({ meaningLayer });
+    if (meaningLayer) get().jumpTo("senses");
   },
   setShapes: (p) => set((s) => ({ shapesView: p.view ?? s.shapesView, shapesPattern: p.pattern === undefined ? s.shapesPattern : p.pattern })),
   // the shape door and the omnibox's pattern rows open Shapes on that pattern (RDR-332, 377)

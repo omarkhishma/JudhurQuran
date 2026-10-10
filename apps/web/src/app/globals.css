@@ -6423,6 +6423,91 @@ a.wotd-pill:hover {
 .workbench-box.is-force {
   border-inline-start: 3px solid var(--good);
 }
+/* the layers of a word's meaning (P15): each a fold inside Meanings, the data card under the entry's header */
+.meaning-layer {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.meaning-layer-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  text-align: start;
+}
+.meaning-layer-head[aria-expanded="false"] .layer-chev {
+  transform: rotate(-90deg);
+}
+[dir="rtl"] .meaning-layer-head[aria-expanded="false"] .layer-chev {
+  transform: rotate(90deg);
+}
+.meaning-layer {
+  scroll-margin-top: 8px;
+}
+.meaning-layer-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 12px 12px;
+}
+.ctx-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-inline-start: 3px solid var(--c-sentence);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c-sentence) 7%, var(--card));
+}
+.ctx-box.is-unset {
+  border-inline-start-color: var(--line-2);
+  background: var(--card-2);
+}
+.ctx-verse {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.ctx-kin {
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--c-root) 70%, transparent);
+}
+.data-card {
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+.data-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+}
+.data-door {
+  min-height: 32px;
+  padding: 2px 0;
+  font-size: 12.5px;
+  color: var(--t1);
+  text-align: start;
+}
+/* the sheet's controls are a thumb's size (RDR-415): the data card's doors and the layers' text doors */
+.reader-sheet .data-door,
+.reader-sheet .text-door {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.data-door:hover,
+.data-door:focus-visible {
+  color: var(--c-word);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 /* the administration's dashboard and tools (P14): headline numbers, the tools, a sūra's passages, the publish bar */
 .dash-kpis {
   display: grid;
@@ -7894,4 +7979,5 @@ button.topic-cell:focus-visible {
 .state-chip.is-rule {
   border-color: color-mix(in srgb, var(--amber) 55%, var(--line));
 }
+
 

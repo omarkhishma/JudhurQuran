@@ -266,3 +266,31 @@ def test_proper_names_with_the_verses_they_are_named_in(board: dict[str, dict[st
     assert client.get("/api/v1/entities").json()["total"] == 106
     _approve(board, "verdict", f"entity_candidates:{musa[0]['id']}", {"verdict": "reviewed"})
     assert client.get(f"/api/v1/entities/{musa[0]['id']}").json()["status"] == "reviewed"
+
+
+def test_a_words_topics_are_those_its_verses_are_gathered_under() -> None:
+    """P15 (PV-21): the topics whose verses hold the word most, counted by its verses, and its verse's own topics."""
+    out = client.get("/api/v1/words/ilm/topics", params={"at": "2:32:3"}).json()
+    from jadhr_api.db import connect, rows
+
+    with connect() as conn:
+        want = {
+            r["topic_id"]: r["n"]
+            for r in rows(
+                conn,
+                """select l.topic_id, count(distinct l.verse_key)::int as n from content.topic_links l
+                   where l.source_id = 'quranpedia-topics' and l.verse_key in (
+                     select distinct v.key from content.words w join content.verses v on v.id = w.verse_id
+                     join content.lemmas lm on lm.id = w.lemma_id where lm.slug = 'ilm')
+                   group by l.topic_id""",
+            )
+        }
+    assert out["recurring"], out
+    for x in out["recurring"]:
+        assert x["word_verses"] == want[x["id"]]
+    assert [x["word_verses"] for x in out["recurring"]] == sorted(
+        (x["word_verses"] for x in out["recurring"]), reverse=True
+    )
+    assert out["here"]["verse_key"] == "2:32"
+    assert "quranpedia-topics" in out["sources"]
+    assert client.get("/api/v1/words/no-such-word/topics").status_code == 404

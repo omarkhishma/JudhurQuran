@@ -331,6 +331,20 @@ def word_relations(
 
 
 @router.get(
+    "/words/{slug}/topics",
+    summary="A word's topics: its verse's, and those whose verses hold it most (credited)",
+)
+def word_topics(
+    request: Request, slug: str, at: str | None = Query(None, pattern=r"^\d{1,3}:\d{1,3}(:\d{1,3})?$")
+) -> Response:
+    with connect() as conn:
+        out = topics.of_word(conn, slug, at)
+        if out is None:
+            raise not_found("word")
+        return cached(request, out)
+
+
+@router.get(
     "/words/{location}/context",
     summary="A word's Quranic context: the range in force (the administration's or the board's), how the sources "
     "group the verses around it, and the context's verses with the word and its root marked",

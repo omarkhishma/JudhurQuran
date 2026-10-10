@@ -24,6 +24,7 @@ import { Backlinks } from "@/components/notebook/Backlinks";
 import { WhereNext } from "./sections/WhereNext";
 import { ListenOccurrence, WordAudioNote } from "./Listen";
 import { WordSigns } from "./MushafSigns";
+import { WordDataCard } from "./sections/Layers";
 
 /** One spec order for both layouts (P2.0 resolution of RDR-207). */
 export const SECTION_ORDER: SectionId[] = SECTIONS;
@@ -178,6 +179,7 @@ function EntryHeader({ w }: { w: WordPayload }) {
           <WordSigns ids={occ.signs ?? []} />
         </div>
       )}
+      <WordDataCard w={w} />
       {w.root ? (
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" className="root-chip" onClick={() => jumpTo("family")} title={t("openRootFamily", { root: w.root.ar_spaced })}>
@@ -236,7 +238,7 @@ export function WordStateControl({ slug }: { slug: string }) {
 }
 
 const SECTION_LABEL: Record<SectionId, string> = {
-  senses: "secMeanings",
+  senses: "secLayers",
   family: "secFamily",
   patterns: "secShapes",
   lexica: "secDictionaries",

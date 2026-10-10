@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { Term } from "@/components/terms/Term";
 import { Link } from "@/i18n/navigation";
 import { cnt, formatNumber, verseRef } from "@/lib/format";
@@ -16,12 +16,17 @@ import { FORM_TERM, TAG_TERM } from "@/lib/terms";
 import { CreditLine } from "../CreditLine";
 import { LoanwordsBlock } from "./Loanwords";
 import { WujuhBlock } from "./Wujuh";
+import { PatternFunction } from "./Family";
+import { ContextualLayer, DefinedRelations, IrabBlock, MeaningLayer, MorphologicalLayer, ReadingsLayer, TcCredit, useLayerFocus, WordTopicsBlock } from "./Layers";
+import { MEANING_LAYERS, type LayerId } from "@/lib/reader/layers";
 import { ReviewMark, ReviewStatus } from "../BoardMark";
 
 /**
- * Meanings (design 03 §3.5.1, P2.5). Numbered sense lists are assembled by the editorial board from the
- * sources (P3.0/P3.1, law L2: nothing generated). Until a word has them, the section shows what each
- * source says about it — every line attributed — and says plainly that the list is not yet assembled.
+ * Meanings by their layers (design 03 §3.5.1, P2.5; P15, D30): the meaning in its context, the dictionaries', the
+ * word's place among the Quran's meanings, what its form adds, its role in its sentence, and the readers' difference.
+ * Numbered sense lists are assembled by the editorial board from the sources (P3.0/P3.1, law L2: nothing generated);
+ * until a word has them, each layer shows what each source says — every line attributed — and says plainly what is
+ * not yet assembled.
  */
 export function MeaningsSection({ w }: { w: WordPayload }) {
   const t = useTranslations("rd");
@@ -30,16 +35,26 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
   const tc = useTranslations("contrib");
   const locale = useLocale();
   const setSuggest = useReader((s) => s.setSuggest);
+  const jumpTo = useReader((s) => s.jumpTo);
   const drafts = useDrafts(w.slug);
+  const [open, setOpen] = useState<Record<LayerId, boolean>>(() => Object.fromEntries(MEANING_LAYERS.map((l) => [l.id, l.open])) as Record<LayerId, boolean>);
+  const openLayer = useCallback((id: LayerId) => setOpen((o) => ({ ...o, [id]: true })), []);
+  useLayerFocus(openLayer);
   // what readers proposed and two reviewers, one of the board, approved: shown beside the sources (P7.3)
   // one the board took into its sense list is shown there, credited to the reader, not again here (B38)
   const merges = (useWordContributions(w.slug).data?.data ?? []).filter((m) => !m.folded);
   const glossHere = merges.filter((m) => m.kind === "gloss" && m.location && m.location === w.occurrence?.location);
   const glossLemma = merges.filter((m) => m.kind === "gloss" && !m.location);
-  const lines: { key: string; text: ReactNode; source: ReactNode; lang: string; suggest?: SuggestTarget; merged?: typeof merges }[] = [];
-  // the meaning of this very place first: al-Muyassar fī Gharīb, phrase by phrase (P3.1)
+  type Line = { key: string; text: ReactNode; source: ReactNode; lang: string; suggest?: SuggestTarget; merged?: typeof merges };
+  // the contextual layer's lines: what the sources say the word means in this very place (P15.3)
+  const here: Line[] = [];
+  const tcl = w.occurrence?.tc;
+  for (const [i, m] of (tcl?.meaning ?? []).entries()) {
+    here.push({ key: `tc${i}`, text: m, source: <>{t("meaningHere")} — {locale === "ar" ? tcl?.source?.title_ar : tcl?.source?.title_en}</>, lang: "ar" });
+  }
+  // al-Muyassar fī Gharīb, phrase by phrase (P3.1)
   for (const m of w.occurrence?.meanings_here ?? []) {
-    lines.push({
+    here.push({
       key: `m${m.id}`,
       text: (
         <>
@@ -59,15 +74,17 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
     });
   }
   for (const g of w.occurrence?.glosses ?? []) {
-    lines.push({
-      key: `g${g.id}`,
-      text: g.gloss,
-      source: <>{locale === "ar" ? g.attribution_ar : g.attribution_en}{g.page_ref ? ` • ${g.page_ref}` : ""}</>,
-      lang: "ar",
-    });
+    here.push({ key: `g${g.id}`, text: g.gloss, source: <>{locale === "ar" ? g.attribution_ar : g.attribution_en}{g.page_ref ? ` • ${g.page_ref}` : ""}</>, lang: "ar" });
   }
+  if (w.occurrence?.gloss_en) {
+    // a gloss is open to proposals, for this place or for the lemma (RDR-567)
+    const at = w.occurrence.location;
+    here.push({ key: "wbw", text: w.occurrence.gloss_en, source: t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }), lang: "en", suggest: { kind: "gloss", slug: w.slug, label: w.occurrence.surface.full, at, current: w.occurrence.gloss_en }, merged: glossHere });
+  }
+  // the lexical layer's lines: the root's core idea and the lemma's gloss (P15.2)
+  const lexical: Line[] = [];
   if (w.core_meaning) {
-    lines.push({
+    lexical.push({
       key: "core",
       text: w.core_meaning.text,
       source: (
@@ -79,121 +96,156 @@ export function MeaningsSection({ w }: { w: WordPayload }) {
       lang: "ar",
     });
   }
-  if (w.occurrence?.gloss_en) {
-    // a gloss is open to proposals, for this place or for the lemma (RDR-567)
-    const at = w.occurrence.location;
-    lines.push({ key: "wbw", text: w.occurrence.gloss_en, source: t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }), lang: "en", suggest: { kind: "gloss", slug: w.slug, label: w.occurrence.surface.full, at, current: w.occurrence.gloss_en }, merged: glossHere });
-  }
   if (w.gloss_en) {
-    lines.push({ key: "lemma", text: w.gloss_en, source: t("lemmaGlossCredit"), lang: "en", suggest: { kind: "gloss", slug: w.slug, label: w.ar.full, current: w.gloss_en }, merged: glossLemma });
+    lexical.push({ key: "lemma", text: w.gloss_en, source: t("lemmaGlossCredit"), lang: "en", suggest: { kind: "gloss", slug: w.slug, label: w.ar.full, current: w.gloss_en }, merged: glossLemma });
   }
+  const numbered = (lines: Line[], from = 0) => (
+    <ol className="flex flex-col gap-2">
+      {lines.map((l, i) => (
+        <li key={l.key} className="sense-row">
+          <span className="mono text-[11px] text-t3">{formatNumber(from + i + 1, locale).padStart(2, locale === "ar" ? "٠" : "0")}</span>
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className={l.lang === "ar" ? "text-[15px] leading-[1.9] text-t1" : "text-[13.5px] italic leading-relaxed text-t2"} lang={l.lang} dir={l.lang === "ar" ? "rtl" : "ltr"}>
+              {l.text}
+            </p>
+            <p className="text-[11px] text-t3">{l.source}</p>
+            {l.merged?.map((m) => (
+              <MergedLine key={m.id} m={m} />
+            ))}
+            {l.suggest && (
+              <button type="button" className="suggest-link self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest(l.suggest!)}>
+                {t("suggestGloss")}
+              </button>
+            )}
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+  const layer = (id: LayerId, body: ReactNode) => {
+    const L = MEANING_LAYERS.find((x) => x.id === id)!;
+    return (
+      <MeaningLayer key={id} id={id} label={t(L.label)} term={L.term} summary={t(`${L.label}Sum`)} open={open[id]} onToggle={() => setOpen((o) => ({ ...o, [id]: !o[id] }))}>
+        {body}
+      </MeaningLayer>
+    );
+  };
 
   return (
-    <div className="flex flex-col gap-2.5">
-      {w.senses.length > 0 ? (
-        <ol className="flex flex-col gap-2">
-          {w.senses.map((s) => (
-            <li key={s.id} className="sense-row">
-              <span className="mono text-[11px] text-t3">{formatNumber(s.ordinal, locale).padStart(2, locale === "ar" ? "٠" : "0")}</span>
-              <div className="flex min-w-0 flex-col gap-1">
-                {/* a merged edit above the source's wording, which stays (D4, L2) */}
-                {merges.filter((m) => m.kind === "edit" && m.sense_ordinal === s.ordinal).map((m) => (
-                  <MergedLine key={m.id} m={m} />
-                ))}
-                {s.text_ar && <p className="text-[15px] leading-[1.8] text-t1" lang="ar" dir="rtl">{s.text_ar}</p>}
-                {s.text_en && <p className="text-[13.5px] italic text-t2" lang="en" dir="ltr">{s.text_en}</p>}
-                {s.status === "board" && s.sources.length > 0 && (
-                  <p className="text-[11px] text-t3" dir="auto">{sourceLine(s.sources, locale)}</p>
-                )}
-                {s.suggested && (
-                  <p className="text-[11px] text-t3">
-                    {t.rich("senseSuggested", { who: () => (s.suggested!.name ? <bdi>{s.suggested!.name}</bdi> : s.suggested!.former ? tw("former") : tc("aContributor")) })}
-                    {" • "}
-                    <Link href={`/review?filter=merged&id=${s.suggested.proposal_id}`} prefetch={false} className="underline-offset-2 hover:text-t1 hover:underline">{tw("decisions")}</Link>
-                  </p>
-                )}
-                <button type="button" className="suggest-link self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest({ kind: "edit", slug: w.slug, label: w.ar.full, ordinal: s.ordinal, current: s.text_ar ?? s.text_en ?? "" })}>
-                  {t("suggestEdit")}
-                </button>
+    <div className="flex flex-col gap-2">
+      {layer(
+        "contextual",
+        <ContextualLayer
+          w={w}
+          here={
+            here.length > 0 ? (
+              <div className="flex flex-col gap-1.5">
+                <p className="label-caps">{t("meaningHere")}</p>
+                {numbered(here)}
+                {tcl && <TcCredit tc={tcl} />}
               </div>
-            </li>
-          ))}
-        </ol>
-      ) : null}
-      {w.senses_board && <p className="text-[11px] text-t3">{tb("senses")}</p>}
-      {/* a word with a sense list keeps its merged glosses too, beside the list (audit 12 F30) */}
-      {w.senses.length > 0 && merges.filter((m) => m.kind === "gloss").map((m) => <MergedLine key={m.id} m={m} />)}
-      {w.senses.length === 0 && (
-        <>
-          {lines.length > 0 ? (
+            ) : null
+          }
+        />,
+      )}
+      {layer(
+        "lexical",
+        <div className="flex flex-col gap-2.5">
+          {w.senses.length > 0 ? (
             <ol className="flex flex-col gap-2">
-              {lines.map((l, i) => (
-                <li key={l.key} className="sense-row">
-                  <span className="mono text-[11px] text-t3">{formatNumber(i + 1, locale).padStart(2, locale === "ar" ? "٠" : "0")}</span>
+              {w.senses.map((s) => (
+                <li key={s.id} className="sense-row">
+                  <span className="mono text-[11px] text-t3">{formatNumber(s.ordinal, locale).padStart(2, locale === "ar" ? "٠" : "0")}</span>
                   <div className="flex min-w-0 flex-col gap-1">
-                    <p
-                      className={l.lang === "ar" ? "text-[15px] leading-[1.9] text-t1" : "text-[13.5px] italic leading-relaxed text-t2"}
-                      lang={l.lang}
-                      dir={l.lang === "ar" ? "rtl" : "ltr"}
-                    >
-                      {l.text}
-                    </p>
-                    <p className="text-[11px] text-t3">{l.source}</p>
-                    {l.merged?.map((m) => (
+                    {/* a merged edit above the source's wording, which stays (D4, L2) */}
+                    {merges.filter((m) => m.kind === "edit" && m.sense_ordinal === s.ordinal).map((m) => (
                       <MergedLine key={m.id} m={m} />
                     ))}
-                    {l.suggest && (
-                      <button type="button" className="suggest-link self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest(l.suggest!)}>
-                        {t("suggestGloss")}
-                      </button>
+                    {s.text_ar && <p className="text-[15px] leading-[1.8] text-t1" lang="ar" dir="rtl">{s.text_ar}</p>}
+                    {s.text_en && <p className="text-[13.5px] italic text-t2" lang="en" dir="ltr">{s.text_en}</p>}
+                    {s.status === "board" && s.sources.length > 0 && <p className="text-[11px] text-t3" dir="auto">{sourceLine(s.sources, locale)}</p>}
+                    {s.suggested && (
+                      <p className="text-[11px] text-t3">
+                        {t.rich("senseSuggested", { who: () => (s.suggested!.name ? <bdi>{s.suggested!.name}</bdi> : s.suggested!.former ? tw("former") : tc("aContributor")) })}
+                        {" • "}
+                        <Link href={`/review?filter=merged&id=${s.suggested.proposal_id}`} prefetch={false} className="underline-offset-2 hover:text-t1 hover:underline">{tw("decisions")}</Link>
+                      </p>
                     )}
+                    <button type="button" className="suggest-link self-start text-[11.5px] text-t3 underline-offset-2 hover:text-t1 hover:underline" onClick={() => setSuggest({ kind: "edit", slug: w.slug, label: w.ar.full, ordinal: s.ordinal, current: s.text_ar ?? s.text_en ?? "" })}>
+                      {t("suggestEdit")}
+                    </button>
                   </div>
                 </li>
               ))}
             </ol>
-          ) : (
+          ) : lexical.length > 0 ? (
+            numbered(lexical)
+          ) : here.length === 0 ? (
             <p className="text-[13px] text-t3">{t("noSourcedLines")}</p>
+          ) : null}
+          {w.senses_board && <p className="text-[11px] text-t3">{tb("senses")}</p>}
+          {/* a word with a sense list keeps its merged glosses too, beside the list (audit 12 F30) */}
+          {w.senses.length > 0 && merges.filter((m) => m.kind === "gloss").map((m) => <MergedLine key={m.id} m={m} />)}
+          {/* numbered after the sourced lines above, never from 01 again (audit 12 F12) */}
+          <MergedSenses items={merges.filter((m) => m.kind === "sense")} after={w.senses.length > 0 ? Math.max(...w.senses.map((s) => s.ordinal)) : lexical.length} />
+          <EditorsNotes items={merges.filter((m) => ["morphology", "error", "attest", "entry"].includes(m.kind))} />
+          <MyProposals slug={w.slug} drafts={drafts} />
+          {w.particles.length > 0 && <ParticlesBlock items={w.particles} />}
+          {w.loanwords?.length > 0 && <LoanwordsBlock items={w.loanwords} />}
+          {w.mufradat && <MufradatBlock m={w.mufradat} />}
+          {w.senses.length === 0 && (
+            <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] leading-relaxed text-t3">{t.rich("sensesPending", { term: (c) => <Term id="sense">{c}</Term> })}</p>
           )}
-        </>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn text-[12px]" onClick={() => setSuggest({ kind: "sense", slug: w.slug, label: w.ar.full, current: "" })}>
+              + {t("proposeSense")}
+            </button>
+            <button type="button" className="btn text-[12px]" onClick={() => setSuggest({ kind: "error", slug: w.slug, label: w.ar.full, current: w.ar.full })}>
+              {t("reportError")}
+            </button>
+            {w.dict_articles.length > 0 && (
+              <button type="button" className="btn text-[12px]" onClick={() => jumpTo("lexica")}>
+                {t("allDictionaries")}
+              </button>
+            )}
+          </div>
+        </div>,
       )}
-      {/* numbered after the sourced lines above, never from 01 again (audit 12 F12) */}
-      <MergedSenses items={merges.filter((m) => m.kind === "sense")} after={w.senses.length > 0 ? Math.max(...w.senses.map((s) => s.ordinal)) : lines.length} />
-      <EditorsNotes items={merges.filter((m) => ["morphology", "error", "attest", "entry"].includes(m.kind))} />
-      <MyProposals slug={w.slug} drafts={drafts} />
-      {w.particles.length > 0 && <ParticlesBlock items={w.particles} />}
-      {w.loanwords?.length > 0 && <LoanwordsBlock items={w.loanwords} />}
-      {w.mufradat && <MufradatBlock m={w.mufradat} />}
-      <WujuhBlock w={w} />
-      {w.senses.length === 0 && (
-        <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] leading-relaxed text-t3">{t.rich("sensesPending", { term: (c) => <Term id="sense">{c}</Term> })}</p>
+      {layer(
+        "semantic",
+        <div className="flex flex-col gap-3">
+          <DefinedRelations w={w} />
+          <WujuhBlock w={w} />
+          <WordTopicsBlock w={w} />
+        </div>,
       )}
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn text-[12px]" onClick={() => setSuggest({ kind: "sense", slug: w.slug, label: w.ar.full, current: "" })}>
-          + {t("proposeSense")}
-        </button>
-        <button type="button" className="btn text-[12px]" onClick={() => setSuggest({ kind: "error", slug: w.slug, label: w.ar.full, current: w.ar.full })}>
-          {t("reportError")}
-        </button>
-      </div>
-      {w.occurrence ? (
-        <GrammarHere
-          features={w.occurrence.features}
-          surface={w.occurrence.surface.full}
-          verseKey={w.occurrence.verse_key}
-          onSuggest={(fields) =>
-            setSuggest({
-              kind: "morphology",
-              slug: w.slug,
-              label: w.occurrence!.surface.full,
-              at: w.occurrence!.location,
-              current: "",
-              fields: [{ key: "gRoot", value: w.root?.ar_spaced ?? t("noRoot") }, { key: "gLemma", value: w.ar.full }, ...fields],
-            })
-          }
-        />
-      ) : (
-        <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] text-t3">{t("grammarNoPlace")}</p>
+      {layer("morphological", <MorphologicalLayer w={w} fn={w.pattern ? <PatternFunction p={w.pattern} /> : null} />)}
+      {layer(
+        "grammatical",
+        <div className="flex flex-col gap-3">
+          {w.occurrence ? (
+            <GrammarHere
+              features={w.occurrence.features}
+              surface={w.occurrence.surface.full}
+              verseKey={w.occurrence.verse_key}
+              onSuggest={(fields) =>
+                setSuggest({
+                  kind: "morphology",
+                  slug: w.slug,
+                  label: w.occurrence!.surface.full,
+                  at: w.occurrence!.location,
+                  current: "",
+                  fields: [{ key: "gRoot", value: w.root?.ar_spaced ?? t("noRoot") }, { key: "gLemma", value: w.ar.full }, ...fields],
+                })
+              }
+            />
+          ) : (
+            <p className="rounded-lg border border-dashed border-line-2 px-3 py-2 text-[12px] text-t3">{t("grammarNoPlace")}</p>
+          )}
+          <IrabBlock w={w} />
+        </div>,
       )}
+      {layer("readings", <ReadingsLayer w={w} />)}
     </div>
   );
 }

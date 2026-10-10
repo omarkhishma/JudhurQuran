@@ -324,6 +324,44 @@ def of_verse(conn: Connection, key: str) -> dict[str, Any]:
     return {"verse_key": key, "data": data, "sources": _credit(conn, used or {SHOWN})}
 
 
+def of_word(conn: Connection, slug: str, at: str | None) -> dict[str, Any] | None:
+    """A word's topics (P15, PV-21): those its verse is gathered under, when the word is read at a place, and the
+    topics whose verses hold the word most often — each with how many of the word's verses it gathers. Quranpedia's
+    links as readers see them (a link the board rejected left out), credited with the data's version (D29)."""
+    lemma = rows(conn, "select id from content.lemmas where slug = :s", {"s": slug})
+    if not lemma:
+        return None
+    here = of_verse(conn, ":".join(at.split(":")[:2])) if at else None
+    v = _View(conn)
+    found = rows(
+        conn,
+        """select l.id as link, l.topic_id, l.verse_key from content.topic_links l
+           where l.source_id = :s and l.verse_key in (
+             select distinct v.key from content.words w join content.verses v on v.id = w.verse_id
+             where w.lemma_id = :lemma)""",
+        {"s": SHOWN, "lemma": lemma[0]["id"]},
+    )
+    kept = board.marked(conn, LAYER, [dict(r) for r in found], key="link")
+    counts: Counter[str] = Counter()
+    for r in kept:
+        counts[r["topic_id"]] += 1
+    ids = [tid for tid, _ in counts.most_common() if v.seen(tid)][:8]
+    every = _rows(conn, v, list({*ids, *(p for tid in ids if (p := v.parent(tid)))}))
+    recurring = []
+    for tid in ids:
+        x = every[tid] | {"word_verses": counts[tid]}
+        p = x["parent_id"]
+        x["parent_name"] = every[p]["name"] if p else None
+        recurring.append(x)
+    used = _sources_of(recurring) | ({SHOWN} if recurring else set())
+    return {
+        "slug": slug,
+        "here": here,
+        "recurring": recurring,
+        "sources": _credit(conn, used | set((here or {}).get("sources", {}))),
+    }
+
+
 def coverage(conn: Connection) -> dict[str, Any]:
     """How many verses of each sūra a topic gathers: Quranpedia's links (research 06: almost none after sūra 39) and
     the verses the board has placed since."""

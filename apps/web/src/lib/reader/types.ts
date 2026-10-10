@@ -176,6 +176,21 @@ export type ParticleEntry = {
   source: { id: string; title_ar: string; title_en: string; author_ar: string; author_en: string; edition_ar: string | null; licence: string; licence_url: string | null; attribution_ar: string; attribution_en: string };
 };
 
+/** What the Tafsir Center gives for a written word, verbatim (P13, D33): its meaning in this place, its sarf statement,
+ * its iʿrāb, the readers' difference — alone and joined to the next word — with what it means, and a note on its
+ * spelling. A token the Center reads as two words gives both, in order. */
+export type Readings = { same: boolean; items: { readers: string; reading: string }[] };
+export type TcLayers = {
+  meaning: string[];
+  sarf: string[];
+  irab: string[];
+  qiraat: { alone: Readings; joined: Readings | null }[];
+  qiraat_same: boolean;
+  qiraat_note: string[];
+  rasm: string[];
+  source: { id: string; title_ar: string; title_en: string; url: string; license_url: string; attribution_ar: string; attribution_en: string } | undefined;
+};
+
 export type Occurrence = {
   location: string;
   uri: string;
@@ -192,6 +207,8 @@ export type Occurrence = {
   segments: Segment[];
   glosses: Gloss[];
   meanings_here: MeaningHere[];
+  /** the Tafsir Center's layers for the written word (P13, D33) */
+  tc: TcLayers | null;
   audio: WordAudio | null;
   /** ids of the mushaf signs written on this word (P3.9) */
   signs: string[];
@@ -481,6 +498,48 @@ export type WordRelations = {
   addad: Contrast[];
   fields: FieldRow[];
   sources: Record<string, RelationSource>;
+  /** the near, related and opposite words the administration or the board defined (P14, D31) */
+  defined?: Defined;
+};
+
+/** A link the administration or the board defined, shown on both of its words. */
+export type DefinedLink = {
+  slug: string;
+  rel: "near" | "related" | "opposite";
+  note_ar: string;
+  note_en: string;
+  source?: { work: string; ref: string };
+  defined_on: "here" | "there";
+  by: "administration" | "board";
+  reviewed: boolean;
+  at: string | null;
+  word: { slug: string; ar: string; pos: string | null; occurrences: number; gloss_en: string | null; root_key: string | null; root_spaced: string | null };
+};
+export type Defined = Record<"near" | "related" | "opposite", DefinedLink[]>;
+
+/** A word's Quranic context (P15, D32): the range in force — the administration's or the board's — or none, the
+ * sources' groupings around its verse, and the context's verses with the word and its root's other words. */
+export type WordContext = {
+  word: { location: string; verse_key: string; verse_id: number; text: string };
+  context: {
+    level: "word" | "passage";
+    from: string;
+    to: string;
+    from_id: number;
+    to_id: number;
+    verses: number;
+    title_ar?: string;
+    title_en?: string;
+    statement: { meaning_ar: string; meaning_en: string; note_ar: string } | null;
+    sources: { work: string; ref: string; quote?: string }[];
+    by: "administration" | "board";
+    reviewed: boolean;
+    at: string | null;
+  } | null;
+  groupings: { from: string; to: string; from_id: number; to_id: number; verses: number; sources: { kind: string; source: string; title_ar: string; title_en: string | null; topic_id?: string }[] }[];
+  verses: { id: number; key: string; surah: number; ayah: number; text_qpc: string; number_text: string; tokens: { position: number; text: string }[] }[];
+  verses_more: number;
+  same_root: { location: string; verse_id: number; token_from: number; token_to: number; text_uthmani: string; lemma_slug: string | null }[];
 };
 export type SurahCard = {
   card: {

@@ -12,7 +12,8 @@ export type TermId =
   | "form2" | "form3" | "form4" | "form5" | "form6" | "form7" | "form8" | "form9" | "form10"
   | "pronoun" | "particle" | "muqattaat" | "nounOfPlace" | "intensive" | "adjective" | "definite"
   | "sense" | "corpus" | "lexicalLevel"
-  | "wujuh" | "furuq" | "addad" | "asbab" | "makkiMadani"; // prettier-ignore
+  | "wujuh" | "furuq" | "addad" | "asbab" | "makkiMadani"
+  | "layerContextual" | "layerLexical" | "layerSemantic" | "layerMorphological" | "layerGrammatical"; // prettier-ignore
 
 /** Corpus verb form number → its card. */
 export const FORM_TERM: Partial<Record<number, TermId>> = {

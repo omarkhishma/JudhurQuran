@@ -21,11 +21,13 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("Meanings opens with al-Muyassar's meaning of this very phrase, credited and marked display-only", async ({ page }) => {
-  const w = await api<W>(page, "/words/amana?limit=0&at=2:3:2");
+test("Meanings opens with what this very place means: the Tafsir Center's meaning, then al-Muyassar's of the phrase, credited and marked display-only (P15)", async ({ page }) => {
+  const w = await api<W & { occurrence: { tc: { meaning: string[] } } }>(page, "/words/amana?limit=0&at=2:3:2");
   const m = w.occurrence.meanings_here[0];
   await page.goto("/quran/2?w=amana&at=2:3:2#v3");
-  const first = meanings(page).locator(".sense-row").first();
+  const here = meanings(page).locator("#layer-contextual .sense-row");
+  await expect(here.first()).toContainText(w.occurrence.tc.meaning[0]);
+  const first = here.filter({ hasText: m.title_ar }).first();
   await expect(first).toContainText(m.phrase_ar);
   await expect(first).toContainText(m.meaning_ar);
   await expect(first).toContainText("المعنى في هذا الموضع");

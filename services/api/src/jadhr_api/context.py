@@ -219,6 +219,15 @@ def word_context(conn: Connection, location: str) -> dict[str, Any] | None:
            where id between :a and :b order by id""",
         {"a": a, "b": shown_b},
     )
+    toks: dict[int, list[dict[str, Any]]] = {}
+    for tk in rows(
+        conn,
+        "select verse_id, position, text from content.tokens where verse_id between :a and :b order by verse_id, position",
+        {"a": a, "b": shown_b},
+    ):
+        toks.setdefault(tk["verse_id"], []).append({"position": tk["position"], "text": tk["text"]})
+    for v in verses:
+        v["tokens"] = toks.get(v["id"], [])
     same_root = (
         rows(
             conn,

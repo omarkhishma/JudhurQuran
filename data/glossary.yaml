@@ -595,3 +595,58 @@ terms:
   en:
     label: Lexical level
     body: 'A number from 1 to 5 describing how common a verse''s words are in the Quran, not how hard its meaning is: 1 when every word occurs 20 times or more in the Quran, rising with the share of rarer words — up to 15% → 2, up to 30% → 3, up to 50% → 4, more → 5. A word is counted by its lemma; the disjointed letters are not counted.'
+- key: layerContextual
+  category: meaning
+  jump_target: senses
+  href: null
+  sort_order: 56
+  ar:
+    label: المعنى السياقي
+    body: 'معنى الكلمة في موضعها، كما يحدّده سياقها: الآيات المتصلة قبلها وبعدها التي تؤلّف فكرة واحدة، لا الآية وحدها. تحدّد إدارة جذر حدود هذا السياق، ويُعرض معه ما قاله أهل التفسير والغريب في معنى الكلمة في هذا الموضع، كلٌّ منسوب إلى صاحبه.'
+  en:
+    label: Contextual meaning
+    body: 'What a word means where it stands, as its context sets it: the connected verses before and after it that make one idea, not the verse alone. Jadhr''s administration sets the bounds of that context; beside it are what the commentators and the books of gharīb say the word means in this place, each credited.'
+- key: layerLexical
+  category: meaning
+  jump_target: senses
+  href: null
+  sort_order: 57
+  ar:
+    label: المعنى المعجمي
+    body: 'معنى الكلمة كما تذكره المعاجم مجرّدًا عن موضع بعينه: أصل معنى الجذر، وما تفرّع منه في هذه الكلمة، كما في «مقاييس اللغة» و«المفردات» وسائر المعاجم.'
+  en:
+    label: Lexical meaning
+    body: 'What a word means as the dictionaries give it, apart from any one place: the root''s core idea and what this word makes of it, as in the Maqāyīs, al-Mufradāt and the other lexica.'
+- key: layerSemantic
+  category: meaning
+  jump_target: senses
+  href: null
+  sort_order: 58
+  ar:
+    label: المعنى الدلالي
+    body: 'موقع الكلمة في شبكة معاني القرآن: الوجوه التي جاءت عليها في مواضعها المختلفة، والكلمات القريبة منها والمقابلة لها والفروق بينها، والحقول الدلالية التي تنتمي إليها، والموضوعات التي ترد فيها.'
+  en:
+    label: Semantic meaning
+    body: 'Where a word stands among the Quran''s meanings: the senses it carries across its places, the words near it and opposite to it and how they differ, the semantic fields it belongs to, and the topics it appears in.'
+- key: layerMorphological
+  category: meaning
+  jump_target: patterns
+  href: null
+  sort_order: 59
+  ar:
+    label: المعنى الصرفي
+    body: 'ما يضيفه الوزن إلى معنى الجذر: فمن الجذر نفسه يدلّ «كاتب» على من يفعل، و«مكتوب» على ما وقع عليه الفعل، و«مكتب» على مكانه. يُعرض وزن الكلمة وما يقوله علماء الصرف في دلالته.'
+  en:
+    label: Morphological meaning
+    body: 'What the pattern adds to the root''s meaning: from one root, kātib names the one who writes, maktūb what is written, maktab the place of writing. The word''s pattern is shown with what the sarf scholars say it conveys.'
+- key: layerGrammatical
+  category: meaning
+  jump_target: senses
+  href: null
+  sort_order: 60
+  ar:
+    label: المعنى النحوي
+    body: 'وظيفة الكلمة في جملتها: إعرابها — أفاعل هي أم مفعول أم غير ذلك — وعلامة إعرابها، وما يبيّنه ذلك من صلتها بما حولها.'
+  en:
+    label: Grammatical meaning
+    body: 'The word''s role in its sentence — subject, object or another — and its case or mood, with what that shows of how it relates to the words around it.'
