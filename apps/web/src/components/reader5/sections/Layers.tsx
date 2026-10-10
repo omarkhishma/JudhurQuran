@@ -17,15 +17,23 @@ import { SourceTopics } from "../SourceTopics";
 import { useWordRelations } from "./Wujuh";
 
 /** One layer of a word's meaning (P15, D30): its name, dotted for its plain-language card, a line of what it holds,
- * and its body when open. A door from the data card opens it and brings it into view. */
+ * and its body when open. A door from the data card opens it and brings it into view. The dotted name is a control of
+ * its own beside the toggle, never inside it: a button holds no button. */
 export function MeaningLayer({ id, label, term, summary, open, onToggle, children }: { id: LayerId; label: string; term: string | null; summary?: ReactNode; open: boolean; onToggle: () => void; children: ReactNode }) {
   return (
     <section className="meaning-layer" id={`layer-${id}`} data-layer={id}>
-      <button type="button" className="meaning-layer-head" aria-expanded={open} onClick={onToggle}>
-        <span className="text-[13px] font-semibold text-t1">{term ? <Term id={term as never}>{label}</Term> : label}</span>
-        {summary && <span className="min-w-0 flex-1 truncate text-[11.5px] text-t3">{summary}</span>}
-        <span className="layer-chev" aria-hidden="true">▾</span>
-      </button>
+      <div className="meaning-layer-head">
+        {term ? (
+          <span className="shrink-0 text-[13px] font-semibold text-t1">
+            <Term id={term as never}>{label}</Term>
+          </span>
+        ) : null}
+        <button type="button" className="meaning-layer-toggle" aria-expanded={open} onClick={onToggle}>
+          <span className={"text-[13px] font-semibold text-t1" + (term ? " sr-only" : "")}>{label}</span>
+          {summary && <span className="min-w-0 flex-1 truncate text-[11.5px] text-t3">{summary}</span>}
+          <span className="layer-chev ms-auto" aria-hidden="true">▾</span>
+        </button>
+      </div>
       {open && <div className="meaning-layer-body">{children}</div>}
     </section>
   );

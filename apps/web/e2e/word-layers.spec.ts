@@ -61,7 +61,7 @@ test("the layers of a word's meaning, each from its sources, and the data card's
   // the data card's door opens the morphological layer: the Center's sarf statement of this word
   await p.locator(".data-door").nth(2).click();
   const morph = p.locator("#layer-morphological");
-  await expect(morph.locator(".meaning-layer-head")).toHaveAttribute("aria-expanded", "true");
+  await expect(morph.locator(".meaning-layer-toggle")).toHaveAttribute("aria-expanded", "true");
   await expect(morph).toContainText(w.occurrence.tc.sarf[0]);
   // the grammatical layer: the Center's iʿrāb of the word, and of the verse on request
   const gram = p.locator("#layer-grammatical");
@@ -70,7 +70,7 @@ test("the layers of a word's meaning, each from its sources, and the data card's
   const irab = await api<{ text: string }>(page, "/verses/2:255/irab");
   await expect(gram.locator("p.whitespace-pre-line")).toHaveText(irab.text);
   // the readings: opened from its head
-  await p.locator(".meaning-layer-head", { hasText: "القراءات والرسم" }).click();
+  await p.locator(".meaning-layer-head", { hasText: "القراءات والرسم" }).locator(".meaning-layer-toggle").click();
   await expect(p.locator("#layer-readings")).toContainText(w.occurrence.tc.qiraat_same ? "لا خلاف بين القراء في هذا الموضع." : "القراءات");
   await morph.scrollIntoViewIfNeeded();
   await shoot(page, `panel-morph-${test.info().project.name}`);

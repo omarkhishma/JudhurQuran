@@ -6440,13 +6440,25 @@ a.wotd-pill:hover {
   gap: 8px;
   width: 100%;
   min-height: 44px;
-  padding: 8px 12px;
+  padding-inline-start: 12px;
+}
+.meaning-layer-toggle {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px 8px 0;
   text-align: start;
 }
-.meaning-layer-head[aria-expanded="false"] .layer-chev {
+[dir="rtl"] .meaning-layer-toggle {
+  padding: 8px 0 8px 12px;
+}
+.meaning-layer-toggle[aria-expanded="false"] .layer-chev {
   transform: rotate(-90deg);
 }
-[dir="rtl"] .meaning-layer-head[aria-expanded="false"] .layer-chev {
+[dir="rtl"] .meaning-layer-toggle[aria-expanded="false"] .layer-chev {
   transform: rotate(90deg);
 }
 .meaning-layer {
