@@ -221,3 +221,14 @@ def test_the_endpoint_asks_for_a_question_or_a_reading() -> None:
     assert client.get("/api/v1/ask", params={"intent": "surah", "surah": 200}).status_code == 422
     d = client.get("/api/v1/ask", params={"intent": "surah", "surah": 112}).json()
     assert d["answer"]["surah"]["number"] == 112 and d["understood"]["how"] == "given"
+
+
+def test_the_resolver_names_a_word_or_a_root_or_nothing() -> None:
+    """`/ask/resolve` (the mind maps' start page): the questions' resolver on its own."""
+    got = lambda q: client.get("/api/v1/ask/resolve", params={"q": q}).json()["subject"]  # noqa: E731
+    assert got("ر ح م")["key"] == "رحم" and got("ر ح م")["kind"] == "root"
+    assert got("الصبر")["slug"] == "sabr"
+    assert got("عِلْم")["slug"] == "ilm" and got("عَلِمَ")["slug"] == "alima"
+    assert got("mercy")["slug"] == "rahma"
+    assert got("زقزقة") is None
+    assert client.get("/api/v1/ask/resolve").status_code == 422

@@ -1525,6 +1525,17 @@ def search(
 
 
 @router.get(
+    "/ask/resolve",
+    summary="What a word, a root's letters or a name names in the Quran: a lemma or a root (the questions' resolver)",
+)
+def ask_resolve(request: Request, q: str = Query(..., min_length=1, max_length=120)) -> Response:
+    from . import ask
+
+    with connect() as conn:
+        return cached(request, {"q": q, "subject": ask.resolve(conn, q)})
+
+
+@router.get(
     "/ask",
     summary="A question in Arabic or English read as an intent and its terms, answered from the data and the sources only",
 )
