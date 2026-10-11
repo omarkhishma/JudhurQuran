@@ -13,10 +13,18 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/split">)
 
 /** The reader and a map side by side (P8.6): `?surah=` opens the reader there, `?map=` the map. */
 export default async function SplitPage({ params, searchParams }: PageProps<"/[locale]/split">) {
-  setRequestLocale((await params).locale);
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("screens");
   const q = await searchParams;
   const n = Number(typeof q.surah === "string" ? q.surah : 1);
   const surah = Number.isInteger(n) && n >= 1 && n <= 114 ? n : 1;
   const map = typeof q.map === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(q.map) ? q.map : null;
-  return <SplitView surah={surah} map={map} />;
+  // the view is two working surfaces with no title bar of its own: its name, for readers of headings only
+  return (
+    <>
+      <h1 className="sr-only">{t("split.title")}</h1>
+      <SplitView surah={surah} map={map} />
+    </>
+  );
 }
