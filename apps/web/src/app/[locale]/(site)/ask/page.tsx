@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { AskScreen, type SurahName } from "@/components/ask/AskScreen";
+import { StatsTabs } from "@/components/stats/StatsTabs";
 import { api } from "@/lib/api";
 import { type AskPayload, askQuery, INTENTS, type Intent, type Reading } from "@/lib/ask";
 import { localized } from "@/lib/seo";
@@ -35,6 +36,7 @@ export default async function AskPage({ params, searchParams }: PageProps<"/[loc
   return (
     <div className="mx-auto flex max-w-[880px] flex-col gap-5 px-4 py-10">
       <header className="flex flex-col gap-2">
+        <StatsTabs current="ask" />
         <h1 className="text-[24px] font-semibold">{t("title")}</h1>
         <p className="text-[13.5px] leading-relaxed text-t2">{t("lead")}</p>
       </header>

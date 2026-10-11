@@ -50,3 +50,34 @@ test("the concordance's distribution shows the whole root by revelation order an
   await expect(page.locator("#rpages-t").locator("xpath=ancestor::figure").locator("svg rect")).toHaveCount(604);
   await expect(page.locator("#rspread-t").locator("xpath=ancestor::figure")).toContainText(new Intl.NumberFormat("ar-EG").format(d.total));
 });
+
+test("mind maps have a start page: a word or a root typed in any spelling opens its map, with examples; the analysis pages lead to one another (P16.4)", async ({ page }) => {
+  await page.goto("/mindmap");
+  await expect(page.getByRole("heading", { name: "خريطة ذهنية", level: 1 })).toBeVisible();
+  const tabs = page.getByRole("navigation", { name: "التحليل" });
+  await expect(tabs.getByRole("link")).toHaveText(["القرآن بالأرقام", "أنماط وعلاقات", "خرائط ذهنية", "اسأل القرآن"]);
+  await expect(tabs.getByRole("link", { name: "خرائط ذهنية" })).toHaveAttribute("aria-current", "page");
+  // a word with its article, as a reader types it
+  await page.getByRole("textbox", { name: "كلمة أو جذر" }).fill("الصبر");
+  await page.getByRole("button", { name: "اعرض الخريطة" }).click();
+  await expect(page).toHaveURL(/\/mindmap\?word=sabr/);
+  await expect(page.getByRole("heading", { name: "خريطة الكلمة صَبْر" })).toBeVisible();
+  // a root's letters, and a name nothing holds
+  await page.goto("/mindmap");
+  await page.getByRole("textbox", { name: "كلمة أو جذر" }).fill("ر ح م");
+  await page.getByRole("button", { name: "اعرض الخريطة" }).click();
+  await expect(page).toHaveURL(new RegExp(`/mindmap\\?root=${encodeURIComponent("رحم")}`));
+  await page.goto("/mindmap");
+  await page.getByRole("textbox", { name: "كلمة أو جذر" }).fill("زقزقة");
+  await page.getByRole("button", { name: "اعرض الخريطة" }).click();
+  await expect(page.getByRole("status")).toHaveText("لم نجد في القرآن كلمة أو جذرًا باسم «زقزقة».");
+  // an example, and the tabs from the statistics page
+  await page.getByRole("link", { name: "ع ل م" }).click();
+  await expect(page.getByRole("heading", { name: "خريطة الجذر ع ل م" })).toBeVisible();
+  await page.goto("/stats");
+  await page.getByRole("navigation", { name: "التحليل" }).getByRole("link", { name: "خرائط ذهنية" }).click();
+  await expect(page).toHaveURL(/\/mindmap$/);
+  // and from the home page
+  await page.goto("/");
+  await expect(page.locator('a.hub-tile[href="/mindmap"]')).toContainText("خرائط ذهنية");
+});

@@ -5,6 +5,7 @@ import { SurahStats } from "@/components/stats/SurahStats";
 import { api } from "@/lib/api";
 import { localized } from "@/lib/seo";
 import type { Distribution, SurahDetail } from "@/lib/stats";
+import { StatsTabs } from "@/components/stats/StatsTabs";
 
 export const revalidate = 86400;
 
@@ -31,6 +32,7 @@ export default async function SurahStatsPage({ params }: PageProps<"/[locale]/st
   const dist = d.top_roots[0] ? await api<Distribution>(`/stats/distribution?root=${encodeURIComponent(d.top_roots[0].key)}`) : null;
   return (
     <div className="mx-auto flex max-w-[1180px] flex-col gap-5 px-4 py-10">
+      <StatsTabs current={null} />
       <SurahStats d={d} dist={dist} />
     </div>
   );

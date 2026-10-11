@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { RelationsScreen } from "@/components/stats/RelationsScreen";
+import { StatsTabs } from "@/components/stats/StatsTabs";
 import { api } from "@/lib/api";
 import { localized } from "@/lib/seo";
 import type { Collocations, NetworkData, Similarity } from "@/lib/stats";
@@ -27,6 +28,7 @@ export default async function RelationsPage({ params }: PageProps<"/[locale]/sta
   return (
     <div className="mx-auto flex max-w-[1180px] flex-col gap-5 px-4 py-10">
       <header className="flex flex-col gap-2">
+        <StatsTabs current="relations" />
         <h1 className="text-[24px] font-semibold">{t("relTitle")}</h1>
         <p className="max-w-[760px] text-[13.5px] leading-relaxed text-t2">{t("relLead")}</p>
         <p className="max-w-[760px] text-[12px] leading-relaxed text-t3">{t("descriptiveOnly")}</p>

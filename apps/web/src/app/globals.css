@@ -8231,3 +8231,37 @@ text.chart-axis.is-ar {
 .askq-compare thead th {
   border-top: none;
 }
+
+/* the analysis surfaces' tabs (P16, P18): the Quran in numbers, patterns and relations, mind maps, ask the Quran */
+.stats-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.stats-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--t2);
+  font-size: 13px;
+  text-decoration: none;
+}
+.stats-tab:hover {
+  color: var(--t1);
+  border-color: var(--line-2);
+}
+.stats-tab[aria-current="page"] {
+  background: var(--t1);
+  border-color: var(--t1);
+  color: var(--card);
+  font-weight: 500;
+}
+@media (max-width: 899px) {
+  .stats-tab {
+    min-height: 40px;
+  }
+}

@@ -223,6 +223,10 @@
       "askQuran": {
         "title": "Ask the Quran",
         "purpose": "Your question in your words — how often, where, what differs — answered from the data"
+      },
+      "mindmap": {
+        "title": "Mind maps",
+        "purpose": "A word or a root at the centre, and what it is tied to around it: its root, family, pattern and topics"
       }
     },
     "nameGloss": "jadhr, “root”",
@@ -4760,7 +4764,19 @@
     "mindKeyRelation": "relation",
     "mindOpenMap": "Open the root's map in the editor",
     "rootSpreadCaption": "Its words per thousand in each sūra. It occurs {total} times in {verses} verses. Press a column to open the sūra in numbers.",
-    "countIn": "{n} times"
+    "countIn": "{n} times",
+    "tabsLabel": "Analysis",
+    "tabStats": "The Quran in numbers",
+    "tabRelations": "Patterns and relations",
+    "tabMindmap": "Mind maps",
+    "tabAsk": "Ask the Quran",
+    "mindPickLabel": "A word or a root",
+    "mindPickPlaceholder": "Type a word or a root… e.g. patience, or r-h-m",
+    "mindPickGo": "Show the map",
+    "mindPickNone": "No word or root in the Quran goes by “{q}”.",
+    "mindPickRoots": "Roots' maps",
+    "mindPickWords": "Words' maps",
+    "mindPickReader": "From the reader: tap any word in the text, then “Mind map” in its panel. Every root's page has a button to its map."
   },
   "ask": {
     "title": "Ask the Quran",

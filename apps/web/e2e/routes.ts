@@ -28,6 +28,8 @@ export const STATIC = [
   "/ask",
   "/ask?q=%D9%83%D9%85%20%D9%85%D8%B1%D8%A9%20%D8%B0%D9%83%D8%B1%D8%AA%20%D9%83%D9%84%D9%85%D8%A9%20%D8%A7%D9%84%D8%B1%D8%AD%D9%85%D8%A9",
   `/mindmap?root=${enc("علم")}`,
+  "/mindmap",
+  "/mindmap?word=ilm",
   "/mushaf/50",
   "/word/1:1:1",
   "/roots",

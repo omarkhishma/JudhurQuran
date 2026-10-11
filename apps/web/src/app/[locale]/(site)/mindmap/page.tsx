@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { MindMap, type MindData } from "@/components/stats/MindMap";
-import { Link } from "@/i18n/navigation";
+import { MindMapPicker } from "@/components/stats/MindMapPicker";
+import { StatsTabs } from "@/components/stats/StatsTabs";
 import { api } from "@/lib/api";
 import { localized } from "@/lib/seo";
 
@@ -43,19 +44,17 @@ export default async function MindMapPage({ params, searchParams }: PageProps<"/
   const t = await getTranslations("stats");
   const word = typeof sp.word === "string" ? sp.word.slice(0, 80) : "";
   const root = typeof sp.root === "string" ? sp.root.slice(0, 8) : "";
-  if (!word && !root) notFound();
-  const data = await load(word, root);
-  if (!data) notFound();
+  // nothing named: where a map starts — a word or a root to type, examples, and the reader's way
+  const data = word || root ? await load(word, root) : null;
+  if ((word || root) && !data) notFound();
   return (
     <div className="mx-auto flex max-w-[1180px] flex-col gap-4 px-4 py-8">
-      <header className="flex flex-col gap-1.5">
-        <nav className="text-[12px] text-t3">
-          <Link href="/stats" className="hover:underline">{t("title")}</Link>
-        </nav>
+      <header className="flex flex-col gap-2">
+        <StatsTabs current="mindmap" />
         <h1 className="text-[22px] font-semibold">{t("mindTitle")}</h1>
         <p className="max-w-[760px] text-[13px] leading-relaxed text-t2">{t("mindLead")}</p>
       </header>
-      <MindMap data={data} />
+      {data ? <MindMap data={data} /> : <MindMapPicker />}
     </div>
   );
 }

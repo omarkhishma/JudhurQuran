@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { StatsScreen } from "@/components/stats/StatsScreen";
+import { StatsTabs } from "@/components/stats/StatsTabs";
 import { api } from "@/lib/api";
 import { localized } from "@/lib/seo";
 import type { Frequency, MatrixData, Overview, RankFrequency, SurahProfiles } from "@/lib/stats";
@@ -28,6 +29,7 @@ export default async function StatsPage({ params }: PageProps<"/[locale]/stats">
   return (
     <div className="mx-auto flex max-w-[1180px] flex-col gap-5 px-4 py-10">
       <header className="flex flex-col gap-2">
+        <StatsTabs current="stats" />
         <h1 className="text-[24px] font-semibold">{t("title")}</h1>
         <p className="max-w-[760px] text-[13.5px] leading-relaxed text-t2">{t("lead")}</p>
         <p className="max-w-[760px] text-[12px] leading-relaxed text-t3">{t("descriptiveOnly")}</p>
