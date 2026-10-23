@@ -379,3 +379,18 @@ def test_the_meanings_are_searched_in_the_sources_words() -> None:
             assert s["kind"] == "translation" and lang[s["work"]["id"]] == "en" and s["work"]["title_en"]
             assert "⁨" in s["excerpt"]
     assert search("2:255")["results"]["meanings"] == [] and search("2:255")["totals"].get("meanings", 0) == 0
+
+
+def test_a_failed_statement_in_the_index_path_still_falls_back_to_postgres(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The index path shares the request's connection: a statement of its that fails (a cold cache over the statement
+    timeout, as after a restart) leaves the transaction aborted, and the fallback must not inherit it."""
+    from jadhr_api import search_os
+    from sqlalchemy import text
+
+    def failing(conn, *_):
+        conn.execute(text("select 1 / 0"))
+
+    monkeypatch.setattr(search_os, "search", failing)
+    r = client.get("/api/v1/search", params={"q": "علم", "limit": 6})
+    assert r.status_code == 200, r.text[:300]
+    assert r.json()["engine"] == "postgres" and r.json()["results"]["lemmas"]

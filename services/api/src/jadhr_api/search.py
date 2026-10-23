@@ -301,6 +301,8 @@ def search(
             try:
                 out = search_os.search(conn, es, q, limit, offset, only)
             except Exception:  # an index problem must never take search down: fall back
+                # on a clean transaction: a statement of the index path that failed has aborted this one
+                conn.rollback()
                 out = None
         if out is None:
             out = search_pg(conn, q, limit, offset, only)
