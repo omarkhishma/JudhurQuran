@@ -96,6 +96,8 @@ export type CanvasTools = {
   addCards: (nodes: GraphNode[], edges: GraphEdge[], label: string, at?: { x: number; y: number }) => void;
   select: (id: string | null) => void;
   center: (id: string) => void;
+  /** a step run once the cards just set are drawn (a card selected and centred after it is added) */
+  whenDrawn: (fn: () => void) => void;
   toast: (text: string, undo?: boolean) => void;
   /** cards that match a search; the others are dimmed (EDT-039). Null: no search. */
   setMatches: (ids: string[] | null) => void;
@@ -351,6 +353,19 @@ function CanvasInner({
     live.current = { nodes, edges };
   });
 
+  // what waits for the cards just set to be drawn (a fit, a card centred): a frame after setNodes can come before React
+  // commits them, and a fit then frames where the cards were — a new map opened off its own focus, by its places before
+  // the layout. It runs after the commit that holds them, when xyflow's store has them too (taken in a child's effect).
+  const [drawTick, setDrawTick] = useState(0);
+  const afterDraw = useRef<(() => void)[]>([]);
+  const whenDrawn = useCallback((fn: () => void) => {
+    afterDraw.current.push(fn);
+    setDrawTick((n) => n + 1);
+  }, []);
+  useEffect(() => {
+    for (const fn of afterDraw.current.splice(0)) fn();
+  }, [nodes, drawTick]);
+
   // a message on the canvas: one at a time, with Undo for 5.2 s when it can be undone, else for 2.6 s (HWF-26)
   const [toastNow, setToastNow] = useState<Toast | null>(null);
   const toast = useCallback((text: string, undo = false) => setToastNow({ id: Date.now() + Math.random(), text, undo }), []);
@@ -403,9 +418,9 @@ function CanvasInner({
       setTimeout(() => setGliding(false), 420);
       commit(label, laid, src.edges);
       // a whole tidy shows the whole map; an extraction shows the card and what it brought, still readable
-      requestAnimationFrame(() => (look?.length ? void rf.fitView({ nodes: look.map((id) => ({ id })), padding: 0.2, minZoom: 0.5, maxZoom: 1, duration: 250 }) : fit()));
+      whenDrawn(() => (look?.length ? void rf.fitView({ nodes: look.map((id) => ({ id })), padding: 0.2, minZoom: 0.5, maxZoom: 1, duration: 250 }) : fit()));
     },
-    [rf, commit, t, fit],
+    [rf, commit, t, fit, whenDrawn],
   );
 
   // First layout with measured card sizes.
@@ -421,12 +436,10 @@ function CanvasInner({
         const roots = laid.filter((n) => n.data.kind === "root");
         const near = roots.length ? laid.filter((n) => n.data.kind === "root" || rf.getEdges().some((e) => roots.some((r) => r.id === e.source) && e.target === n.id)) : laid.filter((n) => n.data.kind === "lemma");
         const anchor = focus.length ? focus : near;
-        requestAnimationFrame(() =>
-          rf.fitView({ nodes: anchor.length ? anchor : undefined, padding: 0.25, minZoom: 0.6, maxZoom: 1 }),
-        );
+        whenDrawn(() => void rf.fitView({ nodes: anchor.length ? anchor : undefined, padding: 0.25, minZoom: 0.6, maxZoom: 1 }));
       });
     }
-  }, [initialized, rf]);
+  }, [initialized, rf, whenDrawn]);
 
   const undo = useCallback(() => {
     const last = past[past.length - 1];
@@ -1199,11 +1212,11 @@ function CanvasInner({
         void layout(rf.getNodes(), rf.getEdges()).then((laid) => {
           if (steps.current !== at) return;
           setNodes(laid);
-          requestAnimationFrame(() => fit());
+          whenDrawn(fit);
         });
       }, 250);
     },
-    [commit, rf, fit],
+    [commit, rf, fit, whenDrawn],
   );
 
   const [matches, setMatchList] = useState<string[] | null>(null);
@@ -1230,6 +1243,7 @@ function CanvasInner({
     addCards,
     select,
     center,
+    whenDrawn,
     toast,
     setMatches,
     cardName,

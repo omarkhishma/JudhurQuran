@@ -87,7 +87,7 @@ export function SplitReceiver({ readOnly = false, saveNow }: { readOnly?: boolea
         tl.addCards(nodes, edges, typeof raw.label === "string" ? raw.label.slice(0, 120) : t("doMergeProposal"));
         if (nodes[0]) {
           const first = nodes[0].id;
-          requestAnimationFrame(() => {
+          tl.whenDrawn(() => {
             live.current.select(first);
             live.current.center(first);
           });
@@ -117,7 +117,7 @@ export function SplitReceiver({ readOnly = false, saveNow }: { readOnly?: boolea
         const had = live.current.nodes.some((n) => n.id === lid);
         live.current.addCards(got.nodes, got.edges, t("doSendWord", { word: got.word }));
         // the word picked once the map holds it
-        requestAnimationFrame(() => {
+        live.current.whenDrawn(() => {
           live.current.select(lid);
           live.current.center(lid);
         });
