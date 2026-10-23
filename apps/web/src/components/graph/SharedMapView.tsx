@@ -14,6 +14,7 @@ import { useSharedPresence } from "@/lib/graph/presence";
 import { isGone, readShared, type SharedDoc } from "@/lib/graph/shared";
 import type { GraphEdge, GraphNode } from "@/lib/graph/types";
 import { translitOn, useGraphUi } from "@/lib/graph/uiPrefs";
+import { useWindowTitle } from "@/lib/windowTitle";
 import { CommentsPanel, SharedMapContext, useMapComments } from "./Comments";
 import { Details, DetailsRail } from "./Details";
 import { GraphCanvas, useCanvasTools } from "./GraphCanvas";
@@ -128,6 +129,7 @@ function SharedHeader({ first, newer, onShowNewer, onComments }: { first: Loaded
   const { presence } = useSharedPresence(first.id, false);
   const open = (comments.data?.data ?? []).filter((c) => !c.parent_id && !c.resolved_at && !c.deleted).length;
   const title = first.title || t("untitled");
+  useWindowTitle(title);
   async function keepCopy() {
     const id = await createGraph({ title: t("myCopyTitle", { title }), kind: first.kind, nodes: tools.nodes, edges: tools.edges });
     router.push(`/graph/edit/${id}`);

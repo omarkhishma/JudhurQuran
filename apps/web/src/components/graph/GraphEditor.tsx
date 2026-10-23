@@ -16,6 +16,7 @@ import { upgrade } from "@/lib/graph/migrate";
 import { cleanTitle } from "@/lib/graph/sanitize";
 import { translitOn, useGraphUi } from "@/lib/graph/uiPrefs";
 import { useWhereSaved } from "@/lib/graph/whereSaved";
+import { useWindowTitle } from "@/lib/windowTitle";
 import { SharedMapContext } from "./Comments";
 import { Details, DetailsRail } from "./Details";
 import { EditorHeader } from "./EditorHeader";
@@ -139,6 +140,7 @@ function EditorInner({
   }, [locked]);
   const router = useRouter();
   const [title, setTitle] = useState(doc.title);
+  useWindowTitle(title || t("untitled"));
   // the title as typed, read by a save scheduled before the next render
   const titleRef = useRef(doc.title);
   const [status, setStatus] = useState<Status>("saved");

@@ -49,6 +49,7 @@ test("a shared map draws its verses from the dataset, never from the link (F3, l
   await page.goto(`/graph/view#${shareFragment(forged)}`);
   const cards = page.locator(".graph-card");
   await expect(cards).toHaveCount(2);
+  await expect(page).toHaveTitle("خريطة • جذر");
   await expect(page.locator(".react-flow")).not.toContainText("مزور");
   // the whole verse, word for word as the dataset holds it
   const whole = page.locator('.react-flow__node[data-id="verse:2:255"] p.quran');
@@ -599,6 +600,8 @@ test("the editor has its own header: the title edited in place, the way back to 
   // the title: Escape leaves it, an empty one keeps the old, Enter keeps the new
   const title = header.locator(".editor-title h1");
   const was = await title.innerText();
+  // the tab carries the map's name, kept in this browser (WCAG 2.4.2)
+  await expect(page).toHaveTitle(`${was} • جذر`);
   await header.locator(".editor-title").click();
   const input = header.getByRole("textbox", { name: "إعادة التسمية" });
   await input.fill("لن يبقى");
@@ -612,6 +615,7 @@ test("the editor has its own header: the title edited in place, the way back to 
   await input.fill("  عالمون  ");
   await input.press("Enter");
   await expect(title).toHaveText("عالمون");
+  await expect(page).toHaveTitle("عالمون • جذر");
   await expect.poll(async () => (await storedGraph(page, id))?.title, { timeout: 10_000 }).toBe("عالمون");
   // the keys, from the header's ? and from the key itself
   await header.getByRole("button", { name: "اختصارات لوحة المفاتيح" }).click();
@@ -640,6 +644,10 @@ test("the editor has its own header: the title edited in place, the way back to 
   await page.reload();
   await expect(page.locator(".graph-card").first()).toBeVisible();
   await expect(page.locator(".graph-details")).toHaveCount(0);
+  // leaving for My maps gives the tab back to that page
+  await header.getByRole("link", { name: "خرائطي" }).click();
+  await expect(page).toHaveURL(/\/graph$/);
+  await expect(page).toHaveTitle("خرائطي • جذر");
 });
 
 test("the library finds a card on the map, says what each kind is, adds from the dataset by kind and by dropping, and knows the map's roots (P8.1-A, EDT-032…047, QAN-15)", async ({ page, isMobile }) => {

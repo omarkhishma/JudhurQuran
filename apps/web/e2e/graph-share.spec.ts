@@ -141,6 +141,7 @@ test("a map shared for comments: its link, the owner's saves following it, comme
     // the reader: read-only, the owner named, Meaning and Comments only
     await r.page.goto(`/graph/shared/${gid}`);
     await expect(r.page.locator(".editor-header")).toContainText(`شاركها ${o.name}`);
+    await expect(r.page).toHaveTitle(`${first.title} • جذر`);
     await expect(r.page.locator(".editor-header")).toContainText("للقراءة والتعليق");
     const rd = r.page.getByRole("complementary", { name: "التفاصيل" });
     await expect(rd.getByRole("tab")).toHaveText(["المعنى", "التعليقات"]);
