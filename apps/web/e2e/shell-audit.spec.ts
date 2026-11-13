@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 test("the shared nav offers Ask, the plain way in (SHL-32)", async ({ page, isMobile }) => {
   test.skip(isMobile, "the strip folds into the menu on phones");
   await page.goto("/library");
-  const ask = page.getByRole("navigation", { name: "التنقل الرئيسي" }).getByRole("link", { name: "اسأل", exact: true });
+  const ask = page.getByRole("navigation", { name: "التنقل الرئيسي" }).getByRole("link", { name: "اسأل عن كلمة", exact: true });
   await expect(ask).toHaveAttribute("href", "/read?mode=ask");
 });
 
