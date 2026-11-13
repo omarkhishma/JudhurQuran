@@ -16,6 +16,8 @@
 
 Files: `infra/compose.prod.yml`, `infra/Caddyfile`, `.env.example` (every variable explained).
 
+Two networks: `edge` (caddy, web, api, and the loader for the web cache) and `back` (api, db, search, embed, loader, monitor, backup). The web server reaches the API and nothing behind it. The embedding service is capped at `EMBED_CPUS` (1.5) and `EMBED_MEMORY` (1536m), embeds one search at a time with eight waiting (`EMBED_CONCURRENCY`, `EMBED_QUEUE`), and tells the rest it is busy; the API then answers by words and says so.
+
 ## Owner inputs needed before the first deploy
 
 - A server with Docker (2 vCPU / 6 GB: OpenSearch takes a 1 GB heap by default, `SEARCH_HEAP` to change; the embedding service about 0.8 GB, `EMBED_THREADS` its threads, 2 by default) and the domain pointed at it. The server reaches huggingface.co once, when the embedding service first starts.
@@ -117,6 +119,7 @@ Keep `data/release/<version>/` for good: a recorded release whose folder is gone
 
 ## Things that bite
 
+- **Anything in front of Caddy** (a CDN, a load balancer): every per-address limit, in the API and in the web's proxy, reads the first `X-Forwarded-For` entry, which Caddy writes itself and trusts from no one. Put a service in front and every reader counts as that service's few addresses and shares one limit. Before you add one, set Caddy's `trusted_proxies` to its published ranges, so Caddy passes on the reader's address.
 - **`HOSTNAME=0.0.0.0`** must stay in the web image. Docker sets `HOSTNAME` to the container id; with that, the locale proxy's internal rewrite is treated as an external host and every Arabic page redirect-loops.
 - **`JADHR_API_ORIGIN` is baked into the web build** (the `/api/v1` rewrite). Behind Caddy the rewrite is never used, but a deploy without Caddy must build with the right origin.
 - **The revalidation secret** must be identical on `web` and `loader`; without it the loader reports `failed` and pages keep the old release for up to a day.

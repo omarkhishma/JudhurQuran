@@ -14,6 +14,7 @@ x-logging: &logging
 
 services:
   db:
+    networks: [back]
     image: postgres:17-alpine
     restart: unless-stopped
     logging: *logging
@@ -30,6 +31,7 @@ services:
       retries: 30
 
   search:
+    networks: [back]
     # Derived index (rebuilt by the loader after every release); Postgres stays the source of truth.
     image: opensearchproject/opensearch:2.19.3
     restart: unless-stopped
@@ -50,6 +52,7 @@ services:
   # The embedding service (P17, D34): a reader's search becomes a vector on this server, never elsewhere. Reached by the
   # API only (no port published, no route in Caddy). Its first start fetches the pinned model (~580 MB) into `models`.
   embed:
+    networks: [back]
     build: { context: .., dockerfile: services/embed/Dockerfile }
     restart: unless-stopped
     logging: *logging
@@ -74,6 +77,7 @@ services:
       start_period: 600s
 
   api:
+    networks: [edge, back]
     build: { context: .., dockerfile: services/api/Dockerfile }
     restart: unless-stopped
     logging: *logging
@@ -124,6 +128,7 @@ services:
       - ../data/release:/data/release:ro
 
   web:
+    networks: [edge]
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
@@ -148,6 +153,7 @@ services:
       JADHR_INTERNAL_TOKEN: ${INTERNAL_TOKEN:?set INTERNAL_TOKEN}
 
   caddy:
+    networks: [edge]
     image: caddy:2-alpine
     restart: unless-stopped
     logging: *logging
@@ -168,6 +174,7 @@ services:
   # removed once it is 13 days and 23 hours old, before the next one is made). The content schema needs no backup:
   # it is rebuilt from data/build/<version>. Off-server copies keep the same fourteen days (docs/DEPLOY.md).
   backup:
+    networks: [back]
     image: postgres:17-alpine
     restart: unless-stopped
     logging: *logging
@@ -195,6 +202,7 @@ services:
   # address; what failed is counted in ops.errors (source "monitor", nothing about anyone) and, when ALERT_WEBHOOK
   # is set, posted to it. `python -m jadhr_api.ops errors` lists what went wrong.
   monitor:
+    networks: [back]
     build: { context: .., dockerfile: services/api/Dockerfile }
     restart: unless-stopped
     logging: *logging
@@ -212,6 +220,7 @@ services:
   # One-off, as the database's owner: apply migrations, make or update the API's role, load data/build/<version>,
   # expire the web cache.
   loader:
+    networks: [edge, back]
     profiles: [tools]
     build: { context: .., dockerfile: services/api/Dockerfile }
     cap_drop: [ALL]
@@ -234,6 +243,12 @@ services:
       - ../data/sources.yaml:/data/sources.yaml:ro
       - ../data/release:/data/release:ro
     command: ["sh", "-c", "alembic upgrade head && python -m jadhr_api.dbroles && python -m jadhr_api.loader /data/build/${DATASET_VERSION:?set DATASET_VERSION} /data/sources.yaml"]
+
+# web and caddy reach the API and nothing behind it (delta security review, I9): the database, the index and the
+# embedding service sit on `back`, which only the API, the loader, the monitor and the backups join
+networks:
+  edge:
+  back:
 
 volumes:
   pg:
