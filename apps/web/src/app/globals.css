@@ -1535,6 +1535,10 @@ button.type-chip:hover {
   background: color-mix(in srgb, var(--ring) 14%, var(--card-2));
   border-color: var(--ring);
 }
+/* the count on the tinted current chip one step darker: t3 there fell under AA's 4.5:1 */
+.word-chip.is-current .text-t3 {
+  color: var(--t2);
+}
 .tag-pill {
   font-size: 10.5px;
   padding: 1px 7px;
