@@ -58,6 +58,12 @@ services:
     security_opt: ["no-new-privileges:true"]
     environment:
       JADHR_EMBED_THREADS: ${EMBED_THREADS:-2}
+      # one search embedded at a time, eight let wait; the rest told at once it is busy (the API answers by words)
+      JADHR_EMBED_CONCURRENCY: ${EMBED_CONCURRENCY:-1}
+      JADHR_EMBED_QUEUE: ${EMBED_QUEUE:-8}
+    # the model's arithmetic never takes the whole server from the API and the database
+    cpus: ${EMBED_CPUS:-1.5}
+    mem_limit: ${EMBED_MEMORY:-1536m}
     volumes:
       - models:/models
     healthcheck:

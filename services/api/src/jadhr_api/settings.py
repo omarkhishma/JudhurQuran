@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3210"]
     public_base_url: str = "http://localhost:8000"
     rate_limit_per_minute: int = 600
+    # the requests that cost the most (a search, which embeds it; a question; an analysis; the statistics' scans),
+    # per address per minute, inside the limit above; 0 → a fifth of it
+    heavy_rate_per_minute: int = 0
     # the public API (P10.2b, 08 §8.1): an address without a key, and each key, per minute
     public_rate_per_minute: int = 120
     key_rate_per_minute: int = 600

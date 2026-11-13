@@ -96,3 +96,25 @@ def test_the_service_answers_vectors_and_refuses_what_it_should() -> None:
             assert c.post("/embed", json=bad).status_code == 422, bad
         assert c.post("/embed", content=b"not json").status_code == 400
         assert c.get("/embed").status_code == 405
+
+
+@needs_model
+def test_the_service_says_it_is_busy_rather_than_queue_without_bound(monkeypatch) -> None:
+    """The model's work is bounded (delta security review, M3): with the model busy and the queue full, a request is
+    refused at once with 503, which the API reads as "unavailable" and answers by words; once free, it answers."""
+    from jadhr_embed import server
+    from starlette.testclient import TestClient
+
+    class Busy:
+        def locked(self) -> bool:
+            return True
+
+    with TestClient(server.app) as c:
+        gate = server.state["gate"]
+        monkeypatch.setattr(server, "MAX_WAITING", 0)
+        server.state["gate"] = Busy()
+        r = c.post("/embed", json={"texts": ["صبر"], "kind": "query"})
+        assert r.status_code == 503 and r.json() == {"error": "busy"} and r.headers["retry-after"] == "1"
+        server.state["gate"] = gate
+        assert c.post("/embed", json={"texts": ["صبر"], "kind": "query"}).status_code == 200
+        assert server.state["waiting"] == 0 and not gate.locked()

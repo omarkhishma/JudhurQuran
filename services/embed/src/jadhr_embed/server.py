@@ -7,6 +7,7 @@ into a vector on our own server. It keeps nothing: no request log, no cache of w
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import os
 from contextlib import asynccontextmanager
@@ -21,6 +22,11 @@ from .encoder import Encoder
 
 MAX_TEXTS = 32
 MAX_CHARS = 2000
+# the model's work at once, and the requests let wait for it (delta security review, M3): the API stops waiting after
+# 1.5 s but a queued request would still be computed, so the queue is bounded and the rest are told at once that the
+# service is busy — the API then answers by words and says so
+CONCURRENCY = max(1, int(os.environ.get("JADHR_EMBED_CONCURRENCY", "1")))
+MAX_WAITING = max(0, int(os.environ.get("JADHR_EMBED_QUEUE", "8")))
 
 state: dict[str, Any] = {}
 
@@ -28,6 +34,8 @@ state: dict[str, Any] = {}
 @asynccontextmanager
 async def lifespan(_app: Starlette):
     state["enc"] = Encoder.load(threads=int(os.environ.get("JADHR_EMBED_THREADS", "2")))
+    state["gate"] = asyncio.Semaphore(CONCURRENCY)
+    state["waiting"] = 0
     yield
     state.clear()
 
@@ -58,7 +66,18 @@ async def embed(request: Request) -> JSONResponse:
     # the model's arithmetic runs in a worker thread: the event loop keeps answering health checks
     from starlette.concurrency import run_in_threadpool
 
-    return JSONResponse(await run_in_threadpool(_encode, texts, kind))
+    gate: asyncio.Semaphore = state["gate"]
+    if gate.locked() and state["waiting"] >= MAX_WAITING:
+        return JSONResponse({"error": "busy"}, status_code=503, headers={"Retry-After": "1"})
+    state["waiting"] += 1
+    try:
+        await gate.acquire()
+    finally:
+        state["waiting"] -= 1
+    try:
+        return JSONResponse(await run_in_threadpool(_encode, texts, kind))
+    finally:
+        gate.release()
 
 
 async def healthz(_request: Request) -> JSONResponse:

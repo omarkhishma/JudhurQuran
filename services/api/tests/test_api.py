@@ -521,6 +521,39 @@ def test_internal_token_exempts_server_renders_from_the_rate_limit(monkeypatch) 
     m._hits.clear()
 
 
+def test_searches_questions_and_statistics_count_in_a_tighter_bucket(monkeypatch) -> None:
+    """A search embeds its words and a question may scan the corpus: an address gets a fifth of the general limit for
+    them (delta security review, M3), while its other requests keep the general limit, and server renders stay exempt."""
+    from jadhr_api import main as m
+    from jadhr_api.settings import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "rate_limit_per_minute", 10)
+    monkeypatch.setattr(s, "heavy_rate_per_minute", 0)
+    monkeypatch.setattr(s, "internal_token", "t0ken")
+    m._hits.clear()
+    c = TestClient(m.create_app())
+    who = {"x-forwarded-for": "203.0.113.10"}
+    heavy = ["/api/v1/search?q=%D8%B5%D8%A8%D8%B1&only=lemmas", "/api/v1/stats/overview"]
+    codes = [c.get(heavy[i % 2], headers=who).status_code for i in range(3)]
+    assert codes == [200, 200, 429]  # a fifth of 10
+    assert (
+        c.get("/api/v1/surahs/1", headers=who).status_code == 200
+    )  # the rest still within the general limit
+    assert c.get(heavy[1], headers={**who, "x-jadhr-internal": "t0ken"}).status_code == 200
+    assert c.get(heavy[1], headers={"x-forwarded-for": "203.0.113.11"}).status_code == 200  # another address
+    for path in ("/api/v1/ask", "/api/v1/analyse", "/api/v1/analyse/form", "/api/v1/stats/matrix", "/api/v1/search"):
+        assert m.HEAVY.match(path), path
+    for path in (
+        "/api/v1/searching",
+        "/api/v1/surahs/1",
+        "/api/v1/public/quran/concordance",
+        "/api/v1/asked",
+    ):
+        assert not m.HEAVY.match(path), path
+    m._hits.clear()
+
+
 def test_the_sources_list_names_every_layer_with_its_licence() -> None:
     d = get("/api/v1/sources")
     layers = d["layers"]

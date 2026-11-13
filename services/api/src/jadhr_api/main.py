@@ -1585,6 +1585,9 @@ def search_private(body: _SearchAsk) -> Response:
 # ─── rate limiting (per client IP, sliding minute) ─────────────────────────
 
 _hits: dict[str, deque[float]] = defaultdict(deque)
+# the requests that cost the most, counted again in a tighter bucket of their own (delta security review, M3):
+# a search embeds its words and asks the index several times, a question may scan the corpus, the statistics scan
+HEAVY = re.compile(rf"^{API_PREFIX}/(?:search|ask|analyse|stats)(?:/|$)")
 _swept = [0.0]
 
 
@@ -1741,6 +1744,16 @@ def create_app() -> FastAPI:
             resp = error(429, "rate_limited", "Too many requests; slow down.")
             resp.headers["Retry-After"] = str(int(60 - (now - q[0])) + 1)
             return resp
+        if HEAVY.match(request.url.path):
+            heavy = settings.heavy_rate_per_minute or max(1, settings.rate_limit_per_minute // 5)
+            h = _hits[f"heavy:{ip}"]
+            while h and now - h[0] > 60:
+                h.popleft()
+            if len(h) >= heavy:
+                resp = error(429, "rate_limited", "Too many searches and questions; slow down.")
+                resp.headers["Retry-After"] = str(int(60 - (now - h[0])) + 1)
+                return resp
+            h.append(now)
         q.append(now)
         response: Response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
