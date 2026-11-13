@@ -39,13 +39,32 @@ test("search: live results, kind facets with counts, and hiding a kind removes i
   await expect(page).toHaveURL(/q=%D8%B1%D8%AD%D9%85%D8%A9/);
   const verses = page.locator(".result-group", { has: page.getByRole("heading", { name: "الآيات" }) });
   await expect(verses.locator(".result-row").first()).toBeVisible();
-  await expect(verses.locator("mark").first()).toContainText("رحمة");
+  // the verse is the mushaf's text with the found word marked in it (audit 27 F03): compared by its letters only
+  const marked = await verses.locator("mark").first().evaluate((m) => (m.textContent ?? "").replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, "").replace(/\u0671/g, "\u0627"));
+  expect(marked).toMatch(/رحم/);
+  await expect(verses.locator(".quran").first()).toBeVisible();
   const total = page.locator(".search-bar [aria-live]");
   const before = await total.innerText();
   if (isMobile) await page.getByRole("button", { name: "التصفية" }).click(); // facets fold away on phones
   await page.getByRole("checkbox", { name: /آيات/ }).first().uncheck();
   await expect(verses).toHaveCount(0);
   await expect(total).not.toHaveText(before);
+});
+
+test("search: a single word is answered by its best match, then words before verses; a phrase keeps the verses first (audit 27 F01)", async ({ page }) => {
+  await page.goto("/search?q=" + encodeURIComponent("صبر"));
+  const best = page.getByTestId("best-match");
+  await expect(best).toBeVisible();
+  await expect(best).toContainText("ص ب ر");
+  await expect(best.getByRole("link", { name: "افتح الكلمة" })).toHaveAttribute("href", /\/read\?w=/);
+  const top = async (name: string) => (await page.locator(".result-group", { has: page.getByRole("heading", { name, exact: true }) }).first().boundingBox())!.y;
+  const bestY = (await best.boundingBox())!.y;
+  expect(bestY).toBeLessThan(await top("الكلمات"));
+  expect(await top("الكلمات")).toBeLessThan(await top("الآيات"));
+  // a phrase: the verses lead and no best match is offered
+  await page.goto("/search?q=" + encodeURIComponent("الحمد لله"));
+  await expect(page.locator(".result-group", { has: page.getByRole("heading", { name: "الآيات", exact: true }) }).first()).toBeVisible();
+  await expect(page.getByTestId("best-match")).toHaveCount(0);
 });
 
 test("search: the root builder is positional, first radical on the right (SRC-14/37, SRC-Q04)", async ({ page, isMobile }) => {

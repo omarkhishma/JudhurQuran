@@ -2470,6 +2470,20 @@ button.type-chip:hover {
   flex-direction: column;
   gap: 8px;
 }
+/* the best match for a single word or root (audit 27 F01): the answer before the lists */
+.best-match {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+}
+.best-head {
+  font-size: 34px;
+  line-height: 1.6;
+}
 .result-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

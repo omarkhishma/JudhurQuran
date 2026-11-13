@@ -658,7 +658,15 @@
       "tafsir": "tafsir",
       "translation": "translation",
       "gharib": "gharīb"
-    }
+    },
+    "bestMatch": "Best match",
+    "bestCount": "{count, plural, =0 {not in the Quran} one {once in the Quran} other {{n} times in the Quran}}",
+    "bestRootLine": "its root; {count, plural, one {once} other {{n} times}} in the Quran",
+    "bestGistBy": "— Ibn Fāris, Maqāyīs al-Lugha",
+    "bestOpenWord": "Open the word",
+    "bestOpenRoot": "The root's page",
+    "bestPlaces": "Its places in the Quran",
+    "bestRootOnly": "{count, plural, one {once} other {{n} times}} in the Quran"
   },
   "footer": {
     "label": "Site links",

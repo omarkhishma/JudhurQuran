@@ -2,7 +2,7 @@
 
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Term } from "@/components/terms/Term";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -88,6 +88,40 @@ function Highlight({ text }: { text: string }) {
   return (
     <>
       {parts.map((p, i) => (i % 2 ? <mark key={i} className="kwic-key">{p}</mark> : <span key={i}>{p}</span>))}
+    </>
+  );
+}
+
+/**
+ * A verse found by its words, in the mushaf's own text (law L1; audit 27 F03): the index matches the everyday
+ * spelling and marks it there; the marks are carried to the mushaf's words by position where both spellings hold the
+ * same number of words (the verse-end sign aside), and otherwise the verse is shown unmarked rather than misplaced.
+ */
+function MushafMarked({ qpc, highlight }: { qpc: string; highlight?: string | null }) {
+  const words = qpc.split(" ");
+  const end = words.length && !/[\u0621-\u064A]/.test(words[words.length - 1]) ? words.pop()! : null;
+  const marked = new Set<number>();
+  if (highlight) {
+    let inMark = false;
+    highlight
+      .split(" ")
+      .filter(Boolean)
+      .forEach((w, i) => {
+        if (w.includes("\u2068")) inMark = true;
+        if (inMark) marked.add(i);
+        if (w.includes("\u2069")) inMark = false;
+      });
+    if (highlight.replace(/[\u2068\u2069]/g, "").split(" ").filter(Boolean).length !== words.length) marked.clear();
+  }
+  return (
+    <>
+      {words.map((w, i) => (
+        <Fragment key={i}>
+          {i > 0 && " "}
+          {marked.has(i) ? <mark className="kwic-key">{w}</mark> : w}
+        </Fragment>
+      ))}
+      {end && <> {end}</>}
     </>
   );
 }
@@ -299,6 +333,378 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
     </div>
   );
 
+  // A single word, root, transliteration or English gloss is answered by the word itself: a card with the best match,
+  // then words, roots and patterns before the verses (design 05 §5.2: Words · Roots · Patterns · Passages). A phrase or a
+  // reference keeps the verses first. The verses-first order for every query (SRC-17, adapted) left the word a casual
+  // reader typed three screens down (audit 27 F01).
+  const wordFirst = !!detected && ["arabic_word", "root", "translit", "english", "latin"].includes(detected.kind);
+  const order: Kind[] = wordFirst
+    ? ["words", "roots", "patterns", "surahs", "verses", "semantic", "meanings", "dictionary", "hadith", "books", "mine"]
+    : ["verses", "semantic", "meanings", "words", "roots", "patterns", "surahs", "dictionary", "hadith", "books", "mine"];
+  const bestLemma = wordFirst && !lettered && detected?.kind !== "root" && kinds.words ? shownWords.find((l) => l.slug) : undefined;
+  const bestRoot = wordFirst && !lettered && kinds.roots ? (bestLemma ? roots.find((x) => x.key === bestLemma.root) : detected?.kind === "root" ? roots[0] : undefined) : undefined;
+  const bestCard =
+    bestLemma || bestRoot ? (
+      <section className="best-match" aria-labelledby="best-match-title" data-testid="best-match">
+        <h2 id="best-match-title" className="label-caps">
+          {t("bestMatch")}
+        </h2>
+        {bestLemma ? (
+          <p className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <span className="best-head ar-classical text-word" lang="ar" dir="rtl">
+              {bestLemma.ar}
+            </span>
+            <span className="text-[12.5px] text-t2">{[bestLemma.envelope?.translit ?? bestLemma.translit, locale === "ar" ? bestLemma.pos_label?.ar : bestLemma.pos_label?.en].filter(Boolean).join(" • ")}</span>
+            <span className="text-[12.5px] text-t2">{t("bestCount", cnt(bestLemma.occurrences, locale))}</span>
+          </p>
+        ) : (
+          bestRoot && (
+            <p className="best-head ar-classical tracking-[.06em] text-root" lang="ar" dir="rtl">
+              {bestRoot.spaced}
+            </p>
+          )
+        )}
+        {locale !== "ar" && bestLemma?.gloss_en && (
+          <p className="text-[14px] text-t1" lang="en" dir="ltr">
+            {bestLemma.gloss_en}
+          </p>
+        )}
+        {bestRoot && (
+          <div className="flex flex-col gap-1 text-[13px] text-t2">
+            <p>
+              {bestLemma && (
+                <>
+                  <span className="ar-classical text-[17px] text-root" lang="ar">
+                    {bestRoot.spaced}
+                  </span>
+                  {" — "}
+                </>
+              )}
+              {t(bestLemma ? "bestRootLine" : "bestRootOnly", cnt(bestRoot.occurrences, locale))}
+            </p>
+            {bestRoot.gist_ar && (
+              <p className="ar-classical text-[17px] leading-[1.8] text-t1" lang="ar" dir="rtl">
+                {bestRoot.gist_ar} <span className="text-[11.5px] text-t3">{t("bestGistBy")}</span>
+              </p>
+            )}
+          </div>
+        )}
+        <p className="flex flex-wrap gap-2">
+          {bestLemma?.slug && (
+            <Link href={`/read?w=${encodeURIComponent(bestLemma.slug)}`} className="btn btn-primary">
+              {t("bestOpenWord")}
+            </Link>
+          )}
+          {bestRoot && (
+            <Link href={`/roots/${encodeURIComponent(bestRoot.key)}`} className="btn">
+              {t("bestOpenRoot")}
+            </Link>
+          )}
+          <Link href={bestLemma?.slug ? `/concordance?w=${encodeURIComponent(bestLemma.slug)}` : `/concordance?root=${encodeURIComponent(bestRoot!.key)}`} className="btn">
+            {t("bestPlaces")}
+          </Link>
+        </p>
+      </section>
+    ) : null;
+
+  // each kind's section, rendered in the order the query calls for (below)
+  const sections: Record<Kind, React.ReactNode> = {
+    verses: kinds.verses && verses.rows.length > 0 && (
+          <ResultGroup title={t("sectionVerses")} n={verses.total} link={concordanceHref ? { href: concordanceHref, label: t("openConcordance") } : undefined}>
+            <ul className="flex flex-col gap-2">
+              {verses.rows.map(({ verse: v, highlight, trans }) => (
+                <li key={v.key}>
+                  <Link href={`/quran/${v.surah}/${v.ayah}`} className="result-row is-verse">
+                    <span className="dot" style={{ background: "var(--c-sentence)" }} />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="quran text-[19px] leading-[1.9] text-t1" lang="ar" dir="rtl">
+                        <MushafMarked qpc={v.text_qpc} highlight={highlight} />
+                      </span>
+                      {trans && locale === "en" && <span className="truncate text-[12px] text-t2" lang="en" dir="ltr"><Highlight text={trans} /></span>}
+                    </span>
+                    <span className="mono shrink-0 text-[11px] text-t3" dir="ltr">{verseRef(v.key, locale)}</span>
+                    <span className="shrink-0 text-[11.5px] text-t3" lang="ar">{v.name_ar}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <More paged={verses} />
+          </ResultGroup>
+    ),
+    semantic: kinds.semantic && semantic.rows.length > 0 && (
+          <ResultGroup title={t("sectionSemantic")} n={semantic.total}>
+            <p className="-mt-1 mb-2 text-[12px] leading-relaxed text-t3">{t(data?.semantic?.lang === "en" ? "semanticNoteEn" : "semanticNoteAr")}</p>
+            <ul className="flex flex-col gap-2">
+              {semantic.rows.map((m) => {
+                const en = data?.semantic?.lang === "en";
+                const work = m.source.work ? (locale === "ar" ? m.source.work.title_ar : m.source.work.title_en) : "";
+                return (
+                  <li key={m.verse.key} className="result-row flex-col items-stretch" data-semantic={m.verse.key}>
+                    <Link href={`/quran/${m.verse.surah}/${m.verse.ayah}`} className="flex flex-wrap items-baseline gap-x-2 hover:underline">
+                      <span className="mono text-[12px] text-t3">{verseRef(m.verse.key, locale)}</span>
+                      <span className="text-[12.5px] text-t2" lang={locale === "ar" ? "ar" : "en"}>{locale === "ar" ? `سورة ${m.verse.name_ar}` : m.verse.name_translit}</span>
+                      <span className="ms-auto text-[11px] text-t3">{t(m.by_meaning && m.by_words ? "foundBoth" : m.by_meaning ? "foundMeaning" : "foundWords")}</span>
+                    </Link>
+                    <p className="quran line-clamp-2 text-[19px] leading-[1.9]" lang="ar" dir="rtl">{m.verse.text_qpc}</p>
+                    {m.source.text && (
+                      <div className="flex flex-col gap-0.5 border-t border-line pt-1.5">
+                        <span className="text-[11.5px] text-t3">{t("semanticRead", { work })}</span>
+                        <span className={"line-clamp-3 text-[14px] leading-[1.8] text-t1" + (en ? "" : " ar-classical text-[16px]")} lang={en ? "en" : "ar"} dir={en ? "ltr" : "rtl"}>
+                          {m.source.text}
+                        </span>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <More paged={semantic} />
+          </ResultGroup>
+    ),
+    meanings: kinds.meanings && meanings.rows.length > 0 && (
+          <ResultGroup title={t("sectionMeanings")} n={meanings.total}>
+            <p className="-mt-1 mb-2 text-[12px] leading-relaxed text-t3">{t("meaningsNote")}</p>
+            <ul className="flex flex-col gap-2">
+              {meanings.rows.map((m) => (
+                <li key={m.verse.key} className="result-row flex-col items-stretch">
+                  <Link href={`/quran/${m.verse.surah}/${m.verse.ayah}`} className="flex flex-wrap items-baseline gap-x-2 hover:underline">
+                    <span className="mono text-[12px] text-t3">{verseRef(m.verse.key, locale)}</span>
+                    <span className="text-[12.5px] text-t2" lang={locale === "ar" ? "ar" : "en"}>{locale === "ar" ? `سورة ${m.verse.name_ar}` : m.verse.name_translit}</span>
+                  </Link>
+                  <p className="quran line-clamp-2 text-[19px] leading-[1.9]" lang="ar" dir="rtl">{m.verse.text_qpc}</p>
+                  <ul className="flex flex-col gap-1.5">
+                    {m.sources.map((s, i) => (
+                      <li key={`${s.work.id}-${i}`} className="flex flex-col gap-0.5 border-t border-line pt-1.5">
+                        <span className="text-[11.5px] text-t3">
+                          <bdi lang={s.kind === "translation" ? "en" : "ar"}>{(locale === "ar" ? s.work.title_ar : s.work.title_en) ?? s.work.title_ar ?? s.work.id}</bdi> • {t(`meaningKind.${s.kind}`)}
+                        </span>
+                        {s.excerpt && (
+                          <span className={"line-clamp-3 text-[14px] leading-[1.8] text-t1" + (s.kind === "translation" ? "" : " ar-classical text-[16px]")} lang={s.kind === "translation" ? "en" : "ar"} dir={s.kind === "translation" ? "ltr" : "rtl"}>
+                            <Highlight text={s.excerpt} />
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+            <More paged={meanings} />
+          </ResultGroup>
+    ),
+    words: kinds.words && shownWords.length > 0 && (
+          <ResultGroup title={onPattern && detected?.ar ? t("sectionLemmasOnPattern", { pattern: detected.ar }) : t("sectionLemmas")} n={counts.words}>
+            <ul className="result-grid">
+              {shownWords.map((l) => (
+                <li key={l.id}>
+                  <Link href={l.slug ? `/read?w=${encodeURIComponent(l.slug)}` : `/search?q=${encodeURIComponent(l.ar)}`} className="result-row">
+                    <span className="dot" style={{ background: "var(--c-word)" }} />
+                    <span className="ar-classical min-w-[80px] text-[20px] text-word" lang="ar" dir="rtl">{l.ar}</span>
+                    <span className="min-w-0 flex-1 truncate text-[12px] text-t2">
+                      {[l.envelope?.translit ?? l.translit, locale === "ar" ? l.pos_label?.ar : (l.gloss_en ?? l.senses_en?.[0])].filter(Boolean).join(" • ")}
+                    </span>
+                    {l.root_spaced && <span className="ar-classical shrink-0 text-[15px] text-root" lang="ar">{l.root_spaced}</span>}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            {!lettered && <More paged={words} />}
+            {spelledNote && (
+              <p className="mt-2 text-[12.5px] text-t2" data-testid="rasm-note">
+                {t.rich("rasmNote", {
+                  mushaf: () => (
+                    <span className="quran text-[17px]" lang="ar" dir="rtl">
+                      {spelledNote.mushaf}
+                    </span>
+                  ),
+                  term: (c) => <Term id="rasm">{c}</Term>,
+                })}
+              </p>
+            )}
+            {(r?.words.length ?? 0) > 0 && (
+              <p className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] text-t3">
+                {t("formsLead")}
+                {r!.words.slice(0, 10).map((w) => (
+                  <Link key={`${w.form}-${w.lemma_id}`} href={`/word/${w.sample}`} className="chip" title={t("formMeta", cnt(w.occurrences, locale))}>
+                    <span className="ar-classical text-[15px]" lang="ar">{w.display}</span>
+                    <span className="mono text-[10.5px]">{formatNumber(w.occurrences, locale)}</span>
+                  </Link>
+                ))}
+              </p>
+            )}
+          </ResultGroup>
+    ),
+    roots: kinds.roots && roots.length > 0 && (
+          <ResultGroup title={t("sectionRoots")} n={rootsTotal} link={{ href: "/concordance", label: t("concordanceLink") }}>
+            <ul className="result-grid">
+              {roots.slice(0, lettered && !r ? 200 : 12).map((x) => (
+                <li key={x.key}>
+                  <Link href={`/concordance?root=${encodeURIComponent(x.key)}`} className="result-row is-root">
+                    <span className="dot" style={{ background: "var(--c-root)" }} />
+                    <span className="ar-classical min-w-[80px] text-[20px] tracking-[.06em] text-root" lang="ar" dir="rtl">{x.spaced}</span>
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="mono truncate text-[11.5px] text-t3" dir="ltr">{x.translit}</span>
+                      {/* the root's meaning: Ibn Fāris's statement, or the English gloss where one exists (SRC-18) */}
+                      {locale !== "ar" && x.gloss_en ? (
+                        <span className="truncate text-[12px] text-t2">{x.gloss_en}</span>
+                      ) : (
+                        x.gist_ar && <span className="truncate text-[12.5px] text-t2" lang="ar" dir="rtl">{x.gist_ar}</span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-[11.5px] text-t3">{t("rootMetaN", { ...cnt(x.occurrences, locale) })}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </ResultGroup>
+    ),
+    patterns: kinds.patterns && patterns.length > 0 && (
+          <ResultGroup title={t("sectionPatterns")} n={patterns.length}>
+            <ul className="result-grid">
+              {patterns.slice(0, 6).map((p) => (
+                <li key={p.slug}>
+                  {/* a pattern leads to its words (SRC-20): the query that names it lists them */}
+                  <Link href={`/search?q=${encodeURIComponent(p.ar.full)}`} className="result-row" aria-current={onPattern && detected?.pattern === p.slug ? "true" : undefined}>
+                    <span className="dot" style={{ background: "var(--c-form)" }} />
+                    <span className="ar-classical min-w-[80px] text-[20px] text-form" lang="ar" dir="rtl">{p.ar.full}</span>
+                    <span className="mono min-w-0 flex-1 truncate text-[11.5px] text-t3" dir="ltr">{p.ar.translit}</span>
+                    <span className="shrink-0 text-[11.5px] text-t3">{t("wordsOnPattern", cnt(p.lemma_count, locale))}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </ResultGroup>
+    ),
+    surahs: kinds.surahs && surahs.length > 0 && (
+          <ResultGroup title={t("sectionSurahs")} n={surahs.length}>
+            <ul className="result-grid">
+              {surahs.map((s) => (
+                <li key={s.number}>
+                  <Link href={`/quran/${s.number}`} className="result-row">
+                    <span className="dot" style={{ background: "var(--c-sentence)" }} />
+                    <span className="ar-classical flex-1 text-[20px]" lang="ar">{`سورة ${s.name_ar}`}</span>
+                    <span className="shrink-0 text-[11.5px] text-t3">{t("versesN", cnt(s.verse_count, locale))}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </ResultGroup>
+    ),
+    dictionary: kinds.dictionary && (dict.rows.length > 0 || (r?.dict_roots?.length ?? 0) > 0) && (
+          <ResultGroup title={t("sectionDictionary")} n={dict.total + (r?.dict_roots?.length ?? 0)}>
+            {/* the roots themselves first: a page each in the dictionary, the Quran's or not (P11.1) */}
+            {(r?.dict_roots?.length ?? 0) > 0 && (
+              <ul className="mb-3 flex flex-wrap gap-2" aria-label={t("dictRoots")}>
+                {r!.dict_roots!.map((x) => (
+                  <li key={x.key}>
+                    <Link href={`/dictionary/${encodeURIComponent(x.key)}`} className="chip min-h-[40px] gap-2">
+                      <span className="ar-classical text-[18px]" lang="ar">{x.display}</span>
+                      <span className="text-[11.5px] text-t3">{x.quran_root ? t("dictRootQuran") : t("dictRootLexica", cnt(x.lexica, locale))}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <ul className="flex flex-col gap-2">
+              {dict.rows.map((e) => {
+                const body = (
+                  <>
+                    <span className="dot" style={{ background: "var(--c-desc)" }} />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="ar-classical text-[18px] text-t1" lang="ar">{e.headword}</span>
+                        {e.work && <span className="text-[11.5px] text-t3">{t("dictBy", locale === "ar" ? { title: e.work.title_ar, author: e.work.author_ar } : { title: e.work.title_en, author: e.work.author_en })}</span>}
+                      </span>
+                      {e.excerpt && (
+                        <span className={"line-clamp-2 text-[13px] leading-relaxed text-t2" + (e.work?.lang === "ar" ? " ar-classical text-[15px]" : "")} lang={e.work?.lang === "en" ? "en" : "ar"} dir={e.work?.lang === "en" ? "ltr" : "rtl"}>
+                          <Highlight text={e.excerpt} />
+                        </span>
+                      )}
+                    </span>
+                    {e.root_spaced && <span className="ar-classical shrink-0 text-[15px] text-root" lang="ar">{e.root_spaced}</span>}
+                  </>
+                );
+                // an article opens on its root's page in the dictionary, every lexicon's article beside it
+                // the article itself on its root's page, by its identifier (P1.7a)
+                const href = e.dict_root ? (e.uri ? articleHref(e.dict_root, e.uri) : dictHref(e.dict_root)) : e.root_key ? `/roots/${encodeURIComponent(e.root_key)}#lexicon` : null;
+                return <li key={e.entry_id}>{href ? <Link href={href} className="result-row">{body}</Link> : <div className="result-row">{body}</div>}</li>;
+              })}
+            </ul>
+            <More paged={dict} />
+          </ResultGroup>
+    ),
+    hadith: kinds.hadith && hadith.rows.length > 0 && (
+          <ResultGroup title={t("sectionHadith")} n={hadith.total}>
+            <ul className="flex flex-col gap-2">
+              {hadith.rows.map((h) => (
+                <li key={h.uri}>
+                  <Link href={hadithHref(h.text.slug, h.ref)} className="result-row">
+                    <span className="dot" style={{ background: "var(--c-sentence)" }} />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="line-clamp-2 ar-classical text-[16px] leading-[1.8] text-t1" lang="ar" dir="rtl">
+                        {h.excerpt ? <Highlight text={h.excerpt} /> : `${h.start}…`}
+                      </span>
+                      <span className="text-[11.5px] text-t3">
+                        {t("hadithIn", { book: locale === "ar" ? h.text.title_ar : h.text.title_en, ref: unnumbered(h.ref) ? th("unnumbered", { n: refText(h.ref, locale) }) : refText(h.ref, locale) })} — <bdi lang="ar">{h.top.title_ar}</bdi>
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <More paged={hadith} />
+          </ResultGroup>
+    ),
+    books: kinds.books && books.rows.length > 0 && (
+          <ResultGroup title={t("sectionBooks")} n={books.total}>
+            <ul className="flex flex-col gap-2">
+              {books.rows.map((h) => (
+                <li key={h.uri}>
+                  <Link href={paragraphHref(h.text.slug, h.ref)} className="result-row">
+                    <span className="dot" style={{ background: "var(--c-desc)" }} />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="line-clamp-2 ar-classical text-[16px] leading-[1.8] text-t1" lang="ar" dir="rtl">
+                        {h.excerpt ? <Highlight text={h.excerpt} /> : `${h.start}…`}
+                      </span>
+                      <span className="text-[11.5px] text-t3">
+                        <bdi lang="ar">{h.text.title_ar}</bdi>
+                        {h.chapter.title_ar && (
+                          <>
+                            {" — "}
+                            <bdi lang="ar">{h.chapter.title_ar}</bdi>
+                          </>
+                        )}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <More paged={books} />
+          </ResultGroup>
+    ),
+    mine: kinds.mine && mineHits.length > 0 && (
+          <ResultGroup title={t("sectionMine")} n={counts.mine}>
+            <ul className="flex flex-col gap-2">
+              {mineHits.map((h) => (
+                <li key={`${h.id}-${h.passage}`}>
+                  <Link href={`/library/text/${h.id}#p${h.passage}`} className="result-row">
+                    <span className="dot" style={{ background: "var(--c-sentence)" }} />
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="ar-classical text-[16px] leading-[1.8] text-t1" lang="ar" dir="rtl">
+                        {h.before && `… ${h.before} `}
+                        <mark className="kwic-key">{h.match}</mark>
+                        {h.after && ` ${h.after} …`}
+                      </span>
+                      <span className="text-[11.5px] text-t3">{t("mineIn", { title: h.title, n: formatNumber(h.passage, locale) })}</span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </ResultGroup>
+    ),
+  };
   return (
     <div className="search-screen">
       <form
@@ -398,301 +804,10 @@ export function SearchScreen({ initialQ, initial, initialKinds, initialLetters }
               </p>
             </div>
           )}
-          {kinds.verses && verses.rows.length > 0 && (
-            <ResultGroup title={t("sectionVerses")} n={verses.total} link={concordanceHref ? { href: concordanceHref, label: t("openConcordance") } : undefined}>
-              <ul className="flex flex-col gap-2">
-                {verses.rows.map(({ verse: v, highlight, trans }) => (
-                  <li key={v.key}>
-                    <Link href={`/quran/${v.surah}/${v.ayah}`} className="result-row is-verse">
-                      <span className="dot" style={{ background: "var(--c-sentence)" }} />
-                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="ar-classical text-[17px] leading-[1.9] text-t1" lang="ar" dir="rtl">
-                          {highlight ? <Highlight text={highlight} /> : v.text_imlaei}
-                        </span>
-                        {trans && locale === "en" && <span className="truncate text-[12px] text-t2" lang="en" dir="ltr"><Highlight text={trans} /></span>}
-                      </span>
-                      <span className="mono shrink-0 text-[11px] text-t3" dir="ltr">{verseRef(v.key, locale)}</span>
-                      <span className="shrink-0 text-[11.5px] text-t3" lang="ar">{v.name_ar}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <More paged={verses} />
-            </ResultGroup>
-          )}
-          {kinds.semantic && semantic.rows.length > 0 && (
-            <ResultGroup title={t("sectionSemantic")} n={semantic.total}>
-              <p className="-mt-1 mb-2 text-[12px] leading-relaxed text-t3">{t(data?.semantic?.lang === "en" ? "semanticNoteEn" : "semanticNoteAr")}</p>
-              <ul className="flex flex-col gap-2">
-                {semantic.rows.map((m) => {
-                  const en = data?.semantic?.lang === "en";
-                  const work = m.source.work ? (locale === "ar" ? m.source.work.title_ar : m.source.work.title_en) : "";
-                  return (
-                    <li key={m.verse.key} className="result-row flex-col items-stretch" data-semantic={m.verse.key}>
-                      <Link href={`/quran/${m.verse.surah}/${m.verse.ayah}`} className="flex flex-wrap items-baseline gap-x-2 hover:underline">
-                        <span className="mono text-[12px] text-t3">{verseRef(m.verse.key, locale)}</span>
-                        <span className="text-[12.5px] text-t2" lang={locale === "ar" ? "ar" : "en"}>{locale === "ar" ? `سورة ${m.verse.name_ar}` : m.verse.name_translit}</span>
-                        <span className="ms-auto text-[11px] text-t3">{t(m.by_meaning && m.by_words ? "foundBoth" : m.by_meaning ? "foundMeaning" : "foundWords")}</span>
-                      </Link>
-                      <p className="quran line-clamp-2 text-[19px] leading-[1.9]" lang="ar" dir="rtl">{m.verse.text_qpc}</p>
-                      {m.source.text && (
-                        <div className="flex flex-col gap-0.5 border-t border-line pt-1.5">
-                          <span className="text-[11.5px] text-t3">{t("semanticRead", { work })}</span>
-                          <span className={"line-clamp-3 text-[14px] leading-[1.8] text-t1" + (en ? "" : " ar-classical text-[16px]")} lang={en ? "en" : "ar"} dir={en ? "ltr" : "rtl"}>
-                            {m.source.text}
-                          </span>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-              <More paged={semantic} />
-            </ResultGroup>
-          )}
-          {kinds.meanings && meanings.rows.length > 0 && (
-            <ResultGroup title={t("sectionMeanings")} n={meanings.total}>
-              <p className="-mt-1 mb-2 text-[12px] leading-relaxed text-t3">{t("meaningsNote")}</p>
-              <ul className="flex flex-col gap-2">
-                {meanings.rows.map((m) => (
-                  <li key={m.verse.key} className="result-row flex-col items-stretch">
-                    <Link href={`/quran/${m.verse.surah}/${m.verse.ayah}`} className="flex flex-wrap items-baseline gap-x-2 hover:underline">
-                      <span className="mono text-[12px] text-t3">{verseRef(m.verse.key, locale)}</span>
-                      <span className="text-[12.5px] text-t2" lang={locale === "ar" ? "ar" : "en"}>{locale === "ar" ? `سورة ${m.verse.name_ar}` : m.verse.name_translit}</span>
-                    </Link>
-                    <p className="quran line-clamp-2 text-[19px] leading-[1.9]" lang="ar" dir="rtl">{m.verse.text_qpc}</p>
-                    <ul className="flex flex-col gap-1.5">
-                      {m.sources.map((s, i) => (
-                        <li key={`${s.work.id}-${i}`} className="flex flex-col gap-0.5 border-t border-line pt-1.5">
-                          <span className="text-[11.5px] text-t3">
-                            <bdi lang={s.kind === "translation" ? "en" : "ar"}>{(locale === "ar" ? s.work.title_ar : s.work.title_en) ?? s.work.title_ar ?? s.work.id}</bdi> • {t(`meaningKind.${s.kind}`)}
-                          </span>
-                          {s.excerpt && (
-                            <span className={"line-clamp-3 text-[14px] leading-[1.8] text-t1" + (s.kind === "translation" ? "" : " ar-classical text-[16px]")} lang={s.kind === "translation" ? "en" : "ar"} dir={s.kind === "translation" ? "ltr" : "rtl"}>
-                              <Highlight text={s.excerpt} />
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-              <More paged={meanings} />
-            </ResultGroup>
-          )}
-          {kinds.words && shownWords.length > 0 && (
-            <ResultGroup title={onPattern && detected?.ar ? t("sectionLemmasOnPattern", { pattern: detected.ar }) : t("sectionLemmas")} n={counts.words}>
-              <ul className="result-grid">
-                {shownWords.map((l) => (
-                  <li key={l.id}>
-                    <Link href={l.slug ? `/read?w=${encodeURIComponent(l.slug)}` : `/search?q=${encodeURIComponent(l.ar)}`} className="result-row">
-                      <span className="dot" style={{ background: "var(--c-word)" }} />
-                      <span className="ar-classical min-w-[80px] text-[20px] text-word" lang="ar" dir="rtl">{l.ar}</span>
-                      <span className="min-w-0 flex-1 truncate text-[12px] text-t2">
-                        {[l.envelope?.translit ?? l.translit, locale === "ar" ? l.pos_label?.ar : (l.gloss_en ?? l.senses_en?.[0])].filter(Boolean).join(" • ")}
-                      </span>
-                      {l.root_spaced && <span className="ar-classical shrink-0 text-[15px] text-root" lang="ar">{l.root_spaced}</span>}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              {!lettered && <More paged={words} />}
-              {spelledNote && (
-                <p className="mt-2 text-[12.5px] text-t2" data-testid="rasm-note">
-                  {t.rich("rasmNote", {
-                    mushaf: () => (
-                      <span className="quran text-[17px]" lang="ar" dir="rtl">
-                        {spelledNote.mushaf}
-                      </span>
-                    ),
-                    term: (c) => <Term id="rasm">{c}</Term>,
-                  })}
-                </p>
-              )}
-              {(r?.words.length ?? 0) > 0 && (
-                <p className="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] text-t3">
-                  {t("formsLead")}
-                  {r!.words.slice(0, 10).map((w) => (
-                    <Link key={`${w.form}-${w.lemma_id}`} href={`/word/${w.sample}`} className="chip" title={t("formMeta", cnt(w.occurrences, locale))}>
-                      <span className="ar-classical text-[15px]" lang="ar">{w.display}</span>
-                      <span className="mono text-[10.5px]">{formatNumber(w.occurrences, locale)}</span>
-                    </Link>
-                  ))}
-                </p>
-              )}
-            </ResultGroup>
-          )}
-          {kinds.roots && roots.length > 0 && (
-            <ResultGroup title={t("sectionRoots")} n={rootsTotal} link={{ href: "/concordance", label: t("concordanceLink") }}>
-              <ul className="result-grid">
-                {roots.slice(0, lettered && !r ? 200 : 12).map((x) => (
-                  <li key={x.key}>
-                    <Link href={`/concordance?root=${encodeURIComponent(x.key)}`} className="result-row is-root">
-                      <span className="dot" style={{ background: "var(--c-root)" }} />
-                      <span className="ar-classical min-w-[80px] text-[20px] tracking-[.06em] text-root" lang="ar" dir="rtl">{x.spaced}</span>
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="mono truncate text-[11.5px] text-t3" dir="ltr">{x.translit}</span>
-                        {/* the root's meaning: Ibn Fāris's statement, or the English gloss where one exists (SRC-18) */}
-                        {locale !== "ar" && x.gloss_en ? (
-                          <span className="truncate text-[12px] text-t2">{x.gloss_en}</span>
-                        ) : (
-                          x.gist_ar && <span className="truncate text-[12.5px] text-t2" lang="ar" dir="rtl">{x.gist_ar}</span>
-                        )}
-                      </span>
-                      <span className="shrink-0 text-[11.5px] text-t3">{t("rootMetaN", { ...cnt(x.occurrences, locale) })}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </ResultGroup>
-          )}
-          {kinds.patterns && patterns.length > 0 && (
-            <ResultGroup title={t("sectionPatterns")} n={patterns.length}>
-              <ul className="result-grid">
-                {patterns.slice(0, 6).map((p) => (
-                  <li key={p.slug}>
-                    {/* a pattern leads to its words (SRC-20): the query that names it lists them */}
-                    <Link href={`/search?q=${encodeURIComponent(p.ar.full)}`} className="result-row" aria-current={onPattern && detected?.pattern === p.slug ? "true" : undefined}>
-                      <span className="dot" style={{ background: "var(--c-form)" }} />
-                      <span className="ar-classical min-w-[80px] text-[20px] text-form" lang="ar" dir="rtl">{p.ar.full}</span>
-                      <span className="mono min-w-0 flex-1 truncate text-[11.5px] text-t3" dir="ltr">{p.ar.translit}</span>
-                      <span className="shrink-0 text-[11.5px] text-t3">{t("wordsOnPattern", cnt(p.lemma_count, locale))}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </ResultGroup>
-          )}
-          {kinds.surahs && surahs.length > 0 && (
-            <ResultGroup title={t("sectionSurahs")} n={surahs.length}>
-              <ul className="result-grid">
-                {surahs.map((s) => (
-                  <li key={s.number}>
-                    <Link href={`/quran/${s.number}`} className="result-row">
-                      <span className="dot" style={{ background: "var(--c-sentence)" }} />
-                      <span className="ar-classical flex-1 text-[20px]" lang="ar">{`سورة ${s.name_ar}`}</span>
-                      <span className="shrink-0 text-[11.5px] text-t3">{t("versesN", cnt(s.verse_count, locale))}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </ResultGroup>
-          )}
-          {kinds.dictionary && (dict.rows.length > 0 || (r?.dict_roots?.length ?? 0) > 0) && (
-            <ResultGroup title={t("sectionDictionary")} n={dict.total + (r?.dict_roots?.length ?? 0)}>
-              {/* the roots themselves first: a page each in the dictionary, the Quran's or not (P11.1) */}
-              {(r?.dict_roots?.length ?? 0) > 0 && (
-                <ul className="mb-3 flex flex-wrap gap-2" aria-label={t("dictRoots")}>
-                  {r!.dict_roots!.map((x) => (
-                    <li key={x.key}>
-                      <Link href={`/dictionary/${encodeURIComponent(x.key)}`} className="chip min-h-[40px] gap-2">
-                        <span className="ar-classical text-[18px]" lang="ar">{x.display}</span>
-                        <span className="text-[11.5px] text-t3">{x.quran_root ? t("dictRootQuran") : t("dictRootLexica", cnt(x.lexica, locale))}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <ul className="flex flex-col gap-2">
-                {dict.rows.map((e) => {
-                  const body = (
-                    <>
-                      <span className="dot" style={{ background: "var(--c-desc)" }} />
-                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="flex flex-wrap items-baseline gap-x-2">
-                          <span className="ar-classical text-[18px] text-t1" lang="ar">{e.headword}</span>
-                          {e.work && <span className="text-[11.5px] text-t3">{t("dictBy", locale === "ar" ? { title: e.work.title_ar, author: e.work.author_ar } : { title: e.work.title_en, author: e.work.author_en })}</span>}
-                        </span>
-                        {e.excerpt && (
-                          <span className={"line-clamp-2 text-[13px] leading-relaxed text-t2" + (e.work?.lang === "ar" ? " ar-classical text-[15px]" : "")} lang={e.work?.lang === "en" ? "en" : "ar"} dir={e.work?.lang === "en" ? "ltr" : "rtl"}>
-                            <Highlight text={e.excerpt} />
-                          </span>
-                        )}
-                      </span>
-                      {e.root_spaced && <span className="ar-classical shrink-0 text-[15px] text-root" lang="ar">{e.root_spaced}</span>}
-                    </>
-                  );
-                  // an article opens on its root's page in the dictionary, every lexicon's article beside it
-                  // the article itself on its root's page, by its identifier (P1.7a)
-                  const href = e.dict_root ? (e.uri ? articleHref(e.dict_root, e.uri) : dictHref(e.dict_root)) : e.root_key ? `/roots/${encodeURIComponent(e.root_key)}#lexicon` : null;
-                  return <li key={e.entry_id}>{href ? <Link href={href} className="result-row">{body}</Link> : <div className="result-row">{body}</div>}</li>;
-                })}
-              </ul>
-              <More paged={dict} />
-            </ResultGroup>
-          )}
-          {kinds.hadith && hadith.rows.length > 0 && (
-            <ResultGroup title={t("sectionHadith")} n={hadith.total}>
-              <ul className="flex flex-col gap-2">
-                {hadith.rows.map((h) => (
-                  <li key={h.uri}>
-                    <Link href={hadithHref(h.text.slug, h.ref)} className="result-row">
-                      <span className="dot" style={{ background: "var(--c-sentence)" }} />
-                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="line-clamp-2 ar-classical text-[16px] leading-[1.8] text-t1" lang="ar" dir="rtl">
-                          {h.excerpt ? <Highlight text={h.excerpt} /> : `${h.start}…`}
-                        </span>
-                        <span className="text-[11.5px] text-t3">
-                          {t("hadithIn", { book: locale === "ar" ? h.text.title_ar : h.text.title_en, ref: unnumbered(h.ref) ? th("unnumbered", { n: refText(h.ref, locale) }) : refText(h.ref, locale) })} — <bdi lang="ar">{h.top.title_ar}</bdi>
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <More paged={hadith} />
-            </ResultGroup>
-          )}
-          {kinds.books && books.rows.length > 0 && (
-            <ResultGroup title={t("sectionBooks")} n={books.total}>
-              <ul className="flex flex-col gap-2">
-                {books.rows.map((h) => (
-                  <li key={h.uri}>
-                    <Link href={paragraphHref(h.text.slug, h.ref)} className="result-row">
-                      <span className="dot" style={{ background: "var(--c-desc)" }} />
-                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="line-clamp-2 ar-classical text-[16px] leading-[1.8] text-t1" lang="ar" dir="rtl">
-                          {h.excerpt ? <Highlight text={h.excerpt} /> : `${h.start}…`}
-                        </span>
-                        <span className="text-[11.5px] text-t3">
-                          <bdi lang="ar">{h.text.title_ar}</bdi>
-                          {h.chapter.title_ar && (
-                            <>
-                              {" — "}
-                              <bdi lang="ar">{h.chapter.title_ar}</bdi>
-                            </>
-                          )}
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <More paged={books} />
-            </ResultGroup>
-          )}
-          {kinds.mine && mineHits.length > 0 && (
-            <ResultGroup title={t("sectionMine")} n={counts.mine}>
-              <ul className="flex flex-col gap-2">
-                {mineHits.map((h) => (
-                  <li key={`${h.id}-${h.passage}`}>
-                    <Link href={`/library/text/${h.id}#p${h.passage}`} className="result-row">
-                      <span className="dot" style={{ background: "var(--c-sentence)" }} />
-                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="ar-classical text-[16px] leading-[1.8] text-t1" lang="ar" dir="rtl">
-                          {h.before && `… ${h.before} `}
-                          <mark className="kwic-key">{h.match}</mark>
-                          {h.after && ` ${h.after} …`}
-                        </span>
-                        <span className="text-[11.5px] text-t3">{t("mineIn", { title: h.title, n: formatNumber(h.passage, locale) })}</span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </ResultGroup>
-          )}
+          {bestCard}
+          {order.map((k) => (
+            <Fragment key={k}>{sections[k]}</Fragment>
+          ))}
         </div>
       </div>
     </div>

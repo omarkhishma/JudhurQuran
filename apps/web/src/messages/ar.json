@@ -658,7 +658,15 @@
       "tafsir": "تفسير",
       "translation": "ترجمة",
       "gharib": "غريب"
-    }
+    },
+    "bestMatch": "أقرب ما يطابق بحثك",
+    "bestCount": "{count, plural, =0 {لا ترد في القرآن} one {مرة واحدة في القرآن} two {مرتان في القرآن} few {{n} مرات في القرآن} many {{n} مرة في القرآن} other {{n} مرة في القرآن}}",
+    "bestRootLine": "جذرها؛ ورد في القرآن {count, plural, one {مرة واحدة} two {مرتين} few {{n} مرات} many {{n} مرة} other {{n} مرة}}",
+    "bestGistBy": "— ابن فارس، مقاييس اللغة",
+    "bestOpenWord": "افتح الكلمة",
+    "bestOpenRoot": "صفحة الجذر",
+    "bestPlaces": "مواضعها في القرآن",
+    "bestRootOnly": "ورد في القرآن {count, plural, one {مرة واحدة} two {مرتين} few {{n} مرات} many {{n} مرة} other {{n} مرة}}"
   },
   "footer": {
     "label": "روابط الموقع",
