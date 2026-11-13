@@ -395,10 +395,10 @@ function Onboarding({ chapter }: { chapter: ChapterInfo }) {
           ))}
         </span>
         <span className="flex-1" />
-        <button type="button" className="text-[12px] text-t3 hover:text-t1" onClick={setOnboarded}>{t("skip")}</button>
+        <button type="button" className="-my-2 min-h-[44px] min-w-[44px] px-2 text-[12px] text-t3 hover:text-t1" onClick={setOnboarded}>{t("skip")}</button>
       </div>
       <p className="text-[15px] font-semibold">{t(`${b}Title`)}</p>
-      <p className="text-[13px] leading-relaxed text-t2">{t(`${b}Body`)}</p>
+      <p className="onb-body text-[13px] leading-relaxed text-t2">{t(`${b}Body`)}</p>
       <button
         type="button"
         className="btn btn-primary self-start"

@@ -2088,11 +2088,20 @@ button.type-chip:hover {
 .reader-v5[data-rail="docked"] .onboarding {
   inset-inline-start: 252px;
 }
+/* on a phone the tour sits low, above the audio bar or above the half sheet, so the verse the reader came to read stays
+   in view at the top (audit 27 F24: it covered the verse's first lines) */
 .reader-v5[data-bp="phone"] .onboarding {
-  top: 64px;
-  bottom: auto;
+  top: auto;
+  bottom: 76px;
   inset-inline: 12px;
   width: auto;
+}
+.reader-v5[data-bp="phone"][data-sheet="open"] .onboarding {
+  bottom: calc(min(52%, 460px) + 8px);
+}
+/* the title and its action are the beat on a phone; the explanation would cover the text */
+.reader-v5[data-bp="phone"] .onboarding .onb-body {
+  display: none;
 }
 }
 
