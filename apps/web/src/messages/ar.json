@@ -562,7 +562,7 @@
     "kindRoot": "جذر",
     "kindWord": "كلمة",
     "kindLemma": "صيغة",
-    "rootMeta": "{occurrences} موضعًا • {lemmas} صيغة",
+    "rootMeta": "{occ, plural, =0 {لا مواضع} one {موضع واحد} two {موضعان} few {{occN} مواضع} many {{occN} موضعًا} other {{occN} موضع}} • {lem, plural, =0 {لا صيغ} one {صيغة واحدة} two {صيغتان} few {{lemN} صيغ} many {{lemN} صيغة} other {{lemN} صيغة}}",
     "formMeta": "{count, plural, one {موضع واحد} two {موضعان} few {{n} مواضع} many {{n} موضعًا} other {{n} موضع}}",
     "pageTitle": "البحث",
     "pageLead": "ابحث في نص القرآن الكريم وكلماته وجذوره. البحث لا يتأثر بالتشكيل ولا باختلاف رسم الهمزة والألف.",

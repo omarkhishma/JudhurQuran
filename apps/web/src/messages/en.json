@@ -562,7 +562,7 @@
     "kindRoot": "Root",
     "kindWord": "Word",
     "kindLemma": "Lemma",
-    "rootMeta": "{occurrences} occurrences • {lemmas} lemmas",
+    "rootMeta": "{occ, plural, one {one place} other {{occN} places}} • {lem, plural, one {one word} other {{lemN} words}}",
     "formMeta": "{count, plural, one {{n} occurrence} other {{n} occurrences}}",
     "pageTitle": "Search",
     "pageLead": "Search the text, words and roots of the Quran. Matching ignores vowel marks and the different ways hamza and alif are written.",

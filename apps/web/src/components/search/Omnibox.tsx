@@ -47,8 +47,9 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
     if (debounced && looksLikeQuestion(debounced))
       out.push({ id: "ask", href: `/ask?q=${encodeURIComponent(debounced)}`, kind: t("kindAsk"), primary: <span dir="auto">{t("askThis", { q: debounced })}</span> });
     if (!data) return out;
+    const g: Record<string, Item[]> = {};
     for (const v of data.results.verses.slice(0, 5))
-      out.push({
+      (g.verses ??= []).push({
         id: `v${v.key}`,
         href: `/quran/${v.surah}/${v.ayah}`,
         kind: t("kindVerse"),
@@ -58,7 +59,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
     // verses close in meaning (P17), after the verses holding the words: up to three, none already listed
     const listed = new Set(data.results.verses.slice(0, 5).map((v) => v.key));
     for (const { verse: v } of (data.results.semantic ?? []).filter((x) => !listed.has(x.verse.key)).slice(0, 3))
-      out.push({
+      (g.semantic ??= []).push({
         id: `m-${v.key}`,
         href: `/quran/${v.surah}/${v.ayah}`,
         kind: t("kindSemantic"),
@@ -66,7 +67,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         secondary: <span className="mono" dir="ltr">{verseRef(v.key, locale)}</span>,
       });
     for (const s of data.results.surahs)
-      out.push({
+      (g.surahs ??= []).push({
         id: `s${s.number}`,
         href: `/quran/${s.number}`,
         kind: t("kindSurah"),
@@ -74,15 +75,15 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         secondary: <span dir="ltr">{`${formatNumber(s.number, locale)} • ${s.name_translit}`}</span>,
       });
     for (const r of data.results.roots)
-      out.push({
+      (g.roots ??= []).push({
         id: `r${r.key}`,
         href: `/roots/${encodeURIComponent(r.key)}`,
         kind: t("kindRoot"),
         primary: <span className="ar-classical text-[19px] text-root" dir="rtl" lang="ar">{r.spaced}</span>,
-        secondary: t("rootMeta", { occurrences: formatNumber(r.occurrences, locale), lemmas: formatNumber(r.lemma_count, locale) }),
+        secondary: t("rootMeta", { occ: r.occurrences, occN: formatNumber(r.occurrences, locale), lem: r.lemma_count, lemN: formatNumber(r.lemma_count, locale) }),
       });
     for (const w of data.results.words.slice(0, 6))
-      out.push({
+      (g.words ??= []).push({
         id: `w${w.form}-${w.lemma_id}`,
         href: `/word/${w.sample}`,
         kind: t("kindWord"),
@@ -96,7 +97,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
       });
     // patterns, as the reader's omnibox offers them (SHL-Q07): each opens the words built on it
     for (const p of (data.results.patterns ?? []).slice(0, 2))
-      out.push({
+      (g.patterns ??= []).push({
         id: `p${p.slug}`,
         href: `/search?q=${encodeURIComponent(p.ar.full)}`,
         kind: t("kindPattern"),
@@ -109,7 +110,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
       });
     // the ecosystem (SHL-Q07): the dictionary's roots, the hadith, the books' paragraphs
     for (const d of (data.results.dict_roots ?? []).slice(0, 2))
-      out.push({
+      (g.dict ??= []).push({
         id: `d${d.key}`,
         href: dictHref(d.key),
         kind: t("kindDictRoot"),
@@ -117,7 +118,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         secondary: t("dictRootMeta", cnt(d.lexica, locale)),
       });
     for (const h of (data.results.texts ?? []).slice(0, 2))
-      out.push({
+      (g.hadith ??= []).push({
         id: h.uri,
         href: hadithHref(h.text.slug, h.ref),
         kind: t("kindHadith"),
@@ -125,7 +126,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         secondary: <span dir="auto">{`${locale === "ar" ? h.text.title_ar : h.text.title_en} • ${formatNumber(Number(h.ref.split(/[._]/)[0]) || 0, locale)}`}</span>,
       });
     for (const h of (data.results.books ?? []).slice(0, 2))
-      out.push({
+      (g.books ??= []).push({
         id: h.uri,
         href: paragraphHref(h.text.slug, h.ref),
         kind: t("kindBook"),
@@ -133,7 +134,7 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
         secondary: <span dir="auto">{[h.text.title_ar, h.chapter?.title_ar].filter(Boolean).join(" • ")}</span>,
       });
     for (const h of mine.data?.hits ?? [])
-      out.push({
+      (g.mine ??= []).push({
         id: `m${h.id}-${h.passage}`,
         href: `/library/text/${h.id}#p${h.passage}`,
         kind: t("kindMine"),
@@ -142,13 +143,20 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
       });
     for (const l of data.results.lemmas.slice(0, 4))
       if (l.root)
-        out.push({
+        (g.lemmas ??= []).push({
           id: `l${l.id}`,
-          href: `/roots/${encodeURIComponent(l.root)}#lemma-${l.id}`,
+          href: l.slug ? `/read?w=${encodeURIComponent(l.slug)}` : `/roots/${encodeURIComponent(l.root)}#lemma-${l.id}`,
           kind: t("kindLemma"),
           primary: <span className="ar-classical text-[19px]" dir="rtl" lang="ar">{l.ar}</span>,
           secondary: l.gloss_en && locale === "en" ? l.gloss_en : t("formMeta", cnt(l.occurrences, locale)),
         });
+    // a single word, root or gloss is answered by the word, its root and its forms first; a phrase or a reference by the
+    // verses (audit 27 F02, as the search page)
+    const wordFirst = ["arabic_word", "root", "translit", "english", "latin"].includes(data.detected.kind);
+    const order = wordFirst
+      ? ["lemmas", "roots", "words", "patterns", "surahs", "verses", "semantic", "dict", "hadith", "books", "mine"]
+      : ["verses", "semantic", "surahs", "roots", "lemmas", "words", "patterns", "dict", "hadith", "books", "mine"];
+    for (const k of order) out.push(...(g[k] ?? []));
     return out;
   }, [data, mine.data, t, locale, debounced]);
 
