@@ -20,6 +20,6 @@ export default async function AnalysePage({ params, searchParams }: PageProps<"/
   const sp = await searchParams;
   const q = (typeof sp.q === "string" ? sp.q : SAMPLE).slice(0, 600);
   const view = sp.view === "interlinear" ? "interlinear" : "table";
-  const initial = q.trim() ? await api<Analysis>(`/analyse?q=${encodeURIComponent(q.trim())}`, { revalidate: 3600 }).catch(() => null) : null;
+  const initial = q.trim() ? await api<Analysis>(`/analyse?q=${encodeURIComponent(q.trim())}`, { asked: true }).catch(() => null) : null;
   return <AnalyseScreen initialQ={q} initialView={view} initial={initial} />;
 }

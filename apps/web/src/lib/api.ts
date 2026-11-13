@@ -8,10 +8,14 @@ const INTERNAL = process.env.JADHR_INTERNAL_TOKEN;
 /**
  * Server-side fetch from our API. Content is immutable within a dataset release, so pages
  * cache for a day and are invalidated together through the "dataset" tag when a release loads.
+ *
+ * `asked: true` is for a path that carries what a reader typed (a search, a question, a text to analyse, a name
+ * looked for): it is never written to the data cache, which keeps each answer on the server's disk under its
+ * address, with no limit on how many — a reader's words would stay there, and one address could fill the disk.
  */
-export async function api<T>(path: string, { revalidate = 86400 }: { revalidate?: number } = {}): Promise<T> {
+export async function api<T>(path: string, { revalidate = 86400, asked = false }: { revalidate?: number; asked?: boolean } = {}): Promise<T> {
   const res = await fetch(`${API_ORIGIN}/api/v1${path}`, {
-    next: { revalidate, tags: ["dataset"] },
+    ...(asked ? { cache: "no-store" as const } : { next: { revalidate, tags: ["dataset"] } }),
     headers: INTERNAL ? { Accept: "application/json", "x-jadhr-internal": INTERNAL } : { Accept: "application/json" },
   });
   if (res.status === 404) notFound();

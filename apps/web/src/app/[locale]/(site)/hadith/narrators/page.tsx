@@ -23,7 +23,7 @@ export default async function NarratorsPage({ params, searchParams }: PageProps<
   const t = await getTranslations("hadith");
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim().slice(0, 80) : "";
-  const found = q ? (await api<{ data: (NarratorCard & { links: number })[] }>(`/narrators?q=${encodeURIComponent(q)}&limit=40`)).data : null;
+  const found = q ? (await api<{ data: (NarratorCard & { links: number })[] }>(`/narrators?q=${encodeURIComponent(q)}&limit=40`, { asked: true })).data : null;
   const ar = locale === "ar";
   return (
     <div className="mx-auto max-w-[900px] px-4 py-10">

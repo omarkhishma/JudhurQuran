@@ -25,8 +25,8 @@ describe("allow", () => {
 
 describe("FRESH", () => {
   it("names the pages that read the API afresh for each question", () => {
-    for (const p of ["/search", "/en/search", "/concordance", "/dictionary/علم/texts", "/en/dictionary/x/texts/"]) expect(FRESH.test(p), p).toBe(true);
-    for (const p of ["/", "/quran/2", "/dictionary/علم", "/searching", "/roots/علم"]) expect(FRESH.test(p), p).toBe(false);
+    for (const p of ["/search", "/en/search", "/concordance", "/dictionary/علم/texts", "/en/dictionary/x/texts/", "/ask", "/en/ask", "/analyse", "/hadith/narrators", "/en/hadith/narrators"]) expect(FRESH.test(p), p).toBe(true);
+    for (const p of ["/", "/quran/2", "/dictionary/علم", "/searching", "/roots/علم", "/asking", "/hadith/bukhari/1", "/hadith/narrators/12"]) expect(FRESH.test(p), p).toBe(false);
   });
 });
 

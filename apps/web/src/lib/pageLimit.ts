@@ -41,5 +41,6 @@ export function allow(key: string, limit: number, now = Date.now()): { ok: boole
   return { ok: true, retry: 0 };
 }
 
-/** The pages that read the API afresh for each question asked of them. */
-export const FRESH = /^(?:\/en)?\/(?:search|concordance|dictionary\/[^/]+\/texts)(?:\/|$)/;
+/** The pages that read the API afresh for each question asked of them: a search, a question (which may embed it and
+ * scan the corpus), a text to analyse, a narrator looked for by name, the concordance, a root in the texts. */
+export const FRESH = /^(?:\/en)?\/(?:(?:search|ask|analyse|concordance|dictionary\/[^/]+\/texts)(?:\/|$)|hadith\/narrators\/?$)/;

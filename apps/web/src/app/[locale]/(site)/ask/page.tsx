@@ -30,7 +30,7 @@ export default async function AskPage({ params, searchParams }: PageProps<"/[loc
     ? { intent, a: s("a", 120) || undefined, b: s("b", 120) || undefined, surah: surah && surah <= 114 ? surah : undefined, place: place === "meccan" || place === "medinan" ? place : undefined }
     : null;
   const [initial, surahs] = await Promise.all([
-    q || reading ? api<AskPayload>(`/ask?${askQuery(q, reading)}`, { revalidate: 3600 }).catch(() => null) : Promise.resolve(null),
+    q || reading ? api<AskPayload>(`/ask?${askQuery(q, reading)}`, { asked: true }).catch(() => null) : Promise.resolve(null),
     api<{ data: SurahName[] }>("/surahs"),
   ]);
   return (

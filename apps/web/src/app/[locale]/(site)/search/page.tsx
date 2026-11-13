@@ -19,7 +19,7 @@ export default async function SearchPage({ params, searchParams }: PageProps<"/[
   const sp = await searchParams;
   const s = (k: string, max: number) => (typeof sp[k] === "string" ? (sp[k] as string) : "").trim().slice(0, max);
   const q = s("q", 200);
-  const initial = q ? await api<SearchPayload>(`/search?q=${encodeURIComponent(q)}&limit=30`, { revalidate: 3600 }) : null;
+  const initial = q ? await api<SearchPayload>(`/search?q=${encodeURIComponent(q)}&limit=30`, { asked: true }) : null;
   // the kinds turned on and the root letters come back from the URL as they were left (SRC-31)
   return <SearchScreen initialQ={q} initial={initial} initialKinds={s("k", 80)} initialLetters={s("l", 12)} />;
 }
