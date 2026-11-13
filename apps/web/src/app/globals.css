@@ -2088,18 +2088,27 @@ button.type-chip:hover {
 .reader-v5[data-rail="docked"] .onboarding {
   inset-inline-start: 252px;
 }
-/* on a phone the tour sits low, above the audio bar or above the half sheet, so the verse the reader came to read stays
-   in view at the top (audit 27 F24: it covered the verse's first lines) */
+/* on a phone the tour is a compact strip — its step, then its title beside its action, no explanation — low above the
+   audio bar while the text is read, and under the header while the sheet is open, since the reader keeps the tapped word
+   just above the sheet (audit 27 F24: a tall card at the top covered the verse the reader came for) */
 .reader-v5[data-bp="phone"] .onboarding {
   top: auto;
   bottom: 76px;
   inset-inline: 12px;
   width: auto;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 10px;
+  padding: 8px 12px;
+}
+.reader-v5[data-bp="phone"] .onboarding > :first-child {
+  grid-column: 1 / -1;
 }
 .reader-v5[data-bp="phone"][data-sheet="open"] .onboarding {
-  bottom: calc(min(52%, 460px) + 8px);
+  top: 62px;
+  bottom: auto;
 }
-/* the title and its action are the beat on a phone; the explanation would cover the text */
 .reader-v5[data-bp="phone"] .onboarding .onb-body {
   display: none;
 }
