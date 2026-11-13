@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { api } from "./helpers";
 
 /** Ask and the panel search (RDR-169, 185, 193, 428, 602). */
 
@@ -14,6 +15,18 @@ test("Ask offers the noun before the verb for bare letters (RDR-169, 602)", asyn
   await page.getByRole("textbox", { name: "عن أي كلمة تتساءل؟" }).fill("علم");
   // the first match is the noun عِلْم, not the more frequent verb عَلِمَ
   await expect(page.locator(".ask-card, .ask-deck").first()).toContainText("عِلْم");
+});
+
+test("Ask leads with the plain meaning of the word at its place, from the Tafsir Center (audit 27 F11)", async ({ page }) => {
+  // صَبْر once led with a gharīb note on one verse («بالصوم»), which reads as the word's meaning
+  const base = await api<{ attestations: { items: { location: string }[] } }>(page, "/words/sabr?limit=1");
+  const at = base.attestations.items[0].location;
+  const w = await api<{ occurrence: { tc: { meaning: string[]; source: { attribution_ar: string } } } }>(page, `/words/sabr?limit=0&at=${at}`);
+  await page.goto("/quran/1?mode=ask");
+  await page.getByRole("textbox", { name: "عن أي كلمة تتساءل؟" }).fill("صبر");
+  const card = page.locator(".ask-card, .ask-deck").first();
+  await expect(card).toContainText(w.occurrence.tc.meaning[0]);
+  await expect(card).toContainText("مركز تفسير"); // its source named, on the phone too
 });
 
 test("the panel search shows each word's part of speech and root, and the arrow keys choose (RDR-193, 428)", async ({ page, isMobile }) => {

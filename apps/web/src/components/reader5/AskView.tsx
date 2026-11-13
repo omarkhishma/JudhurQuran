@@ -162,7 +162,12 @@ function useAskActions(w: WordPayload) {
   };
 }
 
-function meaningLine(w: WordPayload): { text: string; lang: "ar" | "en"; source: string } | null {
+function meaningLine(w: WordPayload): { text: string; lang: "ar" | "en"; source: string; short?: string } | null {
+  // The Tafsir Center's meaning of the word at this place leads: plain and about this word here. A gharīb book's note
+  // speaks of one verse's reading (for صَبْر, «﴿واستعينوا بالصبر﴾ أي: بالصوم»), which a casual reader took for the
+  // word's meaning; it stays in the panel, labelled with its verse (audit 27 F11).
+  const tc = w.occurrence?.tc;
+  if (tc?.meaning[0] && tc.source) return { text: tc.meaning[0], lang: "ar", source: tc.source.attribution_ar, short: tc.source.title_ar };
   const g = w.occurrence?.glosses[0];
   if (g) return { text: g.gloss, lang: "ar", source: g.attribution_ar };
   if (w.occurrence?.gloss_en) return { text: w.occurrence.gloss_en, lang: "en", source: "corpus" };
@@ -277,6 +282,8 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
           <p className="ar-classical text-[44px] leading-[1.4]" lang="ar" dir="rtl">{w.ar.full}</p>
           {meaning && <p className={meaning.lang === "ar" ? "text-[17px] font-semibold" : "text-[16px] font-semibold italic"} lang={meaning.lang}>{meaning.text}</p>}
           <p className="text-[12.5px] text-t3"><span className="mono" dir="ltr">{w.ar.translit}</span> • {locale === "ar" ? w.pos.ar : w.pos.en}</p>
+          {/* every meaning names its source, on the phone too (law L3) */}
+          {meaning && <p className="text-[11.5px] leading-relaxed text-t3">{meaning.source === "corpus" ? t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> }) : (meaning.short ?? meaning.source)}</p>}
         </>
       ),
       action: (
