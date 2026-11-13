@@ -370,11 +370,17 @@ function MufradatBlock({ m }: { m: Mufradat }) {
  */
 function ParticlesBlock({ items }: { items: ParticleLink[] }) {
   const t = useTranslations("rd");
+  // each particle's books together — the الباء of both, then the أل of both — in the order the word holds them, each
+  // book's order kept within (audit 27 F17: they came interleaved, أل الباء الباء أل)
+  const key = (p: ParticleLink) => (p.via.kind === "affix" ? p.via.text : "");
+  const first = new Map<string, number>();
+  for (const p of items) if (!first.has(key(p))) first.set(key(p), first.size);
+  const grouped = [...items].sort((a, b) => first.get(key(a))! - first.get(key(b))!);
   return (
     <section className="particles" aria-label={t("particlesTitle")}>
       <p className="label-caps">{t("particlesTitle")}</p>
       <ul className="flex flex-col">
-        {items.map((p) => (
+        {grouped.map((p) => (
           <ParticleItem key={p.id} p={p} />
         ))}
       </ul>
