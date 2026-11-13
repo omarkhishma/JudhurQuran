@@ -2730,7 +2730,8 @@
       "quranpedia-topics": "Quranpedia"
     },
     "mindMap": "Mind map",
-    "dataContextGrouped": "{from} to {to}, as {count, plural, one {one commentator groups it} other {{n} commentators group it}}"
+    "dataContextGrouped": "{from} to {to}, as {count, plural, one {one commentator groups it} other {{n} commentators group it}}",
+    "forDevelopers": "For developers"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

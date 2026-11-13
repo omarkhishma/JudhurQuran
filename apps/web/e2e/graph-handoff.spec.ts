@@ -137,6 +137,7 @@ test("graph hand-off: the seed JSON can be copied, and the root and verse tools 
   const panel = page.locator(".reader-panel");
   await panel.getByRole("button", { name: "افتح في الخريطة" }).click();
   const dialog = page.getByRole("dialog", { name: "سلّمه إلى محرر الخرائط" });
+  await dialog.getByText("للمطوّرين").click(); // the seed's JSON sits under its own fold (audit 27 F18)
   await dialog.getByRole("button", { name: "نسخ البذرة (JSON)" }).click();
   const copied = JSON.parse(await page.evaluate(() => navigator.clipboard.readText()));
   expect(copied).toEqual({ seed: "word", slug: "alamin", at: "1:2:4" });

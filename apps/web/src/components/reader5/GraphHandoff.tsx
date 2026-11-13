@@ -89,7 +89,11 @@ export function HandoffDialog({ seed, onClose, onToast }: { seed: Seed; onClose:
         </label>
         <p className="text-[11.5px] text-t3">{t("handoffFoot")}</p>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className="btn" onClick={() => void copySeed()}>{t("copySeed")}</button>
+          {/* the seed as JSON is for developers: kept under its own fold, not among a reader's choices (audit 27 F18) */}
+          <details className="text-[12px] text-t3">
+            <summary className="cursor-pointer">{t("forDevelopers")}</summary>
+            <button type="button" className="btn mt-1" onClick={() => void copySeed()}>{t("copySeed")}</button>
+          </details>
           <span className="flex-1" />
           <button type="button" className="btn" onClick={onClose}>{t("cancel")}</button>
           <Link className="btn btn-primary" href={seedHref(seed, into || null)} data-autofocus>

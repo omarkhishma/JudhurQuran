@@ -2731,7 +2731,8 @@
       "quranpedia-topics": "الموسوعة القرآنية"
     },
     "mindMap": "خريطة ذهنية",
-    "dataContextGrouped": "من {from} إلى {to} عند {count, plural, one {مفسّر} two {مفسّرَين} few {{n} مفسّرين} many {{n} مفسّرًا} other {{n} مفسّر}}"
+    "dataContextGrouped": "من {from} إلى {to} عند {count, plural, one {مفسّر} two {مفسّرَين} few {{n} مفسّرين} many {{n} مفسّرًا} other {{n} مفسّر}}",
+    "forDevelopers": "للمطوّرين"
   },
   "board": {
     "reviewed": "راجعته هيئة التحرير",
