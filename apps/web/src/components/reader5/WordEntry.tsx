@@ -293,12 +293,15 @@ function Sections({ w, chapter }: { w: WordPayload; chapter: ChapterInfo }) {
     <div className="flex flex-col gap-2">
       {SECTION_ORDER.map((id) => (
         <section key={id} className="layer" data-section={id}>
-          <button type="button" className="layer-head" aria-expanded={layerOpen[id]} onClick={() => toggle(id)}>
-            <span className="text-[13.5px] font-medium text-t1">{t(SECTION_LABEL[id])}</span>
-            <span className="text-[11.5px] text-t3">{meta[id]}</span>
-            <span className="flex-1" />
-            <span className="layer-chev" aria-hidden="true">▾</span>
-          </button>
+          {/* each section's toggle inside a heading (the accordion pattern): a screen reader moves by section (audit 27 F14) */}
+          <h3>
+            <button type="button" className="layer-head" aria-expanded={layerOpen[id]} onClick={() => toggle(id)}>
+              <span className="text-[13.5px] font-medium text-t1">{t(SECTION_LABEL[id])}</span>
+              <span className="text-[11.5px] text-t3">{meta[id]}</span>
+              <span className="flex-1" />
+              <span className="layer-chev" aria-hidden="true">▾</span>
+            </button>
+          </h3>
           {layerOpen[id] && <div className="layer-body">{bodies[id]}</div>}
         </section>
       ))}

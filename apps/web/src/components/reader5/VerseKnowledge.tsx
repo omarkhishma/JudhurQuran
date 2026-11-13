@@ -21,12 +21,14 @@ export function VerseLayer({ title, meta, children, defaultOpen = true }: { titl
   const [open, setOpen] = useState(defaultOpen);
   return (
     <section className="layer">
-      <button type="button" className="layer-head" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <span className="text-[13.5px] font-medium text-t1">{title}</span>
-        {meta && <span className="text-[11.5px] text-t3">{meta}</span>}
-        <span className="flex-1" />
-        <span className="layer-chev" aria-hidden="true">▾</span>
-      </button>
+      <h3>
+        <button type="button" className="layer-head" aria-expanded={open} onClick={() => setOpen(!open)}>
+          <span className="text-[13.5px] font-medium text-t1">{title}</span>
+          {meta && <span className="text-[11.5px] text-t3">{meta}</span>}
+          <span className="flex-1" />
+          <span className="layer-chev" aria-hidden="true">▾</span>
+        </button>
+      </h3>
       {open && <div className="layer-body">{children}</div>}
     </section>
   );

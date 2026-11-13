@@ -22,7 +22,8 @@ import { useWordRelations } from "./Wujuh";
 export function MeaningLayer({ id, label, term, summary, open, onToggle, children }: { id: LayerId; label: string; term: string | null; summary?: ReactNode; open: boolean; onToggle: () => void; children: ReactNode }) {
   return (
     <section className="meaning-layer" id={`layer-${id}`} data-layer={id}>
-      <div className="meaning-layer-head">
+      {/* a layer of meaning is a heading under the Meanings section (audit 27 F14) */}
+      <h4 className="meaning-layer-head">
         {term ? (
           <span className="shrink-0 text-[13px] font-semibold text-t1">
             <Term id={term as never}>{label}</Term>
@@ -33,7 +34,7 @@ export function MeaningLayer({ id, label, term, summary, open, onToggle, childre
           {summary && <span className="min-w-0 flex-1 truncate text-[11.5px] text-t3">{summary}</span>}
           <span className="layer-chev ms-auto" aria-hidden="true">▾</span>
         </button>
-      </div>
+      </h4>
       {open && <div className="meaning-layer-body">{children}</div>}
     </section>
   );

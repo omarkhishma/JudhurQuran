@@ -38,6 +38,17 @@ async function seed(page: Page) {
 type Tc = { meaning: string[]; sarf: string[]; irab: string[]; qiraat_same: boolean };
 type W = { slug: string; corpus_freq: number; occurrence: { location: string; tc: Tc } };
 
+test("the panel's sections and layers of meaning are headings, so a screen reader moves by them (audit 27 F14)", async ({ page }) => {
+  await seed(page);
+  await page.goto("/quran/2?w=kursiyy&at=2:255:42#v255");
+  const p = panel(page);
+  await expect(p.locator(".data-card")).toBeVisible();
+  // the headword, then each section, then each layer of meaning under Meanings
+  await expect(p.getByRole("heading", { level: 2 }).first()).toBeVisible();
+  expect(await p.getByRole("heading", { level: 3 }).count()).toBeGreaterThanOrEqual(5);
+  for (const name of ["المعنى السياقي", "المعنى المعجمي", "المعنى الدلالي"]) await expect(p.getByRole("heading", { level: 4, name })).toHaveCount(1);
+});
+
 test("the data card says how the commentators group a word's verses until a context is set, and hides empty halves (audit 27 F16, F21)", async ({ page }) => {
   await seed(page);
   await page.goto("/quran/2?w=sabr&at=2:45:2#v45");
