@@ -253,6 +253,8 @@ test("the gallery, the hub's tile, the read-only window and the Profile list the
     await expect(listed).toBeVisible();
     await listed.click();
     await expect(page).toHaveURL(new RegExp(`/g/${enc(m.slug)}$`));
+    // axe reads the framed map too: wait until its document is drawn, or a slow frame reads as one with no heading
+    await expect(page.frameLocator(".pub-iframe").locator("h1")).toBeAttached();
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);
     if (isMobile) await expectNoHorizontalScroll(page);
     // a reader in the dark theme keeps it once the page hydrates, and its frame follows it once it listens
