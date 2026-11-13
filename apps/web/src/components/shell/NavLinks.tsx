@@ -42,8 +42,40 @@ export function NavLinks() {
   const track = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
-    track.current?.querySelector<HTMLElement>("[aria-current=page]")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // the active item to the strip's middle, clear of the faded edges
+    track.current?.querySelector<HTMLElement>("[aria-current=page]")?.scrollIntoView({ block: "nearest", inline: "center" });
   }, [pathname]);
+
+  // a fade at each edge the strip runs past, so an item cut there reads as "more this way", not as a fault (audit 27 F31)
+  useEffect(() => {
+    const el = track.current;
+    if (!el) return;
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const pos = Math.abs(el.scrollLeft); // right to left, scrollLeft runs negative
+      el.toggleAttribute("data-fade-start", max > 1 && pos > 1);
+      el.toggleAttribute("data-fade-end", max > 1 && pos < max - 1);
+    };
+    // when the strip's size settles (fonts load after the first layout), the active item is brought back if it was cut —
+    // on a resize only, never while the reader scrolls the strip
+    const settle = () => {
+      const a = el.querySelector<HTMLElement>("[aria-current=page]");
+      if (a) {
+        const r = a.getBoundingClientRect();
+        const t = el.getBoundingClientRect();
+        if (r.left < t.left || r.right > t.right) a.scrollIntoView({ block: "nearest", inline: "center" });
+      }
+      update();
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(settle);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, []);
 
   return (
     <nav aria-label={t("primary")} className="hidden min-w-0 shrink min-[900px]:block">

@@ -518,6 +518,25 @@ button:disabled {
 .nav-track::-webkit-scrollbar {
   display: none;
 }
+/* the strip's start and end are the inline ones: right and left in Arabic */
+.nav-track[data-fade-end] {
+  mask-image: linear-gradient(to right, transparent 0, #000 28px);
+}
+.nav-track[data-fade-start] {
+  mask-image: linear-gradient(to left, transparent 0, #000 28px);
+}
+.nav-track[data-fade-start][data-fade-end] {
+  mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+}
+:root[dir="ltr"] .nav-track[data-fade-end] {
+  mask-image: linear-gradient(to left, transparent 0, #000 28px);
+}
+:root[dir="ltr"] .nav-track[data-fade-start] {
+  mask-image: linear-gradient(to right, transparent 0, #000 28px);
+}
+:root[dir="ltr"] .nav-track[data-fade-start][data-fade-end] {
+  mask-image: linear-gradient(to right, transparent 0, #000 28px, #000 calc(100% - 28px), transparent 100%);
+}
 .nav-item {
   display: inline-flex;
   align-items: center;
