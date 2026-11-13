@@ -2696,7 +2696,7 @@
     "allDictionaries": "All the dictionaries",
     "dataCard": "The word's data",
     "dataFrequency": "Occurs",
-    "dataFrequencyValue": "{count, plural, one {once} other {{n} times}} in {count2, plural, one {1 verse} other {{n2} verses}} of {count3, plural, one {1 sūra} other {{n3} sūras}} (Meccan {meccan}, Medinan {medinan})",
+    "dataFrequencyValue": "{count, plural, one {once} other {{n} times}} in {count2, plural, one {1 verse} other {{n2} verses}} of {count3, plural, one {1 sūra} other {{n3} sūras}} ({split, select, meccan {all Meccan} medinan {all Medinan} other {Meccan {meccan}, Medinan {medinan}}})",
     "dataRoot": "Root",
     "dataRootValue": "{root} • {count, plural, one {once} other {{n} times}} in {count2, plural, one {1 word} other {{n2} words}}",
     "dataPattern": "Pattern",
@@ -2719,7 +2719,8 @@
       "ibnkathir-tafsirquran": "Ibn Kathīr (headings)",
       "quranpedia-topics": "Quranpedia"
     },
-    "mindMap": "Mind map"
+    "mindMap": "Mind map",
+    "dataContextGrouped": "{from} to {to}, as {count, plural, one {one commentator groups it} other {{n} commentators group it}}"
   },
   "board": {
     "reviewed": "Reviewed by the editorial board",

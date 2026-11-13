@@ -38,12 +38,28 @@ async function seed(page: Page) {
 type Tc = { meaning: string[]; sarf: string[]; irab: string[]; qiraat_same: boolean };
 type W = { slug: string; corpus_freq: number; occurrence: { location: string; tc: Tc } };
 
+test("the data card says how the commentators group a word's verses until a context is set, and hides empty halves (audit 27 F16, F21)", async ({ page }) => {
+  await seed(page);
+  await page.goto("/quran/2?w=sabr&at=2:45:2#v45");
+  const card = panel(page).locator(".data-card");
+  await expect(card).toBeVisible();
+  // no administration content yet: the row shows the commentators' grouping, not «لم يُحدَّد بعد» on every word
+  await expect(card).toContainText(/من .+ إلى .+ عند/);
+  await expect(card).not.toContainText("لم يُحدَّد بعد");
+  // no near or opposite word set: the row is left out, not «قريبة ٠ • مقابلة ٠»
+  await expect(card).not.toContainText("مقابلة");
+  // ٱصْطَبِرْ occurs in Meccan sūras only: «كلها مكية», not «مدنية ٠»
+  await page.goto("/quran/19?w=istabir&at=19:65:7#v65");
+  await expect(panel(page).locator(".data-card")).toContainText("كلها مكية");
+});
+
 test("every door of the data card moves the panel, never the reader's frame (audit 27 F15)", async ({ page }) => {
   // a jump into the panel once scrolled the clipped shell itself: the header gone and a blank strip under the audio bar
   await seed(page);
   await page.goto("/quran/2?w=sabr&at=2:45:2#v45");
   const p = panel(page);
   await expect(p.locator(".data-card")).toBeVisible();
+  await expect(p.locator(".data-card")).not.toContainText("…"); // every row settled: an empty one leaves
   const doors = p.locator(".data-door");
   const n = await doors.count();
   expect(n).toBeGreaterThan(2);

@@ -444,6 +444,7 @@ export function WordDataCard({ w }: { w: WordPayload }) {
   const near = d ? d.near.length + d.related.length : 0;
   const opposite = d ? d.opposite.length : 0;
   const c = ctx.data?.context;
+  const grouping = [...(ctx.data?.groupings ?? [])].sort((x, y) => y.sources.length - x.sources.length)[0];
   const row = (label: string, value: ReactNode, go: () => void, key: string) => (
     <div key={key} className="data-row">
       <dt className="text-[11.5px] text-t3">{label}</dt>
@@ -456,17 +457,34 @@ export function WordDataCard({ w }: { w: WordPayload }) {
   );
   return (
     <dl className="data-card" aria-label={t("dataCard")}>
-      {row(t("dataFrequency"), t("dataFrequencyValue", { ...cnt(w.corpus_freq, locale), ...cnt2(w.verse_count, locale), count3: a.by_chapter.length, n3: formatNumber(a.by_chapter.length, locale), meccan: formatNumber(a.meccan, locale), medinan: formatNumber(a.medinan, locale) }), () => jumpTo("usage"), "freq")}
+      {row(
+        t("dataFrequency"),
+        // the Meccan and Medinan halves, without a zero half: «كلها مكية» rather than «مكية ٣، مدنية ٠» (audit 27 F21)
+        t("dataFrequencyValue", {
+          ...cnt(w.corpus_freq, locale),
+          ...cnt2(w.verse_count, locale),
+          count3: a.by_chapter.length,
+          n3: formatNumber(a.by_chapter.length, locale),
+          split: a.medinan === 0 ? "meccan" : a.meccan === 0 ? "medinan" : "both",
+          meccan: formatNumber(a.meccan, locale),
+          medinan: formatNumber(a.medinan, locale),
+        }),
+        () => jumpTo("usage"),
+        "freq",
+      )}
       {w.root && row(t("dataRoot"), t("dataRootValue", { root: w.root.ar_spaced, ...cnt(w.root.occurrences, locale), ...cnt2(w.root.lemma_count, locale) }), () => jumpTo("family"), "root")}
       {w.pattern && row(t("dataPattern"), <span className="ar-classical text-[15px]" lang="ar">{w.pattern.ar.full}</span>, () => focusLayer("morphological"), "pattern")}
       {w.occurrence &&
         row(
           t("dataContext"),
-          ctx.isPending ? "…" : c ? t("dataContextValue", { from: verseRef(c.from, locale), to: verseRef(c.to, locale) }) : t("dataContextUnset"),
+          // until the administration sets a context, how the commentators group the verses around it — the contextual
+          // layer's first grouping — not «لم يُحدَّد بعد» on every word (audit 27 F16)
+          ctx.isPending ? "…" : c ? t("dataContextValue", { from: verseRef(c.from, locale), to: verseRef(c.to, locale) }) : grouping ? t("dataContextGrouped", { from: verseRef(grouping.from, locale), to: verseRef(grouping.to, locale), ...cnt(grouping.sources.length, locale) }) : t("dataContextUnset"),
           () => focusLayer("contextual"),
           "ctx",
         )}
-      {row(t("dataRelations"), rel.isPending ? "…" : t("dataRelationsValue", { near: formatNumber(near, locale), opposite: formatNumber(opposite, locale) }), () => focusLayer("semantic"), "rel")}
+      {/* near and opposite words are the administration's to set: the row shows once there is one (audit 27 F16) */}
+      {(rel.isPending || near + opposite > 0) && row(t("dataRelations"), rel.isPending ? "…" : t("dataRelationsValue", { near: formatNumber(near, locale), opposite: formatNumber(opposite, locale) }), () => focusLayer("semantic"), "rel")}
       {row(t("dataTopics"), topics.isPending ? "…" : t("dataTopicsValue", cnt(topics.data?.recurring.length ?? 0, locale)), () => focusLayer("semantic"), "topics")}
     </dl>
   );

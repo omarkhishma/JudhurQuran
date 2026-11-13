@@ -2697,7 +2697,7 @@
     "allDictionaries": "المعاجم كاملة",
     "dataCard": "بيانات الكلمة",
     "dataFrequency": "تكرارها",
-    "dataFrequencyValue": "{count, plural, one {مرة واحدة} two {مرتان} few {{n} مرات} many {{n} مرة} other {{n} مرة}} في {count2, plural, one {آية واحدة} two {آيتين} few {{n2} آيات} many {{n2} آية} other {{n2} آية}} من {count3, plural, one {سورة واحدة} two {سورتين} few {{n3} سور} many {{n3} سورة} other {{n3} سورة}} (مكية {meccan}، مدنية {medinan})",
+    "dataFrequencyValue": "{count, plural, one {مرة واحدة} two {مرتان} few {{n} مرات} many {{n} مرة} other {{n} مرة}} في {count2, plural, one {آية واحدة} two {آيتين} few {{n2} آيات} many {{n2} آية} other {{n2} آية}} من {count3, plural, one {سورة واحدة} two {سورتين} few {{n3} سور} many {{n3} سورة} other {{n3} سورة}} ({split, select, meccan {كلها مكية} medinan {كلها مدنية} other {مكية {meccan}، مدنية {medinan}}})",
     "dataRoot": "جذرها",
     "dataRootValue": "{root} • {count, plural, one {مرة واحدة} two {مرتان} few {{n} مرات} many {{n} مرة} other {{n} مرة}} في {count2, plural, one {كلمة واحدة} two {كلمتين} few {{n2} كلمات} many {{n2} كلمة} other {{n2} كلمة}}",
     "dataPattern": "وزنها",
@@ -2720,7 +2720,8 @@
       "ibnkathir-tafsirquran": "ابن كثير (عناوينه)",
       "quranpedia-topics": "الموسوعة القرآنية"
     },
-    "mindMap": "خريطة ذهنية"
+    "mindMap": "خريطة ذهنية",
+    "dataContextGrouped": "من {from} إلى {to} عند {count, plural, one {مفسّر} two {مفسّرَين} few {{n} مفسّرين} many {{n} مفسّرًا} other {{n} مفسّر}}"
   },
   "board": {
     "reviewed": "راجعته هيئة التحرير",
