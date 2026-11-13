@@ -103,6 +103,35 @@ def embed(q: str) -> tuple[np.ndarray, str] | None:
     return np.frombuffer(base64.b64decode(body["vectors"]), dtype="<f4"), body["model"]
 
 
+def embed_many(texts: list[str], timeout: float = 15.0) -> tuple[np.ndarray, str] | None:
+    """Several texts as vectors, 32 to a request (the service's bound); each still read alone by the model, so a vector
+    is the one `embed` gives for its text. None when the service is not set, does not answer, or changes model."""
+    s = get_settings()
+    if not s.embed_url or not texts:
+        return None
+    parts: list[np.ndarray] = []
+    model: str | None = None
+    try:
+        for i in range(0, len(texts), 32):
+            r = httpx.post(
+                f"{s.embed_url}/embed",
+                json={"texts": [t[:2000] for t in texts[i : i + 32]], "kind": "query"},
+                timeout=timeout,
+            )
+            r.raise_for_status()
+            body = r.json()
+            if model is not None and body["model"] != model:
+                return None
+            model = body["model"]
+            parts.append(
+                np.frombuffer(base64.b64decode(body["vectors"]), dtype="<f4").reshape(-1, body["dim"])
+            )
+    except (httpx.HTTPError, ValueError, KeyError):
+        return None
+    assert model is not None
+    return np.concatenate(parts), model
+
+
 def nearest(
     idx: Index, vec: np.ndarray, lang: str, k: int = DEPTH, sims: np.ndarray | None = None
 ) -> list[tuple[int, float]]:

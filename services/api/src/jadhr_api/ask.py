@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 import threading
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
@@ -692,30 +693,38 @@ def _surah_focus(f: str | None) -> str | None:
     )
 
 
-# the example questions as vectors, once per model
+# the example questions as vectors, once per model. Built in two requests to the embedding service, not one per
+# example; a failure is remembered for half a minute, and a question waits for another's build only so long — so a
+# slow or absent service never holds questions in a queue behind the lock (delta security review, M4)
 _EX_LOCK = threading.Lock()
 _EX: dict[str, tuple[np.ndarray, list[tuple[str, str]]]] = {}
+_EX_FAILED = [float("-inf")]
+EX_RETRY = 30.0
+EX_WAIT = 5.0
 
 
 def _examples() -> tuple[np.ndarray, list[tuple[str, str]], str] | None:
     from . import semantic
 
-    with _EX_LOCK:
+    if _EX:
+        model, (mat, labels) = next(iter(_EX.items()))
+        return mat, labels, model
+    if time.monotonic() - _EX_FAILED[0] < EX_RETRY or not _EX_LOCK.acquire(timeout=EX_WAIT):
+        return None
+    try:
         if _EX:
             model, (mat, labels) = next(iter(_EX.items()))
             return mat, labels, model
         labels = [(intent, q) for intent, qs in EXAMPLES.items() for q in qs]
-        vecs: list[np.ndarray] = []
-        model = None
-        for _, q in labels:
-            got = semantic.embed(q)
-            if got is None:
-                return None
-            vecs.append(got[0])
-            model = got[1]
-        assert model is not None
-        _EX[model] = (np.stack(vecs), labels)
-        return _EX[model][0], labels, model
+        got = semantic.embed_many([q for _, q in labels])
+        if got is None:
+            _EX_FAILED[0] = time.monotonic()
+            return None
+        mat, model = got
+        _EX[model] = (mat, labels)
+        return mat, labels, model
+    finally:
+        _EX_LOCK.release()
 
 
 def _by_example(conn: Connection, q: str) -> Reading | None:

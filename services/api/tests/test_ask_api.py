@@ -11,6 +11,7 @@ import os
 from collections import Counter
 from pathlib import Path
 
+import numpy as np
 import pytest
 import yaml
 from fastapi.testclient import TestClient
@@ -39,6 +40,13 @@ def local_embed():
 @pytest.fixture
 def embedded(monkeypatch, local_embed):
     monkeypatch.setattr(semantic, "embed", local_embed)
+    monkeypatch.setattr(
+        semantic,
+        "embed_many",
+        lambda texts, timeout=15.0: (np.stack([local_embed(t)[0] for t in texts]), local_embed(texts[0])[1]),
+    )
+    # a failure an earlier test met without the model is not this test's
+    monkeypatch.setattr(ask, "_EX_FAILED", [float("-inf")])
 
 
 def q(sql: str, **params: object) -> list[dict]:
@@ -232,3 +240,50 @@ def test_the_resolver_names_a_word_or_a_root_or_nothing() -> None:
     assert got("mercy")["slug"] == "rahma"
     assert got("زقزقة") is None
     assert client.get("/api/v1/ask/resolve").status_code == 422
+
+
+def test_the_example_questions_are_built_in_batches_and_a_failure_is_remembered(monkeypatch) -> None:
+    """With the embedding service away, a question does not try again for every request (each a wait behind the lock)
+    but for the next half minute reads by its rules and the search alone; when it answers, the examples are built from
+    two requests, each vector the one a single request gives (delta security review, M4)."""
+    calls: list[int] = []
+
+    def away(texts: list[str], timeout: float = 15.0) -> None:
+        calls.append(len(texts))
+        return None
+
+    monkeypatch.setattr(ask, "_EX", {})
+    monkeypatch.setattr(ask, "_EX_FAILED", [float("-inf")])
+    monkeypatch.setattr(semantic, "embed_many", away)
+    assert ask._examples() is None and ask._examples() is None
+    assert calls == [sum(len(v) for v in ask.EXAMPLES.values())]  # once, with every example
+    monkeypatch.setattr(ask, "_EX_FAILED", [float("-inf")])
+    dim = 4
+
+    def back(texts: list[str], timeout: float = 15.0):
+        return np.eye(len(texts), dim, dtype="<f4"), "m@1"
+
+    monkeypatch.setattr(semantic, "embed_many", back)
+    mat, labels, model = ask._examples()
+    assert model == "m@1" and mat.shape == (len(labels), dim) and labels[0][0] in ask.EXAMPLES
+
+
+def test_embed_many_asks_in_requests_of_32_and_keeps_the_order(monkeypatch) -> None:
+    import base64
+
+    import httpx
+
+    sent: list[list[str]] = []
+
+    def post(url: str, json: dict, timeout: float):
+        sent.append(json["texts"])
+        vec = np.array([[float(len(t)), 0.0] for t in json["texts"]], dtype="<f4")
+        body = {"model": "m@1", "dim": 2, "vectors": base64.b64encode(vec.tobytes()).decode()}
+        return httpx.Response(200, json=body, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(semantic.get_settings(), "embed_url", "http://embed.test")
+    monkeypatch.setattr(semantic.httpx, "post", post)
+    texts = ["x" * (i + 1) for i in range(70)]
+    mat, model = semantic.embed_many(texts)
+    assert [len(b) for b in sent] == [32, 32, 6] and model == "m@1"
+    assert mat[:, 0].tolist() == [float(i + 1) for i in range(70)]
