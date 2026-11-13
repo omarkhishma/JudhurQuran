@@ -3407,14 +3407,21 @@ button.type-chip:hover {
   height: 60px;
   flex-shrink: 0;
 }
+/* a cover is cloth, not a missing picture: an eight-pointed star lattice over each kind's colour (audit 27 F25) */
+.book-cover.is-quran,
+.book-cover.is-hadith,
+.book-cover.is-book {
+  background-size: 28px 28px, auto;
+  background-position: center;
+}
 .book-cover.is-quran {
-  background: linear-gradient(135deg, #177a44, #0d4a29);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg fill='none' stroke='white' stroke-opacity='.17' stroke-width='1'%3E%3Crect x='8.5' y='8.5' width='11' height='11'/%3E%3Crect x='8.5' y='8.5' width='11' height='11' transform='rotate%2845 14 14%29'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(135deg, #177a44, #0d4a29);
 }
 .book-cover.is-hadith {
-  background: linear-gradient(135deg, #a8682c, #6b3f15);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg fill='none' stroke='white' stroke-opacity='.17' stroke-width='1'%3E%3Crect x='8.5' y='8.5' width='11' height='11'/%3E%3Crect x='8.5' y='8.5' width='11' height='11' transform='rotate%2845 14 14%29'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(135deg, #a8682c, #6b3f15);
 }
 .book-cover.is-book {
-  background: linear-gradient(135deg, #3d5a80, #22344d);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg fill='none' stroke='white' stroke-opacity='.17' stroke-width='1'%3E%3Crect x='8.5' y='8.5' width='11' height='11'/%3E%3Crect x='8.5' y='8.5' width='11' height='11' transform='rotate%2845 14 14%29'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(135deg, #3d5a80, #22344d);
 }
 .book-cover.is-mine {
   display: flex;

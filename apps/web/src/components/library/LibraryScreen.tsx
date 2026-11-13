@@ -185,7 +185,7 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
                   <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{x.title_ar}</span>
                   {locale !== "ar" && <span className="text-[12.5px] text-t2">{x.title_en}</span>}
                   <span className="text-[12px] text-t3">{t("hadithMeta", cnt(x.passage_count, locale))}</span>
-                  {textKnown.data?.[x.slug] && <KnownLine known={textKnown.data[x.slug].known} total={textKnown.data[x.slug].total} seen={0} />}
+                  {textKnown.data?.[x.slug] && <KnownLine known={textKnown.data[x.slug].known} total={textKnown.data[x.slug].total} seen={0} quiet />}
                 </Link>
               </li>
             ))}
@@ -200,7 +200,7 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
                   <span className="text-[12px] text-t3">
                     <bdi lang="ar">{x.author_ar}</bdi> • {t("bookMeta", cnt(x.token_count, locale))}
                   </span>
-                  {textKnown.data?.[x.slug] && <KnownLine known={textKnown.data[x.slug].known} total={textKnown.data[x.slug].total} seen={0} />}
+                  {textKnown.data?.[x.slug] && <KnownLine known={textKnown.data[x.slug].known} total={textKnown.data[x.slug].total} seen={0} quiet />}
                 </Link>
               </li>
             ))}
@@ -292,11 +292,12 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
   );
 }
 
-function KnownLine({ known, total, seen }: { known: number; total: number; seen: number }) {
+function KnownLine({ known, total, seen, quiet = false }: { known: number; total: number; seen: number; quiet?: boolean }) {
   const t = useTranslations("library");
   const locale = useLocale();
-  // nothing measured is not "100% known" (LIB-12): say what there is
-  if (!total) return null;
+  // nothing measured is not "100% known" (LIB-12): say what there is — on the Quran's card; the other cards stay quiet
+  // until something is met (audit 27 F25: «لم تعلّم كلمات منه بعد» forty-five times for a reader who never studied)
+  if (!total || (quiet && !known && !seen)) return null;
   return (
     <span className="text-[12px] text-t2">
       {known ? t("knownOf", { known: formatNumber(known, locale), total: formatNumber(total, locale), totalC: total }) : t("noneKnown")}

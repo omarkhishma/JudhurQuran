@@ -21,7 +21,7 @@ test("the shelf: the Quran's card counts known words by unique lemma, resumes at
   await expect(cont.getByRole("link")).toHaveAttribute("href", /\/quran\/18#v10$/);
   const cells = page.locator(".surah-cell");
   await expect(cells).toHaveCount(114);
-  await expect(cells.nth(0)).toHaveAttribute("aria-label", `سورة الفاتحة: قرأت ${ar(7)} من ${ar(7)} آية`);
+  await expect(cells.nth(0)).toHaveAttribute("aria-label", `سورة الفاتحة: قرأت ${ar(7)} من ${ar(7)} آيات`); // ٧ آيات: the noun agrees (audit 27 F04)
   if (isMobile) await expectNoHorizontalScroll(page);
 });
 
@@ -29,6 +29,8 @@ test("nothing measured is never '100% known': a reader who has marked nothing is
   await page.addInitScript((v) => localStorage.setItem("jadhr-personal", JSON.stringify(v)), seed({}));
   await page.goto("/library");
   await expect(page.locator(".book-card").first()).toContainText("لم تعلّم كلمات منه بعد");
+  // said once, on the Quran's card — not on every hadith collection and book (audit 27 F25)
+  await expect(page.locator(".book-card").filter({ hasText: "لم تعلّم كلمات منه بعد" })).toHaveCount(1);
   await expect(page.getByRole("region", { name: "تابع" })).toHaveCount(0);
 });
 
