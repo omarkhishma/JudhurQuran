@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic, hasMarks } from "@/lib/arabic/normalize";
 import { looksLikeQuestion } from "@/lib/ask";
 import { cnt, formatNumber } from "@/lib/format";
@@ -147,18 +147,27 @@ function useAskActions(w: WordPayload) {
   const setAsk = useReader((s) => s.setAsk);
   const openWord = useReader((s) => s.openWord);
   const setPrefs = usePrefs((s) => s.set);
+  const router = useRouter();
   const [star, toggleStar] = useStar(w.slug, w.ar.full);
   const first = w.attestations.items[0];
+  const readHref = first ? `/quran/${first.verse_key.split(":")[0]}?w=${encodeURIComponent(w.slug)}&at=${first.location}#v${first.verse_key.split(":")[1]}` : null;
   return {
     star,
     toggleStar,
     goDeeper: () => {
       setAsk(false);
       setPrefs({ panelOpen: true });
-      // at the first place, which the card explains it from, even before that place's payload has come
-      openWord({ slug: w.slug, at: w.occurrence?.location ?? first?.location ?? null });
+      // at the first place, which the card explains it from, even before that place's payload has come; the text goes
+      // there too, so the verse the panel speaks of is on the page (audit 27 F12: it stayed on al-Fātiḥa)
+      const at = w.occurrence?.location ?? first?.location ?? null;
+      const here = window.location.pathname.match(/\/quran\/(\d+)/)?.[1];
+      if (at && readHref && here !== at.split(":")[0]) {
+        router.push(readHref);
+        return;
+      }
+      openWord({ slug: w.slug, at });
     },
-    readHref: first ? `/quran/${first.verse_key.split(":")[0]}?w=${encodeURIComponent(w.slug)}&at=${first.location}#v${first.verse_key.split(":")[1]}` : null,
+    readHref,
   };
 }
 

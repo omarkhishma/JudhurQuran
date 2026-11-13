@@ -96,6 +96,10 @@ test("Ask finds a word without vowels and Go deeper opens its full entry", async
   await page.getByRole("button", { name: /تعمّق/ }).first().click();
   await expect(panel(page).locator("h2").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "عن أي كلمة تتساءل؟" })).toHaveCount(0);
+  // the text goes to the place the card explains, so the verse the panel speaks of is on the page (audit 27 F12)
+  const first = (await (await page.request.get("/api/v1/words/ilm?limit=1")).json()).attestations.items[0].location as string;
+  await expect(page).toHaveURL(new RegExp(`/quran/${first.split(":")[0]}\\?`));
+  await expect(page.locator(`.w[data-w="${first}"]`)).toBeInViewport();
 });
 
 test("links into a folded section open and scroll to it (RDR-527/589)", async ({ page }) => {
