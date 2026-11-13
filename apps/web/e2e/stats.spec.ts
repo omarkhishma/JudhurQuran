@@ -76,7 +76,10 @@ test("patterns and relations: the roots' network, the sūras' similarity, a root
   await colFig.getByRole("textbox", { name: "اكتب جذرًا" }).fill("صبر");
   await colFig.getByRole("button", { name: "اعرض" }).click();
   await expect(colFig.locator(".bar-row").first()).toContainText(col.items[0].spaced);
-  await expect(colFig.locator(".bar-row").first()).toContainText(`${ar(col.items[0].verses)} آية مشتركة`);
+  // the noun agrees with its number (audit 27 F04): ٤ آيات مشتركة، ١٢ آية مشتركة
+  const shared = col.items[0].verses;
+  const noun = new Intl.PluralRules("ar").select(shared) === "few" ? "آيات" : "آية";
+  await expect(colFig.locator(".bar-row").first()).toContainText(shared > 2 ? `${ar(shared)} ${noun} مشتركة` : "مشترك");
   await colFig.getByRole("textbox", { name: "اكتب جذرًا" }).fill("ززز");
   await colFig.getByRole("button", { name: "اعرض" }).click();
   await expect(colFig.getByRole("status")).toHaveText("لا جذر بهذه الحروف في القرآن.");

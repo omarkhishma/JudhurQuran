@@ -26,7 +26,7 @@ test("the library shows where the topics stop, its numbers a table (B43)", async
   await expect(strip).toContainText(`${ar(cov.covered + cov.placed)} من ${ar(cov.verses)} آية لها موضوع`);
   // a sūra with no topic and one fully covered, as their cells say
   const none = cov.surahs.find((s) => s.covered + s.placed === 0)!;
-  await expect(strip.locator(".topic-cell").nth(none.surah - 1)).toHaveAttribute("title", new RegExp(`${ar(0)} من ${ar(none.verses)} آية`));
+  await expect(strip.locator(".topic-cell").nth(none.surah - 1)).toHaveAttribute("title", new RegExp(`${ar(0)} من ${ar(none.verses)} آي(ة|ات)`) /* the noun agrees with its number (audit 27 F04) */);
   // the numbers as a table, for a screen reader and for anyone
   await strip.getByText("الأرقام سورةً سورة").click();
   const row = strip.getByRole("row").filter({ has: page.getByRole("rowheader", { name: new RegExp(`^${ar(none.surah)}\\. `) }) });
