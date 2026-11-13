@@ -17,7 +17,7 @@ Severity is harm to a reader: **critical** blocks a core journey, **high** misle
 | F01 | high | Search | For a single word («صبر»), the page leads with two exact-string verses, then ten verses by meaning and the meanings section. The word sits at 3,027 px and the root at 3,243 px. The design orders Words · Roots · Patterns · Passages. | A best-match card first (lemma, root, count, plain meaning, open), then words and roots, then verses. |
 | F02 | high | Omnibox | The same order: verses, then the root, then surface forms without vowels. | Lemma and root first. |
 | F09 | high | Dictionary, Mufradāt | The honorific ligatures U+FD40–FD4F (﵁ ﵇ ﵄ ﵂ ﵀ …) render as empty boxes in 4,321 dictionary articles and 182 Mufradāt entries; ﵁ alone occurs 3,493 times. The symbols face covers only U+FDFA–FDFF. | Extend the symbols subset to U+FD40–FD4F. |
-| F04 | high | Counts | Labels fixed beside a number skip agreement: «١٠٣ موضعًا» (→ مواضع), «٨ صيغة» (→ صيغ), «٢٠٩ مقطعًا» (→ مقاطع), in the root page's stat cards, the omnibox and the passages tool. | Every label beside a number goes through the plural rules; a sweep of the fixed ones. |
+| F04 | high | Counts | Labels fixed beside a number skip agreement: «١٠٣ موضعًا» (→ مواضع), «٨ صيغة» (→ صيغ), in the root page's stat cards and the omnibox. | Every label beside a number goes through the plural rules; a sweep of the fixed ones. |
 | F11 | high | Ask card | The lead "meaning" of صَبْر is a verse-specific gharīb reading, «﴿واستعينوا بالصبر﴾ أي: بالصوم», set large and bold. A casual reader takes "fasting" for the word's meaning. The Tafsir Center's «الصبر: حبس النفس عن الجزع» is held and cited, and shown only further down. | The Tafsir Center's meaning in this place leads; the gharīb passage follows, labelled with its verse. |
 | F03 | medium | Search | Verses found by their words show Tanzil's plain text, without marks or a label, while verses found by meaning show the mushaf text. Law L1 requires a simplified spelling to be a labelled view. | Show the mushaf text, or label the plain text. |
 | F12 | medium | Ask → «تعمّق» | The entry opens, but the text stays on al-Fātiḥa 1:1 while the panel says «في هذا الموضع: البقرة ٢:٤٥». | Move the text to the occurrence. |
@@ -55,4 +55,52 @@ The ask card's anatomy (forms, root, cousins, a verse, actions). The layers of m
 
 ## Loop passes
 
-(Written as each pass ends.)
+### Pass 1 — 2026-11-13: the findings, most harmful first
+
+27 of the 31 findings fixed, 26 commits, each with the test that holds it where a test can (`git log 0bcba4c..d9ffe7c`). Fixed: F22, F15, F01, F02, F03, F09, F04, F11, F12, F16, F21, F19, F14, F24, F23, F05, F06, F25, F28, F27, F30, F29, F20, F26, F31, F18 and F17.
+
+What changed along the way:
+
+- **F23.** The half sheet hides its search box. The entry also leads with the word's meaning at its place, from the Tafsir Center: in Arabic it had opened on the corpus's English gloss.
+- **F24.** On a phone the tour is now a compact strip. A low card would have covered the tapped word, which the reader keeps just above the sheet.
+- **F25.** «لم تعلّم كلمات منه بعد» is still said once, on the Quran's card, to keep LIB-12's promise.
+- **F05.** The hub and the omnibox now share one suggestion hook.
+
+Not changed, with the reason:
+
+- **F10.** This is Amiri's design, not a fault. It sets the marks above short letters at one height, level with the tall letters, and the same word drawn alone in Amiri shows the same thing.
+- **F13.** The tour moving to its second step when the first word opens is the tour following the reader. It now sits where it hides nothing (F24).
+- **F08.** The two counting links serve two ends: a note in place, and the count page that answers «كم مرة ذكرت» for search engines (B8a). The concordance is the root pages' nav item by design.
+- **F07.** Grouped navigation is the owner's call (P-UX1).
+- The «٢٠٩ مقطعًا» first listed under F04 was a misread «٢٥٩», which agrees.
+
+Two findings the e2e suite could never have caught:
+
+- **F22.** Every test seeds a returning reader.
+- **F15.** No test pressed a door and then measured the shell.
+
+Both now have tests.
+
+### Verification after pass 1, and pass 2
+
+**Full run of pass 1 on the production build:** 911 passed, 147 skipped by device, 20 failed. Nothing failed in the new features themselves. The causes, all fixed:
+
+- **16 axe failures**, one cause: the current word chip's count. The first fix sat in Tailwind's components layer, which the `text-t3` utility outranks, so the class is now set in the component.
+- **2 failures of the `/read` first visit.** On the production build `?mode=ask` stayed in the address after the reader left Ask, so a reload brought Ask back. The first visit's Ask is now set in the reader's state.
+- **2 tests** read the old forms of the counted noun and of the Go-deeper path; they were updated.
+
+**Rerunning the 20:** all passed. **The final full run on the production build:** 931 passed, 147 skipped by device, 0 failed (18.1 min). Lint, typecheck, and vitest (179) are clean.
+
+**Pass 2: the product used again, after the fixes.** Desktop and an emulated phone, fresh visitors, both themes. Checked:
+
+- The home page box suggests while you type.
+- «رحمة» and «علم» are answered by their best match.
+- On the phone, the search leads with the word.
+- On the phone, Ask then Go deeper lands on 2:7 with «قُلُوبِهِمْ» selected and the Tafsir Center's meaning first.
+- The root page reads «١٠٣ مواضع، ٩٣ آية، ٤٥ سورة، ٨ صيغ», and its title agrees.
+- The mind map's labels read level.
+- The library's covers carry their pattern.
+- In the dark theme, the best-match card and the home page suggestions read clearly.
+
+Pass 2 found nothing new worth changing beyond the two faults the full run caught, so the loop stops here, as its rules say.
+
