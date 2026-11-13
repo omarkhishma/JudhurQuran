@@ -35,7 +35,9 @@ test("journey C: a word looked up, its old dictionaries read one by one and side
   else await page.getByRole("button", { name: "تعمّق — المصادر والأوزان والتاريخ" }).first().click();
   const p = panel(page);
   const lex = p.locator('[data-section="lexica"]');
-  // the phone's entry is in tabs: the dictionaries' tab
+  // the entry opens where the word is (audit 27 F12: the text moves to its place), so wait for it to be drawn;
+  // the phone's entry may be in tabs: the dictionaries' tab
+  await expect(lex.or(p.locator("#tab-lexica")).first()).toBeVisible();
   if (isMobile && !(await lex.isVisible())) await p.locator("#tab-lexica").click();
   await expect(lex).toBeVisible();
 

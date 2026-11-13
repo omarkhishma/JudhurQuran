@@ -45,7 +45,7 @@ test("the board's strip lists a sūra's waiting suggestions (B43)", async ({ bro
     const waiting = (await (await a.page.request.get(`/api/v1/editorial/verdict?layer=topic_candidates&state=all&q=${gap.surah}:&limit=100`, { headers: a.h })).json()) as { total: number; data: { sub: string }[] };
     await a.page.goto("/workbench?kind=verdict&layer=topic_candidates&state=all");
     const strip = a.page.getByRole("region", { name: "أين تتوقف الموضوعات" });
-    await strip.getByRole("button", { name: new RegExp(`آية لها موضوع`) }).nth(gap.surah - 1).click();
+    await strip.getByRole("button", { name: /آي(ة|ات) لها موضوع/ }) /* «٧ آيات» for a short sūra: the noun agrees (audit 27 F04) */.nth(gap.surah - 1).click();
     await expect(a.page).toHaveURL(new RegExp(`q=${gap.surah}(%3A|:)`));
     await expect(a.page.getByRole("status").filter({ hasText: ar(waiting.total) }).first()).toBeVisible();
   } finally {
