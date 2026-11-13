@@ -8,8 +8,9 @@ import { usePersonal } from "@/lib/reader/store";
 import type { WordPayload } from "@/lib/reader/types";
 
 /**
- * /read (design 01 §1.3): opens the reader where it was left (the last sūra and verse read), or at
- * al-Fātiḥa on a first visit. Carries the reader's own parameters: ?w=slug (a cited word) goes to the
+ * /read (design 01 §1.3): opens the reader where it was left (the last sūra and verse read), or, on a first visit,
+ * in Ask (design 03 §3.1, RDR-516) — the plainest door, decided here because /read is the generic entry: an address
+ * that names a sūra or verse opens its text. Carries the reader's own parameters: ?w=slug (a cited word) goes to the
  * word's first place in the Quran; ?mode=ask|lookup|review and ?q= pass through.
  */
 export function ResumeRedirect() {
@@ -41,7 +42,9 @@ export function ResumeRedirect() {
       }
       // a stored position is only trusted when it names a real sūra and verse: a stale or edited one
       // opens al-Fātiḥa instead of a missing page (RDR-538)
-      const saved = usePersonal.getState().progress.quran;
+      const personal = usePersonal.getState();
+      if (!personal.visited && Object.keys(personal.progress).length === 0 && !keep.has("mode")) keep.set("mode", "ask");
+      const saved = personal.progress.quran;
       const prog = saved && Number.isInteger(saved.chapter) && saved.chapter >= 1 && saved.chapter <= 114 ? saved : null;
       const passage = prog && Number.isInteger(prog.passage) && prog.passage > 1 && prog.passage <= 286 ? prog.passage : null;
       const qs = keep.toString();

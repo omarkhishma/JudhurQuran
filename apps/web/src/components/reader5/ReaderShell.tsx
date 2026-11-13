@@ -38,8 +38,9 @@ export function ReaderShell({ chapter, children, footer }: { chapter: ChapterInf
   const setPrefs = usePrefs((s) => s.set);
   const surface = useRef<HTMLDivElement>(null);
 
-  // First visit (design 03 §3.1, fixed per RDR-516): Ask when there is no mode, word, verse or progress,
-  // and the reader never visited before — an explicit flag, not a falsy chapter index.
+  // The mode named in the address (?mode=ask|lookup|about|review). A first visit's Ask (design 03 §3.1, RDR-516) is
+  // decided by /read, the reader's generic entry (ResumeRedirect): an address that names a sūra or a verse — a shared
+  // link, a search result — always opens that text, first visit or not.
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const personal = usePersonal.getState();
@@ -52,9 +53,6 @@ export function ReaderShell({ chapter, children, footer }: { chapter: ChapterInf
       useReader.getState().setMode("surah");
       setPrefs({ panelOpen: true });
     } else if (mode === "review") useReader.getState().setReview(true);
-    else if (!mode && !p.get("w") && !p.get("v") && !personal.visited && Object.keys(personal.progress).length === 0) {
-      useReader.getState().setAsk(true);
-    }
     personal.markVisited();
   }, [setPrefs]);
 

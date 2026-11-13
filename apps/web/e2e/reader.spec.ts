@@ -69,8 +69,16 @@ test("a ?w= deep link takes the same path as a tap (RDR-539) and is recorded in 
   expect(trail.map((s: { id: string }) => s.id)).toContain("ilm");
 });
 
-test("a returning reader is never sent back to Ask (RDR-516); a first visit lands in Ask", async ({ page }) => {
-  await page.goto("/quran/1");
+test("a first visit to an address that names a verse opens the verse, not Ask (audit 27 F22)", async ({ page }) => {
+  // the reader who follows a shared link or a search result reads what they came for
+  await page.goto("/quran/2/255");
+  await expect(page.locator('.w[data-w="2:255:1"]')).toBeVisible();
+  await expect(page.getByRole("heading", { name: "عن أي كلمة تتساءل؟" })).toHaveCount(0);
+});
+
+test("a returning reader is never sent back to Ask (RDR-516); a first visit through /read lands in Ask", async ({ page }) => {
+  await page.goto("/read");
+  await expect(page).toHaveURL(/\/quran\/1/);
   await expect(page.getByRole("heading", { name: "عن أي كلمة تتساءل؟" })).toBeVisible();
   // Leaving Ask and reloading keeps the reader in the text: the visit is remembered.
   await page.getByRole("button", { name: "اسأل" }).click();
