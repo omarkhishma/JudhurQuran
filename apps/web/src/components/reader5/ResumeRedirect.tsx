@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { getJSON } from "@/lib/reader/api";
-import { usePersonal } from "@/lib/reader/store";
+import { usePersonal, useReader } from "@/lib/reader/store";
 import type { WordPayload } from "@/lib/reader/types";
 
 /**
@@ -43,7 +43,9 @@ export function ResumeRedirect() {
       // a stored position is only trusted when it names a real sūra and verse: a stale or edited one
       // opens al-Fātiḥa instead of a missing page (RDR-538)
       const personal = usePersonal.getState();
-      if (!personal.visited && Object.keys(personal.progress).length === 0 && !keep.has("mode")) keep.set("mode", "ask");
+      // a first visit opens in Ask: set in the reader's state, not as ?mode=ask, which the address would keep after the
+      // reader leaves Ask, so a reload would bring it back
+      if (!personal.visited && Object.keys(personal.progress).length === 0 && !keep.has("mode")) useReader.getState().setAsk(true);
       const saved = personal.progress.quran;
       const prog = saved && Number.isInteger(saved.chapter) && saved.chapter >= 1 && saved.chapter <= 114 ? saved : null;
       const passage = prog && Number.isInteger(prog.passage) && prog.passage > 1 && prog.passage <= 286 ? prog.passage : null;
