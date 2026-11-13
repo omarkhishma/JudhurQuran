@@ -373,6 +373,7 @@ const BEATS = ["beat1", "beat2", "beat3"] as const;
 /** Onboarding (design 03 §3.11, RDR-400…408): three beats, a Quranic demo word, dismissible. */
 function Onboarding({ chapter }: { chapter: ChapterInfo }) {
   const t = useTranslations("rd");
+  const locale = useLocale();
   const router = useRouter();
   const onboarded = usePersonal((s) => s.onboarded);
   const setOnboarded = usePersonal((s) => s.setOnboarded);
@@ -387,7 +388,7 @@ function Onboarding({ chapter }: { chapter: ChapterInfo }) {
   return (
     <div className="onboarding popover" role="dialog" aria-label={t("onboardingLabel")}>
       <div className="flex items-center gap-2">
-        <span className="mono text-[10.5px] uppercase text-root">{t("beatOf", { n: beat + 1 })}</span>
+        <span className="mono text-[10.5px] uppercase text-root">{t("beatOf", { n: formatNumber(beat + 1, locale), of: formatNumber(3, locale) })}</span>
         <span className="flex gap-1" aria-hidden="true">
           {BEATS.map((x, i) => (
             <span key={x} className="h-1 w-4 rounded-full" style={{ background: i <= beat ? "var(--c-root)" : "var(--line-2)" }} />

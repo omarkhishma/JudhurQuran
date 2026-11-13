@@ -1,7 +1,8 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { formatNumber } from "@/lib/format";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import { useGoToStep, useStepViews } from "./trailSteps";
 
@@ -18,6 +19,7 @@ const PAD = 10;
  */
 export function TrailMap({ chapter }: { chapter: number }) {
   const t = useTranslations("rd");
+  const locale = useLocale();
   const trail = usePersonal((s) => s.trail);
   const saveTrail = usePersonal((s) => s.saveTrail);
   const clearTrail = usePersonal((s) => s.clearTrail);
@@ -84,7 +86,7 @@ export function TrailMap({ chapter }: { chapter: number }) {
                 >
                   <span className="flex justify-between gap-1.5 text-[10px] text-t3">
                     <span className="font-semibold" style={{ color: v.color }}>{t(s.kind === "word" ? "typeWord" : s.kind === "verse" ? "typeVerse" : "typeRoot")}</span>
-                    <span className="mono">{i + 1}</span>
+                    <span className="mono">{formatNumber(i + 1, locale)}</span>
                   </span>
                   <span className={(s.kind === "verse" ? "mono text-[14px]" : "ar-classical text-[17px]") + " truncate leading-[1.5] text-t1"} lang={s.kind === "verse" ? undefined : "ar"} dir={s.kind === "verse" ? "ltr" : "rtl"}>{v.label}</span>
                   <span className="mono truncate text-[10.5px] text-t2" dir="ltr">{v.sub}</span>

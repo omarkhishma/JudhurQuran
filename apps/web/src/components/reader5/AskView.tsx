@@ -7,7 +7,7 @@ import { Icon } from "@/components/Icon";
 import { Link, useRouter } from "@/i18n/navigation";
 import { hasArabic, hasMarks } from "@/lib/arabic/normalize";
 import { looksLikeQuestion } from "@/lib/ask";
-import { cnt, formatNumber } from "@/lib/format";
+import { cnt, formatNumber, verseRef } from "@/lib/format";
 import { getJSON, useWord } from "@/lib/reader/api";
 import { useBreakpoint } from "@/lib/reader/media";
 import { usePrefs, useReader } from "@/lib/reader/store";
@@ -238,7 +238,7 @@ function DesktopCard({ w, onCousin }: { w: WordPayload; onCousin: (slug: string)
             {first.left} <mark className="kwic-key">{first.keyword}</mark> {first.right}
           </p>
           <p className="text-[12px] text-t3">
-            {first.surah_name_ar} • <span className="mono" dir="ltr">{first.verse_key}</span> • {t("occursN", cnt(w.corpus_freq, locale))}
+            {first.surah_name_ar} • <span className="mono" dir="ltr">{verseRef(first.verse_key, locale)}</span> • {t("occursN", cnt(w.corpus_freq, locale))}
           </p>
         </div>
       )}
@@ -331,7 +331,7 @@ function PhoneDeck({ w, onCousin }: { w: WordPayload; onCousin: (slug: string) =
       body: first ? (
         <>
           <p className="quran text-[22px] leading-[1.9]" lang="ar" dir="rtl">{first.left} <mark className="kwic-key">{first.keyword}</mark> {first.right}</p>
-          <p className="text-[12.5px] text-t3">{first.surah_name_ar} • <span className="mono" dir="ltr">{first.verse_key}</span></p>
+          <p className="text-[12.5px] text-t3">{first.surah_name_ar} • <span className="mono" dir="ltr">{verseRef(first.verse_key, locale)}</span></p>
         </>
       ) : (
         <p className="text-[13px] text-t3">{t("noAttestation")}</p>

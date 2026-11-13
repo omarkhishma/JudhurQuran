@@ -2230,7 +2230,7 @@
     "suggestFootnote": "Your proposal is kept on this device now and goes to the review queue when you sign in. It merges only after two independent reviewers approve.",
     "proposalSaved": "Proposal saved",
     "onboardingLabel": "Quick introduction",
-    "beatOf": "Beat {n} of 3",
+    "beatOf": "Beat {n} of {of}",
     "skip": "Skip",
     "beat1Title": "Tap any word.",
     "beat1Body": "Every word in the text is an entry. Tap one — the dictionary opens beside you with its root, its family and what the classical lexica say.",

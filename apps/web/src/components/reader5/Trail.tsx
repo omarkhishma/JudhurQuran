@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { formatNumber } from "@/lib/format";
 import { usePersonal, useReader } from "@/lib/reader/store";
 import { useGoToStep, useStepViews } from "./trailSteps";
 
@@ -8,6 +9,7 @@ import { useGoToStep, useStepViews } from "./trailSteps";
  * (RDR-568) — shown once the trail holds two distinct steps; clicking a step truncates the trail there. */
 export function Trail({ chapter }: { chapter: number }) {
   const t = useTranslations("rd");
+  const locale = useLocale();
   const trail = usePersonal((s) => s.trail);
   const trailMap = useReader((s) => s.trailMap);
   const setTrailMap = useReader((s) => s.setTrailMap);
@@ -41,7 +43,7 @@ export function Trail({ chapter }: { chapter: number }) {
         })}
       </ol>
       <button type="button" className="chip text-[11.5px]" aria-expanded={trailMap} onClick={() => setTrailMap(!trailMap)}>
-        {trailMap ? t("hideMap") : t("mapN", { n: trail.length })}
+        {trailMap ? t("hideMap") : t("mapN", { n: formatNumber(trail.length, locale) })}
       </button>
     </nav>
   );

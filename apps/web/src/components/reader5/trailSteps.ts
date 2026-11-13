@@ -1,7 +1,9 @@
 "use client";
 
 import { useQueries } from "@tanstack/react-query";
+import { useLocale } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import { verseRef } from "@/lib/format";
 import { getJSON } from "@/lib/reader/api";
 import { type TrailStep, usePersonal, useReader } from "@/lib/reader/store";
 import type { WordPayload } from "@/lib/reader/types";
@@ -12,6 +14,7 @@ const COLOR: Record<TrailStep["kind"], string> = { word: "var(--c-word)", verse:
 
 /** Labels for trail steps: a word's headword (fetched, cached), a verse's key, a root's letters. */
 export function useStepViews(steps: TrailStep[]): StepView[] {
+  const locale = useLocale();
   // a word met twice on the trail is asked for once
   const ids = [...new Set(steps.filter((s) => s.kind === "word").map((s) => s.id))];
   const words = useQueries({
@@ -26,7 +29,7 @@ export function useStepViews(steps: TrailStep[]): StepView[] {
       const w = words[ids.indexOf(s.id)]?.data;
       return { step: s, label: w ? w.ar.full : s.id, sub: w?.ar.translit ?? "", root: w?.root?.key ?? null, color: COLOR.word };
     }
-    if (s.kind === "verse") return { step: s, label: s.id, sub: "", root: null, color: COLOR.verse };
+    if (s.kind === "verse") return { step: s, label: verseRef(s.id, locale), sub: "", root: null, color: COLOR.verse };
     return { step: s, label: s.id.split("").join(" "), sub: "", root: s.id, color: COLOR.root };
   });
 }
