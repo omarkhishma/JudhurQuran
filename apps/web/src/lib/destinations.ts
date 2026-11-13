@@ -5,33 +5,37 @@
  * does. Keys index the `hub.dest` messages. No design exploration codes, and no type colours: those classify
  * linguistic objects only (02 §2.1, HUB-50).
  */
-export type Destination = { key: string; href: string | null; phase?: string };
+export type DestinationGroup = "read" | "find" | "understand" | "draw" | "mine" | "others";
+export type Destination = { key: string; href: string | null; phase?: string; group: DestinationGroup };
+
+/** The groups the hub shows them in, in this order (audit 27 F06: twenty-six tiles of one weight, no grouping). */
+export const DESTINATION_GROUPS: DestinationGroup[] = ["read", "find", "understand", "draw", "mine", "others"];
 
 export const DESTINATIONS: Destination[] = [
-  { key: "read", href: "/read" },
-  { key: "ask", href: "/read?mode=ask" },
-  { key: "askQuran", href: "/ask" },
-  { key: "explore", href: "/explore" },
-  { key: "library", href: "/library" },
-  { key: "lookup", href: "/read?mode=lookup" },
-  { key: "roots", href: "/roots" },
-  { key: "dictionary", href: "/dictionary" },
-  { key: "hadith", href: "/hadith" },
-  { key: "books", href: "/books" },
-  { key: "concordance", href: "/concordance" },
-  { key: "analyser", href: "/analyse" },
-  { key: "stats", href: "/stats" },
-  { key: "mindmap", href: "/mindmap" },
-  { key: "search", href: "/search" },
-  { key: "graph", href: "/graph" },
-  { key: "split", href: "/split" },
-  { key: "review", href: "/read?mode=review" },
-  { key: "notebook", href: "/notebook" },
-  { key: "saved", href: "/saved" },
-  { key: "reviewQueue", href: "/review" },
-  { key: "classroom", href: "/classroom" },
-  { key: "published", href: "/g" },
-  { key: "profile", href: "/me" },
-  { key: "api", href: "/developers" },
-  { key: "sources", href: "/sources" },
+  { key: "read", href: "/read", group: "read" },
+  { key: "ask", href: "/read?mode=ask", group: "find" },
+  { key: "askQuran", href: "/ask", group: "understand" },
+  { key: "explore", href: "/explore", group: "read" },
+  { key: "library", href: "/library", group: "read" },
+  { key: "lookup", href: "/read?mode=lookup", group: "find" },
+  { key: "roots", href: "/roots", group: "find" },
+  { key: "dictionary", href: "/dictionary", group: "find" },
+  { key: "hadith", href: "/hadith", group: "read" },
+  { key: "books", href: "/books", group: "read" },
+  { key: "concordance", href: "/concordance", group: "find" },
+  { key: "analyser", href: "/analyse", group: "find" },
+  { key: "stats", href: "/stats", group: "understand" },
+  { key: "mindmap", href: "/mindmap", group: "understand" },
+  { key: "search", href: "/search", group: "find" },
+  { key: "graph", href: "/graph", group: "draw" },
+  { key: "split", href: "/split", group: "draw" },
+  { key: "review", href: "/read?mode=review", group: "mine" },
+  { key: "notebook", href: "/notebook", group: "mine" },
+  { key: "saved", href: "/saved", group: "mine" },
+  { key: "reviewQueue", href: "/review", group: "others" },
+  { key: "classroom", href: "/classroom", group: "others" },
+  { key: "published", href: "/g", group: "draw" },
+  { key: "profile", href: "/me", group: "mine" },
+  { key: "api", href: "/developers", group: "others" },
+  { key: "sources", href: "/sources", group: "others" },
 ];

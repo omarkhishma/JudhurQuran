@@ -3750,6 +3750,20 @@ body:has(.hub) {
   color: var(--t2);
   text-wrap: pretty;
 }
+/* the hub's surfaces in groups, each with its title (audit 27 F06) */
+.hub-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hub-group + .hub-group {
+  margin-top: 14px;
+}
+.hub-group-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--t1);
+}
 .hub-search-wrap {
   position: relative;
   width: min(560px, 100%);

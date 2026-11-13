@@ -141,7 +141,7 @@
         "purpose": "Your shelf, your progress through the sūras, your own texts"
       },
       "lookup": {
-        "title": "Dictionary",
+        "title": "The reader's lexicon",
         "purpose": "Roots, patterns, classical lexicons and a word's history"
       },
       "roots": {
@@ -235,7 +235,15 @@
     "askTry": "Or ask the Quran:",
     "askExample": "How many times is mercy mentioned?",
     "promptSignIn": "Sign in to sync",
-    "dueRoots": "{count, plural, one {One root due for review} other {{n} roots due for review}}"
+    "dueRoots": "{count, plural, one {One root due for review} other {{n} roots due for review}}",
+    "groups": {
+      "read": "Read",
+      "find": "Look up a word",
+      "understand": "Understand by numbers and questions",
+      "draw": "Draw and share",
+      "mine": "Yours",
+      "others": "For teachers, editors and developers"
+    }
   },
   "explore": {
     "title": "Explore",

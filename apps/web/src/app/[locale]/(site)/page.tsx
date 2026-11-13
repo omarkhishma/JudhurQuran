@@ -8,7 +8,7 @@ import { JsonLd, website } from "@/components/seo/JsonLd";
 import { Link } from "@/i18n/navigation";
 import { api } from "@/lib/api";
 import { meccaToday, type WordOfTheDay } from "@/lib/daily";
-import { DESTINATIONS } from "@/lib/destinations";
+import { DESTINATION_GROUPS, DESTINATIONS } from "@/lib/destinations";
 import { formatNumber } from "@/lib/format";
 import { localized } from "@/lib/seo";
 import type { Meta, Surah } from "@/lib/types";
@@ -82,31 +82,36 @@ export default async function HubPage({ params }: PageProps<"/[locale]">) {
 
       <section className="hub-section" aria-labelledby="hub-all">
         <h2 id="hub-all" className="label-caps">{t("everything")}</h2>
-        <ul className="hub-all">
-          {DESTINATIONS.map((d) => {
-            const body = (
-              <>
-                <span className="hub-tile-title">{t(`dest.${d.key}.title`)}</span>
-                <span className="hub-tile-purpose">{t(`dest.${d.key}.purpose`)}</span>
-                {d.phase && <span className="hub-tile-phase">{t("building")}</span>}
-              </>
-            );
-            return (
-              <li key={d.key}>
-                {d.href ? (
-                  // twenty destinations: prefetching them all would render twenty pages per visit
-                  <Link href={d.href} prefetch={false} className="hub-tile" data-building={d.phase ? "" : undefined}>
-                    {body}
-                  </Link>
-                ) : (
-                  <div className="hub-tile" data-building="" aria-disabled="true">
-                    {body}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+        {DESTINATION_GROUPS.map((g) => (
+          <div key={g} className="hub-group">
+            <h3 className="hub-group-title">{t(`groups.${g}`)}</h3>
+            <ul className="hub-all">
+              {DESTINATIONS.filter((d) => d.group === g).map((d) => {
+                const body = (
+                  <>
+                    <span className="hub-tile-title">{t(`dest.${d.key}.title`)}</span>
+                    <span className="hub-tile-purpose">{t(`dest.${d.key}.purpose`)}</span>
+                    {d.phase && <span className="hub-tile-phase">{t("building")}</span>}
+                  </>
+                );
+                return (
+                  <li key={d.key}>
+                    {d.href ? (
+                      // twenty destinations: prefetching them all would render twenty pages per visit
+                      <Link href={d.href} prefetch={false} className="hub-tile" data-building={d.phase ? "" : undefined}>
+                        {body}
+                      </Link>
+                    ) : (
+                      <div className="hub-tile" data-building="" aria-disabled="true">
+                        {body}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </section>
 
       <div className="hub-section">
