@@ -17,6 +17,17 @@ const short = (s: string, max = 26) => {
   return `${s.slice(0, cut > 10 ? cut : max)}…${/[\u0600-\u06ff]/.test(s) ? "\u200f" : ""}`;
 };
 
+/** A label in lines of about `width` letters, cut on words: a leaf's label reads level, not turned along its radius. */
+const lines = (s: string, width = 14): string[] => {
+  const out: string[] = [];
+  for (const w of s.split(" ")) {
+    const last = out[out.length - 1];
+    if (last !== undefined && (last + " " + w).length <= width) out[out.length - 1] = `${last} ${w}`;
+    else out.push(w);
+  }
+  return out.slice(0, 2).map((l, i) => (i === 1 && out.length > 2 ? `${l}…` : l));
+};
+
 /**
  * A mind map (P16.4, PV-17): a word or a root at the centre, its branches around it and their leaves on the rim, laid
  * out radially by d3-hierarchy's cluster so that leaves share the circle evenly. Every node that leads somewhere is a
@@ -51,15 +62,25 @@ export function RadialTree({ root, label, size = 760 }: { root: MindNode; label:
             {d.depth === 0 ? (
               <text y={-18} textAnchor="middle" className="mind-center">{d.data.label}</text>
             ) : (
-              <text
-                transform={leaf ? `rotate(${((d.x * 180) / Math.PI - 90 + (right ? 0 : 180)).toFixed(2)})` : undefined}
-                x={leaf ? (right ? 8 : -8) : 0}
-                y={leaf ? 4 : -10}
-                textAnchor={leaf ? (right ? "start" : "end") : "middle"}
-                className={d.depth === 1 ? "mind-branch" : "mind-leaf"}
-              >
-                {short(d.data.label)}
-              </text>
+              (() => {
+                // level text, not turned along the radius (audit 27 F29: labels up to 90° were hard to read in Arabic):
+                // beside the node on the sides, centred above or below it near the top and the bottom of the circle
+                const deg = (d.x * 180) / Math.PI;
+                const pole = !leaf ? null : deg < 28 || deg > 332 ? "top" : Math.abs(deg - 180) < 28 ? "bottom" : null;
+                const ls = leaf ? lines(short(d.data.label, 32)) : [short(d.data.label)];
+                const anchor = !leaf || pole ? "middle" : right ? "start" : "end";
+                const x0 = !leaf || pole ? 0 : right ? 8 : -8;
+                const y0 = !leaf ? -10 : pole === "top" ? -10 - (ls.length - 1) * 14 : pole === "bottom" ? 16 : 4 - (ls.length - 1) * 7;
+                return (
+                  <text x={x0} y={y0} textAnchor={anchor} className={d.depth === 1 ? "mind-branch" : "mind-leaf"}>
+                    {ls.map((l, i) => (
+                      <tspan key={i} x={x0} dy={i ? 14 : 0}>
+                        {l}
+                      </tspan>
+                    ))}
+                  </text>
+                );
+              })()
             )}
           </g>
         );
