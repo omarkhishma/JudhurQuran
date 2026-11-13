@@ -113,7 +113,7 @@ test("an example asks itself; the hub, the search page and the reader hand a que
   await expect(page).toHaveURL(/\/ask\?q=/);
   // the hub's box: a question goes here, a word to the search
   await page.goto("/");
-  const box = page.getByRole("search", { name: "ابحث في القرآن" }).getByRole("textbox");
+  const box = page.getByRole("search", { name: "ابحث في القرآن" }).getByRole("combobox");
   await box.fill("كم مرة ذكرت كلمة الجنة؟");
   await box.press("Enter");
   await expect(page).toHaveURL(/\/ask\?q=/);

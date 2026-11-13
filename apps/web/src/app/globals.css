@@ -3751,11 +3751,35 @@ body:has(.hub) {
   text-wrap: pretty;
 }
 .hub-search-wrap {
+  position: relative;
   width: min(560px, 100%);
   margin-top: 6px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+/* what the hub's query suggests, under the box (audit 27 F05) */
+.hub-suggest {
+  position: absolute;
+  top: 60px;
+  inset-inline: 0;
+  z-index: 30;
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+  padding: 6px;
+  text-align: start;
+}
+.hub-suggest-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.hub-suggest-row[aria-selected="true"] {
+  background: var(--card-2);
 }
 .hub-search-try {
   display: flex;

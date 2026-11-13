@@ -28,7 +28,8 @@ test("the masthead: the root of the day for Mecca's date with its word, the name
 test("search: the Quran's own queries, ⌘K back to the field while it shows, the omnibox once scrolled away", async ({ page, isMobile }) => {
   test.skip(isMobile, "keyboard shortcuts are a desktop affordance");
   await page.goto("/");
-  const field = page.getByRole("search", { name: "ابحث في القرآن" }).getByRole("textbox");
+  // a combobox: it suggests as the reader types (audit 27 F05)
+  const field = page.getByRole("search", { name: "ابحث في القرآن" }).getByRole("combobox");
   // the examples teach the Quran's queries as links, at every width
   const tries = page.locator(".hub-try");
   await expect(tries).toHaveText(["عِلْم", "ع ل م", "٢:٢٥٥", "البقرة ٢٥٥", "كم مرة ذكرت كلمة الرحمة؟"]);
@@ -49,6 +50,19 @@ test("search: the Quran's own queries, ⌘K back to the field while it shows, th
   await field.press("Enter");
   await expect(page).toHaveURL(/\/search\?q=/);
   expect(decodeURIComponent(new URL(page.url()).searchParams.get("q") ?? "")).toBe("البقرة ٢٥٥");
+});
+
+test("the hub's box suggests as the reader types — the word and its root first — and the arrows and Enter open one (audit 27 F05)", async ({ page }) => {
+  await page.goto("/");
+  const box = page.getByRole("search", { name: "ابحث في القرآن" }).getByRole("combobox");
+  await box.fill("صبر");
+  const list = page.getByRole("listbox");
+  await expect(list.getByRole("option").first()).toBeVisible();
+  await expect(list).toContainText("ص ب ر");
+  await box.press("ArrowDown");
+  await expect(list.getByRole("option").first()).toHaveAttribute("aria-selected", "true");
+  await box.press("Enter");
+  await expect(page).toHaveURL(/\/quran\/\d+\?w=/);
 });
 
 test("pick up where you left off: sūra and verse, word and root; Clear hides it and keeps the reading", async ({ page }) => {

@@ -20,7 +20,7 @@ test("journey H: questions in Arabic and English, a statistic as a chart, a sear
   const q = "كم مرة ذكرت كلمة الصبر؟";
   const counted = await api<{ answer: { count: number } }>(page, `/ask?q=${encodeURIComponent(q)}`);
   await page.goto("/");
-  const box = page.getByRole("search", { name: "ابحث في القرآن" }).getByRole("textbox");
+  const box = page.getByRole("search", { name: "ابحث في القرآن" }).getByRole("combobox");
   await box.fill(q);
   await box.press("Enter");
   await expect(page).toHaveURL(/\/ask\?q=/);

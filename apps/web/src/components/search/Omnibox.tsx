@@ -14,7 +14,8 @@ import { searchMyTexts } from "@/lib/library/searchTexts";
 import type { SearchResult } from "@/lib/types";
 import { useDebounced } from "@/lib/useDebounced";
 
-type Item = { id: string; href: string; kind: string; primary: React.ReactNode; secondary?: React.ReactNode };
+export type SuggestionItem = { id: string; href: string; kind: string; primary: React.ReactNode; secondary?: React.ReactNode };
+type Item = SuggestionItem;
 /** The texts beyond the Quran in a search's answer (P11): a hadith or a book's paragraph, with its place. */
 type TextHit = { uri: string; ref: string; text: { slug: string; title_ar: string; title_en: string }; chapter?: { title_ar: string } | null; start: string };
 type Ecosystem = { dict_roots?: { key: string; display: string; lexica: number; quran_root: string | null }[]; texts?: TextHit[]; books?: TextHit[]; semantic?: { verse: { key: string; surah: number; ayah: number; text_qpc: string } }[] };
@@ -27,6 +28,121 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
   const [activeState, setActiveState] = useState<{ q: string; i: number }>({ q: "", i: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const listId = useId();
+  const { items, data, isFetching, debounced } = useSuggestions(q);
+
+  // The highlighted row resets whenever the query changes.
+  const active = activeState.q === debounced ? activeState.i : 0;
+  const setActive = (v: number | ((i: number) => number)) =>
+    setActiveState({ q: debounced, i: typeof v === "function" ? v(active) : v });
+  useEffect(() => {
+    inputRef.current?.focus();
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  function go(item: Item | undefined) {
+    if (item) {
+      router.push(item.href);
+      onClose();
+    } else if (q.trim()) {
+      router.push(`/search?q=${encodeURIComponent(q.trim())}`);
+      onClose();
+    }
+  }
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") onClose();
+    else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((i) => Math.min(i + 1, Math.max(items.length - 1, 0)));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      go(items[active]);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(10,10,16,.32)] px-4 pt-[10vh] animate-fade" onMouseDown={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("dialogLabel")}
+        className="popover w-full max-w-[640px] overflow-hidden p-0"
+        onMouseDown={(e) => e.stopPropagation()}
+        onKeyDown={onKeyDown}
+      >
+        <div className="flex items-center gap-2 border-b border-line px-3">
+          <Icon name="search" size={16} className="text-t3" />
+          <input
+            ref={inputRef}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t("placeholder")}
+            aria-label={t("placeholder")}
+            // an Arabic or a Latin query reads in its own direction (SHL-F08)
+            dir="auto"
+            role="combobox"
+            aria-expanded={items.length > 0}
+            aria-controls={listId}
+            aria-activedescendant={items[active] ? `${listId}-${active}` : undefined}
+            className="h-14 min-w-0 flex-1 bg-transparent text-[17px] outline-none placeholder:text-t3"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <button type="button" className="btn" onClick={onClose}>
+            {t("esc")}
+          </button>
+        </div>
+        {data && (
+          <p className="border-b border-line px-4 py-2 text-[12px] text-t3" aria-live="polite">
+            {t("understood", { kind: locale === "ar" ? data.detected.label_ar : data.detected.label_en })}
+          </p>
+        )}
+        <ul id={listId} role="listbox" className="max-h-[60vh] overflow-y-auto p-1.5">
+          {items.map((it, i) => (
+            <li
+              key={it.id}
+              id={`${listId}-${i}`}
+              role="option"
+              aria-selected={i === active}
+              onMouseEnter={() => setActive(i)}
+              onClick={() => go(it)}
+              className={"flex min-h-[48px] cursor-pointer items-center gap-3 rounded-lg px-3 py-1.5 " + (i === active ? "bg-card-2" : "")}
+            >
+              <span className="w-14 shrink-0 text-[11.5px] text-t3">{it.kind}</span>
+              <span className="min-w-0 flex-1 truncate">{it.primary}</span>
+              {it.secondary && <span className="shrink-0 text-[12px] text-t3">{it.secondary}</span>}
+            </li>
+          ))}
+          {debounced && data && items.length === 0 && !isFetching && (
+            <li className="px-3 py-6 text-center text-t2">{t("noResults")}</li>
+          )}
+          {!debounced && <li className="px-3 py-5 text-[13px] text-t3">{t("hint")}</li>}
+        </ul>
+        {debounced && (
+          <button type="button" className="w-full border-t border-line px-4 py-3 text-start text-[13px] text-t2 hover:bg-card-2" onClick={() => go(undefined)}>
+            {t("allResults", { q: debounced })}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * What a query suggests (SHL-Q07; audit 27 F02, F05): the search's answer as rows — for a single word its lemmas and
+ * root first, for a phrase or a reference its verses — with the reader's own texts searched in this browser. Shared by
+ * the omnibox and the hub's search box, so both suggest the same things in the same order.
+ */
+export function useSuggestions(q: string): { items: SuggestionItem[]; data: (SearchResult & { results: Ecosystem }) | undefined; isFetching: boolean; debounced: string } {
+  const t = useTranslations("search");
+  const locale = useLocale();
   const debounced = useDebounced(q.trim(), 160);
 
   const { data, isFetching } = useQuery({
@@ -159,108 +275,5 @@ export function Omnibox({ onClose }: { onClose: () => void }) {
     for (const k of order) out.push(...(g[k] ?? []));
     return out;
   }, [data, mine.data, t, locale, debounced]);
-
-  // The highlighted row resets whenever the query changes.
-  const active = activeState.q === debounced ? activeState.i : 0;
-  const setActive = (v: number | ((i: number) => number)) =>
-    setActiveState({ q: debounced, i: typeof v === "function" ? v(active) : v });
-  useEffect(() => {
-    inputRef.current?.focus();
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
-
-  function go(item: Item | undefined) {
-    if (item) {
-      router.push(item.href);
-      onClose();
-    } else if (q.trim()) {
-      router.push(`/search?q=${encodeURIComponent(q.trim())}`);
-      onClose();
-    }
-  }
-
-  function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") onClose();
-    else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActive((i) => Math.min(i + 1, Math.max(items.length - 1, 0)));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActive((i) => Math.max(i - 1, 0));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      go(items[active]);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(10,10,16,.32)] px-4 pt-[10vh] animate-fade" onMouseDown={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("dialogLabel")}
-        className="popover w-full max-w-[640px] overflow-hidden p-0"
-        onMouseDown={(e) => e.stopPropagation()}
-        onKeyDown={onKeyDown}
-      >
-        <div className="flex items-center gap-2 border-b border-line px-3">
-          <Icon name="search" size={16} className="text-t3" />
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t("placeholder")}
-            aria-label={t("placeholder")}
-            // an Arabic or a Latin query reads in its own direction (SHL-F08)
-            dir="auto"
-            role="combobox"
-            aria-expanded={items.length > 0}
-            aria-controls={listId}
-            aria-activedescendant={items[active] ? `${listId}-${active}` : undefined}
-            className="h-14 min-w-0 flex-1 bg-transparent text-[17px] outline-none placeholder:text-t3"
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <button type="button" className="btn" onClick={onClose}>
-            {t("esc")}
-          </button>
-        </div>
-        {data && (
-          <p className="border-b border-line px-4 py-2 text-[12px] text-t3" aria-live="polite">
-            {t("understood", { kind: locale === "ar" ? data.detected.label_ar : data.detected.label_en })}
-          </p>
-        )}
-        <ul id={listId} role="listbox" className="max-h-[60vh] overflow-y-auto p-1.5">
-          {items.map((it, i) => (
-            <li
-              key={it.id}
-              id={`${listId}-${i}`}
-              role="option"
-              aria-selected={i === active}
-              onMouseEnter={() => setActive(i)}
-              onClick={() => go(it)}
-              className={"flex min-h-[48px] cursor-pointer items-center gap-3 rounded-lg px-3 py-1.5 " + (i === active ? "bg-card-2" : "")}
-            >
-              <span className="w-14 shrink-0 text-[11.5px] text-t3">{it.kind}</span>
-              <span className="min-w-0 flex-1 truncate">{it.primary}</span>
-              {it.secondary && <span className="shrink-0 text-[12px] text-t3">{it.secondary}</span>}
-            </li>
-          ))}
-          {debounced && data && items.length === 0 && !isFetching && (
-            <li className="px-3 py-6 text-center text-t2">{t("noResults")}</li>
-          )}
-          {!debounced && <li className="px-3 py-5 text-[13px] text-t3">{t("hint")}</li>}
-        </ul>
-        {debounced && (
-          <button type="button" className="w-full border-t border-line px-4 py-3 text-start text-[13px] text-t2 hover:bg-card-2" onClick={() => go(undefined)}>
-            {t("allResults", { q: debounced })}
-          </button>
-        )}
-      </div>
-    </div>
-  );
+  return { items, data, isFetching, debounced };
 }
