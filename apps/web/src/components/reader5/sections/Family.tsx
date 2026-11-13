@@ -51,7 +51,8 @@ export function WordChip({ m, current }: { m: LemmaLite; current?: boolean }) {
       title={`${m.ar.translit}${m.gloss_en ? ` — ${m.gloss_en}` : ""}`}
     >
       <span className="ar-classical text-[19px] leading-[1.6]" lang="ar" dir="rtl">{m.ar.full}</span>
-      <span className="mono text-[10.5px] text-t3">{formatNumber(m.occurrences, locale)}</span>
+      {/* on the tinted current chip the count is one step darker: t3 there fell under AA's 4.5:1 */}
+      <span className={"mono text-[10.5px] " + (current ? "text-t2" : "text-t3")}>{formatNumber(m.occurrences, locale)}</span>
       {/* said to be non-Arabic: shared letters need not mean a shared meaning (P3.7a) */}
       {m.loanword && <span className="loan-mark" title={t("loanMarkTitle")}>{t("loanMark")}</span>}
     </button>
