@@ -388,7 +388,7 @@ test("a root's pages list the published maps holding it, and the gallery is sear
     await expect(page.locator(".pub-row", { hasText: m.title })).toBeVisible();
     await page.goto("/g");
     await page.getByRole("searchbox", { name: "عنوان، أو اسم صاحبها، أو جذر" }).fill(`جذر ${t}`);
-    await page.getByRole("button", { name: "ابحث", exact: true }).click();
+    await page.getByRole("main").getByRole("button", { name: "ابحث", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/g\\?q=`));
     await expect(page.locator(".pub-row")).toHaveCount(1);
     await expect(page.locator(".pub-row")).toContainText(m.title);

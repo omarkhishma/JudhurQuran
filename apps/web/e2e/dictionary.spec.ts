@@ -14,8 +14,13 @@ test("the index: every letter with its roots, the lexica in their order, and a r
   const letters = (await (await page.request.get("/api/v1/dictionary/letters")).json()) as { data: { letter: string; roots: number }[] };
   await page.goto("/dictionary");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("المعجم");
-  // the shared nav names it (on the phone it sits in the menu)
-  if (!isMobile) await expect(page.getByRole("navigation", { name: "التنقل الرئيسي" }).getByRole("link", { name: "المعجم", exact: true })).toHaveAttribute("aria-current", "page");
+  if (!isMobile) {
+    // the shared nav names it in its group, the group marked as the reader's (on the phone it sits in the menu)
+    const nav = page.getByRole("navigation", { name: "التنقل الرئيسي" });
+    await nav.getByRole("button", { name: "ابحث (القسم الحالي)" }).click();
+    await expect(nav.getByRole("link", { name: "المعجم", exact: true })).toHaveAttribute("aria-current", "page");
+    await page.keyboard.press("Escape");
+  }
   const grid = page.getByRole("navigation", { name: "الحروف" });
   await expect(grid.getByRole("link")).toHaveCount(28);
   const ain = letters.data.find((l) => l.letter === "ع")!;

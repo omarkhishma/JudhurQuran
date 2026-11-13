@@ -27,7 +27,13 @@ test("the collections: seven books, each with its hadith and kitābs counted", a
   expect(books.map((b) => b.slug)).toEqual(["bukhari", "muslim", "abudawud", "tirmidhi", "nasai", "ibnmajah", "malik"]);
   await page.goto("/hadith");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("كتب الحديث");
-  if (!isMobile) await expect(page.getByRole("navigation", { name: "التنقل الرئيسي" }).getByRole("link", { name: "الحديث", exact: true })).toHaveAttribute("aria-current", "page");
+  if (!isMobile) {
+    // the shared nav names it in its group, the group marked as the reader's (on the phone it sits in the menu)
+    const nav = page.getByRole("navigation", { name: "التنقل الرئيسي" });
+    await nav.getByRole("button", { name: "اقرأ (القسم الحالي)" }).click();
+    await expect(nav.getByRole("link", { name: "الحديث", exact: true })).toHaveAttribute("aria-current", "page");
+    await page.keyboard.press("Escape");
+  }
   for (const b of books) {
     const detail = (await (await page.request.get(`/api/v1/texts/${b.slug}`)).json()) as Detail;
     const card = page.locator(`[data-collection="${b.slug}"]`);

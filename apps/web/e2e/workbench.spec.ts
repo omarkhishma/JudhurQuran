@@ -24,6 +24,28 @@ test("the workbench is the board's: signed out it asks for a sign-in, a member i
   }
 });
 
+test("the header's «مساحتي» shows the edit requests and the workbench to those who hold the role, not to a member (P-UX1)", async ({ browser, isMobile }) => {
+  test.skip(isMobile, "the accounts are made in desktop windows");
+  const t = tag();
+  const m = await person(browser, `e2e-nav-m-${t}@example.org`);
+  const e = await person(browser, `e2e-nav-e-${t}@example.org`, "editor");
+  try {
+    for (const [who, holds] of [[m, false], [e, true]] as const) {
+      await who.page.goto("/notebook");
+      const nav = who.page.getByRole("navigation", { name: "التنقل الرئيسي" });
+      await nav.getByRole("button", { name: /^مساحتي/ }).click();
+      await expect(nav.getByRole("link", { name: "دفتري", exact: true })).toBeVisible();
+      await expect(nav.getByRole("link", { name: "طلبات التعديل", exact: true })).toHaveCount(holds ? 1 : 0);
+      await expect(nav.getByRole("link", { name: "منصة التحرير", exact: true })).toHaveCount(holds ? 1 : 0);
+    }
+    await e.page.getByRole("navigation", { name: "التنقل الرئيسي" }).getByRole("link", { name: "منصة التحرير", exact: true }).click();
+    await expect(e.page).toHaveURL(/\/workbench(\?|$)/);
+  } finally {
+    await drop(m);
+    await drop(e);
+  }
+});
+
 test("an editor writes from the sources and sends it to review; another approves and it is in force; the author never approves their own (P3.0)", async ({ browser, isMobile }) => {
   test.skip(isMobile, "two accounts in desktop windows");
   test.setTimeout(120_000);

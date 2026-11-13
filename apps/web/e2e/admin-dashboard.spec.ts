@@ -79,7 +79,7 @@ test("an administrator divides a sūra, sets a word's own context and links its 
     await a.page.goto("/workbench?kind=word_relations&target=ilm");
     await expect(a.page.locator("#rel-h")).toBeVisible();
     await a.page.getByRole("searchbox", { name: "ابحث عن كلمة في القرآن" }).fill("جهل");
-    await a.page.getByRole("button", { name: "ابحث", exact: true }).click();
+    await a.page.getByRole("main").getByRole("button", { name: "ابحث", exact: true }).click();
     const found = a.page.locator('[aria-live="polite"] li').first();
     await expect(found).toBeVisible();
     await found.getByRole("button", { name: "مقابلة" }).click();
@@ -140,7 +140,7 @@ test("an editor of the board writes the administration's kinds but sends them to
     await a.page.goto("/workbench?view=people");
     await expect(a.page.getByRole("heading", { name: "الأدوار" })).toBeVisible();
     await a.page.getByRole("searchbox", { name: "ابحث بعنوان البريد" }).fill(e.email);
-    await a.page.getByRole("button", { name: "ابحث", exact: true }).click();
+    await a.page.getByRole("main").getByRole("button", { name: "ابحث", exact: true }).click();
     await expect(a.page.getByRole("combobox", { name: `دور ${e.email}` })).toHaveValue("editor");
     await shoot(a.page, "people-1440");
   } finally {

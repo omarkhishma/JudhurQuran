@@ -22,6 +22,8 @@ export async function SiteFooter() {
           <Link href="/about" className="hover:text-t1">{t("about")}</Link>
           <Link href="/sources" className="hover:text-t1">{t("sources")}</Link>
           <Link href="/transparency" className="hover:text-t1">{t("transparency")}</Link>
+          {/* the downloads, which the header's strip carried before it was grouped (P-UX1) */}
+          <Link href="/data" className="hover:text-t1">{t("data")}</Link>
           <Link href="/developers" className="hover:text-t1">{t("developers")}</Link>
           <Link href="/privacy" className="hover:text-t1">{t("privacy")}</Link>
           {/* the footer's Contribute (SHL-40): the review queue, where proposals are read and decided */}

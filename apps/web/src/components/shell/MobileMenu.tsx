@@ -4,10 +4,13 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { Icon } from "@/components/Icon";
-import { isActive, NAV_ITEMS } from "./NavLinks";
+import { activeGroup, isActive, useNavGroups } from "./NavLinks";
 
+/** The phone's menu: the header's five groups, each under its name, two titles to a row so the whole fits a glance. */
 export function MobileMenu() {
   const t = useTranslations("nav");
+  const th = useTranslations("hub.dest");
+  const groups = useNavGroups();
   const tc = useTranslations("common");
   const pathname = usePathname();
   // The menu belongs to the page it was opened on: navigating closes it.
@@ -16,6 +19,7 @@ export function MobileMenu() {
   const setOpen = (v: boolean | ((x: boolean) => boolean)) =>
     setOpenOn((typeof v === "function" ? v(open) : v) ? pathname : null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const current = activeGroup(groups, pathname);
 
   useEffect(() => {
     if (!open) return;
@@ -43,29 +47,33 @@ export function MobileMenu() {
           <div
             id="mobile-menu"
             ref={panelRef}
-            className="popover fixed inset-x-3 top-[58px] z-40 p-2"
+            className="popover mobile-menu fixed inset-x-3 top-[58px] z-40 p-2"
             role="dialog"
             aria-label={t("primary")}
           >
-            <ul className="flex flex-col">
-              {NAV_ITEMS.map((item) => {
-                const active = isActive(pathname, item.match);
-                return (
-                  <li key={item.key}>
-                    <Link
-                      href={item.href}
-                      aria-current={active ? "page" : undefined}
-                      className={"flex min-h-[48px] items-center rounded-lg px-3 text-[15px] " + (active ? "bg-card-2 font-medium" : "")}
-                    >
-                      {t(item.key)}
-                    </Link>
-                  </li>
-                );
-              })}
-              <li className="my-1 border-t border-line" />
-              {(["me", "about", "sources", "privacy"] as const).map((k) => (
+            {groups.map((g) => (
+              <section key={g.key} aria-labelledby={`mm-${g.key}`} className="mobile-menu-group" data-current={current === g.key || undefined}>
+                <h2 id={`mm-${g.key}`} className="mobile-menu-title">
+                  {t(`groups.${g.key}`)}
+                </h2>
+                <ul className="mobile-menu-grid">
+                  {g.items.map((item) => {
+                    const active = isActive(pathname, item.match);
+                    return (
+                      <li key={item.key}>
+                        <Link href={item.href} aria-current={active ? "page" : undefined} className="mobile-menu-link" onClick={() => setOpen(false)}>
+                          {th(`${item.key}.title`)}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+            <ul className="mobile-menu-foot">
+              {(["about", "sources", "data", "privacy"] as const).map((k) => (
                 <li key={k}>
-                  <Link href={k === "me" ? "/me" : `/${k}`} className="flex min-h-[44px] items-center rounded-lg px-3 text-[14px] text-t2">
+                  <Link href={`/${k}`} className="mobile-menu-quiet" onClick={() => setOpen(false)}>
                     {t(k)}
                   </Link>
                 </li>

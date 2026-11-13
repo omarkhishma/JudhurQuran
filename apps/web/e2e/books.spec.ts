@@ -29,7 +29,13 @@ test("the shelf: every book, filtered by subject, each with how it is cited", as
   expect(books.length).toBe(37);
   await page.goto("/books");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("كتب التراث");
-  if (!isMobile) await expect(page.getByRole("navigation", { name: "التنقل الرئيسي" }).getByRole("link", { name: "الكتب", exact: true })).toHaveAttribute("aria-current", "page");
+  if (!isMobile) {
+    // the shared nav names it in its group, the group marked as the reader's (on the phone it sits in the menu)
+    const nav = page.getByRole("navigation", { name: "التنقل الرئيسي" });
+    await nav.getByRole("button", { name: "اقرأ (القسم الحالي)" }).click();
+    await expect(nav.getByRole("link", { name: "الكتب", exact: true })).toHaveAttribute("aria-current", "page");
+    await page.keyboard.press("Escape");
+  }
   await expect(page.locator("[data-book]")).toHaveCount(books.length);
   const tabari = page.locator('[data-book="tabari-jamicbayan"]');
   await expect(tabari).toContainText("الطبري");

@@ -95,7 +95,7 @@ test("journey G: the administration sets a word's context and its near and oppos
     await expect(a.page.locator("#rel-h")).toBeVisible();
     const pick = async (q: string, rel: string) => {
       await a.page.getByRole("searchbox", { name: "ابحث عن كلمة في القرآن" }).fill(q);
-      await a.page.getByRole("button", { name: "ابحث", exact: true }).click();
+      await a.page.getByRole("main").getByRole("button", { name: "ابحث", exact: true }).click();
       const found = a.page.locator('[aria-live="polite"] li').first();
       await expect(found).toBeVisible();
       const ar = (await found.locator("[lang=ar]").first().innerText()).trim();

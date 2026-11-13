@@ -84,7 +84,15 @@
     "hadith": "Hadith",
     "books": "Books",
     "transparency": "Transparency",
-    "stats": "Statistics"
+    "stats": "Statistics",
+    "groups": {
+      "read": "Read",
+      "find": "Look up",
+      "understand": "Understand",
+      "draw": "Draw",
+      "mine": "My space"
+    },
+    "currentGroup": "(current section)"
   },
   "hub": {
     "rootOfDay": "Root of the day",
@@ -227,6 +235,10 @@
       "mindmap": {
         "title": "Mind maps",
         "purpose": "A word or a root at the centre, and what it is tied to around it: its root, family, pattern and topics"
+      },
+      "workbench": {
+        "title": "Editorial workbench",
+        "purpose": "The editors' worklists and the administration's dashboard"
       }
     },
     "nameGloss": "jadhr, “root”",

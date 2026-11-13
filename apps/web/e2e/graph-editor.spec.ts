@@ -145,7 +145,7 @@ test("a map reopened by a link in the same tab shows the work done since, and op
   // a hand-off into this map from the reader, reached without reloading the page (by My maps' search)
   await page.locator(".editor-header").getByRole("link", { name: "خرائطي" }).click();
   await expect(page).toHaveURL(/\/graph$/);
-  await page.getByRole("banner").getByRole("button", { name: /بحث/ }).click();
+  await page.getByRole("banner").getByRole("button", { name: "بحث", exact: true }).click();
   const box = page.getByRole("combobox", { name: /اكتب كلمة أو جذرًا/ });
   await box.fill("2:255");
   await expect(page.getByRole("option").first()).toContainText("آية");
@@ -391,7 +391,7 @@ test("My maps and the hand-off's choices hold a map as soon as it is made or ren
   await page.locator(".editor-header").getByRole("link", { name: "خرائطي" }).click();
   await expect(page.getByRole("main").locator(`a[href="/graph/edit/${id}"]`)).toContainText("خريطتي الجديدة");
   // and the reader's hand-off offers it
-  await page.getByRole("banner").getByRole("button", { name: /بحث/ }).click();
+  await page.getByRole("banner").getByRole("button", { name: "بحث", exact: true }).click();
   const box = page.getByRole("combobox", { name: /اكتب كلمة أو جذرًا/ });
   await box.fill("2:255");
   await expect(page.getByRole("option").first()).toContainText("آية");
