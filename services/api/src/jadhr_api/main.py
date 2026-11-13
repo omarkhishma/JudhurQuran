@@ -1704,8 +1704,18 @@ def create_app() -> FastAPI:
                 "Bearer "
             )
             if key.startswith("jk_"):
+                # a key that is not valid costs a lookup: an address may try the public limit's worth a minute,
+                # then waits like anyone without a key (delta security review, L5)
+                bad = _hits[f"badkey:{ip}"]
+                while bad and now - bad[0] > 60:
+                    bad.popleft()
+                if len(bad) >= settings.public_rate_per_minute:
+                    resp = error(429, "rate_limited", "Too many requests with keys that are not valid.")
+                    resp.headers["Retry-After"] = str(int(60 - (now - bad[0])) + 1)
+                    return _public(resp)
                 who = await asyncio.to_thread(apikeys.check, key)
                 if who is None:
+                    bad.append(now)
                     return _public(
                         error(401, "invalid_key", "This API key is not valid: revoked, or never issued.")
                     )

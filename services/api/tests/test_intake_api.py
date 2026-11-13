@@ -175,6 +175,27 @@ def test_the_request_goes_to_the_address_checked() -> None:
         assert e.code == "not_public"
 
 
+def test_a_slow_name_server_is_waited_on_only_while_the_fetch_has_time(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Delta security review L7: a name whose lookup hangs gives up within what is left of the fetch's time, as
+    "too slow", instead of holding an intake slot for the resolver's own timeout at every hop."""
+    real = intake.socket.getaddrinfo
+
+    def hang(*a, **kw):
+        time.sleep(2)
+        return real("localhost", 80, type=intake.socket.SOCK_STREAM)
+
+    monkeypatch.setattr(intake.socket, "getaddrinfo", hang)
+    t0 = time.monotonic()
+    try:
+        intake._target("https://slow-names.example/x", allow_private=True, timeout=0.2)
+        raise AssertionError("waited for the name server")
+    except intake.IntakeError as e:
+        assert e.code == "too_slow"
+    assert time.monotonic() - t0 < 1.0
+
+
 def test_a_slow_site_is_given_up_on_in_time(site: str, monkeypatch: pytest.MonkeyPatch) -> None:
     """Security review M2: a site sending a byte every few seconds no longer holds a thread for hours."""
     monkeypatch.setattr(get_settings(), "intake_allow_private", True)
@@ -214,6 +235,27 @@ def test_a_pdf_is_read_apart_and_within_limits(monkeypatch: pytest.MonkeyPatch) 
     )  # the process ends in an error, as a killed one
     r = client.post("/api/v1/intake/pdf", files={"file": ("x.pdf", pdf, "application/pdf")})
     assert r.status_code == 422 and r.json()["error"]["code"] == "too_heavy"
+
+
+def test_the_pdf_process_gets_nothing_of_the_servers_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Delta security review L6: the process that parses a reader's PDF runs isolated, with PATH alone — no database
+    password, data key or internal token for a parser fault to read — and still reads the file."""
+    import subprocess
+
+    seen: list[tuple[list[str], dict]] = []
+    real = subprocess.run
+
+    def run(args, **kw):
+        seen.append((args, kw))
+        return real(args, **kw)
+
+    monkeypatch.setenv("JADHR_DATA_KEY", "secret-that-must-not-travel")
+    monkeypatch.setattr(intake.subprocess, "run", run)
+    pdf = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF"
+    r = client.post("/api/v1/intake/pdf", files={"file": ("x.pdf", pdf, "application/pdf")})
+    assert r.status_code in (200, 422) and r.json().get("error", {}).get("code") != "too_heavy"
+    ((args, kw),) = seen
+    assert "-I" in args and set(kw["env"]) == {"PATH"}
 
 
 def test_the_pdf_process_reads_and_refuses_as_the_api_did() -> None:

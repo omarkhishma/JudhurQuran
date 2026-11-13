@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import os
 import re
 import socket
 import subprocess
@@ -26,6 +27,8 @@ import threading
 import time
 import unicodedata
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeout
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any
@@ -107,11 +110,21 @@ def _is_public(address: str) -> bool:
     return ip.is_global and not ip.is_multicast
 
 
-def _resolve(host: str, port: int, allow_private: bool) -> str:
+# names are resolved in threads of their own, so a slow name server is waited on only as long as the fetch has left
+# (delta security review, L7); a lookup still running when its wait ends finishes there, unread, and the pool is bounded
+_RESOLVER = ThreadPoolExecutor(max_workers=8, thread_name_prefix="intake-resolve")
+RESOLVE_SECONDS = 5.0
+
+
+def _resolve(host: str, port: int, allow_private: bool, timeout: float = RESOLVE_SECONDS) -> str:
     """The one address a host is fetched at: resolved once and checked, and the request sent there — so a name cannot
     answer a public address to the check and a private one to the request (DNS rebinding)."""
+    lookup = _RESOLVER.submit(socket.getaddrinfo, host, port, type=socket.SOCK_STREAM)
     try:
-        infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+        infos = lookup.result(timeout=max(0.05, min(timeout, RESOLVE_SECONDS)))
+    except FuturesTimeout as e:
+        lookup.cancel()
+        raise IntakeError("too_slow", "name lookup") from e
     except (socket.gaierror, UnicodeError) as e:
         raise IntakeError("unreachable", str(e)) from e
     addresses = [str(info[4][0]) for info in infos]
@@ -129,7 +142,7 @@ class _Target:
     sni: str  # the name TLS is asked for and the certificate checked against
 
 
-def _target(url: str, allow_private: bool) -> _Target:
+def _target(url: str, allow_private: bool, timeout: float = RESOLVE_SECONDS) -> _Target:
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.hostname:
         raise IntakeError("bad_url")
@@ -142,7 +155,7 @@ def _target(url: str, allow_private: bool) -> _Target:
     usual = 443 if parts.scheme == "https" else 80
     port = given or usual
     # an address off the public internet is named as such, whatever its port
-    ip = _resolve(parts.hostname, port, allow_private)
+    ip = _resolve(parts.hostname, port, allow_private, timeout)
     if port not in (80, 443) and not allow_private:
         raise IntakeError("bad_url")
     name = f"[{parts.hostname}]" if ":" in parts.hostname else parts.hostname
@@ -163,7 +176,7 @@ def fetch(url: str, allow_private: bool = False) -> tuple[str, str]:
         for _ in range(4):
             if time.monotonic() > deadline:
                 raise IntakeError("too_slow")
-            t = _target(url, allow_private)
+            t = _target(url, allow_private, deadline - time.monotonic())
             try:
                 with client.stream(
                     "GET", t.url, headers={"Host": t.host}, extensions={"sni_hostname": t.sni}
@@ -282,9 +295,14 @@ def from_pdf(data: bytes, name: str, lex: frozenset[str]) -> dict[str, Any]:
     if len(data) > PDF_BYTES:
         raise IntakeError("too_large")
     try:
+        # isolated, and with nothing of the server's environment: a fault in the PDF parser would find no database
+        # password, data key or internal token to read (delta security review, L6)
         done = subprocess.run(
             [
                 sys.executable,
+                "-I",
+                "-X",
+                "utf8",
                 "-m",
                 "jadhr_api.pdftext",
                 str(PDF_PAGES),
@@ -295,6 +313,7 @@ def from_pdf(data: bytes, name: str, lex: frozenset[str]) -> dict[str, Any]:
             capture_output=True,
             timeout=PDF_SECONDS,
             check=False,
+            env={"PATH": os.environ.get("PATH", "/usr/bin:/bin")},
         )
     except subprocess.TimeoutExpired as e:
         raise IntakeError("too_slow") from e

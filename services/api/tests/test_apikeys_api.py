@@ -91,3 +91,19 @@ def test_the_public_limit_is_kept(monkeypatch: pytest.MonkeyPatch) -> None:
     assert int(seen[3].headers["retry-after"]) > 0 and seen[3].json()["error"]["code"] == "rate_limited"
     # another address is not held back by the first
     assert tight.get(ROOT, headers={"X-Forwarded-For": "203.0.113.10"}).status_code == 200
+
+
+def test_keys_that_are_not_valid_are_bounded_per_address(monkeypatch) -> None:
+    """Delta security review L5: each key that is not valid costs a lookup, so an address may send the public limit's
+    worth a minute and is then refused before any lookup; another address is not affected."""
+    from jadhr_api import main as m
+
+    monkeypatch.setattr(get_settings(), "public_rate_per_minute", 2)
+    m._hits.clear()
+    c = TestClient(create_app())
+    bogus = {"X-API-Key": "jk_" + "y" * 32, "x-forwarded-for": "203.0.113.20"}
+    codes = [c.get(ROOT, headers=bogus).status_code for _ in range(3)]
+    assert codes == [401, 401, 429]
+    other = {"X-API-Key": "jk_" + "y" * 32, "x-forwarded-for": "203.0.113.21"}
+    assert c.get(ROOT, headers=other).status_code == 401
+    m._hits.clear()
