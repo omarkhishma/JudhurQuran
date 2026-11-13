@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { Link } from "@/i18n/navigation";
-import { setLocalStorage, useTheme } from "@/lib/client";
+import { chooseTheme, useTheme } from "@/lib/client";
 import { cnt, formatNumber } from "@/lib/format";
 import { useBreakpoint } from "@/lib/reader/media";
 import { usePersonal, usePrefs, useReader } from "@/lib/reader/store";
@@ -85,8 +85,7 @@ export function ReaderHeader({ chapter, surfaceRef }: { chapter: ChapterInfo; su
   }
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    setLocalStorage(THEME_KEY, next);
+    chooseTheme(THEME_KEY, next);
   }
   function toggleRail() {
     if (bp === "wide") setPrefs({ railOpen: !railOpen });

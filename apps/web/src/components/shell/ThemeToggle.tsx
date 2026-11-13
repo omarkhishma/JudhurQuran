@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Icon } from "@/components/Icon";
-import { setLocalStorage, useTheme } from "@/lib/client";
+import { chooseTheme, useTheme } from "@/lib/client";
 import { THEME_KEY } from "@/lib/site";
 
 export function ThemeToggle() {
@@ -11,8 +11,7 @@ export function ThemeToggle() {
 
   function toggle() {
     const next = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    setLocalStorage(THEME_KEY, next);
+    chooseTheme(THEME_KEY, next);
   }
 
   const label = theme === "dark" ? t("themeLight") : t("themeDark");

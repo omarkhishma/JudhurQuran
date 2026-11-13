@@ -52,6 +52,23 @@ export function setLocalStorage(key: string, value: string): void {
   window.dispatchEvent(new Event("jadhr:storage"));
 }
 
+/**
+ * The reader chooses a theme. The site follows the device's until they do; choosing the device's own clears the choice,
+ * so it follows the device again (P-UX2) — the one toggle is the whole control, no third "automatic" state to learn.
+ */
+export function chooseTheme(key: string, next: "light" | "dark"): void {
+  document.documentElement.dataset.theme = next;
+  let device: "light" | "dark" = "light";
+  try {
+    device = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  } catch {}
+  if (next !== device) return setLocalStorage(key, next);
+  try {
+    localStorage.removeItem(key);
+  } catch {}
+  window.dispatchEvent(new Event("jadhr:storage"));
+}
+
 function subscribeTheme(cb: () => void): () => void {
   const mo = new MutationObserver(cb);
   mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
