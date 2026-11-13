@@ -1,13 +1,15 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { SCOPES } from "./i18nScopes";
+import { covers, pick, SCOPES } from "./i18nScopes";
 
 const SRC = path.resolve(__dirname, "..");
 const APP = path.join(SRC, "app", "[locale]");
 const IMPORT = /(?:import|export)[^'"]*?from\s+["']([^"']+)["']|import\(["']([^"']+)["']\)/g;
-// a component asks for its copy with useTranslations("…"); getTranslations runs on the server, which reads every namespace
-const CLIENT_NS = /useTranslations\(\s*"([a-zA-Z]+)"/g;
+// a component asks for its copy with useTranslations("…"), a namespace or a dotted part of one ("hub.dest": a pattern of
+// letters alone once missed it, and the drawing pages showed the nav's keys); getTranslations runs on the server, which
+// reads every namespace
+const CLIENT_NS = /useTranslations\(\s*"([a-zA-Z.]+)"/g;
 
 function resolve(from: string, spec: string): string | null {
   const base = spec.startsWith("@/") ? path.join(SRC, spec.slice(2)) : spec.startsWith(".") ? path.resolve(path.dirname(from), spec) : null;
@@ -48,12 +50,19 @@ describe("the copy each route group sends to the browser (lib/i18nScopes)", () =
   for (const [group, scope] of [["(app)", SCOPES.app], ["(reader)", SCOPES.reader], ["(site)", SCOPES.site]] as const) {
     it(`${group} sends every namespace its components ask for`, () => {
       const needed = reachable(entries(path.join(APP, group)));
-      const missing = [...needed].filter((n) => !(scope as readonly string[]).includes(n) && !(SCOPES.root as readonly string[]).includes(n));
+      const missing = [...needed].filter((n) => !covers(scope, n) && !covers(SCOPES.root, n));
       expect(missing, `namespaces ${group} needs but does not send`).toEqual([]);
     });
   }
   it("the root sends what the locale layout, its error and not-found pages ask for", () => {
     const needed = reachable(["layout.tsx", "error.tsx", "not-found.tsx"].map((f) => path.join(APP, f)).filter((f) => existsSync(f)));
-    expect([...needed].filter((n) => !(SCOPES.root as readonly string[]).includes(n))).toEqual([]);
+    expect([...needed].filter((n) => !covers(SCOPES.root, n))).toEqual([]);
+  });
+  it("a dotted name sends that part of its namespace, and nothing beside it", () => {
+    const messages = { hub: { dest: { a: "A" }, title: "T" }, nav: { x: "X" }, other: { y: "Y" } };
+    expect(pick(messages, ["hub.dest", "nav", "missing", "hub.none"])).toEqual({ hub: { dest: { a: "A" } }, nav: { x: "X" } });
+    expect(covers(["hub.dest"], "hub.dest")).toBe(true);
+    expect(covers(["hub"], "hub.dest")).toBe(true);
+    expect(covers(["hub.dest"], "hub")).toBe(false);
   });
 });

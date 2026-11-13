@@ -77,6 +77,31 @@ test("the phone's menu holds the same five groups, the reader's page marked (P-U
   await expect(menu).toHaveCount(0);
 });
 
+test("every group of the nav shows its copy, not its keys, under each layout that carries the header", async ({ page, isMobile }) => {
+  // each route group sends the browser its own part of the copy; the drawing pages once lacked the nav's and showed «hub.dest.…»
+  const key = /\b[a-z]+\.[a-z]+\.[a-zA-Z]+\b/;
+  for (const path of ["/graph", "/library", "/en/graph"]) {
+    await page.goto(path);
+    if (isMobile) {
+      await page.getByRole("button", { name: /^(القائمة|Menu)$/ }).click();
+      const menu = page.locator("#mobile-menu");
+      await expect(menu.getByRole("heading", { level: 2 })).toHaveCount(5);
+      await expect(menu).not.toContainText(key);
+      await page.keyboard.press("Escape");
+      continue;
+    }
+    const nav = page.locator("header nav").first();
+    const groups = nav.locator("button[data-group]");
+    await expect(groups).toHaveCount(5);
+    for (let i = 0; i < 5; i++) {
+      await groups.nth(i).click();
+      await expect(nav.locator(".nav-panel:not([hidden]) a").first()).toBeVisible();
+      await expect(nav.locator(".nav-panel:not([hidden])")).not.toContainText(key);
+      await page.keyboard.press("Escape");
+    }
+  }
+});
+
 test("the site omnibox offers patterns, each leading to its words (SHL-Q07)", async ({ page }) => {
   await page.goto("/library");
   // the header's search button opens the omnibox at every width (⌘K is a desktop affordance)
