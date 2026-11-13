@@ -177,6 +177,15 @@ function ProgressCard() {
       <p id="explore-progress" className="label-caps">{t("progress")}</p>
       <p className="text-[28px] font-semibold leading-tight">{t("met", cnt(slugs.length, locale))}</p>
       {slugs.length > 0 && <p className="text-[12.5px] text-t2">{t("metSplit", { known: formatNumber(known, locale), learning: formatNumber(slugs.length - known, locale) })}</p>}
+      {/* nothing met yet: how words come to be counted here, and the door to it (audit 27 F26: a large empty card) */}
+      {client && slugs.length === 0 && (
+        <>
+          <p className="text-[13px] leading-relaxed text-t2">{t("metNoneLead")}</p>
+          <Link href="/read" className="btn self-start">
+            {t("metNoneGo")}
+          </Link>
+        </>
+      )}
       {/* the roots and the share of the Quran only once known: never a ٠ that is really "loading" (COL-11) */}
       {slugs.length > 0 && cov.isPending && <span className="block h-[34px] w-2/3 animate-pulse rounded-md bg-card-2" aria-hidden="true" />}
       {cov.data && cov.data.roots > 0 && (

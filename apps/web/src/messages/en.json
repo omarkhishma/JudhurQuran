@@ -394,7 +394,9 @@
     "myRootsLatest": "Met most recently",
     "myRootsOpenMap": "Open the latest {n} as a map",
     "myRootsMap": "My roots",
-    "myRootsKept": "Kept in this browser, and with your account when the journal syncs."
+    "myRootsKept": "Kept in this browser, and with your account when the journal syncs.",
+    "metNoneLead": "Turn on study mode in the reader and the words you meet and know are counted here, with how much of the Quran's text they cover.",
+    "metNoneGo": "Open the reader"
   },
   "review": {
     "title": "Root review",
