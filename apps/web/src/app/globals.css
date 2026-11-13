@@ -610,7 +610,9 @@ button:disabled {
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  overflow: hidden;
+  /* clip, not hidden: a hidden box can still be scrolled by script, and a jump into the panel (scrollIntoView)
+     scrolled the whole shell 148 px — header gone, a blank strip under the audio bar (audit 27 F15) */
+  overflow: clip;
   background: var(--canvas);
   font-size: 12.5px;
 }
@@ -1190,7 +1192,7 @@ textarea.field {
   border-top: 1px solid var(--line-2);
   border-radius: 16px 16px 0 0;
   box-shadow: var(--sh-open);
-  overflow: hidden;
+  overflow: clip; /* as .reader-v5: never scrolled by a jump inside it */
   transition: height 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
   animation: dc-rise 0.16s ease-out;
 }

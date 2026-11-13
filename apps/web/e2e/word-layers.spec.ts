@@ -38,6 +38,24 @@ async function seed(page: Page) {
 type Tc = { meaning: string[]; sarf: string[]; irab: string[]; qiraat_same: boolean };
 type W = { slug: string; corpus_freq: number; occurrence: { location: string; tc: Tc } };
 
+test("every door of the data card moves the panel, never the reader's frame (audit 27 F15)", async ({ page }) => {
+  // a jump into the panel once scrolled the clipped shell itself: the header gone and a blank strip under the audio bar
+  await seed(page);
+  await page.goto("/quran/2?w=sabr&at=2:45:2#v45");
+  const p = panel(page);
+  await expect(p.locator(".data-card")).toBeVisible();
+  const doors = p.locator(".data-door");
+  const n = await doors.count();
+  expect(n).toBeGreaterThan(2);
+  for (let i = 0; i < n; i++) {
+    await doors.nth(i).click();
+    await page.waitForTimeout(400);
+    expect(await page.locator(".reader-v5").evaluate((e) => e.scrollTop)).toBe(0);
+    await expect(page.locator(".reader-header")).toBeInViewport();
+    await p.locator(".data-card").scrollIntoViewIfNeeded();
+  }
+});
+
 test("the layers of a word's meaning, each from its sources, and the data card's doors (P15)", async ({ page }) => {
   await seed(page);
   const w = await api<W>(page, "/words/kursiyy?limit=0&at=2:255:42");
