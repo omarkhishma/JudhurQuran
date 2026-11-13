@@ -35,6 +35,10 @@ _SPACE = re.compile(r"\s+")
 _TAG = re.compile(r"<[^>]+>")
 # a licence header in a data file: '#' lines (the corpus) or a '*' comment block (QurSim)
 _COMMENT = re.compile(r"(?m)^[ \t]*[#*]+[ \t]?")
+# Markdown: a link's text without its address, and bold or italic markers — a terms file that only set its words in
+# bold, or linked the licence's name, still says what it said
+_MD_LINK = re.compile(r"\[([^\]]*)\]\([^)\s]*\)")
+_MD_EMPHASIS = re.compile(r"\*\*|__|(?<![\w*])\*(?=\S)|(?<=\S)\*(?![\w*])")
 
 
 def _norm(s: str) -> str:
@@ -55,9 +59,11 @@ def _text(body: bytes) -> str:
 
 def _views(body: bytes) -> list[str]:
     """Readings of a page a quote may sit in: as served, without markup (a linked licence name or a quote
-    that is itself markup), without comment markers (a licence header in a data file), JSON-decoded."""
+    that is itself markup), without comment markers (a licence header in a data file), without Markdown's links and
+    emphasis, JSON-decoded."""
     raw = _text(body)
     views = [raw, _TAG.sub(" ", raw), _TAG.sub("", raw), _COMMENT.sub(" ", raw)]
+    views.append(_MD_EMPHASIS.sub("", _MD_LINK.sub(r"\1", raw)))
     with contextlib.suppress(ValueError):
         views.append(json.dumps(json.loads(raw), ensure_ascii=False))
     return [_norm(v) for v in views]

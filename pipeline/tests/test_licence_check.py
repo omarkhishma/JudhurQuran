@@ -29,9 +29,20 @@ def test_quote_found_in_every_form_a_page_holds_it() -> None:
     with zipfile.ZipFile(buf, "w") as z:
         z.writestr("LICENSE", "Copyright (c) 2016 Collin Fair")
     assert _quote_in("Copyright (c) 2016 Collin Fair", buf.getvalue())
+    # Markdown: words set in bold, a licence's name linked across a line break (Quranpedia, OpenITI, 2026-11)
+    assert _quote_in(
+        "Free to use inside apps, websites, bots, and research tools — no attribution required.",
+        "- **Free to use** inside apps, websites, bots, and research tools — no attribution required.".encode(),
+    )
+    assert _quote_in(
+        "OpenITI is published under the CC BY-NC-SA 4.0 license.",
+        b"OpenITI is published under the [CC BY-NC-SA\n4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode)\nlicense.",
+    )
 
 
 def test_a_changed_or_absent_quote_is_reported() -> None:
     assert not _quote_in(Q, b"<p>This annotation may be used in websites</p>")
     assert not _quote_in("CHANGING IT IS NOT ALLOWED", b"changing it is allowed")
     assert not _quote_in(Q, b"*  This annotation can be used in any website\n*    or service\n")
+    # taking Markdown away never makes a changed clause match
+    assert not _quote_in("requires crediting Quranpedia.net", b"**requires** crediting **another site**")

@@ -140,6 +140,8 @@ Optional for readers; everything works without them. Before enabling sign-in in 
 
 ## Before the site goes public (owner)
 
+Within the week before the go: run `uv run python -m jadhr_pipeline.licence_check` and re-read every clause it reports. Three sources require each copy to follow their latest version, so re-pin them, rebuild and reload: QuranEnc (condition 6, the translations and al-Muyassar and al-Mukhtasar), HadeethEnc (condition 6, its Arabic export) and Quranpedia (its freshness clause, the topics dump). On 2026-11-13 all three were behind: Rwwad 1.0.19 against 1.0.21, HadeethEnc v1.7.0 against v1.8.0, and the Quranpedia dump of 2026-10-03 against 2026-11-11. Tarteel's terms of 2026-11-03 (QUL's host) were re-read: they govern its apps, services and endpoints, and do not name QUL's resources.
+
 Licensing gates from the research reports: the non-commercial assumption (EveryAyah audio CC BY-NC, corpus terms), al-Sa'di in life+70 jurisdictions until 2027-01-01, QuranEnc's "keep the version, link the source" terms (shown on every tafsir/translation), and the corpus attribution link on every word panel. See `docs/research/` and the sources page.
 
 ## Search index
