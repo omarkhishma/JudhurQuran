@@ -388,6 +388,19 @@ test("the trail records verses and roots as steps (RDR-568)", async ({ page, isM
   await expect(page).toHaveURL(/\/quran\/1\/2$/);
 });
 
+test("back to the step before the last is going back: the trail ends there, the word not listed twice (audit 27 F20)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the verse button is reached by hover on desktop");
+  await returning(page);
+  await page.goto("/quran/1");
+  await page.locator('.w[data-w="1:1:3"]').click();
+  await page.locator('.w[data-w="1:2:2"]').click();
+  await page.locator('[data-verse-btn="1:2"]').click();
+  await page.locator('.w[data-w="1:2:2"]').click();
+  const crumbs = panel(page).locator(".trail .trail-step");
+  await expect(crumbs).toHaveCount(2);
+  await expect(crumbs.nth(1)).toHaveAttribute("data-kind", "word");
+});
+
 test("phone: putting the sheet away keeps the word, with its gloss under the verse (RDR-605); the word stays above the sheet (RDR-416)", async ({ page, isMobile }) => {
   test.skip(!isMobile, "phone only");
   await returning(page);

@@ -465,6 +465,10 @@ export const usePersonal = create<PersonalState>()(
         set((st) => {
           const last = st.trail[st.trail.length - 1];
           if (last?.kind === kind && last.id === id) return {}; // consecutive duplicates are not appended (RDR-587)
+          // back to the step before the last (a word, its verse, the word again) is going back, as a press on that step
+          // is: the trail ends there, not «صبر › ٢:٤٥ › صبر» (audit 27 F20)
+          const prev = st.trail[st.trail.length - 2];
+          if (prev?.kind === kind && prev.id === id) return { trail: st.trail.slice(0, -1) };
           return { trail: [...st.trail, { kind, id, ts: Date.now() }].slice(-TRAIL_CAP) };
         }),
       truncateTrail: (index) => set((st) => ({ trail: st.trail.slice(0, index + 1) })),
