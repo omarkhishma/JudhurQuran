@@ -171,6 +171,13 @@ function EntryHeader({ w }: { w: WordPayload }) {
               </span>
             ))}
           </div>
+          {/* the word's plain meaning at this place, first, from the Tafsir Center: on a phone's half sheet the meaning
+              was below the fold, and in Arabic it led with the corpus's English (audit 27 F23) */}
+          {occ.tc?.meaning[0] && occ.tc.source && (
+            <p className="mt-1 text-[15px] leading-relaxed text-t1" lang="ar" dir="rtl" data-testid="meaning-here">
+              {occ.tc.meaning[0]} <span className="text-[11.5px] text-t3">— {t("work_tafsircenter")}</span>
+            </p>
+          )}
           {occ.gloss_en && (
             <p className="mt-1 text-[12.5px] italic text-t2" lang="en" dir="ltr">
               {occ.gloss_en} <span className="not-italic text-t3">— {t.rich("corpusGlossCredit", { term: (c) => <Term id="corpus">{c}</Term> })}</span>

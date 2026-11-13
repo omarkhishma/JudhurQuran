@@ -1270,6 +1270,11 @@ textarea.field {
   padding: 0 12px 10px;
   border-bottom: 1px solid var(--line);
 }
+/* the half sheet on a phone shows the word first: its search comes with the full sheet (and the header's search is
+   one tap away); it had moved the meaning below the half sheet's fold (audit 27 F23) */
+.reader-sheet[data-sheet="half"] .panel-searchbar {
+  display: none;
+}
 .panel-search {
   width: 100%;
   background: var(--card);

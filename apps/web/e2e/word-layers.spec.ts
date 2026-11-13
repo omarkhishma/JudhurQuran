@@ -38,6 +38,16 @@ async function seed(page: Page) {
 type Tc = { meaning: string[]; sarf: string[]; irab: string[]; qiraat_same: boolean };
 type W = { slug: string; corpus_freq: number; occurrence: { location: string; tc: Tc } };
 
+test("the word's plain meaning at its place leads the entry, in view on a phone's half sheet (audit 27 F23)", async ({ page }) => {
+  await seed(page);
+  const w = await api<W>(page, "/words/kursiyy?limit=0&at=2:255:42");
+  await page.goto("/quran/2?w=kursiyy&at=2:255:42#v255");
+  const here = panel(page).getByTestId("meaning-here");
+  await expect(here).toContainText(w.occurrence.tc.meaning[0]);
+  await expect(here).toContainText("مركز تفسير");
+  await expect(here).toBeInViewport();
+});
+
 test("the panel's sections and layers of meaning are headings, so a screen reader moves by them (audit 27 F14)", async ({ page }) => {
   await seed(page);
   await page.goto("/quran/2?w=kursiyy&at=2:255:42#v255");
