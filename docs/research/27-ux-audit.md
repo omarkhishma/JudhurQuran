@@ -50,8 +50,8 @@ The ask card's anatomy (forms, root, cousins, a verse, actions). The layers of m
 
 ## For the owner: proposals that change the product's shape
 
-- **P-UX1 Grouped navigation (F07).** Five groups replace the fifteen flat items: اقرأ (the mushaf, the library) · ابحث (search, the dictionary, the concordance) · افهم (ask the Quran, statistics, mind maps, the analyser) · ارسم (maps, the gallery) · أنا (notebook, review, profile); the editorial queue, the classroom and the administration under the account menu for those who hold the role. Why: a first-time reader meets three doors, not fifteen. Cost: M. Risk: the design handoff fixes its own list of eleven.
-- **P-UX2 System dark mode.** Follow the device's dark preference when the reader has not chosen a theme. Today light is the default by design (a unit test holds it). Cost: S.
+- **P-UX1 Grouped navigation (F07).** Five groups replace the fifteen flat items: اقرأ (the mushaf, the library) · ابحث (search, the dictionary, the concordance) · افهم (ask the Quran, statistics, mind maps, the analyser) · ارسم (maps, the gallery) · أنا (notebook, review, profile); the editorial queue, the classroom and the administration under the account menu for those who hold the role. Why: a first-time reader meets three doors, not fifteen. Cost: M. Risk: the design handoff fixes its own list of eleven. **Approved by the owner and built 2026-11-13:** five groups (اقرأ · ابحث · افهم · ارسم · مساحتي), each a button opening a panel of its destinations, every link with its purpose line; the analyser went to ابحث with the other word tools. The edit requests and the workbench show in مساحتي to the role's holders only (the role read from `/me` on each load), the classroom to everyone. The phone menu shows the same groups, and «البيانات» moved to the footer.
+- **P-UX2 System dark mode.** Follow the device's dark preference when the reader has not chosen a theme. Today light is the default by design (a unit test holds it). Cost: S. **Approved by the owner and built 2026-11-13:** the device's preference leads, followed live, until the reader chooses; choosing the theme the device already has clears the choice, so the one toggle stays the whole control.
 
 ## Loop passes
 
@@ -71,7 +71,7 @@ Not changed, with the reason:
 - **F10.** This is Amiri's design, not a fault. It sets the marks above short letters at one height, level with the tall letters, and the same word drawn alone in Amiri shows the same thing.
 - **F13.** The tour moving to its second step when the first word opens is the tour following the reader. It now sits where it hides nothing (F24).
 - **F08.** The two counting links serve two ends: a note in place, and the count page that answers «كم مرة ذكرت» for search engines (B8a). The concordance is the root pages' nav item by design.
-- **F07.** Grouped navigation is the owner's call (P-UX1).
+- **F07.** Grouped navigation was the owner's call (P-UX1); approved and built 2026-11-13.
 - The «٢٠٩ مقطعًا» first listed under F04 was a misread «٢٥٩», which agrees.
 
 Two findings the e2e suite could never have caught:
