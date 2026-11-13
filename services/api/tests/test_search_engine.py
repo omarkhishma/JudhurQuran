@@ -310,6 +310,9 @@ def test_the_meanings_are_searched_in_the_sources_words() -> None:
         return f"(^|[^{letters}]){w}([^{letters}]|$)"
 
     with connect() as conn:
+        # the recount scans every Arabic passage with a regular expression; on a busy machine that passes the
+        # requests' 5 s statement timeout, which binds what the API does, not this test's own count
+        conn.exec_driver_sql("set local statement_timeout = '60s'")
         held = {
             r["key"]
             for r in rows(
