@@ -182,7 +182,7 @@ function Counts() {
       {rows.map(([k, v]) => (
         <div key={k}>
           <dt>{k}</dt>
-          <dd className="mono">{v}</dd>
+          <dd className="mono">{/^[0٠]$/.test(String(v)) ? <><span aria-hidden="true">—</span><span className="sr-only">{v}</span></> : v}</dd>
         </div>
       ))}
     </dl>

@@ -150,7 +150,8 @@ function Tile({ label, value, sub }: { label: string; value: string; sub: string
   return (
     <div className="dash-tile">
       <span className="text-[12px] text-t2">{label}</span>
-      <span className="text-[26px] font-semibold leading-tight text-t1">{value}</span>
+      {/* a lone Arabic-Indic zero is a dot, which reads as a bullet or a failed load in a headline: a dash, the zero said */}
+      <span className="text-[26px] font-semibold leading-tight text-t1">{/^[0٠]$/.test(value) ? <><span aria-hidden="true">—</span><span className="sr-only">{value}</span></> : value}</span>
       <span className="text-[11.5px] text-t3">{sub}</span>
     </div>
   );
