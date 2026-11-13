@@ -2,7 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { AUTH_KEY, useAccount } from "@/lib/account/store";
+import { type Account, AUTH_KEY, authFetch, useAccount } from "@/lib/account/store";
 import { DOCS_EVENT, GRAPHS_SYNCED_EVENT } from "@/lib/graph/persist";
 import { STORES_CHANNEL, type StoreMessage, TAB_ID } from "@/lib/store/idbStorage";
 import { usePersonal, usePrefs } from "@/lib/reader/store";
@@ -63,6 +63,23 @@ export function SyncRunner() {
       channel?.close();
     };
   }, []);
+
+  // the account's role as the server holds it now: a role earned or given after this device signed in shows its work
+  // in the header at once (P-UX1), on each load and each return to the tab, not at the next sign-in
+  useEffect(() => {
+    if (!session) return;
+    const learn = () =>
+      void authFetch<Account>("/me")
+        .then((me) => {
+          const u = useAccount.getState().user;
+          if (u && me.role !== u.role) useAccount.getState().setUser({ ...u, role: me.role });
+        })
+        .catch(() => {});
+    learn();
+    const back = () => document.visibilityState === "visible" && learn();
+    document.addEventListener("visibilitychange", back);
+    return () => document.removeEventListener("visibilitychange", back);
+  }, [session]);
 
   useEffect(() => {
     if (!session) return;
