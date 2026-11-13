@@ -263,7 +263,7 @@ export function LibraryScreen({ texts, openAdd }: { texts: TextCard[]; openAdd: 
               return (
                 <li key={s.number}>
                   {/* 114 sūras: prefetching each would render every sūra page on a visit to the shelf */}
-                  <Link href={`/quran/${s.number}`} prefetch={false} className="surah-cell" aria-label={t("surahCell", { name: s.name_ar, read: formatNumber(r, locale), of: formatNumber(s.verse_count, locale) })}>
+                  <Link href={`/quran/${s.number}`} prefetch={false} className="surah-cell" aria-label={t("surahCell", { name: s.name_ar, read: formatNumber(r, locale), of: formatNumber(s.verse_count, locale), ofC: s.verse_count })}>
                     <span className="mono text-[11px] text-t3">{formatNumber(s.number, locale)}</span>
                     <span className="ar-classical min-w-0 flex-1 truncate text-[16px]" lang="ar">{s.name_ar}</span>
                     <span className="text-[10.5px] text-t3">{s.revelation_place === "meccan" ? t("meccan") : t("medinan")}</span>
@@ -299,7 +299,7 @@ function KnownLine({ known, total, seen }: { known: number; total: number; seen:
   if (!total) return null;
   return (
     <span className="text-[12px] text-t2">
-      {known ? t("knownOf", { known: formatNumber(known, locale), total: formatNumber(total, locale) }) : t("noneKnown")}
+      {known ? t("knownOf", { known: formatNumber(known, locale), total: formatNumber(total, locale), totalC: total }) : t("noneKnown")}
       {seen > 0 && <span className="text-t3"> • {t("seenWords", cnt(seen, locale))}</span>}
     </span>
   );
@@ -378,7 +378,7 @@ function UserTextCard({ x, known }: { x: UserTextMeta; known: Set<string> }) {
       <span className="ar-classical text-[19px]" lang="ar" dir="rtl">{x.title}</span>
       <span className="text-[12px] text-t3">{t("mineMeta", { words: formatNumber(x.words, locale), review: formatNumber(x.review, locale) })}</span>
       <span className="text-[12px] text-t2">
-        {x.lemmas.length ? (k ? t("knownOf", { known: formatNumber(k, locale), total: formatNumber(x.lemmas.length, locale) }) : t("noneKnown")) : t("noQuranWords")}
+        {x.lemmas.length ? (k ? t("knownOf", { known: formatNumber(k, locale), total: formatNumber(x.lemmas.length, locale), totalC: x.lemmas.length }) : t("noneKnown")) : t("noQuranWords")}
       </span>
       <ProgressLine value={at && of ? at.passage / of : 0} label={!at ? t("new") : of ? t("passageOf", { n: formatNumber(at.passage, locale), of: formatNumber(of, locale) }) : t("passageAt", { n: formatNumber(at.passage, locale) })} />
     </Link>

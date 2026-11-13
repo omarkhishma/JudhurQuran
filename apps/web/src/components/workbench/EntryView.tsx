@@ -90,7 +90,7 @@ export function EntryView({ kind, target, onBack }: { kind: Kind; target: string
         <h2 id="entry-h" className="ar-classical text-[30px] leading-[1.3] text-t1" lang="ar" dir="auto">{tg.label || (kind === "topic" ? t("newTopic") : "")}</h2>
         {tg.translit && <span className="mono text-[13px] text-t3" dir="ltr">{tg.translit}</span>}
         <span className="text-[12.5px] text-t3">{t(`kind_${kind}`)}</span>
-        {tg.occurrences != null && kind !== "glossary" && <span className="text-[12.5px] text-t3">{t("occurrences", { n: formatNumber(tg.occurrences, locale) })}</span>}
+        {tg.occurrences != null && kind !== "glossary" && <span className="text-[12.5px] text-t3">{t("occurrences", { n: formatNumber(tg.occurrences, locale), nC: tg.occurrences })}</span>}
       </header>
 
       {page.in_force && (

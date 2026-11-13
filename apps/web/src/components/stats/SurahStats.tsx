@@ -110,7 +110,7 @@ export function SurahStats({ d, dist }: { d: SurahDetail; dist: Distribution | n
       </div>
       {dist && dist.root && (
         <div className="stats-grid is-two">
-          <Figure id="sdist" title={t("rootThrough", { root: dist.root.spaced })} caption={t("rootThroughCaption", { total: n(dist.total), verses: n(dist.verses) })}>
+          <Figure id="sdist" title={t("rootThrough", { root: dist.root.spaced })} caption={t("rootThroughCaption", { total: n(dist.total), totalC: dist.total, verses: n(dist.verses), versesC: dist.verses })}>
             <SurahColumns label={t("rootThrough", { root: dist.root.spaced })} by="mushaf" data={dist.surahs.map((s) => ({ surah: s.surah, name: ar ? s.name_ar : s.name_translit, place: s.place, order: s.revelation_order, value: s.per_1000 }))} onPick={(s) => router.push(`/stats/surah/${s}`)} />
           </Figure>
           <Figure id="spages" title={t("rootPages", { root: dist.root.spaced })} caption={t("rootPagesCaption")} legend={<RampKey hue="var(--chart-root)" low={t("none")} high={t("most")} />}>

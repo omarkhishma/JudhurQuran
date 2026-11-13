@@ -29,14 +29,14 @@ export function TopicCoverage({ onPick, heading = true }: { onPick?: (surah: num
   };
   const d = cov.data;
   const label = (r: Coverage["surahs"][number]) =>
-    t("coverageCell", { name: name(r.surah), covered: formatNumber(r.covered + r.placed, locale), verses: formatNumber(r.verses, locale) }) +
+    t("coverageCell", { name: name(r.surah), covered: formatNumber(r.covered + r.placed, locale), verses: formatNumber(r.verses, locale), versesC: r.verses }) +
     (r.placed ? ` — ${t("coveragePlaced", { n: formatNumber(r.placed, locale) })}` : "");
   return (
     <section className="flex flex-col gap-2" aria-label={t("coverageTitle")}>
       {/* where a fold above already names it, not named twice */}
       {heading && <h3 className="text-[13.5px] font-semibold">{t("coverageTitle")}</h3>}
       <p className="text-[12px] leading-relaxed text-t2">
-        {t("coverageLead", { covered: formatNumber(d.covered + d.placed, locale), verses: formatNumber(d.verses, locale), pct: pct((d.covered + d.placed) / d.verses, locale), placed: formatNumber(d.placed, locale) })}
+        {t("coverageLead", { covered: formatNumber(d.covered + d.placed, locale), verses: formatNumber(d.verses, locale), versesC: d.verses, pct: pct((d.covered + d.placed) / d.verses, locale), placed: formatNumber(d.placed, locale) })}
       </p>
       <ol className="topic-coverage" aria-label={onPick ? t("coverageTitle") : undefined} aria-hidden={onPick ? undefined : true}>
         {d.surahs.map((r) => {

@@ -70,7 +70,7 @@ export function RelationsTool({ slug, role, onBack, back }: { slug: string; role
       <header className="flex flex-wrap items-baseline gap-3">
         <h2 id="rel-h" className="ar-classical text-[30px] leading-[1.3] text-t1" lang="ar">{tg.label}</h2>
         {tg.root_spaced && <span className="text-[12.5px] text-t3">{t("ctxWordRoot", { root: tg.root_spaced })}</span>}
-        <span className="text-[12.5px] text-t3">{t("occurrences", { n: formatNumber(tg.occurrences, locale) })}</span>
+        <span className="text-[12.5px] text-t3">{t("occurrences", { n: formatNumber(tg.occurrences, locale), nC: tg.occurrences })}</span>
       </header>
       <p className="text-[12.5px] leading-relaxed text-t3">{t("kindLead_word_relations")}</p>
 
@@ -114,7 +114,7 @@ export function RelationsTool({ slug, role, onBack, back }: { slug: string; role
                 .map((w) => (
                   <li key={w.slug} className="flex flex-wrap items-center gap-2">
                     <span className="ar-classical text-[18px] text-t1" lang="ar">{w.ar}</span>
-                    <span className="text-[11.5px] text-t3">{[w.root_spaced, t("occurrences", { n: formatNumber(w.occurrences, locale) })].filter(Boolean).join(" • ")}</span>
+                    <span className="text-[11.5px] text-t3">{[w.root_spaced, t("occurrences", { n: formatNumber(w.occurrences, locale), nC: w.occurrences })].filter(Boolean).join(" • ")}</span>
                     {relButtons({ slug: w.slug, ar: w.ar, occurrences: w.occurrences, root_key: w.root })}
                   </li>
                 ))}

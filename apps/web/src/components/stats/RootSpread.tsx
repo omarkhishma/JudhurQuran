@@ -30,7 +30,7 @@ export function RootSpread({ rootKey, spaced }: { rootKey: string; spaced: strin
       <Figure
         id="rspread"
         title={t("rootThrough", { root: spaced })}
-        caption={t("rootSpreadCaption", { total: n(d.total), verses: n(d.verses) })}
+        caption={t("rootSpreadCaption", { total: n(d.total), totalC: d.total, verses: n(d.verses), versesC: d.verses })}
         legend={
           <div className="seg-group" role="group" aria-label={t("order")}>
             {(["revelation", "mushaf"] as const).map((v) => (
@@ -41,7 +41,7 @@ export function RootSpread({ rootKey, spaced }: { rootKey: string; spaced: strin
           </div>
         }
       >
-        <SurahColumns label={t("rootThrough", { root: spaced })} by={by} data={d.surahs.map((s) => ({ surah: s.surah, name: locale === "ar" ? s.name_ar : s.name_translit, place: s.place, order: s.revelation_order, value: s.per_1000, extra: t("countIn", { n: n(s.count) }) }))} onPick={(s) => router.push(`/stats/surah/${s}`)} />
+        <SurahColumns label={t("rootThrough", { root: spaced })} by={by} data={d.surahs.map((s) => ({ surah: s.surah, name: locale === "ar" ? s.name_ar : s.name_translit, place: s.place, order: s.revelation_order, value: s.per_1000, extra: t("countIn", { n: n(s.count), nC: s.count }) }))} onPick={(s) => router.push(`/stats/surah/${s}`)} />
       </Figure>
       <Figure id="rpages" title={t("rootPages", { root: spaced })} caption={t("rootPagesCaption")} legend={<RampKey hue="var(--chart-root)" low={t("none")} high={t("most")} />}>
         <PageGrid pages={d.pages} label={t("rootPages", { root: spaced })} onPage={(p) => router.push(`/mushaf/${p}`)} />

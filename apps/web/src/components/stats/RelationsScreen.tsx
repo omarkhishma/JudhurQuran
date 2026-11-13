@@ -71,7 +71,7 @@ export function RelationsScreen({ network, similarity, colloc }: { network: Netw
       >
         <Network
           label={t("netTitle", { n: n(network.nodes.length) })}
-          nodes={network.nodes.map((r) => ({ id: r.key, label: r.spaced, size: r.count, href: `/roots/${encodeURIComponent(r.key)}`, sub: t("netNode", { count: n(r.count), verses: n(r.verses) }) }))}
+          nodes={network.nodes.map((r) => ({ id: r.key, label: r.spaced, size: r.count, href: `/roots/${encodeURIComponent(r.key)}`, sub: t("netNode", { count: n(r.count), countC: r.count, verses: n(r.verses), versesC: r.verses }) }))}
           edges={network.edges.map((e) => ({ a: e.a, b: e.b, weight: e.g2 }))}
         />
       </Figure>
@@ -131,7 +131,7 @@ export function RelationsScreen({ network, similarity, colloc }: { network: Netw
                   label: (
                     <span>
                       <span className="ar-classical text-[15px]" lang="ar">{it.spaced}</span>
-                      <span className="text-[11px] text-t3">{` • ${t("sharedN", { n: n(it.verses) })} • PMI ${n(it.pmi)}`}</span>
+                      <span className="text-[11px] text-t3">{` • ${t("sharedN", { n: n(it.verses), nC: it.verses })} • PMI ${n(it.pmi)}`}</span>
                     </span>
                   ),
                 }))}

@@ -46,7 +46,7 @@ export function Dashboard({ lists, onOpen }: { lists?: Worklists; onOpen: (kind:
         <ol className="topic-coverage" aria-label={t("dashCoverage")}>
           {d.by_surah.map((s) => {
             const share = s.words ? s.words_with_context / s.words : 0;
-            const label = t("dashCell", { name: name(s), n: formatNumber(s.surah, locale), words: formatNumber(s.words_with_context, locale), of: formatNumber(s.words, locale), pct: pct(share, locale) });
+            const label = t("dashCell", { name: name(s), n: formatNumber(s.surah, locale), words: formatNumber(s.words_with_context, locale), of: formatNumber(s.words, locale), ofC: s.words, pct: pct(share, locale) });
             return (
               <li key={s.surah}>
                 <button type="button" className="topic-cell" style={{ background: `color-mix(in srgb, var(--c-sentence) ${Math.round(share * 100)}%, var(--card))` }} title={label} aria-label={label} onClick={() => onOpen("context_passages", String(s.surah))} />

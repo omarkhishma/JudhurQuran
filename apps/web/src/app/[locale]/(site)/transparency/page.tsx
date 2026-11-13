@@ -44,7 +44,7 @@ export default async function TransparencyPage({ params }: PageProps<"/[locale]/
         <span style={{ width: `${(100 * l.count) / Math.max(1, l.of)}%` }} />
       </div>
       {WHAT.includes(l.id) && <p className="text-[12.5px] leading-relaxed text-t3">{t(`what.${l.id}`)}</p>}
-      {!!l.disagree && <p className="text-[12.5px] text-t2">{t("disagree", { n: n(l.disagree) })}</p>}
+      {!!l.disagree && <p className="text-[12.5px] text-t2">{t("disagree", { n: n(l.disagree), nC: l.disagree })}</p>}
     </li>
   );
   const groups: [string, Layer[]][] = [

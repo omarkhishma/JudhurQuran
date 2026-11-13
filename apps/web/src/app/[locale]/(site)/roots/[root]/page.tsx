@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/roots/[r
   const { locale, root } = await params;
   const r = await load(root);
   const t = await getTranslations({ locale, namespace: "roots" });
-  const title = t("rootMetaTitle", { root: r.spaced, n: formatNumber(r.occurrences, locale) });
+  const title = t("rootMetaTitle", { root: r.spaced, n: formatNumber(r.occurrences, locale), nC: r.occurrences });
   const lemmas = r.lemmas.slice(0, 6).map((l) => l.ar).join("، ");
   const description =
     locale === "ar"
@@ -130,7 +130,8 @@ export default async function RootPage({ params }: PageProps<"/[locale]/roots/[r
         ).map(([k, n]) => (
           <div key={k} className="card p-4">
             <dd className="text-[28px] font-semibold text-t1">{formatNumber(n, locale)}</dd>
-            <dt className="text-[13px] text-t2">{k === "statOccurrences" ? <Term id="occurrences">{t(k)}</Term> : k === "statLemmas" ? <Term id="lemma">{t(k)}</Term> : t(k)}</dt>
+            {/* the label agrees with the number above it: ١٠٣ مواضع، ٨ صيغ (audit 27 F04) */}
+            <dt className="text-[13px] text-t2">{k === "statOccurrences" ? <Term id="occurrences">{t(k, { count: n })}</Term> : k === "statLemmas" ? <Term id="lemma">{t(k, { count: n })}</Term> : t(k, { count: n })}</dt>
           </div>
         ))}
       </dl>

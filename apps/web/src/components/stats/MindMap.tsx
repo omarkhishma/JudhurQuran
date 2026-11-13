@@ -85,7 +85,7 @@ export function MindMap({ data }: { data: MindData }) {
     <Figure
       id="mind"
       title={title}
-      caption={data.kind === "word" ? t("mindWordCaption", { count: n(data.word.count) }) : t("mindRootCaption", { count: n(data.root.count) })}
+      caption={data.kind === "word" ? t("mindWordCaption", { count: n(data.word.count), countC: data.word.count }) : t("mindRootCaption", { count: n(data.root.count), countC: data.root.count })}
       legend={
         <>
           <Key shape="dot" color={C.root} label={t("mindKeyRoot")} />
