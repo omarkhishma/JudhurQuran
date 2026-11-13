@@ -6723,6 +6723,10 @@ a.wotd-pill:hover {
   align-items: center;
   min-height: 44px;
 }
+/* a door whose count is still on its way shows «…»: a thumb's width all the same */
+.reader-sheet .data-door {
+  min-width: 44px;
+}
 .data-door:hover,
 .data-door:focus-visible {
   color: var(--c-word);
